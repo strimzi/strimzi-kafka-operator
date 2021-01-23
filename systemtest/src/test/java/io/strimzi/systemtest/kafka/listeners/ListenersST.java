@@ -25,6 +25,8 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.security.CertAndKeyFiles;
+import io.strimzi.systemtest.security.SystemTestCertAndKey;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -45,7 +47,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,6 +57,10 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.security.SystemTestCertManager.exportToPemFiles;
+import static io.strimzi.systemtest.security.SystemTestCertManager.generateIntermediateCaCertAndKey;
+import static io.strimzi.systemtest.security.SystemTestCertManager.generateEndEntityCertAndKey;
+import static io.strimzi.systemtest.security.SystemTestCertManager.generateRootCaCertAndKey;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -69,6 +74,30 @@ public class ListenersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
     public static final String NAMESPACE = "listeners";
+
+    private static final CertAndKeyFiles ROOT_CA_CERT_AND_KEY_1;
+    private static final CertAndKeyFiles STRIMZI_CERT_AND_KEY_1;
+    private static final CertAndKeyFiles CHAIN_CERT_AND_KEY_1;
+
+    private static final CertAndKeyFiles ROOT_CA_CERT_AND_KEY_2;
+    private static final CertAndKeyFiles STRIMZI_CERT_AND_KEY_2;
+    private static final CertAndKeyFiles CHAIN_CERT_AND_KEY_2;
+
+    static {
+        SystemTestCertAndKey root1 = generateRootCaCertAndKey();
+        SystemTestCertAndKey intermediate1 = generateIntermediateCaCertAndKey(root1);
+        SystemTestCertAndKey strimzi1 = generateEndEntityCertAndKey(intermediate1);
+        ROOT_CA_CERT_AND_KEY_1 = exportToPemFiles(root1);
+        STRIMZI_CERT_AND_KEY_1 = exportToPemFiles(strimzi1);
+        CHAIN_CERT_AND_KEY_1 = exportToPemFiles(strimzi1, intermediate1, root1);
+
+        SystemTestCertAndKey root2 = generateRootCaCertAndKey();
+        SystemTestCertAndKey intermediate2 = generateIntermediateCaCertAndKey(root2);
+        SystemTestCertAndKey strimzi2 = generateEndEntityCertAndKey(intermediate2);
+        ROOT_CA_CERT_AND_KEY_2 = exportToPemFiles(root2);
+        STRIMZI_CERT_AND_KEY_2 = exportToPemFiles(strimzi2);
+        CHAIN_CERT_AND_KEY_2 = exportToPemFiles(strimzi2, intermediate2, root2);
+    }
 
     private String customCertChain1 = "custom-certificate-chain-1";
     private String customCertChain2 = "custom-certificate-chain-2";
@@ -1208,13 +1237,8 @@ public class ListenersST extends AbstractST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(3 * MESSAGE_COUNT));
 
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE,
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.pem")).getFile(),
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.key")).getFile());
-
-        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE,
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem")).getFile(),
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key")).getFile());
+        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
@@ -1450,13 +1474,8 @@ public class ListenersST extends AbstractST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(3 * MESSAGE_COUNT));
 
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE,
-            Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.pem")).getFile(),
-            Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.key")).getFile());
-
-        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE,
-            Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem")).getFile(),
-            Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key")).getFile());
+        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
@@ -1683,13 +1702,8 @@ public class ListenersST extends AbstractST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(3 * MESSAGE_COUNT));
 
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.pem").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.key").getFile());
-
-        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE,
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem")).getFile(),
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key")).getFile());
+        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
@@ -1892,29 +1906,12 @@ public class ListenersST extends AbstractST {
         SecretUtils.deleteSecretWithWait(customRootCA1, NAMESPACE);
         SecretUtils.deleteSecretWithWait(customRootCA2, NAMESPACE);
 
-        SecretUtils.createCustomSecret(customCertChain1, clusterName, NAMESPACE,
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-bundle.crt")).getFile(),
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/chain/strimzi-key.pem")).getFile());
-
-        SecretUtils.createCustomSecret(customCertChain2, clusterName, NAMESPACE,
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver2/chain/strimzi-bundle.crt")).getFile(),
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver2/chain/strimzi-key.pem")).getFile());
-
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE,
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.pem")).getFile(),
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/strimzi/strimzi.key")).getFile());
-
-        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE,
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.pem")).getFile(),
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver2/strimzi/strimzi.key")).getFile());
-
-        SecretUtils.createCustomSecret(customRootCA1, clusterName, NAMESPACE,
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/root/ca.pem")).getFile(),
-                Objects.requireNonNull(getClass().getClassLoader().getResource("custom-certs/ver1/root/ca.key")).getFile());
-
-        SecretUtils.createCustomSecret(customRootCA2, clusterName, NAMESPACE,
-                getClass().getClassLoader().getResource("custom-certs/ver2/root/ca.pem").getFile(),
-                getClass().getClassLoader().getResource("custom-certs/ver2/root/ca.key").getFile());
+        SecretUtils.createCustomSecret(customCertChain1, clusterName, NAMESPACE, CHAIN_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(customCertChain2, clusterName, NAMESPACE, CHAIN_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(customRootCA1, clusterName, NAMESPACE, ROOT_CA_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(customRootCA2, clusterName, NAMESPACE, ROOT_CA_CERT_AND_KEY_2);
     }
 
     @BeforeAll

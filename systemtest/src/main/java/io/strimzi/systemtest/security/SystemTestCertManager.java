@@ -4,9 +4,18 @@
  */
 package io.strimzi.systemtest.security;
 
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.intermediateCaCertBuilder;
+import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.endEntityCertBuilder;
+import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.rootCaCertBuilder;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static java.util.Arrays.asList;
 
@@ -63,5 +72,58 @@ public class SystemTestCertManager {
                 "subject=/O=io.strimzi/CN=" + certificateName + "\n" +
                 "issuer=/O=io.strimzi/CN=cluster-ca"
         ));
+    }
+
+    public static SystemTestCertAndKey generateRootCaCertAndKey() {
+        return rootCaCertBuilder()
+                .withIssuerDn("C=CZ, L=Prague, O=Strimzi, CN=StrimziRootCA")
+                .withSubjectDn("C=CZ, L=Prague, O=Strimzi, CN=StrimziRootCA")
+                .build();
+    }
+
+    public static SystemTestCertAndKey generateIntermediateCaCertAndKey(SystemTestCertAndKey rootCert) {
+        return intermediateCaCertBuilder(rootCert)
+                .withSubjectDn("C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA")
+                .build();
+    }
+
+    public static SystemTestCertAndKey generateEndEntityCertAndKey(SystemTestCertAndKey intermediateCert) {
+        return endEntityCertBuilder(intermediateCert)
+                .withSubjectDn("C=CZ, L=Prague, O=Strimzi, CN=kafka.strimzi.io")
+                .withSanDnsName("*.127.0.0.1.nip.io")
+                .build();
+    }
+
+    public static CertAndKeyFiles exportToPemFiles(SystemTestCertAndKey... certs) {
+        if (certs.length == 0) {
+            throw new IllegalArgumentException("List of certificates should has at least one element");
+        }
+        try {
+            File keyFile = exportPrivateKeyToPemFile(certs[0].getPrivateKey());
+            File certFile = exportCertsToPemFile(certs);
+            return new CertAndKeyFiles(certFile, keyFile);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static File exportPrivateKeyToPemFile(PrivateKey privateKey) throws IOException {
+        File keyFile = File.createTempFile("key-", ".key");
+        try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(keyFile))) {
+            pemWriter.writeObject(privateKey);
+            pemWriter.flush();
+        }
+        return keyFile;
+    }
+
+    private static File exportCertsToPemFile(SystemTestCertAndKey... certs) throws IOException {
+        File certFile = File.createTempFile("crt-", ".crt");
+        try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(certFile))) {
+            for (SystemTestCertAndKey certAndKey : certs) {
+                pemWriter.writeObject(certAndKey.getCertificate());
+            }
+            pemWriter.flush();
+        }
+        return certFile;
     }
 }
