@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
@@ -93,7 +94,7 @@ import static java.util.Collections.unmodifiableList;
 @EqualsAndHashCode
 @Version(Constants.V1BETA1)
 @Group(Constants.STRIMZI_GROUP)
-public class KafkaTopic extends CustomResource<KafkaTopicSpec, KafkaTopicStatus> implements UnknownPropertyPreserving {
+public class KafkaTopic extends CustomResource<KafkaTopicSpec, KafkaTopicStatus> implements Namespaced, UnknownPropertyPreserving {
 
     private static final long serialVersionUID = 1L;
 
