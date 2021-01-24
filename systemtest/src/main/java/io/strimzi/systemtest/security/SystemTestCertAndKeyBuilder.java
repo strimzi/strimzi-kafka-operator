@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -30,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -160,7 +162,7 @@ public class SystemTestCertAndKeyBuilder {
                     .setProvider(PROVIDER_NAME)
                     .getCertificate(certBuilder.build(contentSigner));
             return new SystemTestCertAndKey(certificate, keyPair.getPrivate());
-        } catch (Exception e) {
+        } catch (CertIOException | CertificateException | OperatorCreationException e) {
             throw new RuntimeException(e);
         }
     }

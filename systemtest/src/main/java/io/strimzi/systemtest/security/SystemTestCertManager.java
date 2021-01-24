@@ -13,10 +13,11 @@ import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.intermediateCaCertBuilder;
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.endEntityCertBuilder;
+import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.intermediateCaCertBuilder;
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.rootCaCertBuilder;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 
 public class SystemTestCertManager {
@@ -109,7 +110,7 @@ public class SystemTestCertManager {
 
     private static File exportPrivateKeyToPemFile(PrivateKey privateKey) throws IOException {
         File keyFile = File.createTempFile("key-", ".key");
-        try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(keyFile))) {
+        try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(keyFile, UTF_8))) {
             pemWriter.writeObject(privateKey);
             pemWriter.flush();
         }
@@ -118,7 +119,7 @@ public class SystemTestCertManager {
 
     private static File exportCertsToPemFile(SystemTestCertAndKey... certs) throws IOException {
         File certFile = File.createTempFile("crt-", ".crt");
-        try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(certFile))) {
+        try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(certFile, UTF_8))) {
             for (SystemTestCertAndKey certAndKey : certs) {
                 pemWriter.writeObject(certAndKey.getCertificate());
             }
