@@ -166,6 +166,16 @@ public class KafkaCluster extends AbstractModel {
     public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "to-version";
 
     /**
+     * Records the used log.message.format.version
+     */
+    public static final String ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION = Annotations.STRIMZI_DOMAIN + "log-message-format-version";
+
+    /**
+     * Records the used inter.broker.protocol.version
+     */
+    public static final String ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION = Annotations.STRIMZI_DOMAIN + "inter-broker-protocol-version";
+
+    /**
      * Records the state of the Kafka upgrade process. Unset outside of upgrades.
      */
     public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
@@ -418,63 +428,12 @@ public class KafkaCluster extends AbstractModel {
             AuthenticationUtils.configureKafkaJmxOptions(kafkaClusterSpec.getJmxOptions().getAuthentication(), result);
         }
 
+        // Handle Kafka broker configuration
+        KafkaVersion desiredVersion = versions.version(kafkaClusterSpec.getVersion());
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
-        // If  required Cruise Control metric reporter configurations are missing set them using Kafka defaults
-        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue()) == null) {
-            result.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_NUM_PARTITIONS);
-        }
-        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue()) == null) {
-            result.ccReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_REPLICATION_FACTOR);
-        }
-        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue()) == null) {
-            result.ccMinInSyncReplicas = "1";
-        } else {
-            // If the user has set the CC minISR but it is higher than the set number of replicas for the metrics topics then we need to abort and make
-            // sure that the user sets minISR <= replicationFactor
-            if (Integer.parseInt(result.ccMinInSyncReplicas) > Integer.parseInt(result.ccReplicationFactor)) {
-                throw new IllegalArgumentException(
-                               "The Cruise Control metric topic minISR was set to a value (" + result.ccMinInSyncReplicas + ") " +
-                               "which is higher than the number of replicas for that topic (" + result.ccReplicationFactor + "). " +
-                               "Please ensure that the CC metrics topic minISR is <= to the topic's replication factor."
-                );
-            }
-        }
-        String metricReporters = configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
-        Set<String> metricReporterList = new HashSet<>();
-        if (metricReporters != null) {
-            addAll(metricReporterList, configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD).split(","));
-        }
-
-        if (kafkaSpec.getCruiseControl() != null && kafkaClusterSpec.getReplicas() < 2) {
-            throw new InvalidResourceException("Kafka " +
-                    kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
-                    " has invalid configuration. Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes.");
-        }
-        result.cruiseControlSpec = kafkaSpec.getCruiseControl();
-        if (result.cruiseControlSpec != null) {
-            metricReporterList.add(CRUISE_CONTROL_METRIC_REPORTER);
-        } else {
-            metricReporterList.remove(CRUISE_CONTROL_METRIC_REPORTER);
-        }
-        if (!metricReporterList.isEmpty()) {
-            configuration.setConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD, String.join(",", metricReporterList));
-        } else {
-            configuration.removeConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
-        }
-
-        List<String> errorsInConfig = configuration.validate(versions.version(kafkaClusterSpec.getVersion()));
-        if (!errorsInConfig.isEmpty()) {
-            for (String error : errorsInConfig) {
-                log.warn("Kafka {}/{} has invalid spec.kafka.config: {}",
-                        kafkaAssembly.getMetadata().getNamespace(),
-                        kafkaAssembly.getMetadata().getName(),
-                        error);
-            }
-            throw new InvalidResourceException("Kafka " +
-                    kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
-                    " has invalid spec.kafka.config: " +
-                    String.join(", ", errorsInConfig));
-        }
+        configureCruiseControlMetrics(kafkaAssembly, result, configuration);
+        //configureLogMessageFormatAndInterBrokerProtocolVersion(desiredVersion, configuration);
+        validateConfiguration(kafkaAssembly, desiredVersion, configuration);
         result.setConfiguration(configuration);
 
         // Parse different types of metrics configurations
@@ -651,6 +610,101 @@ public class KafkaCluster extends AbstractModel {
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
+    }
+
+    /**
+     * Depending on the Cruise Control configuration, it enhances the Kafka configuration to enable the Cruise Control
+     * metric reporter and the configuration of its topics.
+     *
+     * @param kafkaAssembly     Kafka custom resource
+     * @param kafkaCluster      KafkaCluster instance
+     * @param configuration     Kafka broker configuration
+     */
+    private static void configureCruiseControlMetrics(Kafka kafkaAssembly, KafkaCluster kafkaCluster, KafkaConfiguration configuration) {
+        // If  required Cruise Control metric reporter configurations are missing set them using Kafka defaults
+        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue()) == null) {
+            kafkaCluster.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_NUM_PARTITIONS);
+        }
+        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue()) == null) {
+            kafkaCluster.ccReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_REPLICATION_FACTOR);
+        }
+        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue()) == null) {
+            kafkaCluster.ccMinInSyncReplicas = "1";
+        } else {
+            // If the user has set the CC minISR but it is higher than the set number of replicas for the metrics topics then we need to abort and make
+            // sure that the user sets minISR <= replicationFactor
+            if (Integer.parseInt(kafkaCluster.ccMinInSyncReplicas) > Integer.parseInt(kafkaCluster.ccReplicationFactor)) {
+                throw new IllegalArgumentException(
+                        "The Cruise Control metric topic minISR was set to a value (" + kafkaCluster.ccMinInSyncReplicas + ") " +
+                                "which is higher than the number of replicas for that topic (" + kafkaCluster.ccReplicationFactor + "). " +
+                                "Please ensure that the CC metrics topic minISR is <= to the topic's replication factor."
+                );
+            }
+        }
+        String metricReporters = configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
+        Set<String> metricReporterList = new HashSet<>();
+        if (metricReporters != null) {
+            addAll(metricReporterList, configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD).split(","));
+        }
+
+        if (kafkaAssembly.getSpec().getCruiseControl() != null && kafkaAssembly.getSpec().getKafka().getReplicas() < 2) {
+            throw new InvalidResourceException("Kafka " +
+                    kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
+                    " has invalid configuration. Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes.");
+        }
+        kafkaCluster.cruiseControlSpec = kafkaAssembly.getSpec().getCruiseControl();
+        if (kafkaCluster.cruiseControlSpec != null) {
+            metricReporterList.add(CRUISE_CONTROL_METRIC_REPORTER);
+        } else {
+            metricReporterList.remove(CRUISE_CONTROL_METRIC_REPORTER);
+        }
+        if (!metricReporterList.isEmpty()) {
+            configuration.setConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD, String.join(",", metricReporterList));
+        } else {
+            configuration.removeConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
+        }
+    }
+
+    /**
+     * Validates the Kafka broker configuration against the configuration options of the desired Kafka version.
+     *
+     * @param kafkaAssembly     Kafka custom resource
+     * @param desiredVersion    Desired Kafka version
+     * @param configuration     Kafka broker configuration
+     */
+    private static void validateConfiguration(Kafka kafkaAssembly, KafkaVersion desiredVersion, KafkaConfiguration configuration) {
+        List<String> errorsInConfig = configuration.validate(desiredVersion);
+
+        if (!errorsInConfig.isEmpty()) {
+            for (String error : errorsInConfig) {
+                log.warn("Kafka {}/{} has invalid spec.kafka.config: {}",
+                        kafkaAssembly.getMetadata().getNamespace(),
+                        kafkaAssembly.getMetadata().getName(),
+                        error);
+            }
+
+            throw new InvalidResourceException("Kafka " +
+                    kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
+                    " has invalid spec.kafka.config: " +
+                    String.join(", ", errorsInConfig));
+        }
+    }
+
+    /**
+     * If not set, it configures the `log.message.format.version` and `inter.broker.protocol.version` options in the
+     * Kafka broker configuration according to the desired Kafka version.
+     *
+     * @param desiredVersion    Desired Kafka version
+     * @param configuration     Kafka broker configuration
+     */
+    private static void configureLogMessageFormatAndInterBrokerProtocolVersion(KafkaVersion desiredVersion, KafkaConfiguration configuration)  {
+        if (configuration.getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION) == null)   {
+            configuration.setConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, desiredVersion.messageVersion());
+        }
+
+        if (configuration.getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION) == null)   {
+            configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, desiredVersion.protocolVersion());
+        }
     }
 
     protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
@@ -1158,8 +1212,11 @@ public class KafkaCluster extends AbstractModel {
         stsAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         stsAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
 
-        Map<String, String> podAnnotations = new HashMap<>(1);
+        Map<String, String> podAnnotations = new HashMap<>(4);
         podAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+        podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
+        podAnnotations.put(ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, getLogMessageFormatVersion());
+        podAnnotations.put(ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, getInterBrokerProtocolVersion());
 
         return createStatefulSet(
                 stsAnnotations,
@@ -1913,5 +1970,21 @@ public class KafkaCluster extends AbstractModel {
     @Override
     protected boolean shouldPatchLoggerAppender() {
         return true;
+    }
+
+    public String getLogMessageFormatVersion() {
+        return configuration.getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
+    }
+
+    public void setLogMessageFormatVersion(String logMessageFormatVersion) {
+        configuration.setConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, logMessageFormatVersion);
+    }
+
+    public String getInterBrokerProtocolVersion() {
+        return configuration.getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
+    }
+
+    public void setInterBrokerProtocolVersion(String interBrokerProtocolVersion) {
+        configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
     }
 }

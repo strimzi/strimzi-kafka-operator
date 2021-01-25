@@ -39,6 +39,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -800,37 +801,20 @@ public class KafkaAssemblyOperatorMockTest {
             .onComplete(v -> async.flag());
     }
 
-
     /** Test the ZK version change functions */
     private void reconcileZkVersionChange(VertxTestContext context, String initialKafkaVersion, String changedKafkaVersion, String changedImage) {
+        // We set the versions in the initial cluster to allow downgrades / upgrades
+        KafkaVersion lowerVersion = KafkaVersion.compareDottedVersions(initialKafkaVersion, changedKafkaVersion) > 0 ? VERSIONS.version(changedKafkaVersion) : VERSIONS.version(initialKafkaVersion);
 
-        Kafka initialKafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName(CLUSTER_NAME)
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withReplicas(3)
-                        .withVersion(initialKafkaVersion)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
-                    .withNewEntityOperator()
-                        .withNewTopicOperator()
-                        .endTopicOperator()
-                        .withNewUserOperator()
-                        .endUserOperator()
-                    .endEntityOperator()
-                .endSpec()
-                .build();
+        Map<String, Object> config = new HashMap<>(2);
+        config.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, lowerVersion.messageVersion());
+        config.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, lowerVersion.protocolVersion());
 
-        Kafka updatedKafka = new KafkaBuilder(initialKafka)
+        cluster.getSpec().getKafka().setConfig(config);
+        cluster.getSpec().getKafka().setVersion(initialKafkaVersion);
+
+        // We prepare updated Kafka with new version
+        Kafka updatedKafka = new KafkaBuilder(cluster)
                 .editSpec()
                     .editKafka()
                         .withVersion(changedKafkaVersion)
@@ -844,6 +828,8 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding())
+            .compose(v -> initialState.getKafkaClusterDescription())
+            .compose(v -> initialState.prepareVersionChange())
             .compose(v -> initialState.getZookeeperDescription())
             .compose(state -> state.zkVersionChange())
             .onComplete(context.succeeding(state -> context.verify(() -> {
