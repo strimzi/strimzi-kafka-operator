@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
@@ -89,7 +90,7 @@ import static java.util.Collections.unmodifiableList;
 @ToString
 @Version(Constants.V1ALPHA1)
 @Group(Constants.STRIMZI_GROUP)
-public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements UnknownPropertyPreserving {
+public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
