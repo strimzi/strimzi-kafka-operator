@@ -39,6 +39,6 @@ include::modules/con-deploy-kafka-connect-managing-connectors.adoc[leveloffset=+
 //Procedure to deploy a KafkaConnector resource
 include::modules/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
 //Procedure to restart a Kafka connector
-include::../../modules/proc-manual-restart-connector.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-manual-restart-connector.adoc[leveloffset=+1]
 //Procedure to restart a Kafka connector task
-include::../../modules/proc-manual-restart-connector-task.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-manual-restart-connector-task.adoc[leveloffset=+1]
