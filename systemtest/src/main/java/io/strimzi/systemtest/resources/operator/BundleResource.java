@@ -89,7 +89,7 @@ public class BundleResource {
             .endSpec();
     }
 
-    public static Deployment create(Deployment co) {
+    public static Deployment createAndWaitForReadiness(Deployment co) {
         return KubernetesResource.deployNewDeployment(co);
     }
 }

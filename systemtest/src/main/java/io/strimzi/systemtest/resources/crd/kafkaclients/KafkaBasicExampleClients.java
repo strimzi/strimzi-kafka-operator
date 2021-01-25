@@ -291,7 +291,7 @@ public class KafkaBasicExampleClients {
             .endSpec();
     }
 
-    public Job create(Job job) {
+    public Job createAndWaitForReadiness(Job job) {
         return KubernetesResource.deployNewJob(job);
     }
 }

@@ -201,8 +201,8 @@ class LogSettingST extends AbstractST {
         String userName = "test-user";
         String topicName = "test-topic";
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(LOG_SETTING_CLUSTER_NAME, topicName).build());
-        KafkaUserResource.create(KafkaUserResource.tlsUser(LOG_SETTING_CLUSTER_NAME, userName).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(LOG_SETTING_CLUSTER_NAME, topicName).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(LOG_SETTING_CLUSTER_NAME, userName).build());
 
         LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has log level set properly", LOG_SETTING_CLUSTER_NAME);
         assertThat("Kafka's log level is set properly", checkLoggersLevel(KAFKA_LOGGERS, KAFKA_MAP), is(true));
@@ -249,7 +249,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testConnectLogSetting() {
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(CONNECT_NAME, LOG_SETTING_CLUSTER_NAME, 1)
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(CONNECT_NAME, LOG_SETTING_CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
@@ -278,7 +278,7 @@ class LogSettingST extends AbstractST {
     @Test
     @OpenShiftOnly
     void testConnectS2ILogSetting() {
-        KafkaConnectS2IResource.create(KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_NAME, LOG_SETTING_CLUSTER_NAME, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(CONNECTS2I_NAME, LOG_SETTING_CLUSTER_NAME, 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(CONNECT_LOGGERS)
@@ -306,7 +306,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testMirrorMakerLogSetting() {
-        KafkaMirrorMakerResource.create(KafkaMirrorMakerResource.kafkaMirrorMaker(MM_NAME, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
+        KafkaMirrorMakerResource.createAndWaitForReadiness(KafkaMirrorMakerResource.kafkaMirrorMaker(MM_NAME, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(MIRROR_MAKER_LOGGERS)
@@ -334,7 +334,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testMirrorMaker2LogSetting() {
-        KafkaMirrorMaker2Resource.create(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(MM2_NAME, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
+        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(MM2_NAME, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(MIRROR_MAKER_LOGGERS)
@@ -362,7 +362,7 @@ class LogSettingST extends AbstractST {
 
     @Test
     void testBridgeLogSetting() {
-        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(BRIDGE_NAME, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
+        KafkaBridgeResource.createAndWaitForReadiness(KafkaBridgeResource.kafkaBridge(BRIDGE_NAME, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(BRIDGE_LOGGERS)
@@ -489,7 +489,7 @@ class LogSettingST extends AbstractST {
 
         timeMeasuringSystem.setOperationID(startDeploymentMeasuring());
 
-        KafkaResource.create(KafkaResource.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -533,7 +533,7 @@ class LogSettingST extends AbstractST {
             .build());
 
         // deploying second Kafka here because of MM and MM2 tests
-        KafkaResource.create(KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -556,7 +556,7 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
     }
 
     private String startDeploymentMeasuring() {

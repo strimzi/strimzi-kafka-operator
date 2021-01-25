@@ -46,9 +46,9 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     @Test
     void testSendSimpleMessageTlsScramSha() {
         // Create topic
-        KafkaTopicResource.create(KafkaTopicResource.topic(httpBridgeScramShaClusterName, TOPIC_NAME).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(httpBridgeScramShaClusterName, TOPIC_NAME).build());
 
-        kafkaBridgeClientJob.create(kafkaBridgeClientJob.producerStrimziBridge().build());
+        kafkaBridgeClientJob.createAndWaitForReadiness(kafkaBridgeClientJob.producerStrimziBridge().build());
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -67,9 +67,9 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
     @Test
     void testReceiveSimpleMessageTlsScramSha() {
-        KafkaTopicResource.create(KafkaTopicResource.topic(httpBridgeScramShaClusterName, TOPIC_NAME).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(httpBridgeScramShaClusterName, TOPIC_NAME).build());
 
-        kafkaBridgeClientJob.create(kafkaBridgeClientJob.consumerStrimziBridge().build());
+        kafkaBridgeClientJob.createAndWaitForReadiness(kafkaBridgeClientJob.consumerStrimziBridge().build());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -94,7 +94,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
-        KafkaResource.create(KafkaResource.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -112,9 +112,9 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .build());
 
         // Create Kafka user
-        KafkaUser scramShaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(httpBridgeScramShaClusterName, USER_NAME).build());
+        KafkaUser scramShaUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(httpBridgeScramShaClusterName, USER_NAME).build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName, scramShaUser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName, scramShaUser).build());
 
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
@@ -129,7 +129,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(httpBridgeScramShaClusterName));
 
         // Deploy http bridge
-        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(httpBridgeScramShaClusterName, KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName), 1)
+        KafkaBridgeResource.createAndWaitForReadiness(KafkaBridgeResource.kafkaBridge(httpBridgeScramShaClusterName, KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName), 1)
             .editSpec()
                 .withNewConsumer()
                     .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")

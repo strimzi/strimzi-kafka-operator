@@ -59,7 +59,7 @@ public class KafkaConnectS2IResource {
             .endSpec();
     }
 
-    public static KafkaConnectS2I create(KafkaConnectS2I kafkaConnectS2I) {
+    public static KafkaConnectS2I createAndWaitForReadiness(KafkaConnectS2I kafkaConnectS2I) {
         KubernetesResource.allowNetworkPolicySettingsForResource(kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
 
         TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,

@@ -101,7 +101,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     private void testWeirdUsername(String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) {
         String aliceUser = "alice";
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -125,21 +125,21 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             .build());
 
         // Create topic
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
 
         // Create user
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
-            KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, weirdUserName).build());
-            KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, aliceUser).build());
+            KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, weirdUserName).build());
+            KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, aliceUser).build());
         } else {
-            KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, weirdUserName).build());
-            KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, aliceUser).build());
+            KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, weirdUserName).build());
+            KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, aliceUser).build());
         }
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName).build());
 
         // Deploy http bridge
-        KafkaBridgeResource.create(KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.tlsBootstrapAddress(clusterName), 1)
+        KafkaBridgeResource.createAndWaitForReadiness(KafkaBridgeResource.kafkaBridge(clusterName, KafkaResources.tlsBootstrapAddress(clusterName), 1)
             .withNewSpecLike(spec)
                 .withBootstrapServers(KafkaResources.tlsBootstrapAddress(clusterName))
                 .withNewHttp(Constants.HTTP_BRIDGE_DEFAULT_PORT)
@@ -152,7 +152,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         Service service = KafkaBridgeUtils.createBridgeNodePortService(clusterName, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         KubernetesResource.createServiceResource(service, NAMESPACE);
 
-        kafkaBridgeClientJob.create(kafkaBridgeClientJob.consumerStrimziBridge().build());
+        kafkaBridgeClientJob.createAndWaitForReadiness(kafkaBridgeClientJob.consumerStrimziBridge().build());
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withClusterName(clusterName)

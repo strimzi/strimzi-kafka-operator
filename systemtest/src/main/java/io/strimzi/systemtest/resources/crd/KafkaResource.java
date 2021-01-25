@@ -232,7 +232,7 @@ public class KafkaResource {
             .endSpec();
     }
 
-    public static Kafka create(Kafka kafka) {
+    public static Kafka createAndWaitForReadiness(Kafka kafka) {
         TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
             () -> {
                 try {

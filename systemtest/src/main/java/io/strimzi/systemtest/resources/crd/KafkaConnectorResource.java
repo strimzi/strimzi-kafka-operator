@@ -59,7 +59,7 @@ public class KafkaConnectorResource {
         kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
-    public static KafkaConnector create(KafkaConnector kafkaConnector) {
+    public static KafkaConnector createAndWaitForReadiness(KafkaConnector kafkaConnector) {
         TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
             () -> {
                 try {

@@ -64,7 +64,7 @@ class UserST extends AbstractST {
         String saslUserWithLongName = "sasl-user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef"; // 65 character username
 
         // Create user with correct name
-        KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, userWithCorrectName).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, userWithCorrectName).build());
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
@@ -73,7 +73,7 @@ class UserST extends AbstractST {
         verifyCRStatusCondition(condition, "True", Ready);
 
         // Create sasl user with long name, shouldn't fail
-        KafkaUserResource.create(KafkaUserResource.scramShaUser(userClusterName, saslUserWithLongName).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(userClusterName, saslUserWithLongName).build());
 
         KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(userClusterName, userWithLongName)
             .withNewSpec()
@@ -94,7 +94,7 @@ class UserST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     void testUpdateUser() {
-        KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, USER_NAME).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, USER_NAME).build());
 
         String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(USER_NAME));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
@@ -147,12 +147,12 @@ class UserST extends AbstractST {
 
     @Test
     void testTlsUserWithQuotas() {
-        testUserWithQuotas(KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, "encrypted-arnost").build()));
+        testUserWithQuotas(KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, "encrypted-arnost").build()));
     }
 
     @Test
     void testScramUserWithQuotas() {
-        testUserWithQuotas(KafkaUserResource.create(KafkaUserResource.scramShaUser(userClusterName, "scramed-arnost").build()));
+        testUserWithQuotas(KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(userClusterName, "scramed-arnost").build()));
     }
 
     @Test
@@ -161,7 +161,7 @@ class UserST extends AbstractST {
         String labelValue = "test-label-value";
         String annotationKey = "test-annotation-key";
         String annotationValue = "test-annotation-value";
-        KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, USER_NAME)
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, USER_NAME)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewSecret()
@@ -187,7 +187,7 @@ class UserST extends AbstractST {
         Integer reqPerc = 42;
 
         // Create user with correct name
-        KafkaUserResource.create(KafkaUserResource.userWithQuota(user, prodRate, consRate, reqPerc).build());
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.userWithQuota(user, prodRate, consRate, reqPerc).build());
 
         String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
@@ -232,7 +232,7 @@ class UserST extends AbstractST {
         String tlsUserName = "encrypted-leopold";
         String scramShaUserName = "scramed-leopold";
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -262,16 +262,16 @@ class UserST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
-        KafkaUser tlsUser = KafkaUserResource.create(KafkaUserResource.tlsUser(clusterName, tlsUserName).build());
-        KafkaUser scramShaUser = KafkaUserResource.create(KafkaUserResource.scramShaUser(clusterName, scramShaUserName).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        KafkaUser tlsUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, tlsUserName).build());
+        KafkaUser scramShaUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, scramShaUserName).build());
 
         LOGGER.info("Deploying KafkaClients pod for TLS listener");
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).build());
         String tlsKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         LOGGER.info("Deploying KafkaClients pod for PLAIN listener");
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).build());
         String plainKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-plain-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
@@ -337,9 +337,9 @@ class UserST extends AbstractST {
             String userName = "alisa" + i;
 
             if (typeOfUser.equals("TLS")) {
-                KafkaUserResource.create(KafkaUserResource.tlsUser(userClusterName, userName).build());
+                KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, userName).build());
             } else {
-                KafkaUserResource.create(KafkaUserResource.scramShaUser(userClusterName, userName).build());
+                KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(userClusterName, userName).build());
             }
 
             LOGGER.info("Checking status of KafkaUser {}", userName);
@@ -357,6 +357,6 @@ class UserST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(userClusterName, 1, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(userClusterName, 1, 1).build());
     }
 }

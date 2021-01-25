@@ -52,7 +52,7 @@ public class KafkaUserResource {
             .endMetadata();
     }
 
-    public static KafkaUser create(KafkaUser user) {
+    public static KafkaUser createAndWaitForReadiness(KafkaUser user) {
         kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(user);
         LOGGER.info("Created KafkaUser {}", user.getMetadata().getName());
         return waitFor(deleteLater(user));

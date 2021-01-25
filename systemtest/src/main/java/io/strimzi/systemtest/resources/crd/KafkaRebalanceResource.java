@@ -48,7 +48,7 @@ public class KafkaRebalanceResource {
             .endMetadata();
     }
 
-    public static KafkaRebalance create(KafkaRebalance kafkaRebalance) {
+    public static KafkaRebalance createAndWaitForReadiness(KafkaRebalance kafkaRebalance) {
         TestUtils.waitFor("KafkaRebalance creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
             () -> {
                 try {

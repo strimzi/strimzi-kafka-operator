@@ -75,7 +75,7 @@ public class KafkaRollerST extends AbstractST {
         // We need to start with 3 replicas / brokers,
         // so that KafkaStreamsTopicStore topic gets set/distributed on this first 3 [0, 1, 2],
         // since this topic has replication-factor 3 and minISR 2.
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3)
                 .editSpec()
                     .editKafka()
                         .addToConfig("auto.create.topics.enable", "false")
@@ -94,7 +94,7 @@ public class KafkaRollerST extends AbstractST {
 
         StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName, 4, 4, 4).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName, 4, 4, 4).build());
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(clusterName,  3));
@@ -127,8 +127,8 @@ public class KafkaRollerST extends AbstractST {
 
     @Test
     void testKafkaTopicRFLowerThanMinInSyncReplicas() {
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, TOPIC_NAME, 1, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME, 1, 1).build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
@@ -152,7 +152,7 @@ public class KafkaRollerST extends AbstractST {
 
     @Test
     void testKafkaPodCrashLooping() {
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -178,7 +178,7 @@ public class KafkaRollerST extends AbstractST {
 
     @Test
     void testKafkaPodImagePullBackOff() {
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
 
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
@@ -202,7 +202,7 @@ public class KafkaRollerST extends AbstractST {
         ResourceRequirements rr = new ResourceRequirementsBuilder()
                 .withRequests(Collections.emptyMap())
                 .build();
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
                         .withResources(rr)
