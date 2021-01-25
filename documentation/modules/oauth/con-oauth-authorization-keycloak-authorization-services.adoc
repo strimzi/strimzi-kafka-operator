@@ -5,6 +5,9 @@
 [id='con-oauth-authorization-keycloak-authorization-services_{context}']
 = Managing policies and permissions in Keycloak Authorization Services
 
+This section describes the mappings between the Kafka authorization model and Keycloak Authorization Services model.
+The mappings are used in granting permissions to access Kafka.
+
 == Kafka authorization model for resources
 
 The link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] defines resource types, and the permissions available for each type.
@@ -50,6 +53,7 @@ DelegationToken:
 
 * `Describe`
 
+[id='con-oauth-authorization-services-model-{context}']
 == Keycloak Authorization Services model for managing permissions
 
 Keycloak Authorization Services use four concepts to define and grant permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
@@ -98,7 +102,7 @@ The authorization scopes should contain all the possible Kafka permissions regar
 
 The resources use pattern names for pattern matching against the targeted resources when performing permission checks.
 
-The general pattern is as follows: `RESOURCE_TYPE:NAME_PATTERN`
+The general pattern is `__RESOURCE-TYPE:PATTERN-NAME__`.
 
 The resource types mirror the Kafka authorization model.
 The pattern allows for the two matching options: exact matching (when the pattern does not end with `\*`), and prefix matching (when the pattern ends with `*`).
@@ -109,7 +113,7 @@ The pattern allows for the two matching options: exact matching (when the patter
     Group:orders-*
     Cluster:*
 
-In addition, the general pattern can be prefixed by `kafka-cluster:CLUSTER_NAME` followed by a comma, where the cluster name refers to the `metadata.name` in the Kafka custom resource.
+In addition, the general pattern can be prefixed by `kafka-cluster:__CLUSTER-NAME__` followed by a comma, where the cluster name refers to the `metadata.name` in the Kafka custom resource.
 
 .Example patterns for resources with cluster prefix
     kafka-cluster:my-cluster,Topic:*
@@ -126,30 +130,30 @@ While you may add any authorization scope to any resource, only the scopes suppo
 
 Policies are used to target permissions to one or more accounts.
 Targeting can refer to:
+
 * Specific user or service accounts
 * Realm roles or client roles
 * User groups
-* JS rule to match a client IP address
+* JavaScript rule to match a client IP address
 
 A policy is given a unique name, and can be reused to target multiple permissions to multiple resources.
 
-.Defining permissions based on scopes, resources and policies 
+.Defining permissions based on scopes, resources and policies
 
 Use fine-grained permissions to pull together the policies, resources, and authorization scopes that grant access to users.
 
-
-The name of the each permission should should clearly define what permissions it grants to which users.
+The name of each permission should clearly define what permissions it grants to which users.
 
 For more information on how to configure permissions through Keycloak Authorization Services, see xref:con-oauth-authorization-keycloak-example_str[the authorization example].
 
 
 == Example permissions required for operations on Kafka
 
-The following  examples demonstrate the permissions required for performing common operations on Kafka.
+The following  examples demonstrate the user permissions required for performing common operations on Kafka.
 
 .Creating a topic
 
-To create a topic the `Create` permission is required for the specific topic or for `Cluster:kafka-cluster`.
+To create a topic, the `Create` permission is required for the specific topic, or for `Cluster:kafka-cluster`.
 
 [source,shell]
 ----
@@ -159,7 +163,7 @@ bin/kafka-topics.sh --create --topic my-topic \
 
 .Listing the topic
 
-If user has `Describe` permission on the topic, the topic will be listed, otherwise not.
+If a user has `Describe` permission on the topic, the topic is listed.
 
 [source,shell]
 ----
@@ -169,7 +173,7 @@ bin/kafka-topics.sh --list \
 
 .Displaying the topic details
 
-To display the topic details the `Describe`, and `DescribeConfigs` permissions are required on the topic.
+To display topic details, `Describe` and `DescribeConfigs` permissions are required on the topic.
 
 [source,shell]
 ----
@@ -179,7 +183,7 @@ bin/kafka-topics.sh --describe --topic my-topic \
 
 .Producing to the topic
 
-To produce to the topic the user needs `Describe` and `Write` permissions on the topic.
+To produce to the topic, `Describe` and `Write` permissions are required on the topic.
 If topic has not yet been created, and autocreation is enabled, the permissions to create the topic are required.
 
 [source,shell]
@@ -190,16 +194,15 @@ bin/kafka-console-producer.sh  --topic my-topic \
 
 .Consuming from the topic
 
-To consume from the topic the user needs `Describe` and `Read` permissions on the topic.
-Consuming from the topic normally relies on storing the consumer offsets in a consumer group.
-That requires additional `Describe` and `Read` permissions on the consumer group.
+To consume from the topic, `Describe` and `Read` permissions are required on the topic.
+Consuming from the topic normally relies on storing the consumer offsets in a consumer group,
+which requires additional `Describe` and `Read` permissions on the consumer group.
 
 Two `resources` are needed for matching. For example:
-
 ----
 Topic:my-topic
 Group:my-group-*
-----    
+----
 
 [source,shell]
 ----
@@ -209,13 +212,14 @@ bin/kafka-console-consumer.sh --topic my-topic --group my-group-1 --from-beginni
 
 .Producing to the topic using an idempotent producer
 
-Besides needing the permissions for ordinary producing to the topic, an additional `IdempotentWrite` permission is required on the `Cluster` resource.
+Besides needing the permissions for standard producing to the topic, an additional `IdempotentWrite` permission is required on the `Cluster` resource.
 
 Two `resources` are needed for matching. For example:
 
-    Topic:my-topic
-    Cluster:kafka-cluster
-
+----
+Topic:my-topic
+Cluster:kafka-cluster
+----
 
 .Listing consumer groups
 
@@ -230,7 +234,7 @@ bin/kafka-consumer-groups.sh --list \
 
 .Displaying the consumer group details
 
-To display the consumer group details the `Describe` permission is required on the group, and on the topic associated with the group.
+To display the consumer group details, `Describe` permission is required on the group, and on the topic associated with the group.
 
 [source,shell]
 ----
@@ -240,7 +244,7 @@ bin/kafka-consumer-groups.sh --describe --group my-group-1 \
 
 .Changing the topic configuration
 
-To change the topic configuration the `Describe` and `Alter` permissions are required on the topic.
+To change the topic configuration, `Describe` and `Alter` permissions are required on the topic.
 
 [source,shell]
 ----
@@ -260,7 +264,7 @@ bin/kafka-configs.sh --entity-type brokers --entity-name 0 --describe --all \
 
 .Changing the Kafka broker configuration
 
-To change the Kafka broker configuration the 'DescribeConfigs', and `AlterConfigs` permissions are required on `Cluster:kafka-cluster`.
+To change the Kafka broker configuration, `DescribeConfigs` and `AlterConfigs` permissions are required on `Cluster:kafka-cluster`.
 
 [source,shell]
 ----
@@ -270,7 +274,7 @@ bin/kafka-configs --entity-type brokers --entity-name 0 --alter --add-config log
 
 .Deleting a topic
 
-To delete the topic the `Describe`, and `Delete` permissions are required on the topic.
+To delete the topic, `Describe` and `Delete` permissions are required on the topic.
 
 [source,shell]
 ----
@@ -280,7 +284,7 @@ bin/kafka-topics.sh --delete --topic my-topic \
 
 .Selecting a leader partition
 
-To run leader selection for topic partitions you need `Alter` permission on the `Cluster:kafka-cluster`.
+To run leader selection for topic partitions, `Alter` permission is required on the `Cluster:kafka-cluster`.
 
 [source,shell]
 ----
@@ -290,7 +294,7 @@ bin/kafka-leader-election.sh --topic my-topic --partition 0 --election-type PREF
 
 .Reassigning partitions
 
-To generate partition reassignment file the `Describe` on the topics involved.
+To generate a partition reassignment file, `Describe` permissions are required on the topics involved.
 
 [source,shell]
 ----
@@ -298,7 +302,7 @@ bin/kafka-reassign-partitions.sh --topics-to-move-json-file /tmp/topics-to-move.
   --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/config.properties > /tmp/partition-reassignment.json
 ----
 
-To execute the partition reassignment the `Describe`, and `Alter` permissions are required on `Cluster:kafka-cluster`, and `Describe` permissions are required on the topics involved.
+To execute the partition reassignment, `Describe` and `Alter` permissions are required on `Cluster:kafka-cluster`, and `Describe` permissions are required on the topics involved.
 
 [source,shell]
 ----
@@ -306,7 +310,7 @@ bin/kafka-reassign-partitions.sh --reassignment-json-file /tmp/partition-reassig
   --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/config.properties
 ----
 
-To verify partition reassignment the `Describe`, and `AlterConfigs` permissions are required on `Cluster:kafka-cluster`,
+To verify partition reassignment, `Describe`, and `AlterConfigs` permissions are required on `Cluster:kafka-cluster`,
 and on each of the topics involved.
 
 [source,shell]
