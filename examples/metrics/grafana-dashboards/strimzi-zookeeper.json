@@ -1224,7 +1224,7 @@
       "yaxes": [
         {
           "format": "ms",
-          "label": "request latency (ms)",
+          "label": "Request Latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1309,7 +1309,7 @@
       "yaxes": [
         {
           "format": "ms",
-          "label": "request latency (ms)",
+          "label": "Request Latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1394,7 +1394,7 @@
       "yaxes": [
         {
           "format": "ms",
-          "label": "request latency (ms)",
+          "label": "Request Latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
