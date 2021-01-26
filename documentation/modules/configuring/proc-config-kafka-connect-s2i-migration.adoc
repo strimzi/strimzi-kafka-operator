@@ -47,9 +47,16 @@ NOTE: Alternatively, you can build a new image with connectors manually, and spe
 . Delete the old `KafkaConnectS2I` resource:
 +
 [source,shell,subs="+quotes"]
-kubectl delete _MY-KAFKA-CONNECT-S2I-CONFIG-FILE_
+kubectl delete -f _MY-KAFKA-CONNECT-S2I-CONFIG-FILE_
 +
 Replace _MY-KAFKA-CONNECT-S2I-CONFIG-FILE_ with the name of the file containing your `KafkaConnectS2I` resource configuration.
++
+If you don't have the file, specify the name of the resource:
++
+[source,shell,subs="+quotes"]
+kubectl delete kafkaconnects2i _MY-KAFKA-CONNECT-S2I_
++
+Replace _MY-KAFKA-CONNECT-S2I_ with the name of the `KafkaConnectS2I` resource.
 +
 Wait until the Kafka Connect with S2I deployment and pods are deleted.
 +
@@ -64,7 +71,7 @@ Replace _MY-KAFKA-CONNECT-CONFIG-FILE_ with the name of the file containing your
 +
 Wait until the new image is built, the deployment is created, and the pods have started.
 
-. Check that all expected connectors are present and are running:
+. If you are using `KafkaConnector` resources for managing Kafka Connect connectors, check that all expected connectors are present and are running:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -74,7 +81,7 @@ kubectl get kctr --selector strimzi.io/cluster=_MY-CONNECT-CLUSTER_ -o name
 Replace _MY-KAFKA-CONNECT-CLUSTER_ with the name of your Kafka Connect cluster.
 +
 Connectors automatically recover through Kafka Connect storage.
-Even if you are using the Kafka Connect REST APi to manage them, you should not need to recreate them manually
+Even if you are using the Kafka Connect REST API to manage them, you should not need to recreate them manually.
 
 
 [role="_additional-resources"]
