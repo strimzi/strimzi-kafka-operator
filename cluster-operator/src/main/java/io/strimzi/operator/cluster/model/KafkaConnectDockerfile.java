@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.JarArtifact;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifact;
+import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.operator.common.Util;
 
 import java.io.PrintWriter;
@@ -99,6 +100,8 @@ public class KafkaConnectDockerfile {
                 addJarArtifact(writer, connectorPath, (JarArtifact) art);
             } else if (art instanceof TgzArtifact) {
                 addTgzArtifact(writer, connectorPath, (TgzArtifact) art);
+            } else if (art instanceof ZipArtifact) {
+                addZipArtifact(writer, connectorPath, (ZipArtifact) art);
             } else {
                 throw new RuntimeException("Unexpected artifact type " + art.getType());
             }
@@ -166,6 +169,46 @@ public class KafkaConnectDockerfile {
             writer.println("      && sha512sum --check " + archivePath + ".sha512 \\");
             writer.println("      && rm -f " + archivePath + ".sha512 \\");
             writer.println("      && " + unpackCmd + " \\");
+            writer.println("      && " + deleteCmd);
+        }
+
+        writer.println();
+    }
+
+    /**
+     * Add command sequence for downloading and unpacking TAR.ZIP archives and checking their checksums.
+     *
+     * @param writer            Writer for printing the Docker commands
+     * @param connectorPath     Path where the connector to which this artifact belongs should be downloaded
+     * @param zip               The ZIP-type artifact
+     */
+    private void addZipArtifact(PrintWriter writer, String connectorPath, ZipArtifact zip) {
+        String artifactDir = connectorPath + "/" + Util.sha1Prefix(zip.getUrl());
+        String archivePath = connectorPath + "/" + zip.getUrl().substring(zip.getUrl().lastIndexOf("/") + 1);
+
+        String downloadCmd =  "curl -L --output " + archivePath + " " + zip.getUrl();
+        String unpackCmd =  "unzip " + archivePath + " -d " + artifactDir;
+        String deleteSymLinks = "find " + artifactDir + " -type l | xargs rm -f";
+        String deleteCmd =  "rm -vf " + archivePath;
+
+        writer.println("RUN mkdir -p " + artifactDir + " \\");
+
+        if (zip.getSha512sum() == null || zip.getSha512sum().isEmpty()) {
+            // No checksum => we just download and unpack the file
+            writer.println("      && " + downloadCmd + " \\");
+            writer.println("      && " + unpackCmd + " \\");
+            writer.println("      && " + deleteSymLinks + " \\");
+            writer.println("      && " + deleteCmd);
+        } else {
+            // Checksum exists => we need to check it
+            String checksum = zip.getSha512sum() + " " + archivePath;
+
+            writer.println("      && " + downloadCmd + " \\");
+            writer.println("      && echo \"" + checksum + "\" > " + archivePath + ".sha512 \\");
+            writer.println("      && sha512sum --check " + archivePath + ".sha512 \\");
+            writer.println("      && rm -f " + archivePath + ".sha512 \\");
+            writer.println("      && " + unpackCmd + " \\");
+            writer.println("      && " + deleteSymLinks + " \\");
             writer.println("      && " + deleteCmd);
         }
 
