@@ -1165,7 +1165,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Amount of time(in ms) it takes for the server to respond to a client request",
+      "description": "Amount of time (in ms) it takes for the server to respond to a client request",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1224,7 +1224,7 @@
       "yaxes": [
         {
           "format": "ms",
-          "label": "ms",
+          "label": "request latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1250,7 +1250,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Amount of time(in ms) it takes for the server to respond to a client request",
+      "description": "Amount of time (in ms) it takes for the server to respond to a client request",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1309,7 +1309,7 @@
       "yaxes": [
         {
           "format": "ms",
-          "label": "ms",
+          "label": "request latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1335,7 +1335,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Amount of time(in ms) it takes for the server to respond to a client request",
+      "description": "Amount of time (in ms) it takes for the server to respond to a client request",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1394,7 +1394,7 @@
       "yaxes": [
         {
           "format": "ms",
-          "label": "ms",
+          "label": "request latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
