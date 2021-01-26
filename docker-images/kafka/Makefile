@@ -9,17 +9,17 @@ clean:
 
 .kafka-agent.tmp: ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar
 	test -d tmp || mkdir tmp
-	cp ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar tmp/kafka-agent.jar
+	cp ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar tmp/kafka-agent-$(RELEASE_VERSION).jar
 	touch .kafka-agent.tmp
 
 .mirror-maker-agent.tmp: ../../mirror-maker-agent/target/mirror-maker-agent-$(RELEASE_VERSION).jar
 	test -d tmp || mkdir tmp
-	cp ../../mirror-maker-agent/target/mirror-maker-agent-$(RELEASE_VERSION).jar tmp/mirror-maker-agent.jar
+	cp ../../mirror-maker-agent/target/mirror-maker-agent-$(RELEASE_VERSION).jar tmp/mirror-maker-agent-$(RELEASE_VERSION).jar
 	touch .mirror-maker-agent.tmp
 
 .tracing-agent.tmp: ../../tracing-agent/target/tracing-agent-$(RELEASE_VERSION).jar
 	test -d tmp || mkdir tmp
-	cp ../../tracing-agent/target/tracing-agent-$(RELEASE_VERSION).jar tmp/tracing-agent.jar
+	cp ../../tracing-agent/target/tracing-agent-$(RELEASE_VERSION).jar tmp/tracing-agent-$(RELEASE_VERSION).jar
 	touch .tracing-agent.tmp
 
 .thirdparty-libs-$(THIRD_PARTY_LIBS).tmp: kafka-thirdparty-libs/$(THIRD_PARTY_LIBS)/pom.xml
