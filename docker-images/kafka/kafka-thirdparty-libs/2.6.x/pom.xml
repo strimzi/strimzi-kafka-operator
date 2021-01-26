@@ -17,7 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.6.1</strimzi-oauth.version>
-        <cruise-control.version>2.5.21</cruise-control.version>
+        <cruise-control.version>2.5.32</cruise-control.version>
         <opa-authorizer.version>0.4.2</opa-authorizer.version>
     </properties>
 

@@ -17,7 +17,7 @@
     </licenses>
 
     <properties>
-        <mockserver.version>5.10.0</mockserver.version>
+        <mockserver.version>5.11.1</mockserver.version>
     </properties>
 
     <dependencies>
