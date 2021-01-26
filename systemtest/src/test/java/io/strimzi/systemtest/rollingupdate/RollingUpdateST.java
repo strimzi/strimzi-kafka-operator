@@ -575,7 +575,7 @@ class RollingUpdateST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     void testExternalLoggingChangeTriggerRollingUpdate() {
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 3).build());
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));

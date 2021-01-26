@@ -333,7 +333,7 @@ class LoggingChangeST extends AbstractST {
 
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         ResourceManager.setClassResources();
-        BundleResource.create(BundleResource.clusterOperator(NAMESPACE)
+        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
@@ -354,7 +354,7 @@ class LoggingChangeST extends AbstractST {
         // Now we set pointer stack to method again
         ResourceManager.setMethodResources();
 
-        KafkaResource.create(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     .withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
