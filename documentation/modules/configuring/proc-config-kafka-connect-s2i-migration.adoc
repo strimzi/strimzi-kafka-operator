@@ -51,7 +51,7 @@ kubectl delete -f _MY-KAFKA-CONNECT-S2I-CONFIG-FILE_
 +
 Replace _MY-KAFKA-CONNECT-S2I-CONFIG-FILE_ with the name of the file containing your `KafkaConnectS2I` resource configuration.
 +
-If you don't have the file, specify the name of the resource:
+Alternatively, you can specify the name of the resource:
 +
 [source,shell,subs="+quotes"]
 kubectl delete kafkaconnects2i _MY-KAFKA-CONNECT-S2I_
