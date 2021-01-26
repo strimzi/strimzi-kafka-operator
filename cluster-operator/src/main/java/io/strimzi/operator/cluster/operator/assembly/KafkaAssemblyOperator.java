@@ -1016,8 +1016,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // cannot be higher that the Kafka version we are upgrading from. If it is, we override it with the
                     // version we are upgrading from. If it is not set, we set it to the version we are upgrading from.
                     if (desiredInterBrokerProtocol == null
-                            || compareDottedVersions(versionChange.from().messageVersion(), desiredInterBrokerProtocol) < 0) {
-                        kafkaCluster.setInterBrokerProtocolVersion(versionChange.from().messageVersion());
+                            || compareDottedVersions(versionChange.from().protocolVersion(), desiredInterBrokerProtocol) < 0) {
+                        kafkaCluster.setInterBrokerProtocolVersion(versionChange.from().protocolVersion());
                     }
                 } else {
                     // Has to be a downgrade
@@ -1040,19 +1040,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     // If log.message.format.version is not set, we set it to the version we are downgrading to.
                     if (desiredLogMessageFormat == null) {
+                        desiredLogMessageFormat = versionChange.to().messageVersion();
                         kafkaCluster.setLogMessageFormatVersion(versionChange.to().messageVersion());
                     }
 
                     // If inter.broker.protocol.version is not set, we set it to the version we are downgrading to.
                     if (desiredInterBrokerProtocol == null) {
-                        kafkaCluster.setInterBrokerProtocolVersion(versionChange.to().messageVersion());
+                        desiredInterBrokerProtocol = versionChange.to().protocolVersion();
+                        kafkaCluster.setInterBrokerProtocolVersion(versionChange.to().protocolVersion());
                     }
 
                     // Either log.message.format.version or inter.broker.protocol.version are higher than the Kafka
                     // version we are downgrading to. This should normally not happen since that should not pass the CR
                     // validation. But we still double check it as safety.
                     if (compareDottedVersions(versionChange.to().messageVersion(), desiredLogMessageFormat) < 0
-                            || compareDottedVersions(versionChange.to().messageVersion(), desiredInterBrokerProtocol) < 0) {
+                            || compareDottedVersions(versionChange.to().protocolVersion(), desiredInterBrokerProtocol) < 0) {
                         log.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
                         throw new KafkaUpgradeException("log.message.format.version and inter.broker.protocol.version used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to");
                     }
