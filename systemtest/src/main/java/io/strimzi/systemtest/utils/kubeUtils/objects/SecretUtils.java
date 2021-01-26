@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
+import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -123,14 +124,14 @@ public class SecretUtils {
         LOGGER.info("Secret {} deleted", clusterName);
     }
 
-    public static void createCustomSecret(String name, String clusterName, String namespace, String certPath, String keyPath) {
+    public static void createCustomSecret(String name, String clusterName, String namespace, CertAndKeyFiles certAndKeyFiles) {
         Map<String, String> secretLabels = new HashMap<>();
         secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
         secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
 
         Map<String, String> certsPaths = new HashMap<>();
-        certsPaths.put("ca.crt", certPath);
-        certsPaths.put("ca.key", keyPath);
+        certsPaths.put("ca.crt", certAndKeyFiles.getCertPath());
+        certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
 
         SecretUtils.createSecretFromFile(certsPaths, name, namespace, secretLabels);
         waitForSecretReady(name);
