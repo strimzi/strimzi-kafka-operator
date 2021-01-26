@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.mockkube;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
@@ -22,6 +23,8 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.OngoingStubbing;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -112,7 +115,14 @@ class MockBuilder<T extends HasMetadata,
         if (resource == null) {
             return null;
         } else {
-            return resource;
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                objectMapper.writeValue(baos, resource);
+                return (T) objectMapper.readValue(baos.toByteArray(), resource.getClass());
+            } catch (IOException e) {
+                return null;
+            }
         }
     }
 

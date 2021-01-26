@@ -1465,4 +1465,45 @@ public class ConnectorMockTest {
         waitForConnectNotReady(connectName, "ConnectTimeoutException", "connection timed out");
         waitForConnectorNotReady(connectorName, "ConnectTimeoutException", "connection timed out");
     }
+
+    @Test
+    public void testConnectorUnknownField() {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        // Create KafkaConnect cluster and wait till it's ready
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(new KafkaConnectBuilder()
+                .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(connectName)
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                .withReplicas(1)
+                .endSpec()
+                .build());
+        waitForConnectReady(connectName);
+
+        String yaml = "apiVersion: kafka.strimzi.io/v1alpha1\n" +
+                "kind: KafkaConnector\n" +
+                "metadata:\n" +
+                "  name: " + connectorName + "\n" +
+                "  namespace: " + NAMESPACE + "\n" +
+                "  labels:\n" +
+                "    strimzi.io/cluster: " + connectName + "\n" +
+                "spec:\n" +
+                "  class: EchoSink\n" +
+                "  tasksMax: 1\n" +
+                "  unknownField: \"value\"\n" +
+                "  config:\n" +
+                "    level: INFO\n" +
+                "    topics: timer-topic";
+
+        KafkaConnector kcr = TestUtils.fromYamlString(yaml, KafkaConnector.class);
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(kcr);
+
+        waitForConnectorReady(connectorName);
+        waitForConnectorState(connectorName, "RUNNING");
+        waitForConnectorCondition(connectorName, "Warning", "UnknownFields");
+    }
 }
