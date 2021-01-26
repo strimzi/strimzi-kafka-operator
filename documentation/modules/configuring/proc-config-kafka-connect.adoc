@@ -14,7 +14,7 @@ The example shown in this procedure is for the `KafkaConnect` resource, but the 
 KafkaConnector resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
 
 In your Kafka Connect configuration, you enable KafkaConnectors for a Kafka Connect cluster by adding the `strimzi.io/use-connector-resources` annotation.
-You can also add `build` configuration so that Strimzi automatically builds a container image with the connector plugins you require for your data connections.
+You can also add a `build` configuration so that Strimzi automatically builds a container image with the connector plugins you require for your data connections.
 External configuration for Kafka Connect connectors is specified through the `externalConfiguration` property.
 
 To manage connectors, you can use the Kafka Connect REST API, or use KafkaConnector custom resources.
