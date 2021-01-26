@@ -432,7 +432,6 @@ public class KafkaCluster extends AbstractModel {
         KafkaVersion desiredVersion = versions.version(kafkaClusterSpec.getVersion());
         KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
         configureCruiseControlMetrics(kafkaAssembly, result, configuration);
-        //configureLogMessageFormatAndInterBrokerProtocolVersion(desiredVersion, configuration);
         validateConfiguration(kafkaAssembly, desiredVersion, configuration);
         result.setConfiguration(configuration);
 
@@ -687,23 +686,6 @@ public class KafkaCluster extends AbstractModel {
                     kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
                     " has invalid spec.kafka.config: " +
                     String.join(", ", errorsInConfig));
-        }
-    }
-
-    /**
-     * If not set, it configures the `log.message.format.version` and `inter.broker.protocol.version` options in the
-     * Kafka broker configuration according to the desired Kafka version.
-     *
-     * @param desiredVersion    Desired Kafka version
-     * @param configuration     Kafka broker configuration
-     */
-    private static void configureLogMessageFormatAndInterBrokerProtocolVersion(KafkaVersion desiredVersion, KafkaConfiguration configuration)  {
-        if (configuration.getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION) == null)   {
-            configuration.setConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, desiredVersion.messageVersion());
-        }
-
-        if (configuration.getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION) == null)   {
-            configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, desiredVersion.protocolVersion());
         }
     }
 
