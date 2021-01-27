@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpecBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.KubernetesVersion;
@@ -462,7 +462,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 // the resource moved from New to NotReady due to the error
                 KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
                 assertThat(kr1, StateMatchers.hasState());
-                Condition condition = kcrao.rebalanceStateCondition(kr1.getStatus());
+                KafkaCondition condition = kcrao.rebalanceStateCondition(kr1.getStatus());
                 assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CruiseControlRestException.class,
                         "Error processing POST request '/rebalance' due to: " +
                                 "'java.lang.IllegalArgumentException: Missing hard goals [NetworkInboundCapacityGoal, DiskCapacityGoal, RackAwareGoal, NetworkOutboundCapacityGoal, CpuCapacityGoal, ReplicaCapacityGoal] " +
@@ -546,7 +546,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 // the resource moved from New to NotReady due to the error
                 KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
                 assertThat(kr1, StateMatchers.hasState());
-                Condition condition = kcrao.rebalanceStateCondition(kr1.getStatus());
+                KafkaCondition condition = kcrao.rebalanceStateCondition(kr1.getStatus());
                 assertThat(condition, StateMatchers.hasStateInCondition(KafkaRebalanceState.NotReady, CruiseControlRestException.class,
                         "Error processing POST request '/rebalance' due to: " +
                                 "'java.lang.IllegalArgumentException: Missing hard goals [NetworkInboundCapacityGoal, DiskCapacityGoal, RackAwareGoal, NetworkOutboundCapacityGoal, CpuCapacityGoal, ReplicaCapacityGoal] " +
@@ -930,7 +930,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         context.verify(() -> {
             KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
             assertThat(kafkaRebalance, StateMatchers.hasState());
-            Condition condition = kcrao.rebalanceStateCondition(kafkaRebalance.getStatus());
+            KafkaCondition condition = kcrao.rebalanceStateCondition(kafkaRebalance.getStatus());
             assertThat(Collections.singletonList(condition), StateMatchers.hasStateInConditions(state));
         });
     }
@@ -940,7 +940,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
 
             assertThat(kafkaRebalance, StateMatchers.hasState());
-            Condition condition = kcrao.rebalanceStateCondition(kafkaRebalance.getStatus());
+            KafkaCondition condition = kcrao.rebalanceStateCondition(kafkaRebalance.getStatus());
             assertThat(condition, StateMatchers.hasStateInCondition(state, reason, message));
         });
     }

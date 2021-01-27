@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.watcher;
 
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -45,14 +45,14 @@ public abstract class AbstractNamespaceST extends AbstractST {
         LOGGER.info("Check if Kafka Cluster {} in namespace {}", clusterName, namespace);
 
         TestUtils.waitFor("Kafka Cluster status is not in desired state: Ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
+            KafkaCondition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
                     .getStatus().getConditions().get(0);
             LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
             return kafkaCondition.getType().equals(Ready.toString());
         });
 
-        Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
+        KafkaCondition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
                 .getStatus().getConditions().get(0);
 
         assertThat(kafkaCondition.getType(), is(Ready.toString()));

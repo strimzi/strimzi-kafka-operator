@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -69,9 +69,9 @@ public class KafkaSpecCheckerTest {
                 .endSpec()
             .build();
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaStorage"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
@@ -91,9 +91,9 @@ public class KafkaSpecCheckerTest {
                 .endSpec()
             .build();
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaStorage"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
@@ -111,9 +111,9 @@ public class KafkaSpecCheckerTest {
                 .endSpec()
             .build();
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("ZooKeeperStorage"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
@@ -123,9 +123,9 @@ public class KafkaSpecCheckerTest {
     public void checkZookeeperReplicas() {
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 2, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("ZooKeeperReplicas"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("Running ZooKeeper with two nodes is not advisable as both replicas will be needed to avoid downtime. It is recommended that a minimum of three replicas are used."));
@@ -135,9 +135,9 @@ public class KafkaSpecCheckerTest {
     public void checkZookeeperEvenReplicas() {
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 4, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("ZooKeeperReplicas"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("Running ZooKeeper with an odd number of replicas is recommended."));
@@ -157,9 +157,9 @@ public class KafkaSpecCheckerTest {
                 .endSpec()
             .build();
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaLogMessageFormatVersion"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
@@ -175,9 +175,9 @@ public class KafkaSpecCheckerTest {
                 .build();
 
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaLogMessageFormatVersion"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
@@ -193,7 +193,7 @@ public class KafkaSpecCheckerTest {
                 .build();
 
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -207,7 +207,7 @@ public class KafkaSpecCheckerTest {
                 .build();
 
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -225,9 +225,9 @@ public class KafkaSpecCheckerTest {
                 .endSpec()
             .build();
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaInterBrokerProtocolVersion"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
@@ -243,9 +243,9 @@ public class KafkaSpecCheckerTest {
                 .build();
 
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(1));
-        Condition warning = warnings.get(0);
+        KafkaCondition warning = warnings.get(0);
         assertThat(warning.getReason(), is("KafkaInterBrokerProtocolVersion"));
         assertThat(warning.getStatus(), is("True"));
         assertThat(warning.getMessage(), is("inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
@@ -261,7 +261,7 @@ public class KafkaSpecCheckerTest {
                 .build();
 
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -275,7 +275,7 @@ public class KafkaSpecCheckerTest {
                 .build();
 
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(0));
     }
 
@@ -285,7 +285,7 @@ public class KafkaSpecCheckerTest {
                 emptyMap(), null, emptyMap(), emptyMap(),
                 new EphemeralStorage(), new EphemeralStorage(), null, null, null, null);
         KafkaSpecChecker checker = generateChecker(kafka);
-        List<Condition> warnings = checker.run();
+        List<KafkaCondition> warnings = checker.run();
         assertThat(warnings, hasSize(2));
     }
 }

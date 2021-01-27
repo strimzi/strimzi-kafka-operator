@@ -9,7 +9,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
@@ -129,14 +129,14 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
                     assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
                     KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-                    Condition ready = status.getConditions().stream()
+                    KafkaCondition ready = status.getConditions().stream()
                             .filter(condition -> "Ready".equals(condition.getType()))
                             .findFirst()
                             .orElse(null);
                     assertThat(ready, is(notNullValue()));
                     assertThat(ready.getStatus(), is("True"));
 
-                    Condition toWarning = status.getConditions().stream()
+                    KafkaCondition toWarning = status.getConditions().stream()
                             .filter(condition -> "Warning".equals(condition.getType()) && "TopicOperator".equals(condition.getReason()))
                             .findFirst().orElse(null);
                     assertThat(toWarning, is(nullValue()));
@@ -201,14 +201,14 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
                     assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
                     KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-                    Condition ready = status.getConditions().stream()
+                    KafkaCondition ready = status.getConditions().stream()
                             .filter(condition -> "Ready".equals(condition.getType()))
                             .findFirst()
                             .orElse(null);
                     assertThat(ready, is(notNullValue()));
                     assertThat(ready.getStatus(), is("True"));
 
-                    Condition toWarning = status.getConditions().stream()
+                    KafkaCondition toWarning = status.getConditions().stream()
                             .filter(condition -> "Warning".equals(condition.getType()) && "TopicOperator".equals(condition.getReason()))
                             .findFirst().orElse(null);
                     assertThat(toWarning, is(notNullValue()));

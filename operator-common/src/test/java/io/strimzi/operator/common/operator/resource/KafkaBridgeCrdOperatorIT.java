@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.KafkaConditionBuilder;
 
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -75,7 +75,7 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
     protected KafkaBridge getResourceWithNewReadyStatus(KafkaBridge resourceInCluster) {
         return new KafkaBridgeBuilder(resourceInCluster)
                 .withNewStatus()
-                .withConditions(new ConditionBuilder()
+                .withConditions(new KafkaConditionBuilder()
                         .withType("Ready")
                         .withStatus("True")
                         .build())

@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
+import io.strimzi.api.kafka.model.status.KafkaConditionBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
@@ -47,13 +47,13 @@ public class StatusDiffTest {
                         .build())
                 .build();
 
-        Condition condition1 = new ConditionBuilder()
+        KafkaCondition condition1 = new KafkaConditionBuilder()
                 .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
                 .withNewType("Ready")
                 .withNewStatus("True")
                 .build();
 
-        Condition condition2 = new ConditionBuilder()
+        KafkaCondition condition2 = new KafkaConditionBuilder()
                 .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
                 .withNewType("Ready2")
                 .withNewStatus("True")
@@ -126,13 +126,13 @@ public class StatusDiffTest {
                         .build())
                 .build();
 
-        Condition condition1 = new ConditionBuilder()
+        KafkaCondition condition1 = new KafkaConditionBuilder()
                 .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
                 .withNewType("Ready")
                 .withNewStatus("True")
                 .build();
 
-        Condition condition2 = new ConditionBuilder()
+        KafkaCondition condition2 = new KafkaConditionBuilder()
                 .withNewLastTransitionTime(ModelUtils.formatTimestamp(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
                 .withNewType("Ready")
                 .withNewStatus("True")

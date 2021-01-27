@@ -27,7 +27,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({ "type", "status", "lastTransitionTime", "reason", "message" })
 @EqualsAndHashCode
 @ToString
-public class Condition implements UnknownPropertyPreserving, Serializable {
+public class KafkaCondition implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String status;

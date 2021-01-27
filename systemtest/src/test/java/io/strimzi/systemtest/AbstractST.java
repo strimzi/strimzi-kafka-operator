@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.interfaces.TestSeparator;
@@ -636,11 +636,11 @@ public abstract class AbstractST implements TestSeparator {
         );
     }
 
-    protected void verifyCRStatusCondition(Condition condition, String status, Enum<?> type) {
+    protected void verifyCRStatusCondition(KafkaCondition condition, String status, Enum<?> type) {
         verifyCRStatusCondition(condition, null, null, status, type);
     }
 
-    protected void verifyCRStatusCondition(Condition condition, String message, String reason, String status, Enum<?> type) {
+    protected void verifyCRStatusCondition(KafkaCondition condition, String message, String reason, String status, Enum<?> type) {
         assertThat(condition.getStatus(), is(status));
         assertThat(condition.getType(), is(type.toString()));
 

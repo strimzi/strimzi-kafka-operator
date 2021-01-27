@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -108,7 +108,7 @@ public class KafkaRebalanceStateMachineTest {
 
         // there is no actual status and related condition when a KafkaRebalance is just created
         if (currentState != KafkaRebalanceState.New) {
-            Condition currentRebalanceCondition = new Condition();
+            KafkaCondition currentRebalanceCondition = new KafkaCondition();
             currentRebalanceCondition.setType(currentState.toString());
             currentRebalanceCondition.setStatus("True");
 

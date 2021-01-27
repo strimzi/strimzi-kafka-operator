@@ -73,7 +73,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.SystemProperty;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
@@ -280,7 +280,7 @@ public abstract class AbstractModel {
     protected List<TopologySpreadConstraint> templatePodTopologySpreadConstraints;
     protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
 
-    protected List<Condition> warningConditions = new ArrayList<>(0);
+    protected List<KafkaCondition> warningConditions = new ArrayList<>(0);
 
     /**
      * Constructor
@@ -1527,7 +1527,7 @@ public abstract class AbstractModel {
      *
      * @param warning  Condition which will be added to the warning conditions
      */
-    public void addWarningCondition(Condition warning) {
+    public void addWarningCondition(KafkaCondition warning) {
         warningConditions.add(warning);
     }
 
@@ -1536,7 +1536,7 @@ public abstract class AbstractModel {
      *
      * @return  List of warning conditions.
      */
-    public List<Condition> getWarningConditions() {
+    public List<KafkaCondition> getWarningConditions() {
         return warningConditions;
     }
 

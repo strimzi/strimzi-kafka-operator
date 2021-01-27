@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -165,7 +165,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
 
-        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
+        KafkaCondition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
                 .get().getStatus().getConditions().get(0);
         LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
         LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());

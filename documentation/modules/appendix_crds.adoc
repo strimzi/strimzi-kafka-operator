@@ -1864,7 +1864,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |listeners           1.2+<.<|Addresses of the internal and external listeners.
@@ -1873,8 +1873,8 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |string
 |====
 
-[id='type-Condition-{context}']
-### `Condition` schema reference
+[id='type-KafkaCondition-{context}']
+### `KafkaCondition` schema reference
 
 Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
@@ -2405,7 +2405,7 @@ Used in: xref:type-KafkaConnect-{context}[`KafkaConnect`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
@@ -2532,7 +2532,7 @@ Used in: xref:type-KafkaConnectS2I-{context}[`KafkaConnectS2I`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
@@ -2589,7 +2589,7 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |====
@@ -2819,7 +2819,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |username            1.2+<.<|Username.
@@ -3000,7 +3000,7 @@ Used in: xref:type-KafkaMirrorMaker-{context}[`KafkaMirrorMaker`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |labelSelector       1.2+<.<|Label selector for pods providing this resource.
@@ -3187,7 +3187,7 @@ Used in: xref:type-KafkaBridge-{context}[`KafkaBridge`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |url                 1.2+<.<|The URL at which external client applications can access the Kafka Bridge.
@@ -3240,7 +3240,7 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |connectorStatus     1.2+<.<|The connector status, as reported by the Kafka Connect REST API.
@@ -3412,7 +3412,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |url                 1.2+<.<|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
@@ -3477,7 +3477,7 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |====
 |Property                   |Description
 |conditions          1.2+<.<|List of status conditions.
-|xref:type-Condition-{context}[`Condition`] array
+|xref:type-KafkaCondition-{context}[`KafkaCondition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
 |integer
 |sessionId           1.2+<.<|The session identifier for requests to Cruise Control pertaining to this KafkaRebalance resource. This is used by the Kafka Rebalance operator to track the status of ongoing rebalancing operations.

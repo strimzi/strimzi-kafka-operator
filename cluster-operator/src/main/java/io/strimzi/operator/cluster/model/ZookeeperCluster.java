@@ -39,7 +39,7 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
@@ -255,7 +255,7 @@ public class ZookeeperCluster extends AbstractModel {
                         "a result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
-                Condition warning = StatusUtils.buildWarningCondition("ZooKeeperStorage",
+                KafkaCondition warning = StatusUtils.buildWarningCondition("ZooKeeperStorage",
                         "The desired ZooKeeper storage configuration contains changes which are not allowed. As a " +
                                 "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                                 "about the detected changes.");

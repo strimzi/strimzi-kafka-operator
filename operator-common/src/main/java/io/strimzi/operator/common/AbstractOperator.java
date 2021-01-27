@@ -15,8 +15,8 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.Meter;
 import io.strimzi.api.kafka.model.Spec;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
+import io.strimzi.api.kafka.model.status.KafkaConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
@@ -195,7 +195,7 @@ public abstract class AbstractOperator<
                     InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
 
                     S status = createStatus();
-                    Condition errorCondition = new ConditionBuilder()
+                    KafkaCondition errorCondition = new KafkaConditionBuilder()
                             .withLastTransitionTime(StatusUtils.iso8601Now())
                             .withType("NotReady")
                             .withStatus("True")
@@ -213,7 +213,7 @@ public abstract class AbstractOperator<
                     return createOrUpdate.future();
                 }
 
-                Set<Condition> unknownAndDeprecatedConditions = validate(cr);
+                Set<KafkaCondition> unknownAndDeprecatedConditions = validate(cr);
 
                 log.info("{}: {} {} will be checked for creation or modification", reconciliation, kind, name);
 
@@ -274,7 +274,7 @@ public abstract class AbstractOperator<
         return result.future();
     }
 
-    private void addWarningsToStatus(Status status, Set<Condition> unknownAndDeprecatedConditions)   {
+    private void addWarningsToStatus(Status status, Set<KafkaCondition> unknownAndDeprecatedConditions)   {
         if (status != null)  {
             status.addConditions(unknownAndDeprecatedConditions);
         }
@@ -389,9 +389,9 @@ public abstract class AbstractOperator<
      * @param resource The custom resource
      * @throws InvalidResourceException if the resource cannot be safely reconciled.
      */
-    /*test*/ Set<Condition> validate(T resource) {
+    /*test*/ Set<KafkaCondition> validate(T resource) {
         if (resource != null) {
-            Set<Condition> warningConditions = new LinkedHashSet<>(0);
+            Set<KafkaCondition> warningConditions = new LinkedHashSet<>(0);
 
             ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, warningConditions));
 

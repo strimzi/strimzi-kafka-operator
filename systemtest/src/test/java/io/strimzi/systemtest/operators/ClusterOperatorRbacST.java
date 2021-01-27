@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.operators;
 
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -82,7 +82,7 @@ public class ClusterOperatorRbacST extends AbstractST {
             .build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, ".*Forbidden!.*");
-        Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
+        KafkaCondition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaStatusCondition.getType(), is(NotReady.toString()));
 
@@ -93,7 +93,7 @@ public class ClusterOperatorRbacST extends AbstractST {
             .build());
 
         KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, NAMESPACE, ".*Forbidden!.*");
-        Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
+        KafkaCondition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
         assertTrue(kafkaConnectStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaConnectStatusCondition.getType(), is(NotReady.toString()));
     }

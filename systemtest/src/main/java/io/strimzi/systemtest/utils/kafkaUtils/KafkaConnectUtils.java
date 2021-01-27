@@ -6,7 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -95,8 +95,8 @@ public class KafkaConnectUtils {
     public static void waitForKafkaConnectCondition(String conditionReason, String conditionType, String namespace, String clusterName) {
         TestUtils.waitFor("Wait for KafkaConnect '" + conditionReason + "' condition with type '" + conditionType + "'.",
                 Constants.GLOBAL_POLL_INTERVAL, CO_OPERATION_TIMEOUT_SHORT * 2, () -> {
-                List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
-                for (Condition condition : conditions) {
+                List<KafkaCondition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
+                for (KafkaCondition condition : conditions) {
                     if (condition.getReason().matches(conditionReason) && condition.getType().matches(conditionType)) {
                         return true;
                     }
@@ -108,8 +108,8 @@ public class KafkaConnectUtils {
     public static void waitUntilKafkaConnectStatusConditionContainsMessage(String clusterName, String namespace, String message) {
         TestUtils.waitFor("KafkaConnect Status with message [" + message + "]",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-                List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
-                for (Condition condition : conditions) {
+                List<KafkaCondition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
+                for (KafkaCondition condition : conditions) {
                     if (condition.getMessage().matches(message)) {
                         return true;
                     }

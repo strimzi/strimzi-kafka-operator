@@ -38,7 +38,7 @@ import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
@@ -563,7 +563,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
-    private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
+    private Future<List<KafkaCondition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<KafkaCondition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
             log.debug("{}: Restarting connector {}", reconciliation, connectorName);
             return apiClient.restart(host, port, connectorName)
@@ -581,7 +581,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
-    private Future<List<Condition>> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
+    private Future<List<KafkaCondition>> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<KafkaCondition> conditions) {
         int taskID = getRestartTaskAnnotationTaskID(resource, connectorName);
         if (taskID >= 0) {
             log.debug("{}: Restarting connector task {}:{}", reconciliation, connectorName, taskID);
@@ -665,9 +665,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     protected class ConnectorStatusAndConditions {
         Map<String, Object> statusResult;
-        List<Condition> conditions;
+        List<KafkaCondition> conditions;
 
-        ConnectorStatusAndConditions(Map<String, Object> statusResult, List<Condition> conditions) {
+        ConnectorStatusAndConditions(Map<String, Object> statusResult, List<KafkaCondition> conditions) {
             this.statusResult = statusResult;
             this.conditions = conditions;
         }
@@ -681,7 +681,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return statusResult -> Future.succeededFuture(new ConnectorStatusAndConditions(statusResult));
     }
 
-    Function<Map<String, Object>, Future<ConnectorStatusAndConditions>> createConnectorStatusAndConditions(List<Condition> conditions) {
+    Function<Map<String, Object>, Future<ConnectorStatusAndConditions>> createConnectorStatusAndConditions(List<KafkaCondition> conditions) {
         return statusResult -> Future.succeededFuture(new ConnectorStatusAndConditions(statusResult, conditions));
     }
 
@@ -692,7 +692,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         Map<String, Object> statusResult = null;
-        List<Condition> conditions = Collections.emptyList();
+        List<KafkaCondition> conditions = Collections.emptyList();
         if (connectorStatus != null) {
             statusResult = connectorStatus.statusResult;
             conditions = connectorStatus.conditions;

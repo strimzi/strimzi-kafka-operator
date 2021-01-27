@@ -32,7 +32,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.Spec;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -400,9 +400,9 @@ public class ResourceManager {
                 List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
 
                 if (customResource.getStatus() != null) {
-                    List<Condition> conditions = customResource.getStatus().getConditions();
+                    List<KafkaCondition> conditions = customResource.getStatus().getConditions();
                     if (conditions != null) {
-                        for (Condition condition : customResource.getStatus().getConditions()) {
+                        for (KafkaCondition condition : customResource.getStatus().getConditions()) {
                             if (condition.getMessage() != null) {
                                 log.add("\tType: " + condition.getType() + "\n");
                                 log.add("\tMessage: " + condition.getMessage() + "\n");

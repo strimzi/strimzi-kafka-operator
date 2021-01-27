@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
@@ -216,10 +216,10 @@ public class KafkaRebalanceAssemblyOperator
      * @throws RuntimeException If there is more than one Condition instance in the supplied status whose type matches one of the
      *                          {@link KafkaRebalanceState} enum values.
      */
-    /* test */ protected Condition rebalanceStateCondition(KafkaRebalanceStatus status) {
+    /* test */ protected KafkaCondition rebalanceStateCondition(KafkaRebalanceStatus status) {
         if (status.getConditions() != null) {
 
-            List<Condition> statusConditions = status.getConditions()
+            List<KafkaCondition> statusConditions = status.getConditions()
                     .stream()
                     .filter(condition -> condition.getType() != null)
                     .filter(condition -> Arrays.stream(KafkaRebalanceState.values())
@@ -249,7 +249,7 @@ public class KafkaRebalanceAssemblyOperator
      *                          {@link KafkaRebalanceState} enum values.
      */
     private String rebalanceStateConditionType(KafkaRebalanceStatus status) {
-        Condition rebalanceStateCondition = rebalanceStateCondition(status);
+        KafkaCondition rebalanceStateCondition = rebalanceStateCondition(status);
         return rebalanceStateCondition != null ? rebalanceStateCondition.getType() : null;
     }
 

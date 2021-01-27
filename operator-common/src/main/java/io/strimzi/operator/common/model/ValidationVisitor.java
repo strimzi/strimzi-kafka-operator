@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import org.apache.logging.log4j.Logger;
 
@@ -23,10 +23,10 @@ import java.util.Set;
 public class ValidationVisitor implements ResourceVisitor.Visitor {
     private final Logger logger;
     private final HasMetadata resource;
-    private final Set<Condition> warningConditions;
+    private final Set<KafkaCondition> warningConditions;
     private final String transitionTime = StatusUtils.iso8601Now();
 
-    public ValidationVisitor(HasMetadata resource, Logger logger, Set<Condition> warningConditions) {
+    public ValidationVisitor(HasMetadata resource, Logger logger, Set<KafkaCondition> warningConditions) {
         this.resource = resource;
         this.logger = logger;
         this.warningConditions = warningConditions;

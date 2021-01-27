@@ -33,33 +33,33 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode
 @ToString
 public abstract class Status implements UnknownPropertyPreserving, Serializable {
-    private List<Condition> conditions;
+    private List<KafkaCondition> conditions;
     private long observedGeneration;
     private Map<String, Object> additionalProperties;
 
     @Description("List of status conditions")
-    public List<Condition> getConditions() {
+    public List<KafkaCondition> getConditions() {
         return conditions;
     }
 
-    public void setConditions(List<Condition> conditions) {
+    public void setConditions(List<KafkaCondition> conditions) {
         this.conditions = conditions;
     }
 
-    private List<Condition> prepareConditionsUpdate() {
-        List<Condition> oldConditions = getConditions();
-        List<Condition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>(0);
+    private List<KafkaCondition> prepareConditionsUpdate() {
+        List<KafkaCondition> oldConditions = getConditions();
+        List<KafkaCondition> newConditions = oldConditions != null ? new ArrayList<>(oldConditions) : new ArrayList<>(0);
         return newConditions;
     }
 
-    public void addCondition(Condition condition) {
-        List<Condition> newConditions = prepareConditionsUpdate();
+    public void addCondition(KafkaCondition condition) {
+        List<KafkaCondition> newConditions = prepareConditionsUpdate();
         newConditions.add(condition);
         setConditions(Collections.unmodifiableList(newConditions));
     }
 
-    public void addConditions(Collection<Condition> conditions) {
-        List<Condition> newConditions = prepareConditionsUpdate();
+    public void addConditions(Collection<KafkaCondition> conditions) {
+        List<KafkaCondition> newConditions = prepareConditionsUpdate();
         newConditions.addAll(conditions);
         setConditions(Collections.unmodifiableList(newConditions));
     }

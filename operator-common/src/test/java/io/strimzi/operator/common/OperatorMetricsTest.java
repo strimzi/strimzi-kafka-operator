@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.api.kafka.model.Spec;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
@@ -73,7 +73,7 @@ public class OperatorMetricsTest {
                 return Future.succeededFuture();
             }
 
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<KafkaCondition> validate(CustomResource resource) {
                 return emptySet();
             }
 
@@ -173,7 +173,7 @@ public class OperatorMetricsTest {
                 return Future.failedFuture(new UnableToAcquireLockException());
             }
 
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<KafkaCondition> validate(CustomResource resource) {
                 return emptySet();
             }
 
@@ -232,7 +232,7 @@ public class OperatorMetricsTest {
                 return null;
             }
 
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<KafkaCondition> validate(CustomResource resource) {
                 return emptySet();
             }
 
@@ -293,7 +293,7 @@ public class OperatorMetricsTest {
                 return Future.succeededFuture(resources);
             }
 
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<KafkaCondition> validate(CustomResource resource) {
                 return emptySet();
             }
 

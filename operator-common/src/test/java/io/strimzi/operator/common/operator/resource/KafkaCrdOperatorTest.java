@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.KafkaConditionBuilder;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
@@ -65,7 +65,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
                     .endZookeeper()
                 .endSpec()
                 .withNewStatus()
-                    .addToConditions(new ConditionBuilder().withNewStatus("Ready").withNewMessage("Kafka is ready").build())
+                    .addToConditions(new KafkaConditionBuilder().withNewStatus("Ready").withNewMessage("Kafka is ready").build())
                 .endStatus()
                 .build();
     }

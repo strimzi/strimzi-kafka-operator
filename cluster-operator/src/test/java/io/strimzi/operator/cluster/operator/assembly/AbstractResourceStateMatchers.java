@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -57,11 +57,11 @@ public class AbstractResourceStateMatchers {
      * @param state he expected rebalance state to be searched for.
      * @return
      */
-    public static Matcher<List<Condition>> hasStateInConditions(KafkaRebalanceState state) {
+    public static Matcher<List<KafkaCondition>> hasStateInConditions(KafkaRebalanceState state) {
         return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
-            protected boolean matchesSafely(List<Condition> conditions, Description mismatchDescription) {
+            protected boolean matchesSafely(List<KafkaCondition> conditions, Description mismatchDescription) {
                 mismatchDescription.appendText("was ").appendValue(conditions);
 
                 List<String> foundStatuses = new ArrayList<>();
@@ -71,7 +71,7 @@ public class AbstractResourceStateMatchers {
                     return false;
                 }
 
-                for (Condition condition : conditions) {
+                for (KafkaCondition condition : conditions) {
                     if (condition == null) {
                         continue;
                     }
@@ -94,11 +94,11 @@ public class AbstractResourceStateMatchers {
         };
     }
 
-    public static Matcher<Condition> hasStateInCondition(KafkaRebalanceState state, Class reason, String message) {
+    public static Matcher<KafkaCondition> hasStateInCondition(KafkaRebalanceState state, Class reason, String message) {
         return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
-            protected boolean matchesSafely(Condition condition, Description mismatchDescription) {
+            protected boolean matchesSafely(KafkaCondition condition, Description mismatchDescription) {
                 mismatchDescription.appendText("was ").appendValue(condition);
 
                 if (condition == null) {

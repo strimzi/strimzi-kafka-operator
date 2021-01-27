@@ -20,7 +20,7 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -410,10 +410,10 @@ public class ConnectorMockTest {
             .inNamespace(NAMESPACE)
             .withName(connectorName);
         waitForStatus(resource, connectorName, s -> {
-            List<Condition> conditions = s.getStatus().getConditions();
+            List<KafkaCondition> conditions = s.getStatus().getConditions();
             boolean conditionFound = false;
             if (conditions != null && !conditions.isEmpty()) {
-                for (Condition condition: conditions) {
+                for (KafkaCondition condition: conditions) {
                     if (conditionType.equals(condition.getType()) && conditionReason.equals(condition.getReason())) {
                         conditionFound = true;
                         break;

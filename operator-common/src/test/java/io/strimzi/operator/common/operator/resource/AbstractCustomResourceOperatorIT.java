@@ -10,8 +10,8 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
+import io.strimzi.api.kafka.model.status.KafkaConditionBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClient, T extends CustomResource, L extends CustomResourceList<T>> {
     protected static final Logger log = LogManager.getLogger(AbstractCustomResourceOperatorIT.class);
     protected static final String RESOURCE_NAME = "my-test-resource";
-    protected static final Condition READY_CONDITION = new ConditionBuilder()
+    protected static final KafkaCondition READY_CONDITION = new KafkaConditionBuilder()
             .withType("Ready")
             .withStatus("True")
             .build();

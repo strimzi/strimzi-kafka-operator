@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -329,7 +329,7 @@ public abstract class TopicOperatorBaseIT {
                 if (status != null
                         && Objects.equals(status.getObservedGeneration(), kafkaTopic.getMetadata().getGeneration())
                         && status.getConditions() != null) {
-                    List<Condition> conditions = status.getConditions();
+                    List<KafkaCondition> conditions = status.getConditions();
                     assertThat(conditions.size() > 0, is(true));
                     if (conditions.stream().anyMatch(condition ->
                             "Ready".equals(condition.getType()) &&
@@ -358,9 +358,9 @@ public abstract class TopicOperatorBaseIT {
                 if (status != null
                         && Objects.equals(status.getObservedGeneration(), kafkaTopic.getMetadata().getGeneration())
                         && status.getConditions() != null) {
-                    List<Condition> conditions = status.getConditions();
+                    List<KafkaCondition> conditions = status.getConditions();
                     assertThat(conditions.size() > 0, is(true));
-                    Optional<Condition> unreadyCondition = conditions.stream().filter(condition ->
+                    Optional<KafkaCondition> unreadyCondition = conditions.stream().filter(condition ->
                             "NotReady".equals(condition.getType()) &&
                                     "True".equals(condition.getStatus())).findFirst();
                     if (unreadyCondition.isPresent()) {

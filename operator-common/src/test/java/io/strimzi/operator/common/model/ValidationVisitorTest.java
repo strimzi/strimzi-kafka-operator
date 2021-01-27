@@ -7,7 +7,7 @@ package io.strimzi.operator.common.model;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.logging.TestLogger;
 import org.apache.logging.log4j.Level;
@@ -40,11 +40,11 @@ public class ValidationVisitorTest {
                 .withApiVersion("v1alpha1")
             .build();
 
-        Set<Condition> warningConditions = new HashSet<>();
+        Set<KafkaCondition> warningConditions = new HashSet<>();
 
         ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, warningConditions));
 
-        List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
+        List<String> warningMessages = warningConditions.stream().map(KafkaCondition::getMessage).collect(Collectors.toList());
 
         assertThat(warningMessages, hasItem("Contains object at path spec.kafka with an unknown property: foo"));
         assertThat(warningMessages, hasItem("In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
@@ -88,11 +88,11 @@ public class ValidationVisitorTest {
                 .withApiVersion("v1alpha1")
                 .build();
 
-        Set<Condition> warningConditions = new HashSet<>();
+        Set<KafkaCondition> warningConditions = new HashSet<>();
 
         ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, warningConditions));
 
-        List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
+        List<String> warningMessages = warningConditions.stream().map(KafkaCondition::getMessage).collect(Collectors.toList());
 
         assertThat(warningMessages, hasItem("In API version v1alpha1 the property topicOperator at path spec.topicOperator has been deprecated. " +
                 "This feature should now be configured at path spec.entityOperator.topicOperator."));

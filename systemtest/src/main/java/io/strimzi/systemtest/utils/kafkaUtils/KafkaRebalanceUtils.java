@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.common.Annotations;
@@ -27,9 +27,9 @@ public class KafkaRebalanceUtils {
 
     private KafkaRebalanceUtils() {}
 
-    private static Condition rebalanceStateCondition(String resourceName) {
+    private static KafkaCondition rebalanceStateCondition(String resourceName) {
 
-        List<Condition> statusConditions = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace())
+        List<KafkaCondition> statusConditions = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace())
                 .withName(resourceName).get().getStatus().getConditions().stream()
                 .filter(condition -> condition.getType() != null)
                 .filter(condition -> Arrays.stream(KafkaRebalanceState.values()).anyMatch(stateValue -> stateValue.toString().equals(condition.getType())))

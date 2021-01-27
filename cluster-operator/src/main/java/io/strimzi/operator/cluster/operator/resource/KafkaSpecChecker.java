@@ -5,7 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.api.kafka.model.KafkaSpec;
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -54,8 +54,8 @@ public class KafkaSpecChecker {
         }
     }
 
-    public List<Condition> run() {
-        List<Condition> warnings = new ArrayList<>();
+    public List<KafkaCondition> run() {
+        List<KafkaCondition> warnings = new ArrayList<>();
         checkKafkaLogMessageFormatVersion(warnings);
         checkKafkaInterBrokerProtocolVersion(warnings);
         checkKafkaStorage(warnings);
@@ -73,7 +73,7 @@ public class KafkaSpecChecker {
      *
      * @param warnings List to add a warning to, if appropriate.
      */
-    private void checkKafkaLogMessageFormatVersion(List<Condition> warnings) {
+    private void checkKafkaLogMessageFormatVersion(List<KafkaCondition> warnings) {
         String logMsgFormatVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
 
         if (logMsgFormatVersion != null) {
@@ -94,7 +94,7 @@ public class KafkaSpecChecker {
      *
      * @param warnings List to add a warning to, if appropriate.
      */
-    private void checkKafkaInterBrokerProtocolVersion(List<Condition> warnings) {
+    private void checkKafkaInterBrokerProtocolVersion(List<KafkaCondition> warnings) {
         String interBrokerProtocolVersion = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
 
         if (interBrokerProtocolVersion != null) {
@@ -113,7 +113,7 @@ public class KafkaSpecChecker {
      *
      * @param warnings List to add a warning to, if appropriate.
      */
-    private void checkKafkaStorage(List<Condition> warnings) {
+    private void checkKafkaStorage(List<KafkaCondition> warnings) {
         if (kafkaCluster.getReplicas() == 1 && StorageUtils.usesEphemeral(kafkaCluster.getStorage())) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaStorage",
                     "A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
@@ -126,7 +126,7 @@ public class KafkaSpecChecker {
      *
      * @param warnings List to add a warning to, if appropriate.
      */
-    private void checkZooKeeperStorage(List<Condition> warnings) {
+    private void checkZooKeeperStorage(List<KafkaCondition> warnings) {
         if (zkCluster.getReplicas() == 1 && StorageUtils.usesEphemeral(zkCluster.getStorage())) {
             warnings.add(StatusUtils.buildWarningCondition("ZooKeeperStorage",
                     "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
@@ -139,7 +139,7 @@ public class KafkaSpecChecker {
      *
      * @param warnings List to add a warning to, if appropriate.
      */
-    private void checkZooKeeperReplicas(List<Condition> warnings) {
+    private void checkZooKeeperReplicas(List<KafkaCondition> warnings) {
         if (zkCluster.getReplicas() == 2) {
             warnings.add(StatusUtils.buildWarningCondition("ZooKeeperReplicas",
                     "Running ZooKeeper with two nodes is not advisable as both replicas will be needed to avoid downtime. It is recommended that a minimum of three replicas are used."));

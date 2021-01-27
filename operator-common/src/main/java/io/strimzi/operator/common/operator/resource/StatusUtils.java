@@ -7,8 +7,8 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.Constants;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
+import io.strimzi.api.kafka.model.status.KafkaConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
 import io.vertx.core.AsyncResult;
 
@@ -28,20 +28,20 @@ public class StatusUtils {
         return ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
     }
 
-    public static Condition buildConditionFromException(String type, String status, Throwable error) {
+    public static KafkaCondition buildConditionFromException(String type, String status, Throwable error) {
         return buildCondition(type, status, error);
     }
 
-    public static Condition buildCondition(String type, String status, Throwable error) {
-        Condition readyCondition;
+    public static KafkaCondition buildCondition(String type, String status, Throwable error) {
+        KafkaCondition readyCondition;
         if (error == null) {
-            readyCondition = new ConditionBuilder()
+            readyCondition = new KafkaConditionBuilder()
                     .withLastTransitionTime(iso8601Now())
                     .withType(type)
                     .withStatus(status)
                     .build();
         } else {
-            readyCondition = new ConditionBuilder()
+            readyCondition = new KafkaConditionBuilder()
                     .withLastTransitionTime(iso8601Now())
                     .withType(type)
                     .withStatus(status)
@@ -52,12 +52,12 @@ public class StatusUtils {
         return readyCondition;
     }
 
-    public static Condition buildWarningCondition(String reason, String message) {
+    public static KafkaCondition buildWarningCondition(String reason, String message) {
         return buildWarningCondition(reason, message, iso8601Now());
     }
 
-    public static Condition buildWarningCondition(String reason, String message, String transitionTime) {
-        return new ConditionBuilder()
+    public static KafkaCondition buildWarningCondition(String reason, String message, String transitionTime) {
+        return new KafkaConditionBuilder()
                 .withLastTransitionTime(transitionTime)
                 .withType("Warning")
                 .withStatus("True")
@@ -66,8 +66,8 @@ public class StatusUtils {
                 .build();
     }
 
-    public static Condition buildRebalanceCondition(String type) {
-        return new ConditionBuilder()
+    public static KafkaCondition buildRebalanceCondition(String type) {
+        return new KafkaConditionBuilder()
                 .withLastTransitionTime(iso8601Now())
                 .withType(type)
                 .withStatus("True")
@@ -86,7 +86,7 @@ public class StatusUtils {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
-        Condition readyCondition = StatusUtils.buildConditionFromException(type, conditionStatus, error);
+        KafkaCondition readyCondition = StatusUtils.buildConditionFromException(type, conditionStatus, error);
         status.setConditions(Collections.singletonList(readyCondition));
     }
 
@@ -98,7 +98,7 @@ public class StatusUtils {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
-        Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
+        KafkaCondition condition = StatusUtils.buildCondition(type, conditionStatus, null);
         status.setConditions(Collections.singletonList(condition));
     }
 

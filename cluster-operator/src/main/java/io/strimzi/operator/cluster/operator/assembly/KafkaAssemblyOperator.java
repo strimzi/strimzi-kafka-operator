@@ -38,14 +38,14 @@ import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
+import io.strimzi.api.kafka.model.status.KafkaCondition;
+import io.strimzi.api.kafka.model.status.KafkaConditionBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.certs.CertManager;
@@ -228,14 +228,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         reconcile(reconcileState).onComplete(reconcileResult -> {
             KafkaStatus status = reconcileState.kafkaStatus;
-            Condition condition;
+            KafkaCondition condition;
 
             if (kafkaAssembly.getMetadata().getGeneration() != null)    {
                 status.setObservedGeneration(kafkaAssembly.getMetadata().getGeneration());
             }
 
             if (reconcileResult.succeeded())    {
-                condition = new ConditionBuilder()
+                condition = new KafkaConditionBuilder()
                         .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("Ready")
                         .withStatus("True")
@@ -244,7 +244,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 status.addCondition(condition);
                 createOrUpdatePromise.complete(status);
             } else {
-                condition = new ConditionBuilder()
+                condition = new KafkaConditionBuilder()
                         .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                         .withType("NotReady")
                         .withStatus("True")
@@ -519,7 +519,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (kafka != null && kafka.getStatus() == null) {
                         log.debug("{}: Setting the initial status for a new resource", reconciliation);
 
-                        Condition deployingCondition = new ConditionBuilder()
+                        KafkaCondition deployingCondition = new KafkaConditionBuilder()
                                 .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
                                 .withType("NotReady")
                                 .withStatus("True")
@@ -551,7 +551,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> checkKafkaSpec() {
             KafkaSpecChecker checker = new KafkaSpecChecker(kafkaAssembly.getSpec(), versions, kafkaCluster, zkCluster);
-            List<Condition> warnings = checker.run();
+            List<KafkaCondition> warnings = checker.run();
             kafkaStatus.addConditions(warnings);
             return Future.succeededFuture(this);
         }
