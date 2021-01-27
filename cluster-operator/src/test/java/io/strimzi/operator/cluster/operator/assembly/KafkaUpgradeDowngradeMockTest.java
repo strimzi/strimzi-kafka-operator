@@ -424,10 +424,10 @@ public class KafkaUpgradeDowngradeMockTest {
                 })));
     }
 
-    // Tests recovery from failed upgrade with the message format and protocol versions configured to the same Kafka
-    // version as we are upgrading from.
+    // Tests upgrade from Kafka version not supported by the current version of the operator with message format and
+    // protocol versions specified.
     @Test
-    public void testUpgradeFromUnsupportedKafkaVersion(VertxTestContext context)  {
+    public void testUpgradeFromUnsupportedKafkaVersionWithMessageAndProtocol(VertxTestContext context)  {
         KafkaVersion unsupported = VERSIONS.version("2.1.0");
 
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
@@ -495,6 +495,90 @@ public class KafkaUpgradeDowngradeMockTest {
                     assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                             unsupported.messageVersion(),
                             unsupported.protocolVersion(),
+                            KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+
+                    reconciliation.flag();
+                })));
+    }
+
+    // Tests upgrade from Kafka version not supported by the current version of the operator without message format and
+    // protocol versions specified.
+    @Test
+    public void testUpgradeFromUnsupportedKafkaVersionWithoutMessageAndProtocol(VertxTestContext context)  {
+        KafkaVersion unsupported = VERSIONS.version("2.1.0");
+
+        Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                unsupported.messageVersion(),
+                unsupported.protocolVersion());
+
+        Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+
+        Checkpoint reconciliation = context.checkpoint();
+        initialize(context, initialKafka)
+                .onComplete(context.succeeding(v -> {
+                    context.verify(() -> {
+                        assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                                unsupported.messageVersion(),
+                                unsupported.protocolVersion(),
+                                KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+                    });
+                }))
+                .compose(v -> {
+                    StatefulSet sts = client.apps().statefulSets().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").get();
+                    StatefulSet modifiedSts = new StatefulSetBuilder(sts)
+                            .editMetadata()
+                            .addToAnnotations(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION, unsupported.version())
+                            .endMetadata()
+                            .editSpec()
+                            .editTemplate()
+                            .editMetadata()
+                            .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION)
+                            .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION)
+                            .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION)
+                            .endMetadata()
+                            .editSpec()
+                            .editContainer(0)
+                            .withImage("strimzi/kafka:old-kafka-2.1.0")
+                            .endContainer()
+                            .endSpec()
+                            .endTemplate()
+                            .endSpec()
+                            .build();
+                    client.apps().statefulSets().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").createOrReplace(modifiedSts);
+
+                    for (int i = 0; i < 3; i++) {
+                        Pod pod = client.pods().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka-" + i).get();
+                        Pod modifiedPod = new PodBuilder(pod)
+                                .editMetadata()
+                                .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION)
+                                .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION)
+                                .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION)
+                                .endMetadata()
+                                .editSpec()
+                                .editContainer(0)
+                                .withImage("strimzi/kafka:old-kafka-2.1.0")
+                                .endContainer()
+                                .endSpec()
+                                .build();
+                        client.pods().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka-" + i).createOrReplace(modifiedPod);
+                    }
+
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            unsupported.messageVersion(),
+                            unsupported.protocolVersion(),
+                            KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+
+                    reconciliation.flag();
+                })))
+                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger2", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                            KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
                             KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
 
                     reconciliation.flag();
