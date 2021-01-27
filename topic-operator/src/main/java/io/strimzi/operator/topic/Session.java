@@ -174,6 +174,9 @@ public class Session extends AbstractVerticle {
         this.k8s = new K8sImpl(vertx, kubeClient, labels, namespace);
         LOGGER.debug("Using k8s {}", k8s);
 
+        String clientId = config.get(Config.CLIENT_ID);
+        LOGGER.debug("Using client-Id {}", clientId);
+
         Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
                 this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
                 this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue(),

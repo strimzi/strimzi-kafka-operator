@@ -23,6 +23,7 @@ public class ConfigTest {
         MANDATORY.put(Config.ZOOKEEPER_CONNECT.key, "localhost:2181");
         MANDATORY.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, "localhost:9092");
         MANDATORY.put(Config.NAMESPACE.key, "default");
+        MANDATORY.put(Config.CLIENT_ID.key, "default-client-id");
     }
 
     @Test

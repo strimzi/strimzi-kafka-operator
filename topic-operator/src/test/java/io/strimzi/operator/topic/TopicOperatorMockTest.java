@@ -109,6 +109,7 @@ public class TopicOperatorMockTest {
         m.put(io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
         m.put(io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(io.strimzi.operator.topic.Config.NAMESPACE.key, "myproject");
+        m.put(io.strimzi.operator.topic.Config.CLIENT_ID.key, "myproject-client-id");
         m.put(io.strimzi.operator.topic.Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000");
         session = new Session(kubeClient, new io.strimzi.operator.topic.Config(m));
 
