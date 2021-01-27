@@ -187,7 +187,7 @@ public class Config {
     /** The (gRPC) application server for the Kafka Streams based TopicStore */
     public static final Value<String> APPLICATION_SERVER = new Value<>(TC_APPLICATION_SERVER, STRING, "localhost:9000");
     /** The stale timeout for the Kafka Streams based TopicStore */
-    public static final Value<Long> STALE_RESULT_TIMEOUT_MS = new Value<>(TC_STALE_RESULT_TIMEOUT_MS, DURATION, "1000");
+    public static final Value<Long> STALE_RESULT_TIMEOUT_MS = new Value<>(TC_STALE_RESULT_TIMEOUT_MS, DURATION, "5000");
     /** Is distributed KeyValue store used for the Kafka Streams based TopicStore */
     public static final Value<Boolean> DISTRIBUTED_STORE = new Value<>(TC_DISTRIBUTED_STORE, BOOLEAN, "false");
 
