@@ -12,7 +12,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
- * TGZ artifact represents an artifact which is downloaded and unpacked using `unzip`
+ * ZIP artifact represents an artifact which is downloaded and unpacked using `unzip`
  */
 @Buildable(
         editableEnabled = false,

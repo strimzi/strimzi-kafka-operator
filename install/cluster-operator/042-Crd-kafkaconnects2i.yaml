@@ -1694,7 +1694,7 @@ spec:
                               - tgz
                               - zip
                               description: Artifact type. Currently, the supported
-                                artifact types are `tgz`, `jar` and `zip`.
+                                artifact types are `tgz`, `jar`, and `zip`.
                             url:
                               type: string
                               pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
