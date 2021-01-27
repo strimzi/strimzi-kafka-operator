@@ -46,6 +46,9 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     @JsonProperty("default")
     boolean isDefault;
 
+    @JsonProperty("supported")
+    boolean isSupported;
+
     @Override
     public String toString() {
         return "KafkaVersion{" +
@@ -54,6 +57,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
                 ", messageVersion='" + messageVersion + '\'' +
                 ", zookeeperVersion='" + zookeeperVersion + '\'' +
                 ", isDefault=" + isDefault +
+                ", isSupported=" + isSupported +
                 '}';
     }
 
@@ -75,6 +79,10 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     public boolean isDefault() {
         return isDefault;
+    }
+
+    public boolean isSupported() {
+        return isSupported;
     }
 
     @Override
@@ -135,12 +143,14 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
                 TestKafkaVersion.class.getResourceAsStream("/kafka-versions.yaml"),
                 StandardCharsets.UTF_8);
 
-        List<TestKafkaVersion> testKafkaVersions = mapper.readValue(versionsFileReader, new TypeReference<List<TestKafkaVersion>>() {
+        List<TestKafkaVersion> kafkaVersions = mapper.readValue(versionsFileReader, new TypeReference<List<TestKafkaVersion>>() {
         });
 
-        Collections.sort(testKafkaVersions);
+        List<TestKafkaVersion> supportedKafkaVersions = kafkaVersions.stream().filter(TestKafkaVersion::isSupported).collect(Collectors.toList());
 
-        return testKafkaVersions;
+        Collections.sort(supportedKafkaVersions);
+
+        return supportedKafkaVersions;
     }
 
     public static List<TestKafkaVersion> getKafkaVersions() {
