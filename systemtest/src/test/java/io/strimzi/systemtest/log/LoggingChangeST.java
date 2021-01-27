@@ -151,7 +151,7 @@ class LoggingChangeST extends AbstractST {
             .addToData("log4j-custom.properties", loggersConfigZookeeper)
             .build();
 
-        ConfigMapKeySelector zkLoggimgCMselector = new ConfigMapKeySelectorBuilder()
+        ConfigMapKeySelector zkLoggingCMselector = new ConfigMapKeySelectorBuilder()
                 .withName(configMapZookeeperName)
                 .withKey("log4j-custom.properties")
                 .build();
@@ -206,7 +206,7 @@ class LoggingChangeST extends AbstractST {
                 .editZookeeper()
                     .withLogging(new ExternalLoggingBuilder()
                             .withNewValueFrom()
-                                .withConfigMapKeyRef(zkLoggimgCMselector)
+                                .withConfigMapKeyRef(zkLoggingCMselector)
                             .endValueFrom()
                             .build())
                 .endZookeeper()

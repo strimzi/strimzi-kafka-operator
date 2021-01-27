@@ -232,10 +232,12 @@ public class StUtils {
     public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
         boolean isJSON = false;
         //this is only for decrease the number of records - kafka have record/line, operators record/11lines
-        String tail = "--tail=" + (containerName.contains("operator") ? "50" : "10");
+        String tail = "--tail=" + (containerName.contains("operator") ? "100" : "10");
 
         for (String podName : pods.keySet()) {
             String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
+            LOGGER.info("original {}", log);
+
             Matcher matcher = BETWEEN_JSON_OBJECTS_PATTERN.matcher(log);
 
             log = matcher.replaceAll("}, \\{");
@@ -243,6 +245,9 @@ public class StUtils {
             log = "[" + matcher.replaceFirst("{") + "]";
 
             try {
+                LOGGER.info("################");
+                LOGGER.info("reduced {}", log);
+                LOGGER.info("################");
                 new JsonArray(log);
                 LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
                 isJSON = true;
