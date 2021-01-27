@@ -861,17 +861,4 @@ public class KafkaAssemblyOperatorMockTest {
 
         reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
     }
-
-    @ParameterizedTest
-    @MethodSource("data")
-    public void testReconcileZookeeperUpgradeFromMinorToPrevious(Params params, VertxTestContext context) {
-        init(params);
-
-        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_MINOR_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
-
-        reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
-
-    }
 }

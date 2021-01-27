@@ -156,14 +156,6 @@ public class KafkaCluster extends AbstractModel {
      * Records the Kafka version currently running inside Kafka StatefulSet
      */
     public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = Annotations.STRIMZI_DOMAIN + "kafka-version";
-    /**
-     * Records the state of the Kafka upgrade process. Unset outside of upgrades.
-     */
-    public static final String ANNO_STRIMZI_IO_FROM_VERSION = Annotations.STRIMZI_DOMAIN + "from-version";
-    /**
-     * Records the state of the Kafka upgrade process. Unset outside of upgrades.
-     */
-    public static final String ANNO_STRIMZI_IO_TO_VERSION = Annotations.STRIMZI_DOMAIN + "to-version";
 
     /**
      * Records the used log.message.format.version

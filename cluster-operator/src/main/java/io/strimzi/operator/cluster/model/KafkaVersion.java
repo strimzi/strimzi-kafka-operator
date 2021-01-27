@@ -100,7 +100,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                          Map<String, String> kafkaConnectS2iImages,
                          Map<String, String> kafkaMirrorMakerImages,
                          Map<String, String> kafkaMirrorMaker2Images) {
-            map = new HashMap<>(5);
+            map = new HashMap<>();
             try {
                 defaultVersion = parseKafkaVersions(reader, map);
             } catch (Exception e) {
@@ -137,12 +137,17 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             return result;
         }
 
-        public Set<String> supportedVersions() {
+        public Set<String> allVersions() {
             return new TreeSet<>(map.keySet());
+        }
+
+        public Set<String> supportedVersions() {
+            return new TreeSet<>(map.keySet().stream().filter(version -> map.get(version).isSupported).collect(Collectors.toSet()));
         }
 
         public Set<String> supportedVersionsForFeature(String feature) {
             return map.entrySet().stream()
+                    .filter(version -> version.getValue().isSupported)
                     .filter(entry -> entry.getValue().unsupportedFeatures() == null || !entry.getValue().unsupportedFeatures().contains(feature))
                     .map(Entry::getKey)
                     .collect(Collectors.toSet());
@@ -353,6 +358,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     private final String messageVersion;
     private final String zookeeperVersion;
     private final boolean isDefault;
+    private final boolean isSupported;
     private final String unsupportedFeatures;
 
     @JsonCreator
@@ -361,6 +367,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                         @JsonProperty("format") String messageVersion,
                         @JsonProperty("zookeeper") String zookeeperVersion,
                         @JsonProperty("default") boolean isDefault,
+                        @JsonProperty("supported") boolean isSupported,
                         @JsonProperty("unsupported-features") String unsupportedFeatures) {
 
         this.version = version;
@@ -368,6 +375,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         this.messageVersion = messageVersion;
         this.zookeeperVersion = zookeeperVersion;
         this.isDefault = isDefault;
+        this.isSupported = isSupported;
         this.unsupportedFeatures = unsupportedFeatures;
     }
 
@@ -379,6 +387,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 ", messageVersion='" + messageVersion + '\'' +
                 ", zookeeperVersion='" + zookeeperVersion + '\'' +
                 ", isDefault=" + isDefault +
+                ", isSupported=" + isSupported +
                 ", unsupportedFeatures='" + unsupportedFeatures  + '\'' +
                 '}';
     }
@@ -401,6 +410,10 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
     public boolean isDefault() {
         return isDefault;
+    }
+
+    public boolean isSupported() {
+        return isSupported;
     }
 
     public String unsupportedFeatures() {
