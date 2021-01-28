@@ -202,10 +202,19 @@ public class Session extends AbstractVerticle {
                         cs = ksc.start(config, kafkaClientProps).thenCompose(s -> CompletableFuture.completedFuture(ksc));
                     }
                     topicStore = ConcurrentUtil.result(
-                            cs.thenApply(s -> {
-                                service = s;
-                                return s.store;
+                            cs.handle((s, t) -> {
+                                if (t != null) {
+                                    LOGGER.error("Failed to create topic store.", t);
+                                    start.fail(t);
+                                    return null; // [1]
+                                } else {
+                                    service = s;
+                                    return s.store;
+                                }
                             }));
+                    if (topicStore == null) {
+                        return; // [1]
+                    }
                 }
 
                 LOGGER.debug("Using TopicStore {}", topicStore);
