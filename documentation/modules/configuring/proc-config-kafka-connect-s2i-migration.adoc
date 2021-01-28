@@ -75,7 +75,7 @@ Wait until the new image is built, the deployment is created, and the pods have 
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kctr --selector strimzi.io/cluster=_MY-CONNECT-CLUSTER_ -o name
+kubectl get kctr --selector strimzi.io/cluster=_MY-KAFKA-CONNECT-CLUSTER_ -o name
 ----
 +
 Replace _MY-KAFKA-CONNECT-CLUSTER_ with the name of your Kafka Connect cluster.
