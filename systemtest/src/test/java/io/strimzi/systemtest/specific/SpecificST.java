@@ -32,6 +32,7 @@ import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -250,9 +251,6 @@ public class SpecificST extends AbstractST {
 
         KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(clusterName));
 
-        String topicName = "topic-test-rack-aware";
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
-
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         for (String connectPodName : connectPods) {
             Affinity connectPodSpecAffinity = kubeClient().getDeployment(KafkaConnectResources.deploymentName(clusterName)).getSpec().getTemplate().getSpec().getAffinity();
@@ -265,6 +263,8 @@ public class SpecificST extends AbstractST {
             assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
             assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
+            String topicName = "rw-" + KafkaTopicUtils.generateRandomNameOfTopic();
+            KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
             KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
         }
 
