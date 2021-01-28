@@ -100,7 +100,7 @@ class ConnectBuilderST extends AbstractST {
                 .build())
             .build();
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(clusterName, 1)
@@ -162,9 +162,9 @@ class ConnectBuilderST extends AbstractST {
         // this test also testing push into Docker output
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(clusterName, 1)
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -189,10 +189,10 @@ class ConnectBuilderST extends AbstractST {
         connectorConfig.put("topics", topicName);
         connectorConfig.put("level", "INFO");
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
-        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(clusterName)
+        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(clusterName)
             .editOrNewSpec()
                 .withClassName(ECHO_SINK_CLASS_NAME)
                 .withConfig(connectorConfig)
@@ -231,7 +231,7 @@ class ConnectBuilderST extends AbstractST {
 
         kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().create(imageStream);
 
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(clusterName, 1)
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -273,12 +273,12 @@ class ConnectBuilderST extends AbstractST {
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        KafkaTopicResource.create(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
 
-        KafkaClientsResource.create(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
-        KafkaConnectResource.create(KafkaConnectResource.kafkaConnect(clusterName, 1)
+        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -304,7 +304,7 @@ class ConnectBuilderST extends AbstractST {
         echoSinkConfig.put("level", "INFO");
 
         LOGGER.info("Creating EchoSink connector");
-        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(echoConnector, clusterName)
+        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(echoConnector, clusterName)
             .editOrNewSpec()
                 .withClassName(ECHO_SINK_CLASS_NAME)
                 .withConfig(echoSinkConfig)
@@ -332,7 +332,7 @@ class ConnectBuilderST extends AbstractST {
         camelHttpConfig.put("topics", topicName);
 
         LOGGER.info("Creating Camel-HTTP-Sink connector");
-        KafkaConnectorResource.create(KafkaConnectorResource.kafkaConnector(camelConnector, clusterName)
+        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(camelConnector, clusterName)
             .editOrNewSpec()
                 .withClassName(CAMEL_CONNECTOR_CLASS_NAME)
                 .withConfig(camelHttpConfig)
@@ -354,7 +354,7 @@ class ConnectBuilderST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
 
-        KafkaResource.create(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         String outputRegistry = "";
 
