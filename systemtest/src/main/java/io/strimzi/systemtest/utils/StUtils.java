@@ -236,7 +236,6 @@ public class StUtils {
 
         for (String podName : pods.keySet()) {
             String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
-            LOGGER.info("original {}", log);
 
             // remove incomplete JSON from the end
             int lastBracket = log.lastIndexOf("}");
@@ -252,9 +251,6 @@ public class StUtils {
             log = "[" + matcher.replaceFirst("{") + "]";
 
             try {
-                LOGGER.info("################");
-                LOGGER.info("reduced {}", log);
-                LOGGER.info("################");
                 new JsonArray(log);
                 LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
                 isJSON = true;
