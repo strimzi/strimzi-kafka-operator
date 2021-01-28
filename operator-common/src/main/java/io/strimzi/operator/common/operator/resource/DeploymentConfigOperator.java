@@ -10,7 +10,6 @@ import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
-import io.fabric8.openshift.client.internal.readiness.OpenShiftReadiness;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -120,10 +119,7 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
         DeploymentConfig resource = resourceOp.get();
         
         if (resource != null)   {
-            // resourceOp.isReady() does not work because of https://github.com/fabric8io/kubernetes-client/issues/2537
-            // This method provides a temporary workaround by calling OpenShiftReadiness.isDeploymentConfigReady(...) directly.
-            // TODO: This should be changed to resourceOp.isReady() after https://github.com/fabric8io/kubernetes-client/issues/2537 is fixed.
-            return Boolean.TRUE.equals(OpenShiftReadiness.isDeploymentConfigReady(resource));
+            return Boolean.TRUE.equals(resourceOp.isReady());
         } else {
             return false;
         }

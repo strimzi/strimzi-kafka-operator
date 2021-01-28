@@ -14,7 +14,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class EndpointOperatorTest extends AbtractReadyResourceOperatorTest<KubernetesClient, Endpoints, EndpointsList, Resource<Endpoints>> {
+public class EndpointOperatorTest extends AbstractReadyResourceOperatorTest<KubernetesClient, Endpoints, EndpointsList, Resource<Endpoints>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

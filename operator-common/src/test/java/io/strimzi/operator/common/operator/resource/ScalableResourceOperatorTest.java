@@ -13,6 +13,6 @@ public abstract class ScalableResourceOperatorTest<C extends KubernetesClient,
             T extends HasMetadata,
             L extends KubernetesResourceList<T>,
             R extends Resource<T>>
-        extends AbtractReadyResourceOperatorTest<C, T, L, R> {
+        extends AbstractReadyResourceOperatorTest<C, T, L, R> {
 
 }
