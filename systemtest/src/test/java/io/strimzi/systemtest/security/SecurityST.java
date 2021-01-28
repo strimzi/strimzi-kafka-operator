@@ -67,6 +67,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -1384,9 +1385,10 @@ class SecurityST extends AbstractST {
         String msg = "Error: original cert-end date: '" + initialCertEndTime +
                 "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'!";
         assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
-        assertThat("Broker certificates were not renewed",
-                initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0
-                        && initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+        assertThat("Broker certificates start dates have not been renewed.",
+                initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
+        assertThat("Broker certificates end dates have not been renewed.",
+                initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
     }
 
     @Test
@@ -1400,7 +1402,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        String username = "strimzi-tls-user";
+        String username = "strimzi-tls-user-" + new Random().nextInt(Integer.MAX_VALUE);
         KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, username).build());
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
@@ -1442,9 +1444,10 @@ class SecurityST extends AbstractST {
         String msg = "Error: original cert-end date: '" + initialCertEndTime +
                 "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'";
         assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
-        assertThat("UserCert certificates were not renewed",
-                initialKafkaUserCertStartTime.compareTo(changedKafkaUserCertStartTime) < 0
-                        && initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
+        assertThat("UserCert start date has been renewed",
+                initialKafkaUserCertStartTime.compareTo(changedKafkaUserCertStartTime) < 0);
+        assertThat("UserCert end date has been renewed",
+                initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
     @BeforeAll
