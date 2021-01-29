@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ public class KafkaConnectBuild extends AbstractModel {
     private Map<String, String> templateBuildConfigLabels;
     private Map<String, String> templateBuildConfigAnnotations;
     private String baseImage;
+    private List<String> additionalKanikoOptions;
 
     /**
      * Constructor
@@ -82,6 +84,19 @@ public class KafkaConnectBuild extends AbstractModel {
 
         if (spec.getBuild() != null)    {
             validateBuildConfiguration(spec.getBuild());
+
+            // The additionalKanikoOptions are validated separately to avoid parsing the list twice
+            if (spec.getBuild().getOutput() != null
+                    && spec.getBuild().getOutput() instanceof DockerOutput) {
+                DockerOutput dockerOutput = (DockerOutput) spec.getBuild().getOutput();
+
+                if (dockerOutput.getAdditionalKanikoOptions() != null
+                        && !dockerOutput.getAdditionalKanikoOptions().isEmpty())  {
+                    List<String> desiredOptions = Arrays.asList(dockerOutput.getAdditionalKanikoOptions().split("\\s+"));
+                    validateAdditionalKanikoOptions(desiredOptions);
+                    build.additionalKanikoOptions = desiredOptions;
+                }
+            }
         }
 
         if (spec.getImage() == null) {
@@ -137,6 +152,23 @@ public class KafkaConnectBuild extends AbstractModel {
             if (plugin.getArtifacts() == null)  {
                 throw new InvalidResourceException("Each connector plugin needs to have a list of artifacts.");
             }
+        }
+    }
+
+    /**
+     * Validates the additional Kaniko options configured by the user against the list of allowed options. If any
+     * options which are not allowed are found, it raises an InvalidResourceException exception.
+     *
+     * @param desiredOptions    List of additional Kaniko options configured by the user
+     */
+    private static void validateAdditionalKanikoOptions(List<String> desiredOptions)    {
+        List<String> allowedOptions = Arrays.asList(DockerOutput.ALLOWED_KANIKO_OPTIONS.split("\\s*,+\\s*"));
+        List<String> forbiddenOptions = desiredOptions.stream()
+                .filter(option -> !allowedOptions.stream().anyMatch(allowed -> option.startsWith(allowed)))
+                .collect(Collectors.toList());
+
+        if (!forbiddenOptions.isEmpty())    {
+            throw new InvalidResourceException(".spec.build.additionalKanikoOptions contains forbidden options: " + forbiddenOptions);
         }
     }
 
@@ -270,13 +302,20 @@ public class KafkaConnectBuild extends AbstractModel {
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(1);
 
+        List<String> args = new ArrayList<>(4);
+        args.add("--dockerfile=/dockerfile/Dockerfile");
+        args.add("--context=dir://workspace");
+        args.add("--image-name-with-digest-file=/dev/termination-log");
+        args.add("--destination=" + build.getOutput().getImage());
+
+        if (additionalKanikoOptions != null) {
+            args.addAll(additionalKanikoOptions);
+        }
+
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
-                .withArgs("--dockerfile=/dockerfile/Dockerfile",
-                        "--context=dir://workspace",
-                        "--image-name-with-digest-file=/dev/termination-log",
-                        "--destination=" + build.getOutput().getImage())
+                .withArgs(args)
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(build.getResources())
                 .withSecurityContext(templateBuildContainerSecurityContext)
@@ -290,7 +329,7 @@ public class KafkaConnectBuild extends AbstractModel {
     }
 
     /**
-     * This methd should return the name of the logging configuration file. But the Kaniko builder is not using any
+     * This method should return the name of the logging configuration file. But the Kaniko builder is not using any
      * logging configuration, so this currently just returns an unsupported exception (but it has to exist due to the
      * inheritance).
      *

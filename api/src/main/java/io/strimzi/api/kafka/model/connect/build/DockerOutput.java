@@ -25,8 +25,14 @@ import lombok.EqualsAndHashCode;
 public class DockerOutput extends Output {
     private static final long serialVersionUID = 1L;
 
+    public static final String ALLOWED_KANIKO_OPTIONS = "--customPlatform, --insecure, --insecure-pull, " +
+            "--insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, " +
+            "--skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, " +
+            "--use-new-run";
+
     private String image;
     private String pushSecret;
+    private String additionalKanikoOptions;
 
     @Description("Must be `" + TYPE_DOCKER + "`")
     @Override
@@ -53,5 +59,20 @@ public class DockerOutput extends Output {
 
     public void setPushSecret(String pushSecret) {
         this.pushSecret = pushSecret;
+    }
+
+    @Description("Configures additional options which will be passed to the Kaniko executor when building the new Connect image. " +
+            "For example `--reproducible --single-snapshot`. Allowed options are: " + ALLOWED_KANIKO_OPTIONS + " " +
+            "These options will be used only on Kubernetes where the Kaniko executor is used. " +
+            "They will be ignored on OpenShift. " +
+            "The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. " +
+            "Changing this field does not trigger new build of the Kafka Connect image.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getAdditionalKanikoOptions() {
+        return additionalKanikoOptions;
+    }
+
+    public void setAdditionalKanikoOptions(String additionalKanikoOptions) {
+        this.additionalKanikoOptions = additionalKanikoOptions;
     }
 }
