@@ -95,7 +95,7 @@ spec:
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: quay.io/strimzi/jmxtrans:latest
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
-              value: gcr.io/kaniko-project/executor:v1.3.0
+              value: quay.io/strimzi/kaniko-executor:latest
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:
