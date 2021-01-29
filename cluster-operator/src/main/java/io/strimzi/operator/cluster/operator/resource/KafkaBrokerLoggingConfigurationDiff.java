@@ -96,14 +96,16 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
         return updatedCE;
     }
 
-    private static Map<String, String> readLog4jConfig(String config) {
-
+    protected static Map<String, String> readLog4jConfig(String config) {
         Map<String, String> parsed = new LinkedHashMap<>();
         Map<String, String> env = new HashMap<>();
+        BufferedReader firstPassReader = new BufferedReader(new StringReader(config));
         BufferedReader reader = new BufferedReader(new StringReader(config));
         String line;
+
+        // first pass to lookup the var definitions
         try {
-            while ((line = reader.readLine()) != null) {
+            while ((line = firstPassReader.readLine()) != null) {
                 // skip comments
                 if (line.startsWith("#")) continue;
 
@@ -122,6 +124,20 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                     log.debug("Treating the line as ENV var declaration: {}", line);
                     continue;
                 }
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse logging configuration: " + config, e);
+            return Collections.emptyMap();
+        }
+
+        try {
+            while ((line = reader.readLine()) != null) {
+                // skip comments
+                if (line.startsWith("#")) continue;
+
+                // ignore empty lines
+                line = line.trim();
+                if (line.length() == 0) continue;
 
                 // we ignore appenders (log4j.appender.*)
                 // and only handle loggers (log4j.logger.*)
@@ -133,14 +149,14 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
                         continue;
                     }
                     String name = line.substring(startIdx, endIdx).trim();
-                    String value = line.substring(endIdx + 1).trim();
+                    String value = line.substring(endIdx + 1).split(",")[0].trim();
 
                     value = Util.expandVar(value, env);
                     parsed.put(name, value);
 
                 } else if (line.startsWith("log4j.rootLogger=")) {
                     int startIdx = "log4j.rootLogger=".length();
-                    parsed.put("root", Util.expandVar(line.substring(startIdx).trim(), env));
+                    parsed.put("root", Util.expandVar(line.substring(startIdx).split(",")[0].trim(), env));
 
                 } else {
                     log.debug("Skipping log4j line: {}", line);

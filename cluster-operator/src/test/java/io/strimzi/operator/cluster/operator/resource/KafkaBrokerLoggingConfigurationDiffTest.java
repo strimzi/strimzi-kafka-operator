@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
@@ -139,5 +140,34 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
 
     AlterConfigOp newAlterConfigOp(String category, String level) {
         return new AlterConfigOp(new ConfigEntry(category, level), AlterConfigOp.OpType.SET);
+    }
+
+    @Test
+    public void testExpansion() {
+        String input = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
+                "\n" +
+                "# Log levels\n" +
+                // level definition is afterwards its use
+                "kafka.root.logger.level=INFO\n" +
+                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                "log4j.logger.org.apache.zookeeper=INFO\n" +
+                "log4j.logger.kafka=INFO\n" +
+                "log4j.logger.org.apache.kafka=INFO\n" +
+                "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
+                "log4j.logger.kafka.network.Processor=OFF\n" +
+                "log4j.logger.kafka.server.KafkaApis=OFF\n" +
+                "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
+                "log4j.logger.kafka.controller=TRACE\n" +
+                "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                "log4j.logger.state.change.logger=TRACE\n" +
+                "log4j.logger.kafka.authorizer.logger=INFO\n" +
+                "monitorInterval=30\n";
+
+        Map<String, String> res = KafkaBrokerLoggingConfigurationDiff.readLog4jConfig(input);
+        assertThat(res.get("root"), is("INFO"));
+        assertThat(res.get("kafka.request.logger"), is("WARN"));
     }
 }
