@@ -1,5 +1,5 @@
 [id='type-ExampleCrd-{context}']
-# `Example`
+# `Example` schema reference
 
 
 [options="header"]
@@ -80,7 +80,7 @@
 |====
 
 [id='type-Number-{context}']
-# `Number`
+# `Number` schema reference
 
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
@@ -91,7 +91,7 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 |====
 
 [id='type-ObjectProperty-{context}']
-# `ObjectProperty`
+# `ObjectProperty` schema reference
 
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
@@ -107,7 +107,7 @@ Example of complex type.
 |====
 
 [id='type-PolymorphicLeft-{context}']
-# `PolymorphicLeft`
+# `PolymorphicLeft` schema reference
 
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
@@ -126,7 +126,7 @@ It must have the value `left` for the type `PolymorphicLeft`.
 |====
 
 [id='type-PolymorphicRight-{context}']
-# `PolymorphicRight`
+# `PolymorphicRight` schema reference
 
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
@@ -145,7 +145,7 @@ It must have the value `right` for the type `PolymorphicRight`.
 |====
 
 [id='type-Type2-{context}']
-# `Type2`
+# `Type2` schema reference
 
 Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 
@@ -158,7 +158,7 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 |====
 
 [id='type-Type1-{context}']
-# `Type1`
+# `Type1` schema reference
 
 *The type `Type1` has been deprecated.*
 Please use xref:type-Type2-{context}[`Type2`] instead.
@@ -172,3 +172,4 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 |key1  1.2+<.<|
 |string
 |====
+
