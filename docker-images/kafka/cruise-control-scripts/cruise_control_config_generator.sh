@@ -29,7 +29,7 @@ min.insync.replicas=$MIN_INSYNC_REPLICAS
 EOF
 
 # Write all webserver access logs to stdout
-ln -s /dev/stdout $CC_ACCESS_LOG
+ln -sf /dev/stdout $CC_ACCESS_LOG
 
 # Write the config file
 cat <<EOF
