@@ -6,13 +6,17 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.DoneableKafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.test.TestUtils;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class KafkaConnectS2ITemplates {
 
@@ -20,13 +24,25 @@ public class KafkaConnectS2ITemplates {
 
     private KafkaConnectS2ITemplates() {}
 
-    public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, DoneableKafkaConnectS2I, Resource<KafkaConnectS2I, DoneableKafkaConnectS2I>> kafkaConnectS2IClient() {
+    public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2IClient() {
         return Crds.kafkaConnectS2iOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static KafkaConnectS2IBuilder kafkaConnectS2I(String name, String clusterName, int kafkaConnectS2IReplicas) {
+    public static KafkaConnectS2IBuilder kafkaConnectS2I(ExtensionContext extensionContext, String name, String clusterName, int kafkaConnectS2IReplicas, boolean allowNP) {
         KafkaConnectS2I kafkaConnectS2I = getKafkaConnectS2IFromYaml(PATH_TO_KAFKA_CONNECT_S2I_CONFIG);
-        return defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas);
+        kafkaConnectS2I = defaultKafkaConnectS2I(kafkaConnectS2I, name, clusterName, kafkaConnectS2IReplicas).build();
+        return allowNP ? deployKafkaConnectS2IWithNetworkPolicy(extensionContext, kafkaConnectS2I) : new KafkaConnectS2IBuilder(kafkaConnectS2I);
+    }
+
+    public static KafkaConnectS2IBuilder kafkaConnectS2I(ExtensionContext extensionContext, String name, String clusterName, int kafkaConnectReplicas) {
+        return kafkaConnectS2I(extensionContext, name, clusterName, kafkaConnectReplicas, true);
+    }
+
+    private static KafkaConnectS2IBuilder deployKafkaConnectS2IWithNetworkPolicy(ExtensionContext extensionContext, KafkaConnectS2I kafkaConnectS2I) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+            NetworkPolicyResource.allowNetworkPolicySettingsForResource(extensionContext, kafkaConnectS2I, KafkaConnectResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
+        }
+        return new KafkaConnectS2IBuilder(kafkaConnectS2I);
     }
 
     public static KafkaConnectS2IBuilder defaultKafkaConnectS2I(String name, String kafkaClusterName, int kafkaConnectReplicas) {

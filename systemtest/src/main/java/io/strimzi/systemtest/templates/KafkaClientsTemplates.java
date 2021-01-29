@@ -213,7 +213,6 @@ public class KafkaClientsTemplates {
                     consumerConfiguration += SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG + "=";
                 }
 
-
                 containerBuilder.addNewEnv().withName("PRODUCER_CONFIGURATION" + envVariablesSuffix).withValue(producerConfiguration).endEnv();
                 containerBuilder.addNewEnv().withName("CONSUMER_CONFIGURATION" + envVariablesSuffix).withValue(consumerConfiguration).endEnv();
 

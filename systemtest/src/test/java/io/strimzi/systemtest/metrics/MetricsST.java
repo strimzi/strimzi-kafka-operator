@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
@@ -38,6 +39,14 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
+import io.strimzi.systemtest.templates.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.KafkaConnectS2ITemplates;
+import io.strimzi.systemtest.templates.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.KafkaMirrorMaker2Templates;
+import io.strimzi.systemtest.templates.KafkaTemplates;
+import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -50,6 +59,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -188,7 +198,13 @@ public class MetricsST extends AbstractST {
     @Test
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testKafkaExporterDataAfterExchange() {
+    void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+
+        final String defaultKafkaClientsPodName =
+            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(TOPIC_NAME)
@@ -236,12 +252,12 @@ public class MetricsST extends AbstractST {
 
     @Test
     @Tag(ACCEPTANCE)
-    void testClusterOperatorMetrics() {
-        clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics(kafkaClientsPodName);
+    void testClusterOperatorMetrics(ExtensionContext extensionContext) {
+        clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics();
         List<String> resourcesList = Arrays.asList("Kafka", "KafkaBridge", "KafkaConnect", "KafkaConnectS2I", "KafkaConnector", "KafkaMirrorMaker", "KafkaMirrorMaker2", "KafkaRebalance");
 
         // Create some resource which will have state 0. S2I will not be ready, because there is KafkaConnect cluster with same name.
-        KafkaConnectS2IResource.kafkaConnectS2IWithoutWait(KafkaConnectS2IResource.kafkaConnectS2I(metricsClusterName, metricsClusterName, 1).build());
+        resourceManager.createResource(extensionContext, false, KafkaConnectS2ITemplates.kafkaConnectS2I(metricsClusterName, metricsClusterName, 1).build());
 
         for (String resource : resourcesList) {
             assertCoMetricNotNull("strimzi_reconciliations_periodical_total", resource, clusterOperatorMetricsData);
@@ -516,31 +532,30 @@ public class MetricsST extends AbstractST {
     }
 
     @BeforeAll
-    void setupEnvironment() throws Exception {
+    void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         LOGGER.info("Setting up Environment for MetricsST");
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+        installClusterOperator(extensionContext, NAMESPACE);
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
+        resourceManager.createResource(extensionContext, new KafkaBuilder(
+            KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3))
             .editOrNewSpec()
-                .editEntityOperator()
-                    .editUserOperator()
-                        .withReconciliationIntervalSeconds(30)
-                    .endUserOperator()
-                .endEntityOperator()
-            .endSpec()
-            .build());
+            .editEntityOperator()
+            .editUserOperator()
+            .withReconciliationIntervalSeconds(30)
+            .endUserOperator()
+            .endEntityOperator()
+            .endSpec().build());
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).build());
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
-        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnectWithMetrics(metricsClusterName, 1).build());
-        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build());
-        KafkaBridgeResource.createAndWaitForReadiness(KafkaBridgeResource.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build());
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(metricsClusterName, TOPIC_NAME, 7, 2).build());
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(metricsClusterName, bridgeTopic).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetrics(SECOND_CLUSTER, 1 , 1).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithMetrics(metricsClusterName, 1).build());
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build());
+        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, TOPIC_NAME, 7, 2).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, bridgeTopic).build());
 
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
         kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 

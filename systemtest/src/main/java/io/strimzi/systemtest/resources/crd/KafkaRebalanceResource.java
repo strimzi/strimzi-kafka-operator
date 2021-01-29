@@ -16,6 +16,8 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
+import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.test.TestUtils;
 
 import java.util.HashMap;
@@ -24,68 +26,40 @@ import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
-public class KafkaRebalanceResource {
-    public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/cruise-control/kafka-rebalance.yaml";
+public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
+
+    public KafkaRebalanceResource() {}
+
+    @Override
+    public String getKind() {
+        return KafkaRebalance.RESOURCE_KIND;
+    }
+    @Override
+    public KafkaRebalance get(String namespace, String name) {
+        return kafkaRebalanceClient().inNamespace(namespace).withName(name).get();
+    }
+    @Override
+    public void create(KafkaRebalance resource) {
+        kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
+    }
+    @Override
+    public void delete(KafkaRebalance resource) throws Exception {
+        kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).withName(
+            resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+    }
+    @Override
+    public boolean isReady(KafkaRebalance resource) {
+        return resource != null;
+    }
+    @Override
+    public void refreshResource(KafkaRebalance existing, KafkaRebalance newResource) {
+        existing.setMetadata(newResource.getMetadata());
+        existing.setSpec(newResource.getSpec());
+        existing.setStatus(newResource.getStatus());
+    }
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {
         return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
-    }
-
-    public static KafkaRebalanceBuilder kafkaRebalance(String name) {
-        KafkaRebalance kafkaRebalance = getKafkaRebalanceFromYaml(PATH_TO_KAFKA_REBALANCE_CONFIG);
-        return defaultKafkaRebalance(kafkaRebalance, name);
-    }
-
-    private static KafkaRebalanceBuilder defaultKafkaRebalance(KafkaRebalance kafkaRebalance, String name) {
-
-        Map<String, String> kafkaRebalanceLabels = new HashMap<>();
-        kafkaRebalanceLabels.put("strimzi.io/cluster", name);
-        return new KafkaRebalanceBuilder(kafkaRebalance)
-            .editMetadata()
-                .withName(name)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withLabels(kafkaRebalanceLabels)
-            .endMetadata();
-    }
-
-    public static KafkaRebalance createAndWaitForReadiness(KafkaRebalance kafkaRebalance) {
-        TestUtils.waitFor("KafkaRebalance creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-            () -> {
-                try {
-                    kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaRebalance);
-                    return true;
-                } catch (KubernetesClientException e) {
-                    if (e.getMessage().contains("object is being deleted")) {
-                        return false;
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-        );
-        return waitFor(deleteLater(kafkaRebalance));
-    }
-
-    public static KafkaRebalance kafkaRebalanceWithoutWait(KafkaRebalance kafkaRebalance) {
-        kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaRebalance);
-        return kafkaRebalance;
-    }
-
-    public static void deleteKafkaRebalanceWithoutWait(String resourceName) {
-        kafkaRebalanceClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
-    private static KafkaRebalance getKafkaRebalanceFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaRebalance.class);
-    }
-
-    private static KafkaRebalance waitFor(KafkaRebalance kafkaRebalance) {
-        long timeout = ResourceOperation.getTimeoutForKafkaRebalanceState(KafkaRebalanceState.PendingProposal);
-        return ResourceManager.waitForResourceStatus(kafkaRebalanceClient(), kafkaRebalance, KafkaRebalanceState.PendingProposal, timeout);
-    }
-
-    private static KafkaRebalance deleteLater(KafkaRebalance kafkaRebalance) {
-        return ResourceManager.deleteLater(kafkaRebalanceClient(), kafkaRebalance);
     }
 
     public static void replaceKafkaRebalanceResource(String resourceName, Consumer<KafkaRebalance> editor) {

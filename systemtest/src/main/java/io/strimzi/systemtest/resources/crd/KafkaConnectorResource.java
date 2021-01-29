@@ -14,6 +14,8 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -21,76 +23,42 @@ import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
+import static io.strimzi.systemtest.templates.KafkaConnectorTemplates.PATH_TO_KAFKA_CONNECTOR_CONFIG;
 
-public class KafkaConnectorResource {
-    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/source-connector.yaml";
+public class KafkaConnectorResource  implements ResourceType<KafkaConnector> {
+
+    public KafkaConnectorResource() { }
+
+    @Override
+    public String getKind() {
+        return KafkaConnector.RESOURCE_KIND;
+    }
+    @Override
+    public KafkaConnector get(String namespace, String name) {
+        return kafkaConnectorClient().inNamespace(namespace).withName(name).get();
+    }
+    @Override
+    public void create(KafkaConnector resource) {
+        kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
+    }
+    @Override
+    public void delete(KafkaConnector resource) throws Exception {
+        kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).withName(
+            resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+    }
+    @Override
+    public boolean isReady(KafkaConnector resource) {
+        return KafkaConnectorUtils.waitForConnectorReady(resource.getMetadata().getName());
+    }
+    @Override
+    public void refreshResource(KafkaConnector existing, KafkaConnector newResource) {
+        existing.setMetadata(newResource.getMetadata());
+        existing.setSpec(newResource.getSpec());
+        existing.setStatus(newResource.getStatus());
+    }
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
-    }
-
-    public static KafkaConnectorBuilder kafkaConnector(String name) {
-        return kafkaConnector(name, name, 2);
-    }
-
-    public static KafkaConnectorBuilder kafkaConnector(String name, String clusterName) {
-        return kafkaConnector(name, clusterName, 2);
-    }
-
-    public static KafkaConnectorBuilder kafkaConnector(String name, String clusterName, int maxTasks) {
-        KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(PATH_TO_KAFKA_CONNECTOR_CONFIG);
-        return defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks);
-    }
-
-    public static KafkaConnectorBuilder defaultKafkaConnector(KafkaConnector kafkaConnector, String name, String kafkaConnectClusterName, int maxTasks) {
-        return new KafkaConnectorBuilder(kafkaConnector)
-            .editOrNewMetadata()
-                .withName(name)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, kafkaConnectClusterName)
-            .endMetadata()
-            .editOrNewSpec()
-                .withTasksMax(maxTasks)
-            .endSpec();
-    }
-
-    public static KafkaConnector kafkaConnectorWithoutWait(KafkaConnector kafkaConnector) {
-        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnector);
-        return kafkaConnector;
-    }
-
-    public static void deleteKafkaConnectorWithoutWait(String connectorName) {
-        kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(connectorName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
-    public static KafkaConnector createAndWaitForReadiness(KafkaConnector kafkaConnector) {
-        TestUtils.waitFor("KafkaConnector creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-            () -> {
-                try {
-                    kafkaConnectorClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaConnector);
-                    return true;
-                } catch (KubernetesClientException e) {
-                    if (e.getMessage().contains("object is being deleted")) {
-                        return false;
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-        );
-        return waitFor(deleteLater(kafkaConnector));
-    }
-
-    private static KafkaConnector getKafkaConnectorFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaConnector.class);
-    }
-
-    private static KafkaConnector waitFor(KafkaConnector kafkaConnector) {
-        return ResourceManager.waitForResourceStatus(kafkaConnectorClient(), kafkaConnector, Ready);
-    }
-
-    private static KafkaConnector deleteLater(KafkaConnector kafkaConnector) {
-        return ResourceManager.deleteLater(kafkaConnectorClient(), kafkaConnector);
     }
 
     public static void replaceKafkaConnectorResource(String resourceName, Consumer<KafkaConnector> editor) {

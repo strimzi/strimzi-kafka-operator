@@ -1,12 +1,13 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.DoneableNetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.Spec;
+import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
@@ -102,6 +103,23 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully applied", labelSelector);
+    }
+
+    public static void applyDefaultNetworkPolicySettings(ExtensionContext extensionContext, List<String> namespaces) {
+        for (String namespace : namespaces) {
+            if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+                applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
+            } else {
+                applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+            }
+            LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
+        }
+    }
+
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> void deployNetworkPolicyForResource(ExtensionContext extensionContext, T resource, String deploymentName) {
+        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+            allowNetworkPolicySettingsForResource(extensionContext, resource, deploymentName);
+        }
     }
 
     public static NetworkPolicy applyDefaultNetworkPolicy(ExtensionContext extensionContext, String namespace, DefaultNetworkPolicy policy) {

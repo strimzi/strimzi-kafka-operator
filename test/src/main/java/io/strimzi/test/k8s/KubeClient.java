@@ -95,6 +95,11 @@ public class KubeClient {
         return client.namespaces().withName(namespace).get();
     }
 
+    public boolean namespaceExists(String namespace) {
+        return client.namespaces().list().getItems().stream().map(n -> n.getMetadata().getName())
+            .collect(Collectors.toList()).contains(namespace);
+    }
+
     public void createNamespace(String name) {
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build();
         client.namespaces().createOrReplace(ns);
@@ -618,8 +623,20 @@ public class KubeClient {
         return client.rbac().clusterRoleBindings().inNamespace(getNamespace()).delete(clusterRoleBinding);
     }
 
+    public ClusterRoleBinding getClusterRoleBinding(String name) {
+        return client.rbac().clusterRoleBindings().inNamespace(getNamespace()).withName(name).get();
+    }
+
     public List<RoleBinding> listRoleBindings() {
         return client.rbac().roleBindings().list().getItems();
+    }
+
+    public RoleBinding getRoleBinding(String name) {
+        return client.rbac().roleBindings().inNamespace(getNamespace()).withName(name).get();
+    }
+
+    public void deleteRoleBinding(String name) {
+        client.rbac().roleBindings().inNamespace(getNamespace()).withName(name).delete();
     }
 
     public <T extends HasMetadata, L extends KubernetesResourceList<T>> MixedOperation<T, L, Resource<T>> customResources(CustomResourceDefinitionContext crdContext, Class<T> resourceType, Class<L> listClass) {
@@ -659,6 +676,24 @@ public class KubeClient {
             execLatch.countDown();
         }
     }
+
+    // ====================================
+    // ---------> NETWORK POLICY <---------
+    // ====================================
+
+    public NetworkPolicy getNetworkPolicy(String name) {
+        return client.network().networkPolicies().inNamespace(getNamespace()).withName(name).get();
+    }
+
+    public NetworkPolicy createNetworkPolicy(NetworkPolicy networkPolicy) {
+        return client.network().networkPolicies().inNamespace(getNamespace()).createOrReplace(networkPolicy);
+    }
+
+    public void deleteNetworkPolicy(String name) {
+        client.network().networkPolicies().inNamespace(getNamespace()).withName(name).delete();
+    }
+
+
 
     // ======================================
     // ---------> CLUSTER SPECIFIC <---------

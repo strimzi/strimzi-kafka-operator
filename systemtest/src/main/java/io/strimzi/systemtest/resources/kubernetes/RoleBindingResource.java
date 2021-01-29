@@ -1,16 +1,15 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
-import io.fabric8.kubernetes.api.model.Doneable;
-import io.fabric8.kubernetes.api.model.rbac.DoneableRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
-
 
 public class RoleBindingResource implements ResourceType<RoleBinding> {
 
@@ -41,18 +40,25 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
         existing.setMetadata(newResource.getMetadata());
     }
 
-    public static DoneableRoleBinding roleBinding(ExtensionContext extensionContext, String yamlPath, String namespace) {
+    public static RoleBinding roleBinding(ExtensionContext extensionContext, String yamlPath, String namespace, String clientNamespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
-        return roleBinding(extensionContext, new RoleBindingBuilder(roleBinding)
-            .editFirstSubject()
-            .withNamespace(namespace)
-            .endSubject().build());
+        if (Environment.isNamespaceRbacScope()) {
+            LOGGER.info("Replacing ClusterRole RoleRef for Role RoleRef");
+            roleBinding.getRoleRef().setKind("Role");
+        }
+        return roleBinding(
+            new RoleBindingBuilder(roleBinding)
+                .editFirstSubject()
+                .withNamespace(namespace)
+                .endSubject()
+                .build(),
+            clientNamespace);
     }
 
-    private static DoneableRoleBinding roleBinding(ExtensionContext extensionContext, RoleBinding roleBinding) {
-        ResourceManager.getInstance().createResource(extensionContext, roleBinding);
-        return new DoneableRoleBinding(roleBinding);
+    private static RoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
+        ResourceManager.kubeClient().namespace(clientNamespace).createOrReplaceRoleBinding(roleBinding);
+        return roleBinding;
     }
 
     private static RoleBinding getRoleBindingFromYaml(String yamlPath) {

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -11,6 +12,10 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
+import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,67 +25,39 @@ import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 
-public class KafkaTopicResource {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaTopicResource.class);
+public class KafkaTopicResource implements ResourceType<KafkaTopic> {
 
-    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/topic/kafka-topic.yaml";
+    public KafkaTopicResource() {}
 
+    @Override
+    public String getKind() {
+        return KafkaTopic.RESOURCE_KIND;
+    }
+    @Override
+    public KafkaTopic get(String namespace, String name) {
+        return kafkaTopicClient().inNamespace(namespace).withName(name).get();
+    }
+    @Override
+    public void create(KafkaTopic resource) {
+        kafkaTopicClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
+    }
+    @Override
+    public void delete(KafkaTopic resource) throws Exception {
+        kafkaTopicClient().inNamespace(resource.getMetadata().getNamespace()).withName(
+            resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+    }
+    @Override
+    public boolean isReady(KafkaTopic resource) {
+        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), resource, CustomResourceStatus.Ready);
+    }
+    @Override
+    public void refreshResource(KafkaTopic existing, KafkaTopic newResource) {
+        existing.setMetadata(newResource.getMetadata());
+        existing.setSpec(newResource.getSpec());
+        existing.setStatus(newResource.getStatus());
+    }
     public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> kafkaTopicClient() {
         return Crds.topicOperation(ResourceManager.kubeClient().getClient());
-    }
-
-    public static KafkaTopicBuilder topic(String clusterName, String topicName) {
-        return defaultTopic(clusterName, topicName, 1, 1, 1);
-    }
-
-    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions) {
-        return defaultTopic(clusterName, topicName, partitions, 1, 1);
-    }
-
-    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions, int replicas) {
-        return defaultTopic(clusterName, topicName, partitions, replicas, replicas);
-    }
-
-    public static KafkaTopicBuilder topic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
-        return defaultTopic(clusterName, topicName, partitions, replicas, minIsr);
-    }
-
-    public static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas, int minIsr) {
-        KafkaTopic kafkaTopic = getKafkaTopicFromYaml(PATH_TO_KAFKA_TOPIC_CONFIG);
-        return new KafkaTopicBuilder(kafkaTopic)
-            .withNewMetadata()
-                .withName(topicName)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, clusterName)
-            .endMetadata()
-            .editSpec()
-                .withPartitions(partitions)
-                .withReplicas(replicas)
-                .addToConfig("min.insync.replicas", minIsr)
-            .endSpec();
-    }
-
-    public static KafkaTopic createAndWaitForReadiness(KafkaTopic topic) {
-        kafkaTopicClient().inNamespace(topic.getMetadata().getNamespace()).createOrReplace(topic);
-        LOGGER.info("Created KafkaTopic {}", topic.getMetadata().getName());
-        return waitFor(deleteLater(topic));
-    }
-
-    public static KafkaTopic topicWithoutWait(KafkaTopic kafkaTopic) {
-        kafkaTopicClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaTopic);
-        return kafkaTopic;
-    }
-
-    private static KafkaTopic getKafkaTopicFromYaml(String yamlPath) {
-        return TestUtils.configFromYaml(yamlPath, KafkaTopic.class);
-    }
-
-    private static KafkaTopic waitFor(KafkaTopic kafkaTopic) {
-        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), kafkaTopic, Ready);
-    }
-
-    private static KafkaTopic deleteLater(KafkaTopic kafkaTopic) {
-        return ResourceManager.deleteLater(kafkaTopicClient(), kafkaTopic);
     }
 
     public static void replaceTopicResource(String resourceName, Consumer<KafkaTopic> editor) {

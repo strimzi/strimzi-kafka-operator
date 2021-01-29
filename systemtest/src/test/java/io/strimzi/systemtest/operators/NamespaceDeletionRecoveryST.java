@@ -19,6 +19,7 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.templates.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 
@@ -59,7 +61,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      */
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
-    void testTopicAvailable() {
+    void testTopicAvailable(ExtensionContext extensionContext) {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         prepareEnvironmentForRecovery(topicName, MESSAGE_COUNT);
@@ -80,7 +82,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).createOrReplace(kafkaTopic);
         }
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(CLUSTER_NAME, 3 , 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()

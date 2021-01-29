@@ -4,6 +4,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.templates.KafkaTemplates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,7 +20,7 @@ public class MethodCheck extends AbstractST {
         LOGGER.info("This is mine {}", mapTestWithClusterNames.get(extensionContext.getDisplayName()));
 
 
-        resourceManager.createResource(extensionContext, KafkaResource.kafkaEphemeral(mapTestWithClusterNames.get(extensionContext.getDisplayName()), 1 ,1));
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(mapTestWithClusterNames.get(extensionContext.getDisplayName()), 1 ,1).build());
 
         LOGGER.info("Done 1");
     }
@@ -28,13 +29,13 @@ public class MethodCheck extends AbstractST {
     void test2Kafka(ExtensionContext extensionContext) {
         LOGGER.info("This is mine {}", mapTestWithClusterNames.get(extensionContext.getDisplayName()));
 
-        resourceManager.createResource(extensionContext, KafkaResource.kafkaEphemeral(mapTestWithClusterNames.get(extensionContext.getDisplayName()), 1 ,1));
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(mapTestWithClusterNames.get(extensionContext.getDisplayName()), 1 ,1).build());
 
         LOGGER.info("Done 2");
     }
 
     @BeforeAll
-    void setup() {
-        installClusterOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
     }
 }

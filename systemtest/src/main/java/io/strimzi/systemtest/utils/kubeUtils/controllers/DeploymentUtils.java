@@ -164,13 +164,14 @@ public class DeploymentUtils {
      * @param deploymentName The name of the Deployment.
      * @param expectPods The expected number of pods.
      */
-    public static void waitForDeploymentAndPodsReady(String deploymentName, int expectPods) {
+    public static boolean waitForDeploymentAndPodsReady(String deploymentName, int expectPods) {
         waitForDeploymentReady(deploymentName);
 
         LOGGER.info("Waiting for {} Pod(s) of Deployment {} to be ready", expectPods, deploymentName);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), expectPods, true,
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(deploymentName)));
         LOGGER.info("Deployment {} is ready", deploymentName);
+        return true;
     }
 
     /**

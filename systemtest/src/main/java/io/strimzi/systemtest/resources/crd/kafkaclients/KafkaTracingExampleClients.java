@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 
 import java.util.HashMap;
 import java.util.Map;
