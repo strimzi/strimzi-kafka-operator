@@ -58,6 +58,8 @@ The `status` property of a resource provides information on the resource's:
 
 The `status` property also provides resource-specific information. For example:
 
+* `KafkaStatus` provides information on listener addresses and the id of the Kafka cluster.
+
 * `KafkaConnectStatus` provides the REST API endpoint for Kafka Connect connectors.
 
 * `KafkaUserStatus` provides the user name of the Kafka user and the `Secret` in which their credentials are stored.
