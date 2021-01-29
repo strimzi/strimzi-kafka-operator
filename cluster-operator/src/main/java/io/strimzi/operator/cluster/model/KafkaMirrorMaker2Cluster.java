@@ -216,6 +216,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
         final StringBuilder clusterAliases = new StringBuilder();
         final StringBuilder clustersTrustedCerts = new StringBuilder();
+        boolean hasClusterWithTls = false;
         final StringBuilder clustersTlsAuthCerts = new StringBuilder();
         final StringBuilder clustersTlsAuthKeys = new StringBuilder();
         final StringBuilder clustersSaslPasswordFiles = new StringBuilder();
@@ -231,6 +232,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 clusterAliases.append(";");
             }
             clusterAliases.append(clusterAlias);
+
+            if (mirrorMaker2Cluster.getTls() != null)   {
+                hasClusterWithTls = true;
+            }
 
             getClusterTrustedCerts(clustersTrustedCerts, mirrorMaker2Cluster, clusterAlias);
 
@@ -263,8 +268,11 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS, clusterAliases.toString()));
 
-        if (clustersTrustedCerts.length() > 0) {
+        if (hasClusterWithTls) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_CLUSTERS, "true"));
+        }
+
+        if (clustersTrustedCerts.length() > 0) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS, clustersTrustedCerts.toString()));
         }
 
