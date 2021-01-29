@@ -5,7 +5,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
-import io.strimzi.api.kafka.model.DoneableKafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -21,7 +20,7 @@ public class KafkaMirrorMakerTemplates {
 
     private KafkaMirrorMakerTemplates() {}
 
-    public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, DoneableKafkaMirrorMaker, Resource<KafkaMirrorMaker, DoneableKafkaMirrorMaker>> kafkaMirrorMakerClient() {
+    public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> kafkaMirrorMakerClient() {
         return Crds.mirrorMakerOperation(ResourceManager.kubeClient().getClient());
     }
 

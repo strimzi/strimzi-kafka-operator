@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.resources.operator;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;

@@ -17,7 +17,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -33,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -249,7 +249,7 @@ public class NetworkPoliciesST extends AbstractST {
     }
 
     @Test
-    void testNPWhenOperatorIsInDifferentNamespaceThanOperand() {
+    void testNPWhenOperatorIsInDifferentNamespaceThanOperand(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
         String secondNamespace = "second-" + NAMESPACE;
@@ -264,10 +264,10 @@ public class NetworkPoliciesST extends AbstractST {
 
         cluster.createNamespace(secondNamespace);
 
-        prepareEnvForOperator(NAMESPACE, Arrays.asList(NAMESPACE, secondNamespace));
+        prepareEnvForOperator(extensionContext, NAMESPACE, Arrays.asList(NAMESPACE, secondNamespace));
 
         // Apply rolebindings in CO namespace
-        applyBindings(NAMESPACE);
+        applyBindings(extensionContext, NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
         List<ClusterRoleBinding> clusterRoleBindingList = KubernetesResource.clusterRoleBindingsForAllNamespaces(NAMESPACE);

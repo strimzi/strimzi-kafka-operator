@@ -7,7 +7,6 @@ package io.strimzi.systemtest.operators;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;

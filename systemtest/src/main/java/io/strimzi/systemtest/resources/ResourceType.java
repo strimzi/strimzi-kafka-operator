@@ -1,6 +1,5 @@
 package io.strimzi.systemtest.resources;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public interface ResourceType<T extends HasMetadata>{

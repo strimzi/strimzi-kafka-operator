@@ -29,11 +29,6 @@ public class HttpBridgeAbstractST extends AbstractST {
     protected WebClient client;
     protected static KafkaBridgeExampleClients kafkaBridgeClientJob;
 
-    void deployClusterOperator(String namespace) {
-        ResourceManager.setClassResources();
-        installClusterOperator(namespace);
-    }
-
     @BeforeAll
     void createBridgeClient() {
         kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()

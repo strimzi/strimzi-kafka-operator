@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.DoneableKafka;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
@@ -38,7 +37,7 @@ public class KafkaTemplates {
 
     private KafkaTemplates() {};
 
-    public static MixedOperation<Kafka, KafkaList, DoneableKafka, Resource<Kafka, DoneableKafka>> kafkaClient() {
+    public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {
         return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
     }
 

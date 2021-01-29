@@ -1,7 +1,5 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
-import io.fabric8.kubernetes.api.model.Doneable;
-import io.fabric8.kubernetes.api.model.batch.DoneableJob;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.systemtest.Constants;
@@ -40,24 +38,20 @@ public class JobResource implements ResourceType<Job> {
         existing.setStatus(newResource.getStatus());
     }
 
-    public static DoneableJob deployNewJob(Job job) {
-        return new DoneableJob(job, kubernetesJob -> {
-            TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        ResourceManager.kubeClient().createJob(kubernetesJob);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+    public static Job deployNewJob(Job job) {
+        TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
+            () -> {
+                try {
+                    ResourceManager.kubeClient().createJob(job);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
                 }
-            );
-            return kubernetesJob;
-        });
+            });
+        return job;
     }
-
 }

@@ -9,17 +9,50 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
-public class BundleResource {
+public class BundleResource implements ResourceType<Deployment> {
+    private static final Logger LOGGER = LogManager.getLogger(BundleResource.class);
+
     public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
-    public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout) {
-        return defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    @Override
+    public String getKind() {
+        return "Deployment";
+    }
+    @Override
+    public Deployment get(String namespace, String name) {
+        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+    }
+    @Override
+    public void create(Deployment resource) {
+        ResourceManager.kubeClient().createOrReplaceDeployment(resource);
+    }
+    @Override
+    public void delete(Deployment resource) throws Exception {
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getName());
+    }
+    @Override
+    public boolean isReady(Deployment resource) {
+        return DeploymentUtils.waitForDeploymentReady(resource.getMetadata().getName());
+    }
+    @Override
+    public void refreshResource(Deployment existing, Deployment newResource) {
+        existing.setMetadata(newResource.getMetadata());
+        existing.setSpec(newResource.getSpec());
+        existing.setStatus(newResource.getStatus());
+    }
+    public static Deployment clusterOperator(String namespace, long operationTimeout) {
+        return defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build();
     }
 
     public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
@@ -36,7 +69,7 @@ public class BundleResource {
 
     private static DeploymentBuilder defaultClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
 
-        Deployment clusterOperator = KubernetesResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
+        Deployment clusterOperator = DeploymentResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
 
         // Get env from config file
         List<EnvVar> envVars = clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
@@ -90,6 +123,6 @@ public class BundleResource {
     }
 
     public static Deployment createAndWaitForReadiness(Deployment co) {
-        return KubernetesResource.deployNewDeployment(co);
+        return DeploymentResource.deployNewDeployment(co);
     }
 }

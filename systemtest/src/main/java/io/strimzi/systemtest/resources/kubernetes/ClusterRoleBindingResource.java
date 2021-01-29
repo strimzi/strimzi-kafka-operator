@@ -1,12 +1,11 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
-import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.rbac.DoneableClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

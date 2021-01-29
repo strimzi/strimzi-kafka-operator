@@ -112,18 +112,24 @@ public class TimeMeasuringSystem {
             id = createOperationsID(Operation.CO_DELETION);
         }
         try {
-            measuringMap.get(testClass).get(testName).get(id).setEndTime(System.currentTimeMillis());
+            LOGGER.info(testClass);
+            LOGGER.info(testName);
+            LOGGER.info(measuringMap.toString());
+
+            synchronized (this) {
+                measuringMap.get(testClass).get(testName).get(id).setEndTime(System.currentTimeMillis());
+            }
             LOGGER.info("End time of operation {} is correctly stored", id);
         } catch (NullPointerException | ClassCastException ex) {
-            LOGGER.warn("End time of operation {} is not set due to exception: {}", id, ex);
+            LOGGER.error("End time of operation {} is not set due to exception: {}", id, ex);
         }
     }
 
-    private void setTestName(String testName) {
+    public void setTestName(String testName) {
         this.testName = testName;
     }
 
-    private void setTestClass(String testClass) {
+    public void setTestClass(String testClass) {
         this.testClass = testClass;
     }
 

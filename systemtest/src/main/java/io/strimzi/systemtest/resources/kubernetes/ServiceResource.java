@@ -1,7 +1,5 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
-import io.fabric8.kubernetes.api.model.Doneable;
-import io.fabric8.kubernetes.api.model.DoneableService;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -60,16 +58,16 @@ public class ServiceResource implements ResourceType<Service> {
             .endSpec();
     }
 
-    public static DoneableService createServiceResource(ExtensionContext extensionContext, String appName, int port, String clientNamespace, String transportProtocol) {
+    public static Service createServiceResource(ExtensionContext extensionContext, String appName, int port, String clientNamespace, String transportProtocol) {
         Service service = getSystemtestsServiceResource(appName, port, clientNamespace, transportProtocol).build();
         LOGGER.info("Creating Service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.getInstance().createResource(extensionContext, service);
-        return new DoneableService(service);
+        return service;
     }
 
-    public static DoneableService createServiceResource(ExtensionContext extensionContext, Service service, String clientNamespace) {
+    public static Service createServiceResource(ExtensionContext extensionContext, Service service, String clientNamespace) {
         LOGGER.info("Creating Service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         ResourceManager.getInstance().createResource(extensionContext, service);
-        return new DoneableService(service);
+        return service;
     }
 }

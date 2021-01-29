@@ -8,8 +8,8 @@ import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.kubernetes.JobResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -310,6 +310,6 @@ public class KafkaBasicExampleClients {
     }
 
     public Job createAndWaitForReadiness(Job job) {
-        return KubernetesResource.deployNewJob(job);
+        return JobResource.deployNewJob(job);
     }
 }
