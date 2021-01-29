@@ -638,7 +638,7 @@ class ConnectS2IST extends AbstractST {
         assertThat(actualVersion, is(TestKafkaVersion.getKafkaVersions().get(1).version()));
 
         LOGGER.info("===== CONNECTS2I CERT CHANGE =====");
-        InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/cluster-ca.crt");
+        InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/expired-cluster-ca.crt");
         String clusterCaCert = TestUtils.readResource(secretInputStream);
         SecretUtils.createSecret("my-secret", "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
 
