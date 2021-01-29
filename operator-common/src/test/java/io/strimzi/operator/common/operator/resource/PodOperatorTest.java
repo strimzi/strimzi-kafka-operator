@@ -27,7 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
-        AbtractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, PodResource<Pod>> {
+        AbstractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, PodResource<Pod>> {
     @Test
     public void testCreateReadUpdate(VertxTestContext context) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);

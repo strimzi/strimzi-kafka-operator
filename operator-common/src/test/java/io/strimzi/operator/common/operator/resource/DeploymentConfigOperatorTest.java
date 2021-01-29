@@ -12,8 +12,6 @@ import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.when;
 
@@ -53,33 +51,5 @@ public class DeploymentConfigOperatorTest extends ScalableResourceOperatorTest<O
     @Override
     protected DeploymentConfigOperator createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
         return new DeploymentConfigOperator(vertx, mockClient);
-    }
-
-    @Test
-    @Override
-    public void testWaitUntilReadySuccessfulImmediately(VertxTestContext context) {
-        // This test has to be skipped because of https://github.com/fabric8io/kubernetes-client/issues/2537 which
-        // doesn't allow easy mocking of the readiness states
-        // TODO: This dummy method should be removed after https://github.com/fabric8io/kubernetes-client/issues/2537 is fixed
-        context.completeNow();
-
-    }
-
-    @Test
-    @Override
-    public void testWaitUntilReadySuccessfulAfterOneCall(VertxTestContext context) {
-        // This test has to be skipped because of https://github.com/fabric8io/kubernetes-client/issues/2537 which
-        // doesn't allow easy mocking of the readiness states
-        // TODO: This dummy method should be removed after https://github.com/fabric8io/kubernetes-client/issues/2537 is fixed
-        context.completeNow();
-    }
-
-    @Test
-    @Override
-    public void testWaitUntilReadySuccessfulAfterTwoCalls(VertxTestContext context) {
-        // This test has to be skipped because of https://github.com/fabric8io/kubernetes-client/issues/2537 which
-        // doesn't allow easy mocking of the readiness states
-        // TODO: This dummy method should be removed after https://github.com/fabric8io/kubernetes-client/issues/2537 is fixed
-        context.completeNow();
     }
 }

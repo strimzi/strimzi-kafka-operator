@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.internal.readiness.OpenShiftReadiness;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
@@ -28,7 +30,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
+public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList<T>, R extends Resource<T>> extends AbstractResourceOperatorTest<C, T, L, R> {
 
     @Override
@@ -135,7 +137,11 @@ public abstract class AbtractReadyResourceOperatorTest<C extends KubernetesClien
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000)
             .onComplete(context.succeeding(v -> {
-                verify(mockResource, times(Readiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
+                if (clientType() == OpenShiftClient.class)    {
+                    verify(mockResource, times(OpenShiftReadiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
+                } else {
+                    verify(mockResource, times(Readiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
+                }
 
                 if (Readiness.isReadinessApplicable(resource.getClass())) {
                     verify(mockResource, times(unreadyCount + 1)).isReady();
