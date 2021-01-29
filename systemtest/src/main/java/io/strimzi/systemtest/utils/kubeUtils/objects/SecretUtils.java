@@ -14,10 +14,14 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -162,5 +166,18 @@ public class SecretUtils {
             () -> kubeClient().getSecret(secretName) == null);
 
         LOGGER.info("Secret: {} successfully deleted", secretName);
+    }
+
+    public static X509Certificate getCertificateFromSecret(Secret secret, String dataKey) {
+        String caCert = secret.getData().get(dataKey);
+        byte[] decoded = Base64.getDecoder().decode(caCert);
+        X509Certificate cacert = null;
+        try {
+            cacert = (X509Certificate)
+                    CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(decoded));
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        }
+        return cacert;
     }
 }

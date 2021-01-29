@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.AclOperation;
+import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -57,13 +58,16 @@ import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -1326,6 +1330,124 @@ class SecurityST extends AbstractST {
             LOGGER.info("Checking that {} secret is deleted", secretName);
             assertNull(kubeClient().getSecret(secretName));
         });
+    }
+
+    @Test
+    void testClusterCACertRenew() {
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
+            .editOrNewSpec()
+                .withNewClusterCa()
+                    .withRenewalDays(15)
+                    .withValidityDays(20)
+                .endClusterCa()
+            .endSpec()
+            .build());
+
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+
+        Secret clusterCASecret = kubeClient().getSecret(clusterName + "-cluster-ca-cert");
+        X509Certificate cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
+        Date initialCertStartTime = cacert.getNotBefore();
+        Date initialCertEndTime = cacert.getNotAfter();
+
+        // Check Broker kafka certificate dates
+        Secret brokerCertCreationSecret = kubeClient().getSecret(clusterName + "-kafka-brokers");
+        X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, clusterName + "-kafka-0.crt");
+        Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
+        Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
+
+        LOGGER.info("Change of kafka validity and renewal days - reconciliation should start.");
+        CertificateAuthority newClusterCA = new CertificateAuthority();
+        newClusterCA.setRenewalDays(150);
+        newClusterCA.setValidityDays(200);
+        KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().setClusterCa(newClusterCA));
+
+        // Wait for reconciliation and verify certs have been updated
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+
+        // Read renewed secret/certs again
+        clusterCASecret = kubeClient().getSecret(clusterName + "-cluster-ca-cert");
+        cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
+        Date changedCertStartTime = cacert.getNotBefore();
+        Date changedCertEndTime = cacert.getNotAfter();
+
+        // Check renewed Broker kafka certificate dates
+        brokerCertCreationSecret = kubeClient().getSecret(clusterName + "-kafka-brokers");
+        kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, clusterName + "-kafka-0.crt");
+        Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
+        Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
+
+        LOGGER.info("Initial ClusterCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
+        LOGGER.info("Changed ClusterCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
+        LOGGER.info("KafkaBroker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
+        LOGGER.info("KafkaBroker cert changed dates:  " + changedKafkaBrokerCertStartTime + " --> " + changedKafkaBrokerCertEndTime);
+
+        String msg = "Error: original cert-end date: '" + initialCertEndTime +
+                "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'!";
+        assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
+        assertThat("Broker certificates start dates have not been renewed.",
+                initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
+        assertThat("Broker certificates end dates have not been renewed.",
+                initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+    }
+
+    @Test
+    void testClientsCACertRenew() {
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
+            .editOrNewSpec()
+                .withNewClientsCa()
+                    .withRenewalDays(15)
+                    .withValidityDays(20)
+                .endClientsCa()
+            .endSpec()
+            .build());
+
+        String username = "strimzi-tls-user-" + new Random().nextInt(Integer.MAX_VALUE);
+        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, username).build());
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+
+        // Check initial clientsCA validity days
+        Secret clientsCASecret = kubeClient().getSecret(clusterName + "-clients-ca-cert");
+        X509Certificate cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
+        Date initialCertStartTime = cacert.getNotBefore();
+        Date initialCertEndTime = cacert.getNotAfter();
+
+        // Check initial kafkauser validity days
+        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(username), "user.crt");
+        Date initialKafkaUserCertStartTime = userCert.getNotBefore();
+        Date initialKafkaUserCertEndTime = userCert.getNotAfter();
+
+        LOGGER.info("Change of kafka validity and renewal days - reconciliation should start.");
+        CertificateAuthority newClientsCA = new CertificateAuthority();
+        newClientsCA.setRenewalDays(150);
+        newClientsCA.setValidityDays(200);
+        KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().setClientsCa(newClientsCA));
+
+        // Wait for reconciliation and verify certs have been updated
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+
+        // Read renewed secret/certs again
+        clientsCASecret = kubeClient().getSecret(clusterName + "-clients-ca-cert");
+        cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
+        Date changedCertStartTime = cacert.getNotBefore();
+        Date changedCertEndTime = cacert.getNotAfter();
+
+        userCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(username), "user.crt");
+        Date changedKafkaUserCertStartTime = userCert.getNotBefore();
+        Date changedKafkaUserCertEndTime = userCert.getNotAfter();
+
+        LOGGER.info("Initial ClientsCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
+        LOGGER.info("Changed ClientsCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
+        LOGGER.info("Initial userCert dates: " + initialKafkaUserCertStartTime + " --> " + initialKafkaUserCertEndTime);
+        LOGGER.info("Changed userCert dates: " + changedKafkaUserCertStartTime + " --> " + changedKafkaUserCertEndTime);
+
+        String msg = "Error: original cert-end date: '" + initialCertEndTime +
+                "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'";
+        assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
+        assertThat("UserCert start date has been renewed",
+                initialKafkaUserCertStartTime.compareTo(changedKafkaUserCertStartTime) < 0);
+        assertThat("UserCert end date has been renewed",
+                initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
     @BeforeAll
