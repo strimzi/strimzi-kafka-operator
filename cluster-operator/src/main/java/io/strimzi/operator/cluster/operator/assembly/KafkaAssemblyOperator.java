@@ -377,7 +377,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final Kafka kafkaAssembly;
         private final Reconciliation reconciliation;
 
-        private String currentVersion;
+        private String currentStsVersion;
         private KafkaVersionChange versionChange;
         private String highestLogMessageFormatVersion;
         private String highestInterBrokerProtocolVersion;
@@ -1451,7 +1451,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         kafkaCurrentReplicas = 0;
                         if (sts != null && sts.getSpec() != null)   {
                             kafkaCurrentReplicas = sts.getSpec().getReplicas();
-                            this.currentVersion = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
+                            this.currentStsVersion = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
                         }
 
                         this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage, kafkaCurrentReplicas);
@@ -1460,48 +1460,48 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         //return Future.succeededFuture(this);
                         return podOperations.listAsync(namespace, this.kafkaCluster.getSelectorLabels());
                     }).compose(pods -> {
-                        String lowestKafkaVersion = currentVersion;
-                        String highestKafkaVersion = currentVersion;
+                        String lowestKafkaVersion = currentStsVersion;
+                        String highestKafkaVersion = currentStsVersion;
 
                         for (Pod pod : pods)    {
                             // Collect the different annotations from the pods
-                            String kafkaVersionAnnotation = Annotations.stringAnnotation(pod, ANNO_STRIMZI_IO_KAFKA_VERSION, null);
-                            String logMessageFormatAnnotation = Annotations.stringAnnotation(pod, KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, null);
-                            String interBrokerProtocolAnnotation = Annotations.stringAnnotation(pod, KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, null);
+                            String currentVersion = Annotations.stringAnnotation(pod, ANNO_STRIMZI_IO_KAFKA_VERSION, null);
+                            String currentMessageFormat = Annotations.stringAnnotation(pod, KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, null);
+                            String currentIbp = Annotations.stringAnnotation(pod, KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, null);
 
                             // We find the highest and lowest used Kafka version. This is used to detect any upgrades or
                             // downgrades which failed in the middle and continue with them.
-                            if (kafkaVersionAnnotation != null) {
+                            if (currentVersion != null) {
                                 if (highestKafkaVersion == null)  {
-                                    highestKafkaVersion = kafkaVersionAnnotation;
-                                } else if (compareDottedVersions(highestKafkaVersion, kafkaVersionAnnotation) < 0) {
-                                    highestKafkaVersion = kafkaVersionAnnotation;
+                                    highestKafkaVersion = currentVersion;
+                                } else if (compareDottedVersions(highestKafkaVersion, currentVersion) < 0) {
+                                    highestKafkaVersion = currentVersion;
                                 }
 
                                 if (lowestKafkaVersion == null)  {
-                                    lowestKafkaVersion = kafkaVersionAnnotation;
-                                } else if (compareDottedVersions(lowestKafkaVersion, kafkaVersionAnnotation) > 0) {
-                                    lowestKafkaVersion = kafkaVersionAnnotation;
+                                    lowestKafkaVersion = currentVersion;
+                                } else if (compareDottedVersions(lowestKafkaVersion, currentVersion) > 0) {
+                                    lowestKafkaVersion = currentVersion;
                                 }
                             }
 
                             // We find the highest used log.message.format.version. This is later used to validate
                             // upgrades or downgrades.
-                            if (logMessageFormatAnnotation != null) {
+                            if (currentMessageFormat != null) {
                                 if (highestLogMessageFormatVersion == null)  {
-                                    highestLogMessageFormatVersion = logMessageFormatAnnotation;
-                                } else if (compareDottedVersions(highestLogMessageFormatVersion, logMessageFormatAnnotation) < 0) {
-                                    highestLogMessageFormatVersion = logMessageFormatAnnotation;
+                                    highestLogMessageFormatVersion = currentMessageFormat;
+                                } else if (compareDottedVersions(highestLogMessageFormatVersion, currentMessageFormat) < 0) {
+                                    highestLogMessageFormatVersion = currentMessageFormat;
                                 }
                             }
 
                             // We find the highest used inter.broker.protocol.version. This is later used to validate
                             // upgrades or downgrades.
-                            if (interBrokerProtocolAnnotation != null)  {
+                            if (currentIbp != null)  {
                                 if (highestInterBrokerProtocolVersion == null)  {
-                                    highestInterBrokerProtocolVersion = interBrokerProtocolAnnotation;
-                                } else if (compareDottedVersions(highestInterBrokerProtocolVersion, interBrokerProtocolAnnotation) < 0) {
-                                    highestInterBrokerProtocolVersion = interBrokerProtocolAnnotation;
+                                    highestInterBrokerProtocolVersion = currentIbp;
+                                } else if (compareDottedVersions(highestInterBrokerProtocolVersion, currentIbp) < 0) {
+                                    highestInterBrokerProtocolVersion = currentIbp;
                                 }
                             }
                         }
@@ -1509,8 +1509,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // We decide what is the current Kafka version used and create the KafkaVersionChange object
                         // describing the situation.
                         if (lowestKafkaVersion == null)   {
-                            // No version found in Pods or StatefulSet => New cluster or cluster with deleted
-                            // StatefulSet. We treat it as if current version and desired are the same which results in
+                            // No version found in Pods or StatefulSet => This means we are dealing with a brand new
+                            // Kafka cluster or a Kafka cluster with deleted StatefulSet and Pods. New cluster does not
+                            // need an upgrade. And cluster without StatefulSet / Pods cannot be rolled. So we can just
+                            // deploy a new one with the desired version. Therefore we can set the version change to
                             // noop.
                             this.versionChange = new KafkaVersionChange(kafkaCluster.getKafkaVersion(), kafkaCluster.getKafkaVersion());
                         } else if (lowestKafkaVersion.equals(highestKafkaVersion)) {
