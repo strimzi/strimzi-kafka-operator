@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.connect;
 
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -360,10 +361,12 @@ class ConnectBuilderST extends AbstractST {
 
         if (cluster.isNotKubernetes()) {
             outputRegistry = "image-registry.openshift-image-registry.svc:5000/";
+            imageName = outputRegistry + NAMESPACE + "/connect-build:latest";
         } else {
-            LOGGER.warn("For running these tests on K8s you have to have internal registry deployed on localhost:5000");
-            outputRegistry = "localhost:5000/";
+            LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
+            Service service = kubeClient("kube-system").getService("registry");
+            outputRegistry = service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().get().getPort();
+            imageName = outputRegistry + "/connect-build:latest";
         }
-        imageName = outputRegistry + NAMESPACE + "/connect-build:latest";
     }
 }
