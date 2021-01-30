@@ -164,7 +164,7 @@ public class KafkaConnectBuild extends AbstractModel {
     private static void validateAdditionalKanikoOptions(List<String> desiredOptions)    {
         List<String> allowedOptions = Arrays.asList(DockerOutput.ALLOWED_KANIKO_OPTIONS.split("\\s*,+\\s*"));
         List<String> forbiddenOptions = desiredOptions.stream()
-                .filter(option -> !allowedOptions.stream().anyMatch(allowed -> option.startsWith(allowed)))
+                .filter(option -> allowedOptions.stream().noneMatch(option::startsWith))
                 .collect(Collectors.toList());
 
         if (!forbiddenOptions.isEmpty())    {

@@ -492,9 +492,7 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> {
-            KafkaConnectBuild.fromCrd(kc, VERSIONS);
-        });
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaConnectBuild.fromCrd(kc, VERSIONS));
 
         assertThat(e.getMessage(), containsString(".spec.build.additionalKanikoOptions contains forbidden options: [--build-arg, --digest-file=/dev/null]"));
     }
