@@ -1553,7 +1553,7 @@ class KafkaST extends AbstractST {
         KafkaUtils.waitForKafkaReady(clusterName);
 
         pvcs = kubeClient().listPersistentVolumeClaims().stream().filter(
-            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
+            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
 
         assertThat(pvcs.size(), is(7));
 
