@@ -4,7 +4,7 @@
 
 [id='assembly-deployment-configuration-{context}']
 
-= Deployment configuration
+= Configuring a Strimzi deployment
 
 This chapter describes how to configure different aspects of the supported deployments using custom resources:
 

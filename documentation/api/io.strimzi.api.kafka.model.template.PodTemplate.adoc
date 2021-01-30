@@ -1,3 +1,5 @@
+Configures the template for Kafka pods.
+
 .Example `PodTemplate` configuration
 [source,yaml,subs=attributes+]
 ----

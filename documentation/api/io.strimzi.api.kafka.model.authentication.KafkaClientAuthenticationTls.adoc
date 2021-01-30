@@ -1,4 +1,4 @@
-To use TLS client authentication, set the `type` property to the value `tls`.
+To configure TLS client authentication, set the `type` property to the value `tls`.
 TLS client authentication uses a TLS certificate to authenticate.
 
 === `certificateAndKey`

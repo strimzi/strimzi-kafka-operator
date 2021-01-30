@@ -1,4 +1,4 @@
-To use OAuth client authentication, set the `type` property to the value `oauth`.
+To configure OAuth client authentication, set the `type` property to `oauth`.
 
 OAuth authentication can be configured using one of the following options:
 

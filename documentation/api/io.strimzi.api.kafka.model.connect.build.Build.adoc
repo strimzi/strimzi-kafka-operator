@@ -45,9 +45,9 @@ spec:
       pushSecret: my-registry-credentials # <3>
   #...
 ----
-<1> (Required) Type of output used by Strimzi. 
-<2> (Required) Full name of the image used, including the repository and tag. 
-<3> (Optional) Name of the secret with the container registry credentials. 
+<1> (Required) Type of output used by Strimzi.
+<2> (Required) Full name of the image used, including the repository and tag.
+<3> (Optional) Name of the secret with the container registry credentials.
 
 .Using OpenShift ImageStream
 
@@ -71,8 +71,8 @@ spec:
       image: my-connect-build:latest # <2>
   #...
 ----
-<1> (Required) Type of output used by Strimzi. 
-<2> (Required) Name of the ImageStream and tag. 
+<1> (Required) Type of output used by Strimzi.
+<2> (Required) Name of the ImageStream and tag.
 
 === `plugins`
 
@@ -110,7 +110,7 @@ spec:
             sha512sum: a9b1ac63e3284bea7836d7d24d84208c49cdf5600070e6bd1535de654f6920b74ad950d51733e8020bf4187870699819f54ef5859c7846ee4081507f48873479
   #...
 ----
-<1> (Required) List of connector plugins and their artifacts. 
+<1> (Required) List of connector plugins and their artifacts.
 
 Strimzi supports two types of artifacts:
 * JAR files, which are downloaded and used directly
@@ -150,9 +150,9 @@ spec:
             url: https://my-domain.tld/my-jar2.jar
   #...
 ----
-<1> (Required) Type of artifact. 
-<2> (Required) URL from which the artifact is downloaded. 
-<3> (Optional) SHA-512 checksum to verify the artifact. 
+<1> (Required) Type of artifact.
+<2> (Required) URL from which the artifact is downloaded.
+<3> (Optional) SHA-512 checksum to verify the artifact.
 
 .Using TGZ artifacts
 
@@ -184,6 +184,6 @@ spec:
             sha512sum: 158...jg10 # <3>
   #...
 ----
-<1> (Required) Type of artifact. 
-<2> (Required) URL from which the archive is downloaded. 
-<3> (Optional) SHA-512 checksum to verify the artifact.  
+<1> (Required) Type of artifact.
+<2> (Required) URL from which the archive is downloaded.
+<3> (Optional) SHA-512 checksum to verify the artifact.

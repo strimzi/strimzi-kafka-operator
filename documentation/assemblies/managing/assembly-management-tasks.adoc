@@ -24,3 +24,6 @@ include::assembly-client-config.adoc[leveloffset=+1]
 
 //Uninstall the product
 include::modules/proc-uninstalling.adoc[leveloffset=+1]
+
+//faqs for cluster operator
+include::modules/con-cluster-operator-faqs.adoc[leveloffset=+1]
