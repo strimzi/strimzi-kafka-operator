@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.awt.event.ItemEvent;
 import java.util.Collections;
 
 @ExtendWith(ExtensionContextParameterResolver.class)
@@ -34,7 +35,7 @@ public interface TestSeparator {
 
     @AfterEach
     default void afterEachTest(ExtensionContext testContext) {
-        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
+        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION, testContext.getRequiredTestClass().getName(), testContext.getDisplayName());
         LOGGER.info(String.format("%s.%s-FINISHED", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName()));
         LOGGER.info(String.join("", Collections.nCopies(76, SEPARATOR_CHAR)));
     }

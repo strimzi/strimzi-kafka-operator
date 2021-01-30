@@ -46,9 +46,6 @@ public class TimeMeasuringSystem {
      * where operation run time data are stored in MeasureRecord and keys provide names of classes and methods.
      */
     private static Map<String, Map<String, Map<String, MeasureRecord>>> measuringMap;
-    private String testClass;
-    private String testName;
-    private String operationID;
 
     public static synchronized TimeMeasuringSystem getInstance() {
         if (instance == null) {
@@ -69,7 +66,8 @@ public class TimeMeasuringSystem {
         return id;
     }
 
-    private void addRecord(String operationID, MeasureRecord record) {
+    private void addRecord(String operationID, MeasureRecord record, String testClass, String testName) {
+        LOGGER.info("============ ADDING RECORD ========");
         if (measuringMap.get(testClass) == null) {
             // new test suite
             LOGGER.info("Hello testClass {} is new....", testClass);
@@ -90,10 +88,10 @@ public class TimeMeasuringSystem {
         }
     }
 
-    private String setStartTime(Operation operation) {
+    private String setStartTime(Operation operation, String testClass, String testName) {
         String id = createOperationsID(operation);
         try {
-            addRecord(id, new MeasureRecord(System.currentTimeMillis()));
+            addRecord(id, new MeasureRecord(System.currentTimeMillis()), testClass, testName);
             LOGGER.info("Start time of operation {} is correctly stored", id);
         } catch (Exception ex) {
             LOGGER.warn("Start time of operation {} is not set due to exception", id);
@@ -101,7 +99,9 @@ public class TimeMeasuringSystem {
         return id;
     }
 
-    private void setEndTime(String id) {
+
+
+    private void setEndTime(String id, String testClass, String testName) {
         if (id.equals(Operation.TEST_EXECUTION.toString())) {
             id = createOperationsID(Operation.TEST_EXECUTION);
         }
@@ -123,14 +123,6 @@ public class TimeMeasuringSystem {
         } catch (NullPointerException | ClassCastException ex) {
             LOGGER.error("End time of operation {} is not set due to exception: {}", id, ex);
         }
-    }
-
-    public void setTestName(String testName) {
-        this.testName = testName;
-    }
-
-    public void setTestClass(String testClass) {
-        this.testClass = testClass;
     }
 
     private void printResults() {
@@ -188,35 +180,26 @@ public class TimeMeasuringSystem {
         return measuringMap.get(testClass).get(testName).get(operationID).startTime;
     }
 
-    public void setTestName(String testClass, String testName) {
-        instance.setTestName(testName);
-        instance.setTestClass(testClass);
-    }
-
-    public String startTimeMeasuring(Operation operation) {
-        instance.setTestName(testClass, testName);
-        return instance.startOperation(operation);
+    public String startTimeMeasuring(Operation operation, String testClass, String testName) {
+        return instance.startOperation(operation, testClass, testName);
     }
 
     public String startTimeMeasuringConcurrent(String testClass, String testName, Operation operation) {
         synchronized (this) {
-            instance.setTestClass(testClass);
-            instance.setTestName(testName);
-
-            return instance.startOperation(operation);
+            return instance.startOperation(operation, testClass, testName);
         }
     }
 
-    public String startOperation(Operation operation) {
-        return instance.setStartTime(operation);
+    public String startOperation(Operation operation, String testClass, String testName) {
+        return instance.setStartTime(operation, testClass, testName);
     }
 
-    public void stopOperation(String operationId) {
-        instance.setEndTime(operationId);
+    public void stopOperation(String operationId, String testClass, String testName) {
+        instance.setEndTime(operationId, testClass, testName);
     }
 
-    public void stopOperation(Operation operationId) {
-        instance.stopOperation(operationId.toString());
+    public void stopOperation(Operation operationId, String testClass, String testName) {
+        instance.stopOperation(operationId.toString(), testClass, testName);
     }
 
     public void printAndSaveResults(String path) {
@@ -236,14 +219,6 @@ public class TimeMeasuringSystem {
 
     public long getDuration(String testClass, String testName, String operationID) {
         return instance.getTestDuration(testClass, testName, operationID);
-    }
-
-    public String getOperationID() {
-        return operationID;
-    }
-
-    public void setOperationID(String operationID) {
-        this.operationID = operationID;
     }
 
     /**
