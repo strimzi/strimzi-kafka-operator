@@ -84,7 +84,13 @@ public abstract class AbstractST implements TestSeparator {
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     private final Object lock = new Object();
+    private final Object lockForTimeMeasuringSystem = new Object();
+
+    // maps for local variables
     protected static Map<String, String> mapTestWithClusterNames = new HashMap<>();
+    protected static Map<String, String> mapTestWithTestTopics = new HashMap<>();
+    protected static Map<String, String> mapTestWithTestUsers = new HashMap<>();
+    protected static Map<String, String> mapTestWithKafkaClientNames = new HashMap<>();
 
     protected static String previousClusterName;
     protected static String clusterName;
@@ -151,7 +157,7 @@ public abstract class AbstractST implements TestSeparator {
                 applyBindings(extensionContext, namespace, bindingsNamespaces);
             }
             // 060-Deployment
-            resourceManager.createResource(extensionContext, BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).build());
+            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).build());
         }
     }
 
@@ -722,23 +728,18 @@ public abstract class AbstractST implements TestSeparator {
         synchronized (lock) {
             if (testContext.getTestMethod().isPresent()) {
                 testName = testContext.getTestMethod().get().getName();
-                timeMeasuringSystem.setTestClass(testName);
-
             }
 
-            // this is because when we generate @BeforeAll we want have same value in the first test case
-            if (mapTestWithClusterNames.get("1st test case") == null) {
-                LOGGER.info("First test case we are not gonna generate another cluster name");
-                mapTestWithClusterNames.put("1st test case", "placeholder");
-                mapTestWithClusterNames.put(testName, mapTestWithClusterNames.get("BeforeAll"));
-            } else {
-                LOGGER.info("Not first test we are gonna generate cluster name");
-                clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
-                testTopic = KafkaTopicUtils.generateRandomNameOfTopic();
-                testUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
-                mapTestWithClusterNames.put(testName, clusterName);
-                kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
-            }
+            LOGGER.info("Not first test we are gonna generate cluster name");
+            clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
+            testTopic = KafkaTopicUtils.generateRandomNameOfTopic();
+            testUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
+            kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
+
+            mapTestWithClusterNames.put(testName, clusterName);
+            mapTestWithTestTopics.put(testName, testTopic);
+            mapTestWithTestUsers.put(testName, testUser);
+            mapTestWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
 
             LOGGER.info("THIS IS MAP:\n{}", mapTestWithClusterNames);
         }
@@ -749,47 +750,40 @@ public abstract class AbstractST implements TestSeparator {
         cluster = KubeClusterResource.getInstance();
         if (testContext.getTestClass().isPresent()) {
             testClass = testContext.getTestClass().get().getName();
-            timeMeasuringSystem.setTestClass(testClass);
         }
-        //  first test case
-        clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
-        testTopic = KafkaTopicUtils.generateRandomNameOfTopic();
-        testUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        mapTestWithClusterNames.put("BeforeAll", clusterName);
-        kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
     }
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext testContext) throws Exception {
 
-        AssertionError assertionError = null;
-        try {
-            long testDuration = TimeMeasuringSystem.getInstance().getDurationInSeconds(
-                testContext.getRequiredTestClass().getName(),
-                testContext.getRequiredTestMethod().getName(),
-                Operation.TEST_EXECUTION.name());
-            assertNoCoErrorsLogged(testDuration);
-        } catch (AssertionError e) {
-            LOGGER.error("Cluster Operator contains unexpected errors!");
-            assertionError = new AssertionError(e);
-        }
+//        AssertionError assertionError = null;
+//
+//        // this is because more threads can access 'testDuration' variable and modify it...
+//        synchronized (lockForTimeMeasuringSystem) {
+//            try {
+//                long testDuration = TimeMeasuringSystem.getInstance().getDurationInSeconds(
+//                    testContext.getRequiredTestClass().getName(),
+//                    testContext.getRequiredTestMethod().getName(),
+//                    Operation.TEST_EXECUTION.name());
+//                assertNoCoErrorsLogged(testDuration);
+//            } catch (AssertionError e) {
+//                LOGGER.error("Cluster Operator contains unexpected errors!");
+//                assertionError = new AssertionError(e);
+//            }
+//        }
 
         if (!Environment.SKIP_TEARDOWN) {
-            // TODO: how??
             resourceManager.deleteResources(testContext);
-//            tearDownEnvironmentAfterEach();
         }
 
-        if (assertionError != null) {
-            throw assertionError;
-        }
+//        if (assertionError != null) {
+//            throw assertionError;
+//        }
     }
 
     @AfterAll
     void teardownEnvironmentClass(ExtensionContext testContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
-            // TODO: how?
-//            tearDownEnvironmentAfterAll();
             resourceManager.deleteResources(testContext);
             teardownEnvForOperator();
         }

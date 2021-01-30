@@ -28,11 +28,14 @@ public class PersistentVolumeClaimUtils {
 
     private PersistentVolumeClaimUtils() { }
 
-    public static void waitUntilPVCLabelsChange(Map<String, String> newLabels, String labelKey) {
+    public static void waitUntilPVCLabelsChange(String clusterName, Map<String, String> newLabels, String labelKey) {
         LOGGER.info("Wait until PVC labels will change {}", newLabels.toString());
         TestUtils.waitFor("PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims()) {
+                List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims().stream().filter(
+                    persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
+
+                for (PersistentVolumeClaim pvc : pvcs) {
                     if (!pvc.getMetadata().getLabels().get(labelKey).equals(newLabels.get(labelKey))) {
                         return false;
                     }
@@ -42,11 +45,14 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("PVC labels has changed {}", newLabels.toString());
     }
 
-    public static void waitUntilPVCAnnotationChange(Map<String, String> newAnnotation, String annotationKey) {
+    public static void waitUntilPVCAnnotationChange(String clusterName, Map<String, String> newAnnotation, String annotationKey) {
         LOGGER.info("Wait until PVC annotation will change {}", newAnnotation.toString());
         TestUtils.waitFor("PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims()) {
+                List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims().stream().filter(
+                    persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
+
+                for (PersistentVolumeClaim pvc : pvcs) {
                     if (!pvc.getMetadata().getLabels().get(annotationKey).equals(newAnnotation.get(annotationKey))) {
                         return false;
                     }
