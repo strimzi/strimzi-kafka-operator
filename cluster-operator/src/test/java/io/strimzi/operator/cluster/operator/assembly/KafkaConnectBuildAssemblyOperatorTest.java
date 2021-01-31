@@ -64,6 +64,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -180,7 +181,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(terminatedPod));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(null), Future.succeededFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
         when(mockBcOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
@@ -224,7 +225,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
 
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
-                assertThat(capturedBuilderPods, hasSize(3));
+                assertThat(capturedBuilderPods, hasSize(2));
                 assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
@@ -472,7 +473,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(terminatedPod));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(null), Future.succeededFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
         when(mockBcOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
@@ -499,7 +500,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
             .onComplete(context.failing(v -> context.verify(() -> {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
-                assertThat(capturedBuilderPods, hasSize(2));
+                assertThat(capturedBuilderPods, hasSize(1));
                 assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
 
                 async.flag();
@@ -733,7 +734,358 @@ public class KafkaConnectBuildAssemblyOperatorTest {
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
-        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(terminatedPod));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(null), Future.succeededFuture(terminatedPod));
+
+        // Mock and capture BuildConfig ops
+        when(mockBcOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+
+        // Mock and capture NP ops
+        when(mockNetPolOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+
+        // Mock and capture PDB ops
+        when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock and capture KafkaConnect ops for status update
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock KafkaConnect API client
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+
+        // Prepare and run reconciliation
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(kc, VERSIONS);
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                // Verify Deployment
+                List<Deployment> capturedDeps = depCaptor.getAllValues();
+                assertThat(capturedDeps, hasSize(1));
+                Deployment dep = capturedDeps.get(0);
+                assertThat(dep.getMetadata().getName(), is(connect.getName()));
+                assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub()));
+
+                // Verify ConfigMap
+                List<ConfigMap> capturedCms = dockerfileCaptor.getAllValues();
+                assertThat(capturedCms, hasSize(1));
+                ConfigMap dockerfileCm = capturedCms.get(0);
+                assertThat(dockerfileCm.getData().containsKey("Dockerfile"), is(true));
+                assertThat(dockerfileCm.getData().get("Dockerfile"), is(build.generateDockerfile().getDockerfile()));
+
+                // Verify builder Pod
+                List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
+                assertThat(capturedBuilderPods, hasSize(2));
+                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+
+                // Verify status
+                List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                assertThat(capturedConnects, hasSize(1));
+                KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+                assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+
+                async.flag();
+            })));
+    }
+
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    @Test
+    public void testContinueWithPreviousBuildOnKube(VertxTestContext context) {
+        Plugin plugin1 = new PluginBuilder()
+                .withName("plugin1")
+                .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
+                .build();
+
+        Plugin plugin2 = new PluginBuilder()
+                .withName("plugin2")
+                .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my2.jar").build())
+                .build();
+
+        KafkaConnect oldKc = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withName(NAME)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
+                    .withNewBuild()
+                        .withNewDockerOutput()
+                            .withImage("my-connect-build:latest")
+                            .withNewPushSecret("my-docker-credentials")
+                        .endDockerOutput()
+                        .withPlugins(plugin1, plugin2)
+                    .endBuild()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(oldKc, VERSIONS);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(oldKc, VERSIONS);
+
+        KafkaConnect kc = new KafkaConnectBuilder(oldKc)
+                .editSpec()
+                    .editBuild()
+                        .withPlugins(plugin1, plugin2)
+                    .endBuild()
+                .endSpec()
+                .build();
+
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+
+        // Prepare and get mocks
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
+
+        // Mock KafkaConnector ops
+        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        // Mock KafkaConnect ops
+        when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+
+        // Mock KafkaConnectS2I ops
+        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
+
+        // Mock and capture service ops
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock and capture deployment ops
+        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
+        when(mockDepOps.reconcile(anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
+            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
+            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
+            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
+            return Future.succeededFuture(dep);
+        });
+        when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock and capture CM ops
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        when(mockCmOps.reconcile(anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+
+        // Mock and capture Pod ops
+        ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
+        when(mockPodOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+
+        Pod runningBuild = new PodBuilder()
+                .withNewMetadata()
+                    .withName(KafkaConnectResources.buildPodName(NAME))
+                    .withNamespace(NAMESPACE)
+                    .withAnnotations(singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub()))
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
+
+        Pod terminatedPod = new PodBuilder()
+                .withNewMetadata()
+                    .withName(KafkaConnectResources.buildPodName(NAME))
+                    .withNamespace(NAMESPACE)
+                    .withAnnotations(singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub()))
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .withNewStatus()
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build@sha256:blablabla").endTerminated().endState().build())
+                .endStatus()
+                .build();
+        when(mockPodOps.waitFor(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(runningBuild), Future.succeededFuture(terminatedPod));
+
+        // Mock and capture BuildConfig ops
+        when(mockBcOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+
+        // Mock and capture NP ops
+        when(mockNetPolOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+
+        // Mock and capture PDB ops
+        when(mockPdbOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock and capture KafkaConnect ops for status update
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock KafkaConnect API client
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+
+        // Prepare and run reconciliation
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
+
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(kc, VERSIONS);
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                // Verify Deployment
+                List<Deployment> capturedDeps = depCaptor.getAllValues();
+                assertThat(capturedDeps, hasSize(1));
+                Deployment dep = capturedDeps.get(0);
+                assertThat(dep.getMetadata().getName(), is(connect.getName()));
+                assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub()));
+
+                // Verify ConfigMap
+                List<ConfigMap> capturedCms = dockerfileCaptor.getAllValues();
+                assertThat(capturedCms, hasSize(0));
+
+                // Verify builder Pod
+                List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
+                assertThat(capturedBuilderPods, hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(0));
+
+                // Verify status
+                List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                assertThat(capturedConnects, hasSize(1));
+                KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+                assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+
+                async.flag();
+            })));
+    }
+
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    @Test
+    public void testRestartPreviousBuildOnKube(VertxTestContext context) {
+        Plugin plugin1 = new PluginBuilder()
+                .withName("plugin1")
+                .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my.jar").build())
+                .build();
+
+        Plugin plugin2 = new PluginBuilder()
+                .withName("plugin2")
+                .withArtifacts(new JarArtifactBuilder().withUrl("https://my-domain.tld/my2.jar").build())
+                .build();
+
+        KafkaConnect oldKc = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withName(NAME)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                    .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
+                    .withNewBuild()
+                        .withNewDockerOutput()
+                            .withImage("my-connect-build:latest")
+                            .withNewPushSecret("my-docker-credentials")
+                        .endDockerOutput()
+                        .withPlugins(plugin1)
+                    .endBuild()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(oldKc, VERSIONS);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(oldKc, VERSIONS);
+
+        KafkaConnect kc = new KafkaConnectBuilder(oldKc)
+                .editSpec()
+                    .editBuild()
+                        .withPlugins(plugin1, plugin2)
+                    .endBuild()
+                .endSpec()
+                .build();
+
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+
+        // Prepare and get mocks
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
+
+        // Mock KafkaConnector ops
+        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        // Mock KafkaConnect ops
+        when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+
+        // Mock KafkaConnectS2I ops
+        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
+
+        // Mock and capture service ops
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock and capture deployment ops
+        ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
+        when(mockDepOps.reconcile(anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
+            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
+            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
+            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
+            return Future.succeededFuture(dep);
+        });
+        when(mockDepOps.scaleUp(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDepOps.scaleDown(anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDepOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock and capture CM ops
+        when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        when(mockCmOps.reconcile(anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+
+        // Mock and capture Pod ops
+        ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
+        when(mockPodOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), builderPodCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+
+        Pod runningBuild = new PodBuilder()
+                .withNewMetadata()
+                    .withName(KafkaConnectResources.buildPodName(NAME))
+                    .withNamespace(NAMESPACE)
+                    .withAnnotations(singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub()))
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
+
+        Pod terminatedPod = new PodBuilder()
+                .withNewMetadata()
+                    .withName(KafkaConnectResources.buildPodName(NAME))
+                    .withNamespace(NAMESPACE)
+                    .withAnnotations(singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub()))
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .withNewStatus()
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build@sha256:blablabla").endTerminated().endState().build())
+                .endStatus()
+                .build();
+        when(mockPodOps.waitFor(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
+        when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(runningBuild), Future.succeededFuture(terminatedPod));
 
         // Mock and capture BuildConfig ops
         when(mockBcOps.reconcile(eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
