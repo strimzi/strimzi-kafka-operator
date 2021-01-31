@@ -302,7 +302,7 @@ public class KafkaConnectBuild extends AbstractModel {
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(1);
 
-        List<String> args = new ArrayList<>(4);
+        List<String> args = additionalKanikoOptions != null ? new ArrayList<>(4 + additionalKanikoOptions.size()) : new ArrayList<>(4);
         args.add("--dockerfile=/dockerfile/Dockerfile");
         args.add("--context=dir://workspace");
         args.add("--image-name-with-digest-file=/dev/termination-log");
