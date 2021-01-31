@@ -365,11 +365,13 @@ public class KafkaConnectBuild extends AbstractModel {
                 .build();
     }
 
-    public BuildRequest generateBuildRequest()  {
+    public BuildRequest generateBuildRequest(String buildRevision)  {
         return new BuildRequestBuilder()
                 .withNewMetadata()
                     .withName(KafkaConnectResources.buildConfigName(cluster))
                     .withNamespace(namespace)
+                    .withAnnotations(Collections.singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildRevision))
+                    .withLabels(getLabelsWithStrimziName(name, templateBuildConfigLabels).toMap())
                 .endMetadata()
                 .build();
     }

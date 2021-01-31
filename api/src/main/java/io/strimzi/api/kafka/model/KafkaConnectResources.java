@@ -125,9 +125,21 @@ public class KafkaConnectResources {
      * Returns the name of the Kafka Connect {@code BuildConfig} for a {@code KafkaConnect} build that builds the new image.
      *
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
-     * @return The name of the corresponding Kafka Connect build {@code Pod}.
+     * @return The name of the corresponding Kafka Connect {@code BuildConfig}.
      */
     public static String buildConfigName(String clusterName) {
         return deploymentName(clusterName) + "-build";
+    }
+
+    /**
+     * Returns the name of the Kafka Connect {@code Build} for a {@code KafkaConnect} build that builds the new image.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
+     * @param buildVersion The version of the build for which the name should be generated
+     *
+     * @return The name of the corresponding Kafka Connect {@code BuildConfig} {@code Build}.
+     */
+    public static String buildName(String clusterName, Long buildVersion) {
+        return buildConfigName(clusterName) + "-" + buildVersion;
     }
 }
