@@ -7,13 +7,13 @@
 
 [role="_abstract"]
 Support for Kafka Connect with S2I and the `KafkaConnectS2I` resource is planned for deprecation.
-The decision follows the introduction of `build` configuration properties to the `KafkaConnect` resource,
+This follows the introduction of `build` configuration properties to the `KafkaConnect` resource,
 which are used to build a container image with the connector plugins you require for your data connections automatically.
 
 This procedure describes how to migrate your Kafka Connect with S2I instance to a standard Kafka Connect instance.
-To do this, you configure a new `KafkaConnect` custom resource to replace the `KafkaConnectS2I` resource, which is deleted.
+To do this, you configure a new `KafkaConnect` custom resource to replace the `KafkaConnectS2I` resource, which is then deleted.
 
-WARNING: The migration process involves downtime from the moment `KafkaConnectS2I` instance is deleted until the new `KafkaConnect` instance has been successfully deployed.
+WARNING: The migration process involves downtime from the moment the `KafkaConnectS2I` instance is deleted until the new `KafkaConnect` instance has been successfully deployed.
 During this time, connectors will not be running and processing data. However, after the changeover they should continue from the point at which they stopped.
 
 .Prerequisites
@@ -25,7 +25,7 @@ During this time, connectors will not be running and processing data. However, a
 .Procedure
 
 . Create a new `KafkaConnect` custom resource using the same name as the name used for the `KafkaconnectS2I` resource.
-. Copy the `KafkaconnectS2I` resource properties to the `KafkaConnect` resource.
+. Copy the `KafkaConnectS2I` resource properties to the `KafkaConnect` resource.
 . If specified, make sure you use the same `spec.config` properties:
 +
 --
@@ -60,7 +60,7 @@ Replace _MY-KAFKA-CONNECT-S2I_ with the name of the `KafkaConnectS2I` resource.
 +
 Wait until the Kafka Connect with S2I deployment and pods are deleted.
 +
-IMPORTANT: No other resources must be deleted.
+WARNING: No other resources must be deleted.
 
 . Deploy the new `KafkaConnect` resource:
 +
@@ -75,7 +75,7 @@ Wait until the new image is built, the deployment is created, and the pods have 
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kctr --selector strimzi.io/cluster=_MY-CONNECT-CLUSTER_ -o name
+kubectl get kctr --selector strimzi.io/cluster=_MY-KAFKA-CONNECT-CLUSTER_ -o name
 ----
 +
 Replace _MY-KAFKA-CONNECT-CLUSTER_ with the name of your Kafka Connect cluster.
