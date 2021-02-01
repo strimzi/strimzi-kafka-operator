@@ -272,16 +272,16 @@ public class MetricsST extends AbstractST {
         assertCoMetricResourceState(KafkaConnectS2I.RESOURCE_KIND, metricsClusterName, 0);
 
         assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, 0);
-        AssertCoMetricResourceStateNotExists(KafkaMirrorMaker.RESOURCE_KIND, metricsClusterName);
+        assertCoMetricResourceStateNotExists(KafkaMirrorMaker.RESOURCE_KIND, metricsClusterName);
 
         assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, 1);
         assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, MIRROR_MAKER_CLUSTER, 1);
 
         assertCoMetricResources(KafkaConnector.RESOURCE_KIND, 0);
-        AssertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, metricsClusterName);
+        assertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, metricsClusterName);
 
         assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, 0);
-        AssertCoMetricResourceStateNotExists(KafkaRebalance.RESOURCE_KIND, metricsClusterName);
+        assertCoMetricResourceStateNotExists(KafkaRebalance.RESOURCE_KIND, metricsClusterName);
 
         // Remove s2i CR
         KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(metricsClusterName).delete();
@@ -646,7 +646,7 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).count(), notNullValue());
     }
 
-    private void AssertCoMetricResourceStateNotExists(String kind, String name) {
+    private void assertCoMetricResourceStateNotExists(String kind, String name) {
         Pattern pattern = Pattern.compile("strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + NAMESPACE + "\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(pattern, clusterOperatorMetricsData);
         assertThat(values.isEmpty(), is(true));
