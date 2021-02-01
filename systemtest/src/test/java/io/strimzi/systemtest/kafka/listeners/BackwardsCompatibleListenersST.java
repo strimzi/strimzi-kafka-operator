@@ -21,7 +21,9 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -30,6 +32,10 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.templates.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.KafkaTemplates;
+import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -39,9 +45,11 @@ import io.strimzi.test.TestUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Map;
 
@@ -98,31 +106,33 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
-    @Test
+    @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesTlsAuthenticated() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testSendMessagesTlsAuthenticated(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUsername = mapTestWithTestUsers.get(extensionContext.getDisplayName());
 
         KafkaListeners listeners = new KafkaListenersBuilder()
-                .withNewTls()
-                    .withAuth(new KafkaListenerAuthenticationTls())
-                .endTls()
-                .build();
+            .withNewTls()
+                .withAuth(new KafkaListenerAuthenticationTls())
+            .endTls()
+            .build();
 
-        createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
-                .withApiVersion("kafka.strimzi.io/v1beta1")
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
-                    .endKafka()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .withApiVersion("kafka.strimzi.io/v1beta1")
+            .editSpec()
+                .editKafka()
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                .endKafka()
+            .endSpec()
+            .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, kafkaUsername).build();
+        resourceManager.createResource(extensionContext, user);
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -149,32 +159,34 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     /**
      * Test sending messages over plain transport using scram sha auth
      */
-    @Test
+    @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testSendMessagesPlainScramSha() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testSendMessagesPlainScramSha(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUsername = mapTestWithTestUsers.get(extensionContext.getDisplayName());
 
         KafkaListeners listeners = new KafkaListenersBuilder()
-                .withNewPlain()
-                    .withAuth(new KafkaListenerAuthenticationScramSha512())
-                .endPlain()
-                .build();
+            .withNewPlain()
+                .withAuth(new KafkaListenerAuthenticationScramSha512())
+            .endPlain()
+            .build();
 
         // Use a Kafka with plain listener disabled
-        createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
-                .withApiVersion("kafka.strimzi.io/v1beta1")
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
-                    .endKafka()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .withApiVersion("kafka.strimzi.io/v1beta1")
+            .editSpec()
+                .editKafka()
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                .endKafka()
+            .endSpec()
+            .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUser kafkaUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, kafkaUsername).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
+        KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(clusterName, kafkaUsername).build();
+        resourceManager.createResource(extensionContext, kafkaUser);
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
 
         final String kafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -198,13 +210,14 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         );
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testNodePortTls() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testNodePortTls(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUsername = mapTestWithTestUsers.get(extensionContext.getDisplayName());
 
         KafkaListeners listeners = new KafkaListenersBuilder()
                 .withNewKafkaListenerExternalNodePort()
@@ -212,17 +225,18 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalNodePort()
                 .build();
 
-        createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
-                .withApiVersion("kafka.strimzi.io/v1beta1")
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
-                    .endKafka()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
+            .withApiVersion("kafka.strimzi.io/v1beta1")
+            .editSpec()
+                .editKafka()
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                .endKafka()
+            .endSpec()
+            .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        KafkaUser kafkaUser = KafkaUserTemplates.tlsUser(clusterName, kafkaUsername).build();
+        resourceManager.createResource(extensionContext, kafkaUser);
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -240,12 +254,13 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         );
     }
 
-    @Test
+    @ParallelTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancerTls() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testLoadBalancerTls(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUsername = mapTestWithTestUsers.get(extensionContext.getDisplayName());
 
         KafkaListeners listeners = new KafkaListenersBuilder()
                 .withNewKafkaListenerExternalLoadBalancer()
@@ -253,17 +268,18 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalLoadBalancer()
                 .build();
 
-        createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
-                .withApiVersion("kafka.strimzi.io/v1beta1")
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
-                    .endKafka()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .withApiVersion("kafka.strimzi.io/v1beta1")
+            .editSpec()
+                .editKafka()
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                .endKafka()
+            .endSpec()
+            .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        KafkaUser kafkaUser = KafkaUserTemplates.tlsUser(clusterName, kafkaUsername).build();
+        resourceManager.createResource(extensionContext, kafkaUser);
 
         ServiceUtils.waitUntilAddressIsReachable(kafkaV1Beta1Client().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
@@ -283,12 +299,13 @@ public class BackwardsCompatibleListenersST extends AbstractST {
         );
     }
 
-    @Test
+    @ParallelTest
     @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testRouteTls() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testRouteTls(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUsername = mapTestWithTestUsers.get(extensionContext.getDisplayName());
 
         KafkaListeners listeners = new KafkaListenersBuilder()
                 .withNewKafkaListenerExternalRoute()
@@ -296,17 +313,18 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalRoute()
                 .build();
 
-        createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
-                .withApiVersion("kafka.strimzi.io/v1beta1")
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
-                    .endKafka()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .withApiVersion("kafka.strimzi.io/v1beta1")
+            .editSpec()
+                .editKafka()
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                .endKafka()
+            .endSpec()
+            .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        KafkaUser kafkaUser = KafkaUserTemplates.tlsUser(clusterName, kafkaUsername).build();
+        resourceManager.createResource(extensionContext, kafkaUser);
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
                 .withTopicName(topicName)
@@ -328,13 +346,14 @@ public class BackwardsCompatibleListenersST extends AbstractST {
      * When the listeners are converted from the old format to the new format, nothing should change. So no rolling
      * update should happen.
      */
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testCustomResourceConversion() {
-        String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testCustomResourceConversion(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUsername = mapTestWithTestUsers.get(extensionContext.getDisplayName());
 
         KafkaListeners listeners = new KafkaListenersBuilder()
                 .withNewPlain()
@@ -348,19 +367,20 @@ public class BackwardsCompatibleListenersST extends AbstractST {
                 .endKafkaListenerExternalNodePort()
                 .build();
 
-        createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
-                .withApiVersion("kafka.strimzi.io/v1beta1")
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
-                    .endKafka()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
+            .withApiVersion("kafka.strimzi.io/v1beta1")
+            .editSpec()
+                .editKafka()
+                    .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                .endKafka()
+            .endSpec()
+            .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName, 1, 3, 2).build());
-        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, kafkaUsername).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 3, 2).build());
+        KafkaUser kafkaUser = KafkaUserTemplates.tlsUser(clusterName, kafkaUsername).build();
+        resourceManager.createResource(extensionContext, kafkaUser);
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
         final String kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -423,14 +443,16 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
     }
 
-    @Override
-    protected void tearDownEnvironmentAfterEach() throws Exception {
-        super.tearDownEnvironmentAfterEach();
+    @AfterEach
+    void afterEach(ExtensionContext extensionContext) throws Exception {
+        if (!Environment.SKIP_TEARDOWN) {
+            resourceManager.deleteResources(extensionContext);
+        }
+
         kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
     }
 }

@@ -175,9 +175,13 @@ public class ResourceManager {
                 assertTrue(waitResourceCondition(resource, type::isReady),
                     String.format("Timed out waiting for %s %s in namespace %s to be ready", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
 
-                T updated = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+                // sync because without this block more threads can access updated variable and re-write before we invoke
+                // type.refreshResource()...
+                synchronized (this) {
+                    T updated = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
 
-                type.refreshResource(resource, updated);
+                    type.refreshResource(resource, updated);
+                }
             }
         }
     }
