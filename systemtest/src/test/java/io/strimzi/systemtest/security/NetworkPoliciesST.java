@@ -140,7 +140,7 @@ public class NetworkPoliciesST extends AbstractST {
         });
 
         LOGGER.info("Check metrics exported by Kafka Exporter");
-        Map<String, String> kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(clusterName);
+        Map<String, String> kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(allowedKafkaClientsPodName, clusterName);
         assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
         for (Map.Entry<String, String> entry : kafkaExporterMetricsData.entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());

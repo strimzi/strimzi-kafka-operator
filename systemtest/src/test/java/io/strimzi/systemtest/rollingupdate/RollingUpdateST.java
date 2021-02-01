@@ -691,9 +691,13 @@ class RollingUpdateST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
 
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+
+        String metricsScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
-        HashMap<String, String> kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(clusterName);
-        HashMap<String, String> zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(clusterName);
+        HashMap<String, String> kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(metricsScraperPodName, clusterName);
+        HashMap<String, String> zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(metricsScraperPodName, clusterName);
 
         assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
         assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
@@ -749,8 +753,8 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
 
-        kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(clusterName);
-        zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(clusterName);
+        kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(metricsScraperPodName, clusterName);
+        zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(metricsScraperPodName, clusterName);
 
         assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
         assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
@@ -768,8 +772,8 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are not existing in pods");
 
-        kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(clusterName);
-        zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(clusterName);
+        kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(metricsScraperPodName, clusterName);
+        zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(metricsScraperPodName, clusterName);
 
         kafkaMetricsOutput.values().forEach(value -> assertThat(value, is("")));
         zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
