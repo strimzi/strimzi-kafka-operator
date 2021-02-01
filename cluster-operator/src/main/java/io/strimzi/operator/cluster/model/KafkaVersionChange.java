@@ -35,22 +35,6 @@ public class KafkaVersionChange {
     }
 
     /**
-     * true if changing Kafka from {@link #from()} to {@code to} requires changing the inter broker protocol.
-     * @return true if changing Kafka from {@link #from()} to {@code to} requires upgrading the inter broker protocol.
-     */
-    public boolean requiresProtocolChange() {
-        return !from.protocolVersion().equals(to.protocolVersion());
-    }
-
-    /**
-     * true if changing Kafka from {@link #from()} to {@code to} requires changing the message format.
-     * @return true if changing Kafka from {@link #from()} to {@code to} requires upgrading the message format.
-     */
-    public boolean requiresMessageFormatChange() {
-        return !from.messageVersion().equals(to.messageVersion());
-    }
-
-    /**
      * true if changing Kafka from {@link #from()} to {@code to} requires changing the Zookeeper version.
      * @return true if changing Kafka from {@link #from()} to {@code to} requires upgrading the Zookeeper version.
      */

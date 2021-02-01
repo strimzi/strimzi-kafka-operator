@@ -1077,6 +1077,10 @@ public class KafkaStatusTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(null, null)));
 
+        // Mock the PodOperator
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+
         MockModelWarningsStatusKafkaAssemblyOperator kao = new MockModelWarningsStatusKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,

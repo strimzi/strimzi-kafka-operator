@@ -209,11 +209,6 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
         LOGGER.info("1st Kafka roll (image change) is complete");
 
-        if (testContext.getDisplayName().contains("Downgrade")) {
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
-            LOGGER.info("2nd Kafka roll (update) is complete");
-        }
-
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
         PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));

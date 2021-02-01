@@ -18,87 +18,45 @@
 #   <unsupported-features> is a list of Strimzi features that are not supported by this Kafka version
 #   <supported> when `true` this version is currently supported by the operator. Unsupported versions are kept for historical reasons.
 
-- version: 2.1.0
-  format: 2.1
-  protocol: 2.1
+- version: 1.0.0
+  format: 1.0
+  protocol: 1.0
   zookeeper: 3.4.13
   supported: false
   default: false
-- version: 2.1.1
-  format: 2.1
-  protocol: 2.1
-  zookeeper: 3.4.13
-  supported: false
-  default: false
-- version: 2.2.0
-  format: 2.2
-  protocol: 2.2
-  zookeeper: 3.4.13
-  supported: false
-  default: false
-- version: 2.2.1
-  format: 2.2
-  protocol: 2.2
-  zookeeper: 3.4.13
-  supported: false
-  default: false
-- version: 2.3.0
-  format: 2.3
-  protocol: 2.3
-  zookeeper: 3.4.14
-  supported: false
-  default: false
-- version: 2.3.1
-  format: 2.3
-  protocol: 2.3
-  zookeeper: 3.4.14
-  supported: false
-  default: false
-- version: 2.4.0
-  format: 2.4
-  protocol: 2.4
-  zookeeper: 3.5.6
-  supported: false
-  default: false
-- version: 2.4.1
-  format: 2.4
-  protocol: 2.4
+- version: 1.1.0
+  format: 1.1
+  protocol: 1.1
+  url: https://download.tld/kafka-1.1.0.tgz
+  checksum: DUMMYSHA512CHECKSUM110
   zookeeper: 3.5.7
-  supported: false
+  third-party-libs: 1.1x
+  supported: true
   default: false
-- version: 2.5.0
-  format: 2.5
-  protocol: 2.5
-  url: https://archive.apache.org/dist/kafka/2.5.0/kafka_2.12-2.5.0.tgz
-  checksum: 447A7057BCD9FACA98B6F4807BD6019EF73EEE90EFDC1E7B10005F669E2537A8A190CB8B9C9F4C20DB1D95B13D0F0487E9CC560D0759532058439CE7F722C7CD
+- version: 1.1.1
+  format: 1.1
+  protocol: 1.1
+  url: https://download.tld/kafka-1.1.1.tgz
+  checksum: DUMMYSHA512CHECKSUM111
   zookeeper: 3.5.7
-  third-party-libs: 2.5.x
+  third-party-libs: 1.1.x
   supported: true
   default: false
-- version: 2.5.1
-  format: 2.5
-  protocol: 2.5
-  url: https://archive.apache.org/dist/kafka/2.5.1/kafka_2.12-2.5.1.tgz
-  checksum: 91F96F28C016BDAA3FE025F87ACE188417A1E594C8E32B7D23A104AA390BC25F5DB5897E23CCCF00EA7EDE3AC20B3028C10363EBE99DCBD7DB2CF6237EE7553A
-  zookeeper: 3.5.8
-  third-party-libs: 2.5.x
+- version: 1.1.1
+  format: 1.1
+  protocol: 1.1
+  url: https://download.tld/kafka-1.1.1.tgz
+  checksum: DUMMYSHA512CHECKSUM111
+  zookeeper: 3.5.7
+  third-party-libs: 1.1.x
   supported: true
   default: false
-- version: 2.6.0
-  format: 2.6
-  protocol: 2.6
-  url: https://archive.apache.org/dist/kafka/2.6.0/kafka_2.12-2.6.0.tgz
-  checksum: 022AB51605DFFB8A0E4522DF297F02F4C5E488696520BB38DA8E8E70457C0B2696A47D7AD39A86389B747981215B385B2659AC25B3D43A6093AF13239723560D
-  zookeeper: 3.5.8
-  third-party-libs: 2.6.x
-  supported: true
-  default: false
-- version: 2.7.0
-  format: 2.7
-  protocol: 2.7
-  url: https://downloads.apache.org/kafka/2.7.0/kafka_2.12-2.7.0.tgz
-  checksum: ADAD48E6D9C9BF6577FC97DB10BFE9EF3755DA7B3060ED633EDB89EB99722DC81B111BAB2C91E7875E0A866A1020C8C31904B088D2A9F9950796EDA8ED789CCD
-  zookeeper: 3.5.8
-  third-party-libs: 2.7.x
+- version: 1.2.0
+  format: 1.2
+  protocol: 1.2
+  url: https://download.tld/kafka-1.2.0.tgz
+  checksum: DUMMYSHA512CHECKSUM120
+  zookeeper: 3.5.7
+  third-party-libs: 1.2.x
   supported: true
   default: true

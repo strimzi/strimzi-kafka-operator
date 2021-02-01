@@ -18,7 +18,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import org.junit.jupiter.api.Test;
 
-import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,13 +37,7 @@ public class KafkaSpecCheckerTest {
     private static final int HEALTH_TIMEOUT = 30;
 
     private KafkaSpecChecker generateChecker(Kafka kafka) {
-        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(
-                new StringReader(KafkaVersionTestUtils.getKafkaVersionYaml()),
-                KafkaVersionTestUtils.getKafkaImageMap(),
-                emptyMap(),
-                emptyMap(),
-                emptyMap(),
-                emptyMap()) { };
+        KafkaVersion.Lookup versions = KafkaVersionTestUtils.getKafkaVersionLookup();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, versions);
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(kafka, versions);
         return new KafkaSpecChecker(kafka.getSpec(), versions, kafkaCluster, zkCluster);
