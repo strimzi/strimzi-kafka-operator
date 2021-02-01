@@ -118,10 +118,10 @@ tlsSidecarCruiseControl:
     tagPrefix: latest
 kanikoExecutor:
   image:
-    registry: gcr.io
-    repository: kaniko-project
-    name: executor
-    tag: v1.3.0
+    registry: quay.io
+    repository: strimzi
+    name: kaniko-executor
+    tag: latest
 resources:
   limits:
     memory: 384Mi

@@ -9,6 +9,7 @@ base_images="base"
 java_images="operator jmxtrans"
 kafka_image="kafka"
 kafka_images="kafka test-client"
+other_images="kaniko-executor"
 
 function dependency_check { 
 
@@ -157,6 +158,12 @@ function build {
     for image in $java_images
     do
         DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} $(alternate_base $image)" make -C "$image" "$targets"
+    done
+
+    # Images not depending on Kafka version and not based on Java
+    for image in $other_images
+    do
+        make -C "$image" "$targets"
     done
 
     if [[ $targets == *"docker_build"* ]]
