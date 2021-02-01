@@ -219,6 +219,15 @@ public class KubeClient {
                 .collect(Collectors.toList());
     }
 
+    public List<Pod> listKafkaConnectS2IPods(String connectS2iClusterName) {
+        return listPods()
+            .stream().filter(p ->
+                p.getMetadata().getName().startsWith(connectS2iClusterName) &&
+                !p.getMetadata().getName().endsWith("-build") &&
+                !p.getMetadata().getName().endsWith("-deploy"))
+            .collect(Collectors.toList());
+    }
+
     /**
      * Gets pod
      */
@@ -323,6 +332,11 @@ public class KubeClient {
     public String getDeploymentNameByPrefix(String namePrefix) {
         return client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream()
                 .filter(rs -> rs.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList()).get(0).getMetadata().getName();
+    }
+
+    public String getDeploymentBySubstring(String subString) {
+        return client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream()
+            .filter(rs -> rs.getMetadata().getName().contains(subString)).collect(Collectors.toList()).get(0).getMetadata().getName();
     }
     /**
      * Gets deployment UID

@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -40,7 +41,7 @@ public class KafkaConnectS2ITemplates {
 
     private static KafkaConnectS2IBuilder deployKafkaConnectS2IWithNetworkPolicy(ExtensionContext extensionContext, KafkaConnectS2I kafkaConnectS2I) {
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-            NetworkPolicyResource.allowNetworkPolicySettingsForResource(extensionContext, kafkaConnectS2I, KafkaConnectResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
+            NetworkPolicyResource.allowNetworkPolicySettingsForResource(extensionContext, kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
         }
         return new KafkaConnectS2IBuilder(kafkaConnectS2I);
     }

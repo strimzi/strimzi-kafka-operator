@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest.utils;
 
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
@@ -77,6 +79,19 @@ public class ClientUtils {
     private static long timeoutForClientFinishJob(int messagesCount) {
         // need to add at least 2minutes for finishing the job
         return (long) messagesCount * 1000 + Duration.ofMinutes(2).toMillis();
+    }
+
+    public static Deployment waitUntilClientsArePresent(Deployment resource) {
+        Deployment[] deployment = new Deployment[1];
+        deployment[0] = resource;
+
+        TestUtils.waitFor(" for resource: " + resource + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentBySubstring("clients"));
+            LOGGER.info("Resource is present: {}", deployment[0] != null);
+            return deployment[0] != null;
+        });
+
+        return deployment[0];
     }
 
     /**

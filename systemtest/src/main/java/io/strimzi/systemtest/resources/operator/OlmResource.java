@@ -5,10 +5,11 @@
 package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
-import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -50,7 +51,7 @@ public class OlmResource implements ResourceType<Deployment> {
     }
     @Override
     public Deployment get(String namespace, String name) {
-        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+        return ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name));
     }
     @Override
     public void create(Deployment resource) {
@@ -125,7 +126,13 @@ public class OlmResource implements ResourceType<Deployment> {
 
         exampleResources = parseExamplesFromCsv(csvName, namespace);
 
-        return kubeClient().namespace(namespace).getDeployment(deploymentName);
+        Deployment olmClusterOperatorDeployment = new DeploymentBuilder(kubeClient().namespace(namespace).getDeployment(deploymentName))
+            .editMetadata()
+                .addToLabels("deployment-type", DeploymentTypes.OlmClusterOperator.name())
+            .endMetadata()
+            .build();
+
+        return olmClusterOperatorDeployment;
     }
 
     /**

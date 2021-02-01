@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -27,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.toYamlString;
@@ -57,7 +59,11 @@ public class KafkaClientsTemplates {
 
     public static DeploymentBuilder kafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
                                           String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
-        Map<String, String> label = Collections.singletonMap(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+        Map<String, String> label = new HashMap<>();
+
+        label.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+        label.put("deployment-type", DeploymentTypes.KafkaClients.name());
+
         DeploymentBuilder kafkaClient = new DeploymentBuilder()
             .withNewMetadata()
                 .withName(kafkaClientsName)

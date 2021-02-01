@@ -140,7 +140,7 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @Deprecated
-    @Test
+    @ParallelTest
     public void testMetricsConfigMapDeprecatedMetrics() {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
                 .withNewSpec()

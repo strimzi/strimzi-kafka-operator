@@ -5,11 +5,12 @@
 package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
@@ -45,7 +46,7 @@ public class HelmResource implements ResourceType<Deployment> {
     }
     @Override
     public Deployment get(String namespace, String name) {
-        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+        return ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name));
     }
     @Override
     public void create(Deployment resource) {
@@ -120,8 +121,13 @@ public class HelmResource implements ResourceType<Deployment> {
         ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
         DeploymentUtils.waitForDeploymentReady(ResourceManager.getCoDeploymentName());
 
-        return kubeClient().getDeployment(ResourceManager.getCoDeploymentName());
+        Deployment helmClusterOperatorDeployment = new DeploymentBuilder(kubeClient().getDeployment(ResourceManager.getCoDeploymentName()))
+            .editMetadata()
+                .addToLabels("deployment-type", DeploymentTypes.HelmClusterOperator.name())
+            .endMetadata()
+            .build();
 
+        return helmClusterOperatorDeployment;
     }
 
     /**
