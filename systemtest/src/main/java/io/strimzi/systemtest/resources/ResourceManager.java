@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -69,6 +70,10 @@ import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static io.strimzi.systemtest.enums.DeploymentTypes.BundleClusterOperator;
+import static io.strimzi.systemtest.enums.DeploymentTypes.HelmClusterOperator;
+import static io.strimzi.systemtest.enums.DeploymentTypes.KafkaClients;
+import static io.strimzi.systemtest.enums.DeploymentTypes.OlmClusterOperator;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -171,6 +176,7 @@ public class ResourceManager {
                     String.format("Timed out waiting for %s %s in namespace %s to be ready", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
 
                 T updated = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+
                 type.refreshResource(resource, updated);
             }
         }
@@ -366,6 +372,32 @@ public class ResourceManager {
 
     @SuppressWarnings(value = "unchecked")
     private <T extends HasMetadata> ResourceType<T> findResourceType(T resource) {
+
+        // for conflicting deployment types
+        if (resource.getKind().equals("Deployment")) {
+            String deploymentType = resource.getMetadata().getLabels().get("deployment-type");
+            DeploymentTypes deploymentTypes = DeploymentTypes.valueOf(deploymentType);
+
+            switch(deploymentTypes) {
+                case BundleClusterOperator:
+                    // new BundleResource()
+                    return (ResourceType<T>) resourceTypes[11];
+                case KafkaClients:
+                   // new KafkaClientsResource(),
+                   return (ResourceType<T>) resourceTypes[1];
+                case HelmClusterOperator:
+                    // new HelmResource
+                    return (ResourceType<T>) resourceTypes[12];
+                case OlmClusterOperator:
+                    // new OlmResource(),
+                    return (ResourceType<T>) resourceTypes[13];
+                default:
+                    // new DeploymentResource()
+                    return (ResourceType<T>) resourceTypes[15];
+            }
+        }
+
+        // other no conflicting types
         for (ResourceType<?> type : resourceTypes) {
             if (type.getKind().equals(resource.getKind())) {
                 return (ResourceType<T>) type;

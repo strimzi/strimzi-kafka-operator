@@ -86,7 +86,7 @@ public abstract class AbstractST implements TestSeparator {
     private final Object lock = new Object();
     private final Object lockForTimeMeasuringSystem = new Object();
 
-    // maps for local variables
+    // maps for local variables {thread safe}
     protected static Map<String, String> mapTestWithClusterNames = new HashMap<>();
     protected static Map<String, String> mapTestWithTestTopics = new HashMap<>();
     protected static Map<String, String> mapTestWithTestUsers = new HashMap<>();
