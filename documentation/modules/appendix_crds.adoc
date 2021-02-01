@@ -2505,6 +2505,9 @@ Used in: xref:type-KafkaConnectS2IStatus-{context}[`KafkaConnectS2IStatus`], xre
 [id='type-KafkaConnectS2I-{context}']
 ### `KafkaConnectS2I` schema reference
 
+*The type `KafkaConnectS2I` has been deprecated.*
+Please use xref:type-Build-{context}[`Build`] instead.
+
 
 [options="header"]
 |====

@@ -6,7 +6,7 @@
 = Migrating from Kafka Connect with S2I to Kafka Connect
 
 [role="_abstract"]
-Support for Kafka Connect with S2I and the `KafkaConnectS2I` resource is planned for deprecation.
+Support for Kafka Connect with S2I and the `KafkaConnectS2I` resource is deprecated.
 This follows the introduction of `build` configuration properties to the `KafkaConnect` resource,
 which are used to build a container image with the connector plugins you require for your data connections automatically.
 

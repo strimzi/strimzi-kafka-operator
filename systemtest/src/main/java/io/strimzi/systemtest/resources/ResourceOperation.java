@@ -21,6 +21,8 @@ public class ResourceOperation {
         return getTimeoutForResourceReadiness("default");
     }
 
+    // Deprecation is suppressed because of KafkaConnectS2I
+    @SuppressWarnings("deprecation")
     public static long getTimeoutForResourceReadiness(String kind) {
         long timeout;
 
@@ -79,6 +81,8 @@ public class ResourceOperation {
         return getTimeoutForResourceDeletion("default");
     }
 
+    // Deprecation is suppressed because of KafkaConnectS2I
+    @SuppressWarnings("deprecation")
     public static long getTimeoutForResourceDeletion(String kind) {
         long timeout;
 

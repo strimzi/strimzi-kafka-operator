@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -91,6 +92,8 @@ import static java.util.Collections.unmodifiableList;
 @EqualsAndHashCode
 @Version(Constants.V1BETA1)
 @Group(Constants.STRIMZI_GROUP)
+@Deprecated
+@DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.connect.build.Build.class)
 public class KafkaConnectS2I extends CustomResource<KafkaConnectS2ISpec, KafkaConnectS2IStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 

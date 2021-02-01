@@ -26,6 +26,8 @@ import java.util.function.Consumer;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
+// Deprecation is suppressed because of KafkaConnectS2I
+@SuppressWarnings("deprecation")
 public class KafkaConnectS2IResource {
 
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2IClient() {

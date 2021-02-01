@@ -18,7 +18,7 @@ Use the `KafkaConnectS2I` resource if you are using the {docs-okd-s2i} framework
 * The full schema of the `KafkaConnectS2I` resource is described in xref:type-KafkaConnectS2I-reference[].
 
 IMPORTANT: With the introduction of `build` configuration to the `KafkaConnect` resource, Strimzi can now automatically build a container image with the connector plugins you require for your data connections.
-As a result, support for Kafka Connect with Source-to-Image (S2I) is _planned for deprecation_. To prepare for this change, you can xref:proc-migrating-kafka-connect-s2i-{context}[migrate Kafka Connect S2I instances to Kafka Connect instances].
+As a result, support for Kafka Connect with Source-to-Image (S2I) is deprecated. To prepare for this change, you can xref:proc-migrating-kafka-connect-s2i-{context}[migrate Kafka Connect S2I instances to Kafka Connect instances].
 
 .Additional resources
 
