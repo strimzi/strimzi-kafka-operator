@@ -25,6 +25,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectBuild;
+import io.strimzi.operator.cluster.model.KafkaConnectBuildUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectDockerfile;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -67,7 +68,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final BuildOperator buildOperator;
     private final KafkaVersion.Lookup versions;
     private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> connectS2IOperations;
-    private final ClusterOperatorConfig.RbacScope rbacScope;
     protected final long connectBuildTimeoutMs;
 
     /**
@@ -101,7 +101,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         this.buildOperator = supplier.buildOperations;
 
         this.versions = config.versions();
-        this.rbacScope = config.getRbacScope();
         this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();
     }
 
@@ -300,41 +299,97 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      *
      * @param namespace             Namespace where the Kafka Connect is deployed
      * @param connectBuild          The KafkaConnectBuild model with the build definitions
+     * @param buildState            State object of the Kafka Connect build used to pass information around
      * @param dockerFileConfigMap   ConfigMap with the generated Dockerfile
      * @param newBuildRevision      New build revision (hash of the Dockerfile)
      *
      * @return                      Future which completes when the build is finished (or fails if it fails)
      */
     private Future<Void> kubernetesBuild(String namespace, KafkaConnectBuild connectBuild, BuildState buildState, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
-        return podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null)
-                .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
-                .compose(ignore -> configMapOperations.reconcile(namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap))
-                .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                .compose(ignore -> podOperator.waitFor(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> {
-                    Pod buildPod = podOperator.get(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()));
+        return podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()))
+                .compose(pod -> {
+                    if (pod != null)    {
+                        String existingBuildRevision = Annotations.stringAnnotation(pod, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
+                        if (newBuildRevision.equals(existingBuildRevision)
+                                && !KafkaConnectBuildUtils.buildPodFailed(pod)
+                                && !buildState.forceRebuild) {
+                            // Builder pod exists, is not failed, and is building the same Dockerfile and we are not
+                            // asked to force re-build by the annotation => we re-use the existing build
+                            log.info("Previous build exists with the same Dockerfile and will be reused.");
+                            return kubernetesBuildWaitForFinish(namespace, connectBuild, buildState, newBuildRevision);
+                        } else {
+                            // Pod exists, but it either failed or is for different Dockerfile => start new build
+                            log.info("Previous build exists, but uses different Dockerfile or failed. New build will be started.");
+                            return podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null)
+                                    .compose(ignore -> kubernetesBuildStart(namespace, connectBuild, dockerFileConfigMap, newBuildRevision))
+                                    .compose(ignore -> kubernetesBuildWaitForFinish(namespace, connectBuild, buildState, newBuildRevision));
+                        }
+                    } else {
+                        // Pod does not exist => Start new build
+                        return kubernetesBuildStart(namespace, connectBuild, dockerFileConfigMap, newBuildRevision)
+                                .compose(ignore -> kubernetesBuildWaitForFinish(namespace, connectBuild, buildState, newBuildRevision));
+                    }
+                });
+    }
 
-                    // Check if build is complete now (either with success or failure)
-                    return buildPod.getStatus() != null
-                            && buildPod.getStatus().getContainerStatuses() != null
-                            && buildPod.getStatus().getContainerStatuses().size() > 0
-                            && buildPod.getStatus().getContainerStatuses().get(0) != null
-                            && buildPod.getStatus().getContainerStatuses().get(0).getState() != null
-                            && buildPod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null;
-                }))
+    /**
+     * Starts the Kafka Connect Build on Kubernetes by creating the ConfigMap with the Dockerfile and starting the
+     * builder Pod.
+     *
+     * @param namespace             Namespace where the Kafka Connect is deployed
+     * @param connectBuild          The KafkaConnectBuild model with the build definitions
+     * @param dockerFileConfigMap   ConfigMap with the generated Dockerfile
+     * @param newBuildRevision      New build revision (hash of the Dockerfile)
+     *
+     * @return                      Future which completes when the build is finished (or fails if it fails)
+     */
+    private Future<Void> kubernetesBuildStart(String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
+        return configMapOperations.reconcile(namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap)
+                .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, newBuildRevision)))
+                .mapEmpty();
+    }
+
+    /**
+     * Checks if the builder Pod finished the build
+     *
+     * @param namespace             Namespace where the Kafka Connect is deployed
+     * @param podName               The name of the Pod which should be checked whether it finished
+     *
+     * @return                      True if the build already finished, false if it is still building
+     */
+    private boolean kubernetesBuildPodFinished(String namespace, String podName)   {
+        Pod buildPod = podOperator.get(namespace, podName);
+        return KafkaConnectBuildUtils.buildPodComplete(buildPod);
+    }
+
+    /**
+     * Waits for the Kafka Connect build to finish and collects the results from it
+     *
+     * @param namespace             Namespace where the Kafka Connect is deployed
+     * @param connectBuild          The KafkaConnectBuild model with the build definitions
+     * @param buildState            State object of the Kafka Connect build used to pass information around
+     * @param newBuildRevision      New build revision (hash of the Dockerfile)
+     *
+     * @return                      Future which completes when the build is finished (or fails if it fails)
+     */
+    private Future<Void> kubernetesBuildWaitForFinish(String namespace, KafkaConnectBuild connectBuild, BuildState buildState, String newBuildRevision)  {
+        return podOperator.waitFor(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
                 .compose(ignore -> podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
                 .compose(pod -> {
-                    ContainerStateTerminated state = pod.getStatus().getContainerStatuses().get(0).getState().getTerminated();
-                    if (state.getExitCode() == 0) {
+                    if (KafkaConnectBuildUtils.buildPodSucceeded(pod)) {
+                        ContainerStateTerminated state = pod.getStatus().getContainerStatuses().get(0).getState().getTerminated();
                         buildState.desiredImage = state.getMessage().trim();
                         buildState.desiredBuildRevision = newBuildRevision;
                         log.info("Build completed successfully. New image is {}.", buildState.desiredImage);
                         return Future.succeededFuture();
                     } else {
-                        log.info("Build failed with code {}: {}", state.getExitCode(), state.getMessage());
+                        ContainerStateTerminated state = pod.getStatus().getContainerStatuses().get(0).getState().getTerminated();
+                        log.warn("Build failed with code {}: {}", state.getExitCode(), state.getMessage());
                         return Future.failedFuture("The Kafka Connect build failed");
                     }
                 })
                 .compose(i -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
+                .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
                 .mapEmpty();
     }
 
@@ -344,30 +399,96 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      *
      * @param namespace             Namespace where the Kafka Connect is deployed
      * @param connectBuild          The KafkaConnectBuild model with the build definitions
+     * @param buildState            State object of the Kafka Connect build used to pass information around
      * @param dockerfile            The generated Dockerfile
      * @param newBuildRevision      New build revision (hash of the Dockerfile)
      *
      * @return                      Future which completes when the build is finished (or fails if it fails)
      */
     private Future<Void> openShiftBuild(String namespace, KafkaConnectBuild connectBuild, BuildState buildState, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
+        return buildConfigOperator.getAsync(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()))
+                .compose(buildConfig -> {
+                    if (buildConfig != null
+                            && buildConfig.getStatus() != null
+                            && buildConfig.getStatus().getLastVersion() != null) {
+                        Long lastVersion = buildConfig.getStatus().getLastVersion();
+                        return buildOperator.getAsync(namespace, KafkaConnectResources.buildName(connectBuild.getCluster(), lastVersion));
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                })
+                .compose(build -> {
+                    if (build != null)  {
+                        String existingBuildRevision = Annotations.stringAnnotation(build, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
+                        if (newBuildRevision.equals(existingBuildRevision)
+                                && !KafkaConnectBuildUtils.buildFailed(build)
+                                && !buildState.forceRebuild) {
+                            // Build exists, is not failed, and is building the same Dockerfile and we are not
+                            // asked to force re-build by the annotation => we re-use the existing build
+                            log.info("Previous build exists with the same Dockerfile and will be reused.");
+                            buildState.currentBuildName = build.getMetadata().getName();
+                            return openShiftBuildWaitForFinish(namespace, connectBuild, buildState, newBuildRevision);
+                        } else {
+                            // Build exists, but it either failed or is for different Dockerfile => start new build
+                            return openShiftBuildStart(namespace, connectBuild, buildState, dockerfile, newBuildRevision)
+                                    .compose(ignore -> openShiftBuildWaitForFinish(namespace, connectBuild, buildState, newBuildRevision));
+                        }
+                    } else {
+                        return openShiftBuildStart(namespace, connectBuild, buildState, dockerfile, newBuildRevision)
+                                .compose(ignore -> openShiftBuildWaitForFinish(namespace, connectBuild, buildState, newBuildRevision));
+                    }
+                });
+    }
+
+    /**
+     * Starts the Kafka Connect Build on OpenShift.
+     *
+     * @param namespace             Namespace where the Kafka Connect is deployed
+     * @param connectBuild          The KafkaConnectBuild model with the build definitions
+     * @param buildState            State object of the Kafka Connect build used to pass information around
+     * @param dockerfile            The generated Dockerfile
+     * @param newBuildRevision      New build revision (hash of the Dockerfile)
+     *
+     * @return                      Future which completes when the build is finished (or fails if it fails)
+     */
+    private Future<Void> openShiftBuildStart(String namespace, KafkaConnectBuild connectBuild, BuildState buildState, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
         return configMapOperations.reconcile(namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
-                .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
                 .compose(ignore -> buildConfigOperator.reconcile(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildConfig(dockerfile)))
-                .compose(ignore -> buildConfigOperator.startBuild(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildRequest()))
+                .compose(ignore -> buildConfigOperator.startBuild(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildRequest(newBuildRevision)))
                 .compose(build -> {
                     buildState.currentBuildName = build.getMetadata().getName();
-                    return buildOperator.waitFor(namespace, buildState.currentBuildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> {
-                        Build runningBuild = buildOperator.get(namespace, buildState.currentBuildName);
+                    return Future.succeededFuture();
+                });
+    }
 
-                        // Check if build is complete now (either with success or failure)
-                        return runningBuild.getStatus() != null
-                                && ("Complete".equals(runningBuild.getStatus().getPhase()) || "Failed".equals(runningBuild.getStatus().getPhase()) || "Error".equals(runningBuild.getStatus().getPhase()) || "Cancelled".equals(runningBuild.getStatus().getPhase()));
-                    });
-                })
+    /**
+     * Checks if the Build finished
+     *
+     * @param namespace             Namespace where the Kafka Connect is deployed
+     * @param buildName             Name of the Build which should be checked
+     *
+     * @return                      True if the Build already finished, false if it is still building
+     */
+    private boolean openShiftBuildFinished(String namespace, String buildName) {
+        Build runningBuild = buildOperator.get(namespace, buildName);
+        return KafkaConnectBuildUtils.buildComplete(runningBuild);
+    }
+
+    /**
+     * Waits for the Kafka Connect build to finish and collects the results from it
+     *
+     * @param namespace             Namespace where the Kafka Connect is deployed
+     * @param connectBuild          The KafkaConnectBuild model with the build definitions
+     * @param buildState            State object of the Kafka Connect build used to pass information around
+     * @param newBuildRevision      New build revision (hash of the Dockerfile)
+     *
+     * @return                      Future which completes when the build is finished (or fails if it fails)
+     */
+    private Future<Void> openShiftBuildWaitForFinish(String namespace, KafkaConnectBuild connectBuild, BuildState buildState, String newBuildRevision)   {
+        return buildOperator.waitFor(namespace, buildState.currentBuildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> openShiftBuildFinished(namespace, buildState.currentBuildName))
                 .compose(ignore -> buildOperator.getAsync(namespace, buildState.currentBuildName))
                 .compose(build -> {
-                    if (build.getStatus() != null
-                            && "Complete".equals(build.getStatus().getPhase()))   {
+                    if (KafkaConnectBuildUtils.buildSucceeded(build))   {
                         // Build completed successfully. Lets extract the new image
                         if (build.getStatus().getOutputDockerImageReference() != null
                                 && build.getStatus().getOutput() != null
@@ -383,7 +504,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             log.info("Build {} completed successfully. New image is {}.", buildState.currentBuildName, buildState.desiredImage);
                             return Future.succeededFuture();
                         } else {
-                            log.info("Build {} completed successfully. But the new container image was not found.", buildState.currentBuildName);
+                            log.warn("Build {} completed successfully. But the new container image was not found.", buildState.currentBuildName);
                             return Future.failedFuture("The Kafka Connect build " + buildState.currentBuildName + " completed, but the new container image was not found");
                         }
                     } else {
@@ -391,12 +512,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         if (build.getStatus() != null) {
                             log.info("Build {} failed with code {}: {}", buildState.currentBuildName, build.getStatus().getPhase(), build.getStatus().getLogSnippet());
                         } else {
-                            log.info("Build {} failed for unknown reason", buildState.currentBuildName);
+                            log.warn("Build {} failed for unknown reason", buildState.currentBuildName);
                         }
 
                         return Future.failedFuture("The Kafka Connect build " + buildState.currentBuildName + " failed");
                     }
                 })
+                .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
                 .mapEmpty();
     }
 

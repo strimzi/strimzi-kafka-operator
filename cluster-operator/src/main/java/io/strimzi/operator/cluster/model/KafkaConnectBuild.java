@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.connect.build.ImageStreamOutput;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.common.Annotations;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -177,13 +178,14 @@ public class KafkaConnectBuild extends AbstractModel {
      * @param isOpenShift       Flag defining whether we are running on OpenShift
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
+     * @param newBuildRevision  Revision of the build which will be build used for annotation
      *
      * @return  Pod which will build the new container image
      */
-    public Pod generateBuilderPod(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Pod generateBuilderPod(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
         return createPod(
                 KafkaConnectResources.buildPodName(cluster),
-                Collections.emptyMap(),
+                Collections.singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, newBuildRevision),
                 getVolumes(isOpenShift),
                 null,
                 getContainers(imagePullPolicy),
@@ -363,11 +365,13 @@ public class KafkaConnectBuild extends AbstractModel {
                 .build();
     }
 
-    public BuildRequest generateBuildRequest()  {
+    public BuildRequest generateBuildRequest(String buildRevision)  {
         return new BuildRequestBuilder()
                 .withNewMetadata()
                     .withName(KafkaConnectResources.buildConfigName(cluster))
                     .withNamespace(namespace)
+                    .withAnnotations(Collections.singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildRevision))
+                    .withLabels(getLabelsWithStrimziName(name, templateBuildConfigLabels).toMap())
                 .endMetadata()
                 .build();
     }
