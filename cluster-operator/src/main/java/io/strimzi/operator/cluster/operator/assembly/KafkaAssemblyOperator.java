@@ -2903,7 +2903,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 EntityTopicOperator topicOperator = entityOperator.getTopicOperator();
                 EntityUserOperator userOperator = entityOperator.getUserOperator();
 
-                return CompositeFuture.join(Util.metricsAndLogging(configMapOperations, kafkaAssembly.getMetadata().getNamespace(), topicOperator.getLogging(), null), Util.metricsAndLogging(configMapOperations, kafkaAssembly.getMetadata().getNamespace(), userOperator.getLogging(), null))
+                return CompositeFuture.join(
+                            topicOperator == null ? Future.succeededFuture(null) :
+                                Util.metricsAndLogging(configMapOperations, kafkaAssembly.getMetadata().getNamespace(), topicOperator.getLogging(), null),
+                            userOperator == null ? Future.succeededFuture(null) :
+                                Util.metricsAndLogging(configMapOperations, kafkaAssembly.getMetadata().getNamespace(), userOperator.getLogging(), null))
                         .compose(res -> {
                             MetricsAndLogging toMetricsAndLogging = res.resultAt(0);
                             MetricsAndLogging uoMetricsAndLogging = res.resultAt(1);
