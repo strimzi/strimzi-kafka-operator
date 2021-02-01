@@ -585,6 +585,146 @@ public class KafkaUpgradeDowngradeMockTest {
                 })));
     }
 
+    // Tests upgrade when Kafka StatefulSet and/or Pods existing but without any of the version annotations. This
+    // indicates that the Statefulset / Pods were not using the current or recent Strimzi version and since we do not
+    // know the version, we should wail.
+    @Test
+    public void testUpgradeWithoutAnyVersionInPodsOrStsFails(VertxTestContext context)  {
+        KafkaVersion unsupported = VERSIONS.version("2.1.0");
+
+        Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                unsupported.messageVersion(),
+                unsupported.protocolVersion());
+
+        Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+
+        Checkpoint reconciliation = context.checkpoint();
+        initialize(context, initialKafka)
+                .onComplete(context.succeeding(v -> {
+                    context.verify(() -> {
+                        assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                                unsupported.messageVersion(),
+                                unsupported.protocolVersion(),
+                                KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+                    });
+                }))
+                .compose(v -> {
+                    StatefulSet sts = client.apps().statefulSets().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").get();
+                    StatefulSet modifiedSts = new StatefulSetBuilder(sts)
+                            .editMetadata()
+                                .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION)
+                            .endMetadata()
+                            .editSpec()
+                                .editTemplate()
+                                    .editMetadata()
+                                        .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION)
+                                        .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION)
+                                        .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION)
+                                    .endMetadata()
+                                .endTemplate()
+                            .endSpec()
+                            .build();
+                    client.apps().statefulSets().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").createOrReplace(modifiedSts);
+
+                    for (int i = 0; i < 3; i++) {
+                        Pod pod = client.pods().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka-" + i).get();
+                        Pod modifiedPod = new PodBuilder(pod)
+                                .editMetadata()
+                                    .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION)
+                                    .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION)
+                                    .removeFromAnnotations(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION)
+                                .endMetadata()
+                                .build();
+                        client.pods().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka-" + i).createOrReplace(modifiedPod);
+                    }
+
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v.getMessage(), stringContainsInOrder("Kafka Pods or StatefulSet exist, but do not contain the strimzi.io/kafka-version annotation to detect their version. Kafka upgrade cannot be detected."));
+
+                    reconciliation.flag();
+                })));
+    }
+
+    /*
+     * NOOP tests
+     */
+
+    // Tests regular reconciliation without any upgrades
+    @Test
+    public void testNoopUpgrade(VertxTestContext context)  {
+        Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+
+        Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+
+        Checkpoint reconciliation = context.checkpoint();
+        initialize(context, initialKafka)
+                .onComplete(context.succeeding(v -> {
+                    context.verify(() -> {
+                        assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                                KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                                KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
+                                KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+                    });
+                }))
+                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                            KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+
+                    reconciliation.flag();
+                })));
+    }
+
+    // Tesst that Kafka works fine when both Pods and StatefulSets is missing at the beginning of reconciliation
+    @Test
+    public void testNoopWhenStatefulSetAndPodsAreMissing(VertxTestContext context)  {
+        Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+
+        Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+
+        Checkpoint reconciliation = context.checkpoint();
+        initialize(context, initialKafka)
+                .onComplete(context.succeeding(v -> {
+                    context.verify(() -> {
+                        assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                                KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                                KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
+                                KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+                    });
+                }))
+                .compose(v -> {
+                    client.apps().statefulSets().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").delete();
+
+                    for (int i = 0; i < 3; i++) {
+                        client.pods().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka-" + i).delete();
+                    }
+
+                    return Future.succeededFuture();
+                })
+                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
+                            KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+
+                    reconciliation.flag();
+                })));
+    }
+
     /*
      * DOWNGRADE TESTS
      */

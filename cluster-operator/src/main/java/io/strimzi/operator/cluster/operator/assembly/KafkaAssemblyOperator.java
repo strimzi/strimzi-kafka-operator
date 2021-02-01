@@ -377,6 +377,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final Kafka kafkaAssembly;
         private final Reconciliation reconciliation;
 
+        private boolean kafkaStsAlreadyExists = false;
         private String currentStsVersion;
         private KafkaVersionChange versionChange;
         private String highestLogMessageFormatVersion;
@@ -1448,10 +1449,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(sts -> {
                         Storage oldStorage = getOldStorage(sts);
 
-                        kafkaCurrentReplicas = 0;
+                        this.kafkaCurrentReplicas = 0;
                         if (sts != null && sts.getSpec() != null)   {
-                            kafkaCurrentReplicas = sts.getSpec().getReplicas();
+                            this.kafkaCurrentReplicas = sts.getSpec().getReplicas();
                             this.currentStsVersion = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
+                            this.kafkaStsAlreadyExists = true;
                         }
 
                         this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage, kafkaCurrentReplicas);
@@ -1509,12 +1511,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // We decide what is the current Kafka version used and create the KafkaVersionChange object
                         // describing the situation.
                         if (lowestKafkaVersion == null)   {
-                            // No version found in Pods or StatefulSet => This means we are dealing with a brand new
-                            // Kafka cluster or a Kafka cluster with deleted StatefulSet and Pods. New cluster does not
-                            // need an upgrade. And cluster without StatefulSet / Pods cannot be rolled. So we can just
-                            // deploy a new one with the desired version. Therefore we can set the version change to
-                            // noop.
-                            this.versionChange = new KafkaVersionChange(kafkaCluster.getKafkaVersion(), kafkaCluster.getKafkaVersion());
+                            if (!kafkaStsAlreadyExists && pods.isEmpty())  {
+                                // No version found in Pods or StatefulSet because they do not exist => This means we
+                                // are dealing with a brand new Kafka cluster or a Kafka cluster with deleted
+                                // StatefulSet and Pods. New cluster does not need an upgrade. And cluster without
+                                // StatefulSet / Pods cannot be rolled. So we can just deploy a new one with the desired
+                                // version. Therefore we can use the desired version and set the version change to noop.
+                                this.versionChange = new KafkaVersionChange(kafkaCluster.getKafkaVersion(), kafkaCluster.getKafkaVersion());
+                            } else {
+                                // Either Pods or StatefulSet already exist. But none of them contains the version
+                                // annotation. This suggests they are not created by the current versions of Strimzi.
+                                // Without the annotation, we cannot detect the Kafka version and decide on upgrade.
+                                log.warn("Kafka Pods or StatefulSet exist, but do not contain the {} annotation to detect their version. Kafka upgrade cannot be detected.", ANNO_STRIMZI_IO_KAFKA_VERSION);
+                                throw new KafkaUpgradeException("Kafka Pods or StatefulSet exist, but do not contain the " + ANNO_STRIMZI_IO_KAFKA_VERSION + " annotation to detect their version. Kafka upgrade cannot be detected.");
+                            }
                         } else if (lowestKafkaVersion.equals(highestKafkaVersion)) {
                             // All brokers have the same version. We can use it as the current version.
                             this.versionChange = new KafkaVersionChange(versions.version(lowestKafkaVersion), kafkaCluster.getKafkaVersion());
