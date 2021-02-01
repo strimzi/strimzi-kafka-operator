@@ -92,9 +92,8 @@ public class KafkaConnectBuild extends AbstractModel {
 
                 if (dockerOutput.getAdditionalKanikoOptions() != null
                         && !dockerOutput.getAdditionalKanikoOptions().isEmpty())  {
-                    List<String> desiredOptions = Arrays.asList(dockerOutput.getAdditionalKanikoOptions().split("\\s+"));
-                    validateAdditionalKanikoOptions(desiredOptions);
-                    build.additionalKanikoOptions = desiredOptions;
+                    validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
+                    build.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
                 }
             }
         }

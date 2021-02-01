@@ -12,6 +12,8 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 /**
  * Represents Docker output from the build
  */
@@ -32,7 +34,7 @@ public class DockerOutput extends Output {
 
     private String image;
     private String pushSecret;
-    private String additionalKanikoOptions;
+    private List<String> additionalKanikoOptions;
 
     @Description("Must be `" + TYPE_DOCKER + "`")
     @Override
@@ -62,17 +64,17 @@ public class DockerOutput extends Output {
     }
 
     @Description("Configures additional options which will be passed to the Kaniko executor when building the new Connect image. " +
-            "For example `--reproducible --single-snapshot`. Allowed options are: " + ALLOWED_KANIKO_OPTIONS + " " +
+            "Allowed options are: " + ALLOWED_KANIKO_OPTIONS + ". " +
             "These options will be used only on Kubernetes where the Kaniko executor is used. " +
             "They will be ignored on OpenShift. " +
             "The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. " +
             "Changing this field does not trigger new build of the Kafka Connect image.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getAdditionalKanikoOptions() {
+    public List<String> getAdditionalKanikoOptions() {
         return additionalKanikoOptions;
     }
 
-    public void setAdditionalKanikoOptions(String additionalKanikoOptions) {
+    public void setAdditionalKanikoOptions(List<String> additionalKanikoOptions) {
         this.additionalKanikoOptions = additionalKanikoOptions;
     }
 }

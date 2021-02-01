@@ -457,7 +457,7 @@ public class KafkaConnectBuildTest {
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
                             .withNewPushSecret("my-docker-credentials")
-                            .withAdditionalKanikoOptions("--reproducible --single-snapshot --log-format=json")
+                            .withAdditionalKanikoOptions("--reproducible", "--single-snapshot", "--log-format=json")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
@@ -484,7 +484,7 @@ public class KafkaConnectBuildTest {
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
                             .withNewPushSecret("my-docker-credentials")
-                            .withAdditionalKanikoOptions("--reproducible --build-arg --single-snapshot --digest-file=/dev/null --log-format=json")
+                            .withAdditionalKanikoOptions("--reproducible", "--build-arg", "--single-snapshot", "--digest-file=/dev/null", "--log-format=json")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
