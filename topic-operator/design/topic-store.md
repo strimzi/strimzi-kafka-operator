@@ -100,11 +100,11 @@ Other configuration options are listed here:
     /**
      * The store topic for the Kafka Streams based TopicStore
      */
-    public static final Value<String> STORE_TOPIC = new Value<>(TC_STORE_TOPIC, STRING, "store-topic");
+    public static final Value<String> STORE_TOPIC = new Value<>(TC_STORE_TOPIC, STRING, "__strimzi_store_topic");
     /** The store name for the Kafka Streams based TopicStore */
-    public static final Value<String> STORE_NAME = new Value<>(TC_STORE_NAME, STRING, "__strimzi_topic_store");
+    public static final Value<String> STORE_NAME = new Value<>(TC_STORE_NAME, STRING, "topic-store");
     /** The application id for the Kafka Streams based TopicStore */
-    public static final Value<String> APPLICATION_ID = new Value<>(TC_APPLICATION_ID, STRING, "strimzi-topic-store");
+    public static final Value<String> APPLICATION_ID = new Value<>(TC_APPLICATION_ID, STRING, "__strimzi-topic-operator-kstreams");
     /** The (gRPC) application server for the Kafka Streams based TopicStore */
     public static final Value<String> APPLICATION_SERVER = new Value<>(TC_APPLICATION_SERVER, STRING, "localhost:9000");
     /** The stale timeout for the Kafka Streams based TopicStore */
@@ -112,8 +112,8 @@ Other configuration options are listed here:
     /** Is distributed KeyValue store used for the Kafka Streams based TopicStore */
     public static final Value<Boolean> DISTRIBUTED_STORE = new Value<>(TC_DISTRIBUTED_STORE, BOOLEAN, "false");
 
-    /** Do we upgrade/migrate from ZooKeeper TopicStore to Kafka Streams based TopicStore */
-    public static final Value<Boolean> UPGRADE_TOPIC_STORE = new Value<>(TC_UPGRADE_TOPIC_STORE, BOOLEAN, "false");
+    /** Do we use old ZooKeeper based TopicStore */
+    public static final Value<Boolean> USE_ZOOKEEPER_TOPIC_STORE = new Value<>(TC_USE_ZOOKEEPER_TOPIC_STORE, BOOLEAN, "false");
 ```
 
 A cluster of TopicStore (Storage) would look like this:
