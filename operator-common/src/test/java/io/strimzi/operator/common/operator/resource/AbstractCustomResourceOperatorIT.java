@@ -104,7 +104,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         vertx.close();
 
         String namespace = getNamespace();
-        if (kubeClient().getNamespace(namgespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
             log.warn("Deleting namespace {} after tests run", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
