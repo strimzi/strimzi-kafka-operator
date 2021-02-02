@@ -15,7 +15,9 @@ import io.vertx.core.AsyncResult;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public class StatusUtils {
     private static final String V1ALPHA1 = Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1;
@@ -98,8 +100,19 @@ public class StatusUtils {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
+        List<Condition> conditionList = new ArrayList<>();
         Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
-        status.setConditions(Collections.singletonList(condition));
+        conditionList.add(condition);
+
+        if (status.getConditions() != null) {
+            status.getConditions().forEach(cond -> {
+                if ("UnknownFields".equals(cond.getReason()) || "DeprecatedFields".equals(cond.getReason())) {
+                    conditionList.add(cond);
+                }
+            });
+        }
+
+        status.setConditions(conditionList);
     }
 
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type) {

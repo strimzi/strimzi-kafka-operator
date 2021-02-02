@@ -274,7 +274,7 @@ public abstract class AbstractOperator<
         return result.future();
     }
 
-    private void addWarningsToStatus(Status status, Set<Condition> unknownAndDeprecatedConditions)   {
+    protected void addWarningsToStatus(Status status, Set<Condition> unknownAndDeprecatedConditions)   {
         if (status != null)  {
             status.addConditions(unknownAndDeprecatedConditions);
         }
@@ -388,8 +388,9 @@ public abstract class AbstractOperator<
      * if the resource can safely be reconciled (e.g. it merely using deprecated API).
      * @param resource The custom resource
      * @throws InvalidResourceException if the resource cannot be safely reconciled.
+     * @return set of conditions
      */
-    /*test*/ Set<Condition> validate(T resource) {
+    /*test*/ public Set<Condition> validate(T resource) {
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0);
 

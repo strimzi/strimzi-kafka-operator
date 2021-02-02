@@ -34,6 +34,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -57,6 +58,7 @@ import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -758,6 +760,40 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 })));
     }
 
+    @Test
+    public void testRebalanceUsesUnknownProperty(VertxTestContext context) throws IOException, URISyntaxException {
+        // Setup the rebalance endpoint with the number of pending calls before a response is received.
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+
+        String rebalanceString = "apiVersion: kafka.strimzi.io/v1alpha1\n" +
+                "kind: KafkaRebalance\n" +
+                "metadata:\n" +
+                "  name: " + RESOURCE_NAME + "\n" +
+                "  namespace: " + CLUSTER_NAMESPACE + "\n" +
+                "  labels:\n" +
+                "    strimzi.io/cluster: " + CLUSTER_NAME + "\n" +
+                "spec:\n" +
+                "  unknown: \"value\"";
+
+        KafkaRebalance kr = TestUtils.fromYamlString(rebalanceString, KafkaRebalance.class);
+
+        Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).create(kr);
+
+        when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME))
+                .thenReturn(Future.succeededFuture(kafka));
+
+        mockRebalanceOperator(mockRebalanceOps, CLUSTER_NAMESPACE, RESOURCE_NAME, kubernetesClient);
+
+        Checkpoint checkpoint = context.checkpoint();
+        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME), kr)
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from 'New' directly to 'ProposalReady' (no pending calls in the Mock server)
+                    assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                    assertValidationCondition(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, "UnknownFields");
+                    checkpoint.flag();
+                }));
+    }
+
     /**
      * Tests the transition from 'New' to 'NotReady' due to missing Cruise Control deployment
      *
@@ -932,6 +968,15 @@ public class KafkaRebalanceAssemblyOperatorTest {
             assertThat(kafkaRebalance, StateMatchers.hasState());
             Condition condition = kcrao.rebalanceStateCondition(kafkaRebalance.getStatus());
             assertThat(Collections.singletonList(condition), StateMatchers.hasStateInConditions(state));
+        });
+    }
+
+    private void assertValidationCondition(VertxTestContext context, KubernetesClient kubernetesClient, String namespace, String resource, String validationError) {
+        context.verify(() -> {
+            KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
+            assertThat(kafkaRebalance, StateMatchers.hasState());
+            kafkaRebalance.getStatus().getConditions();
+            assertThat(kafkaRebalance.getStatus().getConditions().stream().filter(cond -> validationError.equals(cond.getReason())).findFirst(), notNullValue());
         });
     }
 

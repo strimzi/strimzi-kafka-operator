@@ -49,6 +49,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -313,7 +314,8 @@ public class KafkaRebalanceAssemblyOperator
 
     private Future<Void> reconcile(Reconciliation reconciliation, String host,
                                    CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
-                                   KafkaRebalanceState currentState, KafkaRebalanceAnnotation rebalanceAnnotation) {
+                                   KafkaRebalanceState currentState, KafkaRebalanceAnnotation rebalanceAnnotation,
+                                   Set<Condition> unknownAndDeprecatedConditions) {
 
         log.info("{}: Rebalance action from state [{}]", reconciliation, currentState);
 
@@ -327,6 +329,7 @@ public class KafkaRebalanceAssemblyOperator
                return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), reconciliation.name())
                             .compose(currentKafkaRebalance -> {
                                 if (currentKafkaRebalance != null) {
+                                    addWarningsToStatus(desiredStatus, unknownAndDeprecatedConditions);
                                     return updateStatus(currentKafkaRebalance, desiredStatus, null)
                                             .compose(updatedKafkaRebalance -> {
                                                 log.info("{}: State updated to [{}] with annotation {}={} ",
@@ -358,6 +361,7 @@ public class KafkaRebalanceAssemblyOperator
                                 }
                             }, exception -> {
                                     log.error("{}: Status updated to [NotReady] due to error: {}", reconciliation, exception.getMessage());
+                                    addWarningsToStatus(desiredStatus, unknownAndDeprecatedConditions);
                                     return updateStatus(kafkaRebalance, new KafkaRebalanceStatus(), exception)
                                             .mapEmpty();
                                 }); },
@@ -788,10 +792,11 @@ public class KafkaRebalanceAssemblyOperator
                                 }
                                 currentState = KafkaRebalanceState.valueOf(rebalanceStateType);
                             }
+                            Set<Condition> unknownAndDeprecatedConditions = validate(currentKafkaRebalance);
                             // Check annotation
                             KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(currentKafkaRebalance);
                             return reconcile(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
-                                        apiClient, currentKafkaRebalance, currentState, rebalanceAnnotation).mapEmpty();
+                                        apiClient, currentKafkaRebalance, currentState, rebalanceAnnotation, unknownAndDeprecatedConditions).mapEmpty();
 
                         }, exception -> Future.failedFuture(exception).mapEmpty());
                 }, exception -> updateStatus(kafkaRebalance, new KafkaRebalanceStatus(), exception).mapEmpty());
