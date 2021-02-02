@@ -544,7 +544,7 @@ public abstract class AbstractOperator<
                 Tag.of("kind", reconciliation.kind()),
                 Tag.of("name", reconciliation.name()),
                 Tag.of("resource-namespace", reconciliation.namespace()),
-                Tag.of("failure-reason", cause == null ? "none" : cause.getMessage()));
+                Tag.of("failure-reason", cause == null ? "none" : cause.getMessage() == null ? "unknown error" : cause.getMessage()));
 
         T cr = resourceOperator.get(reconciliation.namespace(), reconciliation.name());
 
