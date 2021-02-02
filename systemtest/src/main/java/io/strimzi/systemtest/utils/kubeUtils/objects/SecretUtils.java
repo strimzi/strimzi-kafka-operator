@@ -80,6 +80,10 @@ public class SecretUtils {
         createSecretFromFile(Collections.singletonMap(key, pathToOrigin), name, namespace, null);
     }
 
+    public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace, Map<String, String> labels) {
+        createSecretFromFile(Collections.singletonMap(key, pathToOrigin), name, namespace, labels);
+    }
+
     public static void createSecretFromFile(Map<String, String> certFilesPath, String name, String namespace) {
         createSecretFromFile(certFilesPath, name, namespace, null);
     }
