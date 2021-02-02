@@ -58,6 +58,8 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
+import io.strimzi.operator.common.model.ResourceVisitor;
+import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -79,6 +81,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -685,6 +688,18 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return statusResult -> Future.succeededFuture(new ConnectorStatusAndConditions(statusResult, conditions));
     }
 
+    public Set<Condition> validate(KafkaConnector resource) {
+        if (resource != null) {
+            Set<Condition> warningConditions = new LinkedHashSet<>(0);
+
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, warningConditions));
+
+            return warningConditions;
+        }
+
+        return Collections.emptySet();
+    }
+
     Future<Void> maybeUpdateConnectorStatus(Reconciliation reconciliation, KafkaConnector connector, ConnectorStatusAndConditions connectorStatus, Throwable error) {
         KafkaConnectorStatus status = new KafkaConnectorStatus();
         if (error != null) {
@@ -692,11 +707,16 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         Map<String, Object> statusResult = null;
-        List<Condition> conditions = Collections.emptyList();
+        List<Condition> conditions = new ArrayList<>();
+
         if (connectorStatus != null) {
             statusResult = connectorStatus.statusResult;
-            conditions = connectorStatus.conditions;
+            connectorStatus.conditions.forEach(condition -> conditions.add(condition));
         }
+
+        Set<Condition> unknownAndDeprecatedConditions = validate(connector);
+        unknownAndDeprecatedConditions.forEach(condition -> conditions.add(condition));
+
         StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
         status.setConnectorStatus(statusResult);
 
