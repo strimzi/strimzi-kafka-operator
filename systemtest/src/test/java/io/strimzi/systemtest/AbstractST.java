@@ -138,7 +138,7 @@ public abstract class AbstractST implements TestSeparator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      * @param namespace namespace where CO should be installed into
      */
-    protected void installClusterOperator(ExtensionContext extensionContext, String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) {
+    protected void installClusterOperator(ExtensionContext extensionContext, String clusterOperatorName, String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) {
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
             cluster.setNamespace(namespace);
@@ -159,20 +159,28 @@ public abstract class AbstractST implements TestSeparator {
                 applyBindings(extensionContext, namespace, bindingsNamespaces);
             }
             // 060-Deployment
-            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).build());
+            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, namespace, operationTimeout, reconciliationInterval).build());
         }
     }
 
+    protected void installClusterOperator(ExtensionContext extensionContext, String clusterOperatorName, String namespace, long operationTimeout, long reconciliationInterval) {
+        installClusterOperator(extensionContext, clusterOperatorName, namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
+    }
+
     protected void installClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
-        installClusterOperator(extensionContext, namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
+        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, reconciliationInterval);
+    }
+
+    protected void installClusterOperator(ExtensionContext extensionContext, String name, String namespace) {
+        installClusterOperator(extensionContext, name, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     protected void installClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout) {
-        installClusterOperator(extensionContext, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
+        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
     }
 
     protected void installClusterOperator(ExtensionContext extensionContext, String namespace) {
-        installClusterOperator(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     protected void installLoggingClusterOperator(ExtensionContext extensionContext, String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) {
@@ -357,7 +365,7 @@ public abstract class AbstractST implements TestSeparator {
         ClusterRoleBindingResource.clusterRoleBinding(extensionContext,TestUtils.USER_PATH + "/../install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
     }
 
-    private static void applyRoleBindings(ExtensionContext extensionContext, String namespace, String bindingsNamespace) {
+    protected static void applyRoleBindings(ExtensionContext extensionContext, String namespace, String bindingsNamespace) {
         // 020-RoleBinding
         RoleBindingResource.roleBinding(extensionContext,TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
         // 031-RoleBinding
@@ -817,9 +825,9 @@ public abstract class AbstractST implements TestSeparator {
 //            }
 //        }
 
-        if (!Environment.SKIP_TEARDOWN) {
-            resourceManager.deleteResources(testContext);
-        }
+//        if (!Environment.SKIP_TEARDOWN) {
+//            resourceManager.deleteResources(testContext);
+//        }
 
 //        if (assertionError != null) {
 //            throw assertionError;
@@ -829,7 +837,7 @@ public abstract class AbstractST implements TestSeparator {
     @AfterAll
     void teardownEnvironmentClass(ExtensionContext testContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
-            resourceManager.deleteResources(testContext);
+//            resourceManager.deleteResources(testContext);
             teardownEnvForOperator();
         }
     }

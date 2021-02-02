@@ -74,22 +74,26 @@ public class BundleResource implements ResourceType<Deployment> {
         deployment[0].setStatus(newResource.getStatus());
     }
     public static Deployment clusterOperator(String namespace, long operationTimeout) {
-        return defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build();
+        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build();
     }
 
     public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        return defaultClusterOperator(namespace, operationTimeout, reconciliationInterval);
+        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, reconciliationInterval);
+    }
+
+    public static DeploymentBuilder clusterOperator(String name, String namespace, long operationTimeout, long reconciliationInterval) {
+        return defaultClusterOperator(name, namespace, operationTimeout, reconciliationInterval);
     }
 
     public static DeploymentBuilder clusterOperator(String namespace) {
-        return defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     public static DeploymentBuilder defaultClusterOperator(String namespace) {
-        return defaultClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    private static DeploymentBuilder defaultClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+    private static DeploymentBuilder defaultClusterOperator(String name, String namespace, long operationTimeout, long reconciliationInterval) {
 
         Deployment clusterOperator = DeploymentResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
 
@@ -130,6 +134,7 @@ public class BundleResource implements ResourceType<Deployment> {
 
         return new DeploymentBuilder(clusterOperator)
             .editMetadata()
+                .withName(name)
                 .addToLabels("deployment-type", DeploymentTypes.BundleClusterOperator.name())
             .endMetadata()
             .editSpec()
@@ -145,9 +150,5 @@ public class BundleResource implements ResourceType<Deployment> {
                     .endSpec()
                 .endTemplate()
             .endSpec();
-    }
-
-    public static Deployment createAndWaitForReadiness(Deployment co) {
-        return DeploymentResource.deployNewDeployment(co);
     }
 }

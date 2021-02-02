@@ -193,10 +193,22 @@ public class KubeClient {
         return listPods(Collections.singletonMap(key, value));
     }
 
+    public List<Pod> listPods(String clusterName, String key, String value) {
+        return listPods(Collections.singletonMap(key, value)).stream()
+            .filter(pod -> pod.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
+    }
+
     public List<String> listPodNames(String key, String value) {
         return listPods(Collections.singletonMap(key, value)).stream()
                 .map(pod -> pod.getMetadata().getName())
                 .collect(Collectors.toList());
+    }
+
+    public List<String> listPodNames(String clusterName, String key, String value) {
+        return listPods(Collections.singletonMap(key, value)).stream()
+            .filter(pod -> pod.getMetadata().getName().startsWith(clusterName))
+            .map(pod -> pod.getMetadata().getName())
+            .collect(Collectors.toList());
     }
 
 

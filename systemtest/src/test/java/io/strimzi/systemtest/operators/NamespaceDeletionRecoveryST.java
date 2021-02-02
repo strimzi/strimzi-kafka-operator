@@ -13,13 +13,16 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaTemplates;
+import io.strimzi.systemtest.templates.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
@@ -59,12 +62,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      * we can simply recreate all KafkaTopic resources and then deploy the Kafka cluster.
      * At the end we verify that we can receive messages from topic (so data are present).
      */
-    @Test
+    @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicAvailable(ExtensionContext extensionContext) {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
-        prepareEnvironmentForRecovery(topicName, MESSAGE_COUNT);
+        prepareEnvironmentForRecovery(extensionContext, topicName, MESSAGE_COUNT);
 
         // Wait till consumer offset topic is created
         KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix("consumer-offsets");
@@ -74,7 +78,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         deleteAndRecreateNamespace();
 
         recreatePvcAndUpdatePv(persistentVolumeClaimList);
-        recreateClusterOperator();
+        recreateClusterOperator(extensionContext);
 
         // Recreate all KafkaTopic resources
         for (KafkaTopic kafkaTopic : kafkaTopicList) {
@@ -99,7 +103,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -111,6 +115,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .withClusterName(CLUSTER_NAME)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
@@ -125,12 +130,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      *  3. enable Topic Operator by redeploying Kafka cluster
      * @throws InterruptedException - sleep
      */
-    @Test
+    @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testTopicNotAvailable() throws InterruptedException {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    void testTopicNotAvailable(ExtensionContext extensionContext) throws InterruptedException {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
-        prepareEnvironmentForRecovery(topicName, MESSAGE_COUNT);
+        prepareEnvironmentForRecovery(extensionContext, topicName, MESSAGE_COUNT);
 
         // Wait till consumer offset topic is created
         KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix("consumer-offsets");
@@ -138,10 +144,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace();
         recreatePvcAndUpdatePv(persistentVolumeClaimList);
-        recreateClusterOperator();
+        recreateClusterOperator(extensionContext);
 
         // Recreate Kafka Cluster
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -180,7 +186,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -199,14 +205,15 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         assertThat(consumed, is(MESSAGE_COUNT));
     }
 
-    private void prepareEnvironmentForRecovery(String topicName, int messageCount) {
-        // Setup Test environment with Kafka and store some messages
-        prepareEnvForOperator(NAMESPACE);
-        applyBindings(NAMESPACE);
-        // 060-Deployment
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
+    private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, String topicName, int messageCount) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
+        // Setup Test environment with Kafka and store some messages
+        prepareEnvForOperator(extensionContext, NAMESPACE);
+        applyBindings(extensionContext, NAMESPACE);
+        // 060-Deployment
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -223,9 +230,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, topicName).build());
-
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -257,12 +263,12 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         }
     }
 
-    private void recreateClusterOperator() {
+    private void recreateClusterOperator(ExtensionContext extensionContext) {
         // Recreate CO
         applyClusterOperatorInstallFiles(NAMESPACE);
-        applyBindings(NAMESPACE);
+        applyBindings(extensionContext, NAMESPACE);
         // 060-Deployment
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
     }
 
     private void deleteAndRecreateNamespace() {
