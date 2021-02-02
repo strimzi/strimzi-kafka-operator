@@ -90,7 +90,6 @@ public class KafkaConnectTemplates {
     }
 
     private static KafkaConnectBuilder deployKafkaConnectWithNetworkPolicy(ExtensionContext extensionContext, KafkaConnect kafkaConnect) {
-        // TODO: SAME AS IN KAFKA BRIDGE...
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
             NetworkPolicyResource.allowNetworkPolicySettingsForResource(extensionContext, kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
         }

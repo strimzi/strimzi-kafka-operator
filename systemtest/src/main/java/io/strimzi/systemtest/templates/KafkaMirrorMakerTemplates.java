@@ -70,11 +70,6 @@ public class KafkaMirrorMakerTemplates {
             .endSpec();
     }
 
-    public static KafkaMirrorMaker kafkaMirrorMakerWithoutWait(KafkaMirrorMaker kafkaMirrorMaker) {
-        kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafkaMirrorMaker);
-        return kafkaMirrorMaker;
-    }
-
     public static void deleteKafkaMirrorMakerWithoutWait(String resourceName) {
         kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }

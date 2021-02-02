@@ -13,12 +13,17 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.templates.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.KafkaTemplates;
+import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -29,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -54,14 +60,14 @@ class UserST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
     private final String userClusterName = "user-cluster-name";
 
-    @Test
-    void testUserWithNameMoreThan64Chars() {
+    @ParallelTest
+    void testUserWithNameMoreThan64Chars(ExtensionContext extensionContext) {
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
         String userWithCorrectName = "user-with-correct-name" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopq"; // 64 character username
         String saslUserWithLongName = "sasl-user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef"; // 65 character username
 
         // Create user with correct name
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, userWithCorrectName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userWithCorrectName).build());
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(userWithCorrectName);
 
@@ -70,9 +76,9 @@ class UserST extends AbstractST {
         verifyCRStatusCondition(condition, "True", Ready);
 
         // Create sasl user with long name, shouldn't fail
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(userClusterName, saslUserWithLongName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, saslUserWithLongName).build());
 
-        KafkaUserResource.kafkaUserWithoutWait(KafkaUserResource.defaultUser(userClusterName, userWithLongName)
+        resourceManager.createResource(extensionContext, false, KafkaUserTemplates.defaultUser(userClusterName, userWithLongName)
             .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
@@ -88,77 +94,94 @@ class UserST extends AbstractST {
                 "InvalidResourceException", "True", NotReady);
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
-    void testUpdateUser() {
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, USER_NAME).build());
+    void testUpdateUser(ExtensionContext extensionContext) {
+        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
 
-        String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(USER_NAME));
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userName).build());
+
+        String kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(userName));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
-        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(USER_NAME)));
+        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(userName)));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
 
-        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(USER_NAME).get();
+        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
         String kafkaUserAsJson = TestUtils.toJsonString(kUser);
 
-        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(USER_NAME)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(userName)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo(Constants.TLS_LISTENER_DEFAULT_NAME)));
 
-        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(USER_NAME).get().getStatus().getObservedGeneration();
+        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration();
 
-        KafkaUserResource.replaceUserResource(USER_NAME, ku -> {
+        KafkaUserResource.replaceUserResource(userName, ku -> {
             ku.getMetadata().setResourceVersion(null);
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
         });
 
-        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(observedGeneration, USER_NAME);
-        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
+        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(observedGeneration, userName);
+        KafkaUserUtils.waitForKafkaUserCreation(userName);
 
-        kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(USER_NAME));
+        kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(userName));
         assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
-        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(USER_NAME).get();
+        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).withName(userName).get();
         kafkaUserAsJson = TestUtils.toJsonString(kUser);
-        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(USER_NAME)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(userName)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
         Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(kubeClient().getNamespace()).delete(kUser);
-        KafkaUserUtils.waitForKafkaUserDeletion(USER_NAME);
+        KafkaUserUtils.waitForKafkaUserDeletion(userName);
     }
 
     @Tag(SCALABILITY)
-    @Test
-    void testBigAmountOfScramShaUsers() {
-        createBigAmountOfUsers("SCRAM_SHA");
+    @ParallelTest
+    void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
+        createBigAmountOfUsers(extensionContext, clusterName,"SCRAM_SHA");
     }
 
     @Tag(SCALABILITY)
-    @Test
-    void testBigAmountOfTlsUsers() {
-        createBigAmountOfUsers("TLS");
+    @ParallelTest
+    void testBigAmountOfTlsUsers(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
+        createBigAmountOfUsers(extensionContext, clusterName, "TLS");
     }
 
-    @Test
-    void testTlsUserWithQuotas() {
-        testUserWithQuotas(KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, "encrypted-arnost").build()));
+    @ParallelTest
+    void testTlsUserWithQuotas(ExtensionContext extensionContext) {
+        KafkaUser user = KafkaUserTemplates.tlsUser(userClusterName, "encrypted-arnost").build();
+
+        resourceManager.createResource(extensionContext, user);
+
+        testUserWithQuotas(extensionContext, user);
     }
 
-    @Test
-    void testScramUserWithQuotas() {
-        testUserWithQuotas(KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(userClusterName, "scramed-arnost").build()));
+    @ParallelTest
+    void testScramUserWithQuotas(ExtensionContext extensionContext) {
+        KafkaUser user = KafkaUserTemplates.scramShaUser(userClusterName, "scramed-arnost").build();
+
+        resourceManager.createResource(extensionContext, user);
+
+        testUserWithQuotas(extensionContext, user);
     }
 
-    @Test
-    void testUserTemplate() {
+    @ParallelTest
+    void testUserTemplate(ExtensionContext extensionContext) {
+        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+
         String labelKey = "test-label-key";
         String labelValue = "test-label-value";
         String annotationKey = "test-annotation-key";
         String annotationValue = "test-annotation-value";
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, USER_NAME)
+
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userName)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewSecret()
@@ -171,12 +194,12 @@ class UserST extends AbstractST {
             .endSpec()
             .build());
 
-        Secret userSecret = kubeClient().getSecret(USER_NAME);
+        Secret userSecret = kubeClient().getSecret(userName);
         assertThat(userSecret.getMetadata().getLabels().get(labelKey), is(labelValue));
         assertThat(userSecret.getMetadata().getAnnotations().get(annotationKey), is(annotationValue));
     }
 
-    void testUserWithQuotas(KafkaUser user) {
+    void testUserWithQuotas(ExtensionContext extensionContext, KafkaUser user) {
         String userName = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).get().getStatus().getUsername();
 
         Integer prodRate = 1111;
@@ -184,7 +207,7 @@ class UserST extends AbstractST {
         Integer reqPerc = 42;
 
         // Create user with correct name
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.userWithQuota(user, prodRate, consRate, reqPerc).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.userWithQuota(user, prodRate, consRate, reqPerc).build());
 
         String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
@@ -206,13 +229,16 @@ class UserST extends AbstractST {
         assertThat(resultAfterDelete.out(), not(containsString("consumer_byte_rate")));
     }
 
-    @Test
-    void testCreatingUsersWithSecretPrefix() {
+    @ParallelTest
+    void testCreatingUsersWithSecretPrefix(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+
         String secretPrefix = "top-secret-";
         String tlsUserName = "encrypted-leopold";
         String scramShaUserName = "scramed-leopold";
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -242,16 +268,20 @@ class UserST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
-        KafkaUser tlsUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, tlsUserName).build());
-        KafkaUser scramShaUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(clusterName, scramShaUserName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+
+        KafkaUser tlsUser = KafkaUserTemplates.tlsUser(clusterName, tlsUserName).build();
+        KafkaUser scramShaUser =  KafkaUserTemplates.scramShaUser(clusterName, scramShaUserName).build();;
+
+        resourceManager.createResource(extensionContext, tlsUser);
+        resourceManager.createResource(extensionContext, scramShaUser);
 
         LOGGER.info("Deploying KafkaClients pod for TLS listener");
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).build());
         String tlsKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         LOGGER.info("Deploying KafkaClients pod for PLAIN listener");
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).build());
         String plainKafkaClientsName = kubeClient().listPodsByPrefixInName(clusterName + "-plain-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         Secret tlsSecret = kubeClient().getSecret(secretPrefix + tlsUserName);
@@ -309,17 +339,17 @@ class UserST extends AbstractST {
         assertNull(kubeClient().getSecret(scramShaSecret.getMetadata().getName()));
     }
 
-    void createBigAmountOfUsers(String typeOfUser) {
+    synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String clusterName, String typeOfUser) {
 
         int numberOfUsers = 100;
 
         for (int i = 0; i < numberOfUsers; i++) {
-            String userName = "alisa" + i;
+            String userName = "alisa" + i + "-" + clusterName;
 
             if (typeOfUser.equals("TLS")) {
-                KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(userClusterName, userName).build());
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userName).build());
             } else {
-                KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.scramShaUser(userClusterName, userName).build());
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, userName).build());
             }
 
             LOGGER.info("Checking status of KafkaUser {}", userName);
@@ -333,10 +363,9 @@ class UserST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(userClusterName, 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(userClusterName, 1, 1).build());
     }
 }

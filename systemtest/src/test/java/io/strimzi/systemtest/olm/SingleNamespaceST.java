@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.OLM;
 
@@ -27,63 +28,62 @@ public class SingleNamespaceST extends OlmAbstractST {
 
     @Test
     @Order(1)
-    void testDeployExampleKafka() {
+    void testDeployExampleKafka(ExtensionContext extensionContext) {
         doTestDeployExampleKafka();
     }
 
     @Test
     @Order(2)
-    void testDeployExampleKafkaUser() {
-        doTestDeployExampleKafkaUser();
+    void testDeployExampleKafkaUser(ExtensionContext extensionContext) {
+        doTestDeployExampleKafkaUser(extensionContext);
     }
 
     @Test
     @Order(3)
-    void testDeployExampleKafkaTopic() {
+    void testDeployExampleKafkaTopic(ExtensionContext extensionContext) {
         doTestDeployExampleKafkaTopic();
     }
 
     @Test
     @Order(4)
-    void testDeployExampleKafkaConnect() {
+    void testDeployExampleKafkaConnect(ExtensionContext extensionContext) {
         doTestDeployExampleKafkaConnect();
     }
 
     @Test
     @Order(5)
-    void testDeployExampleKafkaConnectS2I() {
+    void testDeployExampleKafkaConnectS2I(ExtensionContext extensionContext) {
         doTestDeployExampleKafkaConnectS2I();
     }
 
     @Test
     @Order(6)
-    void testDeployExampleKafkaBridge() {
+    void testDeployExampleKafkaBridge(ExtensionContext extensionContext) {
         doTestDeployExampleKafkaBridge();
     }
 
     @Test
     @Order(7)
-    void testDeployExampleKafkaMirrorMaker() {
+    void testDeployExampleKafkaMirrorMaker(ExtensionContext extensionContext) {
         doTestDeployExampleKafkaMirrorMaker();
     }
 
     @Test
     @Order(8)
-    void testDeployExampleKafkaMirrorMaker2() {
+    void testDeployExampleKafkaMirrorMaker2(ExtensionContext extensionContext) {
         doTestDeployExampleKafkaMirrorMaker2();
     }
 
     @Test
     @Order(9)
-    void testDeployExampleKafkaRebalance() {
-        doTestDeployExampleKafkaRebalance();
+    void testDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
+        doTestDeployExampleKafkaRebalance(extensionContext);
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
+    void setup(ExtensionContext extensionContext) {
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
-        OlmResource.clusterOperator(NAMESPACE);
+        resourceManager.createResource(extensionContext, OlmResource.clusterOperator(NAMESPACE));
     }
 }

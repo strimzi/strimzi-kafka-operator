@@ -238,30 +238,12 @@ public class KafkaTemplates {
     }
 
     /**
-     * This method is used for deploy specific Kafka cluster without wait for all resources.
-     * It can be use for example for deploy Kafka cluster with unsupported Kafka version.
-     * @param kafka kafka cluster specification
-     * @return kafka cluster specification
-     */
-    public static Kafka kafkaWithoutWait(Kafka kafka) {
-        kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
-        return kafka;
-    }
-
-    /**
      * This method is used for delete specific Kafka cluster without wait for all resources deletion.
      * It can be use for example for delete Kafka cluster CR with unsupported Kafka version.
      * @param resourceName kafka cluster name
      */
     public static void deleteKafkaWithoutWait(String resourceName) {
         kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
-    public static Kafka kafkaWithCruiseControlWithoutWait(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
-        kafka = defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas).build();
-
-        return kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
     }
 
     private static Kafka getKafkaFromYaml(String yamlPath) {

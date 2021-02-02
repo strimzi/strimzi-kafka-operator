@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.OLM;
 
@@ -29,8 +30,8 @@ public class AllNamespacesST extends OlmAbstractST {
 
     @Test
     @Order(2)
-    void testDeployExampleKafkaUser() {
-        doTestDeployExampleKafkaUser();
+    void testDeployExampleKafkaUser(ExtensionContext extensionContext) {
+        doTestDeployExampleKafkaUser(extensionContext);
     }
 
     @Test
@@ -71,15 +72,15 @@ public class AllNamespacesST extends OlmAbstractST {
 
     @Test
     @Order(9)
-    void testDeployExampleKafkaRebalance() {
-        doTestDeployExampleKafkaRebalance();
+    void testDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
+        doTestDeployExampleKafkaRebalance(extensionContext);
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
+    void setup(ExtensionContext extensionContext) {
         cluster.setNamespace(cluster.getDefaultOlmNamespace());
-        OlmResource.clusterOperator(cluster.getDefaultOlmNamespace());
+        resourceManager.createResource(extensionContext, OlmResource.clusterOperator(cluster.getDefaultOlmNamespace()));
+
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
     }

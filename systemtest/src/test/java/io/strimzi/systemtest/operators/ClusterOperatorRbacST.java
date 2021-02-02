@@ -6,11 +6,17 @@ package io.strimzi.systemtest.operators;
 
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.templates.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.TestUtils;
@@ -19,12 +25,14 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.systemtest.resources.ResourceManager.resourceToString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,42 +43,49 @@ public class ClusterOperatorRbacST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorRbacST.class);
     public static final String NAMESPACE = "cluster-operator-test";
 
-    @Test
+    @ParallelTest
     @Tag(CONNECT)
-    void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled() {
+    void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
-        applyRoleBindingsWithoutCRBs();
+
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
+        applyRoleBindingsWithoutCRBs(extensionContext);
         // 060-Deployment
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
 
         String coPodName = kubeClient().getClusterOperatorPodName();
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
         String log = cmdKubeClient().execInCurrentNamespace(false, "logs", coPodName).out();
         assertTrue(log.contains("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", clusterName);
-        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1).build(), false);
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, false).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
         log = cmdKubeClient().execInCurrentNamespace(false, "logs", coPodName, "--tail", "50").out();
         assertTrue(log.contains("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
     }
 
-    @Test
+    @ParallelTest
     @Tag(CONNECT)
-    void testCRBDeletionErrorsWhenRackAwarenessIsEnabled() {
+    void testCRBDeletionErrorsWhenRackAwarenessIsEnabled(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
-        applyRoleBindingsWithoutCRBs();
+
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
+        applyRoleBindingsWithoutCRBs(extensionContext);
         // 060-Deployment
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
 
         String rackKey = "rack-key";
 
         LOGGER.info("Deploying Kafka: {}, which should not be deployed and error should be present in CR status message", clusterName);
-        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withNewRack()
@@ -85,7 +100,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaStatusCondition.getType(), is(NotReady.toString()));
 
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(clusterName, clusterName, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
             .editSpec()
                 .withNewRack(rackKey)
             .endSpec()
@@ -97,18 +112,17 @@ public class ClusterOperatorRbacST extends AbstractST {
         assertThat(kafkaConnectStatusCondition.getType(), is(NotReady.toString()));
     }
 
-    private static void applyRoleBindingsWithoutCRBs() {
+    private void applyRoleBindingsWithoutCRBs(ExtensionContext extensionContext) {
         // 020-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", NAMESPACE, NAMESPACE);
+        resourceManager.createResource(extensionContext, RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", NAMESPACE, NAMESPACE));
         // 031-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", NAMESPACE, NAMESPACE);
+        resourceManager.createResource(extensionContext, RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", NAMESPACE, NAMESPACE));
         // 032-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", NAMESPACE, NAMESPACE);
+        resourceManager.createResource(extensionContext, RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", NAMESPACE, NAMESPACE));
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        prepareEnvForOperator(extensionContext, NAMESPACE);
     }
 }

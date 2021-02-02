@@ -27,6 +27,8 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -47,6 +49,7 @@ import io.strimzi.systemtest.templates.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.KafkaTemplates;
 import io.strimzi.systemtest.templates.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.KafkaUserTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -104,19 +107,22 @@ public class MetricsST extends AbstractST {
     private final String metricsClusterName = "metrics-cluster-name";
     private final Object lock = new Object();
     private HashMap<String, String> kafkaMetricsData;
+    private HashMap<String, String> deprecatedKafkaMetricsData;
     private HashMap<String, String> zookeeperMetricsData;
     private HashMap<String, String> kafkaConnectMetricsData;
     private HashMap<String, String> kafkaExporterMetricsData;
     private HashMap<String, String> kafkaMirrorMaker2MetricsData;
+    private HashMap<String, String> deprecatedKafkaMirrorMaker2MetricsData;
     private HashMap<String, String> kafkaBridgeMetricsData;
     private HashMap<String, String> clusterOperatorMetricsData;
     private HashMap<String, String> userOperatorMetricsData;
     private HashMap<String, String> topicOperatorMetricsData;
     String kafkaClientsPodName;
 
-    private String bridgeTopic = "bridge-topic";
+    private String bridgeTopic = KafkaTopicUtils.generateRandomNameOfTopic();
+    private String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     void testKafkaBrokersCount() {
         Pattern brokerOnlineCount = Pattern.compile("kafka_server_replicamanager_leadercount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
@@ -124,28 +130,28 @@ public class MetricsST extends AbstractST {
         assertThat("Broker count doesn't match expected value", values.size(), is(3));
     }
 
-    @Test
+    @ParallelTest
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPartitions, kafkaMetricsData);
         assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(424.0));
     }
 
-    @Test
+    @ParallelTest
     void testKafkaTopicUnderReplicatedPartitions() {
         Pattern underReplicatedPartitions = Pattern.compile("kafka_server_replicamanager_underreplicatedpartitions ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(underReplicatedPartitions, kafkaMetricsData);
         assertThat("Topic under-replicated partitions doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is((double) 0));
     }
 
-    @Test
+    @ParallelTest
     void testKafkaActiveControllers() {
         Pattern activeControllers = Pattern.compile("kafka_controller_kafkacontroller_activecontrollercount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(activeControllers, kafkaMetricsData);
         assertThat("Kafka active controllers count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     void testZookeeperQuorumSize() {
         Pattern quorumSize = Pattern.compile("zookeeper_quorumsize ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
@@ -153,21 +159,21 @@ public class MetricsST extends AbstractST {
         assertThat("Zookeeper quorum size doesn't match expected value", values.stream().mapToDouble(i -> i).max(), is(OptionalDouble.of(3.0)));
     }
 
-    @Test
+    @ParallelTest
     void testZookeeperAliveConnections() {
         Pattern numAliveConnections = Pattern.compile("zookeeper_numaliveconnections ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(numAliveConnections, zookeeperMetricsData);
         assertThat("Zookeeper alive connections count doesn't match expected value", values.stream().mapToDouble(i -> i).count(), is(0L));
     }
 
-    @Test
+    @ParallelTest
     void testZookeeperWatchersCount() {
         Pattern watchersCount = Pattern.compile("zookeeper_inmemorydatatree_watchcount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(watchersCount, zookeeperMetricsData);
         assertThat("Zookeeper watchers count doesn't match expected value", values.stream().mapToDouble(i -> i).count(), is(0L));
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     @Tag(CONNECT)
     void testKafkaConnectRequests() {
@@ -177,7 +183,7 @@ public class MetricsST extends AbstractST {
         assertThat("KafkaConnect requests count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
-    @Test
+    @ParallelTest
     @Tag(CONNECT)
     void testKafkaConnectResponse() {
         kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(kafkaClientsPodName, metricsClusterName);
@@ -186,7 +192,7 @@ public class MetricsST extends AbstractST {
         assertThat("KafkaConnect response count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
-    @Test
+    @ParallelTest
     @Tag(CONNECT)
     void testKafkaConnectIoNetwork() {
         kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(kafkaClientsPodName, metricsClusterName);
@@ -195,7 +201,7 @@ public class MetricsST extends AbstractST {
         assertThat("KafkaConnect IO network count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
@@ -206,8 +212,8 @@ public class MetricsST extends AbstractST {
             ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(TOPIC_NAME)
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(metricsClusterName)
             .withMessageCount(5000)
@@ -225,11 +231,11 @@ public class MetricsST extends AbstractST {
             assertThat("Value from collected metric should be non-empty", !value.isEmpty());
             assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_current_offset"));
             assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_lag"));
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + TOPIC_NAME + "\"} 7"));
+            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + topicName + "\"} 7"));
         });
     }
 
-    @Test
+    @ParallelTest
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
         LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(metricsClusterName));
         String runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
@@ -240,24 +246,24 @@ public class MetricsST extends AbstractST {
 
         KafkaResource.replaceKafkaResource(metricsClusterName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
-            k.getSpec().getKafkaExporter().setTopicRegex(TOPIC_NAME);
+            k.getSpec().getKafkaExporter().setTopicRegex(topicName);
         });
 
         DeploymentUtils.waitTillDepHasRolled(KafkaExporterResources.deploymentName(metricsClusterName), 1, kafkaExporterSnapshot);
 
         runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
-        assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + TOPIC_NAME + "\""));
+        assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + topicName + "\""));
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     void testClusterOperatorMetrics(ExtensionContext extensionContext) {
         clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics();
         List<String> resourcesList = Arrays.asList("Kafka", "KafkaBridge", "KafkaConnect", "KafkaConnectS2I", "KafkaConnector", "KafkaMirrorMaker", "KafkaMirrorMaker2", "KafkaRebalance");
 
         // Create some resource which will have state 0. S2I will not be ready, because there is KafkaConnect cluster with same name.
-        resourceManager.createResource(extensionContext, false, KafkaConnectS2ITemplates.kafkaConnectS2I(metricsClusterName, metricsClusterName, 1).build());
+        resourceManager.createResource(extensionContext, false, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, metricsClusterName, metricsClusterName, 1).build());
 
         for (String resource : resourcesList) {
             assertCoMetricNotNull("strimzi_reconciliations_periodical_total", resource, clusterOperatorMetricsData);
@@ -300,7 +306,7 @@ public class MetricsST extends AbstractST {
         KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(metricsClusterName).delete();
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     void testUserOperatorMetrics() {
         userOperatorMetricsData = MetricsUtils.collectUserOperatorPodMetrics(kafkaClientsPodName, metricsClusterName);
@@ -318,7 +324,7 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 2));
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     void testTopicOperatorMetrics() {
         topicOperatorMetricsData = MetricsUtils.collectTopicOperatorPodMetrics(kafkaClientsPodName, metricsClusterName);
@@ -339,7 +345,7 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) getExpectedTopics().size()));
     }
 
-    @Test
+    @ParallelTest
     @Tag(MIRROR_MAKER2)
     @Tag(ACCEPTANCE)
     void testMirrorMaker2Metrics() {
@@ -353,7 +359,7 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
-    @Test
+    @ParallelTest
     @Tag(BRIDGE)
     @Tag(ACCEPTANCE)
     void testKafkaBridgeMetrics() {
@@ -400,7 +406,7 @@ public class MetricsST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
-    @Test
+    @ParallelTest
     @Tag(ACCEPTANCE)
     @Tag(CRUISE_CONTROL)
     void testCruiseControlMetrics() {
@@ -431,7 +437,7 @@ public class MetricsST extends AbstractST {
      * 3. Updates ConfigMap linked as metrics on
      * 4. Check, whether the metrics ConfigMap is changed
      */
-    @Test
+    @ParallelTest
     void testKafkaMetricsSettings() {
         String metricsConfigJson = "{\"lowercaseOutputName\":true}";
         String metricsConfigYaml = "lowercaseOutputName: true";
@@ -536,22 +542,24 @@ public class MetricsST extends AbstractST {
         LOGGER.info("Setting up Environment for MetricsST");
         installClusterOperator(extensionContext, NAMESPACE);
 
-        resourceManager.createResource(extensionContext, new KafkaBuilder(
-            KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3))
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
             .editOrNewSpec()
-            .editEntityOperator()
-            .editUserOperator()
-            .withReconciliationIntervalSeconds(30)
-            .endUserOperator()
-            .endEntityOperator()
-            .endSpec().build());
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withReconciliationIntervalSeconds(30)
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .build());
+
+        String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetrics(SECOND_CLUSTER, 1 , 1).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithMetrics(metricsClusterName, 1).build());
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build());
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, TOPIC_NAME, 7, 2).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, topicName, 7, 2).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, bridgeTopic).build());
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
@@ -569,11 +577,12 @@ public class MetricsST extends AbstractST {
 
         // Wait for Metrics refresh/values change
         Thread.sleep(60_000);
-        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(kafkaClientsPodName, BRIDGE_CLUSTER);
+        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(metricsClusterName);
+        deprecatedKafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(metricsClusterName);
+        zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(metricsClusterName);
+        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(metricsClusterName);
+        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(metricsClusterName);
+        kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(BRIDGE_CLUSTER);
     }
     
     private List<String> getExpectedTopics() {
@@ -587,7 +596,7 @@ public class MetricsST extends AbstractST {
         list.add("my-cluster-connect-status");
         list.add("second-kafka-cluster.checkpoints.internal");
         list.add("heartbeats");
-        list.add(TOPIC_NAME);
+        list.add(topicName);
         list.add(bridgeTopic);
         list.add(CruiseControlUtils.CRUISE_CONTROL_METRICS_TOPIC);
         list.add(CruiseControlUtils.CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);

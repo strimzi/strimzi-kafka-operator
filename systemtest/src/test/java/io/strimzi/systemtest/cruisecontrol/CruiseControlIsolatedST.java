@@ -121,7 +121,8 @@ public class CruiseControlIsolatedST extends AbstractST {
             "at least two Kafka nodes.";
 
         LOGGER.info("Deploying single node Kafka with CruiseControl");
-        KafkaTemplates.kafkaWithCruiseControlWithoutWait(clusterName, 1, 1);
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaWithCruiseControl(clusterName, 1, 1).build());
+
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, errMessage, Duration.ofMinutes(6).toMillis());
 
         KafkaStatus kafkaStatus = KafkaTemplates.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
