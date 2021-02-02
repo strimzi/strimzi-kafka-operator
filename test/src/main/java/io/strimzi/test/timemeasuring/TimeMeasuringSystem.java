@@ -121,7 +121,7 @@ public class TimeMeasuringSystem {
             }
             LOGGER.info("End time of operation {} is correctly stored", id);
         } catch (NullPointerException | ClassCastException ex) {
-            LOGGER.error("End time of operation {} is not set due to exception: {}", id, ex);
+            LOGGER.warn("End time of operation {} is not set due to exception: {}", id, ex);
         }
     }
 

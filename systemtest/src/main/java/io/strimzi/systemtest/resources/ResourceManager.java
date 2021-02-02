@@ -179,7 +179,6 @@ public class ResourceManager {
                 // type.refreshResource()...
                 synchronized (this) {
                     T updated = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-
                     type.refreshResource(resource, updated);
                 }
             }
