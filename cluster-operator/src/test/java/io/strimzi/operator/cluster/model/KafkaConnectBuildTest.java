@@ -21,9 +21,12 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,6 +46,11 @@ public class KafkaConnectBuildTest {
             .withUrl("https://mydomain.tld/my2.jar")
             .withSha512sum("sha-512-checksum")
             .build();
+
+    private final List<String> defaultArgs = List.of("--dockerfile=/dockerfile/Dockerfile",
+            "--context=dir://workspace",
+            "--image-name-with-digest-file=/dev/termination-log",
+            "--destination=my-image:latest");
 
     @Test
     public void testFromCrd()   {
@@ -183,6 +191,7 @@ public class KafkaConnectBuildTest {
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
         assertThat(pod.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(pod.getSpec().getContainers().size(), is(1));
+        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultArgs));
         assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaConnectResources.buildPodName(this.cluster)));
         assertThat(pod.getSpec().getContainers().get(0).getImage(), is(build.image));
         assertThat(pod.getSpec().getContainers().get(0).getPorts().size(), is(0));
@@ -229,6 +238,7 @@ public class KafkaConnectBuildTest {
 
         Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
         assertThat(pod.getSpec().getVolumes().size(), is(2));
+        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultArgs));
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("workspace"));
         assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
         assertThat(pod.getSpec().getVolumes().get(1).getName(), is("dockerfile"));
@@ -427,5 +437,63 @@ public class KafkaConnectBuildTest {
         BuildConfig bc = build.generateBuildConfig(dockerfile);
         assertThat(bc.getMetadata().getLabels().entrySet().containsAll(buildConfigLabels.entrySet()), is(true));
         assertThat(bc.getMetadata().getAnnotations().entrySet().containsAll(buildConfigAnnos.entrySet()), is(true));
+    }
+
+    @Test
+    public void testValidKanikoOptions()   {
+        List<String> expectedArgs = new ArrayList<>(defaultArgs);
+        expectedArgs.add("--reproducible");
+        expectedArgs.add("--single-snapshot");
+        expectedArgs.add("--log-format=json");
+
+        KafkaConnect kc = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withName(cluster)
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                    .withBootstrapServers("my-kafka:9092")
+                    .withNewBuild()
+                        .withNewDockerOutput()
+                            .withImage("my-image:latest")
+                            .withNewPushSecret("my-docker-credentials")
+                            .withAdditionalKanikoOptions("--reproducible", "--single-snapshot", "--log-format=json")
+                        .endDockerOutput()
+                        .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                                new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                    .endBuild()
+                .endSpec()
+                .build();
+
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+
+        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
+        assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(expectedArgs));
+    }
+
+    @Test
+    public void testInvalidKanikoOptions()   {
+        KafkaConnect kc = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withName(cluster)
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                    .withBootstrapServers("my-kafka:9092")
+                    .withNewBuild()
+                        .withNewDockerOutput()
+                            .withImage("my-image:latest")
+                            .withNewPushSecret("my-docker-credentials")
+                            .withAdditionalKanikoOptions("--reproducible", "--reproducible-something", "--build-arg", "--single-snapshot", "--digest-file=/dev/null", "--log-format=json")
+                        .endDockerOutput()
+                        .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
+                                new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
+                    .endBuild()
+                .endSpec()
+                .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaConnectBuild.fromCrd(kc, VERSIONS));
+
+        assertThat(e.getMessage(), containsString(".spec.build.additionalKanikoOptions contains forbidden options: [--reproducible-something, --build-arg, --digest-file]"));
     }
 }
