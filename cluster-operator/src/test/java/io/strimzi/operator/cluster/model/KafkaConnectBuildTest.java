@@ -484,7 +484,7 @@ public class KafkaConnectBuildTest {
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
                             .withNewPushSecret("my-docker-credentials")
-                            .withAdditionalKanikoOptions("--reproducible", "--build-arg", "--single-snapshot", "--digest-file=/dev/null", "--log-format=json")
+                            .withAdditionalKanikoOptions("--reproducible", "--reproducible-something", "--build-arg", "--single-snapshot", "--digest-file=/dev/null", "--log-format=json")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
@@ -494,6 +494,6 @@ public class KafkaConnectBuildTest {
 
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaConnectBuild.fromCrd(kc, VERSIONS));
 
-        assertThat(e.getMessage(), containsString(".spec.build.additionalKanikoOptions contains forbidden options: [--build-arg, --digest-file=/dev/null]"));
+        assertThat(e.getMessage(), containsString(".spec.build.additionalKanikoOptions contains forbidden options: [--reproducible-something, --build-arg, --digest-file]"));
     }
 }
