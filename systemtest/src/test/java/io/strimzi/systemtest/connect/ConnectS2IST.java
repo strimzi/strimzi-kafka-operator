@@ -110,8 +110,8 @@ class ConnectS2IST extends AbstractST {
     public static final String NAMESPACE = "connect-s2i-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(ConnectS2IST.class);
     private static final String CONNECT_S2I_TOPIC_NAME = "connect-s2i-topic-example";
-    private static final String CONNECT_S2I_CLUSTER_NAME = clusterName + "-s2i";
-    private static final String SECOND_CLUSTER_NAME = "second-" + clusterName;
+    private String connectS2IClusterName;
+    private String secondClusterName;
     private final String connectS2iClientsName = "connect-s2i-clients-name";
 
     private String kafkaClientsPodName;
@@ -560,11 +560,11 @@ class ConnectS2IST extends AbstractST {
     @Test
     void testChangeConnectS2IConfig() {
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(SECOND_CLUSTER_NAME, 3, 1).build());
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(secondClusterName, 3, 1).build());
 
-        String bootstrapAddress = KafkaResources.tlsBootstrapAddress(SECOND_CLUSTER_NAME);
+        String bootstrapAddress = KafkaResources.tlsBootstrapAddress(secondClusterName);
 
-        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 1)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(connectS2IClusterName, clusterName, 1)
                 .editMetadata()
                     .addToAnnotations("strimzi.io/use-connector-resources", "true")
                 .endMetadata()
@@ -573,7 +573,7 @@ class ConnectS2IST extends AbstractST {
                 .endSpec()
                 .build());
 
-        String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
+        String deploymentConfigName = KafkaConnectS2IResources.deploymentName(connectS2IClusterName);
 
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
 
@@ -586,7 +586,7 @@ class ConnectS2IST extends AbstractST {
 
         //scale up
         LOGGER.info("Scaling up to {}", scaleReplicasTo);
-        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
+        KafkaConnectS2IResource.replaceConnectS2IResource(connectS2IClusterName, cs2i ->
                 cs2i.getSpec().setReplicas(scaleReplicasTo));
         DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, scaleReplicasTo);
 
@@ -596,7 +596,7 @@ class ConnectS2IST extends AbstractST {
 
         //scale down
         LOGGER.info("Scaling down to {}", initialReplicas);
-        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, cs2i ->
+        KafkaConnectS2IResource.replaceConnectS2IResource(connectS2IClusterName, cs2i ->
                 cs2i.getSpec().setReplicas(initialReplicas));
         Map<String, String> depConfSnapshot = DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, initialReplicas);
 
@@ -607,25 +607,25 @@ class ConnectS2IST extends AbstractST {
 
         LOGGER.info("===== UPDATE BOOTSTRAP SERVER ADDRESS =====");
 
-        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, kafkaConnectS2I -> {
+        KafkaConnectS2IResource.replaceConnectS2IResource(connectS2IClusterName, kafkaConnectS2I -> {
             kafkaConnectS2I.getSpec().setBootstrapServers(bootstrapAddress);
             kafkaConnectS2I.getSpec().setTls(new KafkaConnectTlsBuilder()
                     .addNewTrustedCertificate()
-                        .withNewSecretName(SECOND_CLUSTER_NAME + "-cluster-ca-cert")
+                        .withNewSecretName(secondClusterName + "-cluster-ca-cert")
                         .withCertificate("ca.crt")
-                    .withNewSecretName(SECOND_CLUSTER_NAME + "-cluster-ca-cert")
+                    .withNewSecretName(secondClusterName + "-cluster-ca-cert")
                     .withCertificate("ca.crt")
                     .endTrustedCertificate()
                     .build());
         });
 
         depConfSnapshot = DeploymentConfigUtils.waitTillDepConfigHasRolled(deploymentConfigName, depConfSnapshot);
-        assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getBootstrapServers(), is(bootstrapAddress));
+        assertThat(KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(connectS2IClusterName).get().getSpec().getBootstrapServers(), is(bootstrapAddress));
 
         LOGGER.info("===== CONNECTS2I VERSION CHANGE =====");
 
         LOGGER.info("Setting version from {} to {}", TestKafkaVersion.getKafkaVersions().get(0).version(), TestKafkaVersion.getKafkaVersions().get(1).version());
-        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME,
+        KafkaConnectS2IResource.replaceConnectS2IResource(connectS2IClusterName,
             kafkaConnectS2I -> kafkaConnectS2I.getSpec().setVersion(TestKafkaVersion.getKafkaVersions().get(1).version()));
 
         depConfSnapshot = DeploymentConfigUtils.waitTillDepConfigHasRolled(deploymentConfigName, depConfSnapshot);
@@ -647,14 +647,14 @@ class ConnectS2IST extends AbstractST {
             .withCertificate("ca.crt")
             .build();
 
-        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, kafkaConnectS2I -> {
+        KafkaConnectS2IResource.replaceConnectS2IResource(connectS2IClusterName, kafkaConnectS2I -> {
             kafkaConnectS2I.getSpec().getTls().getTrustedCertificates().add(certSecretSource);
         });
 
         DeploymentConfigUtils.waitTillDepConfigHasRolled(deploymentConfigName, depConfSnapshot);
 
         List<CertSecretSource> trustedCertificates = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE)
-            .withName(CONNECT_S2I_CLUSTER_NAME).get().getSpec().getTls().getTrustedCertificates();
+            .withName(connectS2IClusterName).get().getSpec().getTls().getTrustedCertificates();
 
         assertThat(trustedCertificates.stream().anyMatch(cert -> cert.getSecretName().equals("my-secret")), is(true));
     }
@@ -664,20 +664,20 @@ class ConnectS2IST extends AbstractST {
     void testScaleConnectS2IWithoutConnectorToZero() {
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
-        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 2).build());
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(connectS2IClusterName, clusterName, 2).build());
 
-        String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
+        String deploymentConfigName = KafkaConnectS2IResources.deploymentName(connectS2IClusterName);
         List<String> connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
 
         assertThat(connectS2IPods.size(), Matchers.is(2));
         //scale down
         LOGGER.info("Scaling KafkaConnect down to zero");
-        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, kafkaConnectS2I -> kafkaConnectS2I.getSpec().setReplicas(0));
+        KafkaConnectS2IResource.replaceConnectS2IResource(connectS2IClusterName, kafkaConnectS2I -> kafkaConnectS2I.getSpec().setReplicas(0));
 
         DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, 0);
 
         connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
-        KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
+        KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(connectS2IClusterName).get().getStatus();
 
         assertThat(connectS2IPods.size(), Matchers.is(0));
         assertThat(connectS2IStatus.getConditions().get(0).getType(), is(Ready.toString()));
@@ -689,13 +689,13 @@ class ConnectS2IST extends AbstractST {
     void testScaleConnectS2IWithConnectorToZero() {
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
-        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(CONNECT_S2I_CLUSTER_NAME, clusterName, 2)
+        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(connectS2IClusterName, clusterName, 2)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
 
-        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(CONNECT_S2I_CLUSTER_NAME)
+        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(connectS2IClusterName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
@@ -705,19 +705,19 @@ class ConnectS2IST extends AbstractST {
             .endSpec()
             .build());
 
-        String deploymentConfigName = KafkaConnectS2IResources.deploymentName(CONNECT_S2I_CLUSTER_NAME);
+        String deploymentConfigName = KafkaConnectS2IResources.deploymentName(connectS2IClusterName);
         List<String> connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
 
         assertThat(connectS2IPods.size(), Matchers.is(2));
         //scale down
         LOGGER.info("Scaling KafkaConnect down to zero");
-        KafkaConnectS2IResource.replaceConnectS2IResource(CONNECT_S2I_CLUSTER_NAME, kafkaConnectS2I -> kafkaConnectS2I.getSpec().setReplicas(0));
+        KafkaConnectS2IResource.replaceConnectS2IResource(connectS2IClusterName, kafkaConnectS2I -> kafkaConnectS2I.getSpec().setReplicas(0));
 
         DeploymentConfigUtils.waitForDeploymentConfigAndPodsReady(deploymentConfigName, 0);
 
         connectS2IPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND);
-        KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
-        KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CONNECT_S2I_CLUSTER_NAME).get().getStatus();
+        KafkaConnectS2IStatus connectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(connectS2IClusterName).get().getStatus();
+        KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(connectS2IClusterName).get().getStatus();
 
         assertThat(connectS2IPods.size(), Matchers.is(0));
         assertThat(connectS2IStatus.getConditions().get(0).getType(), is(Ready.toString()));
@@ -1034,6 +1034,9 @@ class ConnectS2IST extends AbstractST {
 
     @BeforeAll
     void setup() {
+        connectS2IClusterName = clusterName + "-s2i";
+        secondClusterName = "second-" + clusterName;
+
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
