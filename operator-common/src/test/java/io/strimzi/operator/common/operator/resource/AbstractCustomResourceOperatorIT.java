@@ -104,7 +104,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         vertx.close();
 
         String namespace = getNamespace();
-        if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (kubeClient().getNamespace(namgespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
             log.warn("Deleting namespace {} after tests run", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
@@ -123,7 +123,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         PlatformFeaturesAvailability.create(vertx, client)
                 .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
-                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), CoreMatchers.is(not(lessThan(0))));
+                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_16), CoreMatchers.is(not(lessThan(0))));
                 })))
 
                 .compose(pfa -> {
@@ -171,7 +171,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         PlatformFeaturesAvailability.create(vertx, client)
                 .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
-                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), CoreMatchers.is(not(lessThan(0))));
+                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_16), CoreMatchers.is(not(lessThan(0))));
                 })))
                 .compose(pfa -> {
                     log.info("Creating resource");
@@ -216,7 +216,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         PlatformFeaturesAvailability.create(vertx, client)
                 .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
-                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_11), CoreMatchers.is(not(lessThan(0))));
+                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_16), CoreMatchers.is(not(lessThan(0))));
                 })))
                 .compose(pfa -> {
                     log.info("Creating resource");

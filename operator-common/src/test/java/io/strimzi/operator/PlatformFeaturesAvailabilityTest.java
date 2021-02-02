@@ -44,21 +44,21 @@ public class PlatformFeaturesAvailabilityTest {
 
     @Test
     public void networkPoliciesWithFancyCombinationTest() {
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_8);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_15);
         assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(false));
-        pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_11);
-        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(false));
-        pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_11);
+        pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
         assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(true));
-        pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_12);
+        pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(true));
+        pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_17);
         assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(true));
     }
 
     @Test
-    public void testVersionDetectionOpenShift39(VertxTestContext context) throws InterruptedException {
+    public void testVersionDetectionOpenShift44(VertxTestContext context) throws InterruptedException {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +
-                "  \"minor\": \"9\",\n" +
+                "  \"minor\": \"17\",\n" +
                 "  \"gitVersion\": \"v1.9.1+a0ce1bc657\",\n" +
                 "  \"gitCommit\": \"a0ce1bc\",\n" +
                 "  \"gitTreeState\": \"clean\",\n" +
@@ -75,17 +75,17 @@ public class PlatformFeaturesAvailabilityTest {
         Checkpoint a = context.checkpoint();
 
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_9));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_17));
             stopMockApi(context, mockHttp);
             a.flag();
         })));
     }
 
     @Test
-    public void testVersionDetectionMinikube114(VertxTestContext context) throws InterruptedException {
+    public void testVersionDetectionMinikube120(VertxTestContext context) throws InterruptedException {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +
-                "  \"minor\": \"14\",\n" +
+                "  \"minor\": \"20\",\n" +
                 "  \"gitVersion\": \"v1.14.0\",\n" +
                 "  \"gitCommit\": \"641856db18352033a0d96dbc99153fa3b27298e5\",\n" +
                 "  \"gitTreeState\": \"clean\",\n" +
@@ -102,7 +102,7 @@ public class PlatformFeaturesAvailabilityTest {
         Checkpoint async = context.checkpoint();
 
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_14));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_20));
             stopMockApi(context, mockHttp);
             async.flag();
         })));
@@ -222,7 +222,7 @@ public class PlatformFeaturesAvailabilityTest {
     public HttpServer startMockApi(VertxTestContext context, List<String> apis) throws InterruptedException {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +
-                "  \"minor\": \"9\",\n" +
+                "  \"minor\": \"16\",\n" +
                 "  \"gitVersion\": \"v1.9.1+a0ce1bc657\",\n" +
                 "  \"gitCommit\": \"a0ce1bc\",\n" +
                 "  \"gitTreeState\": \"clean\",\n" +

@@ -98,7 +98,7 @@ public class KafkaAssemblyOperatorMockTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static Vertx vertx;
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
 
     private int zkReplicas;
     private SingleVolumeStorage zkStorage;

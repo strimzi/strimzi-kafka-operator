@@ -118,7 +118,7 @@ public class KafkaConnectorIT {
                 .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class)
                 .end()
                 .build();
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_14);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20);
 
         String namespace = "ns";
         String connectorName = "my-connector";
