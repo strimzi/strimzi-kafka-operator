@@ -26,8 +26,15 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
     }
     @Override
     public Deployment get(String namespace, String name) {
-//        ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name)
-        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+        Deployment[] deployment = new Deployment[1];
+
+        TestUtils.waitFor(" until deployment is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                deployment[0] = ResourceManager.kubeClient().namespace(namespace).getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name));
+                return deployment[0] != null;
+            });
+
+        return deployment[0];
     }
     @Override
     public void create(Deployment resource) {

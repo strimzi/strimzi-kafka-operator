@@ -68,6 +68,7 @@ public class KafkaClientsTemplates {
             .withNewMetadata()
                 .withName(kafkaClientsName)
                 .withLabels(label)
+                .withNamespace(ResourceManager.kubeClient().getNamespace())
             .endMetadata()
             .withNewSpec()
                 .withNewSelector()

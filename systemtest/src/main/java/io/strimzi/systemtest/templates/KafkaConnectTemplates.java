@@ -41,6 +41,10 @@ public class KafkaConnectTemplates {
         return kafkaConnect(extensionContext, name, name, kafkaConnectReplicas, true);
     }
 
+    public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, String name, String clusterName, int kafkaConnectReplicas) {
+        return kafkaConnect(extensionContext, name, clusterName, kafkaConnectReplicas, true);
+    }
+
     public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, String name, int kafkaConnectReplicas, boolean allowNP) {
         return kafkaConnect(extensionContext, name, name, kafkaConnectReplicas, allowNP);
     }
