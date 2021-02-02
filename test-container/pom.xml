@@ -76,7 +76,7 @@
                     <executable>yq</executable>
                     <arguments>
                         <argument>eval</argument>
-                        <argument>.[].version</argument>
+                        <argument>.[] | select(.supported == true) | .version</argument>
                         <argument>../kafka-versions.yaml</argument>
                     </arguments>
                     <outputFile>./src/main/resources/kafka-versions.txt</outputFile>
