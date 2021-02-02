@@ -85,8 +85,8 @@ class MirrorMaker2ST extends AbstractST {
     private static final String MIRRORMAKER2_TOPIC_NAME = "mirrormaker2-topic-example";
     private final int messagesCount = 200;
 
-    private String kafkaClusterSourceName = clusterName + "-source";
-    private String kafkaClusterTargetName = clusterName + "-target";
+    private String kafkaClusterSourceName;
+    private String kafkaClusterTargetName;
 
     @SuppressWarnings({"checkstyle:MethodLength"})
     @Test
@@ -895,6 +895,9 @@ class MirrorMaker2ST extends AbstractST {
 
     @BeforeAll
     void setup() {
+        kafkaClusterSourceName = clusterName + "-source";
+        kafkaClusterTargetName = clusterName + "-target";
+
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
     }

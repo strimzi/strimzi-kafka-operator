@@ -6,6 +6,7 @@ package io.strimzi.systemtest.security;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
@@ -283,8 +284,9 @@ public class NetworkPoliciesST extends AbstractST {
             .endSpec()
             .build());
 
-        kubeClient().getClient().namespaces().withName(NAMESPACE).edit(ns -> new NamespaceBuilder()
-            .editMetadata()
+        Namespace actualNamespace = kubeClient().getClient().namespaces().withName(NAMESPACE).get();
+        kubeClient().getClient().namespaces().withName(NAMESPACE).edit(ns -> new NamespaceBuilder(actualNamespace)
+            .editOrNewMetadata()
                 .addToLabels(labels)
             .endMetadata()
             .build());
