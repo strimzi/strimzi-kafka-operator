@@ -87,6 +87,6 @@ Even if you are using the Kafka Connect REST API to manage them, you should not 
 [role="_additional-resources"]
 .Additional resources
 * xref:proc-kafka-connect-config-str[Configuring Kafka Connect]
-* {BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Creating a new container image automatically using Strimzi]
-* {BookURLDeploying}#creating-new-image-from-base-str[Creating a Docker image from the Kafka Connect base image]
-* {BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors]
+* link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Creating a new container image automatically using Strimzi]
+* link:{BookURLDeploying}#creating-new-image-from-base-str[Creating a Docker image from the Kafka Connect base image]
+* link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors]

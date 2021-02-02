@@ -61,7 +61,7 @@ The guide also describes how Strimzi _Operators_ help manage a deployment.
 
 The guide contains high-level outlines of the processes required to deploy, configure, secure and monitor a deployment of Strimzi.
 
-=== Deploying Strimzi
+=== Deploying and Upgrading Strimzi
 
 The _Deploying and Upgrading Strimzi_ guide provides instructions on all the options available for deploying and upgrading Strimzi.
 The guide describes what is deployed, and the order of deployment required to run Apache Kafka in a Kubernetes cluster.
@@ -76,7 +76,7 @@ Upgrade instructions are provided for Strimzi and Kafka upgrades.
 The _Strimzi Quick Start guide_ provides instructions for evaluating Strimzi using _Minikube_.
 The steps describe how to get a Strimzi deployment up-and-running as quickly as possible.
 
-In contrast to the _Deploying_ guide, this guide provides a reduced set of instructions for a specific type of deployment, with minimal configuration.
+In contrast to the _Deploying and Upgrading Strimzi_ guide, this guide provides a reduced set of instructions for a specific type of deployment, with minimal configuration.
 
 === Using Strimzi
 

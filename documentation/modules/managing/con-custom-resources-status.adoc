@@ -58,6 +58,8 @@ The `status` property of a resource provides information on the resource's:
 
 The `status` property also provides resource-specific information. For example:
 
+* `KafkaStatus` provides information on listener addresses and the id of the Kafka cluster.
+
 * `KafkaConnectStatus` provides the REST API endpoint for Kafka Connect connectors.
 
 * `KafkaUserStatus` provides the user name of the Kafka user and the `Secret` in which their credentials are stored.
@@ -74,7 +76,7 @@ When performing an update on a custom resource using `kubectl edit`, for example
 Here we see the `status` property specified for a Kafka custom resource.
 
 .Kafka custom resource with status
-[source,yaml,subs="attributes+"]
+[source,shell,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
@@ -83,7 +85,7 @@ spec:
   # ...
 status:
   conditions: <1>
-  - lastTransitionTime: 2019-07-23T23:46:57+0000
+  - lastTransitionTime: 2021-07-23T23:46:57+0000
     status: "True"
     type: Ready <2>
   observedGeneration: 4 <3>
@@ -110,12 +112,14 @@ status:
       ...
       -----END CERTIFICATE-----
     type: external
-    # ...
+  clusterId: _CLUSTER-ID_ <5>
+# ...
 ----
 <1> Status `conditions` describe criteria related to the status that cannot be deduced from the existing resource information, or are specific to the instance of a resource.
 <2> The `Ready` condition indicates whether the Cluster Operator currently considers the Kafka cluster able to handle traffic.
 <3> The `observedGeneration` indicates the generation of the `Kafka` custom resource that was last reconciled by the Cluster Operator.
 <4> The `listeners` describe the current Kafka bootstrap addresses by type.
+<5> The Kafka cluster id.
 +
 IMPORTANT: The address in the custom resource status for external listeners with type `nodeport` is currently not supported.
 

@@ -81,4 +81,4 @@ kubectl apply -f _USER-CONFIG-FILE_
 The user is created, as well as a Secret with the same name as the `KafkaUser` resource.
 The Secret contains a private and public key for TLS client authentication.
 
-For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see link:{BookURLDeploying}#setup-external-clients-str[Setting up access for clients outside of Kubernetes^] in the _Deploying Strimzi_ guide.
+For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see link:{BookURLDeploying}#setup-external-clients-str[Setting up access for clients outside of Kubernetes^] in the _Deploying and Upgrading Strimzi_ guide.
