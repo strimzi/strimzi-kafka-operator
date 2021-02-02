@@ -467,7 +467,7 @@ public class KafkaConnectBuildTest {
 
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null);
+        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
         assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(expectedArgs));
     }
 
