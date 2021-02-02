@@ -100,6 +100,7 @@ public class StatusUtils {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
+        // condition contains a timestamp so using a set does not help
         List<Condition> conditionList = new ArrayList<>();
         Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
         conditionList.add(condition);
@@ -107,12 +108,22 @@ public class StatusUtils {
         if (status.getConditions() != null) {
             status.getConditions().forEach(cond -> {
                 if ("UnknownFields".equals(cond.getReason()) || "DeprecatedFields".equals(cond.getReason())) {
-                    conditionList.add(cond);
+                    if (!conditionAlreadyPresent(conditionList, cond)) {
+                        conditionList.add(cond);
+                    }
                 }
             });
         }
+        status.setConditions(new ArrayList<>(conditionList));
+    }
 
-        status.setConditions(conditionList);
+    private static boolean conditionAlreadyPresent(List<Condition> conditions, Condition condition) {
+        return conditions.stream().filter(cond -> {
+            return condition.getReason().equals(cond.getReason()) &&
+                    condition.getType().equals(cond.getType()) &&
+                    condition.getStatus().equals(cond.getStatus()) &&
+                    condition.getMessage().equals(cond.getMessage());
+        }).findAny().isPresent();
     }
 
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type) {
