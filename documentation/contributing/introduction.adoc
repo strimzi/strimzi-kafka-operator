@@ -76,7 +76,7 @@ Upgrade instructions are provided for Strimzi and Kafka upgrades.
 The _Strimzi Quick Start guide_ provides instructions for evaluating Strimzi using _Minikube_.
 The steps describe how to get a Strimzi deployment up-and-running as quickly as possible.
 
-In contrast to the __Deploying and Upgrading Strimzi_ guide, this guide provides a reduced set of instructions for a specific type of deployment, with minimal configuration.
+In contrast to the _Deploying and Upgrading Strimzi_ guide, this guide provides a reduced set of instructions for a specific type of deployment, with minimal configuration.
 
 === Using Strimzi
 

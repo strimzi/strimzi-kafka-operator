@@ -85,7 +85,7 @@ spec:
   # ...
 status:
   conditions: <1>
-  - lastTransitionTime: _YEAR_-_MONTH_-23T23:46:57+0000
+  - lastTransitionTime: 2021-07-23T23:46:57+0000
     status: "True"
     type: Ready <2>
   observedGeneration: 4 <3>
