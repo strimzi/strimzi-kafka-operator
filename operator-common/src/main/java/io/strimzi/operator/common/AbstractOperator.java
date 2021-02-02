@@ -94,7 +94,7 @@ public abstract class AbstractOperator<
     private final AtomicInteger pausedResourceCounter;
     private final AtomicInteger resourceCounter;
     private final Timer reconciliationsTimer;
-    private final Map<Tags, AtomicInteger> resourcesStateCounter;
+    private final Map<String, AtomicInteger> resourcesStateCounter;
 
     public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
         this.vertx = vertx;
@@ -495,7 +495,7 @@ public abstract class AbstractOperator<
      */
     private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result, Timer.Sample reconciliationTimerSample) {
         if (result.succeeded()) {
-            updateResourceState(reconciliation, true);
+            updateResourceState(reconciliation, true, null);
             successfulReconciliationsCounter.increment();
             reconciliationTimerSample.stop(reconciliationsTimer);
             log.info("{}: reconciled", reconciliation);
@@ -503,14 +503,14 @@ public abstract class AbstractOperator<
             Throwable cause = result.cause();
 
             if (cause instanceof InvalidConfigParameterException) {
-                updateResourceState(reconciliation, false);
+                updateResourceState(reconciliation, false, cause);
                 failedReconciliationsCounter.increment();
                 reconciliationTimerSample.stop(reconciliationsTimer);
                 log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
             } else if (cause instanceof UnableToAcquireLockException) {
                 lockedReconciliationsCounter.increment();
             } else  {
-                updateResourceState(reconciliation, false);
+                updateResourceState(reconciliation, false, cause);
                 failedReconciliationsCounter.increment();
                 reconciliationTimerSample.stop(reconciliationsTimer);
                 log.warn("{}: Failed to reconcile", reconciliation, cause);
@@ -537,31 +537,38 @@ public abstract class AbstractOperator<
      * @param reconciliation reconciliation to use to update the resource state metric
      * @param ready if reconcile was successful and the resource is ready
      */
-    private void updateResourceState(Reconciliation reconciliation, boolean ready) {
-        Tags metricTags = Tags.of(
+    private void updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
+        String key = reconciliation.namespace() + ":" + reconciliation.kind() + "/" + reconciliation.name();
+
+        Tags metricTagsWithReason = Tags.of(
                 Tag.of("kind", reconciliation.kind()),
                 Tag.of("name", reconciliation.name()),
-                Tag.of("resource-namespace", reconciliation.namespace()));
+                Tag.of("resource-namespace", reconciliation.namespace()),
+                Tag.of("failure-reason", cause == null ? "none" : cause.getMessage()));
 
         T cr = resourceOperator.get(reconciliation.namespace(), reconciliation.name());
-        if (cr != null) {
-            resourcesStateCounter.computeIfAbsent(metricTags, tags ->
-                    metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", tags)
-            );
-            resourcesStateCounter.get(metricTags).set(ready ? 1 : 0);
-            log.debug("{}: Updated metric " + METRICS_PREFIX + "resource.state{} = {}", reconciliation, metricTags, ready ? 1 : 0);
-        } else {
-            Optional<Meter> gauge = metrics.meterRegistry().getMeters()
-                    .stream()
-                    .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
-                            meter.getId().getTags().equals(metricTags.stream().collect(Collectors.toList()))
-                    ).findFirst();
 
-            if (gauge.isPresent()) {
-                metrics.meterRegistry().remove(gauge.get().getId());
-                resourcesStateCounter.remove(metricTags);
-                log.debug("{}: Removed metric " + METRICS_PREFIX + "resource.state{}", reconciliation, metricTags);
-            }
+        Optional<Meter> gauge = metrics.meterRegistry().getMeters()
+                .stream()
+                .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
+                        meter.getId().getTags().contains(Tag.of("kind", reconciliation.kind())) &&
+                        meter.getId().getTags().contains(Tag.of("name", reconciliation.name())) &&
+                        meter.getId().getTags().contains(Tag.of("resource-namespace", reconciliation.namespace()))
+                ).findFirst();
+
+        if (gauge.isPresent()) {
+            // remove metric so it can be re-added with new tags
+            metrics.meterRegistry().remove(gauge.get().getId());
+            resourcesStateCounter.remove(key);
+            log.debug("{}: Removed metric " + METRICS_PREFIX + "resource.state{}", reconciliation, key);
+        }
+
+        if (cr != null) {
+            resourcesStateCounter.computeIfAbsent(key, tags ->
+                    metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTagsWithReason)
+            );
+            resourcesStateCounter.get(key).set(ready ? 1 : 0);
+            log.debug("{}: Updated metric " + METRICS_PREFIX + "resource.state{} = {}", reconciliation, metricTagsWithReason, ready ? 1 : 0);
         }
     }
 
