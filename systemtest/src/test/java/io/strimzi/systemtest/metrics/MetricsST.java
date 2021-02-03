@@ -29,14 +29,15 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaConnectS2ITemplates;
@@ -564,21 +565,21 @@ public class MetricsST extends AbstractST {
         kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
-        KubernetesResource.allowNetworkPolicySettingsForClusterOperator();
-        KubernetesResource.allowNetworkPolicySettingsForEntityOperator(metricsClusterName);
-        KubernetesResource.allowNetworkPolicySettingsForEntityOperator(SECOND_CLUSTER);
+        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext);
+        NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, metricsClusterName);
+        NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, SECOND_CLUSTER);
         // Allow connections from clients to KafkaExporter when NetworkPolicies are set to denied by default
-        KubernetesResource.allowNetworkPolicySettingsForKafkaExporter(metricsClusterName);
-        KubernetesResource.allowNetworkPolicySettingsForKafkaExporter(SECOND_CLUSTER);
+        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, metricsClusterName);
+        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, SECOND_CLUSTER);
 
         // Wait for Metrics refresh/values change
         Thread.sleep(60_000);
-        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(metricsClusterName);
-        deprecatedKafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(metricsClusterName);
-        zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(metricsClusterName);
-        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(metricsClusterName);
-        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(metricsClusterName);
-        kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(BRIDGE_CLUSTER);
+        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        deprecatedKafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(kafkaClientsPodName, BRIDGE_CLUSTER);
     }
     
     private List<String> getExpectedTopics() {
