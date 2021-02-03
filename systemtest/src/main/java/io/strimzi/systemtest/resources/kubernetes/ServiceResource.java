@@ -1,3 +1,7 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.Service;
@@ -24,7 +28,7 @@ public class ServiceResource implements ResourceType<Service> {
     }
     @Override
     public void create(Service resource) {
-       ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createService(resource);
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createService(resource);
     }
     @Override
     public void delete(Service resource) throws Exception {

@@ -24,7 +24,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.HasStatus;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
@@ -70,14 +69,11 @@ import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static io.strimzi.systemtest.enums.DeploymentTypes.BundleClusterOperator;
-import static io.strimzi.systemtest.enums.DeploymentTypes.HelmClusterOperator;
-import static io.strimzi.systemtest.enums.DeploymentTypes.KafkaClients;
-import static io.strimzi.systemtest.enums.DeploymentTypes.OlmClusterOperator;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public class ResourceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
@@ -85,7 +81,7 @@ public class ResourceManager {
     public static final String STRIMZI_PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
     public static final long CR_CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
-    private static final Map<String, Stack<ThrowableRunner>> storedResources = new LinkedHashMap<>();
+    private static final Map<String, Stack<ThrowableRunner>> STORED_RESOURCES = new LinkedHashMap<>();
 
     private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
     private static ResourceManager instance;
@@ -159,8 +155,8 @@ public class ResourceManager {
             type.create(resource);
 
             synchronized (this) {
-                storedResources.computeIfAbsent(testContext.getDisplayName(), k -> new Stack<>());
-                storedResources.get(testContext.getDisplayName()).push(() -> deleteResource(resource));
+                STORED_RESOURCES.computeIfAbsent(testContext.getDisplayName(), k -> new Stack<>());
+                STORED_RESOURCES.get(testContext.getDisplayName()).push(() -> deleteResource(resource));
             }
         }
 
@@ -236,14 +232,14 @@ public class ResourceManager {
         return pass;
     }
 
-    private static final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 
     public static <T extends HasMetadata> String resourceToString(T resource) {
         if (resource == null) {
             return "null";
         }
         try {
-            return mapper.writeValueAsString(resource);
+            return MAPPER.writeValueAsString(resource);
         } catch (JsonProcessingException e) {
             LOGGER.info("Failed converting resource to YAML: {}", e.getMessage());
             return "unknown";
@@ -261,15 +257,15 @@ public class ResourceManager {
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         LOGGER.info("Going to clear all resources for {}", testContext.getDisplayName());
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
-        if (!storedResources.containsKey(testContext.getDisplayName()) || storedResources.get(testContext.getDisplayName()).isEmpty()) {
+        if (!STORED_RESOURCES.containsKey(testContext.getDisplayName()) || STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
             LOGGER.info("Nothing to delete");
         }
-        while (storedResources.containsKey(testContext.getDisplayName()) && !storedResources.get(testContext.getDisplayName()).isEmpty()) {
-            storedResources.get(testContext.getDisplayName()).pop().run();
+        while (STORED_RESOURCES.containsKey(testContext.getDisplayName()) && !STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
+            STORED_RESOURCES.get(testContext.getDisplayName()).pop().run();
         }
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         LOGGER.info("");
-        storedResources.remove(testContext.getDisplayName());
+        STORED_RESOURCES.remove(testContext.getDisplayName());
     }
 
     /**
@@ -381,13 +377,13 @@ public class ResourceManager {
             String deploymentType = resource.getMetadata().getLabels().get("deployment-type");
             DeploymentTypes deploymentTypes = DeploymentTypes.valueOf(deploymentType);
 
-            switch(deploymentTypes) {
+            switch (deploymentTypes) {
                 case BundleClusterOperator:
                     // new BundleResource()
                     return (ResourceType<T>) resourceTypes[11];
                 case KafkaClients:
                    // new KafkaClientsResource(),
-                   return (ResourceType<T>) resourceTypes[1];
+                    return (ResourceType<T>) resourceTypes[1];
                 case HelmClusterOperator:
                     // new HelmResource
                     return (ResourceType<T>) resourceTypes[12];

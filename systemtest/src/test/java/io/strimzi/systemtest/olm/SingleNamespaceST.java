@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.olm;
 
 import io.strimzi.systemtest.resources.operator.OlmResource;
-import io.strimzi.systemtest.resources.ResourceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;

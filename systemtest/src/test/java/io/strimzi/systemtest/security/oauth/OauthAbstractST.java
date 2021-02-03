@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
-import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Base64;

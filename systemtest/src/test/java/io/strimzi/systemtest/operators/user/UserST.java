@@ -15,10 +15,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaTemplates;
@@ -33,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.UnsupportedEncodingException;
@@ -146,7 +141,7 @@ class UserST extends AbstractST {
     void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
-        createBigAmountOfUsers(extensionContext, clusterName,"SCRAM_SHA");
+        createBigAmountOfUsers(extensionContext, clusterName, "SCRAM_SHA");
     }
 
     @Tag(SCALABILITY)
@@ -291,7 +286,7 @@ class UserST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         KafkaUser tlsUser = KafkaUserTemplates.tlsUser(clusterName, tlsUserName).build();
-        KafkaUser scramShaUser =  KafkaUserTemplates.scramShaUser(clusterName, scramShaUserName).build();;
+        KafkaUser scramShaUser =  KafkaUserTemplates.scramShaUser(clusterName, scramShaUserName).build();
 
         resourceManager.createResource(extensionContext, tlsUser);
         resourceManager.createResource(extensionContext, scramShaUser);
