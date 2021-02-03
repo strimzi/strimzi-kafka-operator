@@ -1479,12 +1479,10 @@ class SecurityST extends AbstractST {
             // Deploy ClusterCA secret
             LOGGER.info("Deploy all certificates and keys as secrets.");
             SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaCertificateSecretName(clusterName), NAMESPACE);
-            // kubectl create secret generic CA-CERTIFICATE-SECRET --from-file=ca.crt=CA-CERTIFICATE-FILENAME
             SecretUtils.createCustomSecret(KafkaResources.clusterCaCertificateSecretName(clusterName), clusterName, NAMESPACE, clusterBundle);
 
 
             SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaKeySecretName(clusterName), NAMESPACE);
-            // kubectl create secret generic CA-KEY-SECRET --from-file=ca.key=CA-KEY-SECRET-FILENAME
             File strimziKeyPKCS8 = convertPrivateKeyToPKCS8File(stClusterCA.getPrivateKey());
             SecretUtils.createSecretFromFile(strimziKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clusterCaKeySecretName(clusterName), NAMESPACE, secretLabels);
 
