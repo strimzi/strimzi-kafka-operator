@@ -141,11 +141,9 @@ public class OpenSslCertManager implements CertManager {
                 if (keyStoreFile.length() > 0) {
                     isKeyStoreFile = new FileInputStream(keyStoreFile);
                 }
-
                 FileInputStream isCertFile = null;
                 KeyStore keyStore = KeyStore.getInstance("PKCS12");
                 keyStore.load(isKeyStoreFile, keyStorePassword.toCharArray());
-
                 keyStore.setKeyEntry(alias, Files.readAllBytes(keyFile.toPath()), null);
 
                 try {
@@ -162,28 +160,22 @@ public class OpenSslCertManager implements CertManager {
                     try {
                         osKeyStoreFile = new FileOutputStream(keyStoreFile);
                         keyStore.store(osKeyStoreFile, keyStorePassword.toCharArray());
-                    }
-
-                    finally {
-                        if(osKeyStoreFile != null){
+                    } finally {
+                        if (osKeyStoreFile != null) {
                             osKeyStoreFile.close();
                         }
                     }
-                }
-                finally {
-                    if(isCertFile != null){
+                } finally {
+                    if (isCertFile != null) {
                         isCertFile.close();
                     }
                 }
-            }
-            finally {
-                if(isKeyStoreFile != null){
+            } finally {
+                if (isKeyStoreFile != null) {
                     isKeyStoreFile.close();
                 }
             }
-        }
-
-        catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+        } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             try {
                 throw e;
             } catch (KeyStoreException keyStoreException) {
@@ -194,7 +186,6 @@ public class OpenSslCertManager implements CertManager {
                 certificateException.printStackTrace();
             }
         }
-
     }
 
     @Override
