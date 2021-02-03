@@ -111,6 +111,8 @@ class SecurityST extends AbstractST {
     private static final String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
     private static final String TLS_PROTOCOL = "Protocol  : TLSv1";
     private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
+    static final String STRIMZI_TEST_CLUSTER_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClusterCA";
+    static final String STRIMZI_TEST_CLIENTS_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClientsCA";
 
     @Test
     void testCertificates() {
@@ -1457,48 +1459,6 @@ class SecurityST extends AbstractST {
                 initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
-    static final String STRIMZI_TEST_CLUSTER_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClusterCA";
-    static final String STRIMZI_TEST_CLIENTS_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClientsCA";
-
-    void generateAndDeployCustomStrimziCA() {
-        LOGGER.info("Generating custom RootCA, IntermediateCA, and ClusterCA, ClientsCA for Strimzi and PEM bundles.");
-        SystemTestCertAndKey strimziRootCA = SystemTestCertManager.generateRootCaCertAndKey();
-        SystemTestCertAndKey intermediateCA = SystemTestCertManager.generateIntermediateCaCertAndKey(strimziRootCA);
-        SystemTestCertAndKey stClusterCA = SystemTestCertManager.generateStrimziCaCertAndKey(intermediateCA, STRIMZI_TEST_CLUSTER_CA);
-        SystemTestCertAndKey stClientsCA = SystemTestCertManager.generateStrimziCaCertAndKey(intermediateCA, STRIMZI_TEST_CLIENTS_CA);
-
-        // Create PEM bundles (strimzi root CA, intermediate CA, cluster|clients CA cert+key) for ClusterCA and ClientsCA
-        CertAndKeyFiles clusterBundle = SystemTestCertManager.exportToPemFiles(stClusterCA, intermediateCA, strimziRootCA);
-        CertAndKeyFiles clientsBundle = SystemTestCertManager.exportToPemFiles(stClientsCA, intermediateCA, strimziRootCA);
-
-        Map<String, String> secretLabels = new HashMap<>();
-        secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
-
-        try {
-            // Deploy ClusterCA secret
-            LOGGER.info("Deploy all certificates and keys as secrets.");
-            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaCertificateSecretName(clusterName), NAMESPACE);
-            SecretUtils.createCustomSecret(KafkaResources.clusterCaCertificateSecretName(clusterName), clusterName, NAMESPACE, clusterBundle);
-
-
-            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaKeySecretName(clusterName), NAMESPACE);
-            File strimziKeyPKCS8 = convertPrivateKeyToPKCS8File(stClusterCA.getPrivateKey());
-            SecretUtils.createSecretFromFile(strimziKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clusterCaKeySecretName(clusterName), NAMESPACE, secretLabels);
-
-            // ClientsCA secret part
-            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaCertificateSecretName(clusterName), NAMESPACE);
-            SecretUtils.createCustomSecret(KafkaResources.clientsCaCertificateSecretName(clusterName), clusterName, NAMESPACE, clientsBundle);
-
-            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaKeySecretName(clusterName), NAMESPACE);
-            File clientsKeyPKCS8 = convertPrivateKeyToPKCS8File(stClientsCA.getPrivateKey());
-            SecretUtils.createSecretFromFile(clientsKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clientsCaKeySecretName(clusterName), NAMESPACE, secretLabels);
-
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Test
     void testCustomClusterCAClientsCA() {
         generateAndDeployCustomStrimziCA();
@@ -1607,6 +1567,46 @@ class SecurityST extends AbstractST {
         String certOutIssuer = dn.substring(principalDNType.length() + 3).replace("/", ",");
         return SystemTestCertManager.containsAllDN(certOutIssuer, expectedPrincipal);
     }
+
+    void generateAndDeployCustomStrimziCA() {
+        LOGGER.info("Generating custom RootCA, IntermediateCA, and ClusterCA, ClientsCA for Strimzi and PEM bundles.");
+        SystemTestCertAndKey strimziRootCA = SystemTestCertManager.generateRootCaCertAndKey();
+        SystemTestCertAndKey intermediateCA = SystemTestCertManager.generateIntermediateCaCertAndKey(strimziRootCA);
+        SystemTestCertAndKey stClusterCA = SystemTestCertManager.generateStrimziCaCertAndKey(intermediateCA, STRIMZI_TEST_CLUSTER_CA);
+        SystemTestCertAndKey stClientsCA = SystemTestCertManager.generateStrimziCaCertAndKey(intermediateCA, STRIMZI_TEST_CLIENTS_CA);
+
+        // Create PEM bundles (strimzi root CA, intermediate CA, cluster|clients CA cert+key) for ClusterCA and ClientsCA
+        CertAndKeyFiles clusterBundle = SystemTestCertManager.exportToPemFiles(stClusterCA, intermediateCA, strimziRootCA);
+        CertAndKeyFiles clientsBundle = SystemTestCertManager.exportToPemFiles(stClientsCA, intermediateCA, strimziRootCA);
+
+        Map<String, String> secretLabels = new HashMap<>();
+        secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
+
+        try {
+            // Deploy ClusterCA secret
+            LOGGER.info("Deploy all certificates and keys as secrets.");
+            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaCertificateSecretName(clusterName), NAMESPACE);
+            SecretUtils.createCustomSecret(KafkaResources.clusterCaCertificateSecretName(clusterName), clusterName, NAMESPACE, clusterBundle);
+
+
+            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaKeySecretName(clusterName), NAMESPACE);
+            File strimziKeyPKCS8 = convertPrivateKeyToPKCS8File(stClusterCA.getPrivateKey());
+            SecretUtils.createSecretFromFile(strimziKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clusterCaKeySecretName(clusterName), NAMESPACE, secretLabels);
+
+            // ClientsCA secret part
+            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaCertificateSecretName(clusterName), NAMESPACE);
+            SecretUtils.createCustomSecret(KafkaResources.clientsCaCertificateSecretName(clusterName), clusterName, NAMESPACE, clientsBundle);
+
+            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaKeySecretName(clusterName), NAMESPACE);
+            File clientsKeyPKCS8 = convertPrivateKeyToPKCS8File(stClientsCA.getPrivateKey());
+            SecretUtils.createSecretFromFile(clientsKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clientsCaKeySecretName(clusterName), NAMESPACE, secretLabels);
+
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @BeforeAll
     void setup() {
