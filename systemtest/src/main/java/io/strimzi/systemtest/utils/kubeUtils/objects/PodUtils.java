@@ -77,7 +77,7 @@ public class PodUtils {
                     return false;
                 }
                 if (pods.size() != expectPods) {
-                    LOGGER.debug("Expected pods not ready");
+                    LOGGER.debug("Expected pods {} are not ready", selector);
                     return false;
                 }
                 for (Pod pod : pods) {

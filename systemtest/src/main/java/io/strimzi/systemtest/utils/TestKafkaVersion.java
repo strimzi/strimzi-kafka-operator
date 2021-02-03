@@ -116,6 +116,10 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         return components.length - otherComponents.length;
     }
 
+    public boolean isUpgrade(TestKafkaVersion version) {
+        return compareTo(version) < 0;
+    }
+
     @Override
     public int hashCode() {
         return version.hashCode();

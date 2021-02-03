@@ -7,6 +7,7 @@
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.14.0/strimzi-0.14.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip",
     "generateTopics": false,
+    "oldestKafka": "2.1.0",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.15.0-kafka-2.3.1",
       "kafka": "strimzi/kafka:0.15.0-kafka-2.3.0",
@@ -18,11 +19,6 @@
       "kafka": "strimzi/kafka:0.15.0-kafka-2.3.1",
       "topicOperator": "strimzi/operator:0.15.0",
       "userOperator": "strimzi/operator:0.15.0"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.3.1",
@@ -50,6 +46,7 @@
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.15.0/strimzi-0.15.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
     "generateTopics": false,
+    "oldestKafka": "2.2.1",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.16.2-kafka-2.3.1",
       "kafka": "strimzi/kafka:0.16.2-kafka-2.3.1",
@@ -61,11 +58,6 @@
       "kafka": "strimzi/kafka:0.16.2-kafka-2.4.0",
       "topicOperator": "strimzi/operator:0.16.2",
       "userOperator": "strimzi/operator:0.16.2"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.4.0",
@@ -93,6 +85,7 @@
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.16.2/strimzi-0.16.2.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
     "generateTopics": false,
+    "oldestKafka": "2.3.1",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.17.0-kafka-2.4.0",
       "kafka": "strimzi/kafka:0.17.0-kafka-2.4.0",
@@ -104,11 +97,6 @@
       "kafka": "strimzi/kafka:0.17.0-kafka-2.4.0",
       "topicOperator": "strimzi/operator:0.17.0",
       "userOperator": "strimzi/operator:0.17.0"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "",
@@ -136,6 +124,7 @@
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-0.17.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
     "generateTopics": false,
+    "oldestKafka": "2.3.1",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.18.0-kafka-2.4.0",
       "kafka": "strimzi/kafka:0.18.0-kafka-2.4.0",
@@ -147,11 +136,6 @@
       "kafka": "strimzi/kafka:0.18.0-kafka-2.5.0",
       "topicOperator": "strimzi/operator:0.18.0",
       "userOperator": "strimzi/operator:0.18.0"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.5.0",
@@ -179,6 +163,7 @@
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip",
     "generateTopics": false,
+    "oldestKafka": "2.4.0",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.19.0-kafka-2.5.0",
       "kafka": "strimzi/kafka:0.19.0-kafka-2.5.0",
@@ -190,11 +175,6 @@
       "kafka": "strimzi/kafka:0.19.0-kafka-2.5.0",
       "topicOperator": "strimzi/operator:0.19.0",
       "userOperator": "strimzi/operator:0.19.0"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "",
@@ -222,6 +202,7 @@
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.20.1/strimzi-0.20.1.zip",
     "generateTopics": true,
+    "oldestKafka": "2.4.0",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:0.20.1-kafka-2.5.0",
       "kafka": "strimzi/kafka:0.20.1-kafka-2.5.0",
@@ -233,11 +214,6 @@
       "kafka": "strimzi/kafka:0.20.1-kafka-2.6.0",
       "topicOperator": "strimzi/operator:0.20.1",
       "userOperator": "strimzi/operator:0.20.1"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.6.0",
@@ -265,6 +241,7 @@
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.20.1/strimzi-0.20.1.zip",
     "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.21.1/strimzi-0.21.1.zip",
     "generateTopics": true,
+    "oldestKafka": "2.5.0",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "quay.io/strimzi/kafka:0.21.1-kafka-2.6.0",
       "kafka": "quay.io/strimzi/kafka:0.21.1-kafka-2.6.0",
@@ -276,11 +253,6 @@
       "kafka": "quay.io/strimzi/kafka:0.21.1-kafka-2.7.0",
       "topicOperator": "quay.io/strimzi/operator:0.21.1",
       "userOperator": "quay.io/strimzi/operator:0.21.1"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "2.7.0",
@@ -309,6 +281,7 @@
     "urlTo":"HEAD",
     "generateTopics": true,
     "additionalTopics": 2,
+    "oldestKafka": "2.5.0",
     "imagesBeforeKafkaUpdate": {
       "zookeeper": "strimzi/kafka:latest-kafka-2.7.0",
       "kafka": "strimzi/kafka:latest-kafka-2.7.0",
@@ -320,11 +293,6 @@
       "kafka": "strimzi/kafka:latest-kafka-2.7.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
-    },
-    "proceduresBefore": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
     },
     "proceduresAfter": {
       "kafkaVersion": "",

@@ -140,7 +140,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // Make snapshots of all pods
         makeSnapshots(olmUpgradeClusterName);
         logPodImages(olmUpgradeClusterName);
-        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfter"), olmUpgradeClusterName);
+//        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfter"), olmUpgradeClusterName);
         logPodImages(olmUpgradeClusterName);
         // ======== Kafka upgrade ends ========
 

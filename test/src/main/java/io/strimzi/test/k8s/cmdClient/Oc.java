@@ -5,6 +5,7 @@
 package io.strimzi.test.k8s.cmdClient;
 
 import io.strimzi.test.executor.Exec;
+import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,6 +21,7 @@ public class Oc extends BaseCmdKubeClient<Oc> {
 
     private static final String OC = "oc";
 
+
     public Oc() { }
 
     private Oc(String futureNamespace) {
@@ -28,12 +30,12 @@ public class Oc extends BaseCmdKubeClient<Oc> {
 
     @Override
     public String defaultNamespace() {
-        return "myproject";
+        return OpenShift.DEFAULT_NAMESPACE;
     }
 
     @Override
     public String defaultOlmNamespace() {
-        return "openshift-marketplace";
+        return OpenShift.OLM_NAMESPACE;
     }
 
     @Override
