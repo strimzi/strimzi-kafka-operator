@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.ZipArtifactBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -76,6 +77,9 @@ class ConnectBuilderST extends AbstractST {
     private static final String CAMEL_CONNECTOR_TGZ_URL = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.tar.gz";
     private static final String CAMEL_CONNECTOR_TGZ_CHECKSUM = "d0bb8c6a9e50b68eee3e4d70b6b7e5ae361373883ed3156bc11771330095b66195ac1c12480a0669712da4e5f38e64f004ffecabca4bf70d312f3f7ae0ad51b5";
 
+    private static final String CAMEL_CONNECTOR_ZIP_URL = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.zip";
+    private static final String CAMEL_CONNECTOR_ZIP_CHECKSUM = "bc15135b8ef7faccd073508da0510c023c0f6fa3ec7e48c98ad880dd112b53bf106ad0a47bcb353eed3ec03bb3d273da7de356f3f7f1766a13a234a6bc28d602";
+
     private String imageName = "";
 
     private static final Plugin PLUGIN_WITH_TAR_AND_JAR = new PluginBuilder()
@@ -88,6 +92,15 @@ class ConnectBuilderST extends AbstractST {
             new TgzArtifactBuilder()
                 .withNewUrl(ECHO_SINK_TGZ_URL)
                 .withNewSha512sum(ECHO_SINK_TGZ_CHECKSUM)
+                .build())
+        .build();
+
+    private static final Plugin PLUGIN_WITH_ZIP = new PluginBuilder()
+        .withName("connector-from-zip")
+        .withArtifacts(
+            new ZipArtifactBuilder()
+                .withNewUrl(CAMEL_CONNECTOR_ZIP_URL)
+                .withNewSha512sum(CAMEL_CONNECTOR_ZIP_CHECKSUM)
                 .build())
         .build();
 
@@ -159,7 +172,7 @@ class ConnectBuilderST extends AbstractST {
     }
 
     @Test
-    void testBuildWithJarAndTgz() {
+    void testBuildWithJarTgzAndZip() {
         // this test also testing push into Docker output
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -175,7 +188,7 @@ class ConnectBuilderST extends AbstractST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewBuild()
-                    .withPlugins(PLUGIN_WITH_TAR_AND_JAR)
+                    .withPlugins(PLUGIN_WITH_TAR_AND_JAR, PLUGIN_WITH_ZIP)
                     .withNewDockerOutput()
                         .withNewImage(imageName)
                     .endDockerOutput()
