@@ -31,5 +31,7 @@ spec:
     checkpointConnector:
       config:
         checkpoints.topic.replication.factor: 1
+        replication.policy.separator: ""
+        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy"
     topicsPattern: ".*"
     groupsPattern: ".*"
