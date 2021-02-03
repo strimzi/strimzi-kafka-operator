@@ -143,9 +143,6 @@ public class OpenSslCertManager implements CertManager {
                 }
 
                 FileInputStream isCertFile = null;
-
-                isKeyStoreFile = new FileInputStream(keyStoreFile);
-
                 KeyStore keyStore = KeyStore.getInstance("PKCS12");
                 keyStore.load(isKeyStoreFile, keyStorePassword.toCharArray());
 
