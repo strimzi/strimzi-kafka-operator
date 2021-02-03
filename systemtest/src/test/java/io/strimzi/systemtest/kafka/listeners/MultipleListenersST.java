@@ -225,6 +225,7 @@ public class MultipleListenersST extends AbstractST {
                         );
                     }
                 } else {
+                    String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
                     // using internal clients
                     if (isTlsEnabled) {
                         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName + "-tls",

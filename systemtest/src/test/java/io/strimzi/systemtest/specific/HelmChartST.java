@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -13,12 +14,17 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.operator.HelmResource;
 import io.strimzi.systemtest.AbstractST;
 import org.apache.logging.log4j.LogManager;
+import io.strimzi.systemtest.templates.KafkaTemplates;
+import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.HELM;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -48,13 +54,13 @@ class HelmChartST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
-        HelmResource.clusterOperator();
+        resourceManager.createResource(extensionContext, HelmResource.clusterOperator());
     }
 
-    @Override
+    @AfterAll
     protected void tearDownEnvironmentAfterAll() {
         cluster.deleteNamespaces();
     }

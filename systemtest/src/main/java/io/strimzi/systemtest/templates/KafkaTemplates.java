@@ -219,7 +219,7 @@ public class KafkaTemplates {
             .endSpec();
     }
 
-    public static Kafka kafkaFromYaml(File yamlFile, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaFromYaml(File yamlFile, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(yamlFile);
         return new KafkaBuilder(kafka)
             .withNewMetadata()
@@ -233,8 +233,7 @@ public class KafkaTemplates {
                 .editZookeeper()
                     .withReplicas(zookeeperReplicas)
                 .endZookeeper()
-            .endSpec()
-            .build();
+            .endSpec();
     }
 
     /**

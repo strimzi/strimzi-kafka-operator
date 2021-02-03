@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.watcher;
 
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -13,6 +14,10 @@ import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.templates.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.KafkaConnectorTemplates;
+import io.strimzi.systemtest.templates.KafkaMirrorMakerTemplates;
+import io.strimzi.systemtest.templates.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
@@ -20,6 +25,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.util.HashMap;
@@ -59,13 +65,13 @@ public abstract class AbstractNamespaceST extends AbstractST {
         cluster.setNamespace(previousNamespace);
     }
 
-    void checkMirrorMakerForKafkaInDifNamespaceThanCO(String sourceClusterName) {
+    void checkMirrorMakerForKafkaInDifNamespaceThanCO(ExtensionContext extensionContext, String sourceClusterName) {
         String kafkaSourceName = sourceClusterName;
         String kafkaTargetName = MAIN_NAMESPACE_CLUSTER_NAME + "-target";
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaTargetName, 1, 1).build());
-        KafkaMirrorMakerResource.createAndWaitForReadiness(KafkaMirrorMakerResource.kafkaMirrorMaker(MAIN_NAMESPACE_CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetName, 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(MAIN_NAMESPACE_CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).build());
 
         LOGGER.info("Waiting for creation {} in namespace {}", MAIN_NAMESPACE_CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(MAIN_NAMESPACE_CLUSTER_NAME);
@@ -87,7 +93,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         cluster.setNamespace(CO_NAMESPACE);
     }
 
-    void deployKafkaConnectorWithSink(String clusterName, String namespace, String topicName, String connectLabel) {
+    void deployKafkaConnectorWithSink(ExtensionContext extensionContext, String clusterName, String namespace, String topicName, String connectLabel) {
         // Deploy Kafka Connector
         Map<String, Object> connectorConfig = new HashMap<>();
         connectorConfig.put("topics", topicName);
@@ -95,7 +101,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
-        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(clusterName)
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .withConfig(connectorConfig)
@@ -106,7 +112,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, connectLabel).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 

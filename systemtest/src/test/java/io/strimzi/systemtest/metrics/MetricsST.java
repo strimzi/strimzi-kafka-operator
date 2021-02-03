@@ -206,6 +206,8 @@ public class MetricsST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
 
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
         final String defaultKafkaClientsPodName =
@@ -362,7 +364,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     @Tag(ACCEPTANCE)
-    void testKafkaBridgeMetrics() {
+    void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
         String producerName = "bridge-producer";
         String consumerName = "bridge-consumer";
 
@@ -378,9 +380,8 @@ public class MetricsST extends AbstractST {
             .withPollInterval(200)
             .build();
 
-
-        kafkaBridgeClientJob.createAndWaitForReadiness(kafkaBridgeClientJob.producerStrimziBridge().build());
-        kafkaBridgeClientJob.createAndWaitForReadiness(kafkaBridgeClientJob.consumerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
 
         TestUtils.waitFor("KafkaProducer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             LOGGER.info("Looking for 'strimzi_bridge_kafka_producer_count' in bridge metrics");

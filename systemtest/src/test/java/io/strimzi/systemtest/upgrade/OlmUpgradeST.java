@@ -109,8 +109,8 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
 
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.producerStrimzi().build());
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
 
         String clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         LOGGER.info("Old deployment name of cluster operator is {}", clusterOperatorDeploymentName);
@@ -157,9 +157,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-
+    void setup(ExtensionContext extensionContext) {
         cluster.setNamespace(namespace);
         cluster.createNamespace(namespace);
     }

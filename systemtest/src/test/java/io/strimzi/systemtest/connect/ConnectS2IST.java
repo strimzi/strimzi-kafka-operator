@@ -174,7 +174,7 @@ class ConnectS2IST extends AbstractST {
 
         assertThat(connectorStatus, containsString("RUNNING"));
 
-        consumerTimerMessages(clusterName, timerTopicName);
+        consumerTimerMessages(extensionContext, clusterName, timerTopicName);
     }
 
     @ParallelTest
@@ -217,7 +217,7 @@ class ConnectS2IST extends AbstractST {
         String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + apiUrl + ":8083/connectors/" + connectS2IClusterName + "/status").out();
         assertThat(connectorStatus, containsString("RUNNING"));
 
-        consumerTimerMessages(clusterName, timerTopicName1);
+        consumerTimerMessages(extensionContext, clusterName, timerTopicName1);
 
         String connectorConfig = KafkaConnectorUtils.getConnectorConfig(kafkaClientsPodName, connectS2IClusterName, apiUrl);
         KafkaConnectorResource.replaceKafkaConnectorResource(connectS2IClusterName, kC -> {
@@ -231,7 +231,7 @@ class ConnectS2IST extends AbstractST {
         assertThat(connectorConfig.contains("tasks.max\":\"8"), is(true));
         assertThat(connectorConfig.contains("topics\":\"timer-topic-2"), is(true));
 
-        consumerTimerMessages(clusterName, timerTopicName2);
+        consumerTimerMessages(extensionContext, clusterName, timerTopicName2);
     }
 
     @ParallelTest
@@ -1061,7 +1061,7 @@ class ConnectS2IST extends AbstractST {
                 "org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector"));
     }
 
-    private void consumerTimerMessages(String clusterName, String topicName) {
+    private void consumerTimerMessages(ExtensionContext extensionContext, String clusterName, String topicName) {
         String consumerName = "timer-consumer-" + rng.nextInt(Integer.MAX_VALUE);
         KafkaBasicExampleClients kafkaBasicClientResource = new KafkaBasicExampleClients.Builder()
                 .withConsumerName(consumerName)
@@ -1071,7 +1071,7 @@ class ConnectS2IST extends AbstractST {
                 .withDelayMs(0)
                 .build();
 
-        kafkaBasicClientResource.createAndWaitForReadiness(kafkaBasicClientResource.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientResource.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, 10);
     }
 
