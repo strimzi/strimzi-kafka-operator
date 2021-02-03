@@ -56,8 +56,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     private static final String BRIDGE_EXTERNAL_SERVICE = clusterName + "-bridge-external-service";
 
-    @IsolatedTest
+    @ParallelTest
     void testScramShaAuthWithWeirdUsername(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext);
+
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
 
@@ -84,8 +86,10 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         testWeirdUsername(extensionContext, weirdUserName, new KafkaListenerAuthenticationScramSha512(), bridgeSpec, SecurityProtocol.SASL_SSL);
     }
 
-    @IsolatedTest
+    @ParallelTest
     void testTlsAuthWithWeirdUsername(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext);
+
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
 
@@ -111,7 +115,9 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     }
 
     private void testWeirdUsername(ExtensionContext extensionContext, String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) {
-        String aliceUser = "alice";
+        String aliceUser = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -136,10 +142,15 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             .endSpec()
         .build());
 
-        kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(clusterName)).build();
+        kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder()
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(clusterName))
+            .withProducerName(clusterName + "-" + producerName)
+            .withConsumerName(clusterName + "-" + consumerName)
+            .withTopicName(topicName)
+            .build();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, TOPIC_NAME).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         // Create user
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
@@ -173,7 +184,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withClusterName(clusterName)
             .withNamespaceName(NAMESPACE)
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(weirdUserName)
             .withSecurityProtocol(securityProtocol)
