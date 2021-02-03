@@ -56,7 +56,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     # We have to allow trafic for ITS when NPs are turned on
     # We can allow NP after Strimzi#4092 which should fix some issues on STs side
     sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} \
-      --insecure-registry "localhost:5000" '10.0.0.0/24' --extra-config=apiserver.authorization-mode=Node,RBAC
+      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC
 
     if [ $? -ne 0 ]
     then
@@ -65,7 +65,6 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     sudo -E minikube addons enable default-storageclass
-    sudo -E minikube addons enable registry
 	kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
 elif [ "$TEST_CLUSTER" = "minishift" ]; then

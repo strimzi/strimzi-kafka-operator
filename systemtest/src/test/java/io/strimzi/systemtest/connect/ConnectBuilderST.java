@@ -58,6 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(REGRESSION)
 @Tag(CONNECT_COMPONENTS)
 @Tag(CONNECT)
+@OpenShiftOnly
 class ConnectBuilderST extends AbstractST {
 
     public static final String NAMESPACE = "connect-builder-cluster-test";
