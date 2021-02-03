@@ -135,11 +135,71 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException {
 
-        List<String> cmd = asList("openssl", "pkcs12", "-export", "-in", certFile.getAbsolutePath(),
-                "-inkey", keyFile.getAbsolutePath(), "-name", alias, "-out", keyStoreFile.getAbsolutePath(), "-passout",
-                "pass:" + keyStorePassword);
+        try {
+            FileInputStream isKeyStoreFile = null;
+            try {
+                // check if the truststore file is empty or not, for loading its content eventually
+                // the KeyStore class is able to create an empty store if the input stream is null
+                if (keyStoreFile.length() > 0) {
+                    isKeyStoreFile = new FileInputStream(keyStoreFile);
+                }
 
-        exec(cmd);
+                FileInputStream isCertFile = null;
+
+                isKeyStoreFile = new FileInputStream(keyStoreFile);
+
+                KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                keyStore.load(isKeyStoreFile, keyStorePassword.toCharArray());
+
+                keyStore.setKeyEntry(alias, Files.readAllBytes(keyFile.toPath()), null);
+
+                try {
+                    isCertFile = new FileInputStream(certFile);
+
+                    CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+
+                    X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertFile);
+
+                    keyStore.setCertificateEntry(alias, certificate);
+
+                    FileOutputStream osKeyStoreFile = null;
+
+                    try {
+                        osKeyStoreFile = new FileOutputStream(keyStoreFile);
+                        keyStore.store(osKeyStoreFile, keyStorePassword.toCharArray());
+                    }
+
+                    finally {
+                        if(osKeyStoreFile != null){
+                            osKeyStoreFile.close();
+                        }
+                    }
+                }
+                finally {
+                    if(isCertFile != null){
+                        isCertFile.close();
+                    }
+                }
+            }
+            finally {
+                if(isKeyStoreFile != null){
+                    isKeyStoreFile.close();
+                }
+            }
+        }
+
+        catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
+            try {
+                throw e;
+            } catch (KeyStoreException keyStoreException) {
+                keyStoreException.printStackTrace();
+            } catch (NoSuchAlgorithmException noSuchAlgorithmException) {
+                noSuchAlgorithmException.printStackTrace();
+            } catch (CertificateException certificateException) {
+                certificateException.printStackTrace();
+            }
+        }
+
     }
 
     @Override
