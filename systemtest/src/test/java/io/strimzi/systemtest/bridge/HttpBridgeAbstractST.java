@@ -9,7 +9,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.vertx.ext.web.client.WebClient;
-import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.BeforeAll;
 
 /**

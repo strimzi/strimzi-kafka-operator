@@ -16,17 +16,11 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
-import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaConnectS2ITemplates;
@@ -37,7 +31,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
@@ -146,7 +139,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
         // Deploy Kafka Connect in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext,SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()

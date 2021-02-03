@@ -15,7 +15,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.zookeeper.Environment;
 
 import java.time.Duration;
 import java.util.Arrays;

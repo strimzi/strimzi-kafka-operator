@@ -5,11 +5,7 @@
 package io.strimzi.systemtest.operators.topic;
 
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.KafkaTemplates;
 import io.strimzi.systemtest.templates.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -17,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.SCALABILITY;

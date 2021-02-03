@@ -28,7 +28,6 @@ import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaConnectTemplates;
@@ -43,7 +42,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;

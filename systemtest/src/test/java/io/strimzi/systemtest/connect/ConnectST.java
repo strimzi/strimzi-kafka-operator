@@ -19,14 +19,11 @@ import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
@@ -36,7 +33,6 @@ import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -45,13 +41,9 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaConnectS2ITemplates;
 import io.strimzi.systemtest.templates.KafkaConnectTemplates;
@@ -63,7 +55,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -601,7 +592,7 @@ class ConnectST extends AbstractST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3 , 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
             .editSpec()
                 .withNewTemplate()
@@ -1290,7 +1281,7 @@ class ConnectST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName,1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()

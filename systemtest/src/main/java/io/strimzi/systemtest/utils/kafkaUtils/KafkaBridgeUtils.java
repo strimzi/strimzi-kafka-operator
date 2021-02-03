@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

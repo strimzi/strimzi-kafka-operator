@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.status.Condition;

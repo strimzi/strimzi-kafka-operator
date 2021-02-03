@@ -1,8 +1,12 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
-public interface ResourceType<T extends HasMetadata>{
+public interface ResourceType<T extends HasMetadata> {
     String getKind();
 
     T get(String namespace, String name);

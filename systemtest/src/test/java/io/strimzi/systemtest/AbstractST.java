@@ -34,7 +34,6 @@ import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
-import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -349,20 +348,20 @@ public abstract class AbstractST implements TestSeparator {
 
     private static void applyClusterRoleBindings(ExtensionContext extensionContext, String namespace) {
         // 021-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext,TestUtils.USER_PATH + "/../packaging/install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
         // 030-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext,TestUtils.USER_PATH + "/../packaging/install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
         // 033-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext,TestUtils.USER_PATH + "/../packaging/install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
     }
 
     protected static void applyRoleBindings(ExtensionContext extensionContext, String namespace, String bindingsNamespace) {
         // 020-RoleBinding
-        RoleBindingResource.roleBinding(extensionContext,TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
         // 031-RoleBinding
-        RoleBindingResource.roleBinding(extensionContext,TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
         // 032-RoleBinding
-        RoleBindingResource.roleBinding(extensionContext,TestUtils.USER_PATH + "/../packaging/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {

@@ -23,10 +23,7 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
@@ -49,7 +46,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
@@ -368,7 +364,7 @@ public class ListenersST extends AbstractST {
         Map<String, String> label = Collections.singletonMap("my-label", "value");
         Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3 ,1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -455,7 +451,7 @@ public class ListenersST extends AbstractST {
                 nodePortListenerBrokerOverride.getBroker());
 
         int clusterBootstrapNodePort = 32100;
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3 ,1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -517,7 +513,7 @@ public class ListenersST extends AbstractST {
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3 ,1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()

@@ -12,8 +12,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients;
 import io.strimzi.systemtest.templates.KafkaTemplates;
 import io.strimzi.systemtest.templates.KafkaTopicTemplates;

@@ -5,29 +5,16 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
-import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
-import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
-
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 // Deprecation is suppressed because of KafkaConnectS2I
 @SuppressWarnings("deprecation")

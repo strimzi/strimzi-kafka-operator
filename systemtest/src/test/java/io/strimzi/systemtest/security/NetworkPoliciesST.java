@@ -17,13 +17,8 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
@@ -36,9 +31,7 @@ import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
@@ -74,7 +67,7 @@ public class NetworkPoliciesST extends AbstractST {
         Map<String, String> matchLabelForPlain = new HashMap<>();
         matchLabelForPlain.put("app", allowedKafkaClientsName);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1 , 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()

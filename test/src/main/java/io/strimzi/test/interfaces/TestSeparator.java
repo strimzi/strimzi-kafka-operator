@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.awt.event.ItemEvent;
 import java.util.Collections;
 
 @ExtendWith(ExtensionContextParameterResolver.class)

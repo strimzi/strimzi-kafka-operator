@@ -1,6 +1,9 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest.templates;
 
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -9,10 +12,7 @@ import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.Spec;
-import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.test.TestUtils;

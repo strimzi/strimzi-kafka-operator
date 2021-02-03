@@ -10,20 +10,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
-
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 
 public class KafkaTopicResource implements ResourceType<KafkaTopic> {
 

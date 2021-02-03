@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.templates.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;

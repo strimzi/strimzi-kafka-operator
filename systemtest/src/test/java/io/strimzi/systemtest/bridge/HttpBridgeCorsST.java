@@ -10,8 +10,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaTemplates;
@@ -24,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;

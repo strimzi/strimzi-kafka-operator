@@ -5,28 +5,16 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
-import io.strimzi.test.TestUtils;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
-
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaMirrorMakerResource implements ResourceType<KafkaMirrorMaker> {
 

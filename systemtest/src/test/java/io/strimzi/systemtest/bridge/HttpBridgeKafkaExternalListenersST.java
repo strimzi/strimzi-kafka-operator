@@ -6,11 +6,9 @@ package io.strimzi.systemtest.bridge;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeSpecBuilder;
-import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
@@ -18,16 +16,9 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaTemplates;
@@ -39,7 +30,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -139,8 +129,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec()
-        .build());
+            .endSpec().build());
 
         kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder()
             .withBootstrapAddress(KafkaBridgeResources.serviceName(clusterName))

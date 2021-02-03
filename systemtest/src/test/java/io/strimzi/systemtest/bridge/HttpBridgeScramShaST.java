@@ -5,9 +5,7 @@
 package io.strimzi.systemtest.bridge;
 
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
@@ -15,11 +13,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
@@ -34,7 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -124,8 +116,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec()
-        .build());
+            .endSpec().build());
 
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 

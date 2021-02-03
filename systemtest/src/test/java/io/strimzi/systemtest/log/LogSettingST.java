@@ -12,8 +12,6 @@ import io.strimzi.api.kafka.model.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -22,16 +20,12 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.KafkaConnectS2ITemplates;
@@ -52,11 +46,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import javax.naming.ldap.ExtendedRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -328,7 +320,7 @@ class LogSettingST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMakerName = clusterName + "-mirror-maker";
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false )
+        resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editSpec()
                 .withNewInlineLogging()
                     .withLoggers(MIRROR_MAKER_LOGGERS)
@@ -565,7 +557,7 @@ class LogSettingST extends AbstractST {
             .build());
 
 //         deploying second Kafka here because of MM and MM2 tests
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1 , 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()

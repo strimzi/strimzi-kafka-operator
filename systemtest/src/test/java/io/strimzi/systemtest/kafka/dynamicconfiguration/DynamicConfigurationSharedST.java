@@ -9,8 +9,6 @@ import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Type;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.KafkaTemplates;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
