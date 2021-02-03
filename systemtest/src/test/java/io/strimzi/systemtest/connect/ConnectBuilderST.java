@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.connect;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -59,6 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(CONNECT_COMPONENTS)
 @Tag(CONNECT)
 @OpenShiftOnly
+// TODO: when we'll have solution for pushing/pulling images from internal registries on minikube, remove this tag - until then, OCP only
 class ConnectBuilderST extends AbstractST {
 
     public static final String NAMESPACE = "connect-builder-cluster-test";
@@ -81,7 +81,7 @@ class ConnectBuilderST extends AbstractST {
     private static final String CAMEL_CONNECTOR_ZIP_URL = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.zip";
     private static final String CAMEL_CONNECTOR_ZIP_CHECKSUM = "bc15135b8ef7faccd073508da0510c023c0f6fa3ec7e48c98ad880dd112b53bf106ad0a47bcb353eed3ec03bb3d273da7de356f3f7f1766a13a234a6bc28d602";
 
-    private String imageName = "";
+    private static final String IMAGE_NAME = "image-registry.openshift-image-registry.svc:5000/" + NAMESPACE + "/connect-build:latest";
 
     private static final Plugin PLUGIN_WITH_TAR_AND_JAR = new PluginBuilder()
         .withName("connector-with-tar-and-jar")
@@ -126,7 +126,7 @@ class ConnectBuilderST extends AbstractST {
                 .withNewBuild()
                     .withPlugins(pluginWithWrongChecksum)
                     .withNewDockerOutput()
-                        .withNewImage(imageName)
+                        .withNewImage(IMAGE_NAME)
                     .endDockerOutput()
                 .endBuild()
             .endSpec()
@@ -191,7 +191,7 @@ class ConnectBuilderST extends AbstractST {
                 .withNewBuild()
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR, PLUGIN_WITH_ZIP)
                     .withNewDockerOutput()
-                        .withNewImage(imageName)
+                        .withNewImage(IMAGE_NAME)
                     .endDockerOutput()
                 .endBuild()
                 .withNewInlineLogging()
@@ -305,7 +305,7 @@ class ConnectBuilderST extends AbstractST {
                 .withNewBuild()
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR)
                     .withNewDockerOutput()
-                        .withNewImage(imageName)
+                        .withNewImage(IMAGE_NAME)
                     .endDockerOutput()
                 .endBuild()
                 .withNewInlineLogging()
@@ -370,17 +370,5 @@ class ConnectBuilderST extends AbstractST {
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
 
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
-
-        String outputRegistry = "";
-
-        if (cluster.isNotKubernetes()) {
-            outputRegistry = "image-registry.openshift-image-registry.svc:5000/";
-            imageName = outputRegistry + NAMESPACE + "/connect-build:latest";
-        } else {
-            LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
-            Service service = kubeClient("kube-system").getService("registry");
-            outputRegistry = service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().get().getPort();
-            imageName = outputRegistry + "/connect-build:latest";
-        }
     }
 }
