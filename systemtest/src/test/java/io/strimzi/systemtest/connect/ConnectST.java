@@ -213,6 +213,8 @@ class ConnectST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+
         // Use a Kafka with plain listener disabled
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
@@ -407,6 +409,7 @@ class ConnectST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -491,6 +494,7 @@ class ConnectST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()

@@ -402,7 +402,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
-    public void createResourceAndApply(String template, Map<String, String> params) {
+    synchronized public void createResourceAndApply(String template, Map<String, String> params) {
         List<String> cmd = namespacedCommand("process", template, "-l", "app=" + template, "-o", "yaml");
         for (Map.Entry<String, String> entry : params.entrySet()) {
             cmd.add("-p");

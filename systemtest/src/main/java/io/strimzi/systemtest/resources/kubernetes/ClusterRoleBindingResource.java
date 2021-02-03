@@ -119,6 +119,11 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         return clusterRoleBinding;
     }
 
+    public static ClusterRoleBinding clusterRoleBinding(ExtensionContext extensionContext, ClusterRoleBinding clusterRoleBinding) {
+        ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding);
+        return clusterRoleBinding;
+    }
+
     private static ClusterRoleBinding getClusterRoleBindingFromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, ClusterRoleBinding.class);
     }

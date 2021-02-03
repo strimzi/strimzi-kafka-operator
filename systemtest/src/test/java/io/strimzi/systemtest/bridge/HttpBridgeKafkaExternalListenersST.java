@@ -56,7 +56,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     private static final String BRIDGE_EXTERNAL_SERVICE = clusterName + "-bridge-external-service";
 
-    @IsolatedTest("")
+    @IsolatedTest
     void testScramShaAuthWithWeirdUsername(ExtensionContext extensionContext) {
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
@@ -84,7 +84,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         testWeirdUsername(extensionContext, weirdUserName, new KafkaListenerAuthenticationScramSha512(), bridgeSpec, SecurityProtocol.SASL_SSL);
     }
 
-    @IsolatedTest("")
+    @IsolatedTest
     void testTlsAuthWithWeirdUsername(ExtensionContext extensionContext) {
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
@@ -149,6 +149,8 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, weirdUserName).build());
             resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, aliceUser).build());
         }
+
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
 

@@ -128,6 +128,8 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
         KafkaUser tlsUser = KafkaUserTemplates.tlsUser(httpBridgeTlsClusterName, USER_NAME).build();
         resourceManager.createResource(extensionContext, tlsUser);
 
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, tlsUser).build());
 
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();

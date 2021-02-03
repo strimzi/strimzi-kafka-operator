@@ -308,8 +308,4 @@ public class KafkaBasicExampleClients {
                 .endTemplate()
             .endSpec();
     }
-
-    public Job createAndWaitForReadiness(Job job) {
-        return JobResource.deployNewJob(job);
-    }
 }

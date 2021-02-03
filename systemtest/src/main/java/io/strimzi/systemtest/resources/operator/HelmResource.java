@@ -116,8 +116,6 @@ public class HelmResource implements ResourceType<Deployment> {
         String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
         cmdKubeClient().applyContent(helmServiceAccount);
         KubeClusterResource.getInstance().setNamespace(oldNamespace);
-        // TODO: how??
-//        ResourceManager.getPointerResources().push(HelmResource::deleteClusterOperator);
         ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
         DeploymentUtils.waitForDeploymentReady(ResourceManager.getCoDeploymentName());
 

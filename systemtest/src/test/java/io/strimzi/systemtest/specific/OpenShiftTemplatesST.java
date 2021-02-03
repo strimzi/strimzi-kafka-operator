@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -20,9 +21,12 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
@@ -61,8 +65,9 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    void testStrimziEphemeral() {
-        String clusterName = "foo";
+    void testStrimziEphemeral(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-ephemeral", map("clusterName", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
@@ -77,8 +82,9 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    void testStrimziPersistent() {
-        String clusterName = "bar";
+    void testStrimziPersistent(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-persistent", map("clusterName", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
@@ -92,8 +98,9 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    void testStrimziEphemeralWithCustomParameters() {
-        String clusterName = "test-ephemeral-with-custom-parameters";
+    void testStrimziEphemeralWithCustomParameters(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-ephemeral", map("clusterName", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
@@ -120,8 +127,9 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    void testStrimziPersistentWithCustomParameters() {
-        String clusterName = "test-persistent-with-custom-parameters";
+    void testStrimziPersistentWithCustomParameters(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-persistent", map("clusterName", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
@@ -154,8 +162,9 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     @Test
     @Tag(CONNECT)
-    void testConnect() {
-        String clusterName = "test-connect";
+    void testConnect(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-connect", map("clusterName", clusterName,
                 "INSTANCES", "1"));
 
@@ -166,8 +175,9 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     @Test
     @Tag(CONNECT_S2I)
-    void testConnectS2I() {
-        String clusterName = "test-s2i";
+    void testConnectS2I(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-connect-s2i", map("clusterName", clusterName,
                 "INSTANCES", "1"));
 
@@ -177,8 +187,8 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @Test
-    void testTopicOperator() {
-        String topicName = "test-topic-topic";
+    void testTopicOperator(ExtensionContext extensionContext) {
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         oc.createResourceAndApply("strimzi-topic", map(
                 "TOPIC_NAME", topicName,
                 "TOPIC_PARTITIONS", "10",
@@ -193,19 +203,19 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator",
-                TestUtils.USER_PATH + "/../examples/templates/topic-operator",
-                TestUtils.CRD_KAFKA,
-                TestUtils.CRD_KAFKA_CONNECT,
-                TestUtils.CRD_KAFKA_CONNECT_S2I,
-                TestUtils.CRD_TOPIC,
-                TestUtils.USER_PATH + "/src/rbac/role-edit-kafka.yaml");
+            TestUtils.USER_PATH + "/../examples/templates/topic-operator",
+            TestUtils.CRD_KAFKA,
+            TestUtils.CRD_KAFKA_CONNECT,
+            TestUtils.CRD_KAFKA_CONNECT_S2I,
+            TestUtils.CRD_TOPIC,
+            TestUtils.USER_PATH + "/src/rbac/role-edit-kafka.yaml");
     }
 
-    @Override
+    @AfterAll
     protected void tearDownEnvironmentAfterAll() {
         cluster.deleteCustomResources();
         cluster.deleteNamespaces();

@@ -94,9 +94,7 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapTestWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapTestWithKafkaClientNames = new HashMap<>();
 
-    protected static String previousClusterName;
     protected static String clusterName;
-    protected static String kafkaClientsName;
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
@@ -107,11 +105,6 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
 
-    protected String testClass;
-    protected String testName;
-    protected String testTopic;
-    protected String testUser;
-
     private Stack<String> clusterOperatorConfigs = new Stack<>();
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../install/cluster-operator";
 
@@ -119,13 +112,11 @@ public abstract class AbstractST implements TestSeparator {
 
     public static final int MESSAGE_COUNT = 100;
 
-    public static final String EXAMPLE_TOPIC_NAME = "my-topic";
     public static final String AVAILABILITY_TOPIC_SOURCE_NAME = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
     public static final String AVAILABILITY_TOPIC_TARGET_NAME = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);
 
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
-
 
     // Constants for host aliases tests
     protected final String aliasIp = "34.89.152.196";
@@ -778,6 +769,8 @@ public abstract class AbstractST implements TestSeparator {
     void createTestResources(ExtensionContext testContext) {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
+        String testName = null;
+
         synchronized (lock) {
             if (testContext.getTestMethod().isPresent()) {
                 testName = testContext.getTestMethod().get().getName();
@@ -785,22 +778,22 @@ public abstract class AbstractST implements TestSeparator {
 
             LOGGER.info("Not first test we are gonna generate cluster name");
             clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
-            testTopic = KafkaTopicUtils.generateRandomNameOfTopic();
-            testUser = KafkaUserUtils.generateRandomNameOfKafkaUser();
-            kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
 
             mapTestWithClusterNames.put(testName, clusterName);
-            mapTestWithTestTopics.put(testName, testTopic);
-            mapTestWithTestUsers.put(testName, testUser);
+            mapTestWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
+            mapTestWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
             mapTestWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
 
             LOGGER.info("THIS IS MAP:\n{}", mapTestWithClusterNames);
+            LOGGER.info("============THIS IS CLIENTS MAP:\n{}", mapTestWithKafkaClientNames);
         }
     }
 
     @BeforeAll
     void setTestClassName(ExtensionContext testContext) {
         cluster = KubeClusterResource.getInstance();
+        String testClass = null;
+
         if (testContext.getTestClass().isPresent()) {
             testClass = testContext.getTestClass().get().getName();
         }

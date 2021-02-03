@@ -73,8 +73,8 @@ public class BundleResource implements ResourceType<Deployment> {
         deployment[0].setSpec(newResource.getSpec());
         deployment[0].setStatus(newResource.getStatus());
     }
-    public static Deployment clusterOperator(String namespace, long operationTimeout) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL).build();
+    public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout) {
+        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
     }
 
     public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {

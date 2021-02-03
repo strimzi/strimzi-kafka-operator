@@ -127,6 +127,8 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .endSpec()
         .build());
 
+        String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
+
         // Create Kafka user
         KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(httpBridgeScramShaClusterName, USER_NAME).build();
 

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
@@ -17,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import io.strimzi.systemtest.resources.ResourceManager;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -61,10 +63,9 @@ public class OauthAbstractST extends AbstractST {
 
     protected WebClient client;
 
-    void setupCoAndKeycloak() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
-        KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+    void setupCoAndKeycloak(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
+        NetworkPolicyResource.applyDefaultNetworkPolicy(extensionContext, NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
 
         LOGGER.info("Deploying keycloak...");
 

@@ -348,6 +348,8 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void createClassResources(ExtensionContext extensionContext) {
         installClusterOperator(extensionContext, NAMESPACE);
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
+        String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
+
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeClusterName, 1, 1).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
