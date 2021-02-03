@@ -96,6 +96,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testReceiveSimpleMessage(ExtensionContext extensionContext) {
+
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, TOPIC_NAME).build());
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
 
@@ -117,6 +118,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
+
         String bridgeName = "custom-bridge";
         String usedVariable = "KAFKA_BRIDGE_PRODUCER_CONFIG";
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
@@ -214,6 +216,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testDiscoveryAnnotation() {
+
         Service bridgeService = kubeClient().getService(KafkaBridgeResources.serviceName(httpBridgeClusterName));
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(bridgeServiceDiscoveryAnnotation);
@@ -222,6 +225,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testScaleBridgeToZero(ExtensionContext extensionContext) {
+
         String bridgeName = "scaling-bridge-down";
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1).build());
@@ -276,6 +280,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testHostAliases(ExtensionContext extensionContext) {
+
         String bridgeName = "bridge-with-hosts";
 
         HostAlias hostAlias = new HostAliasBuilder()
@@ -302,6 +307,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
+
         String bridgeName = "example-bridge";
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
@@ -346,6 +352,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
+
         installClusterOperator(extensionContext, NAMESPACE);
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
