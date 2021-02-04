@@ -54,6 +54,8 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         super(resource, APPLICATION_NAME);
     }
 
+    // Deprecation is suppressed because of KafkaConnectS2I
+    @SuppressWarnings("deprecation")
     public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2I kafkaConnectS2I, KafkaVersion.Lookup versions) {
         KafkaConnectS2ISpec spec = kafkaConnectS2I.getSpec();
         KafkaConnectS2ICluster cluster = fromSpec(spec, versions, new KafkaConnectS2ICluster(kafkaConnectS2I));

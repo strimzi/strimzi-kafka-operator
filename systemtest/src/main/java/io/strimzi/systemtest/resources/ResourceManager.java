@@ -114,7 +114,9 @@ public class ResourceManager {
         editor.accept(resource);
         namedResource.replace(resource);
     }
-    @SuppressWarnings("unchecked")
+
+    // Deprecation is suppressed because of KafkaConnectS2I
+    @SuppressWarnings({"unchecked", "deprecation"})
     public static <T extends HasMetadata> T deleteLater(MixedOperation<T, ?, ?> operation, T resource) {
         LOGGER.debug("Scheduled deletion of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
@@ -307,6 +309,8 @@ public class ResourceManager {
                 .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
     }
 
+    // Deprecation is suppressed because of KafkaConnectS2I
+    @SuppressWarnings("deprecation")
     private static void waitForDeletion(KafkaConnectS2I kafkaConnectS2I) {
         LOGGER.info("Waiting when all the Pods are terminated for KafkaConnectS2I {}", kafkaConnectS2I.getMetadata().getName());
 
