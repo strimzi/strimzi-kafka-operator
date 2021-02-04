@@ -644,6 +644,7 @@ class RollingUpdateST extends AbstractST {
     @SuppressWarnings("checkstyle:MethodLength")
     void testMetricsChange(ExtensionContext extensionContext) throws JsonProcessingException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         //Kafka
         Map<String, Object> kafkaRule = new HashMap<>();
@@ -726,7 +727,7 @@ class RollingUpdateST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
         String metricsScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
