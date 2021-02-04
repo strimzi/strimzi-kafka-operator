@@ -14,11 +14,8 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -28,7 +25,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
@@ -71,7 +67,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
     @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
-    @MethodSource("loadJsonData")
+    @MethodSource("loadJsonUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
     void testUpgradeStrimziVersion(String from, String to, JsonObject parameters) throws Exception {
 
@@ -205,7 +201,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupUpgradeEnvAndUpgradeClusterOperator(acrossUpgradeData, MESSAGE_COUNT, MESSAGE_COUNT, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"));
+        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, MESSAGE_COUNT, MESSAGE_COUNT, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), NAMESPACE);
         // Make snapshots of all pods
         makeSnapshots(clusterName);
         // Upgrade CO
@@ -233,7 +229,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupUpgradeEnvAndUpgradeClusterOperator(acrossUpgradeData, MESSAGE_COUNT, MESSAGE_COUNT, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null);
+        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, MESSAGE_COUNT, MESSAGE_COUNT, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, NAMESPACE);
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, NAMESPACE);
         // Wait till first upgrade finished
@@ -301,122 +297,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         return kafkaVersionNode.get(field).asText();
     }
 
-    private void setupUpgradeEnvAndUpgradeClusterOperator(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount,
-                                                          String producerName, String consumerName,
-                                                          String continuousTopicName, String continuousConsumerGroup,
-                                                          String kafkaVersion) throws IOException {
-        int continuousClientsMessageCount = testParameters.getJsonObject("client").getInteger("continuousClientsMessages");
-
-        LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
-        cluster.setNamespace(NAMESPACE);
-
-        String url = testParameters.getString("urlFrom");
-        File dir = FileUtils.downloadAndUnzip(url);
-
-        coDir = new File(dir, testParameters.getString("fromExamples") + "/install/cluster-operator/");
-
-        // Modify + apply installation files
-        copyModifyApply(coDir, NAMESPACE);
-
-        LOGGER.info("Waiting for CO deployment");
-        DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
-        LOGGER.info("CO ready");
-
-        // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
-        if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get() == null) {
-            // Deploy a Kafka cluster
-            kafkaYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-            LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
-            // Change kafka version of it's empty (null is for remove the version)
-            cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaVersion(kafkaYaml, kafkaVersion));
-            // Wait for readiness
-            waitForReadinessOfKafkaCluster();
-        }
-        // We don't need to update KafkaUser during chain upgrade this way
-        if (KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get() == null) {
-            kafkaUserYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
-            LOGGER.info("Going to deploy KafkaUser from: {}", kafkaUserYaml.getPath());
-            cmdKubeClient().create(kafkaUserYaml);
-        }
-        // We don't need to update KafkaTopic during chain upgrade this way
-        if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get() == null) {
-            kafkaTopicYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
-            LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
-            cmdKubeClient().create(kafkaTopicYaml);
-        }
-        // Create bunch of topics for upgrade if it's specified in configuration
-        if (testParameters.getBoolean("generateTopics")) {
-            for (int x = 0; x < upgradeTopicCount; x++) {
-                KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(clusterName, topicName + "-" + x, 1, 1, 1)
-                        .editSpec()
-                        .withTopicName(topicName + "-" + x)
-                        .endSpec()
-                        .build());
-            }
-        }
-
-        if (continuousClientsMessageCount != 0) {
-            // ##############################
-            // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
-            // ##############################
-            // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            if (KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(continuousTopicName).get() == null) {
-                KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
-            }
-
-            String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
-
-            KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
-                    .withProducerName(producerName)
-                    .withConsumerName(consumerName)
-                    .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-                    .withTopicName(continuousTopicName)
-                    .withMessageCount(continuousClientsMessageCount)
-                    .withAdditionalConfig(producerAdditionConfiguration)
-                    .withConsumerGroup(continuousConsumerGroup)
-                    .withDelayMs(1000)
-                    .build();
-
-            kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.producerStrimzi().build());
-            kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.consumerStrimzi().build());
-            // ##############################
-        }
-
-        // Wait until user will be created
-        SecretUtils.waitForSecretReady(userName);
-        TestUtils.waitFor("KafkaUser " + userName + " availability", Constants.GLOBAL_POLL_INTERVAL_MEDIUM,
-                ResourceOperation.getTimeoutForResourceReadiness(KafkaUser.RESOURCE_KIND),
-            () -> !cmdKubeClient().getResourceAsYaml("kafkauser", userName).equals(""));
-
-        // Deploy clients and exchange messages
-        KafkaUser kafkaUser = TestUtils.fromYamlString(cmdKubeClient().getResourceAsYaml("kafkauser", userName), KafkaUser.class);
-        deployClients(testParameters.getJsonObject("client").getString("beforeKafkaUpgradeDowngrade"), kafkaUser);
-
-        final String defaultKafkaClientsPodName =
-                kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(defaultKafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(clusterName)
-                .withKafkaUsername(userName)
-                .withMessageCount(produceMessagesCount)
-                .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                .build();
-
-        int sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(produceMessagesCount));
-
-        internalKafkaClient.setMessageCount(consumeMessagesCount);
-
-        int received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(consumeMessagesCount));
-
-        makeSnapshots(clusterName);
-        logPodImages(clusterName);
-    }
-
     private void verifyUpgradeProcedure(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount,
                                         String producerName, String consumerName) {
         int continuousClientsMessageCount = testParameters.getJsonObject("client").getInteger("continuousClientsMessages");
@@ -471,7 +351,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     }
 
-    @SuppressWarnings("MethodLength")
     private void performUpgrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
@@ -479,7 +358,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupUpgradeEnvAndUpgradeClusterOperator(testParameters, produceMessagesCount, consumeMessagesCount, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "");
+        setupEnvAndUpgradeClusterOperator(testParameters, produceMessagesCount, consumeMessagesCount, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
         // Upgrade CO
         changeClusterOperator(testParameters, NAMESPACE);
         // Wait for Kafka cluster rolling update

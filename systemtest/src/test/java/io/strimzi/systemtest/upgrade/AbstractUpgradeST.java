@@ -21,6 +21,7 @@ import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -87,8 +88,34 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected static Stream<Arguments> loadJsonData(String fileName) {
-        JsonArray upgradeData = readUpgradeJson(fileName);
+    protected static Stream<Arguments> loadJsonUpgradeData() {
+        JsonArray upgradeData = readUpgradeJson(UPGRADE_JSON_FILE);
+        List<Arguments> parameters = new LinkedList<>();
+
+        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getKafkaVersions();
+        TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
+
+        upgradeData.forEach(jsonData -> {
+            JsonObject data = (JsonObject) jsonData;
+            data.put("urlTo", "HEAD");
+            data.put("toVersion", "HEAD");
+            data.put("toExamples", "HEAD");
+
+            // Generate procedures for upgrade
+            JsonObject procedures = new JsonObject();
+            procedures.put("kafkaVersion", testKafkaVersion.version());
+            procedures.put("logMessageVersion", testKafkaVersion.messageVersion());
+            procedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
+            data.put("proceduresAfterOperatorUpgrade", procedures);
+
+            parameters.add(Arguments.of(data.getString("fromVersion"), "HEAD", data));
+        });
+
+        return parameters.stream();
+    }
+
+    protected static Stream<Arguments> loadJsonDowngradeData() {
+        JsonArray upgradeData = readUpgradeJson(DOWNGRADE_JSON_FILE);
         List<Arguments> parameters = new LinkedList<>();
 
         upgradeData.forEach(jsonData -> {
@@ -99,14 +126,6 @@ public class AbstractUpgradeST extends AbstractST {
         return parameters.stream();
     }
 
-    protected static Stream<Arguments> loadJsonUpgradeData() {
-        return loadJsonData(UPGRADE_JSON_FILE);
-    }
-
-    protected static Stream<Arguments> loadJsonDowngradeData() {
-        return loadJsonData(DOWNGRADE_JSON_FILE);
-    }
-
     protected void makeSnapshots(String clusterName) {
         coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -115,15 +134,17 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void changeKafkaAndLogFormatVersion(JsonObject procedures, String clusterName, String namespace) {
-        LOGGER.info(KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getConfig());
+        // Get Kafka configurations
         Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
         Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
+        // Get Kafka version
+        String kafkaVersionFromCR = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getVersion();
+        String kafkaVersionFromProcedure = procedures.getString("kafkaVersion");
 
         if (!procedures.isEmpty() && (currentLogMessageFormat != null || currentInterBrokerProtocol != null)) {
-            String kafkaVersion = procedures.getString("kafkaVersion");
-            if (!kafkaVersion.isEmpty()) {
-                LOGGER.info("Going to set Kafka version to " + kafkaVersion);
-                KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().getKafka().setVersion(kafkaVersion));
+            if (!kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.equals(kafkaVersionFromProcedure)) {
+                LOGGER.info("Going to set Kafka version to " + kafkaVersionFromProcedure);
+                KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().getKafka().setVersion(kafkaVersionFromProcedure));
                 LOGGER.info("Wait until kafka rolling update is finished");
                 kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
             }
