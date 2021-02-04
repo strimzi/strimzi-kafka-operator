@@ -153,7 +153,7 @@ public class OpenSslCertManager implements CertManager {
 
                     X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertFile);
 
-                    keyStore.setEntry(alias, new KeyStore.TrustedCertificateEntry(certificate),null);
+                    keyStore.setEntry(alias, new KeyStore.TrustedCertificateEntry(certificate), null);
 
                     FileOutputStream osKeyStoreFile = null;
 
