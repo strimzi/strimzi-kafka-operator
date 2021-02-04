@@ -47,19 +47,19 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     private final String producerName = "producer";
     private final String consumerName = "consumer";
     private final String topicUpgradeName = "topic-upgrade";
-    private final String olmUpgradeClusterName = "olm-upgrade-cluster-name";
+    private final String clusterName = "olm-upgrade-cluster-name";
     private final int messageUpgradeCount =  50_000; // 10k ~= 23s, 50k ~= 115s
     private final KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
         .withProducerName(producerName)
         .withConsumerName(consumerName)
-        .withBootstrapAddress(KafkaResources.plainBootstrapAddress(olmUpgradeClusterName))
+        .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
         .withTopicName(topicUpgradeName)
         .withMessageCount(messageUpgradeCount)
         .withDelayMs(1)
         .build();
 
     @ParameterizedTest(name = "testUpgradeStrimziVersion-{0}-{1}")
-    @MethodSource("loadJsonUpgradeData")
+    @MethodSource("loadJsonData")
     void testChainUpgrade(String fromVersion, String toVersion, JsonObject testParameters) throws IOException {
 
         // only 0.|18|.0 and more is supported
@@ -89,7 +89,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         }
 
         // In chainUpgrade we want to setup Kafka only at the start and then upgrade it via CO
-        if (KafkaResource.kafkaClient().inNamespace(namespace).withName(olmUpgradeClusterName).get() == null) {
+        if (KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get() == null) {
             JsonObject firstSupportedItemFromUpgradeJsonArray = getFirstSupportedItemFromUpgradeJson();
             String url = firstSupportedItemFromUpgradeJsonArray.getString("urlFrom");
             File dir = FileUtils.downloadAndUnzip(url);
@@ -99,7 +99,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
             LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
             KubeClusterResource.cmdKubeClient().create(kafkaYaml);
             // Wait for readiness
-            waitForReadinessOfKafkaCluster(olmUpgradeClusterName);
+            waitForReadinessOfKafkaCluster();
 
             OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
 
@@ -113,7 +113,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         LOGGER.info("Old deployment name of cluster operator is {}", clusterOperatorDeploymentName);
 
         // ======== Cluster Operator upgrade starts ========
-        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(olmUpgradeClusterName));
+        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
         // wait until non-used install plan is present (sometimes install-plan did not append immediately and we need to wait for at least 10m)
         OlmUtils.waitUntilNonUsedInstallPlanIsPresent(toVersion);
@@ -122,7 +122,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         OlmResource.upgradeClusterOperator();
 
         // wait until RU is finished (first run skipping)
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(olmUpgradeClusterName), 3, kafkaSnapshot);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
         // ======== Cluster Operator upgrade ends ========
 
         clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
@@ -138,10 +138,10 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         // ======== Kafka upgrade starts ========
         // Make snapshots of all pods
-        makeSnapshots(olmUpgradeClusterName);
-        logPodImages(olmUpgradeClusterName);
-//        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfter"), olmUpgradeClusterName);
-        logPodImages(olmUpgradeClusterName);
+        makeSnapshots(clusterName);
+        logPodImages(clusterName);
+//        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfterOperatorUpgrade"), clusterName);
+        logPodImages(clusterName);
         // ======== Kafka upgrade ends ========
 
         ClientUtils.waitForClientSuccess(producerName, namespace, messageUpgradeCount);
