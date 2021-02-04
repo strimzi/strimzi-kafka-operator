@@ -304,8 +304,8 @@ public class SpecificST extends AbstractST {
             assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
             assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
-            String topicName = "rw-" + KafkaTopicUtils.generateRandomNameOfTopic();
-            KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+            topicName = "rw-" + KafkaTopicUtils.generateRandomNameOfTopic();
+            resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
             KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
         }
 
