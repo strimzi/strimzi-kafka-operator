@@ -374,6 +374,44 @@ public class TopicST extends AbstractST {
         assertThat(received, is(sent));
     }
 
+    @Test
+    void testCreateTopicAfterUnsupportedOperation() {
+        String topicName = "topic-with-replication-to-change";
+        String newTopicName = "another-topic";
+
+        KafkaTopic kafkaTopic = KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(TOPIC_CLUSTER_NAME, topicName)
+                .editSpec()
+                    .withReplicas(3)
+                    .withPartitions(3)
+                .endSpec()
+                .build());
+
+        KafkaTopicResource.replaceTopicResource(topicName, t -> {
+            t.getSpec().setReplicas(1);
+            t.getSpec().setPartitions(1);
+        });
+        KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
+
+        String exceptedMessage = "Number of partitions cannot be decreased";
+        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage(), is(exceptedMessage));
+
+        String topicCRDMessage = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
+
+        assertThat(topicCRDMessage, containsString(exceptedMessage));
+
+        KafkaTopic newKafkaTopic = KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(TOPIC_CLUSTER_NAME, newTopicName, 1, 1).build());
+
+        assertThat("Topic exists in Kafka itself", hasTopicInKafka(topicName, TOPIC_CLUSTER_NAME));
+        assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
+        assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, TOPIC_CLUSTER_NAME));
+        assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(newKafkaTopic, newTopicName));
+
+        cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_SINGULAR, topicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(topicName);
+        cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_SINGULAR, newTopicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(newTopicName);
+    }
+
     boolean hasTopicInKafka(String topicName, String clusterName) {
         LOGGER.info("Checking topic {} in Kafka", topicName);
         return KafkaCmdClient.listTopicsUsingPodCli(clusterName, 0).contains(topicName);
