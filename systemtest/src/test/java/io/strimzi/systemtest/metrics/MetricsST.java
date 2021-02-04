@@ -259,7 +259,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testClusterOperatorMetrics(ExtensionContext extensionContext) {
-        clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics();
+        clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics(kafkaClientsPodName);
         List<String> resourcesList = Arrays.asList("Kafka", "KafkaBridge", "KafkaConnect", "KafkaConnectS2I", "KafkaConnector", "KafkaMirrorMaker", "KafkaMirrorMaker2", "KafkaRebalance");
 
         // Create some resource which will have state 0. S2I will not be ready, because there is KafkaConnect cluster with same name.
