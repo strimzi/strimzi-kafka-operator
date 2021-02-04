@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +17,6 @@ import java.io.IOException;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(UPGRADE)
@@ -37,32 +35,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
         LOGGER.debug("Running downgrade test from version {} to {}", from, to);
-
-        try {
-            performDowngrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
-            // Tidy up
-        } catch (Exception e) {
-            e.printStackTrace();
-            TestExecutionWatcher.collectLogs(testClass, testName);
-            try {
-                if (kafkaYaml != null) {
-                    cmdKubeClient().delete(kafkaYaml);
-                }
-            } catch (Exception ex) {
-                LOGGER.warn("Failed to delete resources: {}", kafkaYaml.getName());
-            }
-            try {
-                if (coDir != null) {
-                    cmdKubeClient().delete(coDir);
-                }
-            } catch (Exception ex) {
-                LOGGER.warn("Failed to delete resources: {}", coDir.getName());
-            }
-
-            throw e;
-        } finally {
-            deleteInstalledYamls(coDir, NAMESPACE);
-        }
+        performDowngrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
     }
 
     @SuppressWarnings("MethodLength")
@@ -96,6 +69,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
 
     @Override
     protected void tearDownEnvironmentAfterEach() {
+        deleteInstalledYamls(coDir, NAMESPACE);
         cluster.deleteNamespaces();
     }
 

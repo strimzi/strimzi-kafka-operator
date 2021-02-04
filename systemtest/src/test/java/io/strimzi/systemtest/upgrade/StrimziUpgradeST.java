@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -75,74 +74,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
         LOGGER.debug("Running upgrade test from version {} to {}", from, to);
-
-        try {
-            performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
-            // Tidy up
-        } catch (Exception e) {
-            e.printStackTrace();
-            TestExecutionWatcher.collectLogs(testClass, testName);
-            try {
-                if (kafkaYaml != null) {
-                    cmdKubeClient().delete(kafkaYaml);
-                }
-            } catch (Exception ex) {
-                LOGGER.warn("Failed to delete resources: {}", kafkaYaml.getName());
-            }
-            try {
-                if (coDir != null) {
-                    cmdKubeClient().delete(coDir);
-                }
-            } catch (Exception ex) {
-                LOGGER.warn("Failed to delete resources: {}", coDir.getName());
-            }
-
-            throw e;
-        } finally {
-            deleteInstalledYamls(coDir, NAMESPACE);
-        }
-    }
-
-    @Test
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testChainUpgrade() throws Exception {
-        JsonArray parameters = readUpgradeJson(UPGRADE_JSON_FILE);
-
-        int consumedMessagesCount = MESSAGE_COUNT;
-
-        try {
-            for (Object testParameters : parameters) {
-                JsonObject castTestParameters = (JsonObject) testParameters;
-                if (StUtils.isAllowOnCurrentEnvironment(castTestParameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")) &&
-                    StUtils.isAllowedOnCurrentK8sVersion(castTestParameters.getJsonObject("environmentInfo").getString("maxK8sVersion"))) {
-                    performUpgrade(castTestParameters, MESSAGE_COUNT, consumedMessagesCount);
-                    consumedMessagesCount = consumedMessagesCount + MESSAGE_COUNT;
-                } else {
-                    LOGGER.info("Upgrade of Cluster Operator from version {} to version {} is not allowed on this K8S version!", castTestParameters.getString("fromVersion"), castTestParameters.getString("toVersion"));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            TestExecutionWatcher.collectLogs(testClass, testName);
-            try {
-                if (kafkaYaml != null) {
-                    cmdKubeClient().delete(kafkaYaml);
-                }
-            } catch (Exception ex) {
-                LOGGER.warn("Failed to delete resources: {}", kafkaYaml.getName());
-            }
-            try {
-                if (coDir != null) {
-                    cmdKubeClient().delete(coDir);
-                }
-            } catch (Exception ex) {
-                LOGGER.warn("Failed to delete resources: {}", coDir.getName());
-            }
-
-            throw e;
-        } finally {
-            deleteInstalledYamls(coDir, NAMESPACE);
-        }
+        performUpgrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
     }
 
     @Test
@@ -384,6 +316,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     @Override
     protected void tearDownEnvironmentAfterEach() {
+        deleteInstalledYamls(coDir, NAMESPACE);
         cluster.deleteNamespaces();
     }
 

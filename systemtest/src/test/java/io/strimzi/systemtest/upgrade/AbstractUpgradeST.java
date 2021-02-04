@@ -505,6 +505,5 @@ public class AbstractUpgradeST extends AbstractST {
             kubeClient().deleteJob(producerName);
             kubeClient().deleteJob(consumerName);
         }
-
     }
 }
