@@ -4,18 +4,28 @@
  */
 package io.strimzi.systemtest.security;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.endEntityCertBuilder;
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.intermediateCaCertBuilder;
 import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.rootCaCertBuilder;
+import static io.strimzi.systemtest.security.SystemTestCertAndKeyBuilder.strimziCaCertBuilder;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -25,6 +35,9 @@ public class SystemTestCertManager {
     private static final String KAFKA_CERT_FILE_PATH = "/opt/kafka/broker-certs/";
     private static final String ZK_CERT_FILE_PATH = "/opt/kafka/zookeeper-node-certs/";
     private static final String CA_FILE_PATH = "/opt/kafka/cluster-ca-certs/ca.crt";
+    static final String STRIMZI_ROOT_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziRootCA";
+    static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
+    static final String STRIMZI_END_SUBJECT = "C=CZ, L=Prague, O=Strimzi, CN=kafka.strimzi.io";
 
     public SystemTestCertManager() {}
 
@@ -77,20 +90,32 @@ public class SystemTestCertManager {
 
     public static SystemTestCertAndKey generateRootCaCertAndKey() {
         return rootCaCertBuilder()
-                .withIssuerDn("C=CZ, L=Prague, O=Strimzi, CN=StrimziRootCA")
-                .withSubjectDn("C=CZ, L=Prague, O=Strimzi, CN=StrimziRootCA")
+                .withIssuerDn(STRIMZI_ROOT_CA)
+                .withSubjectDn(STRIMZI_ROOT_CA)
                 .build();
     }
 
     public static SystemTestCertAndKey generateIntermediateCaCertAndKey(SystemTestCertAndKey rootCert) {
         return intermediateCaCertBuilder(rootCert)
-                .withSubjectDn("C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA")
+                .withSubjectDn(STRIMZI_INTERMEDIATE_CA)
+                .build();
+    }
+    public static SystemTestCertAndKey generateStrimziCaCertAndKey(SystemTestCertAndKey rootCert, String subjectDn) {
+        return strimziCaCertBuilder(rootCert)
+                .withSubjectDn(subjectDn)
                 .build();
     }
 
     public static SystemTestCertAndKey generateEndEntityCertAndKey(SystemTestCertAndKey intermediateCert) {
         return endEntityCertBuilder(intermediateCert)
-                .withSubjectDn("C=CZ, L=Prague, O=Strimzi, CN=kafka.strimzi.io")
+                .withSubjectDn(STRIMZI_END_SUBJECT)
+                .withSanDnsName("*.127.0.0.1.nip.io")
+                .build();
+    }
+
+    public static SystemTestCertAndKey generateEndEntityCertAndKey(SystemTestCertAndKey intermediateCert, String subjectDn) {
+        return endEntityCertBuilder(intermediateCert)
+                .withSubjectDn(subjectDn)
                 .withSanDnsName("*.127.0.0.1.nip.io")
                 .build();
     }
@@ -106,6 +131,19 @@ public class SystemTestCertManager {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    static File convertPrivateKeyToPKCS8File(PrivateKey privatekey) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+        byte[] encoded = privatekey.getEncoded();
+        final PrivateKeyInfo privateKeyInfo = PrivateKeyInfo.getInstance(encoded);
+
+        final ASN1Encodable asn1Encodable = privateKeyInfo.parsePrivateKey();
+        final byte[] privateKeyPKCS8Formatted = asn1Encodable.toASN1Primitive().getEncoded(ASN1Encoding.DER);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyPKCS8Formatted);
+
+        KeyFactory kf = KeyFactory.getInstance(SystemTestCertAndKeyBuilder.KEY_PAIR_ALGORITHM);
+        PrivateKey privateKey = kf.generatePrivate(keySpec);
+        return  exportPrivateKeyToPemFile(privateKey);
     }
 
     private static File exportPrivateKeyToPemFile(PrivateKey privateKey) throws IOException {
@@ -126,5 +164,14 @@ public class SystemTestCertManager {
             pemWriter.flush();
         }
         return certFile;
+    }
+
+    static boolean containsAllDN(String principal1, String principal2) {
+        try {
+            return new LdapName(principal1).getRdns().containsAll(new LdapName(principal2).getRdns());
+        } catch (InvalidNameException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

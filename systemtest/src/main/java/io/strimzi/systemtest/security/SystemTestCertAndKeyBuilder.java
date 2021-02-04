@@ -59,7 +59,7 @@ import static org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME;
 public class SystemTestCertAndKeyBuilder {
 
     private static final int KEY_SIZE = 2048;
-    private static final String KEY_PAIR_ALGORITHM = "RSA";
+    protected static final String KEY_PAIR_ALGORITHM = "RSA";
     private static final String SIGNATURE_ALGORITHM = "SHA256WithRSA";
     private static final Duration CERTIFICATE_VALIDITY_PERIOD = Duration.ofDays(30);
 
@@ -102,6 +102,19 @@ public class SystemTestCertAndKeyBuilder {
                 caCert,
                 asList(
                         new Extension(keyUsage, true, keyUsage(keyCertSign)),
+                        new Extension(basicConstraints, true, ca()),
+                        new Extension(subjectKeyIdentifier, false, createSubjectKeyIdentifier(keyPair.getPublic())),
+                        new Extension(authorityKeyIdentifier, false, createAuthorityKeyIdentifier(caCert.getPublicKey()))
+                )
+        );
+    }
+
+    public static SystemTestCertAndKeyBuilder strimziCaCertBuilder(SystemTestCertAndKey caCert) {
+        KeyPair keyPair = generateKeyPair();
+        return new SystemTestCertAndKeyBuilder(
+                keyPair,
+                caCert,
+                asList(
                         new Extension(basicConstraints, true, ca()),
                         new Extension(subjectKeyIdentifier, false, createSubjectKeyIdentifier(keyPair.getPublic())),
                         new Extension(authorityKeyIdentifier, false, createAuthorityKeyIdentifier(caCert.getPublicKey()))
