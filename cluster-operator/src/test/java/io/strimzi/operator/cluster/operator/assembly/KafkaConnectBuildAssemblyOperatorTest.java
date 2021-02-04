@@ -84,7 +84,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     protected static Vertx vertx;
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
 
     @BeforeAll
     public static void before() {

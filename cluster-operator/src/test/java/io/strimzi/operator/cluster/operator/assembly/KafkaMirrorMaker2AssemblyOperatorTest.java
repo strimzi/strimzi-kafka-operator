@@ -83,7 +83,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties("kafkaMirrorMaker2DefaultLoggingProperties")
             .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
 
     @BeforeAll
     public static void before() {

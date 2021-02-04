@@ -13,19 +13,16 @@ public class KubernetesVersion implements Comparable<KubernetesVersion> {
     private int minor;
 
     // unsupported versions
-    public static final KubernetesVersion V1_8 = new KubernetesVersion(1, 8);
+    public static final KubernetesVersion V1_15 = new KubernetesVersion(1, 15);
 
     // supported versions
-    public static final KubernetesVersion V1_9 = new KubernetesVersion(1, 9);
-    public static final KubernetesVersion V1_10 = new KubernetesVersion(1, 10);
-    public static final KubernetesVersion V1_11 = new KubernetesVersion(1, 11);
-    public static final KubernetesVersion V1_12 = new KubernetesVersion(1, 12);
-    public static final KubernetesVersion V1_13 = new KubernetesVersion(1, 13);
-    public static final KubernetesVersion V1_14 = new KubernetesVersion(1, 14);
     public static final KubernetesVersion V1_16 = new KubernetesVersion(1, 16);
+    public static final KubernetesVersion V1_17 = new KubernetesVersion(1, 17);
+    public static final KubernetesVersion V1_18 = new KubernetesVersion(1, 18);
+    public static final KubernetesVersion V1_19 = new KubernetesVersion(1, 19);
+    public static final KubernetesVersion V1_20 = new KubernetesVersion(1, 20);
 
-
-    public static final KubernetesVersion MINIMAL_SUPPORTED_VERSION = V1_9;
+    public static final KubernetesVersion MINIMAL_SUPPORTED_VERSION = V1_16;
     public static final int MINIMAL_SUPPORTED_MAJOR = MINIMAL_SUPPORTED_VERSION.major;
     public static final int MINIMAL_SUPPORTED_MINOR = MINIMAL_SUPPORTED_VERSION.minor;
 

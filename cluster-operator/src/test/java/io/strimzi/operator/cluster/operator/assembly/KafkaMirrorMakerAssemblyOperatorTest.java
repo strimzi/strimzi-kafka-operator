@@ -85,7 +85,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     private final String whitelist = ".*";
     private final String image = "my-image:latest";
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_9;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
 
     @BeforeAll
     public static void before() {

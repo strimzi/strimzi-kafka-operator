@@ -71,7 +71,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_11;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
 
     private static final Logger log = LogManager.getLogger(KafkaRebalanceAssemblyOperatorTest.class.getName());
 

@@ -143,7 +143,7 @@ public class ConnectorMockTest {
                         KafkaConnector::getStatus, KafkaConnector::setStatus).end()
                 .build();
 
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_11);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_18);
 
         setupMockConnectAPI();
 
