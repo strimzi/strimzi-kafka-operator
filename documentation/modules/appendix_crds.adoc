@@ -27,7 +27,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |zookeeper               1.2+<.<|Configuration of the ZooKeeper cluster.
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|topicOperator           1.2+<.<|*The property `topicOperator` has been deprecated. This feature should now be configured at path `spec.entityOperator.topicOperator`.* Configuration of the Topic Operator.
+|topicOperator           1.2+<.<|*The `topicOperator` property has been deprecated, and should now be configured using `spec.entityOperator.topicOperator`.* Configuration of the Topic Operator.
 |xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
 |entityOperator          1.2+<.<|Configuration of the Entity Operator.
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
@@ -77,11 +77,11 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |xref:type-Rack-{context}[`Rack`]
 |brokerRackInitImage  1.2+<.<|The image of the init container used for initializing the `broker.rack`.
 |string
-|affinity             1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.kafka.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity             1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.kafka.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations          1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.kafka.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+|tolerations          1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.kafka.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
@@ -97,13 +97,13 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|metrics              1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.kafka.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics              1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.kafka.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |metricsConfig        1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tlsSidecar           1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration.
+|tlsSidecar           1.2+<.<|*The `tlsSidecar` property has been deprecated* TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
@@ -1089,20 +1089,20 @@ It must have the value `jmxPrometheusExporter` for the type `JmxPrometheusExport
 |Property          |Description
 |type       1.2+<.<|Must be `jmxPrometheusExporter`.
 |string
-|valueFrom  1.2+<.<|ConfigMap where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}.
-|xref:type-ExternalConfigurationMetrics-{context}[`ExternalConfigurationMetrics`]
+|valueFrom  1.2+<.<|ConfigMap entry where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}.
+|xref:type-ExternalConfigurationReference-{context}[`ExternalConfigurationReference`]
 |====
 
-[id='type-ExternalConfigurationMetrics-{context}']
-### `ExternalConfigurationMetrics` schema reference
+[id='type-ExternalConfigurationReference-{context}']
+### `ExternalConfigurationReference` schema reference
 
-Used in: xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
+Used in: xref:type-ExternalLogging-{context}[`ExternalLogging`], xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 
 
 [options="header"]
 |====
 |Property                |Description
-|configMapKeyRef  1.2+<.<|Reference to the key in the ConfigMap containing the metrics configuration. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[external documentation for core/v1 configmapkeyselector].
+|configMapKeyRef  1.2+<.<|Reference to the key in the ConfigMap containing the configuration. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[external documentation for core/v1 configmapkeyselector].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#configmapkeyselector-v1-core[ConfigMapKeySelector]
@@ -1135,11 +1135,13 @@ The `type` property is a discriminator that distinguishes use of the `ExternalLo
 It must have the value `external` for the type `ExternalLogging`.
 [options="header"]
 |====
-|Property     |Description
-|type  1.2+<.<|Must be `external`.
+|Property          |Description
+|type       1.2+<.<|Must be `external`.
 |string
-|name  1.2+<.<|The name of the `ConfigMap` from which to get the logging configuration.
+|name       1.2+<.<|*The `name` property has been deprecatedReplaced with valueFrom . The Property name is scheduled for removal in version v1beta2.* The name of the `ConfigMap` from which to get the logging configuration.
 |string
+|valueFrom  1.2+<.<|`ConfigMap` entry where the logging configuration is stored. 
+|xref:type-ExternalConfigurationReference-{context}[`ExternalConfigurationReference`]
 |====
 
 [id='type-TlsSidecar-{context}']
@@ -1207,7 +1209,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |kafkaContainer            1.2+<.<|Template for the Kafka broker container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer       1.2+<.<|*The property `tlsSidecarContainer` has been deprecated.* Template for the Kafka broker TLS sidecar container.
+|tlsSidecarContainer       1.2+<.<|*The `tlsSidecarContainer` property has been deprecated* Template for the Kafka broker TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |initContainer             1.2+<.<|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
@@ -1333,9 +1335,9 @@ include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc
 |Property                         |Description
 |metadata                  1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|externalTrafficPolicy     1.2+<.<|*The property `externalTrafficPolicy` has been deprecated.* Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
+|externalTrafficPolicy     1.2+<.<|*The `externalTrafficPolicy` property has been deprecated* Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
 |string (one of [Local, Cluster])
-|loadBalancerSourceRanges  1.2+<.<|*The property `loadBalancerSourceRanges` has been deprecated.* A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. 
+|loadBalancerSourceRanges  1.2+<.<|*The `loadBalancerSourceRanges` property has been deprecated* A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. 
 |string array
 |====
 
@@ -1424,11 +1426,11 @@ include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 |config          1.2+<.<|The ZooKeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum (with the exception of: ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites, ssl.hostnameVerification, ssl.quorum.hostnameVerification).
 |map
-|affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity        1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.zookeeper.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations     1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.zookeeper.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+|tolerations     1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.zookeeper.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
@@ -1442,7 +1444,7 @@ include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|metrics         1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.zookeeper.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics         1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.zookeeper.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
@@ -1450,7 +1452,7 @@ include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |template        1.2+<.<|Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-|tlsSidecar      1.2+<.<|*The property `tlsSidecar` has been deprecated.* TLS sidecar configuration. The TLS sidecar is not used anymore and this option will be ignored.
+|tlsSidecar      1.2+<.<|*The `tlsSidecar` property has been deprecated* TLS sidecar configuration. The TLS sidecar is not used anymore and this option will be ignored.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |====
 
@@ -1477,7 +1479,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |zookeeperContainer     1.2+<.<|Template for the ZooKeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer    1.2+<.<|*The property `tlsSidecarContainer` has been deprecated.* Template for the Zookeeper server TLS sidecar container. The TLS sidecar is not used anymore and this option will be ignored.
+|tlsSidecarContainer    1.2+<.<|*The `tlsSidecarContainer` property has been deprecated* Template for the Zookeeper server TLS sidecar container. The TLS sidecar is not used anymore and this option will be ignored.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |====
 
@@ -1538,11 +1540,11 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`]
 |userOperator   1.2+<.<|Configuration of the User Operator.
 |xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`]
-|affinity       1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity       1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations    1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+|tolerations    1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
@@ -1708,7 +1710,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 |config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., anomaly.detection., ssl. (with the exception of: ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled,webserver.http.cors.origin, webserver.http.cors.exposeheaders).
 |map
-|metrics         1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.cruiseControl.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics         1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.cruiseControl.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
@@ -2017,17 +2019,17 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |jmxOptions             1.2+<.<|JMX Options.
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|affinity               1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity               1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations            1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+|tolerations            1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |logging                1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics                1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
@@ -2549,13 +2551,13 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |jmxOptions                1.2+<.<|JMX Options.
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|affinity                  1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity                  1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
 |logging                   1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                   1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics                   1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |template                  1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
@@ -2583,7 +2585,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
 |tls                       1.2+<.<|TLS configuration.
 |xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
-|tolerations               1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+|tolerations               1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
@@ -2948,11 +2950,11 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|affinity        1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity        1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations     1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+|tolerations     1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
@@ -2960,7 +2962,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |logging         1.2+<.<|Logging configuration for MirrorMaker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics         1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
+|metrics         1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
 |map
 |metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
@@ -3388,17 +3390,17 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |jmxOptions             1.2+<.<|JMX Options.
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|affinity               1.2+<.<|*The property `affinity` has been deprecated. This feature should now be configured at path `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity               1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations            1.2+<.<|*The property `tolerations` has been deprecated. This feature should now be configured at path `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+|tolerations            1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |logging                1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                1.2+<.<|*The property `metrics` has been deprecated. This feature should now be configured at path `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics                1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]

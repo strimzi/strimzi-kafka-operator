@@ -6,6 +6,8 @@ package io.strimzi.systemtest.log;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.ExternalLogging;
@@ -55,6 +57,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
@@ -122,6 +125,11 @@ class LoggingChangeST extends AbstractST {
             .addToData("log4j.properties", loggersConfigKafka)
             .build();
 
+        ConfigMapKeySelector kafkaLoggingCMselector = new ConfigMapKeySelectorBuilder()
+                .withName(configMapKafkaName)
+                .withKey("log4j.properties")
+                .build();
+
         ConfigMap configMapOperators = new ConfigMapBuilder()
             .withNewMetadata()
                 .withNewName(configMapOpName)
@@ -130,13 +138,23 @@ class LoggingChangeST extends AbstractST {
             .addToData("log4j2.properties", loggersConfigOperators)
             .build();
 
+        ConfigMapKeySelector operatorsLoggimgCMselector = new ConfigMapKeySelectorBuilder()
+                .withName(configMapOpName)
+                .withKey("log4j2.properties")
+                .build();
+
         ConfigMap configMapZookeeper = new ConfigMapBuilder()
             .withNewMetadata()
                 .withNewName(configMapZookeeperName)
                 .withNamespace(NAMESPACE)
             .endMetadata()
-            .addToData("log4j.properties", loggersConfigZookeeper)
+            .addToData("log4j-custom.properties", loggersConfigZookeeper)
             .build();
+
+        ConfigMapKeySelector zkLoggingCMselector = new ConfigMapKeySelectorBuilder()
+                .withName(configMapZookeeperName)
+                .withKey("log4j-custom.properties")
+                .build();
 
         ConfigMap configMapCO = new ConfigMapBuilder()
             .withNewMetadata()
@@ -145,6 +163,167 @@ class LoggingChangeST extends AbstractST {
             .endMetadata()
             .addToData("log4j2.properties", loggersConfigCO)
             .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapKafka);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapZookeeper);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapCO);
+
+        // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
+        ResourceManager.setClassResources();
+        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE)
+            .editOrNewSpec()
+                .editOrNewTemplate()
+                    .editOrNewSpec()
+                        .addNewVolume()
+                            .withName("logging-config-volume")
+                            .editOrNewConfigMap()
+                                .withName(configMapCOName)
+                            .endConfigMap()
+                        .endVolume()
+                        .editFirstContainer()
+                            .withVolumeMounts(new VolumeMountBuilder().withName("logging-config-volume").withMountPath("/tmp/log-config-map-file").build())
+                            .addToEnv(new EnvVarBuilder().withName("JAVA_OPTS").withValue("-Dlog4j2.configurationFile=file:/tmp/log-config-map-file/log4j2.properties").build())
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build());
+        // Now we set pointer stack to method again
+        ResourceManager.setMethodResources();
+
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+            .editOrNewSpec()
+                .editKafka()
+                    //.withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
+                    .withLogging(new ExternalLoggingBuilder()
+                            .withNewValueFrom()
+                                .withConfigMapKeyRef(kafkaLoggingCMselector)
+                            .endValueFrom()
+                            .build())
+                .endKafka()
+                .editZookeeper()
+                    .withLogging(new ExternalLoggingBuilder()
+                            .withNewValueFrom()
+                                .withConfigMapKeyRef(zkLoggingCMselector)
+                            .endValueFrom()
+                            .build())
+                .endZookeeper()
+                .editEntityOperator()
+                    .editTopicOperator()
+                        .withLogging(new ExternalLoggingBuilder()
+                                .withNewValueFrom()
+                                    .withConfigMapKeyRef(operatorsLoggimgCMselector)
+                                .endValueFrom()
+                                .build())
+                    .endTopicOperator()
+                    .editUserOperator()
+                        .withLogging(new ExternalLoggingBuilder()
+                                .withNewValueFrom()
+                                    .withConfigMapKeyRef(operatorsLoggimgCMselector)
+                                .endValueFrom()
+                                .build())
+                    .endUserOperator()
+                .endEntityOperator()
+            .endSpec()
+            .build());
+
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+
+        assertTrue(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()));
+        assertTrue(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"));
+        assertTrue(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"));
+        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"));
+        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "user-operator"));
+    }
+
+    @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    void testJSONFormatLoggingDeprecated() {
+        // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
+        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
+        String loggersConfigKafka = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
+                "kafka.root.logger.level=INFO\n" +
+                "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
+                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                "log4j.logger.org.apache.zookeeper=INFO\n" +
+                "log4j.logger.kafka=INFO\n" +
+                "log4j.logger.org.apache.kafka=INFO\n" +
+                "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
+                "log4j.logger.kafka.network.Processor=OFF\n" +
+                "log4j.logger.kafka.server.KafkaApis=OFF\n" +
+                "log4j.logger.kafka.network.RequestChannel$=WARN\n" +
+                "log4j.logger.kafka.controller=TRACE\n" +
+                "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                "log4j.logger.state.change.logger=TRACE\n" +
+                "log4j.logger.kafka.authorizer.logger=INFO";
+
+        String loggersConfigOperators = "appender.console.type=Console\n" +
+                "appender.console.name=STDOUT\n" +
+                "appender.console.layout.type=JsonLayout\n" +
+                "rootLogger.level=INFO\n" +
+                "rootLogger.appenderRefs=stdout\n" +
+                "rootLogger.appenderRef.console.ref=STDOUT\n" +
+                "rootLogger.additivity=false";
+
+        String loggersConfigZookeeper = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
+                "zookeeper.root.logger=INFO\n" +
+                "log4j.rootLogger=${zookeeper.root.logger}, CONSOLE";
+
+        String loggersConfigCO = "name = COConfig\n" +
+                "appender.console.type = Console\n" +
+                "appender.console.name = STDOUT\n" +
+                "appender.console.layout.type = JsonLayout\n" +
+                "rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}\n" +
+                "rootLogger.appenderRefs = stdout\n" +
+                "rootLogger.appenderRef.console.ref = STDOUT\n" +
+                "rootLogger.additivity = false\n" +
+                "logger.kafka.name = org.apache.kafka\n" +
+                "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}\n" +
+                "logger.kafka.additivity = false";
+
+        String configMapOpName = "json-layout-operators";
+        String configMapZookeeperName = "json-layout-zookeeper";
+        String configMapKafkaName = "json-layout-kafka";
+        String configMapCOName = "json-layout-cluster-operator";
+
+        ConfigMap configMapKafka = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withNewName(configMapKafkaName)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("log4j.properties", loggersConfigKafka)
+                .build();
+
+        ConfigMap configMapOperators = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withNewName(configMapOpName)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("log4j2.properties", loggersConfigOperators)
+                .build();
+
+        ConfigMap configMapZookeeper = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withNewName(configMapZookeeperName)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("log4j.properties", loggersConfigZookeeper)
+                .build();
+
+        ConfigMap configMapCO = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withNewName(configMapCOName)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .addToData("log4j2.properties", loggersConfigCO)
+                .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapKafka);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
@@ -199,13 +378,13 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
 
-        assertThat(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"), is(true));
-        assertThat(StUtils.checkLogForJSONFormat(eoPods, "user-operator"), is(true));
+        assertTrue(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()));
+        assertTrue(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"));
+        assertTrue(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"));
+        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"));
+        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "user-operator"));
     }
-
+    
     @Test
     @Tag(ROLLING_UPDATE)
     @SuppressWarnings({"checkstyle:MethodLength"})

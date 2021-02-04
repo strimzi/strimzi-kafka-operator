@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -85,8 +86,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
-            .compose(i -> getLoggingCmAsync(configMapOperations, namespace, bridge))
-            .compose(loggingCm -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigMapName(), bridge.generateMetricsAndLogConfigMap(loggingCm, null)))
+            .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, bridge.getLogging(), null))
+            .compose(metricsAndLogging -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigMapName(), bridge.generateMetricsAndLogConfigMap(metricsAndLogging)))
             .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
             .compose(i -> deploymentOperations.reconcile(namespace, bridge.getName(), bridge.generateDeployment(Collections.emptyMap(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))
@@ -127,8 +128,10 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     }
 
     public static Future<ConfigMap> getLoggingCmAsync(ConfigMapOperator configMapOperations, String namespace, KafkaBridgeCluster model) {
-        return model.getLogging() instanceof ExternalLogging ?
-                configMapOperations.getAsync(namespace, ((ExternalLogging) model.getLogging()).getName()) :
-                Future.succeededFuture(null);
+        if (model.getLogging() instanceof ExternalLogging) {
+            return Util.getExternalLoggingCm(configMapOperations, namespace, (ExternalLogging) model.getLogging());
+        } else {
+            return Future.succeededFuture(null);
+        }
     }
 }

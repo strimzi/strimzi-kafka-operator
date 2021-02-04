@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -26,8 +25,6 @@ import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.AbstractKafkaConnectSpec;
-import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
@@ -835,25 +832,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
 
         return updateStatusPromise.future();
-    }
-
-    protected Future<MetricsAndLoggingCm> connectMetricsAndLoggingConfigMap(String namespace, KafkaConnectCluster connect) {
-        final Future<ConfigMap> metricsCmFut;
-        if (connect.isMetricsConfigured()) {
-            if (connect.getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
-                metricsCmFut = configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) connect.getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
-            } else {
-                log.warn("Unknown metrics type {}", connect.getMetricsConfigInCm().getType());
-                throw new InvalidResourceException("Unknown metrics type " + connect.getMetricsConfigInCm().getType());
-            }
-        } else {
-            metricsCmFut = Future.succeededFuture(null);
-        }
-
-        Future<ConfigMap> loggingCmFut = connect.getLogging() instanceof ExternalLogging ?
-                configMapOperations.getAsync(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
-                Future.succeededFuture(null);
-        return CompositeFuture.join(metricsCmFut, loggingCmFut).map(res -> new MetricsAndLoggingCm(res.resultAt(0), res.resultAt(1)));
     }
 
     Future<ReconcileResult<Secret>> kafkaConnectJmxSecret(String namespace, String name, KafkaConnectCluster connectCluster) {

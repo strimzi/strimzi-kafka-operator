@@ -290,16 +290,16 @@ public class DocGenerator {
     }
 
     private String getDeprecation(Property property, DeprecatedProperty deprecated) {
-        String msg = String.format("*The property `%s` has been deprecated.",
+        String msg = String.format("*The `%s` property has been deprecated",
                 property.getName());
         if (!deprecated.movedToPath().isEmpty()) {
-            msg += " This feature should now be configured at path `" + deprecated.movedToPath() + "`.";
+            msg += ", and should now be configured using `" + deprecated.movedToPath() + "`.";
         }
         if (!deprecated.description().isEmpty()) {
             msg += deprecated.description() + " ";
         }
         if (!deprecated.removalVersion().isEmpty()) {
-            msg += " This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
+            msg += ". The Property " + property.getName() + " is scheduled for removal in version " + deprecated.removalVersion() + ".";
         }
         msg += "* ";
         return msg;

@@ -1969,10 +1969,10 @@ spec:
                             optional:
                               type: boolean
                           description: Reference to the key in the ConfigMap containing
-                            the metrics configuration.
-                      description: ConfigMap where the Prometheus JMX Exporter configuration
-                        is stored. For details of the structure of this configuration,
-                        see the {JMXExporter}.
+                            the configuration.
+                      description: ConfigMap entry where the Prometheus JMX Exporter
+                        configuration is stored. For details of the structure of this
+                        configuration, see the {JMXExporter}.
                   required:
                   - type
                   - valueFrom
@@ -1993,6 +1993,22 @@ spec:
                       - inline
                       - external
                       description: Logging type, must be either 'inline' or 'external'.
+                    valueFrom:
+                      type: object
+                      properties:
+                        configMapKeyRef:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to the key in the ConfigMap containing
+                            the configuration.
+                      description: '`ConfigMap` entry where the logging configuration
+                        is stored. '
                   required:
                   - type
                   description: Logging configuration for Kafka.
@@ -3415,10 +3431,10 @@ spec:
                             optional:
                               type: boolean
                           description: Reference to the key in the ConfigMap containing
-                            the metrics configuration.
-                      description: ConfigMap where the Prometheus JMX Exporter configuration
-                        is stored. For details of the structure of this configuration,
-                        see the {JMXExporter}.
+                            the configuration.
+                      description: ConfigMap entry where the Prometheus JMX Exporter
+                        configuration is stored. For details of the structure of this
+                        configuration, see the {JMXExporter}.
                   required:
                   - type
                   - valueFrom
@@ -3439,6 +3455,22 @@ spec:
                       - inline
                       - external
                       description: Logging type, must be either 'inline' or 'external'.
+                    valueFrom:
+                      type: object
+                      properties:
+                        configMapKeyRef:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to the key in the ConfigMap containing
+                            the configuration.
+                      description: '`ConfigMap` entry where the logging configuration
+                        is stored. '
                   required:
                   - type
                   description: Logging configuration for ZooKeeper.
@@ -4526,6 +4558,22 @@ spec:
                       - inline
                       - external
                       description: Logging type, must be either 'inline' or 'external'.
+                    valueFrom:
+                      type: object
+                      properties:
+                        configMapKeyRef:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to the key in the ConfigMap containing
+                            the configuration.
+                      description: '`ConfigMap` entry where the logging configuration
+                        is stored. '
                   required:
                   - type
                   description: Logging configuration.
@@ -4799,6 +4847,22 @@ spec:
                           - inline
                           - external
                           description: Logging type, must be either 'inline' or 'external'.
+                        valueFrom:
+                          type: object
+                          properties:
+                            configMapKeyRef:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: Reference to the key in the ConfigMap containing
+                                the configuration.
+                          description: '`ConfigMap` entry where the logging configuration
+                            is stored. '
                       required:
                       - type
                       description: Logging configuration.
@@ -4944,6 +5008,22 @@ spec:
                           - inline
                           - external
                           description: Logging type, must be either 'inline' or 'external'.
+                        valueFrom:
+                          type: object
+                          properties:
+                            configMapKeyRef:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: Reference to the key in the ConfigMap containing
+                                the configuration.
+                          description: '`ConfigMap` entry where the logging configuration
+                            is stored. '
                       required:
                       - type
                       description: Logging configuration.
@@ -6212,6 +6292,22 @@ spec:
                       - inline
                       - external
                       description: Logging type, must be either 'inline' or 'external'.
+                    valueFrom:
+                      type: object
+                      properties:
+                        configMapKeyRef:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to the key in the ConfigMap containing
+                            the configuration.
+                      description: '`ConfigMap` entry where the logging configuration
+                        is stored. '
                   required:
                   - type
                   description: Logging configuration (log4j1) for Cruise Control.
@@ -6872,10 +6968,10 @@ spec:
                             optional:
                               type: boolean
                           description: Reference to the key in the ConfigMap containing
-                            the metrics configuration.
-                      description: ConfigMap where the Prometheus JMX Exporter configuration
-                        is stored. For details of the structure of this configuration,
-                        see the {JMXExporter}.
+                            the configuration.
+                      description: ConfigMap entry where the Prometheus JMX Exporter
+                        configuration is stored. For details of the structure of this
+                        configuration, see the {JMXExporter}.
                   required:
                   - type
                   - valueFrom

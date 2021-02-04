@@ -78,18 +78,18 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
         DeprecatedProperty deprecated = member.getAnnotation(DeprecatedProperty.class);
         if (deprecated != null
             && isPresent(member, propertyValue)) {
-            String msg = String.format("In API version %s the property %s at path %s has been deprecated. ",
+            String msg = String.format("In API version %s the %s property at path %s has been deprecated",
                     resource.getApiVersion(),
                     propertyName,
                     path(path, propertyName));
             if (!deprecated.movedToPath().isEmpty()) {
-                msg += "This feature should now be configured at path " + deprecated.movedToPath() + ".";
+                msg += ", and should now be configured using " + deprecated.movedToPath() + ".";
             }
             if (!deprecated.description().isEmpty()) {
                 msg += " " + deprecated.description();
             }
             if (!deprecated.removalVersion().isEmpty()) {
-                msg += " This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
+                msg += ". This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
             }
 
             warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", msg, transitionTime));

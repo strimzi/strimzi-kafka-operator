@@ -28,17 +28,17 @@ public class JmxPrometheusExporterMetrics extends MetricsConfig {
 
     public static final String TYPE_JMX_EXPORTER = "jmxPrometheusExporter";
 
-    private ExternalConfigurationMetrics valueFrom;
+    private ExternalConfigurationReference valueFrom;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("ConfigMap where the Prometheus JMX Exporter configuration is stored. " +
+    @Description("ConfigMap entry where the Prometheus JMX Exporter configuration is stored. " +
             "For details of the structure of this configuration, see the {JMXExporter}.")
     @JsonProperty(required = true)
-    public ExternalConfigurationMetrics getValueFrom() {
+    public ExternalConfigurationReference getValueFrom() {
         return valueFrom;
     }
 
-    public void setValueFrom(ExternalConfigurationMetrics valueFrom) {
+    public void setValueFrom(ExternalConfigurationReference valueFrom) {
         this.valueFrom = valueFrom;
     }
 

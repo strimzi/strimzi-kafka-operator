@@ -236,6 +236,14 @@ public class StUtils {
 
         for (String podName : pods.keySet()) {
             String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
+
+            // remove incomplete JSON from the end
+            int lastBracket = log.lastIndexOf("}");
+            int firstBracket = log.indexOf("{");
+            if (log.length() >= lastBracket) {
+                log = log.substring(Math.max(0, firstBracket), lastBracket + 1);
+            }
+
             Matcher matcher = BETWEEN_JSON_OBJECTS_PATTERN.matcher(log);
 
             log = matcher.replaceAll("}, \\{");
@@ -248,7 +256,7 @@ public class StUtils {
                 isJSON = true;
             } catch (Exception e) {
                 LOGGER.info(log);
-                LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName);
+                LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName, e);
                 isJSON = false;
                 break;
             }

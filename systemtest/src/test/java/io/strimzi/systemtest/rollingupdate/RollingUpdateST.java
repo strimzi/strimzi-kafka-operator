@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -514,8 +515,9 @@ class RollingUpdateST extends AbstractST {
     }
 
     @Test
+    @Deprecated
     @Tag(ROLLING_UPDATE)
-    void testExternalLoggingChangeTriggerRollingUpdate() {
+    void testExternalLoggingChangeTriggerRollingUpdateDeprecated() {
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
 
@@ -546,7 +548,6 @@ class RollingUpdateST extends AbstractST {
                 .withName(configMapLoggersName)
             .endMetadata()
             .addToData("log4j.properties", loggersConfig)
-            .addToData("log4j2.properties", loggersConfig)
             .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
@@ -564,7 +565,71 @@ class RollingUpdateST extends AbstractST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
 
         configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
-        configMapLoggers.getData().put("log4j2.properties", loggersConfig.replace("INFO", "DEBUG"));
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
+
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+    }
+
+    @Test
+    @Tag(ROLLING_UPDATE)
+    void testExternalLoggingChangeTriggerRollingUpdate() {
+        // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 3).build());
+
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
+
+        String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
+                "kafka.root.logger.level=INFO\n" +
+                "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
+                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+                "log4j.logger.org.apache.zookeeper=INFO\n" +
+                "log4j.logger.kafka=INFO\n" +
+                "log4j.logger.org.apache.kafka=INFO\n" +
+                "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
+                "log4j.logger.kafka.network.Processor=INFO\n" +
+                "log4j.logger.kafka.server.KafkaApis=INFO\n" +
+                "log4j.logger.kafka.network.RequestChannel$=INFO\n" +
+                "log4j.logger.kafka.controller=INFO\n" +
+                "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+                "log4j.logger.state.change.logger=TRACE\n" +
+                "log4j.logger.kafka.authorizer.logger=INFO";
+
+        String configMapLoggersName = "loggers-config-map";
+        ConfigMap configMapLoggers = new ConfigMapBuilder()
+                .withNewMetadata()
+                    .withName(configMapLoggersName)
+                .endMetadata()
+                .addToData("log4j-custom.properties", loggersConfig)
+                .build();
+
+        ConfigMapKeySelector log4jLoggimgCMselector = new ConfigMapKeySelectorBuilder()
+                .withName(configMapLoggersName)
+                .withKey("log4j-custom.properties")
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
+
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
+            kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
+                    .withNewValueFrom()
+                        .withConfigMapKeyRef(log4jLoggimgCMselector)
+                    .endValueFrom()
+                    .build());
+            kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
+                    .withNewValueFrom()
+                        .withConfigMapKeyRef(log4jLoggimgCMselector)
+                    .endValueFrom()
+                    .build());
+        });
+
+        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+
+        configMapLoggers.getData().put("log4j-custom.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
