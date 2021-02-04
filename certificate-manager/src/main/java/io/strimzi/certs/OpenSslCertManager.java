@@ -6,8 +6,6 @@ package io.strimzi.certs;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -146,9 +144,7 @@ public class OpenSslCertManager implements CertManager {
                 FileInputStream isCertFile = null;
                 KeyStore keyStore = KeyStore.getInstance("PKCS12");
                 keyStore.load(isKeyStoreFile, keyStorePassword.toCharArray());
-
                 byte[] key = Base64.getEncoder().encode(Files.readAllBytes(keyFile.toPath()));
-
                 keyStore.setKeyEntry(alias, key, null);
 
                 try {
