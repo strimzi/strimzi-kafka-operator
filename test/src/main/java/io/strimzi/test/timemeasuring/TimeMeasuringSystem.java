@@ -7,6 +7,7 @@ package io.strimzi.test.timemeasuring;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -88,6 +89,7 @@ public class TimeMeasuringSystem {
         }
     }
 
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private String setStartTime(Operation operation, String testClass, String testName) {
         String id = createOperationsID(operation);
         try {
