@@ -130,12 +130,12 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForKafkaClusterUpgrade(String clusterName) {
         LOGGER.info("Waiting for ZK StatefulSet roll");
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
+        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
     }
 
     protected void waitForReadinessOfKafkaCluster(String clusterName) {

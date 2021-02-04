@@ -505,9 +505,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterUpgrade(kafkaClusterName);
         checkAllImages(testParameters.getJsonObject("imagesBeforeKafkaUpdate"));
-
-        // Make snapshots of all pods
-        makeSnapshots(kafkaClusterName);
         logPodImages(kafkaClusterName);
         //  Upgrade kafka
         changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfter"), kafkaClusterName, NAMESPACE);
