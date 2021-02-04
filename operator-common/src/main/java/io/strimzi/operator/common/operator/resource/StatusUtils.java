@@ -105,25 +105,19 @@ public class StatusUtils {
         Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
         conditionList.add(condition);
 
-        if (status.getConditions() != null) {
-            status.getConditions().forEach(cond -> {
-                if ("UnknownFields".equals(cond.getReason()) || "DeprecatedFields".equals(cond.getReason())) {
-                    if (!conditionAlreadyPresent(conditionList, cond)) {
-                        conditionList.add(cond);
-                    }
+        status.getConditions().forEach(cond -> {
+            if ("UnknownFields".equals(cond.getReason()) || "DeprecatedFields".equals(cond.getReason())) {
+                if (!conditionAlreadyPresent(conditionList, cond)) {
+                    cond.setLastTransitionTime(iso8601Now());
+                    conditionList.add(cond);
                 }
-            });
-        }
+            }
+        });
         status.setConditions(new ArrayList<>(conditionList));
     }
 
     private static boolean conditionAlreadyPresent(List<Condition> conditions, Condition condition) {
-        return conditions.stream().filter(cond -> {
-            return condition.getReason().equals(cond.getReason()) &&
-                    condition.getType().equals(cond.getType()) &&
-                    condition.getStatus().equals(cond.getStatus()) &&
-                    condition.getMessage().equals(cond.getMessage());
-        }).findAny().isPresent();
+        return conditions.stream().filter(cond -> condition.getReason().equals(cond.getReason())).findAny().isPresent();
     }
 
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type) {
