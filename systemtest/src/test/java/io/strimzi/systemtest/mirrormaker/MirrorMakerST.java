@@ -73,8 +73,6 @@ public class MirrorMakerST extends AbstractST {
 
     public static final String NAMESPACE = "mm-cluster-test";
     private final int messagesCount = 200;
-    private String kafkaClusterSourceName;
-    private String kafkaClusterTargetName;
 
     @ParallelTest
     void testMirrorMaker(ExtensionContext extensionContext) {
@@ -420,6 +418,9 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, "my-topic-test-3").build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, "my-topic-test-4").build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -877,8 +878,5 @@ public class MirrorMakerST extends AbstractST {
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) {
         installClusterOperator(extensionContext, NAMESPACE);
-
-        kafkaClusterSourceName = clusterName + "-source";
-        kafkaClusterTargetName = clusterName + "-target";
     }
 }
