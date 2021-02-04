@@ -306,6 +306,8 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         autoRenewSomeCaCertsTriggeredByAnno(
                 extensionContext,
                 asList(clusterCaCertificateSecretName(clusterName)),
@@ -321,6 +323,8 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
             asList(clientsCaCertificateSecretName(clusterName)),
@@ -347,6 +351,7 @@ class SecurityST extends AbstractST {
     }
 
     synchronized void autoReplaceSomeKeysTriggeredByAnno(ExtensionContext extensionContext,
+                                            String clusterName,
                                             final List<String> secrets,
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
@@ -495,6 +500,7 @@ class SecurityST extends AbstractST {
 
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
+            clusterName,
             asList(clusterCaKeySecretName(clusterName)),
                 true,
                 true,
@@ -509,6 +515,7 @@ class SecurityST extends AbstractST {
 
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
+            clusterName,
             asList(clientsCaKeySecretName(clusterName)),
                 false,
                 true,
@@ -523,6 +530,7 @@ class SecurityST extends AbstractST {
 
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
+            clusterName,
             asList(clusterCaKeySecretName(clusterName),
                 clientsCaKeySecretName(clusterName)),
                 true,
@@ -532,7 +540,6 @@ class SecurityST extends AbstractST {
 
     private void createKafkaCluster(ExtensionContext extensionContext) {
         LOGGER.info("Creating a cluster");
-
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)

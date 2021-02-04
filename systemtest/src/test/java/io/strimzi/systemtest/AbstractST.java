@@ -110,9 +110,6 @@ public abstract class AbstractST implements TestSeparator {
     public static Random rng = new Random();
 
     public static final int MESSAGE_COUNT = 100;
-
-    public static final String AVAILABILITY_TOPIC_TARGET_NAME = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);
-
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
 
