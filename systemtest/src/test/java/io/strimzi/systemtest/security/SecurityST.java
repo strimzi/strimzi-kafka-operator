@@ -1390,7 +1390,6 @@ class SecurityST extends AbstractST {
 
         // Check Zookeeper certificate dates
         Secret zkCertCreationSecret = kubeClient().getSecret(clusterName + "-zookeeper-nodes");
-        // my-cluster-468076637-zookeeper-nodes -> my-cluster-468076637-zookeeper-0.crt:
         X509Certificate zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, clusterName + "-zookeeper-0.crt");
         Date initialZkCertStartTime = zkBrokerCert.getNotBefore();
         Date initialZkCertEndTime = zkBrokerCert.getNotAfter();
@@ -1421,7 +1420,6 @@ class SecurityST extends AbstractST {
 
         // Check renewed Zookeeper certificate dates
         zkCertCreationSecret = kubeClient().getSecret(clusterName + "-zookeeper-nodes");
-        // my-cluster-468076637-zookeeper-nodes -> my-cluster-468076637-zookeeper-0.crt:
         zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, clusterName + "-zookeeper-0.crt");
         Date changedZkCertStartTime = zkBrokerCert.getNotBefore();
         Date changedZkCertEndTime = zkBrokerCert.getNotAfter();
@@ -1445,6 +1443,10 @@ class SecurityST extends AbstractST {
                 initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
         assertThat("Broker certificates end dates have not been renewed.",
                 initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+        assertThat("Zookeeper certificates start dates have not been renewed.",
+                initialZkCertStartTime.compareTo(changedCertStartTime) < 0);
+        assertThat("Zookeeper certificates end dates have not been renewed.",
+                initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
     }
 
     @Test
