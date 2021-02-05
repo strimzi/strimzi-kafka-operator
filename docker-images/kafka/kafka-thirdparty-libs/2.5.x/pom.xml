@@ -26,10 +26,6 @@
             <id>jcenter</id>
             <url>https://jcenter.bintray.com/</url>
         </repository>
-        <repository>
-            <id>rcs</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1090</url>
-        </repository>
     </repositories>
 
     <dependencies>

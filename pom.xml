@@ -147,13 +147,6 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>rcs</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1090</url>
-        </repository>
-    </repositories>
-
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>
