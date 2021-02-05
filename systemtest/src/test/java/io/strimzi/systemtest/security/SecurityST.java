@@ -1444,7 +1444,7 @@ class SecurityST extends AbstractST {
         assertThat("Broker certificates end dates have not been renewed.",
                 initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
         assertThat("Zookeeper certificates start dates have not been renewed.",
-                initialZkCertStartTime.compareTo(changedCertStartTime) < 0);
+                initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
         assertThat("Zookeeper certificates end dates have not been renewed.",
                 initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
     }
