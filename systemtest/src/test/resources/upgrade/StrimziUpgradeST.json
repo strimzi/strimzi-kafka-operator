@@ -4,6 +4,7 @@
     "fromExamples":"strimzi-0.18.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-0.18.0.zip",
     "generateTopics": false,
+    "additionalTopics": 2,
     "oldestKafka": "2.4.0",
     "imagesBeforeKafkaUpgrade": {
       "zookeeper": "strimzi/kafka:latest-kafka-2.5.0",
@@ -27,14 +28,14 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
-    },
-    "olmUpgrade": true
+    }
   },
   {
     "fromVersion":"0.19.0",
     "fromExamples":"strimzi-0.19.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.19.0/strimzi-0.19.0.zip",
     "generateTopics": true,
+    "additionalTopics": 2,
     "oldestKafka": "2.4.0",
     "imagesBeforeKafkaUpgrade": {
       "zookeeper": "strimzi/kafka:latest-kafka-2.5.0",
@@ -58,17 +59,14 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
-    },
-    "olmUpgrade": true
+    }
   },
   {
     "fromVersion":"0.20.1",
-    "toVersion":"0.21.1",
     "fromExamples":"strimzi-0.20.1",
-    "toExamples":"strimzi-0.21.1",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.20.1/strimzi-0.20.1.zip",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.21.1/strimzi-0.21.1.zip",
     "generateTopics": true,
+    "additionalTopics": 2,
     "oldestKafka": "2.5.0",
     "imagesBeforeKafkaUpgrade": {
       "zookeeper": "strimzi/kafka:latest-kafka-2.6.0",
@@ -92,16 +90,12 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
-    },
-    "olmUpgrade": true
+    }
   },
   {
     "fromVersion":"0.21.1",
-    "toVersion":"HEAD",
     "fromExamples":"strimzi-0.21.1",
-    "toExamples":"HEAD",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.21.1/strimzi-0.21.1.zip",
-    "urlTo":"HEAD",
     "generateTopics": true,
     "additionalTopics": 2,
     "oldestKafka": "2.5.0",
@@ -127,7 +121,6 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
-    },
-    "olmUpgrade": true
+    }
   }
 ]

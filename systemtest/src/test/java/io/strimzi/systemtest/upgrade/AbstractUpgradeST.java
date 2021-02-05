@@ -165,8 +165,9 @@ public class AbstractUpgradeST extends AbstractST {
                     }
                 });
 
-                LOGGER.info("Wait until kafka rolling update is finished");
-                if (currentInterBrokerProtocol != null || currentLogMessageFormat != null) {
+                if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
+                        (currentLogMessageFormat != null) && !currentLogMessageFormat.equals(logMessageVersion)) {
+                    LOGGER.info("Wait until kafka rolling update is finished");
                     kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
                 }
                 makeSnapshots(clusterName);

@@ -196,10 +196,19 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         acrossUpgradeData.put("fromVersion", startingVersion.getValue("fromVersion"));
         acrossUpgradeData.put("fromExamples", startingVersion.getValue("fromExamples"));
         acrossUpgradeData.put("urlFrom", startingVersion.getValue("urlFrom"));
+
+        acrossUpgradeData.put("urlTo", "HEAD");
+        acrossUpgradeData.put("toVersion", "HEAD");
+        acrossUpgradeData.put("toExamples", "HEAD");
+
         acrossUpgradeData.put("startingKafkaVersion", startingVersion.getString("oldestKafka"));
-        acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade").put("kafkaVersion", latestKafkaSupported.version());
-        acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade").put("logMessageVersion", latestKafkaSupported.messageVersion());
-        acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade").put("interBrokerProtocolVersion", latestKafkaSupported.protocolVersion());
+
+        // Generate procedures for upgrade
+        JsonObject procedures = new JsonObject();
+        procedures.put("kafkaVersion", latestKafkaSupported.version());
+        procedures.put("logMessageVersion", latestKafkaSupported.messageVersion());
+        procedures.put("interBrokerProtocolVersion", latestKafkaSupported.protocolVersion());
+        acrossUpgradeData.put("proceduresAfterOperatorUpgrade", procedures);
 
         return acrossUpgradeData;
     }
@@ -304,6 +313,8 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         // Verify upgrade
         verifyUpgradeProcedure(testParameters, produceMessagesCount, consumeMessagesCount, producerName, consumerName);
+        // Verify that pods are stable
+        PodUtils.verifyThatRunningPodsAreStable(clusterName);
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
