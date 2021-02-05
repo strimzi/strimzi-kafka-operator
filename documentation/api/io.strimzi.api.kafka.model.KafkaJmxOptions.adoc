@@ -62,4 +62,4 @@ spec:
 ----
 
 .Additional resources
- * For more information on the Kafka component metrics exposed using JMX, see {kafkaDoc}.
+ * For more information on the Kafka component metrics exposed using JMX, see the {kafkaDoc}.
