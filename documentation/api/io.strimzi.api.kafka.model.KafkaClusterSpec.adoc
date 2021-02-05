@@ -137,69 +137,6 @@ NOTE: Overriding container images is recommended only in special situations, whe
 For example, because your network does not allow access to the container registry used by Strimzi. In this case, you should either copy the Strimzi images or build them from the source.
 If the configured image is not compatible with Strimzi images, it might not work properly.
 
-[id='property-kafka-jmx-{context}']
-=== `jmxOptions`
-
-JMX metrics are obtained from Kafka brokers by opening a JMX port on 9999.
-Use the `jmxOptions` property to configure a password-protected JMX port, to prevent unauthorized pods from accessing the port,
-or an unprotected JMX port.
-
-You can then obtain metrics about each Kafka broker, such as usage data from the `BytesPerSecond` value,
-or the request rate of the network of the broker.
-
-To enable security for the JMX port, set the `type` parameter in the `authentication` field to `password`.
-
-.Example password-protected JMX configuration
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-spec:
-  kafka:
-    # ...
-    jmxOptions:
-      authentication:
-        type: "password"
-    # ...
-  zookeeper:
-    # ...
-----
-
-You can then deploy a pod into a cluster and obtain JMX metrics using the headless
-service by specifying which broker you want to address.
-
-For example, to get JMX metrics from broker _0_ you specify:
-
-[source,shell,subs="+quotes,attributes"]
-----
-"_CLUSTER-NAME_-kafka-0-_CLUSTER-NAME_-_HEADLESS-SERVICE-NAME_"
-----
-
-If the JMX port is secured, you can get the username and password by referencing them from the JMX secret in the
-deployment of your pod.
-
-For an unprotected JMX port, use an empty object `{}` to open the JMX Port on the headless service.
-You deploy a pod and obtain metrics in the same way as for the protected port, but in this case any pod can read from the JMX port.
-
-.Example open port JMX configuration
-
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-spec:
-  kafka:
-    # ...
-    jmxOptions: {}
-    # ...
-  zookeeper:
-    # ...
-----
-
 [id='property-kafka-logging-{context}']
 === `logging`
 

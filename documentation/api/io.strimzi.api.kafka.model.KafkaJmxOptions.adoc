@@ -1,0 +1,65 @@
+Configures JMX connection options.
+
+JMX metrics are obtained from Kafka brokers, Kafka Connect, and MirrorMaker 2.0 by opening a JMX port on 9999.
+Use the `jmxOptions` property to configure a password-protected JMX port, to prevent unauthorized pods from accessing the port,
+or an unprotected JMX port.
+
+You can then obtain metrics about the component.
+
+For example, for each Kafka broker you can obtain usage data in terms of bytes per second from clients,
+or the request rate of the network of the broker.
+
+To enable security for the JMX port, set the `type` parameter in the `authentication` field to `password`.
+
+.Example password-protected JMX configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    jmxOptions:
+      authentication:
+        type: "password"
+    # ...
+  zookeeper:
+    # ...
+----
+
+You can then deploy a pod into a cluster and obtain JMX metrics using the headless
+service by specifying which broker you want to address.
+
+For example, to get JMX metrics from broker _0_ you specify:
+
+[source,shell,subs="+quotes,attributes"]
+----
+"_CLUSTER-NAME_-kafka-0-_CLUSTER-NAME_-_HEADLESS-SERVICE-NAME_"
+----
+
+If the JMX port is secured, you can get the username and password by referencing them from the JMX secret in the
+deployment of your pod.
+
+For an unprotected JMX port, use an empty object `{}` to open the JMX port on the headless service.
+You deploy a pod and obtain metrics in the same way as for the protected port, but in this case any pod can read from the JMX port.
+
+.Example open port JMX configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    jmxOptions: {}
+    # ...
+  zookeeper:
+    # ...
+----
+
+.Additional resources
+ * For more information on the Kafka component metrics exposed using JMX, see {kafkaDoc}.

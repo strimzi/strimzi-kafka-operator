@@ -1053,6 +1053,13 @@ Used in: xref:type-JvmOptions-{context}[`JvmOptions`]
 
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
+xref:type-KafkaJmxOptions-schema-{context}[Full list of `KafkaJmxOptions` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.KafkaJmxOptions.adoc[leveloffset=+1]
+
+[id='type-KafkaJmxOptions-schema-{context}']
+==== `KafkaJmxOptions` schema properties
+
 
 [options="header"]
 |====

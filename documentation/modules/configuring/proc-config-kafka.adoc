@@ -206,7 +206,7 @@ xref:scaling-clusters-{context}[scale clusters].
 <23> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
 <24> xref:con-common-configuration-prometheus-reference[Prometheus metrics] enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
 <25> Prometheus rules for exporting metrics to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
-<26> xref:property-kafka-jmx-reference[JMX options] to open JMX port 9999 to obtain JMX metrics, which is configured for password protection in this example. You can open the port without protection using `jmxOptions: {}`.
+<26> xref:type-KafkaJmxOptions-reference[JMX options] to open JMX port 9999 to obtain JMX metrics, which is configured for password protection in this example. You can open the port without protection using `jmxOptions: {}`.
 <27> ZooKeeper-specific configuration, which contains properties similar to the Kafka configuration.
 <28> xref:con-common-configuration-replicas-reference[The number of ZooKeeper nodes]. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.
 If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working.
