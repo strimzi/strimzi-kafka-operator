@@ -1214,7 +1214,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), operatorNamespace, operatorNamespaceLabels)));
+            return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
@@ -2317,7 +2317,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), kafkaCluster.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), operatorNamespace, operatorNamespaceLabels)));
+            return withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.policyName(name), kafkaCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
         }
 
         Future<ReconciliationState> kafkaPodDisruptionBudget() {
@@ -3250,7 +3250,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> cruiseControlNetPolicy() {
             return withVoid(networkPolicyOperator.reconcile(namespace, CruiseControl.policyName(name),
-                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), operatorNamespace, operatorNamespaceLabels) : null));
+                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null));
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {

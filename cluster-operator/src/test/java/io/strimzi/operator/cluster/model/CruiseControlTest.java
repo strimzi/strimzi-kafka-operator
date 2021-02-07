@@ -800,7 +800,7 @@ public class CruiseControlTest {
                 .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(true, "operator-namespace", null);
+        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -818,7 +818,7 @@ public class CruiseControlTest {
                 .endPodSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(true, namespace, null);
+        NetworkPolicy np = cc.generateNetworkPolicy(namespace, null);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -839,7 +839,7 @@ public class CruiseControlTest {
                 .endNamespaceSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(true, null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 

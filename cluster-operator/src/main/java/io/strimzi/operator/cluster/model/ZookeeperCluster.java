@@ -359,13 +359,12 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for ZooKeeper nodes
      *
-     * @param namespaceAndPodSelectorNetworkPolicySupported Whether the kube cluster supports namespace selectors
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
         NetworkPolicyPort clientsPort = new NetworkPolicyPort();
@@ -398,46 +397,43 @@ public class ZookeeperCluster extends AbstractModel {
                 .withFrom()
                 .build();
 
-        if (namespaceAndPodSelectorNetworkPolicySupported) {
-            NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
-            LabelSelector labelSelector = new LabelSelector();
-            Map<String, String> expressions = new HashMap<>(1);
-            expressions.put(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster));
-            labelSelector.setMatchLabels(expressions);
-            kafkaClusterPeer.setPodSelector(labelSelector);
+        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector = new LabelSelector();
+        Map<String, String> expressions = new HashMap<>(1);
+        expressions.put(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster));
+        labelSelector.setMatchLabels(expressions);
+        kafkaClusterPeer.setPodSelector(labelSelector);
 
-            NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
-            LabelSelector labelSelector3 = new LabelSelector();
-            Map<String, String> expressions3 = new HashMap<>(1);
-            expressions3.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
-            labelSelector3.setMatchLabels(expressions3);
-            entityOperatorPeer.setPodSelector(labelSelector3);
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector3 = new LabelSelector();
+        Map<String, String> expressions3 = new HashMap<>(1);
+        expressions3.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
+        labelSelector3.setMatchLabels(expressions3);
+        entityOperatorPeer.setPodSelector(labelSelector3);
 
-            NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeer();
-            LabelSelector labelSelector4 = new LabelSelector();
-            Map<String, String> expressions4 = new HashMap<>(1);
-            expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
-            labelSelector4.setMatchLabels(expressions4);
-            clusterOperatorPeer.setPodSelector(labelSelector4);
-            ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
+        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector4 = new LabelSelector();
+        Map<String, String> expressions4 = new HashMap<>(1);
+        expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
+        labelSelector4.setMatchLabels(expressions4);
+        clusterOperatorPeer.setPodSelector(labelSelector4);
+        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
-            NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
-            LabelSelector labelSelector5 = new LabelSelector();
-            Map<String, String> expressions5 = new HashMap<>(1);
-            expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster));
-            labelSelector5.setMatchLabels(expressions5);
-            cruiseControlPeer.setPodSelector(labelSelector5);
+        NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
+        LabelSelector labelSelector5 = new LabelSelector();
+        Map<String, String> expressions5 = new HashMap<>(1);
+        expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster));
+        labelSelector5.setMatchLabels(expressions5);
+        cruiseControlPeer.setPodSelector(labelSelector5);
             
-            // This is a hack because we have no guarantee that the CO namespace has some particular labels
-            List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
-            clientsPortPeers.add(kafkaClusterPeer);
-            clientsPortPeers.add(zookeeperClusterPeer);
-            clientsPortPeers.add(entityOperatorPeer);
-            clientsPortPeers.add(clusterOperatorPeer);
-            clientsPortPeers.add(cruiseControlPeer);
-
-            clientsIngressRule.setFrom(clientsPortPeers);
-        }
+        // This is a hack because we have no guarantee that the CO namespace has some particular labels
+        List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
+        clientsPortPeers.add(kafkaClusterPeer);
+        clientsPortPeers.add(zookeeperClusterPeer);
+        clientsPortPeers.add(entityOperatorPeer);
+        clientsPortPeers.add(clusterOperatorPeer);
+        clientsPortPeers.add(cruiseControlPeer);
+        clientsIngressRule.setFrom(clientsPortPeers);
 
         rules.add(clientsIngressRule);
 

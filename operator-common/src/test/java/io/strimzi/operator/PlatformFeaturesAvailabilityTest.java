@@ -43,18 +43,6 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     @Test
-    public void networkPoliciesWithFancyCombinationTest() {
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_15);
-        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(false));
-        pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
-        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(true));
-        pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
-        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(true));
-        pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_17);
-        assertThat(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), is(true));
-    }
-
-    @Test
     public void testVersionDetectionOpenShift(VertxTestContext context) throws InterruptedException {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +

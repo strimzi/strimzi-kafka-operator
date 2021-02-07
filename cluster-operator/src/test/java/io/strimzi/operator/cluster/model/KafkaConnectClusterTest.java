@@ -1454,7 +1454,7 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1476,7 +1476,7 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, true, namespace, null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1498,7 +1498,7 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1520,7 +1520,7 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
 
-        assertThat(kc.generateNetworkPolicy(true, false, null, null), is(nullValue()));
+        assertThat(kc.generateNetworkPolicy(false, null, null), is(nullValue()));
     }
 
     @Test
