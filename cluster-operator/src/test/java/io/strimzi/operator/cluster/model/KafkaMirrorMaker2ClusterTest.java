@@ -1524,7 +1524,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1548,7 +1548,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, true, namespace, null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1571,7 +1571,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));

@@ -204,11 +204,6 @@ public class PlatformFeaturesAvailability {
         return this.hasRoutes();
     }
 
-    public boolean isNamespaceAndPodSelectorNetworkPolicySupported() {
-        // any version less then 16 is not supported
-        return this.kubernetesVersion.compareTo(KubernetesVersion.V1_16) >= 0;
-    }
-
     public KubernetesVersion getKubernetesVersion() {
         return this.kubernetesVersion;
     }

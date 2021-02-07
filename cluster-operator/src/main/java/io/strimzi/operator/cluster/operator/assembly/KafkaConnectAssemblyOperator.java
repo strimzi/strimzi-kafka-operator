@@ -150,7 +150,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 })
                 .compose(i -> connectServiceAccount(namespace, connect))
                 .compose(i -> connectInitClusterRoleBinding(namespace, kafkaConnect.getMetadata().getName(), connect))
-                .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentOperations.getAsync(namespace, connect.getName()))
                 .compose(deployment -> {
                     if (deployment != null) {

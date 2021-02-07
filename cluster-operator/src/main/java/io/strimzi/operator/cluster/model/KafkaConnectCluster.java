@@ -788,14 +788,13 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for Kafka Connect nodes
      *
-     * @param namespaceAndPodSelectorNetworkPolicySupported whether the kube cluster supports namespace selectors
      * @param connectorOperatorEnabled Whether the ConnectorOperator is enabled or not
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, boolean connectorOperatorEnabled,
+    public NetworkPolicy generateNetworkPolicy(boolean connectorOperatorEnabled,
                                                String operatorNamespace, Labels operatorNamespaceLabels) {
         if (connectorOperatorEnabled) {
             List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
@@ -811,29 +810,27 @@ public class KafkaConnectCluster extends AbstractModel {
             // Since the CO can run in a different namespace, we have to leave it wide open on OCP 3.11
             // Therefore these rules are set only when using something else than OCP 3.11 and leaving
             // the `from` section empty on 3.11
-            if (namespaceAndPodSelectorNetworkPolicySupported) {
-                List<NetworkPolicyPeer> peers = new ArrayList<>(2);
+            List<NetworkPolicyPeer> peers = new ArrayList<>(2);
 
-                // Other connect pods in the same cluster need to talk with each other over the REST API
-                NetworkPolicyPeer connectPeer = new NetworkPolicyPeerBuilder()
-                        .withNewPodSelector()
-                        .addToMatchLabels(getSelectorLabels().toMap())
-                        .endPodSelector()
-                        .build();
-                peers.add(connectPeer);
+            // Other connect pods in the same cluster need to talk with each other over the REST API
+            NetworkPolicyPeer connectPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector()
+                    .addToMatchLabels(getSelectorLabels().toMap())
+                    .endPodSelector()
+                    .build();
+            peers.add(connectPeer);
 
-                // CO needs to talk with the Connect pods to manage connectors
-                NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
-                        .withNewPodSelector()
-                        .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
-                        .endPodSelector()
-                        .build();
-                ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
+            // CO needs to talk with the Connect pods to manage connectors
+            NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                    .withNewPodSelector()
+                    .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
+                    .endPodSelector()
+                    .build();
+            ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
-                peers.add(clusterOperatorPeer);
+            peers.add(clusterOperatorPeer);
 
-                restApiRule.setFrom(peers);
-            }
+            restApiRule.setFrom(peers);
 
             rules.add(restApiRule);
 

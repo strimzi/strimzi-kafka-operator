@@ -1627,13 +1627,12 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for Kafka brokers
      *
-     * @param namespaceAndPodSelectorNetworkPolicySupported Whether the kube cluster supports namespace selectors
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(boolean namespaceAndPodSelectorNetworkPolicySupported, String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
 
         NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
@@ -1643,48 +1642,46 @@ public class KafkaCluster extends AbstractModel {
                 .build();
 
         // Restrict access to 9091 / replication port
-        if (namespaceAndPodSelectorNetworkPolicySupported) {
-            NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
-                    .withNewPodSelector() // cluster operator
-                        .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
-                    .endPodSelector()
+        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector() // cluster operator
+                     .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
+                .endPodSelector()
                     .build();
-            ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
+        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
-            NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeerBuilder()
-                    .withNewPodSelector() // kafka cluster
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
-                    .endPodSelector()
-                    .build();
+        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector() // kafka cluster
+                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                .endPodSelector()
+                .build();
 
-            NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
-                    .withNewPodSelector() // entity operator
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
-                    .endPodSelector()
-                    .build();
+        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector() // entity operator
+                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
+                .endPodSelector()
+                .build();
 
-            NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
-                    .withNewPodSelector() // kafka exporter
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
-                    .endPodSelector()
-                    .build();
+        NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector() // kafka exporter
+                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
+                .endPodSelector()
+                .build();
 
-            NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeerBuilder()
-                    .withNewPodSelector() // cruise control
-                    .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster))
-                    .endPodSelector()
-                    .build();
+        NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeerBuilder()
+                .withNewPodSelector() // cruise control
+                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster))
+                .endPodSelector()
+                .build();
 
-            List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(5);
-            clientsPortPeers.add(clusterOperatorPeer);
-            clientsPortPeers.add(kafkaClusterPeer);
-            clientsPortPeers.add(entityOperatorPeer);
-            clientsPortPeers.add(kafkaExporterPeer);
-            clientsPortPeers.add(cruiseControlPeer);
+        List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(5);
+        clientsPortPeers.add(clusterOperatorPeer);
+        clientsPortPeers.add(kafkaClusterPeer);
+        clientsPortPeers.add(entityOperatorPeer);
+        clientsPortPeers.add(kafkaExporterPeer);
+        clientsPortPeers.add(cruiseControlPeer);
 
-            replicationRule.setFrom(clientsPortPeers);
-        }
-
+        replicationRule.setFrom(clientsPortPeers);
+        
         rules.add(replicationRule);
 
         // Free access to listener ports

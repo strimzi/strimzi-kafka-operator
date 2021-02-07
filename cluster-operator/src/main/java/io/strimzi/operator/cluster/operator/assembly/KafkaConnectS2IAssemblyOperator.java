@@ -139,7 +139,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     }
                 })
                 .compose(i -> connectServiceAccount(namespace, connect))
-                .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(pfa.isNamespaceAndPodSelectorNetworkPolicySupported(), isUseResources(kafkaConnectS2I), operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnectS2I), operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, connect.getLogging(), connect.getMetricsConfigInCm()))

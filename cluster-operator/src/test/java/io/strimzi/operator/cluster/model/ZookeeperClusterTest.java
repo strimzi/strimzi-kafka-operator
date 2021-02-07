@@ -694,46 +694,6 @@ public class ZookeeperClusterTest {
     }
 
     @Test
-    public void testNetworkPolicyOldKubernetesVersions() {
-        Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap());
-        kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        NetworkPolicy np = zc.generateNetworkPolicy(false, null, null);
-
-        LabelSelector podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
-        assertThat(np.getSpec().getPodSelector(), is(podSelector));
-
-        List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress();
-        assertThat(rules.size(), is(3));
-
-        // Ports 2888 and 3888
-        NetworkPolicyIngressRule zooRule = rules.get(0);
-        assertThat(zooRule.getPorts().size(), is(2));
-        assertThat(zooRule.getPorts().get(0).getPort(), is(new IntOrString(2888)));
-        assertThat(zooRule.getPorts().get(1).getPort(), is(new IntOrString(3888)));
-
-        assertThat(zooRule.getFrom().size(), is(1));
-        podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
-        assertThat(zooRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
-
-        // Port 2181
-        NetworkPolicyIngressRule clientsRule = rules.get(1);
-        assertThat(clientsRule.getPorts().size(), is(1));
-        assertThat(clientsRule.getPorts().get(0).getPort(), is(new IntOrString(ZookeeperCluster.CLIENT_TLS_PORT)));
-        assertThat(clientsRule.getFrom().size(), is(0));
-
-        // Port 9404
-        NetworkPolicyIngressRule metricsRule = rules.get(2);
-        assertThat(metricsRule.getPorts().size(), is(1));
-        assertThat(metricsRule.getPorts().get(0).getPort(), is(new IntOrString(9404)));
-        assertThat(metricsRule.getFrom().size(), is(0));
-    }
-
-    @Test
     public void testNetworkPolicyNewKubernetesVersions() {
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap());
@@ -741,7 +701,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Other namespace
-        NetworkPolicy np = zc.generateNetworkPolicy(true, "operator-namespace", null);
+        NetworkPolicy np = zc.generateNetworkPolicy("operator-namespace", null);
 
         LabelSelector podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
@@ -795,19 +755,19 @@ public class ZookeeperClusterTest {
         assertThat(metricsRule.getFrom().size(), is(0));
 
         // Check Network Policies => The same namespace
-        np = zc.generateNetworkPolicy(true, namespace, null);
+        np = zc.generateNetworkPolicy(namespace, null);
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => The same namespace with namespace labels
-        np = zc.generateNetworkPolicy(true, namespace, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        np = zc.generateNetworkPolicy(namespace, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => Other namespace with namespace labels
-        np = zc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        np = zc.generateNetworkPolicy("operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         LabelSelector namespaceSelector = new LabelSelector();
