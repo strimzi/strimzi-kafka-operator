@@ -180,40 +180,14 @@ public class OpenSslCertManager implements CertManager {
 
         //openssl req -new -key root.key -out newcsr.csr
         File csrFile = File.createTempFile("renewal", ".csr");
-        List<String> cmd = new ArrayList<>(asList("openssl", "req",
-                "-new",
-                "-batch",
-                "-out", csrFile.getAbsolutePath(),
-                "-key", keyFile.getAbsolutePath()));
 
-        File sna = null;
-        File openSslConf = null;
-        if (sbj != null) {
-            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
-
-                // subject alt names need to be in an openssl configuration file
-                InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
-                openSslConf = File.createTempFile("openssl-", ".conf");
-                Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-                sna = addSubjectAltNames(openSslConf, sbj);
-                cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
-            }
-            cmd.addAll(asList("-subj", sbj.toString()));
-        }
+        List<String> cmd = new ArrayList<>(asList("openssl", "x509",
+                "-x509toreq",
+                "-in", certFile.getAbsolutePath(),
+                "-signkey", keyFile.getAbsolutePath(),
+                "-out", csrFile.getAbsolutePath()));
 
         exec(cmd);
-
-        if (sna != null) {
-            if (!sna.delete()) {
-                log.warn("{} cannot be deleted", sna.getName());
-            }
-        }
-        if (openSslConf != null) {
-            if (!openSslConf.delete()) {
-                log.warn("{} cannot be deleted", openSslConf.getName());
-            }
-        }
 
         //openssl x509 -req -days 3650 -in newcsr.csr -signkey root.key -out newroot.pem
         List<String> cmd2 = new ArrayList<>(asList("openssl", "x509",
@@ -223,7 +197,22 @@ public class OpenSslCertManager implements CertManager {
                 "-signkey", keyFile.getAbsolutePath(),
                 "-out", certFile.getAbsolutePath()));
 
+        // subject alt names need to be in an openssl configuration file
+        InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
+        File openSslConf = File.createTempFile("openssl-", ".conf");
+        Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        File sna = addSubjectAltNames(openSslConf, sbj);
+        cmd2.addAll(asList("-extfile", sna.toPath().toString(), "-extensions", "v3_req"));
+
         exec(cmd2);
+
+        if (!sna.delete()) {
+            log.warn("{} cannot be deleted", sna.getName());
+        }
+        if (!openSslConf.delete()) {
+            log.warn("{} cannot be deleted", openSslConf.getName());
+        }
 
         if (!csrFile.delete()) {
             log.warn("{} cannot be deleted", csrFile.getName());
@@ -243,20 +232,27 @@ public class OpenSslCertManager implements CertManager {
         File sna = File.createTempFile("sna-", ".conf");
         Files.copy(opensslConf.toPath(), sna.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        BufferedWriter out = null;
-        try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna, true), "UTF8"));
-            boolean newline = false;
-            for (Map.Entry<String, String> entry : sbj.subjectAltNames().entrySet()) {
-                if (newline) {
-                    out.append("\n");
+        if (sbj != null) {
+            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+                BufferedWriter out = null;
+                try {
+                    out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna, true), "UTF8"));
+                    out.append("subjectAltName = @alt_names\n" +
+                            "\n" +
+                            "[alt_names]\n");
+                    boolean newline = false;
+                    for (Map.Entry<String, String> entry : sbj.subjectAltNames().entrySet()) {
+                        if (newline) {
+                            out.append("\n");
+                        }
+                        out.append(entry.getKey()).append(" = ").append(entry.getValue());
+                        newline = true;
+                    }
+                } finally {
+                    if (out != null) {
+                        out.close();
+                    }
                 }
-                out.append(entry.getKey()).append(" = ").append(entry.getValue());
-                newline = true;
-            }
-        } finally {
-            if (out != null) {
-                out.close();
             }
         }
 

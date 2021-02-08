@@ -55,7 +55,7 @@ public class OpenSslCertManagerTest {
         File cert = File.createTempFile("crt-", ".crt");
         File store = File.createTempFile("crt-", ".p12");
 
-        testGenerateSelfSignedCert(key, cert, store, "123456", null);
+        doGenerateSelfSignedCert(key, cert, store, "123456", null);
 
         key.delete();
         cert.delete();
@@ -72,7 +72,7 @@ public class OpenSslCertManagerTest {
         sbj.setCommonName("MyCommonName");
         sbj.setOrganizationName("MyOrganization");
 
-        testGenerateSelfSignedCert(key, cert, store, "123456", sbj);
+        doGenerateSelfSignedCert(key, cert, store, "123456", sbj);
 
         key.delete();
         cert.delete();
@@ -93,14 +93,14 @@ public class OpenSslCertManagerTest {
         subjectAltNames.put("DNS.2", "example2.com");
         sbj.setSubjectAltNames(subjectAltNames);
 
-        testGenerateSelfSignedCert(key, cert, store, "123456", sbj);
+        doGenerateSelfSignedCert(key, cert, store, "123456", sbj);
 
         key.delete();
         cert.delete();
         store.delete();
     }
 
-    private void testGenerateSelfSignedCert(File key, File cert, File trustStore, String trustStorePassword, Subject sbj) throws Exception {
+    private void doGenerateSelfSignedCert(File key, File cert, File trustStore, String trustStorePassword, Subject sbj) throws Exception {
         ssl.generateSelfSignedCert(key, cert, sbj, 365);
         ssl.addCertToTrustStore(cert, "ca", trustStore, trustStorePassword);
 
@@ -173,7 +173,7 @@ public class OpenSslCertManagerTest {
         sbj.setOrganizationName("MyOrganization");
         File cert = File.createTempFile("crt-", ".crt");
 
-        testGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
+        doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
 
         caKey.delete();
         caCert.delete();
@@ -208,7 +208,7 @@ public class OpenSslCertManagerTest {
 
         File cert = File.createTempFile("crt-", ".crt");
 
-        testGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
+        doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
 
         caKey.delete();
         caCert.delete();
@@ -218,8 +218,8 @@ public class OpenSslCertManagerTest {
         store.delete();
     }
 
-    private void testGenerateSignedCert(File caKey, File caCert, Subject caSbj, File key, File csr, File cert,
-                                        File keyStore, String keyStorePassword, Subject sbj) throws Exception {
+    private void doGenerateSignedCert(File caKey, File caCert, Subject caSbj, File key, File csr, File cert,
+                                      File keyStore, String keyStorePassword, Subject sbj) throws Exception {
 
         ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
 
@@ -273,15 +273,34 @@ public class OpenSslCertManagerTest {
 
     @Test
     public void testRenewSelfSignedCertWithSubject() throws Exception {
-        // First generate a self-signed cert
-        File caKey = File.createTempFile("key-", ".key");
-        File originalCert = File.createTempFile("crt-", ".crt");
-        File originalStore = File.createTempFile("crt-", ".p12");
         Subject caSubject = new Subject();
         caSubject.setCommonName("MyCommonName");
         caSubject.setOrganizationName("MyOrganization");
 
-        testGenerateSelfSignedCert(caKey, originalCert, originalStore, "123456", caSubject);
+        doRenewSelfSignedCertWithSubject(caSubject);
+    }
+
+    @Test
+    public void testRenewSelfSignedCertWithSubjectAndAltNames() throws Exception {
+        Subject caSubject = new Subject();
+        caSubject.setCommonName("MyCommonName");
+        caSubject.setOrganizationName("MyOrganization");
+        Map<String, String> subjectAltNames = new HashMap<>();
+        subjectAltNames.put("DNS.1", "example1.com");
+        subjectAltNames.put("DNS.2", "example2.com");
+        caSubject.setSubjectAltNames(subjectAltNames);
+
+        doRenewSelfSignedCertWithSubject(caSubject);
+    }
+
+    public void doRenewSelfSignedCertWithSubject(Subject caSubject) throws Exception {
+        // First generate a self-signed cert
+        File caKey = File.createTempFile("key-", ".key");
+        File originalCert = File.createTempFile("crt-", ".crt");
+        File originalStore = File.createTempFile("crt-", ".p12");
+
+
+        doGenerateSelfSignedCert(caKey, originalCert, originalStore, "123456", caSubject);
 
         // generate a client cert
         File clientKey = File.createTempFile("client-", ".key");
@@ -294,11 +313,11 @@ public class OpenSslCertManagerTest {
 
         ssl.generateCert(csr, caKey, originalCert, clientCert, clientSubject, 365);
         csr.delete();
-        originalCert.delete();
+        //originalCert.delete();
         originalStore.delete();
 
         // Generate a renewed CA certificate
-        File newCert = File.createTempFile("crt-", ".crt");
+        File newCert = originalCert;//File.createTempFile("crt-", ".crt");
         File newStore = File.createTempFile("crt-", ".p12");
         ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
         ssl.addCertToTrustStore(newCert, "ca", newStore, "123456");
