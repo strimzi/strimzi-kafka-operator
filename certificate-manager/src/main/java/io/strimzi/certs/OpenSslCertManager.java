@@ -145,7 +145,7 @@ public class OpenSslCertManager implements CertManager {
 
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
-        // See https://serverfault.com/questions/306345/certification-authority-root-certificate-expiry-and-renewal
+        // See https://serverfault.com/a/501513
 
         //openssl req -new -key root.key -out newcsr.csr
         File csrFile = Files.createTempFile("renewal", ".csr").toFile();
