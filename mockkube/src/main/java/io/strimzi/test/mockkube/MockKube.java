@@ -42,6 +42,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.V1beta1ApiextensionAPIGroupDSL;
+import io.fabric8.kubernetes.client.V1beta1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
@@ -99,6 +100,7 @@ public class MockKube {
     private final Map<String, Role> roleDb = db(emptySet());
     private final Map<String, ClusterRoleBinding> pdbCrb = db(emptySet());
     private final Map<String, Ingress> ingressDb = db(emptySet());
+    private final Map<String, io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingressV1Beta1Db = db(emptySet());
 
     private Map<String, CreateOrReplaceable> crdMixedOps = new HashMap<>();
     private MockBuilder<ConfigMap, ConfigMapList, Resource<ConfigMap>> configMapMockBuilder;
@@ -116,6 +118,7 @@ public class MockKube {
     private MockBuilder<Pod, PodList, PodResource<Pod>> podMockBuilder;
     private MockBuilder<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> persistentVolumeClaimMockBuilder;
     private MockBuilder<Ingress, IngressList, Resource<Ingress>> ingressMockBuilder;
+    private MockBuilder<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress, io.fabric8.kubernetes.api.model.networking.v1beta1.IngressList, Resource<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress>> ingressV1Beta1MockBuilder;
     private DeploymentMockBuilder deploymentMockBuilder;
     private KubernetesClient mockClient;
 
@@ -257,6 +260,7 @@ public class MockKube {
         clusterRoleBindingMockBuilder = addMockBuilder("clusterrolebindings", new MockBuilder<>(ClusterRoleBinding.class, ClusterRoleBindingList.class, MockBuilder.castClass(Resource.class), pdbCrb));
         networkPolicyMockBuilder = addMockBuilder("networkpolicies", new MockBuilder<>(NetworkPolicy.class, NetworkPolicyList.class, MockBuilder.castClass(Resource.class), policyDb));
         ingressMockBuilder = addMockBuilder("ingresses",  new MockBuilder<>(Ingress.class, IngressList.class, MockBuilder.castClass(Resource.class), ingressDb));
+        ingressV1Beta1MockBuilder = addMockBuilder("ingresses",  new MockBuilder<>(io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress.class, io.fabric8.kubernetes.api.model.networking.v1beta1.IngressList.class, MockBuilder.castClass(Resource.class), ingressV1Beta1Db));
 
         podMockBuilder = addMockBuilder("pods", new MockBuilder<>(Pod.class, PodList.class, MockBuilder.castClass(PodResource.class), podDb));
         MixedOperation<Pod, PodList, PodResource<Pod>> mockPods = podMockBuilder.build();
@@ -317,10 +321,13 @@ public class MockKube {
         // Network group
         NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
         V1NetworkAPIGroupDSL networkV1 = mock(V1NetworkAPIGroupDSL.class);
+        V1beta1NetworkAPIGroupDSL networkV1beta1 = mock(V1beta1NetworkAPIGroupDSL.class);
         when(mockClient.network()).thenReturn(network);
         when(network.v1()).thenReturn(networkV1);
+        when(network.v1beta1()).thenReturn(networkV1beta1);
         networkPolicyMockBuilder.build2(network::networkPolicies);
         ingressMockBuilder.build2(networkV1::ingresses);
+        ingressV1Beta1MockBuilder.build2(networkV1beta1::ingresses);
 
         // Policy group
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);
