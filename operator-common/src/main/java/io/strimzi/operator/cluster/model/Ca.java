@@ -940,7 +940,7 @@ public abstract class Ca {
 
             Base64.Decoder decoder = Base64.getDecoder();
             byte[] keyBytes = decoder.decode(caKeySecret.getData().get(CA_KEY));
-            byte[] certBytes = decoder.decode(caKeySecret.getData().get(CA_CRT));
+            byte[] certBytes = caKeySecret.getData().get(CA_CRT) != null ? decoder.decode(caKeySecret.getData().get(CA_CRT)) : new byte[0];
             File keyFile = File.createTempFile("tls", subject.commonName() + "-key");
             File certFile = File.createTempFile("tls", subject.commonName() + "-crt");
             try {
