@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -105,7 +106,7 @@ public class OpenSslCertManagerTest {
         ssl.addCertToTrustStore(cert, "ca", trustStore, trustStorePassword);
 
         X509Certificate x509Certificate = loadCertificate(cert);
-        assertCaCertificate(x509Certificate);
+        assertCaCertificate(x509Certificate, true);
         // subject verification if provided
         if (sbj != null) {
             assertSubject(sbj, x509Certificate);
@@ -127,14 +128,19 @@ public class OpenSslCertManagerTest {
         return x509Certificate;
     }
 
-    private void assertCaCertificate(X509Certificate x509Certificate) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
+    private void assertCaCertificate(X509Certificate x509Certificate, boolean expectCa) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
         try {
             x509Certificate.verify(x509Certificate.getPublicKey());
+            if (!expectCa) {
+                fail("A non-CA cert should not be self signed");
+            }
         } catch (Exception e) {
-            fail("Expected a self signed cert", e);
+            if (expectCa) {
+                fail("Expected a self signed cert", e);
+            }
         }
-        assertTrue(x509Certificate.getBasicConstraints() >= 0,
-                "Expected a certificate with CA:true, but basic constraints = " + x509Certificate.getBasicConstraints());
+        assertEquals(expectCa, x509Certificate.getBasicConstraints() >= 0,
+                "Expected a certificate with CA:" + expectCa + ", but basic constraints = " + x509Certificate.getBasicConstraints());
     }
 
     private void assertSubject(Subject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
@@ -230,27 +236,24 @@ public class OpenSslCertManagerTest {
         ssl.addKeyAndCertToKeyStore(caKey, caCert, "ca", keyStore, keyStorePassword);
 
         X509Certificate c = loadCertificate(cert);
+        assertCaCertificate(c, false);
         Certificate ca = loadCertificate(caCert);
 
         c.verify(ca.getPublicKey());
 
-        if (c instanceof X509Certificate) {
-            Principal p = c.getSubjectDN();
+        Principal p = c.getSubjectDN();
 
-            assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
+        assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
 
-            if (sbj != null && sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
-                final Collection<List<?>> snas = c.getSubjectAlternativeNames();
-                if (snas != null) {
-                    for (final List<?> sanItem : snas) {
-                        assertThat(sbj.subjectAltNames().containsValue(sanItem.get(1)), is(true));
-                    }
-                } else {
-                    fail();
+        if (sbj != null && sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+            final Collection<List<?>> snas = c.getSubjectAlternativeNames();
+            if (snas != null) {
+                for (final List<?> sanItem : snas) {
+                    assertThat(sbj.subjectAltNames().containsValue(sanItem.get(1)), is(true));
                 }
+            } else {
+                fail();
             }
-        } else {
-            fail();
         }
 
         // keystore verification if provided
@@ -299,7 +302,6 @@ public class OpenSslCertManagerTest {
         File originalCert = File.createTempFile("crt-", ".crt");
         File originalStore = File.createTempFile("crt-", ".p12");
 
-
         doGenerateSelfSignedCert(caKey, originalCert, originalStore, "123456", caSubject);
 
         // generate a client cert
@@ -313,30 +315,29 @@ public class OpenSslCertManagerTest {
 
         ssl.generateCert(csr, caKey, originalCert, clientCert, clientSubject, 365);
         csr.delete();
-        //originalCert.delete();
         originalStore.delete();
 
         // Generate a renewed CA certificate
-        File newCert = originalCert;//File.createTempFile("crt-", ".crt");
         File newStore = File.createTempFile("crt-", ".p12");
-        ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
-        ssl.addCertToTrustStore(newCert, "ca", newStore, "123456");
+        ssl.renewSelfSignedCert(caKey, originalCert, caSubject, 365);
+        // TODO should assert that originalCert actually was changed
+        ssl.addCertToTrustStore(originalCert, "ca", newStore, "123456");
 
-        X509Certificate x509Certificate = loadCertificate(newCert);
-        assertCaCertificate(x509Certificate);
+        X509Certificate x509Certificate = loadCertificate(originalCert);
+        assertCaCertificate(x509Certificate, true);
 
         // verify the client cert is valid wrt the new cert.
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate c = cf.generateCertificate(new FileInputStream(clientCert));
-        Certificate ca = cf.generateCertificate(new FileInputStream(newCert));
+        Certificate ca = cf.generateCertificate(new FileInputStream(originalCert));
 
         c.verify(ca.getPublicKey());
 
+        originalCert.delete();
         clientKey.delete();
         clientCert.delete();
 
         caKey.delete();
-        newCert.delete();
         newStore.delete();
     }
 }

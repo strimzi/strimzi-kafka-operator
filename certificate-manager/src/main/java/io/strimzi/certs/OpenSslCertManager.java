@@ -16,7 +16,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
@@ -28,6 +30,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.Arrays.asList;
 
@@ -53,17 +56,15 @@ public class OpenSslCertManager implements CertManager {
                 "-out", certFile.getAbsolutePath(), "-keyout", keyFile.getAbsolutePath()));
 
         File sna = null;
-        File openSslConf = null;
+        Path openSslConf = null;
         if (sbj != null) {
 
             if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
 
                 // subject alt names need to be in an openssl configuration file
-                InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
-                openSslConf = File.createTempFile("openssl-", ".conf");
-                Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                openSslConf = createDefaultConfig();
 
-                sna = addSubjectAltNames(openSslConf, sbj);
+                sna = addSubjectAltNames(openSslConf, sbj, true);
                 cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
             }
 
@@ -78,9 +79,7 @@ public class OpenSslCertManager implements CertManager {
             }
         }
         if (openSslConf != null) {
-            if (!openSslConf.delete()) {
-                log.warn("{} cannot be deleted", openSslConf.getName());
-            }
+            Files.delete(openSslConf);
         }
     }
 
@@ -97,9 +96,7 @@ public class OpenSslCertManager implements CertManager {
                     isTrustStore = new FileInputStream(trustStoreFile);
                 }
 
-                FileInputStream isCertificate = null;
-                try {
-                    isCertificate = new FileInputStream(certFile);
+                try (FileInputStream isCertificate = new FileInputStream(certFile)) {
 
                     CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
                     X509Certificate certificate = (X509Certificate) certFactory.generateCertificate(isCertificate);
@@ -108,18 +105,8 @@ public class OpenSslCertManager implements CertManager {
                     trustStore.load(isTrustStore, trustStorePassword.toCharArray());
                     trustStore.setEntry(certAlias, new KeyStore.TrustedCertificateEntry(certificate), null);
 
-                    FileOutputStream osTrustStore = null;
-                    try {
-                        osTrustStore = new FileOutputStream(trustStoreFile);
+                    try (FileOutputStream osTrustStore = new FileOutputStream(trustStoreFile)) {
                         trustStore.store(osTrustStore, trustStorePassword.toCharArray());
-                    } finally {
-                        if (osTrustStore != null) {
-                            osTrustStore.close();
-                        }
-                    }
-                } finally {
-                    if (isCertificate != null) {
-                        isCertificate.close();
                     }
                 }
             } finally {
@@ -147,26 +134,14 @@ public class OpenSslCertManager implements CertManager {
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
 
         try {
-            FileInputStream isTrustStore = null;
-            try {
-                isTrustStore = new FileInputStream(trustStoreFile);
+            try (FileInputStream isTrustStore = new FileInputStream(trustStoreFile)) {
                 KeyStore trustStore = KeyStore.getInstance("PKCS12");
                 trustStore.load(isTrustStore, trustStorePassword.toCharArray());
                 for (String alias : aliases) {
                     trustStore.deleteEntry(alias);
                 }
-                FileOutputStream osTrustStore = null;
-                try {
-                    osTrustStore = new FileOutputStream(trustStoreFile);
+                try (FileOutputStream osTrustStore = new FileOutputStream(trustStoreFile)) {
                     trustStore.store(osTrustStore, trustStorePassword.toCharArray());
-                } finally {
-                    if (osTrustStore != null) {
-                        osTrustStore.close();
-                    }
-                }
-            } finally {
-                if (isTrustStore != null) {
-                    isTrustStore.close();
                 }
             }
         } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
@@ -179,7 +154,7 @@ public class OpenSslCertManager implements CertManager {
         // See https://serverfault.com/questions/306345/certification-authority-root-certificate-expiry-and-renewal
 
         //openssl req -new -key root.key -out newcsr.csr
-        File csrFile = File.createTempFile("renewal", ".csr");
+        File csrFile = Files.createTempFile("renewal", ".csr").toFile();
 
         List<String> cmd = new ArrayList<>(asList("openssl", "x509",
                 "-x509toreq",
@@ -198,11 +173,9 @@ public class OpenSslCertManager implements CertManager {
                 "-out", certFile.getAbsolutePath()));
 
         // subject alt names need to be in an openssl configuration file
-        InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
-        File openSslConf = File.createTempFile("openssl-", ".conf");
-        Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Path openSslConf = createDefaultConfig();
 
-        File sna = addSubjectAltNames(openSslConf, sbj);
+        File sna = addSubjectAltNames(openSslConf, sbj, true);
         cmd2.addAll(asList("-extfile", sna.toPath().toString(), "-extensions", "v3_req"));
 
         exec(cmd2);
@@ -210,9 +183,7 @@ public class OpenSslCertManager implements CertManager {
         if (!sna.delete()) {
             log.warn("{} cannot be deleted", sna.getName());
         }
-        if (!openSslConf.delete()) {
-            log.warn("{} cannot be deleted", openSslConf.getName());
-        }
+        Files.delete(openSslConf);
 
         if (!csrFile.delete()) {
             log.warn("{} cannot be deleted", csrFile.getName());
@@ -227,16 +198,17 @@ public class OpenSslCertManager implements CertManager {
      * @return openssl configuration file with subject alt names added
      * @throws IOException
      */
-    private File addSubjectAltNames(File opensslConf, Subject sbj) throws IOException {
+    private File addSubjectAltNames(Path opensslConf, Subject sbj, boolean isCa) throws IOException {
 
-        File sna = File.createTempFile("sna-", ".conf");
-        Files.copy(opensslConf.toPath(), sna.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        File sna = Files.createTempFile("sna-", ".conf").toFile();
+        Files.copy(opensslConf, sna.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        if (sbj != null) {
-            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
-                BufferedWriter out = null;
-                try {
-                    out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna, true), "UTF8"));
+        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna, true), StandardCharsets.UTF_8))) {
+            if (isCa) {
+                out.append("basicConstraints = critical,CA:true,pathlen:1\n");
+            }
+            if (sbj != null) {
+                if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
                     out.append("subjectAltName = @alt_names\n" +
                             "\n" +
                             "[alt_names]\n");
@@ -247,10 +219,6 @@ public class OpenSslCertManager implements CertManager {
                         }
                         out.append(entry.getKey()).append(" = ").append(entry.getValue());
                         newline = true;
-                    }
-                } finally {
-                    if (out != null) {
-                        out.close();
                     }
                 }
             }
@@ -266,17 +234,15 @@ public class OpenSslCertManager implements CertManager {
                 "-keyout", keyFile.getAbsolutePath(), "-out", csrFile.getAbsolutePath()));
 
         File sna = null;
-        File openSslConf = null;
+        Path openSslConf = null;
         if (sbj != null) {
 
             if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
 
                 // subject alt names need to be in an openssl configuration file
-                InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
-                openSslConf = File.createTempFile("openssl-", ".conf");
-                Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                openSslConf = createDefaultConfig();
 
-                sna = addSubjectAltNames(openSslConf, sbj);
+                sna = addSubjectAltNames(openSslConf, sbj, false);
                 cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
             }
 
@@ -291,9 +257,7 @@ public class OpenSslCertManager implements CertManager {
             }
         }
         if (openSslConf != null) {
-            if (!openSslConf.delete()) {
-                log.warn("{} cannot be deleted", openSslConf.getName());
-            }
+            Files.delete(openSslConf);
         }
     }
 
@@ -315,17 +279,15 @@ public class OpenSslCertManager implements CertManager {
             "-out", crtFile.getAbsolutePath()));
 
         File sna = null;
-        File openSslConf = null;
+        Path openSslConf = null;
         if (sbj != null) {
 
             if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
 
                 // subject alt names need to be in an openssl configuration file
-                InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf");
-                openSslConf = File.createTempFile("openssl-", ".conf");
-                Files.copy(is, openSslConf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                openSslConf = createDefaultConfig();
 
-                sna = addSubjectAltNames(openSslConf, sbj);
+                sna = addSubjectAltNames(openSslConf, sbj, false);
                 cmd.addAll(asList("-extfile", sna.toPath().toString(), "-extensions", "v3_req"));
             }
         }
@@ -338,22 +300,28 @@ public class OpenSslCertManager implements CertManager {
             }
         }
         if (openSslConf != null) {
-            if (!openSslConf.delete()) {
-                log.warn("{} cannot be deleted", openSslConf.getName());
-            }
+            Files.delete(openSslConf);
         }
 
         // We need to remove CA serial file
         Files.deleteIfExists(Paths.get(caCert.getPath().replace(".crt", ".srl")));
     }
 
+    private Path createDefaultConfig() throws IOException {
+        try (InputStream is = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("openssl.conf"))) {
+            Path openSslConf = Files.createTempFile("openssl-", ".conf");
+            Files.copy(is, openSslConf, StandardCopyOption.REPLACE_EXISTING);
+            return openSslConf;
+        }
+    }
+
     @Override
     public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException {
 
-        File caKeyFile = File.createTempFile("ca-key-", ".key");
+        File caKeyFile = Files.createTempFile("ca-key-", ".key").toFile();
         Files.write(caKeyFile.toPath(), caKey);
 
-        File caCertFile = File.createTempFile("ca-crt-", ".crt");
+        File caCertFile = Files.createTempFile("ca-crt-", ".crt").toFile();
         Files.write(caCertFile.toPath(), caCert);
 
         generateCert(csrFile, caKeyFile, caCertFile, crtFile, sbj, days);
@@ -371,7 +339,7 @@ public class OpenSslCertManager implements CertManager {
 
         try {
 
-            out = File.createTempFile("openssl-", Integer.toString(cmd.hashCode()));
+            out = Files.createTempFile("openssl-", Integer.toString(cmd.hashCode())).toFile();
 
             ProcessBuilder processBuilder = new ProcessBuilder(cmd)
                     .redirectOutput(out)
@@ -385,7 +353,7 @@ public class OpenSslCertManager implements CertManager {
             outputStream.close();
 
             int result = proc.waitFor();
-            String stdout = new String(Files.readAllBytes(out.toPath()), Charset.defaultCharset());
+            String stdout = Files.readString(out.toPath(), Charset.defaultCharset());
 
             log.debug(stdout);
             log.debug("result {}", result);
