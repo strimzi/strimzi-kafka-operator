@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
@@ -94,6 +94,7 @@ import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOper
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
+import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -172,6 +173,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final RoleOperator roleOperations;
     private final PodOperator podOperations;
     private final IngressOperator ingressOperations;
+    private final IngressV1Beta1Operator ingressV1Beta1Operations;
     private final StorageClassOperator storageClassOperator;
     private final NodeOperator nodeOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> crdOperator;
@@ -205,6 +207,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.roleOperations = supplier.roleOperations;
         this.podOperations = supplier.podOperations;
         this.ingressOperations = supplier.ingressOperations;
+        this.ingressV1Beta1Operations = supplier.ingressV1Beta1Operations;
         this.storageClassOperator = supplier.storageClassOperations;
         this.crdOperator = supplier.kafkaOperator;
         this.nodeOperator = supplier.nodeOperator;
@@ -297,11 +300,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaServices())
                 .compose(state -> state.kafkaRoutes())
                 .compose(state -> state.kafkaIngresses())
+                .compose(state -> state.kafkaIngressesV1Beta1())
                 .compose(state -> state.kafkaInternalServicesReady())
                 .compose(state -> state.kafkaLoadBalancerServicesReady())
                 .compose(state -> state.kafkaNodePortServicesReady())
                 .compose(state -> state.kafkaRoutesReady())
                 .compose(state -> state.kafkaIngressesReady())
+                .compose(state -> state.kafkaIngressesV1Beta1Ready())
                 .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
                 .compose(state -> state.customListenerCertificates())
                 .compose(state -> state.kafkaAncillaryCm())
@@ -1652,6 +1657,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<ReconciliationState> kafkaIngresses() {
+            if (!pfa.hasIngressV1()) {
+                return Future.succeededFuture(this);
+            }
+
             List<Ingress> ingresses = new ArrayList<>(kafkaCluster.generateExternalBootstrapIngresses());
 
             int replicas = kafkaCluster.getReplicas();
@@ -1678,6 +1687,50 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // Delete ingresses which match our selector but are not desired anymore
                         for (String ingressName : existingIngressNames) {
                             ingressFutures.add(ingressOperations.reconcile(namespace, ingressName, null));
+                        }
+
+                        return CompositeFuture.join(ingressFutures);
+                    });
+
+            return withVoid(fut);
+        }
+
+        /**
+         * Makes sure all desired ingresses are updated and the rest is deleted
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaIngressesV1Beta1() {
+            if (pfa.hasIngressV1()) {
+                return Future.succeededFuture(this);
+            }
+
+            List<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingresses = new ArrayList<>(kafkaCluster.generateExternalBootstrapIngressesV1Beta1());
+
+            int replicas = kafkaCluster.getReplicas();
+            for (int i = 0; i < replicas; i++) {
+                ingresses.addAll(kafkaCluster.generateExternalIngressesV1Beta1(i));
+            }
+
+            Future fut = ingressV1Beta1Operations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                    .compose(existingIngresses -> {
+                        List<Future> ingressFutures = new ArrayList<>(ingresses.size());
+                        List<String> existingIngressNames = existingIngresses.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
+
+                        log.debug("{}: Reconciling existing v1beta1 Ingresses {} against the desired ingresses", reconciliation, existingIngressNames);
+
+                        // Update desired ingresses
+                        for (io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingress : ingresses) {
+                            String ingressName = ingress.getMetadata().getName();
+                            existingIngressNames.remove(ingressName);
+                            ingressFutures.add(ingressV1Beta1Operations.reconcile(namespace, ingressName, ingress));
+                        }
+
+                        log.debug("{}: V1beta1 ingresses {} should be deleted", reconciliation, existingIngressNames);
+
+                        // Delete ingresses which match our selector but are not desired anymore
+                        for (String ingressName : existingIngressNames) {
+                            ingressFutures.add(ingressV1Beta1Operations.reconcile(namespace, ingressName, null));
                         }
 
                         return CompositeFuture.join(ingressFutures);
@@ -2110,6 +2163,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<ReconciliationState> kafkaIngressesReady() {
+            if (!pfa.hasIngressV1()) {
+                return Future.succeededFuture(this);
+            }
+
             List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(kafkaCluster.getListeners());
             List<Future> listenerFutures = new ArrayList<>(ingressListeners.size());
 
@@ -2152,6 +2209,84 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         .findAny()
                                         .orElse(null);
                                 log.debug("{}: Using address {} for Ingress {}", reconciliation, brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener));
+
+                                kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(2)).add(brokerAddress);
+
+                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                if (advertisedHostname != null) {
+                                    kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                                }
+
+                                kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, pod, brokerAddress));
+                                kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, pod, kafkaCluster.getIngressPort()));
+                            }
+
+                            return Future.succeededFuture();
+                        });
+
+                listenerFutures.add(perListenerFut);
+            }
+
+            return withVoid(CompositeFuture.join(listenerFutures));
+        }
+
+        /**
+         * Makes sure all ingresses are ready and collects their addresses for Statuses,
+         * certificates and advertised addresses. This method for all ingresses:
+         *      1) Checks if the bootstrap ingress has been provisioned (has a loadbalancer address)
+         *      2) Collects the relevant addresses and stores them for use in certificates and in CR status
+         *      3) Checks it the broker ingresses have been provisioned (have an address)
+         *      4) Collects the route addresses for certificates and advertised hostnames
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaIngressesV1Beta1Ready() {
+            if (pfa.hasIngressV1()) {
+                return Future.succeededFuture(this);
+            }
+
+            List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(kafkaCluster.getListeners());
+            List<Future> listenerFutures = new ArrayList<>(ingressListeners.size());
+
+            for (GenericKafkaListener listener : ingressListeners) {
+                String bootstrapIngressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(name, listener);
+
+                Future perListenerFut = ingressV1Beta1Operations.hasIngressAddress(namespace, bootstrapIngressName, 1_000, operationTimeoutMs)
+                        .compose(res -> {
+                            String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
+                            log.debug("{}: Using address {} for v1beta1 Ingress {}", reconciliation, bootstrapAddress, bootstrapIngressName);
+
+                            kafkaBootstrapDnsName.add(bootstrapAddress);
+
+                            ListenerStatus ls = new ListenerStatusBuilder()
+                                    .withNewType(listener.getName())
+                                    .withAddresses(new ListenerAddressBuilder()
+                                            .withHost(bootstrapAddress)
+                                            .withPort(kafkaCluster.getRoutePort())
+                                            .build())
+                                    .build();
+                            addListenerStatus(ls);
+
+                            // Check if broker ingresses are ready
+                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
+
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                perPodFutures.add(
+                                        ingressV1Beta1Operations.hasIngressAddress(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener), 1_000, operationTimeoutMs)
+                                );
+                            }
+
+                            return CompositeFuture.join(perPodFutures);
+                        })
+                        .compose(res -> {
+                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                                final int podNumber = pod;
+                                String brokerAddress = listener.getConfiguration().getBrokers().stream()
+                                        .filter(broker -> broker.getBroker() == podNumber)
+                                        .map(GenericKafkaListenerConfigurationBroker::getHost)
+                                        .findAny()
+                                        .orElse(null);
+                                log.debug("{}: Using address {} for v1beta1 Ingress {}", reconciliation, brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener));
 
                                 kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(2)).add(brokerAddress);
 

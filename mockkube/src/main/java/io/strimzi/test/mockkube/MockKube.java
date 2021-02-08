@@ -26,8 +26,8 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefin
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
-import io.fabric8.kubernetes.api.model.extensions.Ingress;
-import io.fabric8.kubernetes.api.model.extensions.IngressList;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressList;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyList;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
@@ -40,11 +40,11 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.RoleList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.V1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.V1beta1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.CreateOrReplaceable;
-import io.fabric8.kubernetes.client.dsl.ExtensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -314,15 +314,13 @@ public class MockKube {
             mockCrs(mockClient);
         }
 
-        // Extensions group
-        ExtensionsAPIGroupDSL extensions = mock(ExtensionsAPIGroupDSL.class);
-        when(mockClient.extensions()).thenReturn(extensions);
-        ingressMockBuilder.build2(extensions::ingresses);
-
         // Network group
         NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
+        V1NetworkAPIGroupDSL networkV1 = mock(V1NetworkAPIGroupDSL.class);
         when(mockClient.network()).thenReturn(network);
+        when(network.v1()).thenReturn(networkV1);
         networkPolicyMockBuilder.build2(network::networkPolicies);
+        ingressMockBuilder.build2(networkV1::ingresses);
 
         // Policy group
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);
