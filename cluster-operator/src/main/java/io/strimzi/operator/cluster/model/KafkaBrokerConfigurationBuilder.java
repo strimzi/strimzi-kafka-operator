@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -193,6 +194,8 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println();
         }
 
+        configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
+
         printSectionHeader("Common listener configuration");
         writer.println("listeners=" + String.join(",", listeners));
         writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
@@ -204,6 +207,16 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println();
 
         return this;
+    }
+
+    private void configureOAuthPrincipalBuilderIfNeeded(PrintWriter writer, List<GenericKafkaListener> kafkaListeners) {
+        for (GenericKafkaListener listener : kafkaListeners) {
+            if (listener.getAuth() instanceof KafkaListenerAuthenticationOAuth) {
+                writer.println(String.format("principal.builder.class=%s", KafkaListenerAuthenticationOAuth.PRINCIPAL_BUILDER_CLASS_NAME));
+                writer.println();
+                return;
+            }
+        }
     }
 
     /**
@@ -273,14 +286,28 @@ public class KafkaBrokerConfigurationBuilder {
                 options.add("oauth.ssl.truststore.type=\"PKCS12\"");
             }
 
-            writer.println(String.format("listener.name.%s.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", listenerNameInProperty));
-            writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" %s;", listenerNameInProperty, String.join(" ", options)));
-            writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=OAUTHBEARER", listenerNameInProperty));
+            StringBuilder enabledMechanisms = new StringBuilder();
+            if (oauth.isEnableOauthBearer()) {
+                writer.println(String.format("listener.name.%s.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", listenerNameInProperty));
+                writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" %s;", listenerNameInProperty, String.join(" ", options)));
+                enabledMechanisms.append("OAUTHBEARER");
+            }
+
+            if (oauth.isEnablePlain()) {
+                addOption(options, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
+                writer.println(String.format("listener.name.%s.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler", listenerNameInProperty));
+                writer.println(String.format("listener.name.%s.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required %s;", listenerNameInProperty, String.join(" ", options)));
+                if (enabledMechanisms.length() > 0) {
+                    enabledMechanisms.append(",");
+                }
+                enabledMechanisms.append("PLAIN");
+            }
+
+            writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=%s", listenerNameInProperty, enabledMechanisms));
 
             if (oauth.getMaxSecondsWithoutReauthentication() != null) {
                 writer.println(String.format("listener.name.%s.connections.max.reauth.ms=%s", listenerNameInProperty, 1000 * oauth.getMaxSecondsWithoutReauthentication()));
             }
-
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationScramSha512) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
@@ -432,7 +459,6 @@ public class KafkaBrokerConfigurationBuilder {
         } else if (KafkaAuthorizationKeycloak.TYPE_KEYCLOAK.equals(authorization.getType())) {
             KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
             writer.println("authorizer.class.name=" + KafkaAuthorizationKeycloak.AUTHORIZER_CLASS_NAME);
-            writer.println("principal.builder.class=" + KafkaAuthorizationKeycloak.PRINCIPAL_BUILDER_CLASS_NAME);
             writer.println("strimzi.authorization.token.endpoint.uri=" + keycloakAuthz.getTokenEndpointUri());
             writer.println("strimzi.authorization.client.id=" + keycloakAuthz.getClientId());
             writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());

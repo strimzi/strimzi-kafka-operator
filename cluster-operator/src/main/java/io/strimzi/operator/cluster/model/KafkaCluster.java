@@ -100,6 +100,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.addAll;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -1370,8 +1371,7 @@ public class KafkaCluster extends AbstractModel {
                 );
             }
 
-            if (listener.getAuth() != null
-                    && listener.getAuth() instanceof KafkaListenerAuthenticationOAuth)   {
+            if (isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                 volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("oauth-" + ListenersUtils.identifier(listener), oauth.getTlsTrustedCertificates(), isOpenShift));
             }
@@ -1412,8 +1412,7 @@ public class KafkaCluster extends AbstractModel {
                 volumeMountList.add(VolumeUtils.createVolumeMount("custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
             }
 
-            if (listener.getAuth() != null
-                    && listener.getAuth() instanceof KafkaListenerAuthenticationOAuth)   {
+            if (isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                 volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("oauth-" + identifier, oauth.getTlsTrustedCertificates(), OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs"));
             }
@@ -1549,8 +1548,7 @@ public class KafkaCluster extends AbstractModel {
         jvmPerformanceOptions(varList);
 
         for (GenericKafkaListener listener : listeners) {
-            if (listener.getAuth() != null
-                    && listener.getAuth() instanceof KafkaListenerAuthenticationOAuth)   {
+            if (isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
 
                 if (oauth.getClientSecret() != null)    {

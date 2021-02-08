@@ -32,6 +32,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     public static final int DEFAULT_JWKS_EXPIRY_SECONDS = 360;
     public static final int DEFAULT_JWKS_REFRESH_SECONDS = 300;
 
+    public static final String PRINCIPAL_BUILDER_CLASS_NAME = "io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder";
+
     private String clientId;
     private GenericSecretSource clientSecret;
     private String validIssuerUri;
@@ -52,6 +54,9 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean disableTlsHostnameVerification = false;
     private boolean enableECDSA = false;
     private Integer maxSecondsWithoutReauthentication;
+    private boolean enablePlain = false;
+    private String tokenEndpointUri;
+    private boolean enableOauthBearer = true;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @Override
@@ -270,7 +275,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     @Description("Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. " +
             "If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. " +
-            "Not set by default - the authenticated session does not expire when the access token expires.")
+            "Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getMaxSecondsWithoutReauthentication() {
         return maxSecondsWithoutReauthentication;
@@ -279,4 +284,37 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     public void setMaxSecondsWithoutReauthentication(Integer maxSecondsWithoutReauthentication) {
         this.maxSecondsWithoutReauthentication = maxSecondsWithoutReauthentication;
     }
+
+    @Description("Enable or disable OAuth authentication over SASL_OAUTHBEARER. " +
+            "Default value is `true`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isEnableOauthBearer() {
+        return enableOauthBearer;
+    }
+
+    public void setEnableOauthBearer(boolean enableOauthBearer) {
+        this.enableOauthBearer = enableOauthBearer;
+    }
+
+    @Description("Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. " +
+            "Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isEnablePlain() {
+        return enablePlain;
+    }
+
+    public void setEnablePlain(boolean enablePlain) {
+        this.enablePlain = enablePlain;
+    }
+
+    @Description("URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. ")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getTokenEndpointUri() {
+        return tokenEndpointUri;
+    }
+
+    public void setTokenEndpointUri(String tokenEndpointUri) {
+        this.tokenEndpointUri = tokenEndpointUri;
+    }
+
 }
