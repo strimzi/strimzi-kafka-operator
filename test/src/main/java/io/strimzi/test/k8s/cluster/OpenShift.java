@@ -18,6 +18,7 @@ public class OpenShift implements KubeCluster {
 
     private static final String CMD = "oc";
     public static final String OLM_NAMESPACE = "openshift-operators";
+    public static final String OLM_SOURCE_NAMESPACE = "openshift-marketplace";
     public static final String DEFAULT_NAMESPACE = "default";
     private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
 

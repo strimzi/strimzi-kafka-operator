@@ -144,10 +144,6 @@ public class OlmResource {
         throw new RuntimeException("Version was not found in the install plan.");
     }
 
-    public static boolean isUpgradeable() {
-        return !getNonUsedInstallPlan().equals(NO_MORE_NON_USED_INSTALL_PLANS);
-    }
-
     public static String getNonUsedInstallPlan() {
         String[] nonUsedInstallPlan = new String[1];
 
@@ -235,7 +231,7 @@ public class OlmResource {
                 subscription.replace("${OPERATOR_NAMESPACE}", namespace)
                     .replace("${OLM_OPERATOR_NAME}", Environment.OLM_OPERATOR_NAME)
                     .replace("${OLM_SOURCE_NAME}", Environment.OLM_SOURCE_NAME)
-                    .replace("${OLM_SOURCE_NAMESPACE}", ResourceManager.cmdKubeClient().defaultOlmNamespace())
+                    .replace("${OLM_SOURCE_NAMESPACE}", Environment.OLM_SOURCE_NAMESPACE == null ? ResourceManager.cmdKubeClient().defaultOlmSourceNamespace() : Environment.OLM_SOURCE_NAMESPACE)
                     .replace("${OLM_APP_BUNDLE_PREFIX}", Environment.OLM_APP_BUNDLE_PREFIX)
                     .replace("${OLM_OPERATOR_VERSION}", version)
                     .replace("${OLM_INSTALL_PLAN_APPROVAL}", installationStrategy.toString())
