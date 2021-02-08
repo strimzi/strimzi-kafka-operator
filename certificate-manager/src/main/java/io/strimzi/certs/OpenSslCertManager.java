@@ -56,15 +56,12 @@ public class OpenSslCertManager implements CertManager {
                 "-out", certFile.getAbsolutePath(), "-keyout", keyFile.getAbsolutePath()));
 
         File sna = null;
-        Path openSslConf = null;
         if (sbj != null) {
 
             if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
 
                 // subject alt names need to be in an openssl configuration file
-                openSslConf = createDefaultConfig();
-
-                sna = addSubjectAltNames(openSslConf, sbj, true);
+                sna = buildConfigFile(sbj, true);
                 cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
             }
 
@@ -77,9 +74,6 @@ public class OpenSslCertManager implements CertManager {
             if (!sna.delete()) {
                 log.warn("{} cannot be deleted", sna.getName());
             }
-        }
-        if (openSslConf != null) {
-            Files.delete(openSslConf);
         }
     }
 
@@ -173,9 +167,7 @@ public class OpenSslCertManager implements CertManager {
                 "-out", certFile.getAbsolutePath()));
 
         // subject alt names need to be in an openssl configuration file
-        Path openSslConf = createDefaultConfig();
-
-        File sna = addSubjectAltNames(openSslConf, sbj, true);
+        File sna = buildConfigFile(sbj, true);
         cmd2.addAll(asList("-extfile", sna.toPath().toString(), "-extensions", "v3_req"));
 
         exec(cmd2);
@@ -183,7 +175,6 @@ public class OpenSslCertManager implements CertManager {
         if (!sna.delete()) {
             log.warn("{} cannot be deleted", sna.getName());
         }
-        Files.delete(openSslConf);
 
         if (!csrFile.delete()) {
             log.warn("{} cannot be deleted", csrFile.getName());
@@ -191,18 +182,14 @@ public class OpenSslCertManager implements CertManager {
     }
 
     /**
-     * Add subject alt names section to the provided openssl configuration file
+     * Add basic constraints and subject alt names section to the provided openssl configuration file
      *
-     * @param opensslConf openssl configuration file
      * @param sbj subject information
      * @return openssl configuration file with subject alt names added
      * @throws IOException
      */
-    private File addSubjectAltNames(Path opensslConf, Subject sbj, boolean isCa) throws IOException {
-
-        File sna = Files.createTempFile("sna-", ".conf").toFile();
-        Files.copy(opensslConf, sna.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
+    private File buildConfigFile(Subject sbj, boolean isCa) throws IOException {
+        File sna = createDefaultConfig().toFile();
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna, true), StandardCharsets.UTF_8))) {
             if (isCa) {
                 out.append("basicConstraints = critical,CA:true,pathlen:1\n");
@@ -234,15 +221,12 @@ public class OpenSslCertManager implements CertManager {
                 "-keyout", keyFile.getAbsolutePath(), "-out", csrFile.getAbsolutePath()));
 
         File sna = null;
-        Path openSslConf = null;
         if (sbj != null) {
 
             if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
 
                 // subject alt names need to be in an openssl configuration file
-                openSslConf = createDefaultConfig();
-
-                sna = addSubjectAltNames(openSslConf, sbj, false);
+                sna = buildConfigFile(sbj, false);
                 cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
             }
 
@@ -255,9 +239,6 @@ public class OpenSslCertManager implements CertManager {
             if (!sna.delete()) {
                 log.warn("{} cannot be deleted", sna.getName());
             }
-        }
-        if (openSslConf != null) {
-            Files.delete(openSslConf);
         }
     }
 
@@ -279,15 +260,12 @@ public class OpenSslCertManager implements CertManager {
             "-out", crtFile.getAbsolutePath()));
 
         File sna = null;
-        Path openSslConf = null;
         if (sbj != null) {
 
             if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
 
                 // subject alt names need to be in an openssl configuration file
-                openSslConf = createDefaultConfig();
-
-                sna = addSubjectAltNames(openSslConf, sbj, false);
+                sna = buildConfigFile(sbj, false);
                 cmd.addAll(asList("-extfile", sna.toPath().toString(), "-extensions", "v3_req"));
             }
         }
@@ -298,9 +276,6 @@ public class OpenSslCertManager implements CertManager {
             if (!sna.delete()) {
                 log.warn("{} cannot be deleted", sna.getName());
             }
-        }
-        if (openSslConf != null) {
-            Files.delete(openSslConf);
         }
 
         // We need to remove CA serial file
