@@ -101,7 +101,7 @@ public class OlmResource {
      * Get install plan name and store it to closedMapInstallPlan
      */
     public static void obtainInstallPlanName() {
-        String installPlansPureString = cmdKubeClient().exec("get", "installplan").out();
+        String installPlansPureString = cmdKubeClient().execInCurrentNamespace("get", "installplan").out();
         String[] installPlansLines = installPlansPureString.split("\n");
 
         for (String line : installPlansLines) {
@@ -129,7 +129,7 @@ public class OlmResource {
      * @return version with prefix name
      */
     public static String getClusterOperatorVersion() {
-        String installPlansPureString = cmdKubeClient().exec("get", "installplan").out();
+        String installPlansPureString = cmdKubeClient().execInCurrentNamespace("get", "installplan").out();
         String[] installPlansLines = installPlansPureString.split("\n");
 
         for (String line : installPlansLines) {
@@ -172,7 +172,7 @@ public class OlmResource {
             String dynamicScriptContent =
                 "#!/bin/bash\n" +
                     cmdKubeClient().cmd() +
-                    " patch installplan " + nonUsedInstallPlan + " --type json  --patch '[{\"op\": \"add\", \"path\": \"/spec/approved\", \"value\": true}]'";
+                    " patch installplan " + nonUsedInstallPlan + " --type json  --patch '[{\"op\": \"add\", \"path\": \"/spec/approved\", \"value\": true}]' -n " + KubeClusterResource.getInstance().getNamespace();
 
             InputStream inputStream = new ByteArrayInputStream(dynamicScriptContent.getBytes(Charset.defaultCharset()));
             File patchScript = File.createTempFile("installplan_patch",  ".sh");
