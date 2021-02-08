@@ -4,9 +4,6 @@
  */
 package io.strimzi.certs;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,7 +27,9 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static java.util.Arrays.asList;
 
@@ -283,7 +282,7 @@ public class OpenSslCertManager implements CertManager {
     }
 
     private Path createDefaultConfig() throws IOException {
-        try (InputStream is = Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("openssl.conf"))) {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf")) {
             Path openSslConf = Files.createTempFile("openssl-", ".conf");
             Files.copy(is, openSslConf, StandardCopyOption.REPLACE_EXISTING);
             return openSslConf;
