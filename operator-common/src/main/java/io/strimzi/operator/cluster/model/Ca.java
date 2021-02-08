@@ -939,11 +939,13 @@ public abstract class Ca {
             log.debug("Renewing CA with subject={}, org={}", subject);
 
             Base64.Decoder decoder = Base64.getDecoder();
-            byte[] bytes = decoder.decode(caKeySecret.getData().get(CA_KEY));
+            byte[] keyBytes = decoder.decode(caKeySecret.getData().get(CA_KEY));
+            byte[] certBytes = decoder.decode(caKeySecret.getData().get(CA_CRT));
             File keyFile = File.createTempFile("tls", subject.commonName() + "-key");
+            File certFile = File.createTempFile("tls", subject.commonName() + "-crt");
             try {
-                Files.write(keyFile.toPath(), bytes);
-                File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
+                Files.write(keyFile.toPath(), keyBytes);
+                Files.write(certFile.toPath(), certBytes);
                 try {
                     File trustStoreFile = File.createTempFile("tls", subject.commonName() + "-truststore");
                     try {
@@ -951,7 +953,7 @@ public abstract class Ca {
                         certManager.renewSelfSignedCert(keyFile, certFile, subject, validityDays);
                         certManager.addCertToTrustStore(certFile, CA_CRT, trustStoreFile, trustStorePassword);
                         CertAndKey ca = new CertAndKey(
-                                bytes,
+                                keyBytes,
                                 Files.readAllBytes(certFile.toPath()),
                                 Files.readAllBytes(trustStoreFile.toPath()),
                                 null,
