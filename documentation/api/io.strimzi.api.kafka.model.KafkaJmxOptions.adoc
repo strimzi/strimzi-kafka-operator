@@ -36,7 +36,7 @@ For example, to get JMX metrics from broker _0_ you specify:
 
 [source,shell,subs="+quotes,attributes"]
 ----
-"_CLUSTER-NAME_-kafka-0-_CLUSTER-NAME_-_HEADLESS-SERVICE-NAME_"
+"_CLUSTER-NAME_-kafka-0._CLUSTER-NAME_-_brokers_"
 ----
 
 If the JMX port is secured, you can get the username and password by referencing them from the JMX secret in the

@@ -111,13 +111,10 @@ spec:
         configMapKeyRef: <25>
           name: my-config-map
           key: my-key
-    jmxOptions: <26>
-      authentication:
-        type: "password"
     # ...
-  zookeeper: <27>
-    replicas: 3 <28>
-    logging: <29>
+  zookeeper: <26>
+    replicas: 3 <27>
+    logging: <28>
       type: inline
       loggers:
         zookeeper.root.logger: "INFO"
@@ -136,8 +133,8 @@ spec:
       size: 1000Gi
     metricsConfig:
       # ...
-  entityOperator: <30>
-    tlsSidecar: <31>
+  entityOperator: <29>
+    tlsSidecar: <30>
       resources:
         requests:
           cpu: 200m
@@ -148,7 +145,7 @@ spec:
     topicOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalSeconds: 60
-      logging: <32>
+      logging: <31>
         type: inline
         loggers:
           rootLogger.level: "INFO"
@@ -162,7 +159,7 @@ spec:
     userOperator:
       watchedNamespace: my-topic-namespace
       reconciliationIntervalSeconds: 60
-      logging: <33>
+      logging: <32>
         type: inline
         loggers:
           rootLogger.level: INFO
@@ -173,11 +170,11 @@ spec:
         limits:
           memory: 512Mi
           cpu: "1"
-  kafkaExporter: <34>
+  kafkaExporter: <33>
     # ...
-  cruiseControl: <35>
+  cruiseControl: <34>
     # ...
-    tlsSidecar: <36>
+    tlsSidecar: <35>
     # ...
 ----
 <1> xref:con-common-configuration-replicas-reference[The number of replica nodes]. If your cluster already has topics defined, you can
@@ -206,19 +203,18 @@ xref:scaling-clusters-{context}[scale clusters].
 <23> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
 <24> xref:con-common-configuration-prometheus-reference[Prometheus metrics] enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
 <25> Prometheus rules for exporting metrics to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
-<26> xref:type-KafkaJmxOptions-reference[JMX options] to open JMX port 9999 to obtain JMX metrics, which is configured for password protection in this example. You can open the port without protection using `jmxOptions: {}`.
-<27> ZooKeeper-specific configuration, which contains properties similar to the Kafka configuration.
-<28> xref:con-common-configuration-replicas-reference[The number of ZooKeeper nodes]. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.
+<26> ZooKeeper-specific configuration, which contains properties similar to the Kafka configuration.
+<27> xref:con-common-configuration-replicas-reference[The number of ZooKeeper nodes]. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.
 If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working.
 Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
-<29> Specified xref:property-zookeeper-logging-reference[ZooKeeper loggers and log levels].
-<30> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
-<31> Entity Operator xref:type-TlsSidecar-reference[TLS sidecar configuration]. Entity Operator uses the TLS sidecar for secure communication with ZooKeeper.
-<32> Specified xref:property-topic-operator-logging-reference[Topic Operator loggers and log levels]. This example uses `inline` logging.
-<33> Specified xref:property-user-operator-logging-reference[User Operator loggers and log levels].
-<34> Kafka Exporter configuration. link:{BookURLDeploying}#assembly-metrics-kafka-exporter-str[Kafka Exporter] is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data.
-<35> Optional configuration for Cruise Control, which is used to xref:cruise-control-concepts-str[rebalance the Kafka cluster].
-<36> Cruise Control xref:type-TlsSidecar-reference[TLS sidecar configuration]. Cruise Control uses the TLS sidecar for secure communication with ZooKeeper.
+<28> Specified xref:property-zookeeper-logging-reference[ZooKeeper loggers and log levels].
+<29> Entity Operator configuration, which xref:assembly-kafka-entity-operator-{context}[specifies the configuration for the Topic Operator and User Operator].
+<30> Entity Operator xref:type-TlsSidecar-reference[TLS sidecar configuration]. Entity Operator uses the TLS sidecar for secure communication with ZooKeeper.
+<31> Specified xref:property-topic-operator-logging-reference[Topic Operator loggers and log levels]. This example uses `inline` logging.
+<32> Specified xref:property-user-operator-logging-reference[User Operator loggers and log levels].
+<33> Kafka Exporter configuration. link:{BookURLDeploying}#assembly-metrics-kafka-exporter-str[Kafka Exporter] is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data.
+<34> Optional configuration for Cruise Control, which is used to xref:cruise-control-concepts-str[rebalance the Kafka cluster].
+<35> Cruise Control xref:type-TlsSidecar-reference[TLS sidecar configuration]. Cruise Control uses the TLS sidecar for secure communication with ZooKeeper.
 
 . Create or update the resource:
 +

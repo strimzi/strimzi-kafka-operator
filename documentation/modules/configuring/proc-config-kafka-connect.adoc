@@ -129,16 +129,13 @@ spec:
       configMapKeyRef:
         name: my-config-map
         key: my-key
-  jmxOptions: <16>
-    authentication:
-      type: "password"
-  jvmOptions: <17>
+  jvmOptions: <16>
     "-Xmx": "1g"
     "-Xms": "1g"
-  image: my-org/my-image:latest <18>
+  image: my-org/my-image:latest <17>
   rack:
-    topologyKey: topology.kubernetes.io/zone <19>
-  template: <20>
+    topologyKey: topology.kubernetes.io/zone <18>
+  template: <19>
     pod:
       affinity:
         podAntiAffinity:
@@ -151,7 +148,7 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    connectContainer: <21>
+    connectContainer: <20>
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
@@ -177,12 +174,11 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <13> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <14> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <15> xref:con-common-configuration-prometheus-reference[Prometheus metrics], which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
-<16> xref:type-KafkaJmxOptions-reference[JMX options] to open JMX port 9999 to obtain JMX metrics, which is configured for password protection in this example. You can open the port without protection using `jmxOptions: {}`.
-<17> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka Connect.
-<18> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<19> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
-<20> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<21> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
+<16> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka Connect.
+<17> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
+<18> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
+<19> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<20> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
 
 . Create or update the resource:
 +

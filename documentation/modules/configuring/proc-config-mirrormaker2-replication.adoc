@@ -141,11 +141,8 @@ spec:
   jvmOptions: <34>
     "-Xmx": "1g"
     "-Xms": "1g"
-  jmxOptions: <35>
-    authentication:
-      type: "password"
-  image: my-org/my-image:latest <36>
-  template: <37>
+  image: my-org/my-image:latest <35>
+  template: <36>
     pod:
       affinity:
         podAntiAffinity:
@@ -158,7 +155,7 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    connectContainer: <38>
+    connectContainer: <37>
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
@@ -167,8 +164,8 @@ spec:
         - name: JAEGER_AGENT_PORT
           value: "6831"
   tracing:
-    type: jaeger <39>
-  externalConfiguration: <40>
+    type: jaeger <38>
+  externalConfiguration: <39>
     env:
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
@@ -217,12 +214,11 @@ You can use comma-separated lists.
 <32> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <33> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <34> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
-<35> xref:type-KafkaJmxOptions-reference[JMX options] to open JMX port 9999 to obtain JMX metrics, which is configured for password protection in this example. You can open the port without protection using `jmxOptions: {}`.
-<36> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<37> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<38> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
-<39> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
-<40> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
+<35> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
+<36> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<37> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
+<38> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
+<39> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
 
 . Create or update the resource:
 +
