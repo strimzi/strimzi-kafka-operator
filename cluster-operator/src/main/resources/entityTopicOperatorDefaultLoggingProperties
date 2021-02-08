@@ -11,9 +11,9 @@ rootLogger.appenderRef.console.ref = STDOUT
 rootLogger.additivity = false
 
 logger.clients.name = org.apache.kafka.clients
-logger.clients.level = WARN
+logger.clients.level = INFO
 logger.clients.additivity = false
 
 logger.streams.name = org.apache.kafka.streams
-logger.streams.level = WARN
+logger.streams.level = INFO
 logger.streams.additivity = false
