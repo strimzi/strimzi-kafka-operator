@@ -124,8 +124,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
     }
 
     @Test
-    // TODO better name?!
-    void testKafkaUpgradeWithoutMessageAndProtocolVersions(ExtensionContext testContext) {
+    void testUpgradeWithNoMessageAndProtocolVersionsSet(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {

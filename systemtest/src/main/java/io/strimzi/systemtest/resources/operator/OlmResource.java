@@ -231,7 +231,7 @@ public class OlmResource {
                 subscription.replace("${OPERATOR_NAMESPACE}", namespace)
                     .replace("${OLM_OPERATOR_NAME}", Environment.OLM_OPERATOR_NAME)
                     .replace("${OLM_SOURCE_NAME}", Environment.OLM_SOURCE_NAME)
-                    .replace("${OLM_SOURCE_NAMESPACE}", Environment.OLM_SOURCE_NAMESPACE == null ? ResourceManager.cmdKubeClient().defaultOlmSourceNamespace() : Environment.OLM_SOURCE_NAMESPACE)
+                    .replace("${OLM_SOURCE_NAMESPACE}", Environment.OLM_SOURCE_NAMESPACE)
                     .replace("${OLM_APP_BUNDLE_PREFIX}", Environment.OLM_APP_BUNDLE_PREFIX)
                     .replace("${OLM_OPERATOR_VERSION}", version)
                     .replace("${OLM_INSTALL_PLAN_APPROVAL}", installationStrategy.toString())
