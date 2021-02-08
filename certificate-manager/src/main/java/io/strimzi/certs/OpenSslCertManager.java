@@ -192,7 +192,7 @@ public class OpenSslCertManager implements CertManager {
         File sna = createDefaultConfig().toFile();
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna, true), StandardCharsets.UTF_8))) {
             if (isCa) {
-                out.append("basicConstraints = critical,CA:true,pathlen:1\n");
+                out.append("basicConstraints = critical,CA:true,pathlen:0\n");
             }
             if (sbj != null) {
                 if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
