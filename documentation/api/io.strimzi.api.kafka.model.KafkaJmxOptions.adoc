@@ -41,7 +41,7 @@ For example, to get JMX metrics from broker _0_ you specify:
 
 `_CLUSTER-NAME_-kafka-0` is name of the broker pod, and `_CLUSTER-NAME_-kafka-brokers` is the name of the headless service to return the IPs of the broker pods.
 
-If the JMX port is secured, you can get the username and password by referencing them from the JMX secret in the
+If the JMX port is secured, you can get the username and password by referencing them from the JMX Secret in the
 deployment of your pod.
 
 For an unprotected JMX port, use an empty object `{}` to open the JMX port on the headless service.
