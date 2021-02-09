@@ -6,14 +6,14 @@
 [id='assembly-upgrade-{context}']
 = Upgrading Strimzi
 
-Strimzi can be upgraded with no cluster downtime.
+Strimzi can be upgraded without causing any downtime for consumers and producers. 
+Cluster availability might be affected by rolling updates that occur during the upgrade process.
+
 Each version of Strimzi supports one or more versions of Apache Kafka.
 You can upgrade to a higher Kafka version as long as it is supported by your version of Strimzi.
 In some cases, you can also downgrade to a lower supported Kafka version.
 
 Newer versions of Strimzi may support newer versions of Kafka, but you need to upgrade Strimzi _before_ you can upgrade to a higher supported Kafka version.
-
-IMPORTANT: If applicable, xref:assembly-upgrade-resources-{context}[Resource upgrades] _must_ be performed after upgrading Strimzi and Kafka.
 
 include::assembly-upgrade-kafka.adoc[leveloffset=+1]
 

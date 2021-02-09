@@ -95,6 +95,7 @@
 :ExternalListeners: link:https://strimzi.io/2019/04/17/accessing-kafka-part-1.html[Accessing Apache Kafka in Strimzi^]
 :OperatorHub: link:https://operatorhub.io/[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
+:OLMOperatorDocs: link:https://olm.operatorframework.io/docs/[Operator Lifecycle Manager documentation^]
 :OpenTracingHome: link:https://opentracing.io/[OpenTracing^]
 :OpenTelemetryHome: link:https://opentelemetry.io/[OpenTelemetry^]
 :JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
