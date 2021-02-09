@@ -1675,7 +1675,7 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 |Property                             |Description
 |generateCertificateAuthority  1.2+<.<|If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
 |boolean
-|generateSecretOwnerReference  1.2+<.<|If true then the Certificate Authority certificates secrets owner reference is set to the Kafka object. Otherwise no owner reference is set so deleting the Kafka object won't delete the secrets. Default is true.
+|generateSecretOwnerReference  1.2+<.<|If `true`, the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. If the `Kafka` resource is deleted when `true`, the CA Secrets are also deleted. If `false`, the `ownerReference` is disabled. If the `Kafka` resource is deleted when `false`, the CA Secrets are retained and available for reuse. Default is `true`.
 |boolean
 |validityDays                  1.2+<.<|The number of days generated certificates should be valid for. The default is 365.
 |integer
