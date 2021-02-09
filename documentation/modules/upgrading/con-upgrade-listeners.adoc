@@ -7,7 +7,7 @@
 
 Strimzi provides a `GenericKafkaListener` schema for the configuration of Kafka listeners in a `Kafka` resource.
 
-`GenericKafkaListener` replaces the `KafkaListeners` schema, which is deprecated.
+`GenericKafkaListener` replaces the `KafkaListeners` schema, which has been removed from Strimzi.
 
 With the `GenericKafkaListener` schema, you can configure as many listeners as required,
 as long as their names and ports are unique.
@@ -18,8 +18,8 @@ For clients inside the Kubernetes cluster, you can create `plain` (without encry
 For clients outside the Kubernetes cluster, you create _external_ listeners and specify a connection mechanism,
 which can be `nodeport`, `loadbalancer`, `ingress` or `route`.
 
-The `KafkaListeners` schema uses sub-properties for `plain`, `tls` and `external` listeners, with fixed ports for each.
-After the Kafka upgrade, you can convert listeners configured using the `KafkaListeners` schema into the format of the `GenericKafkaListener` schema.
+The `KafkaListeners` schema used sub-properties for `plain`, `tls` and `external` listeners, with fixed ports for each.
+At any stage in the upgrade process, you must convert listeners configured using the `KafkaListeners` schema into the format of the `GenericKafkaListener` schema.
 
 For example, if you are currently using the following configuration in your `Kafka` configuration:
 

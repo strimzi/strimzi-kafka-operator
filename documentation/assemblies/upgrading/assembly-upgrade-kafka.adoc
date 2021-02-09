@@ -3,7 +3,7 @@
 // assembly-upgrade.adoc
 
 [id='assembly-upgrade-kafka-{context}']
-= Outline of Strimzi and Kafka upgrades
+= Strimzi and Kafka upgrades
 
 Upgrading Strimzi is a three-stage process. To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the following order:
 
@@ -31,8 +31,17 @@ For more information on using {OperatorHub} to upgrade Operators, see {OLMOperat
 +
 * xref:assembly-upgrade-resources-{context}[Strimzi resource upgrades]
 
+//mention optional upgrade to GenericKafkaListeners here and link to the procedure
+//mention upgrade to cooperative rebalance protocol here and link to procedure
+
 include::modules/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
 
 include::assembly-upgrade-kafka-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
+
+//how to upgrade to generic listener config
+include::modules/con-upgrade-listeners.adoc[leveloffset=+1]
+
+//how to upgrade clients and kafka streams to use the incremental cooperative rebalance protocol
+include::modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]

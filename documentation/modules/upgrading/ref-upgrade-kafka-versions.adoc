@@ -6,7 +6,7 @@
 
 = Kafka versions
 
-Kafka's log message format version and inter-broker protocol version specify the log format version appended to messages and the version of protocol used in a cluster. As a result, the upgrade process involves making configuration changes to existing Kafka brokers and code changes to client applications (consumers and producers) to ensure the correct versions are used.
+Kafka's log message format version and inter-broker protocol version specify the log format version appended to messages and the version of the Kafka protocol used in a cluster. Therefore, the upgrade process involves making configuration changes to existing Kafka brokers and code changes to client applications (consumers and producers) to ensure the correct versions are used.
 
 The following table shows the differences between Kafka versions:
 
@@ -15,7 +15,7 @@ include::snip-kafka-versions.adoc[leveloffset=+1]
 .Message format version
 
 When a producer sends a message to a Kafka broker, the message is encoded using a specific format.
-The format can change between Kafka releases, so messages include a version identifying which version of the format they were encoded with. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.
+The format can change between Kafka releases, so messages specify which version of the format they were encoded with. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.
 
 In Kafka, there are two different methods for setting the message format version:
 

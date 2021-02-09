@@ -4,7 +4,7 @@
 
 [id="proc-upgrading-consumers-streams-cooperative-rebalancing_{context}"]
 
-= Upgrading consumers and Kafka Streams applications to cooperative rebalancing
+= Upgrading consumers to cooperative rebalancing
 
 You can upgrade Kafka consumers and Kafka Streams applications to use the _incremental cooperative rebalance_ protocol for partition rebalances instead of the default _eager rebalance_ protocol. The new protocol was added in Kafka 2.4.0.
 
