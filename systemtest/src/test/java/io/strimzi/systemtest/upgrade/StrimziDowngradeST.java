@@ -19,6 +19,11 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+/**
+ * This test class contains tests for Strimzi downgrade from version X to version X - 1.
+ * Metadata for downgrade procedure are available in resource file StrimziDowngrade.json
+ * Kafka upgrade is done as part of those tests as well, but the tests for Kafka upgrade/downgrade are in {@link KafkaUpgradeDowngradeST}.
+ */
 @Tag(UPGRADE)
 public class StrimziDowngradeST extends AbstractUpgradeST {
 

@@ -52,6 +52,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+/**
+ * This test class contains tests for Strimzi upgrade from version X to version X + 1.
+ * Metadata for upgrade procedure are available in resource file StrimziUpgrade.json
+ * Kafka upgrade is done as part of those tests as well, but the tests for Kafka upgrade/downgrade are in {@link KafkaUpgradeDowngradeST}.
+ */
 @Tag(UPGRADE)
 public class StrimziUpgradeST extends AbstractUpgradeST {
 

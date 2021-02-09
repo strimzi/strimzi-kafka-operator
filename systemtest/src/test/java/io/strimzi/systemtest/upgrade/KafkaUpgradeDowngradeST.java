@@ -35,6 +35,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+/**
+ * This test class contains tests for Kafka upgrade/downgrade from version X to X +/- 1.
+ * Metadata for upgrade/downgrade procedure are loaded from kafka-versions.yaml in root dir of this repository.
+ */
 @Tag(UPGRADE)
 public class KafkaUpgradeDowngradeST extends AbstractST {
 

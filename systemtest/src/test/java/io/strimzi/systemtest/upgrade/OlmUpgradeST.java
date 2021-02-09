@@ -34,6 +34,11 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+/**
+ * This test class contains tests for Strimzi downgrade from version X to version X - 1.
+ * The difference between this class and {@link StrimziUpgradeST} is in cluster operator install type.
+ * Tests in this class use OLM for install cluster operator.
+ */
 @Tag(OLM_UPGRADE)
 public class OlmUpgradeST extends AbstractUpgradeST {
 
