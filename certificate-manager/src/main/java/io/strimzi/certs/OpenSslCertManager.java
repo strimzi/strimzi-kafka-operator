@@ -149,11 +149,18 @@ public class OpenSslCertManager implements CertManager {
         //openssl req -new -key root.key -out newcsr.csr
         File csrFile = Files.createTempFile("renewal", ".csr").toFile();
 
-        List<String> cmd = new ArrayList<>(asList("openssl", "x509",
-                "-x509toreq",
-                "-in", certFile.getAbsolutePath(),
-                "-signkey", keyFile.getAbsolutePath(),
-                "-out", csrFile.getAbsolutePath()));
+        List<String> cmd = new ArrayList<>(asList("openssl", "req",
+                "-new",
+                "-batch",
+                "-out", csrFile.getAbsolutePath(),
+                "-key", keyFile.getAbsolutePath()));
+        if (sbj != null) {
+            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+                File sna = buildConfigFile(sbj, true);
+                cmd.addAll(asList("-config", sna.toPath().toString(), "-extensions", "v3_req"));
+            }
+            cmd.addAll(asList("-subj", sbj.toString()));
+        }
 
         exec(cmd);
 

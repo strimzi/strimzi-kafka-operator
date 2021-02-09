@@ -315,29 +315,31 @@ public class OpenSslCertManagerTest {
 
         ssl.generateCert(csr, caKey, originalCert, clientCert, clientSubject, 365);
         csr.delete();
+        originalCert.delete();
         originalStore.delete();
 
         // Generate a renewed CA certificate
+        File newCert = File.createTempFile("crt-", ".crt");
         File newStore = File.createTempFile("crt-", ".p12");
-        ssl.renewSelfSignedCert(caKey, originalCert, caSubject, 365);
+        ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
         // TODO should assert that originalCert actually was changed
-        ssl.addCertToTrustStore(originalCert, "ca", newStore, "123456");
+        ssl.addCertToTrustStore(newCert, "ca", newStore, "123456");
 
-        X509Certificate x509Certificate = loadCertificate(originalCert);
+        X509Certificate x509Certificate = loadCertificate(newCert);
         assertCaCertificate(x509Certificate, true);
 
         // verify the client cert is valid wrt the new cert.
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate c = cf.generateCertificate(new FileInputStream(clientCert));
-        Certificate ca = cf.generateCertificate(new FileInputStream(originalCert));
+        Certificate ca = cf.generateCertificate(new FileInputStream(newCert));
 
         c.verify(ca.getPublicKey());
 
-        originalCert.delete();
         clientKey.delete();
         clientCert.delete();
 
         caKey.delete();
+        newCert.delete();
         newStore.delete();
     }
 }
