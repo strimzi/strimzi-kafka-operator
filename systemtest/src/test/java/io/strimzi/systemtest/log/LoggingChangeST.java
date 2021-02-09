@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -1116,6 +1117,60 @@ class LoggingChangeST extends AbstractST {
         );
 
         assertThat("MirrorMaker2 pod should not roll", DeploymentUtils.depSnapshot(KafkaMirrorMaker2Resources.deploymentName(clusterName)), equalTo(mm2Snapshot));
+    }
+
+    @Test
+    void testUseLoggingVarsBeforeDefinition() {
+        String myCustomLevel = "WARN";
+        Map<String, String> loggersConfigKafka = new LinkedHashMap<>() {
+            {
+                put("log4j.rootLogger", "${kafka.root.logger.level}, CONSOLE");
+                put("log4j.logger.org.apache.kafka", "${kafka.my.level.string}");
+                put("log4j.appender.CONSOLE", "org.apache.log4j.ConsoleAppender");
+                put("log4j.appender.CONSOLE.layout", "net.logstash.log4j.JSONEventLayoutV1");
+
+                put("log4j.logger.org.I0Itec.zkclient.ZkClient", "${kafka.my.level.string}");
+                put("log4j.logger.org.apache.zookeeper", "${kafka.my.level.string}");
+                put("log4j.logger.kafka", "${kafka.my.level.string}");
+                put("log4j.logger.kafka.request.logger", "${kafka.my.level.string}, CONSOLE");
+                put("log4j.logger.kafka.network.Processor", "OFF");
+                put("log4j.logger.kafka.server.KafkaApis", "OFF");
+                put("log4j.logger.kafka.network.RequestChannel$", "WARN");
+                put("log4j.logger.kafka.controller", "${kafka.my.level.string}");
+                put("log4j.logger.kafka.log.LogCleaner", "${kafka.my.level.string}");
+                put("log4j.logger.state.change.logger", "TRACE");
+                put("log4j.logger.kafka.authorizer.logger", "${kafka.my.level.string}");
+
+                put("kafka.root.logger.level", "DEBUG");
+                put("kafka.my.level.string", myCustomLevel);
+            }
+        };
+
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .withNewInlineLogging()
+                            .addToLoggers(loggersConfigKafka)
+                        .endInlineLogging()
+                .endKafka()
+                .endSpec()
+                .build());
+
+        // We have to check dynamic kafka logs, and not log4j.properties file(s) to get real logging levels
+        String logConfigOutput =  cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(clusterName, 0),
+                        "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out();
+
+        assertThat("Expected kafka root logger is incorrect!!", logConfigOutput.contains("root=DEBUG"));
+
+        String expectedString;
+        for (String key : loggersConfigKafka.keySet()) {
+            if (loggersConfigKafka.get(key).contains("${kafka.my.level.string}")) {
+                LOGGER.info("Checking " + key + " value:" + loggersConfigKafka.get(key));
+                expectedString = key.substring("log4j.logger.".length()) + "=" + myCustomLevel;
+                String msg = String.format("Wrong logging key=value: '%s'", expectedString);
+                assertThat(msg, logConfigOutput.contains(expectedString));
+            }
+        }
     }
 
     @BeforeAll
