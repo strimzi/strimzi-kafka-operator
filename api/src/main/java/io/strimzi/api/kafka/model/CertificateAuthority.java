@@ -60,11 +60,11 @@ public class CertificateAuthority implements UnknownPropertyPreserving, Serializ
         this.generateCertificateAuthority = generateCertificateAuthority;
     }
 
-    @Description("If true, then the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. " +
-            "If the Kafka resource is deleted, then the CA Secrets are also deleted. " +
-            "If false, the `ownerReference` is disabled. " +
-            "If the `Kafka` resource is deleted, then the CA Secrets are retained and available for reuse. " +
-            "Default is true.")
+    @Description("If `true`, the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. " +
+            "If the `Kafka` resource is deleted when `true`, the CA Secrets are also deleted. " +
+            "If `false`, the `ownerReference` is disabled. " +
+            "If the `Kafka` resource is deleted when `false`, the CA Secrets are retained and available for reuse. " +
+            "Default is `true`.")
     public boolean isGenerateSecretOwnerReference() {
         return generateSecretOwnerReference;
     }
