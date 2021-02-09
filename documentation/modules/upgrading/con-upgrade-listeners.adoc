@@ -1,9 +1,9 @@
 // This module is included in the following assemblies:
 //
-// upgrading/assembly_upgrade-kafka-versions.adoc
+// upgrading/assembly-upgrade-kafka.adoc
 
 [id='con-upgrade-listeners-{context}']
-= Updating listener configuration
+= Updating listeners to the generic listener configuration
 
 Strimzi provides a `GenericKafkaListener` schema for the configuration of Kafka listeners in a `Kafka` resource.
 

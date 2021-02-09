@@ -26,6 +26,4 @@ When one or more of these versions differ, the Cluster Operator requires two or 
 
 include::modules/con-upgrade-versions-and-images.adoc[leveloffset=+1]
 
-include::modules/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
-
 include::modules/proc-upgrade-brokers-newer-kafka.adoc[leveloffset=+1]
