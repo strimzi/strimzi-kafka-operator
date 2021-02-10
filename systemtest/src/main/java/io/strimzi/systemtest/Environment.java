@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -99,6 +100,7 @@ public class Environment {
     private static final String OLM_OPERATOR_NAME_ENV = "OLM_OPERATOR_NAME";
     private static final String OLM_OPERATOR_DEPLOYMENT_NAME_ENV = "OLM_OPERATOR_DEPLOYMENT_NAME";
     private static final String OLM_SOURCE_NAME_ENV = "OLM_SOURCE_NAME";
+    private static final String OLM_SOURCE_NAMESPACE_ENV = "OLM_SOURCE_NAMESPACE";
     private static final String OLM_APP_BUNDLE_PREFIX_ENV = "OLM_APP_BUNDLE_PREFIX";
     private static final String OLM_OPERATOR_VERSION_ENV = "OLM_OPERATOR_VERSION";
     private static final String OLM_LATEST_CONTAINER_IMAGE_TAG_ENV = "OLM_LATEST_CONTAINER_IMAGE_TAG";
@@ -123,13 +125,11 @@ public class Environment {
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
-    public static final int KAFKA_CLIENTS_DEFAULT_PORT = 4242;
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi-kafka-operator";
     public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = Constants.STRIMZI_DEPLOYMENT_NAME;
     public static final String OLM_SOURCE_NAME_DEFAULT = "strimzi-source";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi-cluster-operator";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "v0.19.0";
-    public static final String OLM_LATEST_CONTAINER_IMAGE_TAG_DEFAULT = "6.6.6";
+    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.21.1";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
 
@@ -157,9 +157,9 @@ public class Environment {
     public static final String OLM_OPERATOR_NAME = getOrDefault(OLM_OPERATOR_NAME_ENV, OLM_OPERATOR_NAME_DEFAULT);
     public static final String OLM_OPERATOR_DEPLOYMENT_NAME = getOrDefault(OLM_OPERATOR_DEPLOYMENT_NAME_ENV, OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT);
     public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
+    public static final String OLM_SOURCE_NAMESPACE = getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
     public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
     public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, OLM_OPERATOR_VERSION_DEFAULT);
-    public static final String OLM_LATEST_CONTAINER_IMAGE_TAG = getOrDefault(OLM_LATEST_CONTAINER_IMAGE_TAG_ENV, OLM_LATEST_CONTAINER_IMAGE_TAG_DEFAULT);
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // ClusterOperator installation type variable

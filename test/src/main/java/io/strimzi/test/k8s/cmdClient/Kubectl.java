@@ -38,6 +38,11 @@ public class Kubectl extends BaseCmdKubeClient<Kubectl> {
     }
 
     @Override
+    public String defaultOlmSourceNamespace() {
+        return defaultOlmNamespace();
+    }
+
+    @Override
     public String cmd() {
         return KUBECTL;
     }

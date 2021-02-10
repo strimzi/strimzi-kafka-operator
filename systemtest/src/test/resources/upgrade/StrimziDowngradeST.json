@@ -1,0 +1,66 @@
+[
+  {
+    "fromVersion":"HEAD",
+    "toVersion":"0.21.1",
+    "fromExamples":"HEAD",
+    "toExamples":"strimzi-0.21.1",
+    "urlFrom":"HEAD",
+    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.21.1/strimzi-0.21.1.zip",
+    "generateTopics": true,
+    "additionalTopics": 2,
+    "oldestKafka": "2.5.0",
+    "imagesAfterOperatorDowngrade": {
+      "zookeeper": "strimzi/kafka:0.21.1-kafka-2.7.0",
+      "kafka": "strimzi/kafka:0.21.1-kafka-2.7.0",
+      "topicOperator": "strimzi/operator:0.21.1",
+      "userOperator": "strimzi/operator:0.21.1"
+    },
+    "proceduresBeforeOperatorDowngrade": {
+      "kafkaVersion": "",
+      "logMessageVersion": "",
+      "interBrokerProtocolVersion": ""
+    },
+    "client": {
+      "beforeKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:latest-kafka-2.7.0",
+      "afterKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.21.1-kafka-2.7.0",
+      "continuousClientsMessages": 500
+    },
+    "environmentInfo": {
+      "maxK8sVersion": "latest",
+      "status": "stable",
+      "flakyEnvVariable": "none",
+      "reason" : "Test is working on all environment used by QE."
+    }
+  },
+  {
+    "fromVersion":"0.21.1",
+    "toVersion":"0.20.1",
+    "fromExamples":"strimzi-0.21.1",
+    "toExamples":"strimzi-0.20.1",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.21.1/strimzi-0.21.1.zip",
+    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.20.1/strimzi-0.20.1.zip",
+    "generateTopics": true,
+    "imagesAfterOperatorDowngrade": {
+      "zookeeper": "strimzi/kafka:0.20.1-kafka-2.6.0",
+      "kafka": "strimzi/kafka:0.20.1-kafka-2.6.0",
+      "topicOperator": "strimzi/operator:0.20.1",
+      "userOperator": "strimzi/operator:0.20.1"
+    },
+    "proceduresBeforeOperatorDowngrade": {
+      "kafkaVersion": "2.6.0",
+      "logMessageVersion": "2.6",
+      "interBrokerProtocolVersion": "2.6"
+    },
+    "client": {
+      "beforeKafkaUpgradeDowngrade": "strimzi/test-client:0.21.1-kafka-2.7.0",
+      "afterKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.20.1-kafka-2.6.0",
+      "continuousClientsMessages": 500
+    },
+    "environmentInfo": {
+      "maxK8sVersion": "latest",
+      "status": "stable",
+      "flakyEnvVariable": "none",
+      "reason" : "Test is working on all environment used by QE."
+    }
+  }
+]
