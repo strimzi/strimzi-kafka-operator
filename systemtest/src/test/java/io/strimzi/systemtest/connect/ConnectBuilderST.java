@@ -115,6 +115,8 @@ class ConnectBuilderST extends AbstractST {
                 .build())
             .build();
 
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+
         KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
@@ -175,6 +177,9 @@ class ConnectBuilderST extends AbstractST {
     @Test
     void testBuildWithJarTgzAndZip() {
         // this test also testing push into Docker output
+
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
@@ -246,6 +251,8 @@ class ConnectBuilderST extends AbstractST {
 
         kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(NAMESPACE).create(imageStream);
 
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+
         KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -285,6 +292,8 @@ class ConnectBuilderST extends AbstractST {
                     .withNewSha512sum(CAMEL_CONNECTOR_TGZ_CHECKSUM)
                     .build())
             .build();
+
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -368,7 +377,5 @@ class ConnectBuilderST extends AbstractST {
     void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
-
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
     }
 }
