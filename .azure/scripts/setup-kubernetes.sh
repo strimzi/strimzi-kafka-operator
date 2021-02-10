@@ -4,6 +4,11 @@ set -x
 rm -rf ~/.kube
 
 KUBE_VERSION=${KUBE_VERSION:-1.16.0}
+MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-$(free -m | grep "Mem" | awk '{print $3}')}
+MINIKUBE_CPU=${MINIKUBE_MEMORY:-$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)}
+
+echo "[INFO] MINIKUBE_MEMORY: ${MINIKUBE_MEMORY}"
+echo "[INFO] MINIKUBE_CPU: ${MINIKUBE_CPU}"
 
 function install_kubectl {
     if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
@@ -60,8 +65,9 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
     # We have to allow trafic for ITS when NPs are turned on
     # We can allow NP after Strimzi#4092 which should fix some issues on STs side
-    sudo -E minikube start --vm-driver=none --kubernetes-version=${KUBE_VERSION} \
-      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC
+    minikube start --vm-driver=kvm2 --kubernetes-version=${KUBE_VERSION} \
+      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
+      --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY}
 
     if [ $? -ne 0 ]
     then
@@ -69,8 +75,11 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
         exit 1
     fi
 
-    sudo -E minikube addons enable default-storageclass
-	  kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+    minikube addons enable default-storageclass
+	minikube addons enable registry
+	minikube addons enable registry-aliases
+
+	kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
