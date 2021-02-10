@@ -242,9 +242,12 @@ spec:
                                 claim in JWT token. Defaults to `true`.
                             checkAudience:
                               type: boolean
-                              description: Enable or disable audience checking. If
-                                audience checking is enabled the `clientId` also has
-                                to be configured. Default value is `false`.
+                              description: Enable or disable audience checking. Audience
+                                checks identify the recipients of tokens. If audience
+                                checking is enabled the OAuth Client ID also has to
+                                be configured via the `clientId` property. The Kafka
+                                broker will reject tokens that do not have its `clientId`
+                                in their `aud` (audience) claim.Default value is `false`.
                             checkIssuer:
                               type: boolean
                               description: Enable or disable issuer checking. By default
@@ -671,8 +674,12 @@ spec:
                               checkAudience:
                                 type: boolean
                                 description: Enable or disable audience checking.
-                                  If audience checking is enabled the `clientId` also
-                                  has to be configured. Default value is `false`.
+                                  Audience checks identify the recipients of tokens.
+                                  If audience checking is enabled the OAuth Client
+                                  ID also has to be configured via the `clientId`
+                                  property. The Kafka broker will reject tokens that
+                                  do not have its `clientId` in their `aud` (audience)
+                                  claim.Default value is `false`.
                               checkIssuer:
                                 type: boolean
                                 description: Enable or disable issuer checking. By
@@ -915,8 +922,12 @@ spec:
                               checkAudience:
                                 type: boolean
                                 description: Enable or disable audience checking.
-                                  If audience checking is enabled the `clientId` also
-                                  has to be configured. Default value is `false`.
+                                  Audience checks identify the recipients of tokens.
+                                  If audience checking is enabled the OAuth Client
+                                  ID also has to be configured via the `clientId`
+                                  property. The Kafka broker will reject tokens that
+                                  do not have its `clientId` in their `aud` (audience)
+                                  claim.Default value is `false`.
                               checkIssuer:
                                 type: boolean
                                 description: Enable or disable issuer checking. By
@@ -1183,8 +1194,12 @@ spec:
                               checkAudience:
                                 type: boolean
                                 description: Enable or disable audience checking.
-                                  If audience checking is enabled the `clientId` also
-                                  has to be configured. Default value is `false`.
+                                  Audience checks identify the recipients of tokens.
+                                  If audience checking is enabled the OAuth Client
+                                  ID also has to be configured via the `clientId`
+                                  property. The Kafka broker will reject tokens that
+                                  do not have its `clientId` in their `aud` (audience)
+                                  claim.Default value is `false`.
                               checkIssuer:
                                 type: boolean
                                 description: Enable or disable issuer checking. By
