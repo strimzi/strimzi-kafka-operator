@@ -2,7 +2,7 @@
 set -x
 
 # Install kvm
-sudo apt-get install -y kvm qemu-kvm libvirt-bin virtinst
+sudo apt-get install -y qemu-kvm libvirt-bin virtinst bridge-utils cpu-checker
 # Start libvirtd
 sudo systemctl start libvirtd
 # Setup nested virtualization
