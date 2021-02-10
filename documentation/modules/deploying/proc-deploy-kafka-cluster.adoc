@@ -25,17 +25,29 @@ acquired using a `PersistentVolumeClaim` to make it independent of the actual ty
 ifdef::Kubernetes[HostPath volumes on Minikube or]
 Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The `PersistentVolumeClaim` can use a `StorageClass` to trigger automatic volume provisioning.
 
+The example YAML files specify the latest supported Kafka version, and configuration for its supported log message format version and inter-broker protocol version.
+Updates to these properties are required when xref:assembly-upgrading-kafka-versions-str[upgrading Kafka].
+
 The example clusters are named `my-cluster` by default.
 The cluster name is defined by the name of the resource and cannot be changed after the cluster has been deployed.
 To change the cluster name before you deploy the cluster, edit the `Kafka.metadata.name` property of the `Kafka` resource in the relevant YAML file.
 
+.Default cluster name and specified Kafka versions
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   name: my-cluster
-# ...
+spec:
+  kafka:
+    version: {DefaultKafkaVersion}
+    #...
+    config:
+      #...
+      log.message.format.version: {LogMsgVersHigher}
+      inter.broker.protocol.version: {LogMsgVersHigher}
+  # ...
 ----
 
 For more information about configuring the `Kafka` resource, see link:{BookURLUsing}#assembly-config-kafka-str[Kafka cluster configuration^] in the _Using Strimzi_ guide.
