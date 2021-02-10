@@ -5,14 +5,12 @@ rm -rf ~/.kube
 
 KUBE_VERSION=${KUBE_VERSION:-1.16.0}
 
-FREE_MEM=$(free -m | grep "Mem" | awk '{print $2}')
-FREE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
+DEFAULT_MINIKUBE_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
+DEFAULT_MINIKUBE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
 
-MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-$FREE_MEM}
-MINIKUBE_CPU=${MINIKUBE_MEMORY:-$FREE_CPU}
+MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-$DEFAULT_MINIKUBE_MEMORY}
+MINIKUBE_CPU=${MINIKUBE_CPU:-$DEFAULT_MINIKUBE_CPU}
 
-echo "[INFO] FREE_MEM: ${FREE_MEM}"
-echo "[INFO] FREE_CPU: ${FREE_CPU}"
 echo "[INFO] MINIKUBE_MEMORY: ${MINIKUBE_MEMORY}"
 echo "[INFO] MINIKUBE_CPU: ${MINIKUBE_CPU}"
 
