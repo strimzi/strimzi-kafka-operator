@@ -4,9 +4,15 @@ set -x
 rm -rf ~/.kube
 
 KUBE_VERSION=${KUBE_VERSION:-1.16.0}
-MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-$(free -m | grep "Mem" | awk '{print $3}')}
-MINIKUBE_CPU=${MINIKUBE_MEMORY:-$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)}
 
+FREE_MEM=$(free -m | grep "Mem" | awk '{print $3}')
+FREE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
+
+MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-$FREE_MEM}
+MINIKUBE_CPU=${MINIKUBE_MEMORY:-$FREE_CPU}
+
+echo "[INFO] FREE_MEM: ${FREE_MEM}"
+echo "[INFO] FREE_CPU: ${FREE_CPU}"
 echo "[INFO] MINIKUBE_MEMORY: ${MINIKUBE_MEMORY}"
 echo "[INFO] MINIKUBE_CPU: ${MINIKUBE_CPU}"
 
@@ -65,7 +71,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
     # We have to allow trafic for ITS when NPs are turned on
     # We can allow NP after Strimzi#4092 which should fix some issues on STs side
-    minikube start --vm-driver=kvm2 --kubernetes-version=${KUBE_VERSION} \
+    minikube start --vm-driver=docker --kubernetes-version=${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
       --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY}
 
