@@ -108,7 +108,7 @@ class ConnectBuilderST extends AbstractST {
     @Test
     void testBuildFailsWithWrongChecksumOfArtifact() {
         Plugin pluginWithWrongChecksum = new PluginBuilder()
-            .withName("connector-with-empty-checksum")
+            .withName("connector-with-wrong-checksum")
             .withArtifacts(new JarArtifactBuilder()
                 .withNewUrl(ECHO_SINK_JAR_URL)
                 .withNewSha512sum(ECHO_SINK_JAR_WRONG_CHECKSUM)
@@ -149,7 +149,7 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Replacing plugin's checksum with right one");
         KafkaConnectResource.replaceKafkaConnectResource(clusterName, kC -> {
             Plugin pluginWithRightChecksum = new PluginBuilder()
-                .withName("connector-with-empty-checksum")
+                .withName("connector-with-right-checksum")
                 .withArtifacts(new JarArtifactBuilder()
                     .withNewUrl(ECHO_SINK_JAR_URL)
                     .withNewSha512sum(ECHO_SINK_JAR_CHECKSUM)
@@ -244,7 +244,7 @@ class ConnectBuilderST extends AbstractST {
             .endMetadata()
             .build();
 
-        kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().create(imageStream);
+        kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(NAMESPACE).create(imageStream);
 
         KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
             .editMetadata()
