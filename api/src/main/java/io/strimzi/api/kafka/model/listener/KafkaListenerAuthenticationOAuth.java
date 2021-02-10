@@ -106,7 +106,9 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.checkIssuer = checkIssuer;
     }
 
-    @Description("Enable or disable audience checking. If audience checking is enabled the OAuth Client ID also has to be configured via the `clientId` property. " +
+    @Description("Enable or disable audience checking. Audience checks identify the recipients of tokens. " +
+            "If audience checking is enabled the OAuth Client ID also has to be configured via the `clientId` property. " +
+            "The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim." +
             "Default value is `false`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isCheckAudience() {
