@@ -492,10 +492,18 @@ spec:
                                   x-kubernetes-preserve-unknown-fields: true
                                   type: object
                                   description: Annotations that will be added to the
-                                    `Ingress` or `Service` resource. You can use this
-                                    field to configure DNS providers such as External
-                                    DNS. This field can be used only with `loadbalancer`,
-                                    `nodeport`, or `ingress` type listeners.
+                                    `Ingress`, `Route`, or `Service` resource. You
+                                    can use this field to configure DNS providers
+                                    such as External DNS. This field can be used only
+                                    with `loadbalancer`, `nodeport`, `route`, or `ingress`
+                                    type listeners.
+                                labels:
+                                  x-kubernetes-preserve-unknown-fields: true
+                                  type: object
+                                  description: Labels that will be added to the `Ingress`,
+                                    `Route`, or `Service` resource. This field can
+                                    be used only with `loadbalancer`, `nodeport`,
+                                    `route`, or `ingress` type listeners.
                               description: Bootstrap configuration.
                             brokers:
                               type: array
@@ -546,6 +554,13 @@ spec:
                                       as External DNS. This field can be used only
                                       with `loadbalancer`, `nodeport`, or `ingress`
                                       type listeners.
+                                  labels:
+                                    x-kubernetes-preserve-unknown-fields: true
+                                    type: object
+                                    description: Labels that will be added to the
+                                      `Ingress`, `Route`, or `Service` resource. This
+                                      field can be used only with `loadbalancer`,
+                                      `nodeport`, `route`, or `ingress` type listeners.
                                 required:
                                 - broker
                               description: Per-broker configurations.

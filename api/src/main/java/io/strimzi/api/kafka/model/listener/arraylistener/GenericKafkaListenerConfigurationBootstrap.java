@@ -35,6 +35,7 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
     private List<String> alternativeNames;
     private String host;
     private Map<String, String> annotations = new HashMap<>(0);
+    private Map<String, String> labels = new HashMap<>(0);
     private Integer nodePort;
     private String loadBalancerIP;
 
@@ -63,9 +64,9 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
         this.host = host;
     }
 
-    @Description("Annotations that will be added to the `Ingress` or `Service` resource. " +
+    @Description("Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. " +
             "You can use this field to configure DNS providers such as External DNS. " +
-            "This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.")
+            "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
         return annotations;
@@ -73,6 +74,17 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
 
     public void setAnnotations(Map<String, String> annotations) {
         this.annotations = annotations;
+    }
+
+    @Description("Labels that will be added to the `Ingress`, `Route`, or `Service` resource. " +
+            "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 
     @Description("Node port for the bootstrap service. " +

@@ -843,7 +843,7 @@ public class KafkaCluster extends AbstractModel {
                     serviceName,
                     ListenersUtils.serviceType(listener),
                     ports,
-                    getLabelsWithStrimziName(name, templateExternalBootstrapServiceLabels),
+                    getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapServiceLabels, ListenersUtils.bootstrapLabels(listener))),
                     getSelectorLabels(),
                     Util.mergeLabelsOrAnnotations(ListenersUtils.bootstrapAnnotations(listener), templateExternalBootstrapServiceAnnotations)
             );
@@ -907,7 +907,7 @@ public class KafkaCluster extends AbstractModel {
                     serviceName,
                     ListenersUtils.serviceType(listener),
                     ports,
-                    getLabelsWithStrimziName(name, templatePerPodServiceLabels),
+                    getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodServiceLabels, ListenersUtils.brokerLabels(listener, pod))),
                     selector,
                     Util.mergeLabelsOrAnnotations(ListenersUtils.brokerAnnotations(listener, pod), templatePerPodServiceAnnotations)
             );
@@ -960,8 +960,8 @@ public class KafkaCluster extends AbstractModel {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(routeName)
-                        .withLabels(getLabelsWithStrimziName(name, templateExternalBootstrapRouteLabels).toMap())
-                        .withAnnotations(templateExternalBootstrapRouteAnnotations)
+                        .withLabels(Util.mergeLabelsOrAnnotations(getLabelsWithStrimziName(name, templateExternalBootstrapRouteLabels).toMap(), ListenersUtils.bootstrapLabels(listener)))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(templateExternalBootstrapRouteAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -1005,8 +1005,8 @@ public class KafkaCluster extends AbstractModel {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(routeName)
-                        .withLabels(getLabelsWithStrimziName(name, templatePerPodRouteLabels).toMap())
-                        .withAnnotations(templatePerPodRouteAnnotations)
+                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodRouteLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(templatePerPodRouteAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -1074,7 +1074,7 @@ public class KafkaCluster extends AbstractModel {
             Ingress ingress = new IngressBuilder()
                     .withNewMetadata()
                         .withName(ingressName)
-                        .withLabels(getLabelsWithStrimziName(name, templateExternalBootstrapIngressLabels).toMap())
+                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
@@ -1129,7 +1129,7 @@ public class KafkaCluster extends AbstractModel {
             Ingress ingress = new IngressBuilder()
                     .withNewMetadata()
                         .withName(ingressName)
-                        .withLabels(getLabelsWithStrimziName(name, templatePerPodIngressLabels).toMap())
+                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templatePerPodIngressAnnotations, dnsAnnotations))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())

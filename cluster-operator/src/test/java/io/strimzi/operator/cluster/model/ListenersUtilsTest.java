@@ -106,6 +106,7 @@ public class ListenersUtilsTest {
                     .withAlternativeNames(asList("my-route-1", "my-route-2"))
                     .withHost("my-route-host")
                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                    .withLabels(Collections.singletonMap("label", "label-value"))
                 .endBootstrap()
                 .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(0)
@@ -113,6 +114,7 @@ public class ListenersUtilsTest {
                                 .withAdvertisedPort(9092)
                                 .withHost("my-route-host-1")
                                 .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                .withLabels(Collections.singletonMap("label", "label-value"))
                                 .build(),
                         new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(1)
@@ -120,6 +122,7 @@ public class ListenersUtilsTest {
                                 .withAdvertisedPort(9092)
                                 .withHost("my-route-host-2")
                                 .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                .withLabels(Collections.singletonMap("label", "label-value"))
                                 .build())
             .endConfiguration()
             .build();
@@ -145,6 +148,7 @@ public class ListenersUtilsTest {
                     .withAlternativeNames(asList("my-np-1", "my-np-2"))
                     .withNodePort(32189)
                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                    .withLabels(Collections.singletonMap("label", "label-value"))
                 .endBootstrap()
                 .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(0)
@@ -152,6 +156,7 @@ public class ListenersUtilsTest {
                                 .withAdvertisedPort(9092)
                                 .withNodePort(32190)
                                 .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                .withLabels(Collections.singletonMap("label", "label-value"))
                                 .build(),
                         new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(1)
@@ -159,6 +164,7 @@ public class ListenersUtilsTest {
                                 .withAdvertisedPort(9092)
                                 .withNodePort(32191)
                                 .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                .withLabels(Collections.singletonMap("label", "label-value"))
                                 .build())
             .endConfiguration()
             .build();
@@ -189,6 +195,7 @@ public class ListenersUtilsTest {
                     .withAlternativeNames(asList("my-lb-1", "my-lb-2"))
                     .withLoadBalancerIP("130.211.204.1")
                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                    .withLabels(Collections.singletonMap("label", "label-value"))
                 .endBootstrap()
                 .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(0)
@@ -196,6 +203,7 @@ public class ListenersUtilsTest {
                                 .withAdvertisedPort(19092)
                                 .withLoadBalancerIP("130.211.204.1")
                                 .withAnnotations(Collections.singletonMap("dns-anno-1", "dns-value"))
+                                .withLabels(Collections.singletonMap("label-1", "label-value"))
                                 .build(),
                         new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(1)
@@ -203,6 +211,7 @@ public class ListenersUtilsTest {
                                 .withAdvertisedPort(29092)
                                 .withLoadBalancerIP("130.211.204.1")
                                 .withAnnotations(Collections.singletonMap("dns-anno-2", "dns-value"))
+                                .withLabels(Collections.singletonMap("label-2", "label-value"))
                                 .build())
             .endConfiguration()
             .build();
@@ -238,6 +247,7 @@ public class ListenersUtilsTest {
                     .withAlternativeNames(asList("my-ing-1", "my-ing-2"))
                     .withHost("my-ing-host")
                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                    .withLabels(Collections.singletonMap("label", "label-value"))
                 .endBootstrap()
                 .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(0)
@@ -245,6 +255,7 @@ public class ListenersUtilsTest {
                                 .withAdvertisedPort(9092)
                                 .withHost("my-host")
                                 .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                .withLabels(Collections.singletonMap("label", "label-value"))
                                 .build(),
                         new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(1)
@@ -252,6 +263,7 @@ public class ListenersUtilsTest {
                                 .withAdvertisedPort(9092)
                                 .withHost("my-host")
                                 .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                .withLabels(Collections.singletonMap("label", "label-value"))
                                 .build())
             .endConfiguration()
             .build();
@@ -451,17 +463,24 @@ public class ListenersUtilsTest {
     }
 
     @Test
-    public void testBootstrapDnsAnnotations() {
+    public void testBootstrapLabelsAndAnnotations() {
         assertThat(ListenersUtils.bootstrapAnnotations(newLoadBalancer), is(emptyMap()));
         assertThat(ListenersUtils.bootstrapAnnotations(newLoadBalancer2), is(Collections.singletonMap("dns-anno", "dns-value")));
         assertThat(ListenersUtils.bootstrapAnnotations(oldPlain), is(emptyMap()));
         assertThat(ListenersUtils.bootstrapAnnotations(newTls), is(emptyMap()));
         assertThat(ListenersUtils.bootstrapAnnotations(newNodePort), is(emptyMap()));
         assertThat(ListenersUtils.bootstrapAnnotations(newNodePort3), is(emptyMap()));
+
+        assertThat(ListenersUtils.bootstrapLabels(newLoadBalancer), is(emptyMap()));
+        assertThat(ListenersUtils.bootstrapLabels(newLoadBalancer2), is(Collections.singletonMap("label", "label-value")));
+        assertThat(ListenersUtils.bootstrapLabels(oldPlain), is(emptyMap()));
+        assertThat(ListenersUtils.bootstrapLabels(newTls), is(emptyMap()));
+        assertThat(ListenersUtils.bootstrapLabels(newNodePort), is(emptyMap()));
+        assertThat(ListenersUtils.bootstrapLabels(newNodePort3), is(emptyMap()));
     }
 
     @Test
-    public void testBrokerDnsAnnotations() {
+    public void testBrokerLabelsAndAnnotations() {
         assertThat(ListenersUtils.brokerAnnotations(newLoadBalancer, 1), is(emptyMap()));
         assertThat(ListenersUtils.brokerAnnotations(newLoadBalancer2, 0), is(Collections.singletonMap("dns-anno-1", "dns-value")));
         assertThat(ListenersUtils.brokerAnnotations(newLoadBalancer2, 1), is(Collections.singletonMap("dns-anno-2", "dns-value")));
@@ -470,6 +489,15 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerAnnotations(newTls, 1), is(emptyMap()));
         assertThat(ListenersUtils.brokerAnnotations(newNodePort, 1), is(emptyMap()));
         assertThat(ListenersUtils.brokerAnnotations(newNodePort3, 1), is(emptyMap()));
+
+        assertThat(ListenersUtils.brokerLabels(newLoadBalancer, 1), is(emptyMap()));
+        assertThat(ListenersUtils.brokerLabels(newLoadBalancer2, 0), is(Collections.singletonMap("label-1", "label-value")));
+        assertThat(ListenersUtils.brokerLabels(newLoadBalancer2, 1), is(Collections.singletonMap("label-2", "label-value")));
+        assertThat(ListenersUtils.brokerLabels(newLoadBalancer2, 2), is(emptyMap()));
+        assertThat(ListenersUtils.brokerLabels(oldPlain, 1), is(emptyMap()));
+        assertThat(ListenersUtils.brokerLabels(newTls, 1), is(emptyMap()));
+        assertThat(ListenersUtils.brokerLabels(newNodePort, 1), is(emptyMap()));
+        assertThat(ListenersUtils.brokerLabels(newNodePort3, 1), is(emptyMap()));
     }
 
     @Test
