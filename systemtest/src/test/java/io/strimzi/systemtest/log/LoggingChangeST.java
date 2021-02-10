@@ -961,8 +961,7 @@ class LoggingChangeST extends AbstractST {
                         "log4j.logger.kafka.log.LogCleaner=INFO\n" +
                         "log4j.logger.state.change.logger=TRACE\n" +
                         "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
-                        "kafka.my.level.string=${infoLevel}\n" +
-                        "infoLevel=INFO"
+                        "kafka.my.level.string=INFO"
                         ))
                 .build();
 
@@ -1002,8 +1001,7 @@ class LoggingChangeST extends AbstractST {
                         "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
                         "log4j.logger.state.change.logger=TRACE\n" +
                         "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
-                        "kafka.my.level.string=${errorLevel}\n" +
-                        "errorLevel=ERROR"
+                        "kafka.my.level.string=ERROR"
                         ))
                 .build();
 
@@ -1037,8 +1035,7 @@ class LoggingChangeST extends AbstractST {
                         "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
                         "log4j.logger.state.change.logger=TRACE\n" +
                         "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
-                        "kafka.my.level.string=${debugLevel}\n" +
-                        "debugLevel=DEBUG"
+                        "kafka.my.level.string=DEBUG}"
                 ))
                 .build();
 
