@@ -415,6 +415,42 @@ public class ListenersUtils {
     }
 
     /**
+     * Finds bootstrap service labels
+     *
+     * @param listener  Listener for which the load balancer IP should be found
+     * @return          Map with labels or empty map if not specified
+     */
+    public static Map<String, String> bootstrapLabels(GenericKafkaListener listener)    {
+        if (listener.getConfiguration() != null
+                && listener.getConfiguration().getBootstrap() != null
+                && listener.getConfiguration().getBootstrap().getLabels() != null) {
+            return listener.getConfiguration().getBootstrap().getLabels();
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Finds broker service labels
+     *
+     * @param listener  Listener for which the load balancer IP should be found
+     * @param pod       Pod ID for which we should get the configuration option
+     * @return          Map with labels or empty map if not specified
+     */
+    public static Map<String, String> brokerLabels(GenericKafkaListener listener, int pod)    {
+        if (listener.getConfiguration() != null
+                && listener.getConfiguration().getBrokers() != null) {
+            return listener.getConfiguration().getBrokers().stream()
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getLabels() != null)
+                    .map(GenericKafkaListenerConfigurationBroker::getLabels)
+                    .findAny()
+                    .orElse(Collections.emptyMap());
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
      * Finds bootstrap host
      *
      * @param listener  Listener for which the host should be found

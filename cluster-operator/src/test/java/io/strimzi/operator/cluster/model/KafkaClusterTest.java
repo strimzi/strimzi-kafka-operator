@@ -743,6 +743,65 @@ public class KafkaClusterTest {
     }
 
     @Test
+    public void testExternalRoutesWithLabelsAndAnnotations() {
+        GenericKafkaListenerConfigurationBroker routeListenerBrokerConfig0 = new GenericKafkaListenerConfigurationBroker();
+        routeListenerBrokerConfig0.setBroker(0);
+        routeListenerBrokerConfig0.setAnnotations(Collections.singletonMap("anno", "anno-value-0"));
+        routeListenerBrokerConfig0.setLabels(Collections.singletonMap("label", "label-value-0"));
+
+        GenericKafkaListenerConfigurationBroker routeListenerBrokerConfig1 = new GenericKafkaListenerConfigurationBroker();
+        routeListenerBrokerConfig1.setBroker(1);
+        routeListenerBrokerConfig1.setAnnotations(Collections.singletonMap("anno", "anno-value-1"));
+        routeListenerBrokerConfig1.setLabels(Collections.singletonMap("label", "label-value-1"));
+
+        GenericKafkaListenerConfigurationBroker routeListenerBrokerConfig2 = new GenericKafkaListenerConfigurationBroker();
+        routeListenerBrokerConfig2.setBroker(2);
+        routeListenerBrokerConfig2.setAnnotations(Collections.singletonMap("anno", "anno-value-2"));
+        routeListenerBrokerConfig2.setLabels(Collections.singletonMap("label", "label-value-2"));
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.ROUTE)
+                                .withTls(true)
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .withNewConfiguration()
+                                    .withNewBootstrap()
+                                        .withAnnotations(Collections.singletonMap("anno", "anno-value"))
+                                        .withLabels(Collections.singletonMap("label", "label-value"))
+                                    .endBootstrap()
+                                    .withBrokers(routeListenerBrokerConfig0, routeListenerBrokerConfig1, routeListenerBrokerConfig2)
+                                .endConfiguration()
+                            .endGenericKafkaListener()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        // Check bootstrap route
+        Route brt = kc.generateExternalBootstrapRoutes().get(0);
+        assertThat(brt.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
+        assertThat(brt.getMetadata().getAnnotations().get("anno"), is("anno-value"));
+        assertThat(brt.getMetadata().getLabels().get("label"), is("label-value"));
+
+        // Check per pod router
+        for (int i = 0; i < replicas; i++)  {
+            Route rt = kc.generateExternalRoutes(i).get(0);
+            assertThat(rt.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(rt.getMetadata().getAnnotations().get("anno"), is("anno-value-" + i));
+            assertThat(rt.getMetadata().getLabels().get("label"), is("label-value-" + i));
+        }
+    }
+
+    @Test
     public void testExternalLoadBalancers() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
@@ -1148,19 +1207,22 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testExternalLoadBalancersWithDnsAnnotations() {
+    public void testExternalLoadBalancersWithLabelsAndAnnotations() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
+                .withLabels(Collections.singletonMap("label", "label-value"))
                 .build();
 
         GenericKafkaListenerConfigurationBroker brokerConfig0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
                 .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."))
+                .withLabels(Collections.singletonMap("label", "label-value"))
                 .build();
 
         GenericKafkaListenerConfigurationBroker brokerConfig2 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(2)
                 .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
+                .withLabels(Collections.singletonMap("label", "label-value"))
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
@@ -1186,9 +1248,13 @@ public class KafkaClusterTest {
 
         // Check annotations
         assertThat(kc.generateExternalBootstrapServices().get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com.")));
+        assertThat(kc.generateExternalBootstrapServices().get(0).getMetadata().getLabels().get("label"), is("label-value"));
         assertThat(kc.generateExternalServices(0).get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com.")));
+        assertThat(kc.generateExternalServices(0).get(0).getMetadata().getLabels().get("label"), is("label-value"));
         assertThat(kc.generateExternalServices(1).get(0).getMetadata().getAnnotations().isEmpty(), is(true));
+        assertThat(kc.generateExternalServices(1).get(0).getMetadata().getLabels().get("label"), is(nullValue()));
         assertThat(kc.generateExternalServices(2).get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com.")));
+        assertThat(kc.generateExternalServices(2).get(0).getMetadata().getLabels().get("label"), is("label-value"));
     }
 
     @Test
@@ -1236,19 +1302,22 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testExternalNodePortWithDnsAnnotations() {
+    public void testExternalNodePortWithLabelsAndAnnotations() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
+                .withLabels(Collections.singletonMap("label", "label-value"))
                 .build();
 
         GenericKafkaListenerConfigurationBroker brokerConfig0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
                 .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com."))
+                .withLabels(Collections.singletonMap("label", "label-value"))
                 .build();
 
         GenericKafkaListenerConfigurationBroker brokerConfig2 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(2)
                 .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com."))
+                .withLabels(Collections.singletonMap("label", "label-value"))
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
@@ -1274,9 +1343,13 @@ public class KafkaClusterTest {
 
         // Check annotations
         assertThat(kc.generateExternalBootstrapServices().get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com.")));
+        assertThat(kc.generateExternalBootstrapServices().get(0).getMetadata().getLabels().get("label"), is("label-value"));
         assertThat(kc.generateExternalServices(0).get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com.")));
+        assertThat(kc.generateExternalServices(0).get(0).getMetadata().getLabels().get("label"), is("label-value"));
         assertThat(kc.generateExternalServices(1).get(0).getMetadata().getAnnotations().isEmpty(), is(true));
+        assertThat(kc.generateExternalServices(1).get(0).getMetadata().getLabels().get("label"), is(nullValue()));
         assertThat(kc.generateExternalServices(2).get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com.")));
+        assertThat(kc.generateExternalServices(2).get(0).getMetadata().getLabels().get("label"), is("label-value"));
 
     }
 
@@ -2714,16 +2787,22 @@ public class KafkaClusterTest {
     public void testExternalIngress() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withHost("my-broker-kafka-0.com")
+                .withLabels(Collections.singletonMap("label", "label-value"))
+                .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-broker.com"))
                 .withBroker(0)
                 .build();
 
         GenericKafkaListenerConfigurationBroker broker1 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withHost("my-broker-kafka-1.com")
+                .withLabels(Collections.singletonMap("label", "label-value"))
+                .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-broker.com"))
                 .withBroker(1)
                 .build();
 
         GenericKafkaListenerConfigurationBroker broker2 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withHost("my-broker-kafka-2.com")
+                .withLabels(Collections.singletonMap("label", "label-value"))
+                .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-broker.com"))
                 .withBroker(2)
                 .build();
 
@@ -2741,6 +2820,7 @@ public class KafkaClusterTest {
                                     .withNewBootstrap()
                                         .withHost("my-kafka-bootstrap.com")
                                         .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
+                                        .withLabels(Collections.singletonMap("label", "label-value"))
                                     .endBootstrap()
                                     .withBrokers(broker0, broker1, broker2)
                                 .endConfiguration()
@@ -2782,6 +2862,8 @@ public class KafkaClusterTest {
         Ingress bing = kc.generateExternalBootstrapIngresses().get(0);
         assertThat(bing.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
         assertThat(bing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is("nginx"));
+        assertThat(bing.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-bootstrap.com"));
+        assertThat(bing.getMetadata().getLabels().get("label"), is("label-value"));
         assertThat(bing.getSpec().getTls().size(), is(1));
         assertThat(bing.getSpec().getTls().get(0).getHosts().size(), is(1));
         assertThat(bing.getSpec().getTls().get(0).getHosts().get(0), is("my-kafka-bootstrap.com"));
@@ -2798,6 +2880,8 @@ public class KafkaClusterTest {
             Ingress ing = kc.generateExternalIngresses(i).get(0);
             assertThat(ing.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
             assertThat(ing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is("nginx"));
+            assertThat(ing.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-broker.com"));
+            assertThat(ing.getMetadata().getLabels().get("label"), is("label-value"));
             assertThat(ing.getSpec().getTls().size(), is(1));
             assertThat(ing.getSpec().getTls().get(0).getHosts().size(), is(1));
             assertThat(ing.getSpec().getTls().get(0).getHosts().get(0), is(String.format("my-broker-kafka-%d.com", i)));

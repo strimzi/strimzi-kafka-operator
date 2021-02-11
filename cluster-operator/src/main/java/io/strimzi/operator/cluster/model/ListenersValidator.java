@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -21,7 +20,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * Util methods for validating Kafka listeners
@@ -29,7 +27,7 @@ import static java.util.Collections.unmodifiableList;
 public class ListenersValidator {
     protected static final Logger LOG = LogManager.getLogger(ListenersValidator.class.getName());
     private final static Pattern LISTENER_NAME_PATTERN = Pattern.compile(GenericKafkaListener.LISTENER_NAME_REGEX);
-    public final static List<Integer> FORBIDDEN_PORTS = unmodifiableList(Arrays.asList(9404, 9999));
+    public final static List<Integer> FORBIDDEN_PORTS = List.of(9404, 9999);
     public final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;
 
     /**
@@ -82,7 +80,7 @@ public class ListenersValidator {
                     validateBootstrapHost(errors, listener);
                     validateBootstrapLoadBalancerIp(errors, listener);
                     validateBootstrapNodePort(errors, listener);
-                    validateBootstrapDnsAnnotations(errors, listener);
+                    validateBootstrapLabelsAndAnnotations(errors, listener);
                 }
 
                 if (listener.getConfiguration().getBrokers() != null) {
@@ -90,7 +88,7 @@ public class ListenersValidator {
                         validateBrokerHost(errors, listener, broker);
                         validateBrokerLoadBalancerIp(errors, listener, broker);
                         validateBrokerNodePort(errors, listener, broker);
-                        validateBrokerDnsAnnotations(errors, listener, broker);
+                        validateBrokerLabelsAndAnnotations(errors, listener, broker);
                     }
                 }
 
@@ -286,16 +284,26 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that bootstrap.dnsAnnotations is used only with LoadBalancer, NodePort or Ingress type listener
+     * Validates that bootstrap.annotations and bootstrap.labels are used only with LoadBalancer, NodePort, Route, or
+     * Ingress type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
      */
-    private static void validateBootstrapDnsAnnotations(Set<String> errors, GenericKafkaListener listener) {
-        if ((!KafkaListenerType.LOADBALANCER.equals(listener.getType()) && !KafkaListenerType.NODEPORT.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
-                && listener.getConfiguration().getBootstrap().getAnnotations() != null
-                && !listener.getConfiguration().getBootstrap().getAnnotations().isEmpty())    {
-            errors.add("listener " + listener.getName() + " cannot configure bootstrap.dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener");
+    private static void validateBootstrapLabelsAndAnnotations(Set<String> errors, GenericKafkaListener listener) {
+        if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
+                && !KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.ROUTE.equals(listener.getType())
+                && !KafkaListenerType.INGRESS.equals(listener.getType())) {
+            if (listener.getConfiguration().getBootstrap().getLabels() != null
+                    && !listener.getConfiguration().getBootstrap().getLabels().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+            }
+
+            if (listener.getConfiguration().getBootstrap().getAnnotations() != null
+                    && !listener.getConfiguration().getBootstrap().getAnnotations().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+            }
         }
     }
 
@@ -342,17 +350,27 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that brokers[].dnsAnnotations is used only with LoadBalancer, NodePort or Ingress type listener
+     * Validates that brokers[].annotations and brokers[].labels are used only with LoadBalancer, NodePort, Route or
+     * Ingress type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
      * @param broker    Broker configuration which needs to be validated
      */
-    private static void validateBrokerDnsAnnotations(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
-        if ((!KafkaListenerType.LOADBALANCER.equals(listener.getType()) && !KafkaListenerType.NODEPORT.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
-                && broker.getAnnotations() != null
-                && !broker.getAnnotations().isEmpty())    {
-            errors.add("listener " + listener.getName() + " cannot configure brokers[].dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener");
+    private static void validateBrokerLabelsAndAnnotations(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
+        if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
+                && !KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.ROUTE.equals(listener.getType())
+                && !KafkaListenerType.INGRESS.equals(listener.getType()))  {
+            if (broker.getLabels() != null
+                    && !broker.getLabels().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+            }
+
+            if (broker.getAnnotations() != null
+                    && !broker.getAnnotations().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+            }
         }
     }
 

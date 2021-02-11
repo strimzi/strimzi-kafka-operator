@@ -241,6 +241,7 @@ public class ListenersValidatorTest {
                         .withNodePort(32189)
                         .withHost("my-host")
                         .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                        .withLabels(Collections.singletonMap("label", "label-value"))
                     .endBootstrap()
                     .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(0)
@@ -250,6 +251,7 @@ public class ListenersValidatorTest {
                                     .withNodePort(32189)
                                     .withHost("my-host")
                                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .withLabels(Collections.singletonMap("label", "label-value"))
                                     .build(),
                             new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(1)
@@ -259,6 +261,7 @@ public class ListenersValidatorTest {
                                     .withNodePort(32189)
                                     .withHost("my-host")
                                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .withLabels(Collections.singletonMap("label", "label-value"))
                                     .build())
                 .endConfiguration()
                 .build();
@@ -273,11 +276,13 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure brokers[].dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener"
+                "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
+                "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -438,6 +443,7 @@ public class ListenersValidatorTest {
                         .withNodePort(32189)
                         .withHost("my-host")
                         .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                        .withLabels(Collections.singletonMap("label", "label-value"))
                     .endBootstrap()
                     .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(0)
@@ -447,6 +453,7 @@ public class ListenersValidatorTest {
                                     .withNodePort(32189)
                                     .withHost("my-host")
                                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .withLabels(Collections.singletonMap("label", "label-value"))
                                     .build(),
                             new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(1)
@@ -456,6 +463,7 @@ public class ListenersValidatorTest {
                                     .withNodePort(32189)
                                     .withHost("my-host")
                                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .withLabels(Collections.singletonMap("label", "label-value"))
                                     .build())
                 .endConfiguration()
                 .build();
@@ -470,10 +478,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure brokers[].dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener"
+                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));

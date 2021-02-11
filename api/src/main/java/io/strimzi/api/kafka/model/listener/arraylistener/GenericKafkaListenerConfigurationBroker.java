@@ -39,6 +39,7 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
     private Integer advertisedPort;
     private String host;
     private Map<String, String> annotations = new HashMap<>(0);
+    private Map<String, String> labels = new HashMap<>(0);
     private Integer nodePort;
     private String loadBalancerIP;
 
@@ -75,7 +76,6 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
         this.advertisedPort = advertisedPort;
     }
 
-
     @Description("The broker host. " +
             "This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. " +
             "This field can be used only with `route` (optional) or `ingress` (required) type listeners.")
@@ -98,6 +98,17 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
 
     public void setAnnotations(Map<String, String> annotations) {
         this.annotations = annotations;
+    }
+
+    @Description("Labels that will be added to the `Ingress`, `Route`, or `Service` resource. " +
+            "This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 
     @Description("Node port for the per-broker service. " +
