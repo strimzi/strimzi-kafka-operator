@@ -13,3 +13,5 @@ sed -i "s#strimzi/operator:latest#${DOCKER_ORG}/operator:${DOCKER_TAG}#g" system
 
 cat install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
 cat systemtest/src/test/resources/upgrade/StrimziUpgradeST.json
+cat systemtest/src/test/resources/upgrade/StrimziDowngradeST.json
+
