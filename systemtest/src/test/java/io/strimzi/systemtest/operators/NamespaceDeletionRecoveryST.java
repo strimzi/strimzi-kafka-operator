@@ -46,6 +46,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
 
     private String storageClassName = "retain";
+    private static final String CLUSTER_NAME = "my-cluster";
 
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
@@ -70,7 +71,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).createOrReplace(kafkaTopic);
         }
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -87,16 +88,17 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(clusterName)
+            .withClusterName(CLUSTER_NAME)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
@@ -121,7 +123,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         recreateClusterOperator();
 
         // Recreate Kafka Cluster
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -142,12 +144,15 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         // Wait some time after kafka is ready before delete topics files
         Thread.sleep(60000);
-        // Remove all topic data from zookeeper
-        String deleteZkDataCmd = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:2181 <<< \"deleteall /strimzi\"";
-        cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", deleteZkDataCmd);
+        // Remove all topic data from topic store
+
+        String deleteTopicStoreTopics = "./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete " +
+            "&& ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete";
+
+        cmdKubeClient().execInPod(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), "/bin/bash", "-c", deleteTopicStoreTopics);
         // Wait till exec result will be finish
         Thread.sleep(30000);
-        KafkaResource.replaceKafkaResource(clusterName, k -> {
+        KafkaResource.replaceKafkaResource(CLUSTER_NAME, k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
                 .withNewTopicOperator()
                 .endTopicOperator()
@@ -155,19 +160,20 @@ class NamespaceDeletionRecoveryST extends AbstractST {
                 .endUserOperator().build());
         });
 
-        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(CLUSTER_NAME), 1);
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(clusterName)
+            .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
@@ -182,7 +188,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // 060-Deployment
         BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
@@ -199,19 +205,20 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, topicName).build());
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
-            .withClusterName(clusterName)
+            .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
