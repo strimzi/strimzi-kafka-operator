@@ -73,7 +73,7 @@ listeners:
   - name: external
     port: 9094
     type: ingress
-    tls: false
+    tls: true
     configuration:
       class: nginx-internal
     # ...
