@@ -6,8 +6,19 @@
 [id='assembly-upgrade-{context}']
 = Upgrading Strimzi
 
-Strimzi can be upgraded without causing any downtime for consumers and producers. 
-Cluster availability might be affected by rolling updates that occur during the upgrade process.
+Strimzi can be upgraded from a lower version to a higher version to take advantage of new features and enhancements, performance improvements, and security options. 
+By upgrading to the latest Strimzi version you gain access to the features shipped in the higher supported Kafka versions.
+
+.Downtime and availability
+
+If topics are configured for high availability, upgrading should not cause any downtime for the consumers and producers that publish and read data from them. 
+Highly available topics have a replication factor of at least 3, with partitions distributed evenly across the brokers.
+
+The Strimzi upgrade process involves rolling updates, which can affect _cluster availability_. 
+The rolling updates cause brokers to restart. 
+Overall cluster availability is reduced when one or more brokers in a cluster are down, increasing the chance that a broker failure will result in messages being lost.
+
+.Kafka version compatibility
 
 Each version of Strimzi supports one or more versions of Apache Kafka.
 You can upgrade to a higher Kafka version as long as it is supported by your version of Strimzi.
