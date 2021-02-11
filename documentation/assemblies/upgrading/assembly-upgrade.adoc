@@ -18,3 +18,6 @@ Newer versions of Strimzi may support newer versions of Kafka, but you need to u
 include::assembly-upgrade-kafka.adoc[leveloffset=+1]
 
 include::assembly-upgrade-resources.adoc[leveloffset=+1]
+
+//how to upgrade clients and kafka streams to use the incremental cooperative rebalance protocol
+include::modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]

@@ -28,19 +28,23 @@ For more information on using {OperatorHub} to upgrade Operators, see the {OLMOp
 * xref:assembly-upgrading-kafka-versions-{context}[]
 * xref:con-strategies-for-upgrading-clients-{context}[] 
 
-. If applicable, update existing resources to handle deprecated custom resource properties.
+. If applicable, perform the following tasks:
 +
-* xref:assembly-upgrade-resources-{context}[Strimzi resource upgrades]
+.. Update existing resources to handle deprecated custom resource properties
++
+* xref:assembly-upgrade-resources-{context}[]
++
+NOTE: Resources can also be updated _before_ the Kafka upgrade.
++
+.. Update listeners to use the `GenericKafkaListener` schema
++
+* xref:con-upgrade-listeners-{context}[]
 
-.Additional upgrade tasks
+.Optional: incremental cooperative rebalance upgrade
 
-You might also need to complete the following upgrades.
+Consider upgrading consumers and Kafka Streams applications to use the _incremental cooperative rebalance_ protocol for partition rebalances.
 
-The old listener configuration is deprecated. 
-We recommend that you xref:con-upgrade-listeners-{context}[update listeners to use the `GenericKafkaListener` schema], where `listeners` is configurable as an array.
-
-The incremental cooperative rebalance protocol was introduced in Kafka 2.4.0. 
-Consider xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[upgrading consumers and Kafka Streams applications to use the new protocol]. 
+* xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[] 
 
 include::modules/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
 
@@ -50,9 +54,6 @@ include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
 
 //how to upgrade to generic listener config
 include::modules/con-upgrade-listeners.adoc[leveloffset=+1]
-
-//how to upgrade clients and kafka streams to use the incremental cooperative rebalance protocol
-include::modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]
 
 //strategies for upgrading clients - concept
 include::modules/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
