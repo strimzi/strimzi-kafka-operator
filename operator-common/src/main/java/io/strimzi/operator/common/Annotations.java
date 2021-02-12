@@ -89,6 +89,9 @@ public class Annotations {
     }
 
     public static boolean booleanAnnotation(HasMetadata resource, String annotation, boolean defaultValue, String... deprecatedAnnotations) {
+        if (resource == null) {
+            return defaultValue;
+        }
         ObjectMeta metadata = resource.getMetadata();
         String str = annotation(annotation, null, metadata, deprecatedAnnotations);
         return str != null ? parseBoolean(str) : defaultValue;

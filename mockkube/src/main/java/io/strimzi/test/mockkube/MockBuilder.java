@@ -31,6 +31,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -296,7 +298,7 @@ class MockBuilder<T extends HasMetadata,
         if (Readiness.isReadinessApplicable(resourceTypeClass)) {
             mockIsReady(resourceName, resource);
         }
-        /*try {
+        try {
             when(resource.waitUntilCondition(any(), anyLong(), any())).thenAnswer(i -> {
                 Predicate<T> p = i.getArgument(0);
                 T t = resource.get();
@@ -316,7 +318,7 @@ class MockBuilder<T extends HasMetadata,
             });
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
-        }*/
+        }
     }
 
     protected void checkNotExists(String resourceName) {
