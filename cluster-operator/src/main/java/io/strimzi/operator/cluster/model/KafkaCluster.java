@@ -267,7 +267,7 @@ public class KafkaCluster extends AbstractModel {
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
-        this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "strimzi/operator:latest");
+        this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
     }
 
     public static String kafkaClusterName(String cluster) {
@@ -403,7 +403,7 @@ public class KafkaCluster extends AbstractModel {
 
         String initImage = kafkaClusterSpec.getBrokerRackInitImage();
         if (initImage == null) {
-            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "strimzi/operator:latest");
+            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
         result.setInitImage(initImage);
 

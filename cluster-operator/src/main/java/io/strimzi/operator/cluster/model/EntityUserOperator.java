@@ -227,7 +227,7 @@ public class EntityUserOperator extends AbstractModel {
                 result.setOwnerReference(kafkaAssembly);
                 String image = userOperatorSpec.getImage();
                 if (image == null) {
-                    image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, "strimzi/operator:latest");
+                    image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
                 }
                 result.setImage(image);
                 result.setWatchedNamespace(userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : namespace);
