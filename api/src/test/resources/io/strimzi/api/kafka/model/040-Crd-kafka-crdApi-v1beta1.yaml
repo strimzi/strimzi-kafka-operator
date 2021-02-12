@@ -241,10 +241,11 @@ spec:
                               type: boolean
                               description: Enable or disable audience checking. Audience
                                 checks identify the recipients of tokens. If audience
-                                checking is enabled the OAuth Client ID also has to
-                                be configured via the `clientId` property. The Kafka
-                                broker will reject tokens that do not have its `clientId`
-                                in their `aud` (audience) claim.Default value is `false`.
+                                checking is enabled, the OAuth Client ID also has
+                                to be configured using the `clientId` property. The
+                                Kafka broker will reject tokens that do not have its
+                                `clientId` in their `aud` (audience) claim.Default
+                                value is `false`.
                             checkIssuer:
                               type: boolean
                               description: Enable or disable issuer checking. By default
@@ -6311,8 +6312,8 @@ spec:
                                 type: boolean
                                 description: Enable or disable audience checking.
                                   Audience checks identify the recipients of tokens.
-                                  If audience checking is enabled the OAuth Client
-                                  ID also has to be configured via the `clientId`
+                                  If audience checking is enabled, the OAuth Client
+                                  ID also has to be configured using the `clientId`
                                   property. The Kafka broker will reject tokens that
                                   do not have its `clientId` in their `aud` (audience)
                                   claim.Default value is `false`.
@@ -6746,8 +6747,8 @@ spec:
                                   type: boolean
                                   description: Enable or disable audience checking.
                                     Audience checks identify the recipients of tokens.
-                                    If audience checking is enabled the OAuth Client
-                                    ID also has to be configured via the `clientId`
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
                                     property. The Kafka broker will reject tokens
                                     that do not have its `clientId` in their `aud`
                                     (audience) claim.Default value is `false`.
@@ -7000,8 +7001,8 @@ spec:
                                   type: boolean
                                   description: Enable or disable audience checking.
                                     Audience checks identify the recipients of tokens.
-                                    If audience checking is enabled the OAuth Client
-                                    ID also has to be configured via the `clientId`
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
                                     property. The Kafka broker will reject tokens
                                     that do not have its `clientId` in their `aud`
                                     (audience) claim.Default value is `false`.
@@ -7277,8 +7278,8 @@ spec:
                                   type: boolean
                                   description: Enable or disable audience checking.
                                     Audience checks identify the recipients of tokens.
-                                    If audience checking is enabled the OAuth Client
-                                    ID also has to be configured via the `clientId`
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
                                     property. The Kafka broker will reject tokens
                                     that do not have its `clientId` in their `aud`
                                     (audience) claim.Default value is `false`.
@@ -14628,8 +14629,8 @@ spec:
                                 type: boolean
                                 description: Enable or disable audience checking.
                                   Audience checks identify the recipients of tokens.
-                                  If audience checking is enabled the OAuth Client
-                                  ID also has to be configured via the `clientId`
+                                  If audience checking is enabled, the OAuth Client
+                                  ID also has to be configured using the `clientId`
                                   property. The Kafka broker will reject tokens that
                                   do not have its `clientId` in their `aud` (audience)
                                   claim.Default value is `false`.
@@ -15063,8 +15064,8 @@ spec:
                                   type: boolean
                                   description: Enable or disable audience checking.
                                     Audience checks identify the recipients of tokens.
-                                    If audience checking is enabled the OAuth Client
-                                    ID also has to be configured via the `clientId`
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
                                     property. The Kafka broker will reject tokens
                                     that do not have its `clientId` in their `aud`
                                     (audience) claim.Default value is `false`.
@@ -15317,8 +15318,8 @@ spec:
                                   type: boolean
                                   description: Enable or disable audience checking.
                                     Audience checks identify the recipients of tokens.
-                                    If audience checking is enabled the OAuth Client
-                                    ID also has to be configured via the `clientId`
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
                                     property. The Kafka broker will reject tokens
                                     that do not have its `clientId` in their `aud`
                                     (audience) claim.Default value is `false`.
@@ -15594,8 +15595,8 @@ spec:
                                   type: boolean
                                   description: Enable or disable audience checking.
                                     Audience checks identify the recipients of tokens.
-                                    If audience checking is enabled the OAuth Client
-                                    ID also has to be configured via the `clientId`
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
                                     property. The Kafka broker will reject tokens
                                     that do not have its `clientId` in their `aud`
                                     (audience) claim.Default value is `false`.
