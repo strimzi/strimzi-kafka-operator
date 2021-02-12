@@ -10,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.images.ImagePullPolicy;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.images.builder.Transferable;
 
@@ -75,7 +74,6 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         withExposedPorts(KAFKA_PORT);
 
         withEnv("LOG_DIR", "/tmp");
-//        withEnv("TESTCONTAINERS_RYUK_DISABLED", "true");
     }
 
     public StrimziKafkaContainer() {
