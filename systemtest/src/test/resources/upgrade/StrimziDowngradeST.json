@@ -52,7 +52,7 @@
       "interBrokerProtocolVersion": "2.6"
     },
     "client": {
-      "beforeKafkaUpgradeDowngrade": "strimzi/test-client:0.21.1-kafka-2.7.0",
+      "beforeKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.21.1-kafka-2.7.0",
       "afterKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.20.1-kafka-2.6.0",
       "continuousClientsMessages": 500
     },
