@@ -38,6 +38,10 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+/**
+ * Suite for testing topic recovery in case of namespace deletion.
+ * Procedure described in documentation  https://strimzi.io/docs/master/#namespace-deletion_str
+ */
 @Tag(RECOVERY)
 class NamespaceDeletionRecoveryST extends AbstractST {
 
@@ -48,6 +52,11 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private String storageClassName = "retain";
     private static final String CLUSTER_NAME = "my-cluster";
 
+    /**
+     * In case that we have all KafkaTopic resources that existed before cluster loss, including internal topics,
+     * we can simply recreate all KafkaTopic resources and then deploy the Kafka cluster.
+     * At the end we verify that we can receive messages from topic (so data are present).
+     */
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicAvailable() {
@@ -107,6 +116,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         assertThat(consumed, is(MESSAGE_COUNT));
     }
 
+    /**
+     * In case we don't have KafkaTopic resources from before the cluster loss, we do these steps:
+     *  1. deploy the Kafka cluster without Topic Operator - otherwise topics will be deleted
+     *  2. delete KafkaTopic Store topics - `__strimzi-topic-operator-kstreams-topic-store-changelog` and `__strimzi_store_topic`
+     *  3. enable Topic Operator by redeploying Kafka cluster
+     * @throws InterruptedException - sleep
+     */
     @Test
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicNotAvailable() throws InterruptedException {
