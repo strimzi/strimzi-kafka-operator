@@ -19,8 +19,8 @@
       "userOperator": "strimzi/operator:latest"
     },
     "client": {
-      "beforeKafkaUpgradeDowngrade": "strimzi/test-client:0.18.0-kafka-2.5.0",
-      "afterKafkaUpgradeDowngrade": "strimzi/test-client:latest-kafka-2.7.0",
+      "beforeKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.18.0-kafka-2.5.0",
+      "afterKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:latest-kafka-2.7.0",
       "continuousClientsMessages": 0
     },
     "environmentInfo": {
@@ -50,8 +50,8 @@
       "userOperator": "strimzi/operator:latest"
     },
     "client": {
-      "beforeKafkaUpgradeDowngrade": "strimzi/test-client:0.19.0-kafka-2.5.0",
-      "afterKafkaUpgradeDowngrade": "strimzi/test-client:latest-kafka-2.7.0",
+      "beforeKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.19.0-kafka-2.5.0",
+      "afterKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:latest-kafka-2.7.0",
       "continuousClientsMessages": 500
     },
     "environmentInfo": {
@@ -81,8 +81,8 @@
       "userOperator": "strimzi/operator:latest"
     },
     "client": {
-      "beforeKafkaUpgradeDowngrade": "strimzi/test-client:0.20.1-kafka-2.6.0",
-      "afterKafkaUpgradeDowngrade": "strimzi/test-client:latest-kafka-2.7.0",
+      "beforeKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.20.0-kafka-2.6.0",
+      "afterKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:latest-kafka-2.7.0",
       "continuousClientsMessages": 500
     },
     "environmentInfo": {
@@ -113,7 +113,7 @@
     },
     "client": {
       "beforeKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.21.1-kafka-2.7.0",
-      "afterKafkaUpgradeDowngrade": "strimzi/test-client:latest-kafka-2.7.0",
+      "afterKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:latest-kafka-2.7.0",
       "continuousClientsMessages": 500
     },
     "environmentInfo": {

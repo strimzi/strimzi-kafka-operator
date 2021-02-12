@@ -9,7 +9,7 @@ spec:
   name: ${OLM_OPERATOR_NAME}
   source: ${OLM_SOURCE_NAME}
   sourceNamespace: ${OLM_SOURCE_NAMESPACE}
-  startingCSV: ${OLM_APP_BUNDLE_PREFIX}.${OLM_OPERATOR_VERSION}
+  startingCSV: ${OLM_APP_BUNDLE_PREFIX}.v${OLM_OPERATOR_VERSION}
   channel: stable
   installPlanApproval: ${OLM_INSTALL_PLAN_APPROVAL}
   config:
