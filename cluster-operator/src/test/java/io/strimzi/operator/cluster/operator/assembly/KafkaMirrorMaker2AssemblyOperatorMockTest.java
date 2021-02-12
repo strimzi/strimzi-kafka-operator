@@ -5,12 +5,15 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -42,8 +45,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
+import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -101,7 +106,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     }
 
 
-    private Future<Void> createMirrorMaker2Cluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi) {
+    private Future<Void> createMirrorMaker2Cluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
                 new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, this.mockClient),
@@ -121,12 +126,17 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         LOGGER.info("Reconciling initially -> create");
         Promise created = Promise.promise();
         Checkpoint async = context.checkpoint();
+        Deployment depBeforeRecon = mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get();
         kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(ar -> context.verify(() -> {
-                assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                if (!reconciliationPaused) {
+                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                } else {
+                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(depBeforeRecon));
+                }
 
                 async.flag();
                 created.complete();
@@ -151,13 +161,59 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         when(mock.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
-        createMirrorMaker2Cluster(context, mock)
+        createMirrorMaker2Cluster(context, mock, false)
             .onComplete(context.succeeding())
             .compose(v -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
             })
             .onComplete(context.succeeding(v -> async.flag()));
+    }
+
+    @Test
+    public void testPauseReconcileUpdate(VertxTestContext context) {
+        setMirrorMaker2Resource(new KafkaMirrorMaker2Builder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(CLUSTER_NAME)
+                        .withNamespace(NAMESPACE)
+                        .withLabels(TestUtils.map("foo", "bar"))
+                        .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))
+                        .build())
+                .withNewSpec()
+                .withReplicas(replicas)
+                .endSpec()
+                .build());
+        KafkaConnectApi mock = mock(KafkaConnectApi.class);
+        when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+
+        Checkpoint async = context.checkpoint();
+        createMirrorMaker2Cluster(context, mock, true)
+                .onComplete(context.succeeding())
+                .compose(v -> {
+                    LOGGER.info("Reconciling again -> update");
+                    return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Resource<KafkaMirrorMaker2> resource = Crds.kafkaMirrorMaker2Operation(mockClient).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+                    io.strimzi.operator.cluster.TestUtils.waitForStatus(resource, CLUSTER_NAME, s -> {
+                        if (s.getStatus() == null) {
+                            return false;
+                        }
+                        List<Condition> conditions = s.getStatus().getConditions();
+                        boolean conditionFound = false;
+                        if (conditions != null && !conditions.isEmpty()) {
+                            for (Condition condition: conditions) {
+                                if ("ReconciliationPaused".equals(condition.getType())) {
+                                    conditionFound = true;
+                                    break;
+                                }
+                            }
+                        }
+                        return conditionFound;
+                    });
+                    async.flag();
+                })));
     }
 
 }

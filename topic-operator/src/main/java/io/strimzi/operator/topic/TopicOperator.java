@@ -7,6 +7,7 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.api.model.EventBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
@@ -14,8 +15,11 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
@@ -32,9 +36,11 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,8 +52,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static java.util.Collections.disjoint;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 class TopicOperator {
@@ -553,6 +561,11 @@ class TopicOperator {
                 }
             } else if (kafkaTopic == null) {
                 // it's been created in k8s => create in Kafka and privateState
+                if (hasPauseReconciliationAnnotation(TopicSerialization.toTopicResource(k8sTopic, new Labels()))) {
+                    reconciliationResultHandler = Future.succeededFuture();
+                    return reconciliationResultHandler;
+                }
+
                 LOGGER.debug("{}: KafkaTopic created in k8s, will create topic in kafka and topicStore", logContext);
                 reconciliationResultHandler = createKafkaTopic(logContext, k8sTopic, involvedObject)
                     .compose(ignore -> createInTopicStore(logContext, k8sTopic, involvedObject))
@@ -834,6 +847,16 @@ class TopicOperator {
     }
 
     /**
+     * Whether the provided resource instance is a KafkaConnector and has the strimzi.io/pause-reconciliation annotation
+     *
+     * @param resource resource instance to check
+     * @return true if the provided resource instance has the strimzi.io/pause-reconciliation annotation; false otherwise
+     */
+    protected boolean hasPauseReconciliationAnnotation(CustomResource resource) {
+        return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, false);
+    }
+
+    /**
      * Called when ZK watch notifies of a change to the topic's partitions
      */
     Future<Void> onTopicPartitionsChanged(LogContext logContext, TopicName topicName) {
@@ -1044,6 +1067,23 @@ class TopicOperator {
 
     /** Called when a resource is isModify in k8s */
     Future<Void> onResourceEvent(LogContext logContext, KafkaTopic modifiedTopic, Watcher.Action action) {
+        if (hasPauseReconciliationAnnotation(modifiedTopic)) {
+            Condition pausedCondition = new ConditionBuilder()
+                    .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date()))
+                    .withType("ReconciliationPaused")
+                    .withStatus("True")
+                    .build();
+
+            KafkaTopicStatus status = new KafkaTopicStatus();
+            status.setConditions(singletonList(pausedCondition));
+            Promise<Void> promise = Promise.promise();
+            Future<Void> statusFuture = promise.future();
+            k8s.updateResourceStatus(new KafkaTopicBuilder(modifiedTopic).withStatus(status).build()).onComplete(ar -> {
+                statusFuture.handle(ar.map((Void) null));
+            });
+
+            return statusFuture;
+        }
         return executeWithTopicLockHeld(logContext, new TopicName(modifiedTopic),
                 new Reconciliation("onResourceEvent", false) {
                     @Override
@@ -1444,6 +1484,7 @@ class TopicOperator {
             @Override
             public Future<Void> execute() {
                 Reconciliation self = this;
+                //todo tady taky?
                 return CompositeFuture.all(
                         k8s.getFromName(kubeName).map(kt -> {
                             observedTopicFuture(kt);

@@ -5,7 +5,9 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
@@ -15,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -45,8 +48,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
+import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -102,7 +107,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     }
 
 
-    private Future<Void> createConnectCluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi) {
+    private Future<Void> createConnectCluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
                 new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, this.mockClient),
@@ -117,13 +122,18 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Promise created = Promise.promise();
 
+        Deployment depBeforeRecon = mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get();
         LOGGER.info("Reconciling initially -> create");
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                if (!reconciliationPaused) {
+                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                } else {
+                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(depBeforeRecon));
+                }
                 created.complete();
             })));
         return created.future();
@@ -146,13 +156,60 @@ public class KafkaConnectAssemblyOperatorMockTest {
         when(mock.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         Checkpoint async = context.checkpoint();
-        createConnectCluster(context, mock)
+        createConnectCluster(context, mock, false)
             .onComplete(context.succeeding())
             .compose(v -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
             })
             .onComplete(context.succeeding(v -> async.flag()));
+
+    }
+
+    @Test
+    public void testPauseReconcile(VertxTestContext context) {
+        setConnectResource(new KafkaConnectBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(CLUSTER_NAME)
+                        .withNamespace(NAMESPACE)
+                        .withLabels(TestUtils.map("foo", "bar"))
+                        .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))
+                        .build())
+                .withNewSpec()
+                .withReplicas(replicas)
+                .endSpec()
+                .build());
+        KafkaConnectApi mock = mock(KafkaConnectApi.class);
+        when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+
+        Checkpoint async = context.checkpoint();
+        createConnectCluster(context, mock, true)
+                .onComplete(context.succeeding())
+                .compose(v -> {
+                    LOGGER.info("Reconciling again -> update");
+                    return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(mockClient).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+                    io.strimzi.operator.cluster.TestUtils.waitForStatus(resource, CLUSTER_NAME, s -> {
+                        if (s.getStatus() == null) {
+                            return false;
+                        }
+                        List<Condition> conditions = s.getStatus().getConditions();
+                        boolean conditionFound = false;
+                        if (conditions != null && !conditions.isEmpty()) {
+                            for (Condition condition: conditions) {
+                                if ("ReconciliationPaused".equals(condition.getType())) {
+                                    conditionFound = true;
+                                    break;
+                                }
+                            }
+                        }
+                        return conditionFound;
+                    });
+                    async.flag();
+                })));
 
     }
 

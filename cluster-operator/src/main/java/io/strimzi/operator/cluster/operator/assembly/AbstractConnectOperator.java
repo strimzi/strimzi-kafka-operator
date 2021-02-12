@@ -37,6 +37,7 @@ import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
@@ -75,8 +76,10 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -431,6 +434,24 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         connectorsReconciliationsCounter.increment();
         Timer.Sample connectorsReconciliationsTimerSample = Timer.start(metrics.meterRegistry());
+
+        if (hasPauseReconciliationAnnotation(connector)) {
+            Set<Condition> conditions = validate(connector);
+            Condition pausedCondition = new ConditionBuilder()
+                    .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date()))
+                    .withType("ReconciliationPaused")
+                    .withStatus("True")
+                    .build();
+            conditions.add(pausedCondition);
+
+            return maybeUpdateConnectorStatus(reconciliation, connector, new ConnectorStatusAndConditions(emptyMap(), new ArrayList<>(conditions)), null).compose(
+                i -> {
+                    connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer);
+                    connectorsSuccessfulReconciliationsCounter.increment();
+                    return Future.succeededFuture();
+                }
+            );
+        }
 
         reconcileConnector(reconciliation, host, apiClient, useResources, connectorName, connector)
                 .onComplete(result -> {

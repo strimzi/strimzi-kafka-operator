@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
@@ -26,6 +27,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
@@ -50,6 +52,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -335,6 +338,22 @@ public class KafkaRebalanceAssemblyOperator
                                    KafkaRebalanceState currentState, KafkaRebalanceAnnotation rebalanceAnnotation) {
 
         log.info("{}: Rebalance action from state [{}]", reconciliation, currentState);
+
+        if (hasPauseReconciliationAnnotation(kafkaRebalance)) {
+            // we need to do this check again because it was triggered by a watcher
+            KafkaRebalanceStatus status = new KafkaRebalanceStatus();
+
+            Condition pauseCondition = new ConditionBuilder()
+                    .withLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
+                    .withType("ReconciliationPaused")
+                    .withStatus("True")
+                    .build();
+
+            unknownAndDeprecatedConditions.add(pauseCondition);
+            status.setConditions(new ArrayList<>(unknownAndDeprecatedConditions));
+
+            return  updateStatus(kafkaRebalance, status, null).compose(i -> Future.succeededFuture());
+        }
 
         RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
 

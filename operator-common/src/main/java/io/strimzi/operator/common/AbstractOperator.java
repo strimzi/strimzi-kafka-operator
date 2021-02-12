@@ -36,6 +36,9 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Collections;
@@ -47,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static io.strimzi.operator.common.Util.async;
 
 /**
@@ -204,63 +208,82 @@ public abstract class AbstractOperator<
                 }
 
                 Promise<Void> createOrUpdate = Promise.promise();
-
-                if (cr.getSpec() == null)   {
-                    InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
-
+                if (hasPauseReconciliationAnnotation(cr)) {
                     S status = createStatus();
-                    Condition errorCondition = new ConditionBuilder()
-                            .withLastTransitionTime(StatusUtils.iso8601Now())
-                            .withType("NotReady")
+                    Set<Condition> conditions = validate(cr);
+                    Condition pausedCondition = new ConditionBuilder()
+                            .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date()))
+                            .withType("ReconciliationPaused")
                             .withStatus("True")
-                            .withReason(exception.getClass().getSimpleName())
-                            .withMessage(exception.getMessage())
                             .build();
-                    status.setObservedGeneration(cr.getMetadata().getGeneration());
-                    status.addCondition(errorCondition);
+                    conditions.add(pausedCondition);
+                    status.setConditions(new ArrayList<>(conditions));
 
-                    log.error("{}: {} spec cannot be null", reconciliation, cr.getMetadata().getName());
-                    updateStatus(reconciliation, status).onComplete(notUsed -> {
-                        createOrUpdate.fail(exception);
+                    updateStatus(reconciliation, status).onComplete(statusResult -> {
+                        if (statusResult.succeeded()) {
+                            createOrUpdate.complete();
+                        } else {
+                            createOrUpdate.fail(statusResult.cause());
+                        }
                     });
+                } else {
+                    if (cr.getSpec() == null)   {
+                        InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
 
-                    return createOrUpdate.future();
-                }
+                        S status = createStatus();
+                        Condition errorCondition = new ConditionBuilder()
+                                .withLastTransitionTime(StatusUtils.iso8601Now())
+                                .withType("NotReady")
+                                .withStatus("True")
+                                .withReason(exception.getClass().getSimpleName())
+                                .withMessage(exception.getMessage())
+                                .build();
+                        status.setObservedGeneration(cr.getMetadata().getGeneration());
+                        status.addCondition(errorCondition);
 
-                Set<Condition> unknownAndDeprecatedConditions = validate(cr);
+                        log.error("{}: {} spec cannot be null", reconciliation, cr.getMetadata().getName());
+                        updateStatus(reconciliation, status).onComplete(notUsed -> {
+                            createOrUpdate.fail(exception);
+                        });
 
-                log.info("{}: {} {} will be checked for creation or modification", reconciliation, kind, name);
+                        return createOrUpdate.future();
+                    }
 
-                createOrUpdate(reconciliation, cr)
-                        .onComplete(res -> {
-                            if (res.succeeded()) {
-                                S status = res.result();
+                    Set<Condition> unknownAndDeprecatedConditions = validate(cr);
 
-                                addWarningsToStatus(status, unknownAndDeprecatedConditions);
-                                updateStatus(reconciliation, status).onComplete(statusResult -> {
-                                    if (statusResult.succeeded()) {
-                                        createOrUpdate.complete();
-                                    } else {
-                                        createOrUpdate.fail(statusResult.cause());
-                                    }
-                                });
-                            } else {
-                                if (res.cause() instanceof ReconciliationException) {
-                                    ReconciliationException e = (ReconciliationException) res.cause();
-                                    Status status = e.getStatus();
+                    log.info("{}: {} {} will be checked for creation or modification", reconciliation, kind, name);
+
+                    createOrUpdate(reconciliation, cr)
+                            .onComplete(res -> {
+                                if (res.succeeded()) {
+                                    S status = res.result();
+
                                     addWarningsToStatus(status, unknownAndDeprecatedConditions);
-
-                                    log.error("{}: createOrUpdate failed", reconciliation, e.getCause());
-
-                                    updateStatus(reconciliation, (S) status).onComplete(statusResult -> {
-                                        createOrUpdate.fail(e.getCause());
+                                    updateStatus(reconciliation, status).onComplete(statusResult -> {
+                                        if (statusResult.succeeded()) {
+                                            createOrUpdate.complete();
+                                        } else {
+                                            createOrUpdate.fail(statusResult.cause());
+                                        }
                                     });
                                 } else {
-                                    log.error("{}: createOrUpdate failed", reconciliation, res.cause());
-                                    createOrUpdate.fail(res.cause());
+                                    if (res.cause() instanceof ReconciliationException) {
+                                        ReconciliationException e = (ReconciliationException) res.cause();
+                                        Status status = e.getStatus();
+                                        addWarningsToStatus(status, unknownAndDeprecatedConditions);
+
+                                        log.error("{}: createOrUpdate failed", reconciliation, e.getCause());
+
+                                        updateStatus(reconciliation, (S) status).onComplete(statusResult -> {
+                                            createOrUpdate.fail(e.getCause());
+                                        });
+                                    } else {
+                                        log.error("{}: createOrUpdate failed", reconciliation, res.cause());
+                                        createOrUpdate.fail(res.cause());
+                                    }
                                 }
-                            }
-                        });
+                            });
+                }
 
                 return createOrUpdate.future();
             } else {
@@ -553,5 +576,15 @@ public abstract class AbstractOperator<
                 return Future.failedFuture(e.getMessage());
             }
         );
+    }
+
+    /**
+     * Whether the provided resource instance is a KafkaConnector and has the strimzi.io/pause-reconciliation annotation
+     *
+     * @param resource resource instance to check
+     * @return true if the provided resource instance has the strimzi.io/pause-reconciliation annotation; false otherwise
+     */
+    protected boolean hasPauseReconciliationAnnotation(CustomResource resource) {
+        return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, false);
     }
 }

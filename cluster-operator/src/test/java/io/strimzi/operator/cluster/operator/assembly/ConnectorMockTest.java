@@ -419,11 +419,14 @@ public class ConnectorMockTest {
             .inNamespace(NAMESPACE)
             .withName(connectorName);
         waitForStatus(resource, connectorName, s -> {
+            if (s.getStatus() == null) {
+                return false;
+            }
             List<Condition> conditions = s.getStatus().getConditions();
             boolean conditionFound = false;
             if (conditions != null && !conditions.isEmpty()) {
                 for (Condition condition: conditions) {
-                    if (conditionType.equals(condition.getType()) && conditionReason.equals(condition.getReason())) {
+                    if (conditionType.equals(condition.getType()) && (conditionReason == null || conditionReason.equals(condition.getReason()))) {
                         conditionFound = true;
                         break;
                     }
@@ -1514,5 +1517,46 @@ public class ConnectorMockTest {
         waitForConnectorReady(connectorName);
         waitForConnectorState(connectorName, "RUNNING");
         waitForConnectorCondition(connectorName, "Warning", "UnknownFields");
+    }
+
+    @Test
+    public void testConnectorReconciliationPaused() {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        // Create KafkaConnect cluster and wait till it's ready
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(new KafkaConnectBuilder()
+                .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(connectName)
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                .withReplicas(1)
+                .endSpec()
+                .build());
+        waitForConnectReady(connectName);
+
+        String yaml = "apiVersion: kafka.strimzi.io/v1alpha1\n" +
+                "kind: KafkaConnector\n" +
+                "metadata:\n" +
+                "  name: " + connectorName + "\n" +
+                "  namespace: " + NAMESPACE + "\n" +
+                "  labels:\n" +
+                "    strimzi.io/cluster: " + connectName + "\n" +
+                "  annotations:\n" +
+                "    strimzi.io/pause-reconciliation: \"true\"\n" +
+                "spec:\n" +
+                "  class: EchoSink\n" +
+                "  tasksMax: 1\n" +
+                "  unknownField: \"value\"\n" +
+                "  config:\n" +
+                "    level: INFO\n" +
+                "    topics: timer-topic";
+
+        KafkaConnector kcr = TestUtils.fromYamlString(yaml, KafkaConnector.class);
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(kcr);
+
+        waitForConnectorCondition(connectorName, "ReconciliationPaused", null);
     }
 }
