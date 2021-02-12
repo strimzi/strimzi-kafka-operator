@@ -81,7 +81,7 @@
       "userOperator": "strimzi/operator:latest"
     },
     "client": {
-      "beforeKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.20.1-kafka-2.6.0",
+      "beforeKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:0.20.0-kafka-2.6.0",
       "afterKafkaUpgradeDowngrade": "quay.io/strimzi/test-client:latest-kafka-2.7.0",
       "continuousClientsMessages": 500
     },
