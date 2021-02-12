@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Base64;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,28 +63,35 @@ public class OauthAbstractST extends AbstractST {
     }
 
     protected WebClient client;
+    
+    protected void beforeAllOverrideMe(ExtensionContext extensionContext, String namespace) {
 
-    void setupCoAndKeycloak(ExtensionContext extensionContext) {
-        installClusterOperator(extensionContext, NAMESPACE);
-        NetworkPolicyResource.applyDefaultNetworkPolicy(extensionContext, NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+        installClusterOperator(extensionContext, namespace);
+        NetworkPolicyResource.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
 
         LOGGER.info("Deploying keycloak...");
 
-        KeycloakUtils.deployKeycloak(NAMESPACE);
+        KeycloakUtils.deployKeycloak(namespace);
 
         String passwordEncoded = kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_PASSWORD");
         String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
-        keycloakInstance = new KeycloakInstance("admin", password, NAMESPACE);
+        keycloakInstance = new KeycloakInstance("admin", password, namespace);
 
         createSecretsForDeployments();
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown(ExtensionContext extensionContext) {
+        // TODO: filter all jobs by containing cluster name..
+        List<Job> clusterJobList = kubeClient().getJobList().getItems()
+            .stream()
+            .filter(
+                job -> job.getMetadata().getName().contains(mapTestWithClusterNames.get(extensionContext.getDisplayName())))
+            .collect(Collectors.toList());
 
-        for (Job job : kubeClient().getJobList().getItems()) {
+        for (Job job : clusterJobList) {
             LOGGER.info("Deleting {} job", job.getMetadata().getName());
-            JobUtils.deleteJobWithWait(NAMESPACE, job.getMetadata().getName());
+            JobUtils.deleteJobWithWait(job.getMetadata().getNamespace(), job.getMetadata().getName());
         }
     }
 

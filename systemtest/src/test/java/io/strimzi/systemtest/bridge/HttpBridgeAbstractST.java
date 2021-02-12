@@ -19,7 +19,7 @@ public class HttpBridgeAbstractST extends AbstractST {
 
     public static int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
     public static String kafkaClientsPodName = "";
-    public static String bridgeServiceName = KafkaBridgeResources.serviceName(clusterName);
+    protected static final String CLUSTER_NAME = "http-bridge-cluster-name";
     public static String bridgeUrl = "";
 
     public static String producerName = "bridge-producer";
@@ -33,7 +33,7 @@ public class HttpBridgeAbstractST extends AbstractST {
         kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(clusterName))
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(CLUSTER_NAME))
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(bridgePort)

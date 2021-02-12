@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -23,7 +24,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -62,11 +62,11 @@ public class OpenShiftTemplatesST extends AbstractST {
         return KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
-    @Test
+    @ParallelTest
     void testStrimziEphemeral(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
-        oc.createResourceAndApply("strimzi-ephemeral", map("clusterName", clusterName,
+        oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
@@ -79,11 +79,11 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(kafka.getSpec().getZookeeper().getStorage().getType(), is("ephemeral"));
     }
 
-    @Test
+    @ParallelTest
     void testStrimziPersistent(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
-        oc.createResourceAndApply("strimzi-persistent", map("clusterName", clusterName,
+        oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
 
@@ -95,11 +95,11 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(kafka.getSpec().getZookeeper().getStorage().getType(), is("persistent-claim"));
     }
 
-    @Test
+    @ParallelTest
     void testStrimziEphemeralWithCustomParameters(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
-        oc.createResourceAndApply("strimzi-ephemeral", map("clusterName", clusterName,
+        oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
                 "KAFKA_HEALTHCHECK_DELAY", "30",
@@ -124,11 +124,11 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"), is("5"));
     }
 
-    @Test
+    @ParallelTest
     void testStrimziPersistentWithCustomParameters(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
-        oc.createResourceAndApply("strimzi-persistent", map("clusterName", clusterName,
+        oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
                 "KAFKA_HEALTHCHECK_DELAY", "30",
@@ -158,12 +158,12 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(((PersistentClaimStorage) kafka.getSpec().getZookeeper().getStorage()).getSize(), is("2Gi"));
     }
 
-    @Test
+    @ParallelTest
     @Tag(CONNECT)
     void testConnect(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
-        oc.createResourceAndApply("strimzi-connect", map("clusterName", clusterName,
+        oc.createResourceAndApply("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
         KafkaConnect connect = getKafkaConnect(clusterName);
@@ -171,12 +171,12 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(connect.getSpec().getReplicas(), is(1));
     }
 
-    @Test
+    @ParallelTest
     @Tag(CONNECT_S2I)
     void testConnectS2I(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
-        oc.createResourceAndApply("strimzi-connect-s2i", map("clusterName", clusterName,
+        oc.createResourceAndApply("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
         KafkaConnectS2I cm = getKafkaConnectS2I(clusterName);
@@ -184,7 +184,7 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(cm.getSpec().getReplicas(), is(1));
     }
 
-    @Test
+    @ParallelTest
     void testTopicOperator(ExtensionContext extensionContext) {
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         oc.createResourceAndApply("strimzi-topic", map(

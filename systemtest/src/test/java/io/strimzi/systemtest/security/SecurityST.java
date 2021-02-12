@@ -33,12 +33,12 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaConnectTemplates;
-import io.strimzi.systemtest.templates.KafkaMirrorMakerTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
@@ -51,7 +51,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
-import kafka.tools.MirrorMaker;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
@@ -71,6 +70,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -95,7 +95,6 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.security.SystemTestCertManager.STRIMZI_INTERMEDIATE_CA;
 import static io.strimzi.systemtest.security.SystemTestCertManager.convertPrivateKeyToPKCS8File;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -109,7 +108,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 class SecurityST extends AbstractST {
 
-    public static final String NAMESPACE = "security-cluster-test";
+    public static final String NAMESPACE = "security-cluster-test2";
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
     private static final String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
     private static final String TLS_PROTOCOL = "Protocol  : TLSv1";
@@ -141,8 +140,8 @@ class SecurityST extends AbstractST {
                 KafkaResources.kafkaPodName(clusterName, 0), "kafka");
         verifyCerts(clusterName, outputCertificate, "zookeeper");
 
-        List<String> kafkaPorts = new ArrayList<>(asList("9091", "9093"));
-        List<String> zkPorts = new ArrayList<>(asList("2181", "3888"));
+        List<String> kafkaPorts = new ArrayList<>(Arrays.asList("9091", "9093"));
+        List<String> zkPorts = new ArrayList<>(Arrays.asList("2181", "3888"));
 
         IntStream.rangeClosed(0, 1).forEach(podId -> {
             String output;
@@ -164,7 +163,8 @@ class SecurityST extends AbstractST {
         });
     }
 
-    // synchronized avoiding data-race (list of string is allocated on the heap)
+    // synchronized avoiding data-race (list of string is allocated on the heap), but has different reference on stack it's ok
+    // but Strings parameters provided are not created in scope of this method
     synchronized private static void verifyCerts(String clusterName, String certificate, String component) {
         List<String> certificateChains = SystemTestCertManager.getCertificateChain(clusterName + "-" + component);
 
@@ -175,24 +175,78 @@ class SecurityST extends AbstractST {
         assertThat(certificate, containsString(OPENSSL_RETURN_CODE));
     }
 
-    synchronized void autoRenewSomeCaCertsTriggeredByAnno(
+    @ParallelTest
+    @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
+    void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
+        autoRenewSomeCaCertsTriggeredByAnno(
+                extensionContext,
+                /* ZK node need new certs */
+                true,
+                /* brokers need new certs */
+                true,
+                /* eo needs new cert */
+                true);
+    }
+
+    @ParallelTest
+    @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
+    void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
+        autoRenewSomeCaCertsTriggeredByAnno(
+            extensionContext,
+                /* no communication between clients and zk, so no need to roll */
+                false,
+                /* brokers need to trust client certs with new cert */
+                true,
+                /* eo needs to generate new client certs */
+                true);
+    }
+
+    @ParallelTest
+    @Tag(ACCEPTANCE)
+    @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(ROLLING_UPDATE)
+    void testAutoRenewAllCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
+        autoRenewSomeCaCertsTriggeredByAnno(
+            extensionContext,
+                true,
+                true,
+                true);
+    }
+
+    void autoRenewSomeCaCertsTriggeredByAnno(
             ExtensionContext extensionContext,
-            final List<String> secretsToAnnotate,
             boolean zkShouldRoll,
             boolean kafkaShouldRoll,
             boolean eoShouldRoll) {
+
+        createKafkaCluster(extensionContext);
+
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        List<String> secrets = null;
 
-
-        createKafkaCluster(extensionContext);
+        // to make it parallel we need decision maker...
+        switch (extensionContext.getDisplayName()) {
+            case "testAutoRenewClusterCaCertsTriggeredByAnno":
+                secrets = Arrays.asList(clusterCaCertificateSecretName(clusterName));
+                break;
+            case "testAutoRenewClientsCaCertsTriggeredByAnno":
+                secrets = Arrays.asList(clientsCaCertificateSecretName(clusterName));
+                break;
+            case "testAutoRenewAllCaCertsTriggeredByAnno":
+                secrets = Arrays.asList(clusterCaCertificateSecretName(clusterName),
+                    clientsCaCertificateSecretName(clusterName));
+                break;
+        }
 
         KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
 
         resourceManager.createResource(extensionContext, user);
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -219,42 +273,61 @@ class SecurityST extends AbstractST {
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
-        Map<String, String> initialCaCerts = new HashMap<>();
-        for (String secretName : secretsToAnnotate) {
+        Map<String, String> initialCaKeys = new HashMap<>();
+        for (String secretName : secrets) {
             Secret secret = kubeClient().getSecret(secretName);
+            // TODO: java.lang.AssertionError: ca.key in my-cluster-2085887157-cluster-ca-cert should not be null
+            // TODO: testAutoRenewAllCaCertsTriggeredByAnno Null pointeer...
+            // TODO: testAutoRenewClientsCaCertsTriggeredByAnno java.lang.AssertionError: ca.key in my-cluster-2147249579-clients-ca-cert should not be null
+            // TODO: testAutoRenewClusterCaCertsTriggeredByAnno java.lang.AssertionError: ca.key in my-cluster-2085887157-cluster-ca-cert should not be null
             String value = secret.getData().get("ca.crt");
-            assertThat("ca.crt in " + secretName + " should not be null", value, is(notNullValue()));
-            initialCaCerts.put(secretName, value);
+            assertThat("ca.crt in " + secretName + " should not be null", value, is(Matchers.notNullValue()));
+            initialCaKeys.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
-                    .editMetadata()
-                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
-                    .endMetadata()
-                    .build();
-            LOGGER.info("Patching secret {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW);
+                .editMetadata()
+                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                .endMetadata()
+                .build();
+            LOGGER.info("Patching secret {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_REPLACE);
             kubeClient().patchSecret(secretName, annotated);
         }
 
         if (zkShouldRoll) {
-            LOGGER.info("Wait for zk to rolling restart ...");
-            StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
+            LOGGER.info("Wait for zk to rolling restart (1)...");
+            zkPods = StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
         }
         if (kafkaShouldRoll) {
-            LOGGER.info("Wait for kafka to rolling restart ...");
-            StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), 3, kafkaPods);
+            LOGGER.info("Wait for kafka to rolling restart (1)...");
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), kafkaPods);
         }
         if (eoShouldRoll) {
-            LOGGER.info("Wait for EO to rolling restart ...");
+            LOGGER.info("Wait for EO to rolling restart (1)...");
+            eoPod = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+        }
+
+        if (zkShouldRoll) {
+            LOGGER.info("Wait for zk to rolling restart (2)...");
+            zkPods = StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
+        }
+        if (kafkaShouldRoll) {
+            LOGGER.info("Wait for kafka to rolling restart (2)...");
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        }
+
+        if (eoShouldRoll) {
+            LOGGER.info("Wait for EO to rolling restart (2)...");
             eoPod = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
 
         LOGGER.info("Checking the certificates have been replaced");
-        for (String secretName : secretsToAnnotate) {
+        for (String secretName : secrets) {
             Secret secret = kubeClient().getSecret(secretName);
             assertThat("Secret " + secretName + " should exist", secret, is(notNullValue()));
-            assertThat("CA cert in " + secretName + " should have non-null 'data'", is(notNullValue()));
+            assertThat("CA key in " + secretName + " should have non-null 'data'", secret.getData(), is(notNullValue()));
             String value = secret.getData().get("ca.crt");
-            assertThat("CA cert in " + secretName + " should have changed",
-                    value, is(not(initialCaCerts.get(secretName))));
+            assertThat("CA key in " + secretName + " should exist", value, is(notNullValue()));
+            assertThat("CA key in " + secretName + " should have changed",
+                    value, is(not(initialCaKeys.get(secretName))));
         }
 
         internalKafkaClient = internalKafkaClient.toBuilder()
@@ -264,12 +337,12 @@ class SecurityST extends AbstractST {
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-                MESSAGE_COUNT,
-                internalKafkaClient.receiveMessagesPlain()
+            MESSAGE_COUNT,
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         // Check a new client (signed by new client key) can consume
-        String bobUserName = "bob";
+        String bobUserName = "bob-" + clusterName;
 
         user = KafkaUserTemplates.tlsUser(clusterName, bobUserName).build();
 
@@ -282,17 +355,19 @@ class SecurityST extends AbstractST {
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .withUsingPodName(defaultKafkaClientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withKafkaUsername(bobUserName)
             .build();
 
-        LOGGER.info("Checking consumed messages to pod:{}", MirrorMaker.defaultMirrorMakerMessageHandler$::new);
+        LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
+
         internalKafkaClient.checkProducedAndConsumedMessages(
-                MESSAGE_COUNT,
-                internalKafkaClient.receiveMessagesPlain()
+            MESSAGE_COUNT,
+            internalKafkaClient.receiveMessagesPlain()
         );
 
         if (!zkShouldRoll) {
             assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName)), is(zkPods));
-
         }
         if (!kafkaShouldRoll) {
             assertThat("Kafka pods should not roll, but did.", StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName)), is(kafkaPods));
@@ -305,57 +380,59 @@ class SecurityST extends AbstractST {
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
-    void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-
-        autoRenewSomeCaCertsTriggeredByAnno(
-                extensionContext,
-                asList(clusterCaCertificateSecretName(clusterName)),
-                /* ZK node need new certs */
+    void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
+        autoReplaceSomeKeysTriggeredByAnno(
+            extensionContext,
                 true,
-                /* brokers need new certs */
                 true,
-                /* eo needs new cert */
                 true);
     }
 
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
-    void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-
-        autoRenewSomeCaCertsTriggeredByAnno(
+    void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
+        autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
-            asList(clientsCaCertificateSecretName(clusterName)),
-                /* no communication between clients and zk, so no need to roll */
                 false,
-                /* brokers need to trust client certs with new cert */
                 true,
-                /* eo needs to generate new client certs */
                 true);
     }
 
     @ParallelTest
-    @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
-    void testAutoRenewAllCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
-        autoRenewSomeCaCertsTriggeredByAnno(
+    void testAutoReplaceAllCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
+        autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
-            asList(clusterCaCertificateSecretName(clusterName),
-                clientsCaCertificateSecretName(clusterName)),
                 true,
                 true,
                 true);
     }
 
-    synchronized void autoReplaceSomeKeysTriggeredByAnno(ExtensionContext extensionContext,
-                                            String clusterName,
-                                            final List<String> secrets,
+    void autoReplaceSomeKeysTriggeredByAnno(ExtensionContext extensionContext,
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll) {
+
+
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        List<String> secrets = null;
+
+        // to make it parallel we need decision maker...
+        switch (extensionContext.getDisplayName()) {
+            case "testAutoReplaceClusterCaKeysTriggeredByAnno":
+                secrets = Arrays.asList(clusterCaKeySecretName(clusterName));
+                break;
+            case "testAutoReplaceClientsCaKeysTriggeredByAnno":
+                secrets = Arrays.asList(clientsCaKeySecretName(clusterName));
+                break;
+            case "testAutoReplaceAllCaKeysTriggeredByAnno":
+                secrets = Arrays.asList(clusterCaKeySecretName(clusterName),
+                    clientsCaKeySecretName(clusterName));
+                break;
+        }
+
         createKafkaCluster(extensionContext);
 
         KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build();
@@ -365,7 +442,7 @@ class SecurityST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -490,52 +567,6 @@ class SecurityST extends AbstractST {
         if (!eoShouldRoll) {
             assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
         }
-    }
-
-    @ParallelTest
-    @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(ROLLING_UPDATE)
-    void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-
-        autoReplaceSomeKeysTriggeredByAnno(
-            extensionContext,
-            clusterName,
-            asList(clusterCaKeySecretName(clusterName)),
-                true,
-                true,
-                true);
-    }
-
-    @ParallelTest
-    @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(ROLLING_UPDATE)
-    void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-
-        autoReplaceSomeKeysTriggeredByAnno(
-            extensionContext,
-            clusterName,
-            asList(clientsCaKeySecretName(clusterName)),
-                false,
-                true,
-                true);
-    }
-
-    @ParallelTest
-    @Tag(INTERNAL_CLIENTS_USED)
-    @Tag(ROLLING_UPDATE)
-    void testAutoReplaceAllCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-
-        autoReplaceSomeKeysTriggeredByAnno(
-            extensionContext,
-            clusterName,
-            asList(clusterCaKeySecretName(clusterName),
-                clientsCaKeySecretName(clusterName)),
-                true,
-                true,
-                true);
     }
 
     private void createKafkaCluster(ExtensionContext extensionContext) {
@@ -1228,6 +1259,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster with the support {} TLS",  tlsVersion12);
 
+        // TODO: io.strimzi.test.WaitException: Timeout after 840000 ms waiting for Wait for Kafka: my-cluster-1561447058 will have desired state: Ready
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
@@ -1263,6 +1295,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different TLS version");
 
+        // TODO: ?? io.strimzi.test.WaitException: Timeout after 600000 ms waiting for Wait for KafkaConnect: my-cluster-1032091772 will have desired state: NotReady
         KafkaConnectUtils.waitForConnectStatus(clusterName, NotReady);
 
         LOGGER.info("Replacing Kafka Connect config to the newest(TLSv1.2) one same as the Kafka broker has.");
@@ -1332,6 +1365,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different cipher suites complexity of algorithm");
 
+        // TODO: io.strimzi.test.WaitException: Timeout after 600000 ms waiting for Wait for KafkaConnect: my-cluster-331348972 will have desired state: NotReady
         KafkaConnectUtils.waitForConnectNotReady(clusterName);
 
         LOGGER.info("Replacing Kafka Connect config to the cipher suites same as the Kafka broker has.");
@@ -1359,8 +1393,8 @@ class SecurityST extends AbstractST {
     void testOwnerReferenceOfCASecrets(ExtensionContext extensionContext) {
         /* Different name for Kafka cluster to make the test quicker -> KafkaRoller is waiting for pods of "my-cluster" to become ready
          for 5 minutes -> this will prevent the waiting. */
-        String secondClusterName = "my-second-cluster";
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String secondClusterName = "my-second-cluster-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editOrNewSpec()
@@ -1392,6 +1426,7 @@ class SecurityST extends AbstractST {
         });
 
         LOGGER.info("Deploying Kafka with generateSecretOwnerReference set to true");
+        // TODO: io.strimzi.test.WaitException: Timeout after 840000 ms waiting for Wait for Kafka: my-second-cluster-my-cluster-2076107627 will have desired state: Ready
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(secondClusterName, 3)
             .editOrNewSpec()
                 .editOrNewClusterCa()

@@ -7,13 +7,14 @@ package io.strimzi.systemtest.operators;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.KafkaConnectTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.TestUtils;
@@ -38,7 +39,7 @@ public class ClusterOperatorRbacST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorRbacST.class);
     public static final String NAMESPACE = "cluster-operator-test";
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(CONNECT)
     void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -66,12 +67,13 @@ public class ClusterOperatorRbacST extends AbstractST {
         assertTrue(log.contains("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(CONNECT)
     void testCRBDeletionErrorsWhenRackAwarenessIsEnabled(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         applyRoleBindingsWithoutCRBs(extensionContext);
         // 060-Deployment
@@ -95,7 +97,8 @@ public class ClusterOperatorRbacST extends AbstractST {
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaStatusCondition.getType(), is(NotReady.toString()));
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
             .editSpec()
                 .withNewRack(rackKey)
             .endSpec()
@@ -109,11 +112,11 @@ public class ClusterOperatorRbacST extends AbstractST {
 
     private void applyRoleBindingsWithoutCRBs(ExtensionContext extensionContext) {
         // 020-RoleBinding
-        resourceManager.createResource(extensionContext, RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", NAMESPACE, NAMESPACE));
+        RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", NAMESPACE, NAMESPACE);
         // 031-RoleBinding
-        resourceManager.createResource(extensionContext, RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", NAMESPACE, NAMESPACE));
+        RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", NAMESPACE, NAMESPACE);
         // 032-RoleBinding
-        resourceManager.createResource(extensionContext, RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", NAMESPACE, NAMESPACE));
+        RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", NAMESPACE, NAMESPACE);
     }
 
     @BeforeAll

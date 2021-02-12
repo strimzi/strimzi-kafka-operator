@@ -15,13 +15,13 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients;
-import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaConnectTemplates;
-import io.strimzi.systemtest.templates.KafkaMirrorMaker2Templates;
-import io.strimzi.systemtest.templates.KafkaMirrorMakerTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
+import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -57,17 +57,36 @@ public class OauthPlainST extends OauthAbstractST {
 
     private KafkaOauthExampleClients oauthInternalClientJob;
     private final String oauthClusterName = "oauth-cluster-plain-name";
+    private static final String NAMESPACE = "oauth2-plain-cluster-test";
 
     @Description(
             "As an oauth producer, I should be able to produce messages to the kafka broker\n" +
             "As an oauth consumer, I should be able to consumer messages from the kafka broker.")
     @ParallelTest
     void testProducerConsumer(ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+
+        KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
+
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @Description("As an oauth KafkaConnect, I should be able to sink messages from kafka broker topic.")
@@ -76,17 +95,33 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerConnect(ExtensionContext extensionContext) {
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
+        KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, oauthClusterName, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, oauthClusterName, 1)
             .withNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
@@ -107,11 +142,11 @@ public class OauthPlainST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaConnectorUtils.createFileSinkConnector(kafkaConnectPodName, TOPIC_NAME, Constants.DEFAULT_SINK_FILE_PATH, "http://localhost:8083");
+        KafkaConnectorUtils.createFileSinkConnector(kafkaConnectPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, "http://localhost:8083");
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
     }
@@ -121,15 +156,32 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker(ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
+        KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
-        String targetKafkaCluster = oauthClusterName + "-target";
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
+
+        String targetKafkaCluster = clusterName + "-target";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(targetKafkaCluster, 1, 1)
             .editSpec()
@@ -207,10 +259,10 @@ public class OauthPlainST extends OauthAbstractST {
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
                 KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
-                    .withProducerName(OAUTH_PRODUCER_NAME)
+                    .withProducerName(consumerName)
                     .withConsumerName(OAUTH_CONSUMER_NAME)
                     .withBootstrapAddress(KafkaResources.plainBootstrapAddress(targetKafkaCluster))
-                    .withTopicName(TOPIC_NAME)
+                    .withTopicName(topicName)
                     .withMessageCount(MESSAGE_COUNT)
                     .withOAuthClientId(OAUTH_CLIENT_NAME)
                     .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
@@ -234,18 +286,35 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT_COMPONENTS)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker2(ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
+        KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
-        String kafkaSourceClusterName = oauthClusterName;
-        String kafkaTargetClusterName = oauthClusterName + "-target";
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
+
+        String kafkaSourceClusterName = clusterName;
+        String kafkaTargetClusterName = clusterName + "-target";
         // mirror maker 2 adding prefix to mirrored topic for in this case mirrotopic will be : my-cluster.my-topic
-        String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + TOPIC_NAME;
+        String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + topicName;
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
             .editSpec()
@@ -323,14 +392,14 @@ public class OauthPlainST extends OauthAbstractST {
         TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
-                LOGGER.info("Deleting the Job {}", OAUTH_CONSUMER_NAME);
-                JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
+                LOGGER.info("Deleting the Job {}", consumerName);
+                JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", kafkaTargetClusterName);
 
                 KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
-                    .withProducerName(OAUTH_PRODUCER_NAME)
-                    .withConsumerName(OAUTH_CONSUMER_NAME)
+                    .withProducerName(producerName)
+                    .withConsumerName(consumerName)
                     .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
                     .withTopicName(kafkaTargetClusterTopicName)
                     .withMessageCount(MESSAGE_COUNT)
@@ -342,7 +411,7 @@ public class OauthPlainST extends OauthAbstractST {
                 resourceManager.createResource(extensionContext, kafkaOauthClientJob.consumerStrimziOauthPlain().build());
 
                 try {
-                    ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+                    ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
                     return  true;
                 } catch (WaitException e) {
                     e.printStackTrace();
@@ -356,14 +425,30 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(BRIDGE)
     void testProducerConsumerBridge(ExtensionContext extensionContext) {
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
+        KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
@@ -379,12 +464,12 @@ public class OauthPlainST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        String producerName = "bridge-producer";
+        String bridgeProducerName = "bridge-producer-" + clusterName;
 
         KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
-            .withProducerName(producerName)
+            .withProducerName(bridgeProducerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(oauthClusterName))
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
@@ -392,29 +477,21 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+        ClientUtils.waitForClientSuccess(bridgeProducerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, bridgeProducerName);
     }
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
-        setupCoAndKeycloak(extensionContext);
+        super.beforeAllMayOverride(extensionContext);
+        // for namespace
+        super.beforeAllOverrideMe(extensionContext, NAMESPACE);
+
         keycloakInstance.setRealm("internal", false);
 
         LOGGER.info("Setting producer and consumer properties");
 
-        oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
-            .withProducerName(OAUTH_PRODUCER_NAME)
-            .withConsumerName(OAUTH_CONSUMER_NAME)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
-            .withTopicName(TOPIC_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withOAuthClientId(OAUTH_CLIENT_NAME)
-            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
-            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-            .build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -437,8 +514,5 @@ public class OauthPlainST extends OauthAbstractST {
                 .endKafka()
             .endSpec()
             .build());
-
-        // TODO: make this for each test... and also clients
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, TOPIC_NAME).build());
     }
 }

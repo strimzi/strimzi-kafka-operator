@@ -102,7 +102,9 @@ public class KafkaUtils {
             Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
-                    if (condition.getMessage().matches(message)) {
+                    String conditionMessage = condition.getMessage();
+                    LOGGER.debug(conditionMessage);
+                    if (conditionMessage.matches(message)) {
                         return true;
                     }
                 }

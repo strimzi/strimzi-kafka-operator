@@ -8,12 +8,13 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -51,7 +52,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
     private final String producerName = "hello-world-producer";
     private final String consumerName = "hello-world-consumer";
 
-    @ParallelTest
+    @IsolatedTest
     void testKafkaClusterUpgrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
@@ -72,7 +73,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testKafkaClusterDowngrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
@@ -93,7 +94,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testKafkaClusterDowngradeToOlderMessageFormat(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 

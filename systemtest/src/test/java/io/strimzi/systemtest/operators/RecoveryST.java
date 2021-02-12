@@ -13,11 +13,10 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
+import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -50,7 +49,7 @@ class RecoveryST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryST.class);
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromEntityOperatorDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -67,7 +66,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaStatefulSetDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -87,7 +86,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromZookeeperStatefulSetDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -107,7 +106,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaServiceDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -123,7 +122,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromZookeeperServiceDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -139,7 +138,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaHeadlessServiceDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -155,7 +154,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromZookeeperHeadlessServiceDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -171,7 +170,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaMetricsConfigDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         // kafka cluster already deployed
@@ -186,7 +185,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromZookeeperMetricsConfigDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", sharedClusterName);
@@ -201,7 +200,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(BRIDGE)
     void testRecoveryFromKafkaBridgeDeploymentDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
@@ -217,7 +216,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(BRIDGE)
     void testRecoveryFromKafkaBridgeServiceDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
@@ -232,7 +231,7 @@ class RecoveryST extends AbstractST {
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(BRIDGE)
     void testRecoveryFromKafkaBridgeMetricsConfigDeletion(ExtensionContext extensionContext) {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
@@ -258,7 +257,7 @@ class RecoveryST extends AbstractST {
      *
      * @see KafkaRollerST#testKafkaPodPending()
      */
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromImpossibleMemoryRequest(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
@@ -269,7 +268,6 @@ class RecoveryST extends AbstractST {
         ResourceRequirements resourceReq = new ResourceRequirementsBuilder()
             .withRequests(requests)
             .build();
-
 
         Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
@@ -303,7 +301,7 @@ class RecoveryST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String clusterOperatorName = clusterName + "-" + Constants.STRIMZI_DEPLOYMENT_NAME;
 
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL).build());
+        installClusterOperator(extensionContext, clusterOperatorName, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
 
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
         String kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + sharedClusterName;
@@ -315,7 +313,7 @@ class RecoveryST extends AbstractST {
 
     @BeforeAll
     void prepare(ExtensionContext extensionContext) {
-        prepareEnvForOperator(extensionContext,  NAMESPACE);
+        prepareEnvForOperator(extensionContext, NAMESPACE);
         if (Environment.isNamespaceRbacScope()) {
             // if roles only, only deploy the rolebindings
             applyRoleBindings(extensionContext, NAMESPACE, NAMESPACE);

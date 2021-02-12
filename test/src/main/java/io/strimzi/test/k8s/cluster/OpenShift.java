@@ -21,6 +21,7 @@ public class OpenShift implements KubeCluster {
     public static final String OLM_SOURCE_NAMESPACE = "openshift-marketplace";
     public static final String DEFAULT_NAMESPACE = "default";
     private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
+    public static final String DEFAULT_NAMESPACE = "default";
 
     @Override
     public boolean isAvailable() {

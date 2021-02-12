@@ -51,7 +51,7 @@ public class BundleResource implements ResourceType<Deployment> {
         deployment[0] = resource;
 
         TestUtils.waitFor(" for resource: " + resource + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(Constants.STRIMZI_DEPLOYMENT_NAME));
+            deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(deployment[0].getMetadata().getName()));
             LOGGER.info("Resource is present: {}", deployment[0] != null);
             return deployment[0] != null;
         });
@@ -64,7 +64,7 @@ public class BundleResource implements ResourceType<Deployment> {
         deployment[0] = existing;
 
         TestUtils.waitFor(" for resource: " + existing + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(Constants.STRIMZI_DEPLOYMENT_NAME));
+            deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(deployment[0].getMetadata().getName()));
             LOGGER.info("Resource is present: {}", deployment[0] != null);
             return deployment[0] != null;
         });

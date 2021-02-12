@@ -29,10 +29,10 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaConnectTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -86,6 +86,8 @@ public class SpecificST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAware(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
+
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String rackKey = "rack-key";
@@ -143,6 +145,7 @@ public class SpecificST extends AbstractST {
     void testRackAwareConnectWrongDeployment(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
         Map<String, String> label = Collections.singletonMap("my-label", "value");
         Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
@@ -245,6 +248,7 @@ public class SpecificST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
@@ -323,6 +327,7 @@ public class SpecificST extends AbstractST {
     void testLoadBalancerIpOverride(ExtensionContext extensionContext) {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -370,6 +375,7 @@ public class SpecificST extends AbstractST {
     void testDeployUnsupportedKafka(ExtensionContext extensionContext) {
         String nonExistingVersion = "6.6.6";
         String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported. Supported versions are.*";
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
@@ -393,6 +399,7 @@ public class SpecificST extends AbstractST {
         String networkInterfaces = Exec.exec("ip", "route").out();
         Pattern ipv4InterfacesPattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");
         Matcher ipv4InterfacesMatcher = ipv4InterfacesPattern.matcher(networkInterfaces);
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         ipv4InterfacesMatcher.find();
         LOGGER.info(ipv4InterfacesMatcher.group(0));

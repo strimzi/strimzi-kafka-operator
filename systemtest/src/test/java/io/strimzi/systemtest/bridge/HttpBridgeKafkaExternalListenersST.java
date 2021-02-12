@@ -19,11 +19,11 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
-import io.strimzi.systemtest.templates.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -44,7 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
 class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
-    private static final String BRIDGE_EXTERNAL_SERVICE = clusterName + "-bridge-external-service";
+    private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
 
     @ParallelTest
     void testScramShaAuthWithWeirdUsername(ExtensionContext extensionContext) {
