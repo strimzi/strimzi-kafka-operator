@@ -24,7 +24,7 @@ This procedure shows only some of the possible configuration options, but those 
 .Kafka versions
 
 The `log.message.format.version` and `inter.broker.protocol.version` properties for the Kafka `config` must be the versions supported by the specified Kafka version (`spec.kafka.version`).
-The properties represent the log format version appended to messages and the version of protocol used in a Kafka cluster.
+The properties represent the log format version appended to messages and the version of Kafka protocol used in a Kafka cluster.
 Updates to these properties are required when upgrading your Kafka version.
 For more information, see link:{BookURLDeploying}#assembly-upgrading-kafka-versions-str[Upgrading Kafka] in the _Deploying and Upgrading Strimzi_ guide.
 
