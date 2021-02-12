@@ -45,13 +45,13 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaConnectS2ITemplates;
-import io.strimzi.systemtest.templates.KafkaConnectTemplates;
-import io.strimzi.systemtest.templates.KafkaConnectorTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectS2ITemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -1067,8 +1067,8 @@ class ConnectS2IST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         installClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
-        connectS2IClusterName = clusterName + "-s2i";
-        secondClusterName = "second-" + clusterName;
+        connectS2IClusterName = NAMESPACE + "-s2i";
+        secondClusterName = "second-" + NAMESPACE;
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, connectS2iClientsName).build());
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(connectS2iClientsName).get(0).getMetadata().getName();

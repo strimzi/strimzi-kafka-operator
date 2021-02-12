@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.watcher;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -19,14 +20,16 @@ import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaConnectS2ITemplates;
-import io.strimzi.systemtest.templates.KafkaConnectTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectS2ITemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -73,8 +76,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE_CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
-        deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, topicName);
-        deleteNewTopic(SECOND_NAMESPACE, topicName);
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, SECOND_NAMESPACE).build());
+        KafkaTopicResource.kafkaTopicClient().inNamespace(SECOND_NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         cluster.setNamespace(previousNamespace);
     }
 
@@ -112,16 +115,18 @@ class AllNamespaceST extends AbstractNamespaceST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
+        String kafkaConnectName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
+
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
         // Deploy Kafka Connect in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, SECOND_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, kafkaConnectName, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(extensionContext, SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND);
+        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND);
 
         cluster.setNamespace(previousNamespace);
     }
@@ -135,17 +140,18 @@ class AllNamespaceST extends AbstractNamespaceST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
+        String kafkaConnectS2IName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect-s2i";
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
         // Deploy Kafka Connect in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, kafkaConnectS2IName, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(extensionContext, SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnectS2I.RESOURCE_KIND);
+        deployKafkaConnectorWithSink(extensionContext, kafkaConnectS2IName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnectS2I.RESOURCE_KIND);
 
         cluster.setNamespace(previousNamespace);
     }

@@ -16,9 +16,9 @@ import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
@@ -30,7 +30,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
@@ -53,6 +52,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -97,25 +97,26 @@ public class TopicST extends AbstractST {
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
     }
 
-    @Test
-    void testCreateTopicViaKafka() {
+    @ParallelTest
+    void testCreateTopicViaKafka(ExtensionContext extensionContext) {
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         int topicPartitions = 3;
 
-        LOGGER.debug("Creating topic {} with {} replicas and {} partitions", TOPIC_NAME, 3, topicPartitions);
-        KafkaCmdClient.createTopicUsingPodCli(TOPIC_CLUSTER_NAME, 0, TOPIC_NAME, 3, topicPartitions);
+        LOGGER.debug("Creating topic {} with {} replicas and {} partitions", topicName, 3, topicPartitions);
+        KafkaCmdClient.createTopicUsingPodCli(TOPIC_CLUSTER_NAME, 0, topicName, 3, topicPartitions);
 
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(TOPIC_NAME).get();
+        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get();
 
-        verifyTopicViaKafkaTopicCRK8s(kafkaTopic, TOPIC_NAME, topicPartitions, TOPIC_CLUSTER_NAME);
+        verifyTopicViaKafkaTopicCRK8s(kafkaTopic, topicName, topicPartitions, TOPIC_CLUSTER_NAME);
 
         topicPartitions = 5;
         LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
 
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(TOPIC_CLUSTER_NAME, 0, TOPIC_NAME, topicPartitions);
-        LOGGER.debug("Topic {} updated from {} to {} partitions", TOPIC_NAME, 3, topicPartitions);
+        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(TOPIC_CLUSTER_NAME, 0, topicName, topicPartitions);
+        LOGGER.debug("Topic {} updated from {} to {} partitions", topicName, 3, topicPartitions);
 
-        KafkaTopicUtils.waitForKafkaTopicPartitionChange(TOPIC_NAME, topicPartitions);
-        verifyTopicViaKafka(TOPIC_NAME, topicPartitions, TOPIC_CLUSTER_NAME);
+        KafkaTopicUtils.waitForKafkaTopicPartitionChange(topicName, topicPartitions);
+        verifyTopicViaKafka(topicName, topicPartitions, TOPIC_CLUSTER_NAME);
     }
 
     @Tag(NODEPORT_SUPPORTED)
@@ -340,6 +341,7 @@ public class TopicST extends AbstractST {
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testDeleteTopicEnableFalse(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String isolatedKafkaCluster = clusterName + "-isolated";
 

@@ -6,12 +6,12 @@ package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +35,7 @@ public class ClusterOperationST extends AbstractST {
 
     public static final String NAMESPACE = "cluster-operations-test";
 
-    @ParallelTest
+    @IsolatedTest
     @MultiNodeClusterOnly
     @RequiredMinKubeApiVersion(version = 1.15)
     void testAvailabilityDuringNodeDrain(ExtensionContext extensionContext) {

@@ -6,8 +6,8 @@ package io.strimzi.systemtest.operators.topic;
 
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

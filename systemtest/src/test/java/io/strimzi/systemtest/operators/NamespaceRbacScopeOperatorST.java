@@ -7,9 +7,9 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +34,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(NamespaceRbacScopeOperatorST.class);
 
-    @ParallelTest
+    @IsolatedTest("This test case needs own Cluster Operator")
     void testNamespacedRbacScopeDeploysRoles(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 

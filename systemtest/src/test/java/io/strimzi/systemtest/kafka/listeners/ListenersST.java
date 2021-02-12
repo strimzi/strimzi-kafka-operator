@@ -17,7 +17,6 @@ import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -26,10 +25,10 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -44,7 +43,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -105,11 +103,9 @@ public class ListenersST extends AbstractST {
     }
 
     private String customCertChain1 = "custom-certificate-chain-1";
-    private String customCertChain2 = "custom-certificate-chain-2";
     private String customCertServer1 = "custom-certificate-server-1";
     private String customCertServer2 = "custom-certificate-server-2";
     private String customRootCA1 = "custom-certificate-root-1";
-    private String customRootCA2 = "custom-certificate-root-2";
     private String customListenerName = "randname";
 
     private String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
@@ -251,6 +247,8 @@ public class ListenersST extends AbstractST {
 
         KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(clusterName, kafkaUsername).build();
 
+        resourceManager.createResource(extensionContext, kafkaUser);
+
         String brokerPodLog = kubeClient().logs(clusterName + "-kafka-0", "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(kafkaUsername) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
@@ -326,6 +324,7 @@ public class ListenersST extends AbstractST {
 
         KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(clusterName, kafkaUsername).build();
 
+        resourceManager.createResource(extensionContext, kafkaUser);
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
 
         final String kafkaClientsPodName =
@@ -490,7 +489,6 @@ public class ListenersST extends AbstractST {
         assertThat(kubeClient().getService(firstExternalService)
                 .getSpec().getPorts().get(0).getNodePort(), is(brokerNodePort));
 
-
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
@@ -646,6 +644,9 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+
+        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
@@ -658,7 +659,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -671,7 +672,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -691,7 +692,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withCertificateAuthorityCertificateName(customCertServer1)
+            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(customListenerName)
             .build();
@@ -732,6 +733,10 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertChain1 = clusterName + "-" + customCertChain1;
+        String clusterCustomRootCA1 = clusterName + "-" + customRootCA1;
+
+        SecretUtils.createCustomSecret(clusterCustomCertChain1, clusterName, NAMESPACE, CHAIN_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
@@ -744,7 +749,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertChain1)
+                                    .withSecretName(clusterCustomCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -757,7 +762,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertChain1)
+                                    .withSecretName(clusterCustomCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -777,7 +782,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withCertificateAuthorityCertificateName(customRootCA1)
+            .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -818,6 +823,9 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+
+        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -830,7 +838,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -843,7 +851,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -864,7 +872,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withCertificateAuthorityCertificateName(customCertServer1)
+            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -905,6 +913,11 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertChain1 = clusterName + "-" + customCertChain1;
+        String clusterCustomRootCA1 = clusterName + "-" + customRootCA1;
+
+        SecretUtils.createCustomSecret(clusterCustomCertChain1, clusterName, NAMESPACE, CHAIN_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomRootCA1, clusterName, NAMESPACE, ROOT_CA_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -917,7 +930,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertChain1)
+                                    .withSecretName(clusterCustomCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -930,7 +943,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertChain1)
+                                    .withSecretName(clusterCustomCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -955,7 +968,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withCertificateAuthorityCertificateName(customRootCA1)
+            .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -997,6 +1010,9 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -1009,7 +1025,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1022,7 +1038,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1042,7 +1058,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withCertificateAuthorityCertificateName(customCertServer1)
+            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -1083,6 +1099,11 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertChain1 = clusterName + "-" + customCertChain1;
+        String clusterCustomRootCA1 = clusterName + "-" + customRootCA1;
+
+        SecretUtils.createCustomSecret(clusterCustomCertChain1, clusterName, NAMESPACE, CHAIN_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomRootCA1, clusterName, NAMESPACE, ROOT_CA_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -1095,7 +1116,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertChain1)
+                                    .withSecretName(clusterCustomCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1108,7 +1129,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertChain1)
+                                    .withSecretName(clusterCustomCertChain1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1128,7 +1149,7 @@ public class ListenersST extends AbstractST {
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
-            .withCertificateAuthorityCertificateName(customRootCA1)
+            .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
@@ -1171,6 +1192,11 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+        String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
+
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
@@ -1234,7 +1260,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
+                                    .withSecretName(clusterCustomCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1247,7 +1273,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1262,10 +1288,10 @@ public class ListenersST extends AbstractST {
         KafkaUtils.waitForKafkaStatusUpdate(clusterName);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        String internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        String internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1273,7 +1299,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
-            .withCertificateAuthorityCertificateName(customCertServer1)
+            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1303,17 +1329,17 @@ public class ListenersST extends AbstractST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(3 * MESSAGE_COUNT));
 
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
-        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1347,7 +1373,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
+                                    .withSecretName(clusterCustomCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1371,7 +1397,7 @@ public class ListenersST extends AbstractST {
         externalSecretCerts = getKafkaSecretCertificates(clusterName + "-cluster-ca-cert", "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1412,6 +1438,11 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+        String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
+
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
@@ -1475,7 +1506,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
+                                    .withSecretName(clusterCustomCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1488,7 +1519,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1503,10 +1534,10 @@ public class ListenersST extends AbstractST {
         KafkaUtils.waitForKafkaStatusUpdate(clusterName);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        String internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        String internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1514,7 +1545,7 @@ public class ListenersST extends AbstractST {
         assertThat(internalSecretCerts, is(internalCerts));
 
         basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
-            .withCertificateAuthorityCertificateName(customCertServer1)
+            .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
             .build();
 
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1544,17 +1575,17 @@ public class ListenersST extends AbstractST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(3 * MESSAGE_COUNT));
 
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
-        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1585,7 +1616,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
+                                    .withSecretName(clusterCustomCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1609,7 +1640,7 @@ public class ListenersST extends AbstractST {
         externalSecretCerts = getKafkaSecretCertificates(clusterName + "-cluster-ca-cert", "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1642,6 +1673,11 @@ public class ListenersST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+        String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
+
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
@@ -1705,7 +1741,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
+                                    .withSecretName(clusterCustomCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1718,7 +1754,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1733,10 +1769,10 @@ public class ListenersST extends AbstractST {
         KafkaUtils.waitForKafkaStatusUpdate(clusterName);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        String internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        String internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1775,17 +1811,17 @@ public class ListenersST extends AbstractST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(3 * MESSAGE_COUNT));
 
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
-        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
+        SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        externalSecretCerts = getKafkaSecretCertificates(customCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1816,7 +1852,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer2)
+                                    .withSecretName(clusterCustomCertServer2)
                                     .withKey("ca.key")
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1840,7 +1876,7 @@ public class ListenersST extends AbstractST {
         externalSecretCerts = getKafkaSecretCertificates(clusterName + "-cluster-ca-cert", "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, NAMESPACE, clusterName);
-        internalSecretCerts = getKafkaSecretCertificates(customCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -1904,6 +1940,9 @@ public class ListenersST extends AbstractST {
     void testCertificateWithNonExistingDataCrt(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String nonExistingCertName = "non-existing-crt";
+        String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
@@ -1916,7 +1955,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey("ca.key")
                                     .withCertificate(nonExistingCertName)
                                 .endBrokerCertChainAndKey()
@@ -1930,7 +1969,7 @@ public class ListenersST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
-                ".*Secret " + customCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
+                ".*Secret " + clusterCustomCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
 
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
@@ -1939,6 +1978,9 @@ public class ListenersST extends AbstractST {
     void testCertificateWithNonExistingDataKey(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String nonExistingCertKey = "non-existing-key";
+        String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
@@ -1951,7 +1993,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withNewConfiguration()
                                 .withNewBrokerCertChainAndKey()
-                                    .withSecretName(customCertServer1)
+                                    .withSecretName(clusterCustomCertServer1)
                                     .withKey(nonExistingCertKey)
                                     .withCertificate("ca.crt")
                                 .endBrokerCertChainAndKey()
@@ -1965,26 +2007,9 @@ public class ListenersST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE,
-                ".*Secret " + customCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");
+                ".*Secret " + clusterCustomCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");
 
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
-    }
-
-    @BeforeEach
-    void setupCertificates() {
-        SecretUtils.deleteSecretWithWait(customCertChain1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertChain2, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertServer1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customCertServer2, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customRootCA1, NAMESPACE);
-        SecretUtils.deleteSecretWithWait(customRootCA2, NAMESPACE);
-
-        SecretUtils.createCustomSecret(customCertChain1, clusterName, NAMESPACE, CHAIN_CERT_AND_KEY_1);
-        SecretUtils.createCustomSecret(customCertChain2, clusterName, NAMESPACE, CHAIN_CERT_AND_KEY_2);
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
-        SecretUtils.createCustomSecret(customCertServer2, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_2);
-        SecretUtils.createCustomSecret(customRootCA1, clusterName, NAMESPACE, ROOT_CA_CERT_AND_KEY_1);
-        SecretUtils.createCustomSecret(customRootCA2, clusterName, NAMESPACE, ROOT_CA_CERT_AND_KEY_2);
     }
 
     @BeforeAll
@@ -1994,10 +2019,6 @@ public class ListenersST extends AbstractST {
 
     @AfterEach
     void afterEach(ExtensionContext extensionContext) throws Exception {
-        if (!Environment.SKIP_TEARDOWN) {
-            resourceManager.deleteResources(extensionContext);
-        }
-
         kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).delete();
     }
 }

@@ -42,11 +42,12 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     }
     @Override
     public void create(NetworkPolicy resource) {
-        ResourceManager.kubeClient().createNetworkPolicy(resource);
+        LOGGER.info("Namespace.... " + resource.getMetadata().getNamespace());
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createNetworkPolicy(resource);
     }
     @Override
     public void delete(NetworkPolicy resource) throws Exception {
-        ResourceManager.kubeClient().deleteNetworkPolicy(resource.getMetadata().getName());
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteNetworkPolicy(resource.getMetadata().getName());
     }
     @Override
     public boolean isReady(NetworkPolicy resource) {

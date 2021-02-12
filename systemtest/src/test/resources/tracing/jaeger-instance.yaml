@@ -1,7 +1,7 @@
 apiVersion: jaegertracing.io/v1
 kind: Jaeger
 metadata:
-  name: my-jaeger
+  name: my-jaeger2
   namespace: tracing-cluster-test
 spec:
   strategy: allInOne

@@ -13,15 +13,15 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
@@ -38,8 +38,6 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Suite for testing topic recovery in case of namespace deletion.
@@ -60,7 +58,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      * we can simply recreate all KafkaTopic resources and then deploy the Kafka cluster.
      * At the end we verify that we can receive messages from topic (so data are present).
      */
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicAvailable(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -117,8 +115,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
-        Integer consumed = internalKafkaClient.receiveMessagesPlain();
-        assertThat(consumed, is(MESSAGE_COUNT));
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
     }
 
     /**
@@ -128,7 +128,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      *  3. enable Topic Operator by redeploying Kafka cluster
      * @throws InterruptedException - sleep
      */
-    @ParallelTest
+    @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicNotAvailable(ExtensionContext extensionContext) throws InterruptedException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -199,8 +199,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .build();
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", internalKafkaClient.getPodName());
-        Integer consumed = internalKafkaClient.receiveMessagesPlain();
-        assertThat(consumed, is(MESSAGE_COUNT));
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
     }
 
     private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, String topicName, int messageCount) {

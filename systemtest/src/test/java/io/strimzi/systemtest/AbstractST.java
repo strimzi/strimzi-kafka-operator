@@ -93,7 +93,6 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapTestWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapTestWithKafkaClientNames = new HashMap<>();
 
-    protected static String clusterName;
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
@@ -145,6 +144,7 @@ public abstract class AbstractST implements TestSeparator {
                 applyBindings(extensionContext, namespace, bindingsNamespaces);
             }
             // 060-Deployment
+            ResourceManager.setCoDeploymentName(clusterOperatorName);
             ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, namespace, operationTimeout, reconciliationInterval).build());
         }
     }
@@ -760,19 +760,24 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Docker images verified");
     }
 
-    @BeforeEach
-    void createTestResources(ExtensionContext testContext) {
+    /**
+     * BeforeEachMayOverride, is a method, which gives you option to override @BeforeAll in sub-classes and
+     * ensure that this is also executed if you call it with super.beforeEachMayOverride(). You can also skip it and
+     * you your implementation in sub-class as you want.
+     * @param extensionContext
+     */
+    protected void beforeEachMayOverride(ExtensionContext extensionContext) {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
         String testName = null;
 
         synchronized (lock) {
-            if (testContext.getTestMethod().isPresent()) {
-                testName = testContext.getTestMethod().get().getName();
+            if (extensionContext.getTestMethod().isPresent()) {
+                testName = extensionContext.getTestMethod().get().getName();
             }
 
             LOGGER.info("Not first test we are gonna generate cluster name");
-            clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
+            String clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
 
             mapTestWithClusterNames.put(testName, clusterName);
             mapTestWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
@@ -784,14 +789,29 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    @BeforeAll
-    void setTestClassName(ExtensionContext testContext) {
+    /**
+     * BeforeAllMayOverride, is a method, which gives you option to override @BeforeAll in sub-classes and
+     * ensure that this is also executed if you call it with super.beforeAllMayOverride(). You can also skip it and
+     * you your implementation in sub-class as you want.
+     * @param extensionContext
+     */
+    protected void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
         String testClass = null;
 
-        if (testContext.getTestClass().isPresent()) {
-            testClass = testContext.getTestClass().get().getName();
+        if (extensionContext.getTestClass().isPresent()) {
+            testClass = extensionContext.getTestClass().get().getName();
         }
+    }
+
+    @BeforeEach
+    void createTestResources(ExtensionContext testContext) {
+        beforeEachMayOverride(testContext);
+    }
+
+    @BeforeAll
+    void setTestClassName(ExtensionContext testContext) {
+        beforeAllMayOverride(testContext);
     }
 
     @AfterEach
@@ -813,10 +833,6 @@ public abstract class AbstractST implements TestSeparator {
 //            }
 //        }
 
-//        if (!Environment.SKIP_TEARDOWN) {
-//            resourceManager.deleteResources(testContext);
-//        }
-
 //        if (assertionError != null) {
 //            throw assertionError;
 //        }
@@ -825,7 +841,6 @@ public abstract class AbstractST implements TestSeparator {
     @AfterAll
     void teardownEnvironmentClass(ExtensionContext testContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
-//            resourceManager.deleteResources(testContext);
             teardownEnvForOperator();
         }
     }

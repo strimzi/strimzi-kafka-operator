@@ -10,6 +10,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.images.ImagePullPolicy;
+import org.testcontainers.images.PullPolicy;
 import org.testcontainers.images.builder.Transferable;
 
 import java.io.BufferedReader;
@@ -67,11 +69,13 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     public StrimziKafkaContainer(final String version) {
         super("quay.io/strimzi/kafka:" + version);
         super.withNetwork(Network.SHARED);
+        super.withImagePullPolicy(PullPolicy.alwaysPull());
 
         // exposing kafka port from the container
         withExposedPorts(KAFKA_PORT);
 
         withEnv("LOG_DIR", "/tmp");
+//        withEnv("TESTCONTAINERS_RYUK_DISABLED", "true");
     }
 
     public StrimziKafkaContainer() {

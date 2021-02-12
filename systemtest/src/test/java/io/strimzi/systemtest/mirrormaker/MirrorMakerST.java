@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
+import com.sun.tools.jxc.ap.Const;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -25,14 +26,15 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
-import io.strimzi.systemtest.templates.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.KafkaMirrorMakerTemplates;
-import io.strimzi.systemtest.templates.KafkaTemplates;
-import io.strimzi.systemtest.templates.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -190,10 +192,9 @@ public class MirrorMakerST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
-
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
-        String kafkaSourceUserName = "my-user-source";
-        String kafkaTargetUserName = "my-user-target";
+        String kafkaSourceUserName = clusterName + "-my-user-source";
+        String kafkaTargetUserName = clusterName + "-my-user-target";
 
         // Deploy source kafka with tls listener and mutual tls auth
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
@@ -253,9 +254,16 @@ public class MirrorMakerST extends AbstractST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
+        String baseTopic = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicTestName1 = baseTopic + "-test-1";
+        String topicTestName2 = baseTopic + "-test-2";
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicTestName1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicTestName2).build());
+
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
-            .withTopicName("my-topic-test-3")
+            .withTopicName(topicTestName1)
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterSourceName)
             .withKafkaUsername(userSource.getMetadata().getName())
@@ -270,16 +278,13 @@ public class MirrorMakerST extends AbstractST {
         );
 
         internalKafkaClient = internalKafkaClient.toBuilder()
-            .withTopicName("my-topic-test-4")
+            .withTopicName(topicTestName2)
             .withClusterName(kafkaClusterTargetName)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .withKafkaUsername(userTarget.getMetadata().getName())
             .build();
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        ClientUtils.waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(extensionContext, internalKafkaClient);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(clusterName, kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, true)
@@ -345,9 +350,8 @@ public class MirrorMakerST extends AbstractST {
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
-
-        String kafkaUserSource = "my-user-source";
-        String kafkaUserTarget = "my-user-target";
+        String kafkaUserSource = clusterName + "-my-user-source";
+        String kafkaUserTarget = clusterName + "-my-user-target";
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
@@ -419,12 +423,16 @@ public class MirrorMakerST extends AbstractST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, "my-topic-test-3").build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, "my-topic-test-4").build());
+        String baseTopic = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicTestName1 = baseTopic + "-test-1";
+        String topicTestName2 = baseTopic + "-test-2";
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicTestName1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicTestName2).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
-            .withTopicName("my-topic-test-3")
+            .withTopicName(topicTestName1)
             .withNamespaceName(NAMESPACE)
             .withClusterName(kafkaClusterSourceName)
             .withKafkaUsername(userSource.getMetadata().getName())
@@ -439,7 +447,7 @@ public class MirrorMakerST extends AbstractST {
         );
 
         internalKafkaClient = internalKafkaClient.toBuilder()
-            .withTopicName("my-topic-test-4")
+            .withTopicName(topicTestName2)
             .withClusterName(kafkaClusterTargetName)
             .withKafkaUsername(userTarget.getMetadata().getName())
             .build();

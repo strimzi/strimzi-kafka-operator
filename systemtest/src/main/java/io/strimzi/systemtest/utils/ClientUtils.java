@@ -7,11 +7,15 @@ package io.strimzi.systemtest.utils;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.rmi.UnexpectedException;
 import java.time.Duration;
@@ -60,7 +64,10 @@ public class ClientUtils {
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
         LOGGER.info("Waiting for producer/consumer:{} to finished", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
+            () -> {
+                LOGGER.info("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(jobName));
+                return kubeClient().namespace(namespace).checkSucceededJobStatus(jobName)
+            });
     }
 
     public static void waitForClientTimeout(String jobName, String namespace, int messageCount) throws UnexpectedException {
@@ -98,6 +105,33 @@ public class ClientUtils {
         });
 
         return deployment[0];
+    }
+
+    public static void waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(ExtensionContext extensionContext,
+                                                                                     InternalKafkaClient internalKafkaClient) {
+        // loop client...
+        InternalKafkaClient client = internalKafkaClient.toBuilder().build();
+
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+            internalKafkaClient.getTopicName(), internalKafkaClient.getClusterName(), internalKafkaClient.getMessageCount());
+
+        TestUtils.waitFor("Until producer and consumer successfully send and receive messages", Constants.GLOBAL_CLIENTS_POLL, Constants.GLOBAL_CLIENTS_TIMEOUT,
+            () -> {
+                String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+                ResourceManager.getInstance().createResource(extensionContext, KafkaTopicTemplates.topic(client.getClusterName(), topicName).build());
+
+                InternalKafkaClient loopClient = client.toBuilder()
+                    .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+                    .withTopicName(topicName)
+                    .build();
+
+                int sent = loopClient.sendMessagesTls();
+                int received = loopClient.receiveMessagesTls();
+
+                LOGGER.info("Sent {} and received {}", sent, received);
+
+                return sent == received;
+            });
     }
 
     /**
