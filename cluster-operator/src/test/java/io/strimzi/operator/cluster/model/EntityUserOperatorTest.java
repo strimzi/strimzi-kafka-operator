@@ -185,7 +185,7 @@ public class EntityUserOperatorTest {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
 
         assertThat(entityUserOperator.getWatchedNamespace(), is(namespace));
-        assertThat(entityUserOperator.getImage(), is("strimzi/operator:latest"));
+        assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
         assertThat(entityUserOperator.getReconciliationIntervalMs(), is(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
         assertThat(entityUserOperator.getZookeeperSessionTimeoutMs(), is(EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000));
         assertThat(entityUserOperator.readinessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));

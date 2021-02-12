@@ -123,7 +123,7 @@ public class JmxTrans extends AbstractModel {
 
             String image = spec.getImage();
             if (image == null) {
-                image = System.getenv().getOrDefault(STRIMZI_DEFAULT_JMXTRANS_IMAGE, "strimzi/jmxtrans:latest");
+                image = System.getenv().getOrDefault(STRIMZI_DEFAULT_JMXTRANS_IMAGE, "quay.io/strimzi/jmxtrans:latest");
             }
             result.setImage(image);
 

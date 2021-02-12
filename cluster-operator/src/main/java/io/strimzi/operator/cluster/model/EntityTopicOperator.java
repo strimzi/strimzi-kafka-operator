@@ -217,7 +217,7 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setOwnerReference(kafkaAssembly);
                 String image = topicOperatorSpec.getImage();
                 if (image == null) {
-                    image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "strimzi/operator:latest");
+                    image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
                 }
                 result.setImage(image);
                 result.setWatchedNamespace(topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace);

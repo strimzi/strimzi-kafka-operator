@@ -128,7 +128,7 @@ public class KafkaBridgeClusterTest {
     public void testDefaultValues() {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(ResourceUtils.createEmptyKafkaBridge(namespace, cluster), VERSIONS);
 
-        assertThat(kbc.image, is("strimzi/kafka-bridge:latest"));
+        assertThat(kbc.image, is("quay.io/strimzi/kafka-bridge:latest"));
         assertThat(kbc.replicas, is(KafkaBridgeCluster.DEFAULT_REPLICAS));
         assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT));

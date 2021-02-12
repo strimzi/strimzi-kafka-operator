@@ -164,7 +164,7 @@ public class EntityTopicOperatorTest {
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
 
         assertThat(entityTopicOperator.getWatchedNamespace(), is(namespace));
-        assertThat(entityTopicOperator.getImage(), is("strimzi/operator:latest"));
+        assertThat(entityTopicOperator.getImage(), is("quay.io/strimzi/operator:latest"));
         assertThat(entityTopicOperator.getReconciliationIntervalMs(), is(EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
         assertThat(entityTopicOperator.getZookeeperSessionTimeoutMs(), is(EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000));
         assertThat(entityTopicOperator.getTopicMetadataMaxAttempts(), is(EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS));
