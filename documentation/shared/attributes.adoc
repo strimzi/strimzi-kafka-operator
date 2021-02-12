@@ -29,7 +29,7 @@
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
 
 //Monitoring links
-:ExampleMetrics: link:https://github.com/strimzi/strimzi-kafka-operator/tree/master/examples/metrics/
+:ExampleMetrics: link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics/
 :GrafanaHome: link:https://grafana.com/[Grafana Labs^]
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :PrometheusHome: link:https://github.com/prometheus[Prometheus^]
@@ -38,13 +38,13 @@
 
 //OAuth attributes and links
 :oauth2-site: link:https://oauth.net/2/[OAuth 2.0 site^]
-:oauth-artifact-version: 0.6.1
+:oauth-version: 0.7.0
 :keycloak-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Authorization Services^]
 :oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using OAuth 2.0^]
-:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the OAuth 2.0 authorization server^]
-:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the OAuth 2.0 authorization server^]
-:oauth-kubernetes-examples-link: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-artifact-version}/examples/kubernetes[https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-artifact-version}/examples/kubernetes]
+:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-version}/examples[Using Keycloak as the OAuth 2.0 authorization server^]
+:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-version}/examples/docker[Using Hydra as the OAuth 2.0 authorization server^]
+:oauth-kubernetes-examples-link: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-version}/examples/kubernetes[https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-version}/examples/kubernetes]
 
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
@@ -163,7 +163,7 @@
 :ChartRepositoryUrl: https://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.20.0
+:ProductVersion: 0.21.1
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
