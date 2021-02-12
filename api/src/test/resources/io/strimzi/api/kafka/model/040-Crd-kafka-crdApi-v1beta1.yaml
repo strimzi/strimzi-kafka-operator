@@ -237,6 +237,15 @@ spec:
                                 check is performed or not. This should be set to `false`
                                 if the authorization server does not include 'typ'
                                 claim in JWT token. Defaults to `true`.
+                            checkAudience:
+                              type: boolean
+                              description: Enable or disable audience checking. Audience
+                                checks identify the recipients of tokens. If audience
+                                checking is enabled, the OAuth Client ID also has
+                                to be configured using the `clientId` property. The
+                                Kafka broker will reject tokens that do not have its
+                                `clientId` in their `aud` (audience) claim.Default
+                                value is `false`.
                             checkIssuer:
                               type: boolean
                               description: Enable or disable issuer checking. By default
@@ -6316,6 +6325,15 @@ spec:
                                   check is performed or not. This should be set to
                                   `false` if the authorization server does not include
                                   'typ' claim in JWT token. Defaults to `true`.
+                              checkAudience:
+                                type: boolean
+                                description: Enable or disable audience checking.
+                                  Audience checks identify the recipients of tokens.
+                                  If audience checking is enabled, the OAuth Client
+                                  ID also has to be configured using the `clientId`
+                                  property. The Kafka broker will reject tokens that
+                                  do not have its `clientId` in their `aud` (audience)
+                                  claim.Default value is `false`.
                               checkIssuer:
                                 type: boolean
                                 description: Enable or disable issuer checking. By
@@ -6754,6 +6772,15 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    Audience checks identify the recipients of tokens.
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
+                                    property. The Kafka broker will reject tokens
+                                    that do not have its `clientId` in their `aud`
+                                    (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -6999,6 +7026,15 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    Audience checks identify the recipients of tokens.
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
+                                    property. The Kafka broker will reject tokens
+                                    that do not have its `clientId` in their `aud`
+                                    (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -7267,6 +7303,15 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    Audience checks identify the recipients of tokens.
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
+                                    property. The Kafka broker will reject tokens
+                                    that do not have its `clientId` in their `aud`
+                                    (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -14613,6 +14658,15 @@ spec:
                                   check is performed or not. This should be set to
                                   `false` if the authorization server does not include
                                   'typ' claim in JWT token. Defaults to `true`.
+                              checkAudience:
+                                type: boolean
+                                description: Enable or disable audience checking.
+                                  Audience checks identify the recipients of tokens.
+                                  If audience checking is enabled, the OAuth Client
+                                  ID also has to be configured using the `clientId`
+                                  property. The Kafka broker will reject tokens that
+                                  do not have its `clientId` in their `aud` (audience)
+                                  claim.Default value is `false`.
                               checkIssuer:
                                 type: boolean
                                 description: Enable or disable issuer checking. By
@@ -15051,6 +15105,15 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    Audience checks identify the recipients of tokens.
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
+                                    property. The Kafka broker will reject tokens
+                                    that do not have its `clientId` in their `aud`
+                                    (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -15296,6 +15359,15 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    Audience checks identify the recipients of tokens.
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
+                                    property. The Kafka broker will reject tokens
+                                    that do not have its `clientId` in their `aud`
+                                    (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.
@@ -15564,6 +15636,15 @@ spec:
                                     set to `false` if the authorization server does
                                     not include 'typ' claim in JWT token. Defaults
                                     to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking.
+                                    Audience checks identify the recipients of tokens.
+                                    If audience checking is enabled, the OAuth Client
+                                    ID also has to be configured using the `clientId`
+                                    property. The Kafka broker will reject tokens
+                                    that do not have its `clientId` in their `aud`
+                                    (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking.

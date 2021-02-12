@@ -420,10 +420,10 @@ public class ListenersValidator {
             String listenerName = listener.getName();
 
             if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
-                errors.add("listener " + listenerName + ": At least one of 'enablePlain', 'enableOauthBearer' has to be set to true");
+                errors.add("listener " + listenerName + ": At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'");
             }
             if (oAuth.isEnablePlain() && oAuth.getTokenEndpointUri() == null) {
-                errors.add("listener " + listenerName + ": When `enablePlain` is `true` the `tokenEndpointUri` has to be specified.");
+                errors.add("listener " + listenerName + ": When 'enablePlain' is 'true' the 'tokenEndpointUri' has to be specified.");
             }
             boolean hasJwksRefreshSecondsValidInput = oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksRefreshSeconds() > 0;
             boolean hasJwksExpirySecondsValidInput = oAuth.getJwksExpirySeconds() != null && oAuth.getJwksExpirySeconds() > 0;
@@ -434,11 +434,15 @@ public class ListenersValidator {
             }
 
             if (oAuth.getValidIssuerUri() == null && oAuth.isCheckIssuer()) {
-                errors.add("listener " + listenerName + ": Valid Issuer URI has to be specified or 'checkIssuer' set to false");
+                errors.add("listener " + listenerName + ": Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'");
+            }
+
+            if (oAuth.isCheckAudience() && oAuth.getClientId() == null) {
+                errors.add("listener " + listenerName + ": 'clientId' has to be configured when 'checkAudience' is 'true'");
             }
 
             if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
-                errors.add("listener " + listenerName + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
+                errors.add("listener " + listenerName + ": Introspection Endpoint URI needs to be configured together with 'clientId' and 'clientSecret'");
             }
 
             if (oAuth.getUserInfoEndpointUri() != null && oAuth.getIntrospectionEndpointUri() == null) {
@@ -446,19 +450,19 @@ public class ListenersValidator {
             }
 
             if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput || hasJwksMinRefreshPauseSecondsValidInput)) {
-                errors.add("listener " + listenerName + ": jwksRefreshSeconds, jwksExpirySeconds and jwksMinRefreshPauseSeconds can only be used together with jwksEndpointUri");
+                errors.add("listener " + listenerName + ": 'jwksRefreshSeconds', 'jwksExpirySeconds' and 'jwksMinRefreshPauseSeconds' can only be used together with 'jwksEndpointUri'");
             }
 
             if (oAuth.getJwksRefreshSeconds() != null && !hasJwksRefreshSecondsValidInput) {
-                errors.add("listener " + listenerName + ": jwksRefreshSeconds needs to be a positive integer (set to: " + oAuth.getJwksRefreshSeconds() + ")");
+                errors.add("listener " + listenerName + ": 'jwksRefreshSeconds' needs to be a positive integer (set to: " + oAuth.getJwksRefreshSeconds() + ")");
             }
 
             if (oAuth.getJwksExpirySeconds() != null && !hasJwksExpirySecondsValidInput) {
-                errors.add("listener " + listenerName + ": jwksExpirySeconds needs to be a positive integer (set to: " + oAuth.getJwksExpirySeconds() + ")");
+                errors.add("listener " + listenerName + ": 'jwksExpirySeconds' needs to be a positive integer (set to: " + oAuth.getJwksExpirySeconds() + ")");
             }
 
             if (oAuth.getJwksMinRefreshPauseSeconds() != null && !hasJwksMinRefreshPauseSecondsValidInput) {
-                errors.add("listener " + listenerName + ": jwksMinRefreshPauseSeconds needs to be a positive integer or zero (set to: " + oAuth.getJwksMinRefreshPauseSeconds() + ")");
+                errors.add("listener " + listenerName + ": 'jwksMinRefreshPauseSeconds' needs to be a positive integer or zero (set to: " + oAuth.getJwksMinRefreshPauseSeconds() + ")");
             }
 
             if ((hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
@@ -469,19 +473,19 @@ public class ListenersValidator {
 
             if (!oAuth.isAccessTokenIsJwt()) {
                 if (oAuth.getJwksEndpointUri() != null) {
-                    errors.add("listener " + listenerName + ": accessTokenIsJwt=false can not be used together with jwksEndpointUri");
+                    errors.add("listener " + listenerName + ": 'accessTokenIsJwt' can not be 'false' when 'jwksEndpointUri' is set");
                 }
                 if (!oAuth.isCheckAccessTokenType()) {
-                    errors.add("listener " + listenerName + ": checkAccessTokenType can not be set to false when accessTokenIsJwt is false");
+                    errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'accessTokenIsJwt' is 'false'");
                 }
             }
 
             if (!oAuth.isCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
-                errors.add("listener " + listenerName + ": checkAccessTokenType=false can not be used together with introspectionEndpointUri");
+                errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'introspectionEndpointUri' is set");
             }
 
             if (oAuth.getValidTokenType() != null && oAuth.getIntrospectionEndpointUri() == null) {
-                errors.add("listener " + listenerName + ": validTokenType can only be used with introspectionEndpointUri");
+                errors.add("listener " + listenerName + ": 'validTokenType' can only be used when 'introspectionEndpointUri' is set");
             }
         }
     }
