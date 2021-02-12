@@ -249,6 +249,7 @@ public class OauthTlsST extends OauthAbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMaker(ExtensionContext extensionContext) {
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());

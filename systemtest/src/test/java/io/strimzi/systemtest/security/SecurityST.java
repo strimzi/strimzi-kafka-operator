@@ -215,6 +215,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     void autoRenewSomeCaCertsTriggeredByAnno(
             ExtensionContext extensionContext,
             boolean zkShouldRoll,
@@ -410,6 +411,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     void autoReplaceSomeKeysTriggeredByAnno(ExtensionContext extensionContext,
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
