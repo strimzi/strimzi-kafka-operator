@@ -24,6 +24,11 @@
             <artifactId>testcontainers</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-api</artifactId>
+            <version>${docker-java.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
         </dependency>

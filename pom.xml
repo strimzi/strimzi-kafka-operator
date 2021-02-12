@@ -117,6 +117,7 @@
         <grpc.version>1.30.2</grpc.version>
 
         <test-containers.version>1.15.2</test-containers.version>
+        <docker-java.version>3.2.7</docker-java.version>
         <javax.json-api.version>1.1.4</javax.json-api.version>
         <javax.json.version>1.1.4</javax.json.version>
         <rest-assured.version>4.1.1</rest-assured.version>
