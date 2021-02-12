@@ -69,10 +69,13 @@ public class Annotations {
     );
 
     private static Map<String, String> annotations(ObjectMeta metadata) {
-        Map<String, String> annotations = metadata.getAnnotations();
-        if (annotations == null) {
-            annotations = new HashMap<>(3);
-            metadata.setAnnotations(annotations);
+        Map<String, String> annotations = new HashMap<>();
+        if (metadata != null) {
+            annotations = metadata.getAnnotations();
+            if (annotations == null) {
+                annotations = new HashMap<>(3);
+                metadata.setAnnotations(annotations);
+            }
         }
         return annotations;
     }
