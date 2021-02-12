@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -37,7 +36,6 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.TestUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -123,7 +121,6 @@ public class KafkaAssemblyOperatorMockTest {
         private final int kafkaReplicas;
         private final Storage kafkaStorage;
         private ResourceRequirements resources;
-        private boolean pause = false;
 
         public Params(int zkReplicas,
                       SingleVolumeStorage zkStorage,
@@ -237,7 +234,6 @@ public class KafkaAssemblyOperatorMockTest {
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo", "bar"))
-                    .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", Boolean.toString(params.pause)))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
@@ -354,47 +350,6 @@ public class KafkaAssemblyOperatorMockTest {
             .onComplete(context.succeeding(v -> async.flag()));
     }
 
-    @ParameterizedTest
-    @MethodSource("data")
-    public void testPauseReconcile(Params params, VertxTestContext context) {
-        params.pause = true;
-
-        init(params);
-
-        cluster.getMetadata().setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
-        CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
-
-        client = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class)
-                .withInitialInstances(Collections.singleton(cluster))
-                .end()
-                .build();
-
-        Checkpoint async = context.checkpoint();
-        operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    Resource<Kafka> resource = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
-                    TestUtils.waitForStatus(resource, CLUSTER_NAME, s -> {
-                        if (s.getStatus() == null) {
-                            return false;
-                        }
-                        List<Condition> conditions = s.getStatus().getConditions();
-                        boolean conditionFound = false;
-                        if (conditions != null && !conditions.isEmpty()) {
-                            for (Condition condition: conditions) {
-                                if ("ReconciliationPaused".equals(condition.getType())) {
-                                    conditionFound = true;
-                                    break;
-                                }
-                            }
-                        }
-                        return conditionFound;
-                    });
-                    async.flag();
-                    params.pause = false;
-                })));
-    }
-    
     @ParameterizedTest
     @MethodSource("data")
     public void testReconcileReplacesAllDeletedSecrets(Params params, VertxTestContext context) {
