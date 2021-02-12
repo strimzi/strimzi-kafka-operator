@@ -104,6 +104,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         LOGGER.info("This is all advertised listeners for Kafka {}", advertisedListeners.toString());
 
         String command = "#!/bin/bash \n";
+        command += "export TESTCONTAINERS_RYUK_DISABLED=true\n";
         command += "bin/zookeeper-server-start.sh config/zookeeper.properties &\n";
         command += "bin/kafka-server-start.sh config/server.properties --override listeners=BROKER://0.0.0.0:9093,PLAINTEXT://0.0.0.0:" + KAFKA_PORT +
             " --override advertised.listeners=" + advertisedListeners.toString() +
