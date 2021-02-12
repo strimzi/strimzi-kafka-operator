@@ -65,7 +65,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     }
 
     public StrimziKafkaContainer(final String version) {
-        super("strimzi/kafka:" + version);
+        super("quay.io/strimzi/kafka:" + version);
         super.withNetwork(Network.SHARED);
 
         // exposing kafka port from the container
