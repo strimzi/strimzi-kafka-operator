@@ -565,7 +565,9 @@ spec:
                               type: string
                               description: Configures the `Ingress` class that defines
                                 which `Ingress` controller will be used. This field
-                                can be used only with `ingress` type listener.
+                                can be used only with `ingress` type listener. If
+                                not specified, the default Ingress controller will
+                                be used.
                             preferredNodePortAddressType:
                               type: string
                               enum:
