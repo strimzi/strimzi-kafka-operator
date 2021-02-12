@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.status.KafkaRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
@@ -139,10 +140,11 @@ public class KafkaRebalanceAssemblyOperator
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
      * @param supplier Supplies the operators for different resources
+     * @param config Cluster Operator configuration
      */
     public KafkaRebalanceAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
-                                          ResourceOperatorSupplier supplier) {
-        super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider);
+                                          ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+        super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
         this.pfa = pfa;
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.kafkaOperator = supplier.kafkaOperator;
@@ -177,7 +179,7 @@ public class KafkaRebalanceAssemblyOperator
     public Future<Void> createRebalanceWatch(String watchNamespaceOrWildcard) {
 
         return Util.async(this.vertx, () -> {
-            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaRebalance>() {
+            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new Watcher<KafkaRebalance>() {
                 @Override
                 public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
                     Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", kafkaRebalance.getKind(),

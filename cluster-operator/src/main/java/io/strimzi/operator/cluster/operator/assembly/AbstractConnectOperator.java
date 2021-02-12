@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -128,7 +129,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
                                    Function<Vertx, KafkaConnectApi> connectClientProvider,
                                    int port) {
-        super(vertx, kind, resourceOperator, supplier.metricsProvider);
+        super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
         this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectClientProvider = connectClientProvider;
         this.configMapOperations = supplier.configMapOperations;
@@ -195,15 +196,19 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param connectOperator The operator for {@code KafkaConnect}.
      * @param connectS2IOperator The operator for {@code KafkaConnectS2I}.
      * @param watchNamespaceOrWildcard The namespace to watch.
+     * @param selectorLabels Selector labels for filtering the custom resources
+     *
      * @return A future which completes when the watch has been set up.
      */
     // Deprecation is suppressed because of KafkaConnectS2I
     @SuppressWarnings("deprecation")
     public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
                                                     AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> connectS2IOperator,
-                                                    String watchNamespaceOrWildcard) {
+                                                    String watchNamespaceOrWildcard, Labels selectorLabels) {
+        Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
+
         return Util.async(connectOperator.vertx, () -> {
-            connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
+            connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, selector, new Watcher<KafkaConnector>() {
                 @Override
                 public void eventReceived(Action action, KafkaConnector kafkaConnector) {
                     String connectorName = kafkaConnector.getMetadata().getName();
@@ -237,7 +242,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 Reconciliation reconciliation = new Reconciliation("connector-watch", connectOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
 
-                                                if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
+                                                if (!matchesSelector(selector, connect))   {
+                                                    log.warn("{}: {} {} in namespace {} was {}, but Connect cluster {} does not match label selector", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
+                                                    updateStatus(noConnectClusterMatchingLabelSelector(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                    return Future.succeededFuture();
+                                                } else if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
                                                     log.info("{}: {} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
                                                     updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                     return Future.succeededFuture();
@@ -260,7 +269,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 Reconciliation reconciliation = new Reconciliation("connector-watch", connectS2IOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
 
-                                                if (connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0)    {
+                                                if (!matchesSelector(selector, connectS2i)) {
+                                                    log.warn("{}: {} {} in namespace {} was {}, but Connect cluster {} does not match label selector", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
+                                                    updateStatus(noConnectClusterMatchingLabelSelector(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                    return Future.succeededFuture();
+                                                } else if (connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0)    {
                                                     log.info("{}: {} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
                                                     updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                     return Future.succeededFuture();
@@ -306,6 +319,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
     }
 
+    public static boolean matchesSelector(Optional<LabelSelector> labelSelector, HasMetadata connect) {
+        if (labelSelector.isPresent()) {
+            return connect.getMetadata().getLabels().entrySet().containsAll(labelSelector.get().getMatchLabels().entrySet());
+        }
+
+        return true;
+    }
+
     /**
      * Returns true if the resource is null or if the creationDate of the resource is newer than the creationDate. If
      * the dates are the same, it returns true. This is used to determine whether Connect and ConnectS2I both exist and
@@ -328,9 +349,26 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + connectNamespace + ".");
     }
 
+    private static NoSuchResourceException noConnectClusterMatchingLabelSelector(String connectNamespace, String connectName) {
+        return new NoSuchResourceException(
+                "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' exists in namespace " + connectNamespace + ", but does not match the configured label selector.");
+    }
+
     private static RuntimeException zeroReplicas(String connectNamespace, String connectName) {
         return new RuntimeException(
                 "Kafka Connect cluster '" + connectName + "' in namespace " + connectNamespace + " has 0 replicas.");
+    }
+
+    private Optional<LabelSelector> connectorSelector(String connectName) {
+        LabelSelectorBuilder labelSelectorBuilder = new LabelSelectorBuilder()
+                .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName);
+
+        Optional<LabelSelector> resourceSelector = selector();
+        if (resourceSelector.isPresent())   {
+            labelSelectorBuilder.addToMatchLabels(resourceSelector.get().getMatchLabels());
+        }
+
+        return Optional.of(labelSelectorBuilder.build());
     }
 
     /**
@@ -352,7 +390,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         if (scaledToZero)   {
-            return connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
+            return connectorOperator.listAsync(namespace, connectorSelector(connectName))
                     .compose(connectors -> CompositeFuture.join(
                             connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
                                     .collect(Collectors.toList())
@@ -364,7 +402,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         return CompositeFuture.join(
                 apiClient.list(host, port),
-                connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
+                connectorOperator.listAsync(namespace, connectorSelector(connectName)),
                 apiClient.listConnectorPlugins(host, port),
                 apiClient.updateConnectLoggers(host, port, desiredLogging, defaultLogging)
         ).compose(cf -> {
@@ -396,7 +434,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 Promise<Void> connectorStatuses = Promise.promise();
                 log.warn("{}: Failed to connect to the REST API => trying to update the connector status", reconciliation);
 
-                connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
+                connectorOperator.listAsync(namespace, connectorSelector(connectName))
                         .compose(connectors -> CompositeFuture.join(
                                 connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, error))
                                         .collect(Collectors.toList())

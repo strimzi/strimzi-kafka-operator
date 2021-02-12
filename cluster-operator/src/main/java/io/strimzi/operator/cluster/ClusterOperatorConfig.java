@@ -42,6 +42,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_IMAGE_PULL_SECRETS = "STRIMZI_IMAGE_PULL_SECRETS";
     public static final String STRIMZI_OPERATOR_NAMESPACE = "STRIMZI_OPERATOR_NAMESPACE";
     public static final String STRIMZI_OPERATOR_NAMESPACE_LABELS = "STRIMZI_OPERATOR_NAMESPACE_LABELS";
+    public static final String STRIMZI_CUSTOM_RESOURCE_SELECTOR = "STRIMZI_CUSTOM_RESOURCE_SELECTOR";
 
     // Feature Flags
     public static final String STRIMZI_RBAC_SCOPE = "STRIMZI_RBAC_SCOPE";
@@ -81,6 +82,7 @@ public class ClusterOperatorConfig {
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
     private final RbacScope rbacScope;
+    private final Labels customResourceSelector;
 
     /**
      * Constructor
@@ -96,6 +98,7 @@ public class ClusterOperatorConfig {
      * @param operatorNamespace Name of the namespace in which the operator is running
      * @param operatorNamespaceLabels Labels of the namespace in which the operator is running (used for network policies)
      * @param rbacScope true to use Roles where possible instead of ClusterRoles
+     * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
      */
     public ClusterOperatorConfig(
             Set<String> namespaces,
@@ -108,7 +111,8 @@ public class ClusterOperatorConfig {
             List<LocalObjectReference> imagePullSecrets,
             String operatorNamespace,
             Labels operatorNamespaceLabels,
-            RbacScope rbacScope
+            RbacScope rbacScope,
+            Labels customResourceSelector
     ) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
@@ -121,6 +125,7 @@ public class ClusterOperatorConfig {
         this.operatorNamespace = operatorNamespace;
         this.operatorNamespaceLabels = operatorNamespaceLabels;
         this.rbacScope = rbacScope;
+        this.customResourceSelector = customResourceSelector;
     }
 
     /**
@@ -164,8 +169,9 @@ public class ClusterOperatorConfig {
         ImagePullPolicy imagePullPolicy = parseImagePullPolicy(map.get(STRIMZI_IMAGE_PULL_POLICY));
         List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(STRIMZI_IMAGE_PULL_SECRETS));
         String operatorNamespace = map.get(STRIMZI_OPERATOR_NAMESPACE);
-        Labels operatorNamespaceLabels = parseOperatorNamespaceLabels(map.get(STRIMZI_OPERATOR_NAMESPACE_LABELS));
+        Labels operatorNamespaceLabels = parseLabels(map, STRIMZI_OPERATOR_NAMESPACE_LABELS);
         RbacScope rbacScope = parseRbacScope(map.get(STRIMZI_RBAC_SCOPE));
+        Labels customResourceSelector = parseLabels(map, STRIMZI_CUSTOM_RESOURCE_SELECTOR);
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -178,7 +184,8 @@ public class ClusterOperatorConfig {
                 imagePullSecrets,
                 operatorNamespace,
                 operatorNamespaceLabels,
-                rbacScope);
+                rbacScope,
+                customResourceSelector);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -337,18 +344,27 @@ public class ClusterOperatorConfig {
         return imagePullSecrets;
     }
 
-    private static Labels parseOperatorNamespaceLabels(String operatorNamespaceLabelsString) {
-        Labels operatorNamespaceLabels = null;
+    /**
+     * Parse labels from String into the Labels format. This is used to parse the custom resource labels and the
+     * namespace labels.
+     *
+     * @param vars              Map with configuration variables
+     * @param configurationKey  Key containing the string with labels
+     * @return                  Labels object with the Labels or null if no labels are configured
+     */
+    private static Labels parseLabels(Map<String, String> vars, String configurationKey) {
+        String labelsString = vars.get(configurationKey);
+        Labels labels = null;
 
-        if (operatorNamespaceLabelsString != null) {
+        if (labelsString != null) {
             try {
-                operatorNamespaceLabels = Labels.fromString(operatorNamespaceLabelsString);
+                labels = Labels.fromString(labelsString);
             } catch (Exception e) {
-                throw new InvalidConfigurationException("Failed to parse namespace labels from " + ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE_LABELS, e);
+                throw new InvalidConfigurationException("Failed to parse labels from " + configurationKey, e);
             }
         }
 
-        return operatorNamespaceLabels;
+        return labels;
     }
 
     /**
@@ -419,10 +435,17 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * @return permissions mode for the operator, whether to use Roles instead of ClusterRoles wherever possible.
+     * @return Permissions mode for the operator, whether to use Roles instead of ClusterRoles wherever possible.
      */
     public RbacScope getRbacScope() {
         return rbacScope;
+    }
+
+    /**
+     * @return Labels used for filtering custom resources
+     */
+    public Labels getCustomResourceSelector() {
+        return customResourceSelector;
     }
 
     @Override
@@ -439,6 +462,7 @@ public class ClusterOperatorConfig {
                 ",operatorNamespace=" + operatorNamespace +
                 ",operatorNamespaceLabels=" + operatorNamespaceLabels +
                 ",rbacScope=" + rbacScope +
+                ",customResourceSelector=" + customResourceSelector +
                 ")";
     }
 }

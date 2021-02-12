@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
@@ -80,6 +81,8 @@ public abstract class AbstractOperator<
     protected final O resourceOperator;
     private final String kind;
 
+    private final Optional<LabelSelector> selector;
+
     protected final MetricsProvider metrics;
     private final Counter periodicReconciliationsCounter;
     private final Counter reconciliationsCounter;
@@ -90,10 +93,11 @@ public abstract class AbstractOperator<
     private final Timer reconciliationsTimer;
     private final Map<Tags, AtomicInteger> resourcesStateCounter;
 
-    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics) {
+    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
         this.vertx = vertx;
         this.kind = kind;
         this.resourceOperator = resourceOperator;
+        this.selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
         this.metrics = metrics;
 
         // Setup metrics
@@ -416,7 +420,7 @@ public abstract class AbstractOperator<
      * @return A selector.
      */
     public Optional<LabelSelector> selector() {
-        return Optional.empty();
+        return selector;
     }
 
     /**

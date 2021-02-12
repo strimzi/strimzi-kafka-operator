@@ -41,8 +41,6 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -72,8 +70,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
-
-    private static final Logger log = LogManager.getLogger(KafkaRebalanceAssemblyOperatorTest.class.getName());
 
     private static ClientAndServer ccServer;
     private KubernetesClient kubernetesClient;
@@ -125,7 +121,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
 
         // Override to inject mocked cruise control address so real cruise control not required
-        kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier) {
+        kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
                 return HOST;
