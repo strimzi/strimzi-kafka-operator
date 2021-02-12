@@ -163,7 +163,7 @@
 :ChartRepositoryUrl: https://strimzi.io/charts/
 
 //Latest Strimzi version
-:ProductVersion: 0.21.0
+:ProductVersion: 0.21.1
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
