@@ -30,7 +30,7 @@ For more information, see link:{BookURLDeploying}#assembly-upgrading-kafka-versi
 
 .Prerequisites
 
-* An OpenShift cluster
+* A Kubernetes cluster
 * A running Cluster Operator
 
 See the _Deploying and Upgrading Strimzi_ guide for instructions on deploying a:
