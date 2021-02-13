@@ -795,11 +795,11 @@ public class KafkaRebalanceAssemblyOperatorTest {
         kcrao.reconcileRebalance(
                 new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
                 kr).onComplete(context.succeeding(v -> context.verify(() -> {
-            // The labels of the Kafka resource do not match the => the KafkaRebalance should not be reconciled and the
-            // rebalance ops should have no interactions.
-            verifyZeroInteractions(mockRebalanceOps);
-            checkpoint.flag();
-        })));
+                    // The labels of the Kafka resource do not match the => the KafkaRebalance should not be reconciled and the
+                    // rebalance ops should have no interactions.
+                    verifyZeroInteractions(mockRebalanceOps);
+                    checkpoint.flag();
+                })));
     }
 
     @Test
