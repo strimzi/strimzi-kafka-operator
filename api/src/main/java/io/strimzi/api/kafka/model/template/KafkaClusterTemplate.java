@@ -50,6 +50,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private ContainerTemplate kafkaContainer;
     private ContainerTemplate tlsSidecarContainer;
     private ContainerTemplate initContainer;
+    private ResourceTemplate clusterRoleBinding;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka `StatefulSet`.")
@@ -210,8 +211,19 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     public ResourceTemplate getClusterCaCert() {
         return clusterCaCert;
     }
+
     public void setClusterCaCert(ResourceTemplate clusterCaCert) {
         this.clusterCaCert = clusterCaCert;
+    }
+
+    @Description("Template for the Kafka ClusterRoleBinding.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getClusterRoleBinding() {
+        return clusterRoleBinding;
+    }
+
+    public void setClusterRoleBinding(ResourceTemplate clusterRoleBinding) {
+        this.clusterRoleBinding = clusterRoleBinding;
     }
 
     @Override

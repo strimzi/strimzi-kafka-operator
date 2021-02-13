@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.openshift.api.model.BinaryBuildSource;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
@@ -546,6 +547,9 @@ public class KafkaConnectS2IClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
 
+        Map<String, String> crbLabels = TestUtils.map("l9", "v9", "l10", "v10");
+        Map<String, String> crbAnots = TestUtils.map("a9", "v9", "a10", "v10");
+
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
                 .withIp("192.168.1.86")
@@ -571,6 +575,7 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
+                    .withNewRack("my-topology-key")
                     .withNewTemplate()
                         .withNewDeployment()
                             .withNewMetadata()
@@ -601,6 +606,12 @@ public class KafkaConnectS2IClusterTest {
                                 .withAnnotations(pdbAnots)
                             .endMetadata()
                         .endPodDisruptionBudget()
+                        .withNewClusterRoleBinding()
+                            .withNewMetadata()
+                                .withLabels(crbLabels)
+                                .withAnnotations(crbAnots)
+                            .endMetadata()
+                        .endClusterRoleBinding()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -630,6 +641,11 @@ public class KafkaConnectS2IClusterTest {
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+
+        // Check ClusterRoleBinding
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding();
+        assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
+        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
     }
 
     @Test

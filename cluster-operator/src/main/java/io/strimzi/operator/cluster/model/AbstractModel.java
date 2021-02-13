@@ -280,6 +280,8 @@ public abstract class AbstractModel {
     protected List<HostAlias> templatePodHostAliases;
     protected List<TopologySpreadConstraint> templatePodTopologySpreadConstraints;
     protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
+    protected Map<String, String> templateClusterRoleBindingLabels;
+    protected Map<String, String> templateClusterRoleBindingAnnotations;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -1523,7 +1525,8 @@ public abstract class AbstractModel {
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(labels.toMap())
+                    .withLabels(getLabelsWithStrimziName(name, templateClusterRoleBindingLabels).toMap())
+                    .withAnnotations(templateClusterRoleBindingAnnotations)
                 .endMetadata()
                 .withSubjects(subject)
                 .withRoleRef(roleRef)

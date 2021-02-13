@@ -39,6 +39,7 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
     private ContainerTemplate initContainer;
     private ContainerTemplate buildContainer;
     private ResourceTemplate buildConfig;
+    private ResourceTemplate clusterRoleBinding;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Connect `Deployment`.")
@@ -132,6 +133,16 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
 
     public void setBuildConfig(ResourceTemplate buildConfig) {
         this.buildConfig = buildConfig;
+    }
+
+    @Description("Template for the Kafka Connect ClusterRoleBinding.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getClusterRoleBinding() {
+        return clusterRoleBinding;
+    }
+
+    public void setClusterRoleBinding(ResourceTemplate clusterRoleBinding) {
+        this.clusterRoleBinding = clusterRoleBinding;
     }
 
     @Override

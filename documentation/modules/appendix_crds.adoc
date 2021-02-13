@@ -1234,6 +1234,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |clusterCaCert             1.2+<.<|Template for Secret with Kafka Cluster certificate public key.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|clusterRoleBinding        1.2+<.<|Template for the Kafka ClusterRoleBinding.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-StatefulSetTemplate-{context}']
@@ -2255,6 +2257,8 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |buildPod             1.2+<.<|Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
+|clusterRoleBinding   1.2+<.<|Template for the Kafka Connect ClusterRoleBinding.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |connectContainer     1.2+<.<|Template for the Kafka Connect container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |initContainer        1.2+<.<|Template for the Kafka init container.

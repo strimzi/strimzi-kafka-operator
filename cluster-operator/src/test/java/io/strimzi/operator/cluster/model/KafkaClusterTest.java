@@ -1687,6 +1687,9 @@ public class KafkaClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l17", "v17", "l18", "v18");
         Map<String, String> pdbAnots = TestUtils.map("a17", "v17", "a18", "v18");
 
+        Map<String, String> crbLabels = TestUtils.map("l19", "v19", "l20", "v20");
+        Map<String, String> crbAnots = TestUtils.map("a19", "v19", "a20", "v20");
+
         HostAlias hostAlias1 = new HostAliasBuilder()
                         .withHostnames("my-host-1", "my-host-2")
                         .withIp("192.168.1.86")
@@ -1719,6 +1722,12 @@ public class KafkaClusterTest {
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.ROUTE)
+                                .withTls(true)
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withName("external2")
+                                .withPort(9095)
+                                .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
                             .endGenericKafkaListener()
                         .endListeners()
@@ -1781,6 +1790,12 @@ public class KafkaClusterTest {
                                     .withAnnotations(pdbAnots)
                                 .endMetadata()
                             .endPodDisruptionBudget()
+                            .withNewClusterRoleBinding()
+                                .withNewMetadata()
+                                    .withLabels(crbLabels)
+                                    .withAnnotations(crbAnots)
+                                .endMetadata()
+                            .endClusterRoleBinding()
                         .endTemplate()
                     .endKafka()
                 .endSpec()
@@ -1834,6 +1849,11 @@ public class KafkaClusterTest {
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+
+        // Check ClusterRoleBinding
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding("namespace");
+        assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
+        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
     }
 
     @Test

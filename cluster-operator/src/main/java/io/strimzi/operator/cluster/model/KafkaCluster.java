@@ -572,6 +572,11 @@ public class KafkaCluster extends AbstractModel {
                 result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
             }
 
+            if (template.getClusterRoleBinding() != null && template.getClusterRoleBinding().getMetadata() != null) {
+                result.templateClusterRoleBindingLabels = template.getClusterRoleBinding().getMetadata().getLabels();
+                result.templateClusterRoleBindingAnnotations = template.getClusterRoleBinding().getMetadata().getAnnotations();
+            }
+
             if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
                 result.templatePersistentVolumeClaimLabels = Util.mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
                         result.templateStatefulSetLabels);
