@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
@@ -53,12 +54,15 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.Map;
 
+import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -754,6 +758,48 @@ public class KafkaRebalanceAssemblyOperatorTest {
                             "Kafka resource '" + CLUSTER_NAME + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + CLUSTER_NAMESPACE  + ".");
                     checkpoint.flag();
                 })));
+    }
+
+    /**
+     * When the Kafka cluster does not match the selector labels in the cluster operator configuration, the
+     * KafkaRebalance resource should be ignored and not reconciled.
+     */
+    @Test
+    public void testKafkaClusterNotMatchingLabelSelector(VertxTestContext context) {
+        KafkaRebalance kr =
+                createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        mockKafkaOps = supplier.kafkaOperator;
+        mockRebalanceOps = supplier.kafkaRebalanceOperator;
+        when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
+
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
+        ClusterOperatorConfig config = new ClusterOperatorConfig(
+                singleton(CLUSTER_NAMESPACE),
+                60_000,
+                120_000,
+                300_000,
+                false,
+                KafkaVersionTestUtils.getKafkaVersionLookup(),
+                null,
+                null,
+                null,
+                null,
+                ClusterOperatorConfig.RbacScope.CLUSTER,
+                Labels.fromMap(Map.of("selectorLabel", "value")));
+
+        kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), pfa, supplier, config);
+
+        Checkpoint checkpoint = context.checkpoint();
+        kcrao.reconcileRebalance(
+                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                kr).onComplete(context.succeeding(v -> context.verify(() -> {
+            // The labels of the Kafka resource do not match the => the KafkaRebalance should not be reconciled and the
+            // rebalance ops should have no interactions.
+            verifyZeroInteractions(mockRebalanceOps);
+            checkpoint.flag();
+        })));
     }
 
     @Test

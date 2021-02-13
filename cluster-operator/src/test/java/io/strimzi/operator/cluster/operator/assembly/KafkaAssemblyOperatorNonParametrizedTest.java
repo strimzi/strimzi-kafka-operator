@@ -53,6 +53,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -66,6 +67,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -348,6 +350,74 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
     }
 
     @Test
+    public void testSelectorLabels(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                        .withName(NAME)
+                        .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the CRD Operator for Kafka resources
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
+        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+
+        ClusterOperatorConfig config = new ClusterOperatorConfig(
+                singleton("dummy"),
+                60_000,
+                120_000,
+                300_000,
+                false,
+                KafkaVersionTestUtils.getKafkaVersionLookup(),
+                null,
+                null,
+                null,
+                null,
+                ClusterOperatorConfig.RbacScope.CLUSTER,
+                Labels.fromMap(Map.of("selectorLabel", "value")));
+
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
+                supplier, config);
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+
+        Checkpoint async = context.checkpoint();
+        op.reconcile(reconciliation)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // The resource labels don't match the selector labels => the reconciliation should exit right on
+                    // beginning with success. It should not reconcile any resources other than getting the Kafka
+                    // resource it self.
+                    verifyZeroInteractions(
+                            supplier.kafkaSetOperations,
+                            supplier.zkSetOperations,
+                            supplier.serviceOperations,
+                            supplier.secretOperations,
+                            supplier.configMapOperations,
+                            supplier.podOperations,
+                            supplier.podDisruptionBudgetOperator,
+                            supplier.deploymentOperations
+                    );
+
+                    async.flag();
+                })));
+    }
+
+    @Test
     public void testIngressV1Beta1(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -553,6 +623,5 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     .compose(state -> state.kafkaIngressesV1Beta1Ready())
                     .map((Void) null);
         }
-
     }
 }

@@ -45,6 +45,27 @@ env:
 The labels of the namespace where the Strimzi Cluster Operator is running.
 Namespace labels are used to configure the namespace selector in network policies to allow the Strimzi Cluster Operator to only have access to the operands from the namespace with these labels.
 When not set, the namespace selector in network policies is configured to allow access to the Strimzi Cluster Operator from any namespace in the Kubernetes cluster.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_OPERATOR_NAMESPACE_LABELS
+    value: label1=value1,label2=value2
+----
+
+`STRIMZI_CUSTOM_RESOURCE_SELECTOR`:: Optional.
+Specifies label selector used to filter the custom resources handled by the operator.
+The operator will operate only the custom resource which will have the labels set.
+Resources without these labels will not be seen by the operator.
+The label selector applies to `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `KafkaBridge`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2` resources.
+`KafkaRebalance` and `KafkaConnector` resources will be operated only when their corresponding Kafka and Kafka Connect clusters have the matching labels.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_CUSTOM_RESOURCE_SELECTOR
+    value: label1=value1,label2=value2
+----
 
 `STRIMZI_KAFKA_IMAGES`:: Required.
 This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
