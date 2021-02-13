@@ -5,6 +5,8 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
@@ -44,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
@@ -518,5 +521,27 @@ public class Util {
             configMaps.add(Future.succeededFuture(null));
         }
         return CompositeFuture.join(configMaps).map(result -> new MetricsAndLogging(result.resultAt(0), result.resultAt(1)));
+    }
+
+    /**
+     * Checks if the Kubernetes resource matches LabelSelector. This is useful when you use get/getAsync to retrieve an
+     * resource and want to check if it matches the labels from the selector (since get/getAsync is using name and not
+     * labels to identify the resource).
+     *
+     * @param labelSelector The LabelSelector with the labels which should be present in the resource
+     * @param cr            The Custom Resource which labels should be checked
+     *
+     * @return              True if the resource contains all labels from the LabelSelector or if the LabelSelector is empty
+     */
+    public static boolean matchesSelector(Optional<LabelSelector> labelSelector, HasMetadata cr) {
+        if (labelSelector.isPresent()) {
+            if (cr.getMetadata().getLabels() != null) {
+                return cr.getMetadata().getLabels().entrySet().containsAll(labelSelector.get().getMatchLabels().entrySet());
+            } else {
+                return labelSelector.get().getMatchLabels().isEmpty();
+            }
+        }
+
+        return true;
     }
 }

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
@@ -50,6 +51,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -135,6 +137,7 @@ public class KafkaRebalanceAssemblyOperator
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private final PlatformFeaturesAvailability pfa;
+    private final Optional<LabelSelector> kafkaSelector;
 
     /**
      * @param vertx The Vertx instance
@@ -144,7 +147,8 @@ public class KafkaRebalanceAssemblyOperator
      */
     public KafkaRebalanceAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                           ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-        super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
+        super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, null);
+        this.kafkaSelector = (config.getCustomResourceSelector() == null || config.getCustomResourceSelector().toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, config.getCustomResourceSelector().toMap()));
         this.pfa = pfa;
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.kafkaOperator = supplier.kafkaOperator;
@@ -770,6 +774,9 @@ public class KafkaRebalanceAssemblyOperator
                                 new NoSuchResourceException("Kafka resource '" + clusterName
                                         + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
                                         + "' does not exist in namespace " + clusterNamespace + ".")).mapEmpty();
+                    } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
+                        log.debug("{}: {} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", reconciliation, kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.get().getMatchLabels());
+                        return Future.succeededFuture();
                     } else if (kafka.getSpec().getCruiseControl() == null) {
                         log.warn("{}: Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.", reconciliation);
                         return updateStatus(kafkaRebalance, new KafkaRebalanceStatus(),

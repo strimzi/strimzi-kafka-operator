@@ -193,6 +193,13 @@ public abstract class AbstractOperator<
             T cr = resourceOperator.get(namespace, name);
 
             if (cr != null) {
+                if (!Util.matchesSelector(selector(), cr))  {
+                    // The the labels matching the selector are removed, the DELETED event is triggered. We have to
+                    // filter these situations out and ignore the reconciliation.
+                    log.debug("{}: {} {} in namespace {} does not match label selector {} and will be ignored", reconciliation, kind(), name, namespace, selector().get().getMatchLabels());
+                    return Future.succeededFuture();
+                }
+
                 Promise<Void> createOrUpdate = Promise.promise();
 
                 if (cr.getSpec() == null)   {
