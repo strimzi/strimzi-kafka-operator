@@ -3364,6 +3364,8 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |map
 |tasksMax            1.2+<.<|The maximum number of tasks for the Kafka Connector.
 |integer
+|topics              1.2+<.<|The list of topics used by the Kafka Connector.
+|string array
 |====
 
 [id='type-KafkaMirrorMaker2-{context}']

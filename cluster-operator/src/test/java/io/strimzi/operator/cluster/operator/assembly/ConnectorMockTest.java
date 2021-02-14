@@ -306,6 +306,15 @@ public class ConnectorMockTest {
             }
             return Future.succeededFuture();
         });
+        when(api.getConnectorTopics(any(), anyInt(), anyString())).thenAnswer(invocation -> {
+            String host = invocation.getArgument(0);
+            String connectorName = invocation.getArgument(2);
+            ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
+            if (connectorState == null) {
+                return Future.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s/topics", connectorName), 404, "Not Found", ""));
+            }
+            return Future.succeededFuture(List.of("my-topic"));
+        });
     }
 
     @AfterEach
