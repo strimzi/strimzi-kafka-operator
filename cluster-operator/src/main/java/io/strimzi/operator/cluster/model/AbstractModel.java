@@ -1525,7 +1525,7 @@ public abstract class AbstractModel {
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templateClusterRoleBindingLabels).toMap())
+                    .withLabels(labels.withAdditionalLabels(templateClusterRoleBindingLabels).toMap())
                     .withAnnotations(templateClusterRoleBindingAnnotations)
                 .endMetadata()
                 .withSubjects(subject)
