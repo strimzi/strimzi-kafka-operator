@@ -13,7 +13,16 @@ The following table shows the differences between Kafka versions:
 
 include::snip-kafka-versions.adoc[leveloffset=+1]
 
-.Message format version
+.Inter-broker protocol version
+
+In Kafka, the network protocol used for inter-broker communication is called the _inter-broker protocol_. 
+Each version of Kafka has a compatible version of the inter-broker protocol. 
+The minor version of the protocol typically increases to match the minor version of Kafka, as shown in the preceding table.
+
+The inter-broker protocol version is set cluster wide in the `Kafka` resource.  
+To change it, you edit the `inter.broker.protocol.version` property in `Kafka.spec.kafka.config`.
+
+.Log message format version
 
 When a producer sends a message to a Kafka broker, the message is encoded using a specific format.
 The format can change between Kafka releases, so messages specify which version of the format they were encoded with. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.

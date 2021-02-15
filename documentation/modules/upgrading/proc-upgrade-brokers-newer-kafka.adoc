@@ -77,7 +77,7 @@ spec:
 +
 WARNING: You cannot downgrade Kafka if the `inter.broker.protocol.version` for the new Kafka version changes. The inter-broker protocol version determines the schemas used for persistent metadata stored by the broker, including messages written to `__consumer_offsets`. The downgraded cluster will not understand the messages.
 
-. If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
+. If the image for the Kafka cluster is defined in the Kafka custom resource, in `Kafka.spec.kafka.image`, update the `image` to point to a container image with the new Kafka version.
 +
 See xref:con-versions-and-images-str[Kafka version and image mappings]
 
@@ -146,6 +146,7 @@ spec:
     version: {KafkaVersionHigher}
     config:
       log.message.format.version: "{LogMsgVersHigher}"
+      inter.broker.protocol.version: "{InterBrokVersHigher}"
       # ...
 ----
 

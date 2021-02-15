@@ -44,7 +44,7 @@ Wait for the rolling updates to complete.
 kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the new Strimzi version followed by the Kafka version. For example, `_NEW-STRIMZI-VERSION_-kafka-_CURRENT-KAFKA-VERSION_`.
+The image tag shows the new Strimzi version. For example, `{ExampleImageTagUpgrades}-kafka`.
 
 Your Cluster Operator was upgraded to the later version, but the version of Kafka running in the cluster it manages is unchanged.
 

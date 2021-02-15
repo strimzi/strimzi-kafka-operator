@@ -21,9 +21,11 @@
 :KafkaVersionLower: 2.6.0
 :KafkaVersionHigher: 2.7.0
 
-//log message format version
+//log message format version and inter-broker protocol version
 :LogMsgVersLower: 2.6
 :LogMsgVersHigher: 2.7
+:InterBrokVersLower: 2.6
+:InterBrokVersHigher: 2.7
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
@@ -124,6 +126,7 @@
 :DockerEntityOperatorStunnel: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaBridge: quay.io/strimzi/kafka-bridge:{BridgeDockerTag}
 :DockerImageUser: 1001
+:ExampleImageTagUpgrades: quay.io/strimzi/operator:0.21.1
 
 // API Versions current
 :ApiVersion: v1beta1

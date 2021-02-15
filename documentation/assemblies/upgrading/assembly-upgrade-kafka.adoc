@@ -30,11 +30,11 @@ For more information on using {OperatorHub} to upgrade Operators, see the {OLMOp
 
 . If applicable, perform the following tasks:
 +
-.. Update existing resources to handle deprecated custom resource properties
+.. Update existing custom resources to handle deprecated custom resource properties
 +
 * xref:assembly-upgrade-resources-{context}[]
 +
-NOTE: Resources can also be updated _before_ the Kafka upgrade.
+NOTE: Custom resources can also be updated _before_ the Kafka upgrade.
 +
 .. Update listeners to use the `GenericKafkaListener` schema
 +
