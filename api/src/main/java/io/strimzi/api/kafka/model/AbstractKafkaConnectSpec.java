@@ -185,6 +185,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.tracing = tracing;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -199,6 +200,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.affinity = affinity;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_NULL)

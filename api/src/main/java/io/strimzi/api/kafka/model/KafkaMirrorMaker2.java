@@ -42,11 +42,8 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaMirrorMaker2.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker2.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(
-                                name = KafkaMirrorMaker2.V1ALPHA1,
-                                served = true,
-                                storage = true
-                        )
+                        @Crd.Spec.Version(name = KafkaMirrorMaker2.V1BETA2, served = true, storage = false),
+                        @Crd.Spec.Version(name = KafkaMirrorMaker2.V1ALPHA1, served = true, storage = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status(),
@@ -87,8 +84,9 @@ public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, Kaf
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
+    public static final String V1BETA2 = Constants.V1BETA2;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaMirrorMaker2";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
