@@ -12,6 +12,9 @@
 :linkattrs:
 :toclevels: 3
 
+//Latest Strimzi version
+:ProductVersion: 0.20.0
+
 // Kubernetes and OpenShift versions
 :OpenShiftVersion: 4.3 and later
 :KubernetesVersion: 1.16 and later
@@ -20,6 +23,7 @@
 :DefaultKafkaVersion: 2.7.0
 :KafkaVersionLower: 2.6.0
 :KafkaVersionHigher: 2.7.0
+:ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 //log message format version and inter-broker protocol version
 :LogMsgVersLower: 2.6
@@ -106,7 +110,6 @@
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 :external-cors-link: https://www.w3.org/TR/cors/
 
-
 // Container image names and repositories
 :DockerOrg: quay.io/strimzi
 :DockerTag: {ProductVersion}
@@ -126,7 +129,6 @@
 :DockerEntityOperatorStunnel: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaBridge: quay.io/strimzi/kafka-bridge:{BridgeDockerTag}
 :DockerImageUser: 1001
-:ExampleImageTagUpgrades: quay.io/strimzi/operator:0.21.1
 
 // API Versions current
 :ApiVersion: v1beta1
@@ -165,9 +167,6 @@
 :ChartName: strimzi-kafka-operator
 :ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
 :ChartRepositoryUrl: https://strimzi.io/charts/
-
-//Latest Strimzi version
-:ProductVersion: 0.20.0
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
