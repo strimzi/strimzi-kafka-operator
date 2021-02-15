@@ -58,6 +58,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean enablePlain = false;
     private String tokenEndpointUri;
     private boolean enableOauthBearer = true;
+    private String customClaimCheck;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @Override
@@ -117,6 +118,17 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setCheckAudience(boolean checkAudience) {
         this.checkAudience = checkAudience;
+    }
+
+    @Description("JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint " +
+            "for additional token validation. Not set by default.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getCustomClaimCheck() {
+        return customClaimCheck;
+    }
+
+    public void setCustomClaimCheck(String customClaimCheck) {
+        this.customClaimCheck = customClaimCheck;
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")

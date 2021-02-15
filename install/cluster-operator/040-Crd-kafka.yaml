@@ -277,6 +277,12 @@ spec:
                                 OAuth client secret which the Kafka broker can use
                                 to authenticate against the authorization server and
                                 use the introspect endpoint URI.
+                            customClaimCheck:
+                              type: string
+                              description: JsonPath filter query to be applied to
+                                the JWT token or to the response of the introspection
+                                endpoint for additional token validation. Not set
+                                by default.
                             disableTlsHostnameVerification:
                               type: boolean
                               description: Enable or disable TLS hostname verification.
@@ -722,6 +728,12 @@ spec:
                                   the OAuth client secret which the Kafka broker can
                                   use to authenticate against the authorization server
                                   and use the introspect endpoint URI.
+                              customClaimCheck:
+                                type: string
+                                description: JsonPath filter query to be applied to
+                                  the JWT token or to the response of the introspection
+                                  endpoint for additional token validation. Not set
+                                  by default.
                               disableTlsHostnameVerification:
                                 type: boolean
                                 description: Enable or disable TLS hostname verification.
@@ -970,6 +982,12 @@ spec:
                                   the OAuth client secret which the Kafka broker can
                                   use to authenticate against the authorization server
                                   and use the introspect endpoint URI.
+                              customClaimCheck:
+                                type: string
+                                description: JsonPath filter query to be applied to
+                                  the JWT token or to the response of the introspection
+                                  endpoint for additional token validation. Not set
+                                  by default.
                               disableTlsHostnameVerification:
                                 type: boolean
                                 description: Enable or disable TLS hostname verification.
@@ -1242,6 +1260,12 @@ spec:
                                   the OAuth client secret which the Kafka broker can
                                   use to authenticate against the authorization server
                                   and use the introspect endpoint URI.
+                              customClaimCheck:
+                                type: string
+                                description: JsonPath filter query to be applied to
+                                  the JWT token or to the response of the introspection
+                                  endpoint for additional token validation. Not set
+                                  by default.
                               disableTlsHostnameVerification:
                                 type: boolean
                                 description: Enable or disable TLS hostname verification.
