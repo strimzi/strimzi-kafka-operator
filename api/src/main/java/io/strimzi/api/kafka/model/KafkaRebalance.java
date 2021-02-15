@@ -42,11 +42,8 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaRebalance.RESOURCE_GROUP,
                 scope = KafkaRebalance.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(
-                                name = KafkaRebalance.V1ALPHA1,
-                                served = true,
-                                storage = true
-                        )
+                        @Crd.Spec.Version(name = KafkaRebalance.V1BETA2, served = true, storage = false),
+                        @Crd.Spec.Version(name = KafkaRebalance.V1ALPHA1, served = true, storage = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status()
@@ -77,8 +74,9 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
+    public static final String V1BETA2 = Constants.V1BETA2;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaRebalance";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;

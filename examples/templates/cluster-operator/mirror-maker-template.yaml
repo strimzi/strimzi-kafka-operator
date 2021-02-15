@@ -31,7 +31,7 @@ parameters:
   displayName: The Kafka version to use
   name: KAFKA_VERSION
   required: true
-  value: "2.6.0"
+  value: "2.7.0"
 - description: The consumer group id to which this consumer belongs
   displayName: The consumer group id
   name: MIRROR_MAKER_GROUP_ID
@@ -43,7 +43,7 @@ parameters:
   required: true
   value: ".*"
 objects:
-- apiVersion: kafka.strimzi.io/v1beta1
+- apiVersion: kafka.strimzi.io/v1beta2
   kind: KafkaMirrorMaker
   metadata:
     name: mirror-maker

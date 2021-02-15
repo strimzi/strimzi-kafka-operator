@@ -185,6 +185,7 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @DeprecatedProperty(movedToPath = "spec.template.pod.affinity")
+    @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     public Affinity getAffinity() {
         return affinity;
@@ -199,6 +200,7 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
     @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations")
+    @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     public List<Toleration> getTolerations() {
         return tolerations;

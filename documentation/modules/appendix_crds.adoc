@@ -1358,9 +1358,9 @@ include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc
 |Property                         |Description
 |metadata                  1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|externalTrafficPolicy     1.2+<.<|*The `externalTrafficPolicy` property has been deprecated* Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
+|externalTrafficPolicy     1.2+<.<|*The `externalTrafficPolicy` property has been deprecated, and should now be configured using `spec.kafka.listeners[].configuration`.* Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
 |string (one of [Local, Cluster])
-|loadBalancerSourceRanges  1.2+<.<|*The `loadBalancerSourceRanges` property has been deprecated* A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. 
+|loadBalancerSourceRanges  1.2+<.<|*The `loadBalancerSourceRanges` property has been deprecated, and should now be configured using `spec.kafka.listeners[].configuration`.* A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. 
 |string array
 |====
 
@@ -1563,11 +1563,11 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`]
 |userOperator   1.2+<.<|Configuration of the User Operator.
 |xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`]
-|affinity       1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity       1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.entityOperator.template.pod.affinity`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations    1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+|tolerations    1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.entityOperator.template.pod.tolerations`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
