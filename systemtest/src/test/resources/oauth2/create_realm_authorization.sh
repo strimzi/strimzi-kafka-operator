@@ -8,6 +8,15 @@ URL=$3
 
 TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token" | awk -F '\"' '{print $4}')
 
+RETRY=10
+while [[ ${TOKEN} == *"invalid_grant"* && ${RETRY} -gt 0 ]]
+do
+	echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Token wasn't granted! Retry in 2 sec (${RETRY})"
+	sleep 2
+	TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token" | awk -F '\"' '{print $4}')
+	((RETRY-=1))
+done
+
 RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
