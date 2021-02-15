@@ -6,6 +6,10 @@
 * Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
 * Add additional configuration options for the Kaniko executor used by the Kafka Connect Build on Kubernetes
 * Add support for JMX options configuration of all Kafka Connect (KC, KC2SI, MM2)
+* Update Strimzi Kafka OAuth to version 0.7.0 and add support for new features:
+  * OAuth authentication over SASL PLAIN mechanism
+  * Checking token audience
+  * Validating token claims
 * Updated Cruise Control to version 2.5.32
 * Fix Cruise Control crash loop when updating container configurations
 * Configure extenal logging `ConfigMap` name and key.
