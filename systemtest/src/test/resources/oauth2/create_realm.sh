@@ -9,9 +9,11 @@ TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td2
 RETRY=10
 while [[ ${TOKEN} == *"invalid_grant"* && ${RETRY} -gt 0 ]]
 do
-	echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Token wasn't granted! Retry in 2 sec (${RETRY})"
+	printf "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Token wasn't granted! Retry in 2 sec (%s)\n" ${RETRY}
 	sleep 2
-	TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token" | awk -F '\"' '{print $4}')
+	TMP_CURL=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token")
+	printf "[INFO] CURL OUTPUT: %s\n" ${TMP_CURL}
+	TOKEN=$(echo ${TMP_CURL} | awk -F '\"' '{print $4}')
 	((RETRY-=1))
 done
 
