@@ -29,4 +29,6 @@ Working in the other direction, if a topic is:
 This allows you to declare a `KafkaTopic` as part of your application's deployment and the Topic Operator will take care of creating the topic for you.
 Your application just needs to deal with producing or consuming from the necessary topics.
 
-If the topic is reconfigured or reassigned to different Kafka nodes, the `KafkaTopic` will always be up to date.
+The Topic Operator maintains information about each topic in a _topic store_, which is continually synchronized with updates from Kafka topics or Kubernetes `KafkaTopic` custom resources.
+Updates from operations applied to a local in-memory topic store are persisted to a backup topic store on disk.
+If a topic is reconfigured or reassigned to different Kafka nodes, the `KafkaTopic` will always be up to date.

@@ -1,0 +1,115 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-topic-operator.adoc
+
+[id='ref-topic-operator-store-{context}']
+= Topic Operator topic store
+
+[role="_abstract"]
+The Topic Operator uses persistent storage to store topic metadata describing topic configuration as key-value pairs.
+The _topic store_ is based on the Kafka Streams key-value mechanism, which uses persistent storage with local and remote components.
+
+Topic metadata is stored and accessed locally in-memory.
+Updates from operations applied to the local in-memory topic store are persisted to a backup topic store on disk.
+The topic store is continually synchronized with updates from Kafka topics or Kubernetes `KafkaTopic` custom resources.
+Operations are handled rapidly with the topic store set up this way,
+but should the in-memory topic store crash it is automatically repopulated from the persistent storage.
+
+== Internal topic store topics
+
+Internal topics support the handling of topic metadata.
+
+`__strimzi_store_topic`:: Input topic for storing the topic metadata
+`__strimzi-topic-operator-kstreams-topic-store-changelog`:: Retains a log of compacted topic store values
+
+== Migrating topic metadata from ZooKeeper
+
+In previous releases of Strimzi, topic metadata was stored in ZooKeeper.
+The new process removes this requirement, bringing the metadata into the Kafka cluster, and under the control of the Topic Operator.
+
+When upgrading to Strimzi {ProductVersion}, the transition to Topic Operator control of the topic store is seamless.
+Metadata is found and migrated from ZooKeeper, and the old store is cleansed.
+
+== Downgrading to a Strimzi version that uses ZooKeeper to store topic metadata
+
+If you are reverting back to a version of Strimzi that uses ZooKeeper for the storage of topic metadata,
+you downgrade your Cluster Operator to the previous version,
+then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
+
+Additionally, you must delete the topics created for the topic store using an `exec` command, specifying the bootstrap address of the Kafka cluster and the name of a broker pod.
+For example, where `my-cluster-kafka-0` is the name of the broker pod:
+
+[source,shell]
+----
+kubectl exec -ti my-cluster-kafka-0 -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
+----
+
+The Topic Operator will reconstruct the Zookeeper topic metadata from the state of the topics in Kafka.
+
+NOTE: When scaling a Kafka cluster, the topic store topics must also be deleted so that partitions can be reassigned.
+
+== Scaling and topics
+
+The recommended configuration for topics is to have a topic replication factor of 3, so that there are 2 in-sync replicas on other brokers.
+If a broker is unavailable, at least one other broker is in-sync.
+
+[source,shell,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 3 <1>
+  config:
+    min.insync.replicas=2 <2>
+  #...
+----
+<1> The number of replica topics. Currently, this cannot be changed in the `KafkaTopic` resource, but it can be changed using the `kafka-reassign-partitions.sh` tool.
+<2> The minimum number of replica partitions that a message must be successfully written to, or an exception is raised.
+
+NOTE: In-sync replicas are used in conjunction with the `acks` configuration for a producer application.
+The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
+
+When scaling Kafka clusters by adding or removing brokers, replicas are not reassigned automatically.
+However, you can use the `kafka-reassign-partitions.sh` tool to change the replication factor, and manually reassign replicas to brokers.
+
+Alternatively, though Cruise Control cannot change the replication factor for topics,
+the optimization proposals it generates for rebalancing Kafka include commands that transfer partition replicas and change partition leadership.
+
+== Handling changes to topics
+
+A fundamental problem that the Topic Operator has to solve is that there is no single source of truth:
+Both the `KafkaTopic` resource and the Kafka topic can be modified independently of the Topic Operator.
+Complicating this, the Topic Operator might not always be able to observe changes at each end in real time.
+For example, when the Topic Operator is down.
+
+To resolve this, the Topic Operator maintains information about each topic in the topic store.
+When a change happens in the Kafka cluster or Kubernetes, it looks at both the state of the other system and the topic store in order to determine what needs to change to keep everything in sync.
+The same thing happens whenever the Topic Operator starts, and periodically while it is running.
+
+For example, suppose the Topic Operator is not running, and a `KafkaTopic` called _my-topic_ is created.
+When the Topic Operator starts, the topic store does not contain information on my-topic, so it can infer that the `KafkaTopic` was created after it was last running.
+The Topic Operator creates the topic corresponding to my-topic, and also stores metadata for my-topic in the topic store.
+
+If you update Kafka topic configuration or apply a change through the `KafkaTopic` custom resource,
+the topic store is updated after the Kafka cluster is reconciled.
+
+The topic store also allows the Topic Operator to manage scenarios where the topic configuration is changed in Kafka topics _and_ updated through Kubernetes `KafkaTopic` custom resources,
+so long as the changes are not incompatible.
+For example, it is possible to make changes to the same topic config key, but to different values.
+For incompatible changes, the Kafka configuration takes priority, and the `KafkaTopic` is updated accordingly.
+
+NOTE: You can also use the `KafkaTopic` resource to delete topics using a `kubectl delete -f _KAFKA-TOPIC-CONFIG-FILE_` command.
+To be able to do this, `delete.topic.enable` must be set to `true` (default) in the `spec.kafka.config` of the Kafka resource.
+
+
+[role="_additional-resources"]
+.Additional resources
+* link:{BookURLDeploying}#assembly-downgrade-{context}[Downgrading Strimzi^]
+* xref:con-producer-config-properties-str[Producer configuration tuning and data durability]
+* xref:con-partition-reassignment-str[Scaling cluster and partition reassignment]
+* xref:cruise-control-concepts-str[Cruise Control for cluster rebalancing]

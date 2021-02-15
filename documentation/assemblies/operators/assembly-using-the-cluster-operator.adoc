@@ -16,4 +16,4 @@ For information on the deployment options available for Kafka, see xref:assembly
 
 NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image feature to provide a convenient way to add additional connectors.
 
-include::../modules/ref-operator-cluster.adoc[leveloffset=+1]
+include::../../modules/operators/ref-operator-cluster.adoc[leveloffset=+1]

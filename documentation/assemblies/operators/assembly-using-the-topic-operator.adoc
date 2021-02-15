@@ -13,6 +13,7 @@ The _Deploying and Upgrading Strimzi_ guide provides instructions to deploy the 
 * link:{BookURLDeploying}#deploying-the-topic-operator-using-the-cluster-operator-{context}[Using the Cluster Operator (recommended)^]
 * link:{BookURLDeploying}#deploying-the-topic-operator-standalone-{context}[Standalone to operate with Kafka clusters not managed by Strimzi^]
 
-include::../modules/ref-operator-topic.adoc[leveloffset=+1]
-include::../modules/proc-configuring-kafka-topic.adoc[leveloffset=+1]
-include::../modules/proc-topic-operator-with-resource-requests-limits.adoc[leveloffset=+1]
+include::../../modules/operators/ref-operator-topic.adoc[leveloffset=+1]
+include::../../modules/operators/con-topic-operator-store.adoc[leveloffset=+1]
+include::../../modules/operators/proc-configuring-kafka-topic.adoc[leveloffset=+1]
+include::../../modules/operators/proc-topic-operator-with-resource-requests-limits.adoc[leveloffset=+1]

@@ -6,6 +6,7 @@
 
 = Downgrading Kafka brokers and client applications
 
+[role="_abstract"]
 This procedure describes how you can downgrade a Strimzi Kafka cluster to a lower (previous) version of Kafka, such as downgrading from {KafkaVersionHigher} to {KafkaVersionLower}.
 
 .Prerequisites
@@ -19,10 +20,10 @@ For the `Kafka` resource to be downgraded, check:
 
 .Procedure
 
-. Update the Kafka cluster configuration in an editor, as required.
+. Update the Kafka cluster configuration.
 +
 [source,shell,subs=+quotes]
-kubectl edit kafka _my-cluster_
+kubectl edit kafka _KAFKA-CONFIGURATION-FILE_
 
 . Change the `Kafka.spec.kafka.version` to specify the previous version.
 +
@@ -75,3 +76,16 @@ Reconciliation #_NUM_(watch) Kafka(_NAMESPACE_/_NAME_): Kafka version downgrade 
 . Downgrade all client applications (consumers) to use the previous version of the client binaries.
 +
 The Kafka cluster and clients are now using the previous Kafka version.
+
+. If you are reverting back to a version of Strimzi that uses ZooKeeper for the storage of topic metadata, delete the internal topic store topics from the Kafka cluster.
++
+For example, where _my-cluster-kafka-0_ is the name of the broker pod:
++
+[source,shell]
+----
+kubectl exec -ti my-cluster-kafka-0 -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
+----
+
+[role="_additional-resources"]
+.Additional resources
+* link:{BookURLUsing}#ref-topic-operator-store-{context}[Topic Operator topic store^]

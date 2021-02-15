@@ -11,4 +11,4 @@ Use the Strimzi operators to manage your Kafka cluster, and Kafka topics and use
 include::assembly-using-the-cluster-operator.adoc[leveloffset=+1]
 include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 include::assembly-using-the-user-operator.adoc[leveloffset=+1]
-include::../modules/con-operators-prometheus-metrics.adoc[leveloffset=+1]
+include::../../modules/operators/con-operators-prometheus-metrics.adoc[leveloffset=+1]
