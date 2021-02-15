@@ -13,7 +13,7 @@ Each Kafka release introduces new features, improvements, and bug fixes.
 
 .Downtime and availability
 
-If topics are configured for high availability, upgrading should not cause any downtime for consumers and producers that publish and read data from them. 
+If topics are configured for high availability, upgrading Strimzi should not cause any downtime for consumers and producers that publish and read data from those topics. 
 Highly available topics have a replication factor of at least 3 and partitions distributed evenly among the brokers.
 
 Upgrading Strimzi triggers rolling updates, where all brokers are restarted in turn, at different stages of the process. 

@@ -29,7 +29,7 @@ Clients are upgraded in step 6 of this procedure according to your chosen strate
 kubectl edit kafka _my-cluster_
 ----
 
-. If the `log.message.format.version` and `inter.broker.protocol.version` of the _current_ Kafka version is _the same_ as the new Kafka version, go to step 3.
+. If the `log.message.format.version` and `inter.broker.protocol.version` of the _current_ Kafka version are _the same_ as the new Kafka version, go to step 3.
 +
 Otherwise, ensure that `Kafka.spec.kafka.config` has the `log.message.format.version` and `inter.broker.protocol.version` configured to the defaults for the _current_ Kafka version.
 +
@@ -48,11 +48,11 @@ spec:
       # ...
 ----
 +
-If the `log.message.format.version` and `inter.broker.protocol.version` are unset, set them to the defaults for the current version.
+If the `log.message.format.version` and `inter.broker.protocol.version` are unset, set them to the defaults for the _current_ Kafka version.
 +
 NOTE: The value of `log.message.format.version` and `inter.broker.protocol.version` must be strings to prevent them from being interpreted as floating point numbers.
 
-. Change the `Kafka.spec.kafka.version` to specify the new version (leaving the `log.message.format.version` and and `inter.broker.protocol.version` at the current version).
+. Change the `Kafka.spec.kafka.version` to specify the new version (leaving the `log.message.format.version` and and `inter.broker.protocol.version` at the _current_ versions).
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
 +
@@ -125,10 +125,12 @@ If required, set the `version` property for Kafka Connect and MirrorMaker as the
 .. For MirrorMaker, update `KafkaMirrorMaker.spec.version`.
 .. For MirrorMaker 2.0, update `KafkaMirrorMaker2.spec.version`.
 
-. _Optional step to reduce rolling updates_: You can now perform one or more further product upgrades (starting with xref:proc-upgrading-the-co-{context}[Upgrading the Cluster Operator to a later version]). 
+. _Optional step to reduce rolling updates_:
++
+You can now perform one or more further product upgrades, starting with xref:proc-upgrading-the-co-{context}[Upgrading the Cluster Operator to a later version]. 
 After reaching this step for the last upgrade you want to perform, you can complete this procedure.
 +
-Alternatively, go to step 8.
+Alternatively, skip this step and go to step 8.
 +
 . If the `log.message.format.version` and `inter.broker.protocol.version` of the _new_ Kafka version are _different from_ the old Kafka version, update the Kafka resource to use the new default versions. Otherwise, go to step 9.
 
@@ -154,5 +156,8 @@ spec:
 +
 The Kafka cluster and clients are now using the new Kafka version.
 
-Following the Kafka upgrade, if required, you can xref:con-upgrade-listeners-{context}[update listeners to the `GenericKafkaListener` schema] and xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[upgrade consumers to use the incremental cooperative rebalance protocol]
-.
+Following the Kafka upgrade, if required, you can:
+
+* xref:con-upgrade-listeners-{context}[Update listeners to the `GenericKafkaListener` schema]
+* xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[Upgrade consumers to use the incremental cooperative rebalance protocol]
+* xref:assembly-upgrade-resources-{context}[Update existing custom resources] 

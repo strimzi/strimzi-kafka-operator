@@ -5,7 +5,7 @@
 [id='con-versions-and-images-{context}']
 = Kafka version and image mappings
 
-When upgrading Kafka, consider your settings for the `STRIMZI_KAFKA_IMAGES` and `Kafka.spec.kafka.version` properties.
+When upgrading Kafka, consider your settings for the `STRIMZI_KAFKA_IMAGES` environment variable and the `Kafka.spec.kafka.version` property.
 
 * Each `Kafka` resource can be configured with a `Kafka.spec.kafka.version`.
 * The Cluster Operator's `STRIMZI_KAFKA_IMAGES` environment variable provides a mapping between the Kafka version and the image to be used when that version is requested in a given `Kafka` resource.
