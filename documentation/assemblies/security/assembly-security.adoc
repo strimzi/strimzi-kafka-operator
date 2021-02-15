@@ -30,9 +30,9 @@ include::modules/con-certificate-renewal.adoc[leveloffset=+1]
 
 include::modules/proc-renewing-ca-certs-manually.adoc[leveloffset=+2]
 
-include::modules/proc-renewing-your-own-ca-certificates.adoc[leveloffset=+2]
+include::modules/proc-replacing-private-keys.adoc[leveloffset=+2]
 
-include::modules/proc-replacing-private-keys.adoc[leveloffset=+1]
+include::modules/proc-renewing-your-own-ca-certificates.adoc[leveloffset=+2]
 
 include::modules/con-tls-connections.adoc[leveloffset=+1]
 
