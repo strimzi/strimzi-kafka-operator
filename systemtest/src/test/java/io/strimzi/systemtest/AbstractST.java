@@ -166,6 +166,7 @@ public abstract class AbstractST implements TestSeparator {
     public void applyClusterOperatorInstallFiles(String namespace) {
         clusterOperatorConfigs.clear();
         Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
+                .filter(File::isFile)
                 .filter(file ->
                         !file.getName().matches(".*(Binding|Deployment)-.*"))
                 .collect(Collectors.toMap(
