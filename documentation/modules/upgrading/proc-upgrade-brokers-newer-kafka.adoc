@@ -52,7 +52,7 @@ If the `log.message.format.version` and `inter.broker.protocol.version` are unse
 +
 NOTE: The value of `log.message.format.version` and `inter.broker.protocol.version` must be strings to prevent them from being interpreted as floating point numbers.
 
-. Change the `Kafka.spec.kafka.version` to specify the new version (leaving the `log.message.format.version` and and `inter.broker.protocol.version` at the _current_ versions).
+. Change the `Kafka.spec.kafka.version` to specify the new version (leaving the `log.message.format.version` and `inter.broker.protocol.version` at the _current_ versions).
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
 +
