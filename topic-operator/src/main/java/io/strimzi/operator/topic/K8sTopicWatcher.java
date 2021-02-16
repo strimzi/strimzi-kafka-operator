@@ -5,11 +5,9 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.operator.common.Annotations;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -18,8 +16,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.Objects;
-
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 
 class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
@@ -39,9 +35,6 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     public void eventReceived(Action action, KafkaTopic kafkaTopic) {
         ObjectMeta metadata = kafkaTopic.getMetadata();
         Map<String, String> labels = metadata.getLabels();
-        if (kafkaTopic.getMetadata() != null && kafkaTopic.getMetadata().getAnnotations() != null) {
-            LOGGER.info("k8s mam anotaci {}", hasPauseReconciliationAnnotation(kafkaTopic));
-        }
         if (kafkaTopic.getSpec() != null) {
             LogContext logContext = LogContext.kubeWatch(action, kafkaTopic).withKubeTopic(kafkaTopic);
             String name = metadata.getName();
@@ -79,10 +72,6 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                 }
             }
         }
-    }
-
-    protected boolean hasPauseReconciliationAnnotation(CustomResource resource) {
-        return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, false);
     }
 
     public boolean shouldReconcile(KafkaTopic kafkaTopic, ObjectMeta metadata) {

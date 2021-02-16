@@ -76,10 +76,8 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -435,10 +433,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         connectorsReconciliationsCounter.increment();
         Timer.Sample connectorsReconciliationsTimerSample = Timer.start(metrics.meterRegistry());
 
-        if (hasPauseReconciliationAnnotation(connector)) {
+        if (connector != null && Annotations.isReconciliationPausedWithAnnotation(connector)) {
             Set<Condition> conditions = validate(connector);
             Condition pausedCondition = new ConditionBuilder()
-                    .withLastTransitionTime(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date()))
+                    .withLastTransitionTime(StatusUtils.iso8601Now())
                     .withType("ReconciliationPaused")
                     .withStatus("True")
                     .build();

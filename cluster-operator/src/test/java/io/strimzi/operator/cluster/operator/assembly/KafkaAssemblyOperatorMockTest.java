@@ -349,6 +349,7 @@ public class KafkaAssemblyOperatorMockTest {
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> async.flag()));
     }
+
     @ParameterizedTest
     @MethodSource("data")
     public void testReconcileReplacesAllDeletedSecrets(Params params, VertxTestContext context) {

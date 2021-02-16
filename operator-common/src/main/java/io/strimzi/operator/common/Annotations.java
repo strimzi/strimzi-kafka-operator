@@ -7,6 +7,7 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.client.CustomResource;
 
 import java.util.HashMap;
 import java.util.List;
@@ -69,13 +70,10 @@ public class Annotations {
     );
 
     private static Map<String, String> annotations(ObjectMeta metadata) {
-        Map<String, String> annotations = new HashMap<>();
-        if (metadata != null) {
-            annotations = metadata.getAnnotations();
-            if (annotations == null) {
-                annotations = new HashMap<>(3);
-                metadata.setAnnotations(annotations);
-            }
+        Map<String, String> annotations = metadata.getAnnotations();
+        if (annotations == null) {
+            annotations = new HashMap<>(3);
+            metadata.setAnnotations(annotations);
         }
         return annotations;
     }
@@ -89,10 +87,12 @@ public class Annotations {
     }
 
     public static boolean booleanAnnotation(HasMetadata resource, String annotation, boolean defaultValue, String... deprecatedAnnotations) {
-        if (resource == null) {
-            return defaultValue;
-        }
         ObjectMeta metadata = resource.getMetadata();
+        String str = annotation(annotation, null, metadata, deprecatedAnnotations);
+        return str != null ? parseBoolean(str) : defaultValue;
+    }
+
+    public static boolean booleanAnnotation(ObjectMeta metadata, String annotation, boolean defaultValue, String... deprecatedAnnotations) {
         String str = annotation(annotation, null, metadata, deprecatedAnnotations);
         return str != null ? parseBoolean(str) : defaultValue;
     }
@@ -168,6 +168,16 @@ public class Annotations {
             }
         }
         return value;
+    }
+
+    /**
+     * Whether the provided resource instance is a KafkaConnector and has the strimzi.io/pause-reconciliation annotation
+     *
+     * @param resource resource instance to check
+     * @return true if the provided resource instance has the strimzi.io/pause-reconciliation annotation; false otherwise
+     */
+    public static boolean isReconciliationPausedWithAnnotation(CustomResource resource) {
+        return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, false);
     }
 
 }

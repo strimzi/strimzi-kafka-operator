@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -54,10 +53,15 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -122,7 +126,6 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Promise created = Promise.promise();
 
-        Deployment depBeforeRecon = mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get();
         LOGGER.info("Reconciling initially -> create");
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -132,7 +135,8 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
                     assertThat(mockClient.policy().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
-                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(depBeforeRecon));
+                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
+                    verify(mockClient, never()).customResources(KafkaConnect.class);
                 }
                 created.complete();
             })));
@@ -192,22 +196,21 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 })
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(mockClient).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
-                    io.strimzi.operator.cluster.TestUtils.waitForStatus(resource, CLUSTER_NAME, s -> {
-                        if (s.getStatus() == null) {
-                            return false;
-                        }
-                        List<Condition> conditions = s.getStatus().getConditions();
-                        boolean conditionFound = false;
-                        if (conditions != null && !conditions.isEmpty()) {
-                            for (Condition condition: conditions) {
-                                if ("ReconciliationPaused".equals(condition.getType())) {
-                                    conditionFound = true;
-                                    break;
-                                }
+                    if (resource.get().getStatus() == null) {
+                        fail();
+                    }
+                    List<Condition> conditions = resource.get().getStatus().getConditions();
+                    boolean conditionFound = false;
+                    if (conditions != null && !conditions.isEmpty()) {
+                        for (Condition condition: conditions) {
+                            if ("ReconciliationPaused".equals(condition.getType())) {
+                                conditionFound = true;
+                                break;
                             }
                         }
-                        return conditionFound;
-                    });
+                    }
+                    assertTrue(conditionFound);
+
                     async.flag();
                 })));
 
