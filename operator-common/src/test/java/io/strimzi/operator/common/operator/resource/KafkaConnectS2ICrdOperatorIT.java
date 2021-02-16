@@ -48,7 +48,6 @@ public class KafkaConnectS2ICrdOperatorIT extends AbstractCustomResourceOperator
     @Override
     protected KafkaConnectS2I getResource(String resourceName) {
         return new KafkaConnectS2IBuilder()
-                .withApiVersion(KafkaConnectS2I.RESOURCE_GROUP + "/" + KafkaConnectS2I.V1BETA1)
                 .withNewMetadata()
                 .withName(resourceName)
                 .withNamespace(getNamespace())

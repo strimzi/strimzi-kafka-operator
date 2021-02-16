@@ -86,7 +86,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 @ToString
-@Version(Constants.V1ALPHA1)
+@Version(Constants.V1BETA2)
 @Group(Constants.STRIMZI_GROUP)
 public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

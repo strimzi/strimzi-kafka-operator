@@ -83,7 +83,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-@Version(Constants.V1BETA1)
+@Version(Constants.V1BETA2)
 @Group(Constants.STRIMZI_GROUP)
 @Deprecated
 @DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.connect.build.Build.class)

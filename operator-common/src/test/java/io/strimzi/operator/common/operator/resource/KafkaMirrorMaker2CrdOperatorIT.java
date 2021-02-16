@@ -47,7 +47,6 @@ public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperat
     @Override
     protected KafkaMirrorMaker2 getResource(String resourceName) {
         return new KafkaMirrorMaker2Builder()
-                .withApiVersion(KafkaMirrorMaker2.RESOURCE_GROUP + "/" + KafkaMirrorMaker2.V1ALPHA1)
                 .withNewMetadata()
                     .withName(resourceName)
                     .withNamespace(getNamespace())
