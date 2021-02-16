@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.api.model.networking.v1.IngressList;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.IngressList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -15,20 +15,20 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Ingress}es.
  */
-public class IngressOperator extends AbstractResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
+public class IngressV1Beta1Operator extends AbstractResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
 
     /**
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public IngressOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Ingress");
+    public IngressV1Beta1Operator(Vertx vertx, KubernetesClient client) {
+        super(vertx, client, "v1beta1.Ingress");
     }
 
     @Override
     protected MixedOperation<Ingress, IngressList, Resource<Ingress>> operation() {
-        return client.network().v1().ingresses();
+        return client.network().v1beta1().ingresses();
     }
 
     /**

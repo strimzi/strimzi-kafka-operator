@@ -62,8 +62,8 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     }
 
     @Description("Configures the `Ingress` class that defines which `Ingress` controller will be used. " +
-            "If not set, the `Ingress` class is set to `nginx`. " +
-            "This field can be used only with `ingress` type listener.")
+            "This field can be used only with `ingress` type listener. " +
+            "If not specified, the default Ingress controller will be used.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("class")
     public String getIngressClass() {

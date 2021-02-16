@@ -248,6 +248,15 @@ public class PlatformFeaturesAvailability {
         return hasBuilds() && hasApps() && hasImages();
     }
 
+    /**
+     * Returns true when the Kubernetes cluster has V1 version of the Ingress resource (Kubernetes 1.19 and newer)
+     *
+     * @return True when Ingress V1 is supported. False otherwise.
+     */
+    public boolean hasIngressV1() {
+        return this.kubernetesVersion.compareTo(KubernetesVersion.V1_19) >= 0;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +

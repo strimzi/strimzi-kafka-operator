@@ -579,9 +579,10 @@ spec:
                             class:
                               type: string
                               description: Configures the `Ingress` class that defines
-                                which `Ingress` controller will be used. If not set,
-                                the `Ingress` class is set to `nginx`. This field
-                                can be used only with `ingress` type listener.
+                                which `Ingress` controller will be used. This field
+                                can be used only with `ingress` type listener. If
+                                not specified, the default Ingress controller will
+                                be used.
                             preferredNodePortAddressType:
                               type: string
                               enum:
@@ -1402,8 +1403,7 @@ spec:
                           class:
                             type: string
                             description: Configures the `Ingress` class that defines
-                              which `Ingress` controller will be used. If not set,
-                              the `Ingress` class is set to `nginx`.
+                              which `Ingress` controller will be used.
                           configuration:
                             type: object
                             properties:
