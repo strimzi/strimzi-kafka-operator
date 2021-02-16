@@ -6,15 +6,31 @@
 [id='assembly-upgrade-{context}']
 = Upgrading Strimzi
 
-Strimzi can be upgraded with no cluster downtime.
+Strimzi can be upgraded from a lower version to a higher version to take advantage of new features and enhancements, performance improvements, and security options.
+
+As part of the upgrade, you upgrade Kafka to a higher supported version. 
+Each Kafka release introduces new features, improvements, and bug fixes.
+
+.Downtime and availability
+
+If topics are configured for high availability, upgrading Strimzi should not cause any downtime for consumers and producers that publish and read data from those topics. 
+Highly available topics have a replication factor of at least 3 and partitions distributed evenly among the brokers.
+
+Upgrading Strimzi triggers rolling updates, where all brokers are restarted in turn, at different stages of the process. 
+During rolling updates, not all brokers are online, so overall _cluster availability_ is temporarily reduced.  
+A reduction in cluster availability increases the chance that a broker failure will result in lost messages.
+
+.Kafka version compatibility
+
 Each version of Strimzi supports one or more versions of Apache Kafka.
 You can upgrade to a higher Kafka version as long as it is supported by your version of Strimzi.
 In some cases, you can also downgrade to a lower supported Kafka version.
 
 Newer versions of Strimzi may support newer versions of Kafka, but you need to upgrade Strimzi _before_ you can upgrade to a higher supported Kafka version.
 
-IMPORTANT: If applicable, xref:assembly-upgrade-resources-{context}[Resource upgrades] _must_ be performed after upgrading Strimzi and Kafka.
-
 include::assembly-upgrade-kafka.adoc[leveloffset=+1]
 
 include::assembly-upgrade-resources.adoc[leveloffset=+1]
+
+//how to upgrade clients and kafka streams to use the incremental cooperative rebalance protocol
+include::modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]

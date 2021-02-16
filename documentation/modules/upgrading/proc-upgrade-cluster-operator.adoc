@@ -21,7 +21,7 @@ Any changes will be *overwritten* by the new version of the Cluster Operator.
 
 . Update the Cluster Operator.
 
-.. Modify the installation files for the new version according to the namespace the Cluster Operator is running in.
+.. Modify the installation files for the new Cluster Operator version according to the namespace the Cluster Operator is running in.
 +
 include::snip-cluster-operator-namespace-sed.adoc[]
 +
@@ -41,15 +41,16 @@ Wait for the rolling updates to complete.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl get pod my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
+kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the new Strimzi version followed by the Kafka version. For example, `_NEW-STRIMZI-VERSION_-kafka-_CURRENT-KAFKA-VERSION_`.
-
-. Update existing resources to handle deprecated custom resource properties.
+The image tag shows the new Strimzi version and the new Kafka version. For example: 
 +
-* xref:assembly-upgrade-resources-{context}[Strimzi resource upgrades]
+[source,shell,subs="+quotes,attributes"]
+----
+{ExampleImageTagUpgrades}
+----
 
-Your Cluster Operator was upgraded to the later version., but the version of Kafka running in the cluster it manages is unchanged.
+Your Cluster Operator was upgraded to the later version, but the version of Kafka running in the cluster it manages is unchanged.
 
-Following the Cluster Operator upgrade, you can perform a xref:assembly-upgrading-kafka-versions-str[Kafka upgrade].
+Following the Cluster Operator upgrade, you must perform a xref:assembly-upgrading-kafka-versions-str[Kafka upgrade].

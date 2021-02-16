@@ -1,12 +1,12 @@
 // Module included in the following assemblies:
 //
-// upgrade/assembly_upgrade-kafka-versions.adoc
+// upgrade/assembly-upgrade-kafka.adoc
 
 [id='con-strategies-for-upgrading-clients-{context}']
 
 = Strategies for upgrading clients
 
-The best approach to upgrading your client applications (including Kafka Connect connectors) depends on your particular circumstances.
+The right approach to upgrading your client applications (including Kafka Connect connectors) depends on your particular circumstances.
 
 Consuming applications need to receive messages in a message format that they understand. You can ensure that this is the case in one of two ways:
 

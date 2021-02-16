@@ -12,6 +12,9 @@
 :linkattrs:
 :toclevels: 3
 
+//Latest Strimzi version
+:ProductVersion: 0.21.1
+
 // Kubernetes and OpenShift versions
 :OpenShiftVersion: 4.3 and later
 :KubernetesVersion: 1.16 and later
@@ -20,10 +23,13 @@
 :DefaultKafkaVersion: 2.7.0
 :KafkaVersionLower: 2.6.0
 :KafkaVersionHigher: 2.7.0
+:ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
-//log message format version
+//log message format version and inter-broker protocol version
 :LogMsgVersLower: 2.6
 :LogMsgVersHigher: 2.7
+:InterBrokVersLower: 2.6
+:InterBrokVersHigher: 2.7
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
@@ -95,6 +101,7 @@
 :ExternalListeners: link:https://strimzi.io/2019/04/17/accessing-kafka-part-1.html[Accessing Apache Kafka in Strimzi^]
 :OperatorHub: link:https://operatorhub.io/[OperatorHub.io^]
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
+:OLMOperatorDocs: link:https://olm.operatorframework.io/docs/[Operator Lifecycle Manager documentation^]
 :OpenTracingHome: link:https://opentracing.io/[OpenTracing^]
 :OpenTelemetryHome: link:https://opentelemetry.io/[OpenTelemetry^]
 :JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
@@ -102,7 +109,6 @@
 :OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 :external-cors-link: https://www.w3.org/TR/cors/
-
 
 // Container image names and repositories
 :DockerOrg: quay.io/strimzi
@@ -161,9 +167,6 @@
 :ChartName: strimzi-kafka-operator
 :ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
 :ChartRepositoryUrl: https://strimzi.io/charts/
-
-//Latest Strimzi version
-:ProductVersion: 0.21.1
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
