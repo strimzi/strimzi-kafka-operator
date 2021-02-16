@@ -31,7 +31,7 @@ The properties you can configure are shown in this example configuration:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

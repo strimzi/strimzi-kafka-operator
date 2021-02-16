@@ -13,7 +13,7 @@ For the origins, you can use a URL or a Java regular expression.
 .Example Kafka Bridge HTTP configuration
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

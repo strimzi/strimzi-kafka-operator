@@ -83,7 +83,7 @@ In this example, the default storage class is named `my-storage-class`:
 .Example Strimzi cluster using storage class overrides
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 metadata:
   labels:

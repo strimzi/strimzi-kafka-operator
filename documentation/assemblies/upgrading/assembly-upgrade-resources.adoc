@@ -5,7 +5,20 @@
 [id='assembly-upgrade-resources-{context}']
 = Strimzi resource upgrades
 
-The `{KafkaApiVersionPrev}` API version is deprecated for the following Strimzi resources:
+The `v1alpha1` API version is deprecated for the following Strimzi resources:
+
+* `Kafka`
+* `KafkaConnect`
+* `KafkaConnectS2I`
+* `KafkaConnector`
+* `KafkaMirrorMaker`
+* `KafkaMirrorMaker2`
+* `KafkaTopic`
+* `KafkaUser`
+* `KafkaBridge`
+* `KafkaRebalance`
+
+The `v1beta1` API version is deprecated for the following Strimzi resources:
 
 * `Kafka`
 * `KafkaConnect`

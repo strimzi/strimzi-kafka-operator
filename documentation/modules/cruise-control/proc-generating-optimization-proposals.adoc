@@ -23,7 +23,7 @@ Analyze the information in the optimization proposal and decide whether to appro
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaRebalanceApiVersion}
 kind: KafkaRebalance
 metadata:
   name: my-rebalance
@@ -38,7 +38,7 @@ In the following example, rack awareness and replica capacity are configured as 
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaRebalanceApiVersion}
 kind: KafkaRebalance
 metadata:
   name: my-rebalance
@@ -54,7 +54,7 @@ spec:
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaRebalanceApiVersion}
 kind: KafkaRebalance
 metadata:
   name: my-rebalance

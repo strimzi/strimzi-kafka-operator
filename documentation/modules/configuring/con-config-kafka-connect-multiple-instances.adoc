@@ -9,7 +9,7 @@ If you are running multiple instances of Kafka Connect, you have to change the d
 
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect

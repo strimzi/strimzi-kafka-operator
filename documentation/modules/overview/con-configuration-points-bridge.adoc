@@ -28,7 +28,7 @@ CORS allows for _simple_ and _preflighted_ requests between origin sources on di
 == Example YAML showing Kafka Bridge configuration
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

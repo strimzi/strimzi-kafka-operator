@@ -27,7 +27,7 @@ For client connection using a specific _cipher suite_ for a TLS version, you can
 .Example Kafka Bridge producer configuration
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

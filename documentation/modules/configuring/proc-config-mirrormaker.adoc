@@ -25,7 +25,7 @@ The properties you can configure are shown in this example configuration:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaMirrorMakerApiVersion}
 kind: KafkaMirrorMaker
 metadata:
   name: my-mirror-maker

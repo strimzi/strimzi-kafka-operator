@@ -31,7 +31,7 @@ To mount a value from a Secret to an environment variable, use the `valueFrom` p
 .Example environment variables set to values from a Secret
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect
@@ -58,7 +58,7 @@ To mount a value from a ConfigMap to an environment variable, use `configMapKeyR
 .Example environment variables set to values from a ConfigMap
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect
@@ -107,7 +107,7 @@ and will read and extract database _username_ and _password_ property values fro
 .Example external volumes set to values from a Secret
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect
