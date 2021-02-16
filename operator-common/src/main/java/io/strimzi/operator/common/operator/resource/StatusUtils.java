@@ -105,14 +105,16 @@ public class StatusUtils {
         Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
         conditionList.add(condition);
 
-        status.getConditions().forEach(cond -> {
-            if ("UnknownFields".equals(cond.getReason()) || "DeprecatedFields".equals(cond.getReason())) {
-                if (!conditionAlreadyPresent(conditionList, cond)) {
-                    cond.setLastTransitionTime(iso8601Now());
-                    conditionList.add(cond);
+        if (status.getConditions() != null) {
+            status.getConditions().forEach(cond -> {
+                if ("UnknownFields".equals(cond.getReason()) || "DeprecatedFields".equals(cond.getReason()) || "DeprecatedObjects".equals(cond.getReason())) {
+                    if (!conditionAlreadyPresent(conditionList, cond)) {
+                        cond.setLastTransitionTime(iso8601Now());
+                        conditionList.add(cond);
+                    }
                 }
-            }
-        });
+            });
+        }
         status.setConditions(new ArrayList<>(conditionList));
     }
 
