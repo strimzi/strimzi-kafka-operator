@@ -68,7 +68,7 @@ public class Crds {
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls) {
         String version = null;
         if (cls.equals(Kafka.class)) {
-            version = Kafka.CONSUMED_VERSION;
+            version = KafkaConnect.VERSIONS.get(0);
         } else if (cls.equals(KafkaConnect.class)) {
             version = KafkaConnect.VERSIONS.get(0);
         } else if (cls.equals(KafkaConnectS2I.class)) {
