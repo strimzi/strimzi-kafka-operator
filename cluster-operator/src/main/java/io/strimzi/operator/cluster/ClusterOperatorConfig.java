@@ -345,8 +345,7 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * Parse labels from String into the Labels format. This is used to parse the custom resource labels and the
-     * namespace labels.
+     * Parse labels from String into the Labels format.
      *
      * @param vars              Map with configuration variables
      * @param configurationKey  Key containing the string with labels
