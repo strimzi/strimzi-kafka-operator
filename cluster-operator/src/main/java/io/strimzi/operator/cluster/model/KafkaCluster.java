@@ -27,14 +27,14 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPath;
-import io.fabric8.kubernetes.api.model.extensions.HTTPIngressPathBuilder;
-import io.fabric8.kubernetes.api.model.extensions.Ingress;
-import io.fabric8.kubernetes.api.model.extensions.IngressBuilder;
-import io.fabric8.kubernetes.api.model.extensions.IngressRule;
-import io.fabric8.kubernetes.api.model.extensions.IngressRuleBuilder;
-import io.fabric8.kubernetes.api.model.extensions.IngressTLS;
-import io.fabric8.kubernetes.api.model.extensions.IngressTLSBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.HTTPIngressPath;
+import io.fabric8.kubernetes.api.model.networking.v1.HTTPIngressPathBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressRule;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressRuleBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressTLS;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressTLSBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
@@ -1054,14 +1054,18 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             String host = ListenersUtils.bootstrapHost(listener);
-            Map<String, String> dnsAnnotations = ListenersUtils.bootstrapAnnotations(listener);
             String ingressClass = ListenersUtils.ingressClass(listener);
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()
                     .withPath("/")
+                    .withNewPathType("Prefix")
                     .withNewBackend()
-                        .withNewServicePort(listener.getPort())
-                        .withServiceName(serviceName)
+                        .withNewService()
+                            .withNewName(serviceName)
+                            .withNewPort()
+                                .withNumber(listener.getPort())
+                            .endPort()
+                        .endService()
                     .endBackend()
                     .build();
 
@@ -1080,11 +1084,68 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(ingressName)
                         .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templateExternalBootstrapIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
                     .withNewSpec()
+                        .withIngressClassName(ingressClass)
+                        .withRules(rule)
+                        .withTls(tls)
+                    .endSpec()
+                    .build();
+
+            ingresses.add(ingress);
+        }
+
+        return ingresses;
+    }
+
+    /**
+     * Generates a list of bootstrap ingress which can be used to bootstrap clients outside of Kubernetes.
+     *
+     * @return The list of generated Ingresses
+     */
+    public List<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> generateExternalBootstrapIngressesV1Beta1() {
+        List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(listeners);
+        List<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingresses = new ArrayList<>(ingressListeners.size());
+
+        for (GenericKafkaListener listener : ingressListeners)   {
+            String ingressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(cluster, listener);
+            String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
+
+            String host = ListenersUtils.bootstrapHost(listener);
+            String ingressClass = ListenersUtils.ingressClass(listener);
+
+            io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressPath path = new io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressPathBuilder()
+                    .withPath("/")
+                    .withNewBackend()
+                        .withNewServicePort(listener.getPort())
+                        .withServiceName(serviceName)
+                    .endBackend()
+                    .build();
+
+            io.fabric8.kubernetes.api.model.networking.v1beta1.IngressRule rule = new io.fabric8.kubernetes.api.model.networking.v1beta1.IngressRuleBuilder()
+                    .withHost(host)
+                    .withNewHttp()
+                        .withPaths(path)
+                    .endHttp()
+                    .build();
+
+            io.fabric8.kubernetes.api.model.networking.v1beta1.IngressTLS tls = new io.fabric8.kubernetes.api.model.networking.v1beta1.IngressTLSBuilder()
+                    .withHosts(host)
+                    .build();
+
+            io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingress = new io.fabric8.kubernetes.api.model.networking.v1beta1.IngressBuilder()
+                    .withNewMetadata()
+                        .withName(ingressName)
+                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
+                    .endMetadata()
+                    .withNewSpec()
+                        .withIngressClassName(ingressClass)
                         .withRules(rule)
                         .withTls(tls)
                     .endSpec()
@@ -1109,14 +1170,18 @@ public class KafkaCluster extends AbstractModel {
         for (GenericKafkaListener listener : ingressListeners)   {
             String ingressName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
             String host = ListenersUtils.brokerHost(listener, pod);
-            Map<String, String> dnsAnnotations = ListenersUtils.brokerAnnotations(listener, pod);
             String ingressClass = ListenersUtils.ingressClass(listener);
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()
                     .withPath("/")
+                    .withNewPathType("Prefix")
                     .withNewBackend()
-                        .withNewServicePort(listener.getPort())
-                        .withServiceName(ingressName)
+                        .withNewService()
+                            .withNewName(ingressName)
+                            .withNewPort()
+                                .withNumber(listener.getPort())
+                            .endPort()
+                        .endService()
                     .endBackend()
                     .build();
 
@@ -1135,11 +1200,67 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(ingressName)
                         .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templatePerPodIngressAnnotations, dnsAnnotations))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
                     .withNewSpec()
+                        .withIngressClassName(ingressClass)
+                        .withRules(rule)
+                        .withTls(tls)
+                    .endSpec()
+                    .build();
+
+            ingresses.add(ingress);
+        }
+
+        return ingresses;
+    }
+
+    /**
+     * Generates list of ingress for pod. This ingress is used for exposing it externally using Nginx Ingress.
+     *
+     * @param pod Number of the pod for which this ingress should be generated
+     * @return The list of generated Ingresses
+     */
+    public List<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> generateExternalIngressesV1Beta1(int pod) {
+        List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(listeners);
+        List<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingresses = new ArrayList<>(ingressListeners.size());
+
+        for (GenericKafkaListener listener : ingressListeners)   {
+            String ingressName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
+            String host = ListenersUtils.brokerHost(listener, pod);
+            String ingressClass = ListenersUtils.ingressClass(listener);
+
+            io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressPath path = new io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressPathBuilder()
+                    .withPath("/")
+                    .withNewBackend()
+                        .withNewServicePort(listener.getPort())
+                        .withServiceName(ingressName)
+                    .endBackend()
+                    .build();
+
+            io.fabric8.kubernetes.api.model.networking.v1beta1.IngressRule rule = new io.fabric8.kubernetes.api.model.networking.v1beta1.IngressRuleBuilder()
+                    .withHost(host)
+                    .withNewHttp()
+                        .withPaths(path)
+                    .endHttp()
+                    .build();
+
+            io.fabric8.kubernetes.api.model.networking.v1beta1.IngressTLS tls = new io.fabric8.kubernetes.api.model.networking.v1beta1.IngressTLSBuilder()
+                    .withHosts(host)
+                    .build();
+
+            io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingress = new io.fabric8.kubernetes.api.model.networking.v1beta1.IngressBuilder()
+                    .withNewMetadata()
+                        .withName(ingressName)
+                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
+                        .withNamespace(namespace)
+                        .withOwnerReferences(createOwnerReference())
+                    .endMetadata()
+                    .withNewSpec()
+                        .withIngressClassName(ingressClass)
                         .withRules(rule)
                         .withTls(tls)
                     .endSpec()
@@ -1160,7 +1281,9 @@ public class KafkaCluster extends AbstractModel {
     private Map<String, String> generateInternalIngressAnnotations(String ingressClass) {
         Map<String, String> internalAnnotations = new HashMap<>(4);
 
-        internalAnnotations.put("kubernetes.io/ingress.class", ingressClass != null ? ingressClass : "nginx");
+        if (ingressClass != null) {
+            internalAnnotations.put("kubernetes.io/ingress.class", ingressClass);
+        }
 
         internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
         internalAnnotations.put("nginx.ingress.kubernetes.io/ssl-passthrough", "true");

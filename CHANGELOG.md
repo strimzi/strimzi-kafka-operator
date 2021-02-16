@@ -10,9 +10,14 @@
 * Fix Cruise Control crash loop when updating container configurations
 * Configure external logging `ConfigMap` name and key.
 * Add support for configuring labels and annotations in ClusterRoleBindings created as part of Kafka and Kafka Connect clusters
+* Add support for Ingress v1 in Kubernetes 1.19 and newer
 
-### Deprecations and removals
+### Changes, deprecations and removals
 
+* In the past, when no Ingress class was specified in the Ingress-type listener in the Kafka custom resource, the 
+  `kubernetes.io/ingress.class` annotation was automatically set to `nginx`. Because of the support for the new 
+  IngressClass resource and the new `ingressClassName` field in the Ingress resource, the default value will not be set 
+  anymore. Please use the `class` field in `.spec.kafka.listeners[].configuration` to specify the class name. 
 * The `KafkaConnectS2I` custom resource is deprecated and will be removed in the future. You can use the new [`KafkaConnect` build feature](https://strimzi.io/docs/operators/latest/full/deploying.html#creating-new-image-using-kafka-connect-build-str) instead.
 * Removed support for Helm2 charts as that version is now unsupported. There is no longer the need for separate `helm2` and `helm3` binaries, only `helm` (version 3) is required.
 * The following annotations are deprecated for a long time and will be removed in 0.23.0:

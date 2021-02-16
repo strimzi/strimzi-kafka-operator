@@ -37,6 +37,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
+import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -80,6 +81,7 @@ public class ResourceOperatorSupplier {
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     public final PodOperator podOperations;
     public final IngressOperator ingressOperations;
+    public final IngressV1Beta1Operator ingressV1Beta1Operations;
     public final ImageStreamOperator imagesStreamOperations;
     public final BuildConfigOperator buildConfigOperations;
     public final BuildOperator buildOperations;
@@ -120,6 +122,7 @@ public class ResourceOperatorSupplier {
                 new PodDisruptionBudgetOperator(vertx, client),
                 new PodOperator(vertx, client),
                 new IngressOperator(vertx, client),
+                new IngressV1Beta1Operator(vertx, client),
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
@@ -155,6 +158,7 @@ public class ResourceOperatorSupplier {
                                     PodDisruptionBudgetOperator podDisruptionBudgetOperator,
                                     PodOperator podOperations,
                                     IngressOperator ingressOperations,
+                                    IngressV1Beta1Operator ingressV1Beta1Operations,
                                     ImageStreamOperator imagesStreamOperations,
                                     BuildConfigOperator buildConfigOperations,
                                     BuildOperator buildOperations,
@@ -189,6 +193,7 @@ public class ResourceOperatorSupplier {
         this.kafkaOperator = kafkaOperator;
         this.podOperations = podOperations;
         this.ingressOperations = ingressOperations;
+        this.ingressV1Beta1Operations = ingressV1Beta1Operations;
         this.imagesStreamOperations = imagesStreamOperations;
         this.buildConfigOperations = buildConfigOperations;
         this.buildOperations = buildOperations;

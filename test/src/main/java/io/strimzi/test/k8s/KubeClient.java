@@ -23,7 +23,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobList;
-import io.fabric8.kubernetes.api.model.extensions.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -492,11 +492,11 @@ public class KubeClient {
     // =============================
 
     public Ingress createIngress(Ingress ingress) {
-        return client.extensions().ingresses().inNamespace(getNamespace()).createOrReplace(ingress);
+        return client.network().v1().ingresses().inNamespace(getNamespace()).createOrReplace(ingress);
     }
 
     public Boolean deleteIngress(Ingress ingress) {
-        return client.extensions().ingresses().inNamespace(getNamespace()).delete(ingress);
+        return client.network().v1().ingresses().inNamespace(getNamespace()).delete(ingress);
     }
 
     // =============================

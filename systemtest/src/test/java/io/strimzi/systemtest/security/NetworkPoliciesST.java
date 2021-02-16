@@ -92,6 +92,8 @@ public class NetworkPoliciesST extends AbstractST {
             .endSpec()
             .build());
 
+        KubernetesResource.allowNetworkPolicySettingsForKafkaExporter(clusterName);
+
         String topic0 = "topic-example-0";
         String topic1 = "topic-example-1";
 

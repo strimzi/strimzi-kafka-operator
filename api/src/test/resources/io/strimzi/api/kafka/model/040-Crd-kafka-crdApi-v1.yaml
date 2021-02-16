@@ -276,6 +276,12 @@ spec:
                                 OAuth client secret which the Kafka broker can use
                                 to authenticate against the authorization server and
                                 use the introspect endpoint URI.
+                            customClaimCheck:
+                              type: string
+                              description: JsonPath filter query to be applied to
+                                the JWT token or to the response of the introspection
+                                endpoint for additional token validation. Not set
+                                by default.
                             disableTlsHostnameVerification:
                               type: boolean
                               description: Enable or disable TLS hostname verification.
@@ -576,9 +582,10 @@ spec:
                             class:
                               type: string
                               description: Configures the `Ingress` class that defines
-                                which `Ingress` controller will be used. If not set,
-                                the `Ingress` class is set to `nginx`. This field
-                                can be used only with `ingress` type listener.
+                                which `Ingress` controller will be used. This field
+                                can be used only with `ingress` type listener. If
+                                not specified, the default Ingress controller will
+                                be used.
                             preferredNodePortAddressType:
                               type: string
                               enum:

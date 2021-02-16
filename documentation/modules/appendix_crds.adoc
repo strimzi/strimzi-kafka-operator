@@ -283,6 +283,8 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |clientSecret                       1.2+<.<|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|customClaimCheck                   1.2+<.<|JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
+|string
 |disableTlsHostnameVerification     1.2+<.<|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
 |enableECDSA                        1.2+<.<|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
@@ -379,7 +381,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |xref:type-GenericKafkaListenerConfigurationBootstrap-{context}[`GenericKafkaListenerConfigurationBootstrap`]
 |brokers                       1.2+<.<|Per-broker configurations.
 |xref:type-GenericKafkaListenerConfigurationBroker-{context}[`GenericKafkaListenerConfigurationBroker`] array
-|class                         1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`. This field can be used only with `ingress` type listener.
+|class                         1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used.
 |string
 |preferredNodePortAddressType  1.2+<.<|Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
 * `ExternalDNS`
@@ -829,7 +831,7 @@ It must have the value `ingress` for the type `KafkaListenerExternalIngress`.
 |string
 |authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
 |xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-|class               1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`.
+|class               1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used.
 |string
 |configuration       1.2+<.<|External listener configuration.
 |xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]

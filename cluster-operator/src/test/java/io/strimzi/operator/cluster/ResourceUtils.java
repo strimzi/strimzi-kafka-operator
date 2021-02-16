@@ -80,6 +80,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
+import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -751,6 +752,7 @@ public class ResourceUtils {
                 mock(PodDisruptionBudgetOperator.class),
                 mock(PodOperator.class),
                 mock(IngressOperator.class),
+                mock(IngressV1Beta1Operator.class),
                 mock(ImageStreamOperator.class),
                 mock(BuildConfigOperator.class),
                 mock(BuildOperator.class),
