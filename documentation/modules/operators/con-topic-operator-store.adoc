@@ -50,7 +50,7 @@ The command must correspond to the type of listener and authentication used to a
 
 The Topic Operator will reconstruct the Zookeeper topic metadata from the state of the topics in Kafka.
 
-== Scaling and Topic Operator topics
+== Topic Operator topic replication and scaling
 
 The recommended configuration for the Topic Operator topics is to have a topic replication factor of 3, and a minimum of 2 in-sync replicas.
 
@@ -74,7 +74,7 @@ spec:
 
 NOTE: In-sync replicas are used in conjunction with the `acks` configuration for a producer application.
 The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
-The Topic Operator runs with `acks=all` by default, whereby messages must be acknowledged by all in-sync replicas.
+The Topic Operator runs with `acks=all`, whereby messages must be acknowledged by all in-sync replicas.
 
 When scaling Kafka clusters by adding or removing brokers, replication factor configuration is not changed and replicas are not reassigned automatically.
 However, you can use the `kafka-reassign-partitions.sh` tool to change the replication factor, and manually reassign replicas to brokers.
