@@ -2,7 +2,7 @@
 
 NAMESPACE=$1
 
-KEYCLOAK_VERSION=12.0.1
+KEYCLOAK_VERSION=11.0.3
 
 SCRIPT_PATH=$(dirname "${BASH_SOURCE[0]}")
 
@@ -28,7 +28,7 @@ kubectl apply -n ${NAMESPACE} -f https://github.com/keycloak/keycloak-operator/r
 
 # This is needed to avoid race condition when pods are not created yet before waiting for pods condition
 PODS=$(kubectl get pods -n ${NAMESPACE})
-RETRY=10
+RETRY=12
 while [[ ${PODS} != *"keycloak-0"* && ${RETRY} -gt 0 ]]
 do
 	echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") keycloak-0 does not exists! Going to check it in 5 seconds (${RETRY})"
