@@ -9,10 +9,15 @@ TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td2
 RETRY=10
 while [[ ${TOKEN} == *"invalid_grant"* && ${RETRY} -gt 0 ]]
 do
-	printf "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Token wasn't granted! Retry in 2 sec (%s)\n" ${RETRY}
+	echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Token wasn't granted! Retry in 2 sec (${RETRY})\n"
 	sleep 2
+
+	PASSWORD=$(kubectl get secret -n ${NAMESPACE} credential-example-keycloak -o=jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d)
+	USERNAME=$(kubectl get secret -n ${NAMESPACE} credential-example-keycloak -o=jsonpath='{.data.ADMIN_USERNAME}' | base64 -d)
+	echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Credentials - USER:${USERNAME} - PASS:${PASSWORD}"
+
 	TMP_CURL=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token")
-	printf "[INFO] CURL OUTPUT: %s\n" ${TMP_CURL}
+	echo "[INFO] CURL OUTPUT: ${TMP_CURL}\n"
 	TOKEN=$(echo ${TMP_CURL} | awk -F '\"' '{print $4}')
 	((RETRY-=1))
 done
