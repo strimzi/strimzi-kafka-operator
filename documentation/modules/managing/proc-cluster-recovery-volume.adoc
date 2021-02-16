@@ -17,7 +17,7 @@ The `KafkaTopic` resources must therefore be recovered before the cluster is sta
 
 . Use _Option 2_ when you are unable to recover all `KafkaTopic` resources.
 +
-This time you deploy your cluster without the Topic Operator, delete the Topic Operator data in ZooKeeper, and then redeploy it so that the Topic Operator can recreate the `KafkaTopic` resources from the corresponding topics.
+This time you deploy your cluster without the Topic Operator, delete the Topic Operator topic store metadata, and then redeploy it so that the Topic Operator can recreate the `KafkaTopic` resources from the corresponding topics.
 
 NOTE: If the Topic Operator is not deployed, you only need to recover the `PersistentVolumeClaim` (PVC) resources.
 
@@ -193,14 +193,14 @@ kubectl apply -f _kafka.yaml_
 +
 If you include the Topic Operator in the deployment, the Topic Operator will delete all the topics.
 
-. Delete the internal topic store topics from the Kafka cluster.
-+
-For example, where _my-cluster-kafka-0_ is the name of the broker pod:
+. Delete the internal topic store topics from the Kafka cluster:
 +
 [source,shell]
 ----
-kubectl exec -ti my-cluster-kafka-0 -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
+kubectl -n kafka run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
 ----
++
+The command must correspond to the type of listener and authentication used to access the Kafka cluster.
 
 . Enable the Topic Operator by redeploying the Kafka cluster with the `topicOperator` property to recreate the `KafkaTopic` resources.
 +

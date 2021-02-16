@@ -6,14 +6,14 @@
 = Topic Operator topic store
 
 [role="_abstract"]
-The Topic Operator uses persistent storage to store topic metadata describing topic configuration as key-value pairs.
-The _topic store_ is based on the Kafka Streams key-value mechanism, which uses persistent storage with local and remote components.
+The Topic Operator uses Kafka to store topic metadata describing topic configuration as key-value pairs.
+The _topic store_ is based on the Kafka Streams key-value mechanism, which uses Kafka topics to persist the state.
 
-Topic metadata is stored and accessed locally in-memory.
-Updates from operations applied to the local in-memory topic store are persisted to a backup topic store on disk.
+Topic metadata is cached in-memory and accessed locally.
+Updates from operations applied to the local in-memory cache are persisted to a backup topic store on disk.
 The topic store is continually synchronized with updates from Kafka topics or Kubernetes `KafkaTopic` custom resources.
 Operations are handled rapidly with the topic store set up this way,
-but should the in-memory topic store crash it is automatically repopulated from the persistent storage.
+but should the in-memory cache crash it is automatically repopulated from the persistent storage.
 
 == Internal topic store topics
 
@@ -21,6 +21,8 @@ Internal topics support the handling of topic metadata.
 
 `__strimzi_store_topic`:: Input topic for storing the topic metadata
 `__strimzi-topic-operator-kstreams-topic-store-changelog`:: Retains a log of compacted topic store values
+
+IMPORTANT: Do not delete these topics, as they are essential to the running of the Topic Operator.
 
 == Migrating topic metadata from ZooKeeper
 
@@ -36,22 +38,21 @@ If you are reverting back to a version of Strimzi that uses ZooKeeper for the st
 you downgrade your Cluster Operator to the previous version,
 then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
 
-Additionally, you must delete the topics created for the topic store using an `exec` command, specifying the bootstrap address of the Kafka cluster and the name of a broker pod.
-For example, where `my-cluster-kafka-0` is the name of the broker pod:
+Additionally, you must delete the topics created for the topic store using a `kafka-admin` command, specifying the bootstrap address of the Kafka cluster and the name of a broker pod.
+For example:
 
 [source,shell]
 ----
-kubectl exec -ti my-cluster-kafka-0 -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
+kubectl -n kafka run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
 ----
+
+The command must correspond to the type of listener and authentication used to access the Kafka cluster.
 
 The Topic Operator will reconstruct the Zookeeper topic metadata from the state of the topics in Kafka.
 
-NOTE: When scaling a Kafka cluster, the topic store topics must also be deleted so that partitions can be reassigned.
+== Scaling and Topic Operator topics
 
-== Scaling and topics
-
-The recommended configuration for topics is to have a topic replication factor of 3, so that there are 2 in-sync replicas on other brokers.
-If a broker is unavailable, at least one other broker is in-sync.
+The recommended configuration for the Topic Operator topics is to have a topic replication factor of 3, and a minimum of 2 in-sync replicas.
 
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -73,11 +74,12 @@ spec:
 
 NOTE: In-sync replicas are used in conjunction with the `acks` configuration for a producer application.
 The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
+The Topic Operator runs with `acks=all` by default, whereby messages must be acknowledged by all in-sync replicas.
 
-When scaling Kafka clusters by adding or removing brokers, replicas are not reassigned automatically.
+When scaling Kafka clusters by adding or removing brokers, replication factor configuration is not changed and replicas are not reassigned automatically.
 However, you can use the `kafka-reassign-partitions.sh` tool to change the replication factor, and manually reassign replicas to brokers.
 
-Alternatively, though Cruise Control cannot change the replication factor for topics,
+Alternatively, though the integration of Cruise Control for Strimzi cannot change the replication factor for topics,
 the optimization proposals it generates for rebalancing Kafka include commands that transfer partition replicas and change partition leadership.
 
 == Handling changes to topics
