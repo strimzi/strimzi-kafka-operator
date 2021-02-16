@@ -71,7 +71,7 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
     @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.entityOperator.template.pod.affinity")
+    @DeprecatedProperty(movedToPath = "spec.entityOperator.template.pod.affinity", removalVersion = "v1beta2")
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     public Affinity getAffinity() {
@@ -86,7 +86,7 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
     @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @DeprecatedProperty(movedToPath = "spec.entityOperator.template.pod.tolerations")
+    @DeprecatedProperty(movedToPath = "spec.entityOperator.template.pod.tolerations", removalVersion = "v1beta2")
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     public List<Toleration> getTolerations() {

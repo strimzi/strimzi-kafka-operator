@@ -56,7 +56,7 @@ public class ExternalServiceTemplate implements Serializable, UnknownPropertyPre
             "`Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). " +
             "If unspecified, Kubernetes will use `Cluster` as the default.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @DeprecatedProperty(movedToPath = "spec.kafka.listeners[].configuration")
+    @DeprecatedProperty(movedToPath = "spec.kafka.listeners[].configuration", removalVersion = "v1beta2")
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     public ExternalTrafficPolicy getExternalTrafficPolicy() {
@@ -72,7 +72,7 @@ public class ExternalServiceTemplate implements Serializable, UnknownPropertyPre
             "This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. " +
             "For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. ")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @DeprecatedProperty(movedToPath = "spec.kafka.listeners[].configuration")
+    @DeprecatedProperty(movedToPath = "spec.kafka.listeners[].configuration", removalVersion = "v1beta2")
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     public List<String> getLoadBalancerSourceRanges() {

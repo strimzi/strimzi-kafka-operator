@@ -67,7 +67,8 @@ public class KafkaSpec extends Spec {
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @DeprecatedProperty(
-            movedToPath = "spec.entityOperator.topicOperator"
+            movedToPath = "spec.entityOperator.topicOperator",
+            removalVersion = "v1beta2"
     )
     @Description("Configuration of the Topic Operator")
     public TopicOperatorSpec getTopicOperator() {

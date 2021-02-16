@@ -17,7 +17,7 @@ import lombok.EqualsAndHashCode;
  * Representation of a Strimzi-managed Topic Operator deployment.
  */
 @Deprecated
-@DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.EntityTopicOperatorSpec.class)
+@DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.EntityTopicOperatorSpec.class, removalVersion = "v1beta2")
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API

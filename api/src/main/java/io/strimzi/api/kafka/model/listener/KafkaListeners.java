@@ -30,7 +30,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({"plain", "tls", "external"})
 @EqualsAndHashCode
 @Deprecated
-@DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener.class)
+@DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener.class, removalVersion = "v1beta2")
 @Description("Refer to link:{BookURLUsingPrevious}[previous documentation] for example configuration.")
 public class KafkaListeners implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
