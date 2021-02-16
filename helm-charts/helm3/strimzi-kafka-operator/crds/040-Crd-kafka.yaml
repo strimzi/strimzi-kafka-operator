@@ -786,47 +786,7 @@ spec:
                                         type: string
                                       value:
                                         type: string
-<<<<<<< HEAD
-                                        description: The name of the Secret containing the certificate.
-                                    required:
-                                      - certificate
-                                      - secretName
-                                  description: Trusted certificates for TLS connection to the OAuth server.
-                                tokenEndpointUri:
-                                  type: string
-                                  description: 'URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. '
-                                type:
-                                  type: string
-                                  enum:
-                                    - tls
-                                    - scram-sha-512
-                                    - oauth
-                                  description: Authentication type. `oauth` type uses SASL OAUTHBEARER Authentication. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `tls` type uses TLS Client Authentication. `tls` type is supported only on TLS listeners.
-                                userInfoEndpointUri:
-                                  type: string
-                                  description: 'URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. '
-                                userNameClaim:
-                                  type: string
-                                  description: Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
-                                validIssuerUri:
-                                  type: string
-                                  description: URI of the token issuer used for authentication.
-                                validTokenType:
-                                  type: string
-                                  description: Valid value for the `token_type` attribute returned by the Introspection Endpoint. No default value, and not checked by default.
-                              required:
-                                - type
-                              description: Authentication configuration for Kafka brokers.
-                            class:
-                              type: string
-                              description: Configures the `Ingress` class that defines which `Ingress` controller will be used.
-                            configuration:
-                              type: object
-                              properties:
-                                bootstrap:
-=======
                                 windowsOptions:
->>>>>>> Add v1beta2 to all CRDs and fix some deprecation issues
                                   type: object
                                   properties:
                                     gmsaCredentialSpec:
@@ -5527,7 +5487,7 @@ spec:
                                     description: Per-broker configurations.
                                   class:
                                     type: string
-                                    description: Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`. This field can be used only with `ingress` type listener.
+                                    description: Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used.
                                   preferredNodePortAddressType:
                                     type: string
                                     enum:
@@ -6082,7 +6042,7 @@ spec:
                                   description: Authentication configuration for Kafka brokers.
                                 class:
                                   type: string
-                                  description: Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`.
+                                  description: Configures the `Ingress` class that defines which `Ingress` controller will be used.
                                 configuration:
                                   type: object
                                   properties:
@@ -12609,7 +12569,7 @@ spec:
                                     description: Per-broker configurations.
                                   class:
                                     type: string
-                                    description: Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`. This field can be used only with `ingress` type listener.
+                                    description: Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used.
                                   preferredNodePortAddressType:
                                     type: string
                                     enum:
@@ -13164,7 +13124,7 @@ spec:
                                   description: Authentication configuration for Kafka brokers.
                                 class:
                                   type: string
-                                  description: Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`.
+                                  description: Configures the `Ingress` class that defines which `Ingress` controller will be used.
                                 configuration:
                                   type: object
                                   properties:
