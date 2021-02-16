@@ -1,6 +1,5 @@
 // Module included in the following assemblies:
-//
-//
+// configuring/assembly-config-mirrormaker2.adoc
 
 [id='proc-manual-restart-mirrormaker2-connector-task-{context}']
 = Performing a restart of a Kafka MirrorMaker 2.0 connector task
@@ -14,19 +13,33 @@ This procedure describes how to manually trigger a restart of a Kafka MirrorMake
 .Procedure
 
 . Find the name of the `KafkaMirrorMaker2` custom resource that controls the Kafka MirrorMaker 2.0 connector you want to restart:
-[source,shell,subs=+quotes]
++
+[source,shell,subs="+quotes"]
+----
 kubectl get KafkaMirrorMaker2
+----
 
-. Find the name of the Kafka MirrorMaker 2.0 connector and the ID of the task to be restarted from the `KafkaMirrorMaker2` custom resource.
-Task IDs are non-negative integers, starting from 0:
-[source,shell,subs=+quotes]
-kubectl describe KafkaMirrorMaker2 _KafkaMirrorMaker2-name_
+. Find the name of the Kafka MirrorMaker 2.0 connector and the ID of the task to be restarted from the `KafkaMirrorMaker2` custom resource. 
+Task IDs are non-negative integers, starting from 0.
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe KafkaMirrorMaker2 _KAFKAMIRRORMAKER-2-NAME_
+----
 
-. To restart the connector task, annotate the `KafkaMirrorMaker2` resource in Kubernetes.
+. To restart the connector task, annotate the `KafkaMirrorMaker2` resource in Kubernetes. 
 For example, using `kubectl annotate` to restart task 0 of the connector named `my-source->my-target.MirrorSourceConnector`:
-[source,shell,subs=+quotes]
-kubectl annotate KafkaMirrorMaker2 _KafkaMirrorMaker2-name_ "strimzi.io/restart-connector-task=my-source->my-target.MirrorSourceConnector:0"
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate KafkaMirrorMaker2 _KAFKAMIRRORMAKER-2-NAME_ "strimzi.io/restart-connector-task=my-source->my-target.MirrorSourceConnector:0"
+----
 
 . Wait for the next reconciliation to occur (every two minutes by default).
-The Kafka MirrorMaker 2.0 connector task is restarted, as long as the annotation was detected by the reconciliation process.
++
+The Kafka MirrorMaker 2.0 connector task is restarted, as long as the annotation was detected by the reconciliation process. 
 When the restart task request is accepted, the annotation is removed from the `KafkaMirrorMaker2` custom resource.
+
+.Additional resources
+
+* xref:assembly-mirrormaker-{context}[Kafka MirrorMaker 2.0 cluster configuration].
