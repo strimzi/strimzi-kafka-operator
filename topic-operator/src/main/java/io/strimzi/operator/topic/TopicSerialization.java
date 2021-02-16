@@ -149,7 +149,7 @@ class TopicSerialization {
                     .build();
         }
 
-        KafkaTopic kt = new KafkaTopicBuilder().withApiVersion(KafkaTopic.RESOURCE_GROUP + "/" + KafkaTopic.V1BETA1)
+        KafkaTopic kt = new KafkaTopicBuilder()
                 .withMetadata(om)
                 // TODO .withUid()
                 .withNewSpec()
