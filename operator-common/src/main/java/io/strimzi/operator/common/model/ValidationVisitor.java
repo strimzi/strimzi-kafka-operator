@@ -83,13 +83,14 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                     propertyName,
                     path(path, propertyName));
             if (!deprecated.movedToPath().isEmpty()) {
-                msg += ", and should now be configured using " + deprecated.movedToPath() + ".";
-            }
-            if (!deprecated.description().isEmpty()) {
-                msg += " " + deprecated.description();
+                msg += ", and should now be configured using " + deprecated.movedToPath() + "";
             }
             if (!deprecated.removalVersion().isEmpty()) {
-                msg += ". This property is scheduled for removal in version " + deprecated.removalVersion() + ".";
+                msg += ". This property is removed in API version " + deprecated.removalVersion();
+            }
+            msg += ".";
+            if (!deprecated.description().isEmpty()) {
+                msg += " " + deprecated.description();
             }
 
             warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", msg, transitionTime));
@@ -107,8 +108,12 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                         propertyName,
                         path(path, propertyName));
                 if (deprecatedType.replacedWithType() != null) {
-                    msg += "This object has been replaced with " + deprecatedType.replacedWithType().getSimpleName() + ".";
+                    msg += "This object has been replaced with " + deprecatedType.replacedWithType().getSimpleName();
                 }
+                if (!deprecatedType.removalVersion().isEmpty()) {
+                    msg += " and is removed in API version " + deprecatedType.removalVersion();
+                }
+                msg += ".";
 
                 warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedObjects", msg, transitionTime));
                 logger.warn("{}: {}", context(), msg);
