@@ -26,7 +26,7 @@ A minimal configuration, with defaults left unchanged, would be something like t
 
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaMirrorMaker2ApiVersion}
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker2
@@ -62,7 +62,7 @@ The properties you can configure are shown in this example configuration:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+apiVersion: {KafkaMirrorMaker2ApiVersion}
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker2

@@ -23,7 +23,7 @@ Perform these steps for each `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConn
 .Jaeger tracer configuration for Kafka Connect
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect-cluster
@@ -46,7 +46,7 @@ spec:
 .Jaeger tracer configuration for MirrorMaker
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaMirrorMakerApiVersion}
 kind: KafkaMirrorMaker
 metadata:
   name: my-mirror-maker
@@ -69,7 +69,7 @@ spec:
 .Jaeger tracer configuration for MirrorMaker 2.0
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaMirrorMaker2ApiVersion}
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mm2-cluster
@@ -92,7 +92,7 @@ spec:
 .Jaeger tracer configuration for the Kafka Bridge
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: my-bridge

@@ -45,7 +45,7 @@ The properties you can configure are shown in this example configuration:
 +
 [source,yaml,subs=attributes+,options="nowrap"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect <1>
 metadata:
   name: my-connect-cluster

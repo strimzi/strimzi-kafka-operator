@@ -13,7 +13,7 @@ Next, produce messages to topics in JSON format by using the link:https://strimz
 +
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: bridge-quickstart-topic

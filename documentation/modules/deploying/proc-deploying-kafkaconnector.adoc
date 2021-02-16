@@ -33,7 +33,7 @@ The `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as ex
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaConnectorApiVersion}
 kind: KafkaConnector
 metadata:
   name: my-source-connector <1>
@@ -74,7 +74,7 @@ touch examples/connect/sink-connector.yaml
 +
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaConnectorApiVersion}
 kind: KafkaConnector
 metadata:
   name: my-sink-connector

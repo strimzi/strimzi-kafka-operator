@@ -9,7 +9,7 @@ A `KafkaUser` resource includes a label that defines the appropriate name of the
 
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaUserApiVersion}
 kind: KafkaUser
 metadata:
   name: my-user

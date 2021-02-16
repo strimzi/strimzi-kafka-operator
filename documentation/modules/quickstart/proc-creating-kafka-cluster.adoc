@@ -87,7 +87,7 @@ Create the following `my-topic` custom resource definition with 3 partitions and
 [source, yaml, subs=attributes+]
 ----
 cat << EOF | kubectl create -n my-kafka-project -f -
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: my-topic

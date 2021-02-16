@@ -45,7 +45,7 @@ For clients, including Kafka Connect, you specify the same topology key as the b
 .Example `rack` configuration for Kafka Connect
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 # ...
 spec:

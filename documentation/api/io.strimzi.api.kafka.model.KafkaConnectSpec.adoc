@@ -56,7 +56,7 @@ You can also configure the `ssl.endpoint.identification.algorithm` property to e
 .Example Kafka Connect configuration
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect
@@ -113,7 +113,7 @@ Here we see examples of `inline` and `external` logging.
 .Inline logging
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 spec:
   # ...
@@ -127,7 +127,7 @@ spec:
 .External logging
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 spec:
   # ...

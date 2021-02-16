@@ -3,7 +3,7 @@ Specify additional labels and annotations for the secret created by the User Ope
 .An example showing the `KafkaUserTemplate`
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaUserApiVersion}
 kind: KafkaUser
 metadata:
   name: my-user

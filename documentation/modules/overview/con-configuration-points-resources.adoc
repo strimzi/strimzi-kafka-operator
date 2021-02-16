@@ -16,7 +16,7 @@ The `spec` property shows configuration that defines the number of partitions an
 == Kafka topic custom resource
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: my-topic

@@ -13,7 +13,7 @@ Strimzi includes a YAML example that specifies the configuration of the Strimzi 
 +
 [source,yaml,subs=attributes+]
 ----
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: {KafkaBridgeApiVersion}
 kind: KafkaBridge
 metadata:
   name: quickstart <1>

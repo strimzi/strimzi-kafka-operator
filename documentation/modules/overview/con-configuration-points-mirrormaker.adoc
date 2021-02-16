@@ -71,7 +71,7 @@ image::mirrormaker-renaming.png[MirrorMaker 2.0 bidirectional architecture]
 
 [source,yaml,subs="+quotes,attributes"]
 ----
-  apiVersion: {KafkaApiVersionPrev}
+  apiVersion: {KafkaMirrorMaker2ApiVersion}
   kind: KafkaMirrorMaker2
   metadata:
     name: my-mirror-maker2
@@ -121,7 +121,7 @@ Cancel option for send failure:: You can define whether a message send failure i
 === Example YAML showing MirrorMaker configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaMirrorMakerApiVersion}
 kind: KafkaMirrorMaker
 metadata:
   name: my-mirror-maker
