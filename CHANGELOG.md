@@ -9,7 +9,7 @@
 * Update Strimzi Kafka OAuth to version 0.7.0 and add support for new features:
   * OAuth authentication over SASL PLAIN mechanism
   * Checking token audience
-  * Validating token claims
+  * Validating tokens using JSONPath filter queries to perform custom checks
 * Updated Cruise Control to version 2.5.32
 * Fix Cruise Control crash loop when updating container configurations
 * Configure extenal logging `ConfigMap` name and key.
