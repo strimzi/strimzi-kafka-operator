@@ -163,12 +163,12 @@ pipeline {
                         if ("${env.TEST_PROFILE}".contains("upgrade")) {
                             println("[INFO] Update files for upgrade procedure")
                             sh(script: """
-                                sed -i 's#:latest#:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
-                                sed -i 's#quay.io/strimzi/test-client:${env.DOCKER_TAG}#${env.DOCKER_REGISTRY}/strimzi/test-client:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json
+                                sed -i 's#:latest#:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+                                sed -i 's#quay.io/strimzi/test-client:${env.DOCKER_TAG}#${env.DOCKER_REGISTRY}/strimzi/test-client:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json
                                 sed -i 's#quay.io/strimzi/#${env.DOCKER_REGISTRY}/strimzi/#g' ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
                                 sed -i 's#/opt/${env.DOCKER_REGISTRY}#/opt#g' ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
                             """)
-                            sh(script: "cat ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
+                            sh(script: "cat ${env.WORKSPACE}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json")
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
                         }
                         lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)

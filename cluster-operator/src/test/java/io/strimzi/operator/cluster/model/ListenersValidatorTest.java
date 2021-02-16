@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListenersValidatorTest {
@@ -241,6 +242,7 @@ public class ListenersValidatorTest {
                         .withNodePort(32189)
                         .withHost("my-host")
                         .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                        .withLabels(Collections.singletonMap("label", "label-value"))
                     .endBootstrap()
                     .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(0)
@@ -250,6 +252,7 @@ public class ListenersValidatorTest {
                                     .withNodePort(32189)
                                     .withHost("my-host")
                                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .withLabels(Collections.singletonMap("label", "label-value"))
                                     .build(),
                             new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(1)
@@ -259,6 +262,7 @@ public class ListenersValidatorTest {
                                     .withNodePort(32189)
                                     .withHost("my-host")
                                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .withLabels(Collections.singletonMap("label", "label-value"))
                                     .build())
                 .endConfiguration()
                 .build();
@@ -273,11 +277,13 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure brokers[].dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener"
+                "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
+                "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -438,6 +444,7 @@ public class ListenersValidatorTest {
                         .withNodePort(32189)
                         .withHost("my-host")
                         .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                        .withLabels(Collections.singletonMap("label", "label-value"))
                     .endBootstrap()
                     .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(0)
@@ -447,6 +454,7 @@ public class ListenersValidatorTest {
                                     .withNodePort(32189)
                                     .withHost("my-host")
                                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .withLabels(Collections.singletonMap("label", "label-value"))
                                     .build(),
                             new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(1)
@@ -456,6 +464,7 @@ public class ListenersValidatorTest {
                                     .withNodePort(32189)
                                     .withHost("my-host")
                                     .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                    .withLabels(Collections.singletonMap("label", "label-value"))
                                     .build())
                 .endConfiguration()
                 .build();
@@ -470,10 +479,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure brokers[].dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener"
+                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -647,7 +654,7 @@ public class ListenersValidatorTest {
         Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
         assertThat(exception.getMessage(), allOf(
                 containsString("listener listener1: Introspection endpoint URI or JWKS endpoint URI has to be specified"),
-                containsString("listener listener1: Valid Issuer URI has to be specified or 'checkIssuer' set to false")));
+                containsString("listener listener1: Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'")));
     }
 
     @Test
@@ -727,5 +734,100 @@ public class ListenersValidatorTest {
         List<GenericKafkaListener> listeners = asList(internal, route, lb, np, inq);
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), empty());
+    }
+
+    @Test
+    public void testValidateOauthPlain() {
+        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
+                .withEnableOauthBearer(false);
+
+        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withAuth(authBuilder.build());
+
+        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener);
+
+        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'")));
+
+        // enable plain
+        authBuilder.withEnablePlain(true);
+        listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+        List<GenericKafkaListener> listeners2 = asList(listener);
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners2));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: When 'enablePlain' is 'true' the 'tokenEndpointUri' has to be specified.")));
+    }
+
+    @Test
+    public void testValidateAudienceOauth() {
+        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
+                .withCheckAudience(true);
+
+        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withAuth(authBuilder.build());
+
+        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener);
+
+        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: 'clientId' has to be configured when 'checkAudience' is 'true'")));
+
+        // set clientId
+        authBuilder.withClientId("kafka");
+
+        listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+        List<GenericKafkaListener> listeners2 = asList(listener);
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners2));
+        assertThat(exception.getMessage(), allOf(
+                not(containsString("listener listener1: 'clientId' has to be configured when 'checkAudience' is 'true'"))));
+    }
+
+    @Test
+    public void testValidateCustomClaimCheckOauth() {
+        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
+                .withCustomClaimCheck("invalid");
+
+        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withAuth(authBuilder.build());
+
+        GenericKafkaListener listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener);
+
+        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: 'customClaimCheck' value not a valid JsonPath filter query - Failed to parse filter query: \"invalid\"")));
+
+        // set valid JsonPath query
+        authBuilder.withCustomClaimCheck("@.valid == 'value'");
+
+        listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+        List<GenericKafkaListener> listeners2 = asList(listener);
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners2));
+        assertThat(exception.getMessage(), allOf(
+                not(containsString("listener listener1: 'customClaimCheck' value not a valid JsonPath filter query - Failed to parse query: \"invalid\" at position: 0"))));
     }
 }

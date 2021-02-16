@@ -30,7 +30,7 @@ spec:
       - name: external2
         port: 9095
         type: ingress
-        tls: false
+        tls: true
         authentication:
           type: tls
         configuration:
@@ -143,7 +143,7 @@ spec:
       - name: external2
         port: 9095
         type: ingress
-        tls: false
+        tls: true
         authentication:
           type: tls
         configuration:

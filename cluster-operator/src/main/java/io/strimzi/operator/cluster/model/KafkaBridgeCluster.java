@@ -153,7 +153,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
         String image = spec.getImage();
         if (image == null) {
-            image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "strimzi/kafka-bridge:latest");
+            image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "quay.io/strimzi/kafka-bridge:latest");
         }
         kafkaBridgeCluster.setImage(image);
         kafkaBridgeCluster.setReplicas(spec.getReplicas());

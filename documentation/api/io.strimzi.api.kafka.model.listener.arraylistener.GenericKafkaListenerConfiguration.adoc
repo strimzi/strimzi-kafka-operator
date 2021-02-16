@@ -61,9 +61,7 @@ listeners:
 === `class`
 
 The `class` property is only used with `ingress` listeners.
-
-By default, the `Ingress` class is set to `nginx`.
-You can change the `Ingress` class using the `class` property.
+You can configure the `Ingress` class using the `class` property.
 
 .Example of an external listener of type `ingress` using `Ingress` class `nginx-internal`
 [source,yaml,subs="attributes+"]
@@ -73,7 +71,7 @@ listeners:
   - name: external
     port: 9094
     type: ingress
-    tls: false
+    tls: true
     configuration:
       class: nginx-internal
     # ...

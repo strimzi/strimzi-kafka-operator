@@ -190,6 +190,9 @@ spec:
                               checkAccessTokenType:
                                 type: boolean
                                 description: Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+                              checkAudience:
+                                type: boolean
+                                description: Enable or disable audience checking. Audience checks identify the recipients of tokens. If audience checking is enabled, the OAuth Client ID also has to be configured using the `clientId` property. The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim.Default value is `false`.
                               checkIssuer:
                                 type: boolean
                                 description: Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
@@ -209,12 +212,21 @@ spec:
                                   - key
                                   - secretName
                                 description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+                              customClaimCheck:
+                                type: string
+                                description: JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
                               disableTlsHostnameVerification:
                                 type: boolean
                                 description: Enable or disable TLS hostname verification. Default value is `false`.
                               enableECDSA:
                                 type: boolean
                                 description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+                              enableOauthBearer:
+                                type: boolean
+                                description: Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
+                              enablePlain:
+                                type: boolean
+                                description: Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
                               fallbackUserNameClaim:
                                 type: string
                                 description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
@@ -241,7 +253,7 @@ spec:
                                 description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
                               maxSecondsWithoutReauthentication:
                                 type: integer
-                                description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
+                                description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
                               tlsTrustedCertificates:
                                 type: array
                                 items:
@@ -257,6 +269,9 @@ spec:
                                     - certificate
                                     - secretName
                                 description: Trusted certificates for TLS connection to the OAuth server.
+                              tokenEndpointUri:
+                                type: string
+                                description: 'URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. '
                               type:
                                 type: string
                                 enum:
@@ -329,7 +344,10 @@ spec:
                                     description: The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.This field can be used only with `loadbalancer` type listener.
                                   annotations:
                                     type: object
-                                    description: Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
+                                    description: Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
+                                  labels:
+                                    type: object
+                                    description: Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
                                 description: Bootstrap configuration.
                               brokers:
                                 type: array
@@ -357,12 +375,15 @@ spec:
                                     annotations:
                                       type: object
                                       description: Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
+                                    labels:
+                                      type: object
+                                      description: Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
                                   required:
                                     - broker
                                 description: Per-broker configurations.
                               class:
                                 type: string
-                                description: Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`. This field can be used only with `ingress` type listener.
+                                description: Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used.
                               preferredNodePortAddressType:
                                 type: string
                                 enum:
@@ -454,6 +475,9 @@ spec:
                                 checkAccessTokenType:
                                   type: boolean
                                   description: Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking. Audience checks identify the recipients of tokens. If audience checking is enabled, the OAuth Client ID also has to be configured using the `clientId` property. The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
@@ -473,12 +497,21 @@ spec:
                                     - key
                                     - secretName
                                   description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+                                customClaimCheck:
+                                  type: string
+                                  description: JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
                                 disableTlsHostnameVerification:
                                   type: boolean
                                   description: Enable or disable TLS hostname verification. Default value is `false`.
                                 enableECDSA:
                                   type: boolean
                                   description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+                                enableOauthBearer:
+                                  type: boolean
+                                  description: Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
+                                enablePlain:
+                                  type: boolean
+                                  description: Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
                                 fallbackUserNameClaim:
                                   type: string
                                   description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
@@ -505,7 +538,7 @@ spec:
                                   description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
                                 maxSecondsWithoutReauthentication:
                                   type: integer
-                                  description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
+                                  description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
                                 tlsTrustedCertificates:
                                   type: array
                                   items:
@@ -521,6 +554,9 @@ spec:
                                       - certificate
                                       - secretName
                                   description: Trusted certificates for TLS connection to the OAuth server.
+                                tokenEndpointUri:
+                                  type: string
+                                  description: 'URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. '
                                 type:
                                   type: string
                                   enum:
@@ -607,6 +643,9 @@ spec:
                                 checkAccessTokenType:
                                   type: boolean
                                   description: Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking. Audience checks identify the recipients of tokens. If audience checking is enabled, the OAuth Client ID also has to be configured using the `clientId` property. The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
@@ -626,12 +665,21 @@ spec:
                                     - key
                                     - secretName
                                   description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+                                customClaimCheck:
+                                  type: string
+                                  description: JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
                                 disableTlsHostnameVerification:
                                   type: boolean
                                   description: Enable or disable TLS hostname verification. Default value is `false`.
                                 enableECDSA:
                                   type: boolean
                                   description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+                                enableOauthBearer:
+                                  type: boolean
+                                  description: Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
+                                enablePlain:
+                                  type: boolean
+                                  description: Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
                                 fallbackUserNameClaim:
                                   type: string
                                   description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
@@ -658,7 +706,7 @@ spec:
                                   description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
                                 maxSecondsWithoutReauthentication:
                                   type: integer
-                                  description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
+                                  description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
                                 tlsTrustedCertificates:
                                   type: array
                                   items:
@@ -674,6 +722,9 @@ spec:
                                       - certificate
                                       - secretName
                                   description: Trusted certificates for TLS connection to the OAuth server.
+                                tokenEndpointUri:
+                                  type: string
+                                  description: 'URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. '
                                 type:
                                   type: string
                                   enum:
@@ -781,6 +832,9 @@ spec:
                                 checkAccessTokenType:
                                   type: boolean
                                   description: Configure whether the access token type check is performed or not. This should be set to `false` if the authorization server does not include 'typ' claim in JWT token. Defaults to `true`.
+                                checkAudience:
+                                  type: boolean
+                                  description: Enable or disable audience checking. Audience checks identify the recipients of tokens. If audience checking is enabled, the OAuth Client ID also has to be configured using the `clientId` property. The Kafka broker will reject tokens that do not have its `clientId` in their `aud` (audience) claim.Default value is `false`.
                                 checkIssuer:
                                   type: boolean
                                   description: Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
@@ -800,12 +854,21 @@ spec:
                                     - key
                                     - secretName
                                   description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+                                customClaimCheck:
+                                  type: string
+                                  description: JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
                                 disableTlsHostnameVerification:
                                   type: boolean
                                   description: Enable or disable TLS hostname verification. Default value is `false`.
                                 enableECDSA:
                                   type: boolean
                                   description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+                                enableOauthBearer:
+                                  type: boolean
+                                  description: Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
+                                enablePlain:
+                                  type: boolean
+                                  description: Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
                                 fallbackUserNameClaim:
                                   type: string
                                   description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
@@ -832,7 +895,7 @@ spec:
                                   description: Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
                                 maxSecondsWithoutReauthentication:
                                   type: integer
-                                  description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires.
+                                  description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
                                 tlsTrustedCertificates:
                                   type: array
                                   items:
@@ -848,6 +911,9 @@ spec:
                                       - certificate
                                       - secretName
                                   description: Trusted certificates for TLS connection to the OAuth server.
+                                tokenEndpointUri:
+                                  type: string
+                                  description: 'URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. '
                                 type:
                                   type: string
                                   enum:
@@ -872,7 +938,7 @@ spec:
                               description: Authentication configuration for Kafka brokers.
                             class:
                               type: string
-                              description: Configures the `Ingress` class that defines which `Ingress` controller will be used. If not set, the `Ingress` class is set to `nginx`.
+                              description: Configures the `Ingress` class that defines which `Ingress` controller will be used.
                             configuration:
                               type: object
                               properties:
@@ -5102,7 +5168,7 @@ spec:
                   description: If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
                 generateSecretOwnerReference:
                   type: boolean
-                  description: If true then the Certificate Authority certificates secrets owner reference is set to the Kafka object. Otherwise no owner reference is set so deleting the Kafka object won't delete the secrets. Default is true.
+                  description: If `true`, the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. If the `Kafka` resource is deleted when `true`, the CA Secrets are also deleted. If `false`, the `ownerReference` is disabled. If the `Kafka` resource is deleted when `false`, the CA Secrets are retained and available for reuse. Default is `true`.
                 validityDays:
                   type: integer
                   minimum: 1
@@ -5126,7 +5192,7 @@ spec:
                   description: If true then Certificate Authority certificates will be generated automatically. Otherwise the user will need to provide a Secret with the CA certificate. Default is true.
                 generateSecretOwnerReference:
                   type: boolean
-                  description: If true then the Certificate Authority certificates secrets owner reference is set to the Kafka object. Otherwise no owner reference is set so deleting the Kafka object won't delete the secrets. Default is true.
+                  description: If `true`, the Cluster and Client CA Secrets are configured with the `ownerReference` set to the `Kafka` resource. If the `Kafka` resource is deleted when `true`, the CA Secrets are also deleted. If `false`, the `ownerReference` is disabled. If the `Kafka` resource is deleted when `false`, the CA Secrets are retained and available for reuse. Default is `true`.
                 validityDays:
                   type: integer
                   minimum: 1

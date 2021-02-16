@@ -69,10 +69,10 @@ public class OlmResource {
         if (fromVersion != null) {
             createAndModifySubscription(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy, fromVersion);
             // must be strimzi-cluster-operator.v0.18.0
-            csvName = Environment.OLM_APP_BUNDLE_PREFIX + "." + fromVersion;
+            csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + fromVersion;
         } else {
             createAndModifySubscriptionLatestRelease(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy);
-            csvName = Environment.OLM_APP_BUNDLE_PREFIX + "." + Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION;
+            csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION;
         }
 
         // manual installation needs approval with patch
@@ -101,7 +101,7 @@ public class OlmResource {
      * Get install plan name and store it to closedMapInstallPlan
      */
     public static void obtainInstallPlanName() {
-        String installPlansPureString = cmdKubeClient().exec("get", "installplan").out();
+        String installPlansPureString = cmdKubeClient().execInCurrentNamespace("get", "installplan").out();
         String[] installPlansLines = installPlansPureString.split("\n");
 
         for (String line : installPlansLines) {
@@ -129,7 +129,7 @@ public class OlmResource {
      * @return version with prefix name
      */
     public static String getClusterOperatorVersion() {
-        String installPlansPureString = cmdKubeClient().exec("get", "installplan").out();
+        String installPlansPureString = cmdKubeClient().execInCurrentNamespace("get", "installplan").out();
         String[] installPlansLines = installPlansPureString.split("\n");
 
         for (String line : installPlansLines) {
@@ -142,10 +142,6 @@ public class OlmResource {
             }
         }
         throw new RuntimeException("Version was not found in the install plan.");
-    }
-
-    public static boolean isUpgradeable() {
-        return !getNonUsedInstallPlan().equals(NO_MORE_NON_USED_INSTALL_PLANS);
     }
 
     public static String getNonUsedInstallPlan() {
@@ -176,7 +172,7 @@ public class OlmResource {
             String dynamicScriptContent =
                 "#!/bin/bash\n" +
                     cmdKubeClient().cmd() +
-                    " patch installplan " + nonUsedInstallPlan + " --type json  --patch '[{\"op\": \"add\", \"path\": \"/spec/approved\", \"value\": true}]'";
+                    " patch installplan " + nonUsedInstallPlan + " --type json  --patch '[{\"op\": \"add\", \"path\": \"/spec/approved\", \"value\": true}]' -n " + KubeClusterResource.getInstance().getNamespace();
 
             InputStream inputStream = new ByteArrayInputStream(dynamicScriptContent.getBytes(Charset.defaultCharset()));
             File patchScript = File.createTempFile("installplan_patch",  ".sh");
@@ -235,7 +231,7 @@ public class OlmResource {
                 subscription.replace("${OPERATOR_NAMESPACE}", namespace)
                     .replace("${OLM_OPERATOR_NAME}", Environment.OLM_OPERATOR_NAME)
                     .replace("${OLM_SOURCE_NAME}", Environment.OLM_SOURCE_NAME)
-                    .replace("${OLM_SOURCE_NAMESPACE}", ResourceManager.cmdKubeClient().defaultOlmNamespace())
+                    .replace("${OLM_SOURCE_NAMESPACE}", Environment.OLM_SOURCE_NAMESPACE)
                     .replace("${OLM_APP_BUNDLE_PREFIX}", Environment.OLM_APP_BUNDLE_PREFIX)
                     .replace("${OLM_OPERATOR_VERSION}", version)
                     .replace("${OLM_INSTALL_PLAN_APPROVAL}", installationStrategy.toString())

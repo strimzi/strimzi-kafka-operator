@@ -960,7 +960,9 @@ class LoggingChangeST extends AbstractST {
                         "log4j.logger.kafka.controller=TRACE\n" +
                         "log4j.logger.kafka.log.LogCleaner=INFO\n" +
                         "log4j.logger.state.change.logger=TRACE\n" +
-                        "log4j.logger.kafka.authorizer.logger=INFO"))
+                        "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
+                        "kafka.my.level.string=INFO"
+                        ))
                 .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
@@ -998,7 +1000,9 @@ class LoggingChangeST extends AbstractST {
                         "log4j.logger.kafka.controller=ERROR\n" +
                         "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
                         "log4j.logger.state.change.logger=TRACE\n" +
-                        "log4j.logger.kafka.authorizer.logger=ERROR"))
+                        "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
+                        "kafka.my.level.string=ERROR"
+                        ))
                 .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
@@ -1030,7 +1034,9 @@ class LoggingChangeST extends AbstractST {
                         "log4j.logger.kafka.controller=ERROR\n" +
                         "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
                         "log4j.logger.state.change.logger=TRACE\n" +
-                        "log4j.logger.kafka.authorizer.logger=DEBUG"))
+                        "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
+                        "kafka.my.level.string=DEBUG}"
+                ))
                 .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);

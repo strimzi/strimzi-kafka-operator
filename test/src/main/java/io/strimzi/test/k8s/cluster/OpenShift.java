@@ -17,7 +17,9 @@ import java.util.List;
 public class OpenShift implements KubeCluster {
 
     private static final String CMD = "oc";
-    private static final String OLM_NAMESPACE = "openshift-operators";
+    public static final String OLM_NAMESPACE = "openshift-operators";
+    public static final String OLM_SOURCE_NAMESPACE = "openshift-marketplace";
+    public static final String DEFAULT_NAMESPACE = "default";
     private static final Logger LOGGER = LogManager.getLogger(OpenShift.class);
 
     @Override
@@ -27,7 +29,7 @@ public class OpenShift implements KubeCluster {
 
     @Override
     public boolean isClusterUp() {
-        List<String> cmd = Arrays.asList(CMD, "status");
+        List<String> cmd = Arrays.asList(CMD, "status", "-n", DEFAULT_NAMESPACE);
         try {
             return Exec.exec(cmd).exitStatus() && Exec.exec(CMD, "api-resources").out().contains("openshift.io");
         } catch (KubeClusterException e) {

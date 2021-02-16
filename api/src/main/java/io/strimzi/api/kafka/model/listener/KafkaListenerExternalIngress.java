@@ -80,8 +80,7 @@ public class KafkaListenerExternalIngress extends KafkaListenerExternal {
         this.configuration = configuration;
     }
 
-    @Description("Configures the `Ingress` class that defines which `Ingress` controller will be used. " +
-            "If not set, the `Ingress` class is set to `nginx`.")
+    @Description("Configures the `Ingress` class that defines which `Ingress` controller will be used.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("class")
     public String getIngressClass() {

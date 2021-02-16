@@ -4,11 +4,11 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.IngressList;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.IngressBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.IngressList;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.V1NetworkAPIGroupDSL;
+import io.fabric8.kubernetes.client.V1beta1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -18,7 +18,7 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class IngressOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
+public class IngressV1Beta1OperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
     @Override
     protected Class<KubernetesClient> clientType() {
         return KubernetesClient.class;
@@ -43,14 +43,14 @@ public class IngressOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
-        V1NetworkAPIGroupDSL v1 = mock(V1NetworkAPIGroupDSL.class);
-        when(network.v1()).thenReturn(v1);
-        when(v1.ingresses()).thenReturn(op);
+        V1beta1NetworkAPIGroupDSL v1beta1 = mock(V1beta1NetworkAPIGroupDSL.class);
+        when(network.v1beta1()).thenReturn(v1beta1);
+        when(v1beta1.ingresses()).thenReturn(op);
         when(mockClient.network()).thenReturn(network);
     }
 
     @Override
     protected AbstractResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new IngressOperator(vertx, mockClient);
+        return new IngressV1Beta1Operator(vertx, mockClient);
     }
 }

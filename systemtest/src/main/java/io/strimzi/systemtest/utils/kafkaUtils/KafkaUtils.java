@@ -4,7 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -24,6 +27,7 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -373,5 +377,23 @@ public class KafkaUtils {
                 }
             },
             () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).get()));
+    }
+
+    public static String changeOrRemoveKafkaVersion(File file, String version) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            JsonNode node = mapper.readTree(file);
+            ObjectNode kafkaNode = (ObjectNode) node.at("/spec/kafka");
+            if (version == null) {
+                kafkaNode.remove("version");
+                ((ObjectNode) kafkaNode.get("config")).remove("log.message.format.version");
+            } else if (!version.equals("")) {
+                kafkaNode.put("version", version);
+                ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", version.substring(0, 3));
+            }
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

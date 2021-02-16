@@ -10,17 +10,17 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.kafka.oauth.jsonpath.JsonPathFilterQuery;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.unmodifiableList;
+import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 
 /**
  * Util methods for validating Kafka listeners
@@ -28,7 +28,7 @@ import static java.util.Collections.unmodifiableList;
 public class ListenersValidator {
     protected static final Logger LOG = LogManager.getLogger(ListenersValidator.class.getName());
     private final static Pattern LISTENER_NAME_PATTERN = Pattern.compile(GenericKafkaListener.LISTENER_NAME_REGEX);
-    public final static List<Integer> FORBIDDEN_PORTS = unmodifiableList(Arrays.asList(9404, 9999));
+    public final static List<Integer> FORBIDDEN_PORTS = List.of(9404, 9999);
     public final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;
 
     /**
@@ -81,7 +81,7 @@ public class ListenersValidator {
                     validateBootstrapHost(errors, listener);
                     validateBootstrapLoadBalancerIp(errors, listener);
                     validateBootstrapNodePort(errors, listener);
-                    validateBootstrapDnsAnnotations(errors, listener);
+                    validateBootstrapLabelsAndAnnotations(errors, listener);
                 }
 
                 if (listener.getConfiguration().getBrokers() != null) {
@@ -89,7 +89,7 @@ public class ListenersValidator {
                         validateBrokerHost(errors, listener, broker);
                         validateBrokerLoadBalancerIp(errors, listener, broker);
                         validateBrokerNodePort(errors, listener, broker);
-                        validateBrokerDnsAnnotations(errors, listener, broker);
+                        validateBrokerLabelsAndAnnotations(errors, listener, broker);
                     }
                 }
 
@@ -285,16 +285,26 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that bootstrap.dnsAnnotations is used only with LoadBalancer, NodePort or Ingress type listener
+     * Validates that bootstrap.annotations and bootstrap.labels are used only with LoadBalancer, NodePort, Route, or
+     * Ingress type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
      */
-    private static void validateBootstrapDnsAnnotations(Set<String> errors, GenericKafkaListener listener) {
-        if ((!KafkaListenerType.LOADBALANCER.equals(listener.getType()) && !KafkaListenerType.NODEPORT.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
-                && listener.getConfiguration().getBootstrap().getAnnotations() != null
-                && !listener.getConfiguration().getBootstrap().getAnnotations().isEmpty())    {
-            errors.add("listener " + listener.getName() + " cannot configure bootstrap.dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener");
+    private static void validateBootstrapLabelsAndAnnotations(Set<String> errors, GenericKafkaListener listener) {
+        if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
+                && !KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.ROUTE.equals(listener.getType())
+                && !KafkaListenerType.INGRESS.equals(listener.getType())) {
+            if (listener.getConfiguration().getBootstrap().getLabels() != null
+                    && !listener.getConfiguration().getBootstrap().getLabels().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+            }
+
+            if (listener.getConfiguration().getBootstrap().getAnnotations() != null
+                    && !listener.getConfiguration().getBootstrap().getAnnotations().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+            }
         }
     }
 
@@ -341,17 +351,27 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that brokers[].dnsAnnotations is used only with LoadBalancer, NodePort or Ingress type listener
+     * Validates that brokers[].annotations and brokers[].labels are used only with LoadBalancer, NodePort, Route or
+     * Ingress type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
      * @param broker    Broker configuration which needs to be validated
      */
-    private static void validateBrokerDnsAnnotations(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
-        if ((!KafkaListenerType.LOADBALANCER.equals(listener.getType()) && !KafkaListenerType.NODEPORT.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
-                && broker.getAnnotations() != null
-                && !broker.getAnnotations().isEmpty())    {
-            errors.add("listener " + listener.getName() + " cannot configure brokers[].dnsAnnotations because it is not LoadBalancer, NodePort or Ingress based listener");
+    private static void validateBrokerLabelsAndAnnotations(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
+        if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
+                && !KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.ROUTE.equals(listener.getType())
+                && !KafkaListenerType.INGRESS.equals(listener.getType()))  {
+            if (broker.getLabels() != null
+                    && !broker.getLabels().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+            }
+
+            if (broker.getAnnotations() != null
+                    && !broker.getAnnotations().isEmpty()) {
+                errors.add("listener " + listener.getName() + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+            }
         }
     }
 
@@ -396,11 +416,16 @@ public class ListenersValidator {
      */
     @SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     private static void validateOauth(Set<String> errors, GenericKafkaListener listener) {
-        if (listener.getAuth() != null
-                && KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType())) {
+        if (isListenerWithOAuth(listener)) {
             KafkaListenerAuthenticationOAuth oAuth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
             String listenerName = listener.getName();
 
+            if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
+                errors.add("listener " + listenerName + ": At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'");
+            }
+            if (oAuth.isEnablePlain() && oAuth.getTokenEndpointUri() == null) {
+                errors.add("listener " + listenerName + ": When 'enablePlain' is 'true' the 'tokenEndpointUri' has to be specified.");
+            }
             boolean hasJwksRefreshSecondsValidInput = oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksRefreshSeconds() > 0;
             boolean hasJwksExpirySecondsValidInput = oAuth.getJwksExpirySeconds() != null && oAuth.getJwksExpirySeconds() > 0;
             boolean hasJwksMinRefreshPauseSecondsValidInput = oAuth.getJwksMinRefreshPauseSeconds() != null && oAuth.getJwksMinRefreshPauseSeconds() >= 0;
@@ -410,11 +435,24 @@ public class ListenersValidator {
             }
 
             if (oAuth.getValidIssuerUri() == null && oAuth.isCheckIssuer()) {
-                errors.add("listener " + listenerName + ": Valid Issuer URI has to be specified or 'checkIssuer' set to false");
+                errors.add("listener " + listenerName + ": Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'");
+            }
+
+            if (oAuth.isCheckAudience() && oAuth.getClientId() == null) {
+                errors.add("listener " + listenerName + ": 'clientId' has to be configured when 'checkAudience' is 'true'");
+            }
+
+            String customCheckQuery = oAuth.getCustomClaimCheck();
+            if (customCheckQuery != null) {
+                try {
+                    JsonPathFilterQuery.parse(customCheckQuery);
+                } catch (Exception e) {
+                    errors.add("listener " + listenerName + ": 'customClaimCheck' value not a valid JsonPath filter query - " + e.getMessage());
+                }
             }
 
             if (oAuth.getIntrospectionEndpointUri() != null && (oAuth.getClientId() == null || oAuth.getClientSecret() == null)) {
-                errors.add("listener " + listenerName + ": Introspection Endpoint URI needs to be configured together with clientId and clientSecret");
+                errors.add("listener " + listenerName + ": Introspection Endpoint URI needs to be configured together with 'clientId' and 'clientSecret'");
             }
 
             if (oAuth.getUserInfoEndpointUri() != null && oAuth.getIntrospectionEndpointUri() == null) {
@@ -422,19 +460,19 @@ public class ListenersValidator {
             }
 
             if (oAuth.getJwksEndpointUri() == null && (hasJwksRefreshSecondsValidInput || hasJwksExpirySecondsValidInput || hasJwksMinRefreshPauseSecondsValidInput)) {
-                errors.add("listener " + listenerName + ": jwksRefreshSeconds, jwksExpirySeconds and jwksMinRefreshPauseSeconds can only be used together with jwksEndpointUri");
+                errors.add("listener " + listenerName + ": 'jwksRefreshSeconds', 'jwksExpirySeconds' and 'jwksMinRefreshPauseSeconds' can only be used together with 'jwksEndpointUri'");
             }
 
             if (oAuth.getJwksRefreshSeconds() != null && !hasJwksRefreshSecondsValidInput) {
-                errors.add("listener " + listenerName + ": jwksRefreshSeconds needs to be a positive integer (set to: " + oAuth.getJwksRefreshSeconds() + ")");
+                errors.add("listener " + listenerName + ": 'jwksRefreshSeconds' needs to be a positive integer (set to: " + oAuth.getJwksRefreshSeconds() + ")");
             }
 
             if (oAuth.getJwksExpirySeconds() != null && !hasJwksExpirySecondsValidInput) {
-                errors.add("listener " + listenerName + ": jwksExpirySeconds needs to be a positive integer (set to: " + oAuth.getJwksExpirySeconds() + ")");
+                errors.add("listener " + listenerName + ": 'jwksExpirySeconds' needs to be a positive integer (set to: " + oAuth.getJwksExpirySeconds() + ")");
             }
 
             if (oAuth.getJwksMinRefreshPauseSeconds() != null && !hasJwksMinRefreshPauseSecondsValidInput) {
-                errors.add("listener " + listenerName + ": jwksMinRefreshPauseSeconds needs to be a positive integer or zero (set to: " + oAuth.getJwksMinRefreshPauseSeconds() + ")");
+                errors.add("listener " + listenerName + ": 'jwksMinRefreshPauseSeconds' needs to be a positive integer or zero (set to: " + oAuth.getJwksMinRefreshPauseSeconds() + ")");
             }
 
             if ((hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
@@ -445,19 +483,19 @@ public class ListenersValidator {
 
             if (!oAuth.isAccessTokenIsJwt()) {
                 if (oAuth.getJwksEndpointUri() != null) {
-                    errors.add("listener " + listenerName + ": accessTokenIsJwt=false can not be used together with jwksEndpointUri");
+                    errors.add("listener " + listenerName + ": 'accessTokenIsJwt' can not be 'false' when 'jwksEndpointUri' is set");
                 }
                 if (!oAuth.isCheckAccessTokenType()) {
-                    errors.add("listener " + listenerName + ": checkAccessTokenType can not be set to false when accessTokenIsJwt is false");
+                    errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'accessTokenIsJwt' is 'false'");
                 }
             }
 
             if (!oAuth.isCheckAccessTokenType() && oAuth.getIntrospectionEndpointUri() != null) {
-                errors.add("listener " + listenerName + ": checkAccessTokenType=false can not be used together with introspectionEndpointUri");
+                errors.add("listener " + listenerName + ": 'checkAccessTokenType' can not be set to 'false' when 'introspectionEndpointUri' is set");
             }
 
             if (oAuth.getValidTokenType() != null && oAuth.getIntrospectionEndpointUri() == null) {
-                errors.add("listener " + listenerName + ": validTokenType can only be used with introspectionEndpointUri");
+                errors.add("listener " + listenerName + ": 'validTokenType' can only be used when 'introspectionEndpointUri' is set");
             }
         }
     }
