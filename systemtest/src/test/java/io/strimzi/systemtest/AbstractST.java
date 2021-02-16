@@ -175,14 +175,14 @@ public abstract class AbstractST implements TestSeparator {
                     (x, y) -> x,
                     LinkedHashMap::new));
         for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
-            LOGGER.info("Applying configuration file: {}", entry.getKey());
+            LOGGER.info("Creating configuration file: {}", entry.getKey());
             String fileContents = entry.getValue();
             if (Environment.isNamespaceRbacScope()) {
                 fileContents = switchClusterRolesToRoles(fileContents);
 
             }
             clusterOperatorConfigs.push(entry.getKey().getPath());
-            cmdKubeClient().namespace(namespace).applyContent(fileContents);
+            cmdKubeClient().namespace(namespace).createContent(fileContents);
         }
     }
 

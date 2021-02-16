@@ -94,7 +94,6 @@ public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Nam
     public static final String V1BETA1 = Constants.V1BETA1;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1BETA1, V1ALPHA1));
-    public static final String CONSUMED_VERSION = V1BETA1;
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
