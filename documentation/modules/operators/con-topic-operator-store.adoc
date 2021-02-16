@@ -48,7 +48,7 @@ kubectl -n kafka run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true
 
 The command must correspond to the type of listener and authentication used to access the Kafka cluster.
 
-The Topic Operator will reconstruct the Zookeeper topic metadata from the state of the topics in Kafka.
+The Topic Operator will reconstruct the ZooKeeper topic metadata from the state of the topics in Kafka.
 
 == Topic Operator topic replication and scaling
 
