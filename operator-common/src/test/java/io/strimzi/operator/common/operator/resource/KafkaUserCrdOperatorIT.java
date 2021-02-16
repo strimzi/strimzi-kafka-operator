@@ -47,7 +47,6 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
     @Override
     protected KafkaUser getResource(String resourceName) {
         return new KafkaUserBuilder()
-                .withApiVersion(KafkaUser.RESOURCE_GROUP + "/" + KafkaUser.V1BETA1)
                 .withNewMetadata()
                     .withName(resourceName)
                     .withNamespace(getNamespace())
