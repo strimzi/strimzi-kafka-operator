@@ -50,7 +50,7 @@
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
-            <version>${jsonpath.version}</version>
+            <version>${jayway-jsonpath.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
