@@ -75,7 +75,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                        AbstractWatchableStatusedResourceOperator<C, T, L, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
-        super(vertx, kind, resourceOperator, supplier.metricsProvider);
+        super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
         this.pfa = pfa;
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;

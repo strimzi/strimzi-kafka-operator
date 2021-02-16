@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaUserList;
@@ -37,8 +36,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -57,9 +54,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     private final String caKeyName;
     private final String caNamespace;
     private final ScramShaCredentialsOperator scramShaCredentialOperator;
-    private final Optional<LabelSelector> selector;
     private final KafkaUserQuotasOperator kafkaUserQuotasOperator;
-    private PasswordGenerator passwordGenerator = new PasswordGenerator(12);
+    private final PasswordGenerator passwordGenerator = new PasswordGenerator(12);
     private final String secretPrefix;
 
     /**
@@ -84,10 +80,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
                              ScramShaCredentialsOperator scramShaCredentialOperator,
                              KafkaUserQuotasOperator kafkaUserQuotasOperator,
                              SimpleAclOperator aclOperations, String caCertName, String caKeyName, String caNamespace, String secretPrefix) {
-        super(vertx, "KafkaUser", crdOperator, new MicrometerMetricsProvider());
+        super(vertx, "KafkaUser", crdOperator, new MicrometerMetricsProvider(), labels);
         this.certManager = certManager;
-        Map<String, String> matchLabels = labels.toMap();
-        this.selector = matchLabels.isEmpty() ? Optional.empty() : Optional.of(new LabelSelector(null, matchLabels));
         this.secretOperations = secretOperations;
         this.scramShaCredentialOperator = scramShaCredentialOperator;
         this.kafkaUserQuotasOperator = kafkaUserQuotasOperator;
@@ -96,11 +90,6 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         this.caKeyName = caKeyName;
         this.caNamespace = caNamespace;
         this.secretPrefix = secretPrefix;
-    }
-
-    @Override
-    public Optional<LabelSelector> selector() {
-        return selector;
     }
 
     @Override
@@ -223,13 +212,13 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     /**
      * Deletes the user
      *
-     * @reutrn A Future
+     * @return A Future
      */
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
-        log.debug("{}: Deleting User", reconciliation, user, namespace);
+        log.debug("{}: Deleting User {} from namespace {}", reconciliation, user, namespace);
         return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(secretPrefix, user), null),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),

@@ -33,8 +33,6 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,8 +60,6 @@ public class KafkaRebalanceStateMachineTest {
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
-
-    private static final Logger log = LogManager.getLogger(KafkaRebalanceStateMachineTest.class.getName());
 
     private static ClientAndServer ccServer;
 
@@ -141,7 +137,7 @@ public class KafkaRebalanceStateMachineTest {
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
-        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier) {
+        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
                 return HOST;

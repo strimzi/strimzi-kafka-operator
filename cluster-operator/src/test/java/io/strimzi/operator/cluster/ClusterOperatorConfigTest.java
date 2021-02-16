@@ -75,7 +75,8 @@ public class ClusterOperatorConfigTest {
                 null,
                 null,
                 null,
-                ClusterOperatorConfig.RbacScope.CLUSTER);
+                ClusterOperatorConfig.RbacScope.CLUSTER,
+                null);
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));
@@ -299,9 +300,29 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE_LABELS, "nsLabelKey1,nsLabelKey2");
 
-        assertThrows(InvalidConfigurationException.class, () -> {
-            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
-        });
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
+        assertThat(e.getMessage(), containsString("Failed to parse labels from STRIMZI_OPERATOR_NAMESPACE_LABELS"));
+    }
+
+    @Test
+    public void testCustomResourceSelectorLabels() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_CUSTOM_RESOURCE_SELECTOR, "nsLabelKey1=nsLabelValue1,nsLabelKey2=nsLabelValue2");
+
+        Map<String, String> expectedLabels = new HashMap<>(2);
+        expectedLabels.put("nsLabelKey1", "nsLabelValue1");
+        expectedLabels.put("nsLabelKey2", "nsLabelValue2");
+
+        assertThat(ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()).getCustomResourceSelector(), is(Labels.fromMap(expectedLabels)));
+    }
+
+    @Test
+    public void testInvalidCustomResourceSelectorLabels() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_CUSTOM_RESOURCE_SELECTOR, "nsLabelKey1,nsLabelKey2");
+
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
+        assertThat(e.getMessage(), containsString("Failed to parse labels from STRIMZI_CUSTOM_RESOURCE_SELECTOR"));
     }
 
     @Test

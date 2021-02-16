@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
@@ -80,6 +81,8 @@ public abstract class AbstractOperator<
     protected final O resourceOperator;
     private final String kind;
 
+    private final Optional<LabelSelector> selector;
+
     protected final MetricsProvider metrics;
     private final Counter periodicReconciliationsCounter;
     private final Counter reconciliationsCounter;
@@ -90,10 +93,11 @@ public abstract class AbstractOperator<
     private final Timer reconciliationsTimer;
     private final Map<Tags, AtomicInteger> resourcesStateCounter;
 
-    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics) {
+    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
         this.vertx = vertx;
         this.kind = kind;
         this.resourceOperator = resourceOperator;
+        this.selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
         this.metrics = metrics;
 
         // Setup metrics
@@ -189,6 +193,16 @@ public abstract class AbstractOperator<
             T cr = resourceOperator.get(namespace, name);
 
             if (cr != null) {
+                if (!Util.matchesSelector(selector(), cr))  {
+                    // When the labels matching the selector are removed from the custom resource, a DELETE event is
+                    // triggered by the watch even through the custom resource might not match the watch labels anymore
+                    // and might not be really deleted. We have to filter these situations out and ignore the
+                    // reconciliation because such resource might be already operated by another instance (where the
+                    // same change triggered ADDED event).
+                    log.debug("{}: {} {} in namespace {} does not match label selector {} and will be ignored", reconciliation, kind(), name, namespace, selector().get().getMatchLabels());
+                    return Future.succeededFuture();
+                }
+
                 Promise<Void> createOrUpdate = Promise.promise();
 
                 if (cr.getSpec() == null)   {
@@ -416,7 +430,7 @@ public abstract class AbstractOperator<
      * @return A selector.
      */
     public Optional<LabelSelector> selector() {
-        return Optional.empty();
+        return selector;
     }
 
     /**

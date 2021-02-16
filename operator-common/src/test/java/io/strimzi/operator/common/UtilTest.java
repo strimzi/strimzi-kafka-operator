@@ -4,14 +4,21 @@
  */
 package io.strimzi.operator.common;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
+import static io.strimzi.operator.common.Util.matchesSelector;
 import static io.strimzi.operator.common.Util.parseMap;
+import static java.util.Collections.emptyMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
@@ -135,5 +142,50 @@ public class UtilTest {
                 "log4j.rootLogger=INFO, CONSOLE\n";
         String result = Util.expandVars(input);
         assertThat(result, is(expectedOutput));
+    }
+
+    @Test
+    public void testMatchesSelector()   {
+        Pod testResource = new PodBuilder()
+                .withNewMetadata()
+                    .withNewName("test-pod")
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
+
+        // Resources without any labels
+        Optional<LabelSelector> selector = Optional.empty();
+        assertThat(matchesSelector(selector, testResource), is(true));
+
+        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(emptyMap()).build());
+        assertThat(matchesSelector(selector, testResource), is(true));
+
+        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2")).build());
+        assertThat(matchesSelector(selector, testResource), is(false));
+
+        // Resources with Labels
+        testResource.getMetadata().setLabels(Map.of("label1", "value1", "label2", "value2"));
+
+        selector = Optional.empty();
+        assertThat(matchesSelector(selector, testResource), is(true));
+
+        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(emptyMap()).build());
+        assertThat(matchesSelector(selector, testResource), is(true));
+
+        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2")).build());
+        assertThat(matchesSelector(selector, testResource), is(true));
+
+        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1")).build());
+        assertThat(matchesSelector(selector, testResource), is(true));
+
+        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value1")).build());
+        assertThat(matchesSelector(selector, testResource), is(false));
+
+        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label3", "value3")).build());
+        assertThat(matchesSelector(selector, testResource), is(false));
+
+        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build());
+        assertThat(matchesSelector(selector, testResource), is(false));
     }
 }

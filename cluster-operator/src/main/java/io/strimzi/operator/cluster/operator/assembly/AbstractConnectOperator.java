@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -128,7 +129,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
                                    Function<Vertx, KafkaConnectApi> connectClientProvider,
                                    int port) {
-        super(vertx, kind, resourceOperator, supplier.metricsProvider);
+        super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
         this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectClientProvider = connectClientProvider;
         this.configMapOperations = supplier.configMapOperations;
@@ -195,13 +196,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param connectOperator The operator for {@code KafkaConnect}.
      * @param connectS2IOperator The operator for {@code KafkaConnectS2I}.
      * @param watchNamespaceOrWildcard The namespace to watch.
+     * @param selectorLabels Selector labels for filtering the custom resources
+     *
      * @return A future which completes when the watch has been set up.
      */
     // Deprecation is suppressed because of KafkaConnectS2I
     @SuppressWarnings("deprecation")
     public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
                                                     AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> connectS2IOperator,
-                                                    String watchNamespaceOrWildcard) {
+                                                    String watchNamespaceOrWildcard, Labels selectorLabels) {
+        Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
+
         return Util.async(connectOperator.vertx, () -> {
             connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
                 @Override
@@ -237,7 +242,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 Reconciliation reconciliation = new Reconciliation("connector-watch", connectOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
 
-                                                if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
+                                                if (!Util.matchesSelector(selector, connect))   {
+                                                    log.debug("{}: {} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName, selectorLabels);
+                                                    return Future.succeededFuture();
+                                                } else if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
                                                     log.info("{}: {} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
                                                     updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                     return Future.succeededFuture();
@@ -260,7 +268,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 Reconciliation reconciliation = new Reconciliation("connector-watch", connectS2IOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
 
-                                                if (connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0)    {
+                                                if (!Util.matchesSelector(selector, connectS2i)) {
+                                                    log.debug("{}: {} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName, selectorLabels);
+                                                    return Future.succeededFuture();
+                                                } else if (connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0)    {
                                                     log.info("{}: {} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
                                                     updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                     return Future.succeededFuture();

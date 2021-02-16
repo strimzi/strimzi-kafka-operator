@@ -54,7 +54,7 @@ public class ClusterOperator extends AbstractVerticle {
 
     private final KubernetesClient client;
     private final String namespace;
-    private final long reconciliationInterval;
+    private final ClusterOperatorConfig config;
 
     private final Map<String, Watch> watchByKind = new ConcurrentHashMap<>();
 
@@ -68,7 +68,7 @@ public class ClusterOperator extends AbstractVerticle {
     private final KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator;
 
     public ClusterOperator(String namespace,
-                           long reconciliationInterval,
+                           ClusterOperatorConfig config,
                            KubernetesClient client,
                            KafkaAssemblyOperator kafkaAssemblyOperator,
                            KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
@@ -80,7 +80,7 @@ public class ClusterOperator extends AbstractVerticle {
                            MetricsProvider metricsProvider) {
         log.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
-        this.reconciliationInterval = reconciliationInterval;
+        this.config = config;
         this.client = client;
         this.kafkaAssemblyOperator = kafkaAssemblyOperator;
         this.kafkaConnectAssemblyOperator = kafkaConnectAssemblyOperator;
@@ -115,13 +115,13 @@ public class ClusterOperator extends AbstractVerticle {
             }));
         }
 
-        watchFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, kafkaConnectS2IAssemblyOperator, namespace));
+        watchFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, kafkaConnectS2IAssemblyOperator, namespace, config.getCustomResourceSelector()));
         watchFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
 
         CompositeFuture.join(watchFutures)
                 .compose(f -> {
                     log.info("Setting up periodic reconciliation for namespace {}", namespace);
-                    this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
+                    this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), res2 -> {
                         log.info("Triggering periodic reconciliation for namespace {}...", namespace);
                         reconcileAll("timer");
                     });

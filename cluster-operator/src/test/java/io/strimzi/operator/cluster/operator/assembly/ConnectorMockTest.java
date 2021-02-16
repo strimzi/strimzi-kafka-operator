@@ -182,7 +182,7 @@ public class ConnectorMockTest {
                 return kafkaConnectS2iOperator.createWatch(NAMESPACE, e -> testContext.failNow(e));
             })
             .onComplete(testContext.succeeding())
-            .compose(watch -> AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, kafkaConnectS2iOperator, NAMESPACE))
+            .compose(watch -> AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, kafkaConnectS2iOperator, NAMESPACE, null))
             .onComplete(testContext.succeeding(v -> async.flag()));
     }
 
