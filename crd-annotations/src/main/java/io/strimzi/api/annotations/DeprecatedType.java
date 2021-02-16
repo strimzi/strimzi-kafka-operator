@@ -16,4 +16,9 @@ public @interface DeprecatedType {
      * @return The type which should be used as replacement
      */
     Class<?> replacedWithType();
+
+    /**
+     * @return The API version in which this property is scheduled to be removed.
+     */
+    String removalVersion() default "";
 }
