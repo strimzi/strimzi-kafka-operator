@@ -26,7 +26,7 @@ Using the APIs, you can:
 
 * Check the status of a connector instance
 * Reconfigure a running connector
-* Increase or decrease the number of tasks for a connector instance
+* Increase or decrease the number of connector tasks for a connector instance
 * Restart connectors
 * Restart connector tasks, including failed tasks
 * Pause a connector instance
