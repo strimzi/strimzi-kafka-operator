@@ -34,11 +34,11 @@ Metadata is found and migrated from ZooKeeper, and the old store is cleansed.
 
 == Downgrading to a Strimzi version that uses ZooKeeper to store topic metadata
 
-If you are reverting back to a version of Strimzi that uses ZooKeeper for the storage of topic metadata,
-you downgrade your Cluster Operator to the previous version,
+If you are reverting back to a version of Strimzi earlier than 0.22, which uses ZooKeeper for the storage of topic metadata,
+you still downgrade your Cluster Operator to the previous version,
 then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
 
-Additionally, you must delete the topics created for the topic store using a `kafka-admin` command, specifying the bootstrap address of the Kafka cluster and the name of a broker pod.
+However, you must also delete the topics created for the topic store using a `kafka-admin` command, specifying the bootstrap address of the Kafka cluster.
 For example:
 
 [source,shell]

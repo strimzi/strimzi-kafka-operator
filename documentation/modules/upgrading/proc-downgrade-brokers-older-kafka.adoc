@@ -77,13 +77,11 @@ Reconciliation #_NUM_(watch) Kafka(_NAMESPACE_/_NAME_): Kafka version downgrade 
 +
 The Kafka cluster and clients are now using the previous Kafka version.
 
-. If you are reverting back to a version of Strimzi that uses ZooKeeper for the storage of topic metadata, delete the internal topic store topics from the Kafka cluster.
-+
-For example, where _my-cluster-kafka-0_ is the name of the broker pod:
+. If you are reverting back to a version of Strimzi earlier than 0.22, which uses ZooKeeper for the storage of topic metadata, delete the internal topic store topics from the Kafka cluster.
 +
 [source,shell]
 ----
-kubectl exec -ti my-cluster-kafka-0 -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
+kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
 ----
 
 [role="_additional-resources"]
