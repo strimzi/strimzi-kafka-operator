@@ -394,6 +394,7 @@ public class OauthTlsST extends OauthAbstractST {
 
     @BeforeAll
     void setUp() {
+        setupCoAndKeycloak();
         keycloakInstance.setRealm("internal", true);
 
         LOGGER.info("Keycloak settings {}", keycloakInstance.toString());

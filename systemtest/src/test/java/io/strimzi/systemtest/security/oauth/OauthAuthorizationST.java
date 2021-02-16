@@ -459,6 +459,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @BeforeAll
     void setUp()  {
+        setupCoAndKeycloak();
         keycloakInstance.setRealm(TEST_REALM, true);
 
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(oauthClusterName, 3)

@@ -392,6 +392,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @BeforeAll
     void setUp() {
+        setupCoAndKeycloak();
         keycloakInstance.setRealm("internal", false);
 
         LOGGER.info("Setting producer and consumer properties");

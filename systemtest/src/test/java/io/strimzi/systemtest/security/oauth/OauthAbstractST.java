@@ -53,8 +53,7 @@ public class OauthAbstractST extends AbstractST {
 
     protected WebClient client;
 
-    @BeforeAll
-    void setup() {
+    void setupCoAndKeycloak() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
         KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
