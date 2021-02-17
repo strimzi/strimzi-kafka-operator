@@ -39,8 +39,8 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
         TEST_MINIKUBE_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_MINIKUBE_VERSION}/minikube-linux-amd64
     fi
 
-    if [ "$KUBE_VERSION" = "latest" ]; then
-        KUBE_VERSION=$(curl -s https://github.com/kubernetes/kubernetes/releases/latest | grep -o "[0-9].[0-9][0-9].[0-9]")
+    if [ "$KUBE_VERSION" != "latest" ] && [ "$KUBE_VERSION" != "stable" ]; then
+        KUBE_VERSION="v${KUBE_VERSION}"
     fi
 
     curl -Lo minikube ${TEST_MINIKUBE_URL} && chmod +x minikube
@@ -50,7 +50,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     export MINIKUBE_WANTREPORTERRORPROMPT=false
     export MINIKUBE_HOME=$HOME
     export CHANGE_MINIKUBE_NONE_USER=true
-    
+
     mkdir $HOME/.kube || true
     touch $HOME/.kube/config
 
@@ -60,7 +60,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
     # We have to allow trafic for ITS when NPs are turned on
     # We can allow NP after Strimzi#4092 which should fix some issues on STs side
-    sudo -E minikube start --vm-driver=none --kubernetes-version=v${KUBE_VERSION} \
+    sudo -E minikube start --vm-driver=none --kubernetes-version=${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC
 
     if [ $? -ne 0 ]
@@ -70,7 +70,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     sudo -E minikube addons enable default-storageclass
-	kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+	  kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
 elif [ "$TEST_CLUSTER" = "minishift" ]; then
     #install_kubectl
