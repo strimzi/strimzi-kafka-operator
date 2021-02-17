@@ -56,7 +56,7 @@ Replace `_my-cluster-operator-namespace_` with the namespace you want to install
 . Deploy the Cluster Operator to your Kubernetes cluster.
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl apply -f install/cluster-operator -n _my-cluster-operator-namespace_
+kubectl create -f install/cluster-operator -n _my-cluster-operator-namespace_
 
 . Verify that the Cluster Operator was successfully deployed:
 +

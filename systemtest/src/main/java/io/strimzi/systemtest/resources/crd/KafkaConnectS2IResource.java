@@ -31,7 +31,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 public class KafkaConnectS2IResource {
 
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2IClient() {
-        return Crds.kafkaConnectS2iOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaConnectS2iV1Beta2Operation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaConnectS2IBuilder kafkaConnectS2I(String name, String clusterName, int kafkaConnectS2IReplicas) {

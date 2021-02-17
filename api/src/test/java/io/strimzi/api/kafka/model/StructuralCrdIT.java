@@ -55,7 +55,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
             assertApiVersionsAreStructural(crd.getKey(),
                     ApiVersion.V1,
-                    "../install/crd-v1/" + crd.getValue(),
+                    "./src/test/resources/io/strimzi/api/kafka/model/" + crd.getValue(),
                     ApiVersion.parseRange("v1beta2+"));
         }
     }

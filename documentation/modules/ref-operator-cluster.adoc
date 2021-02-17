@@ -169,7 +169,7 @@ You configure Cluster Operator logging by changing the data field `log4j2.proper
 
 To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator.yaml` file and then run the following command:
 [source,shell,subs=+quotes]
-kubectl apply -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml_
+kubectl create -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml_
 
 Alternatively, edit the `ConfigMap` directly:
 [source,shell,subs=+quotes]
