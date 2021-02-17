@@ -38,6 +38,11 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     else
         TEST_MINIKUBE_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_MINIKUBE_VERSION}/minikube-linux-amd64
     fi
+
+    if [ "$KUBE_VERSION" = "latest" ]; then
+        KUBE_VERSION=$(curl -s https://github.com/kubernetes/kubernetes/releases/latest | grep -o "[0-9].[0-9][0-9].[0-9]")
+    fi
+
     curl -Lo minikube ${TEST_MINIKUBE_URL} && chmod +x minikube
     sudo cp minikube /usr/bin
 
