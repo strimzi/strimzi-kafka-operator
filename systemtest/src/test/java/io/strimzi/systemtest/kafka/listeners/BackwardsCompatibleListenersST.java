@@ -65,24 +65,24 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     public static final String NAMESPACE = "bc-listeners";
 
     // Backwards compatibility needs to use v1beta1. That is why we have some custom methods here instead of using KafkaResource class
-    private static MixedOperation< Kafka, KafkaList, Resource<Kafka>> kafkaV1Beta1Client() {
+    private static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Beta1Client() {
         return Crds.kafkaV1Beta1Operation(ResourceManager.kubeClient().getClient());
     }
 
     private static Kafka createAndWaitForReadiness(Kafka kafka) {
         TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-                () -> {
-                    try {
-                        kafkaV1Beta1Client().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
-                        return true;
-                    } catch (KubernetesClientException e) {
-                        if (e.getMessage().contains("object is being deleted")) {
-                            return false;
-                        } else {
-                            throw e;
-                        }
+            () -> {
+                try {
+                    kafkaV1Beta1Client().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
+                    return true;
+                } catch (KubernetesClientException e) {
+                    if (e.getMessage().contains("object is being deleted")) {
+                        return false;
+                    } else {
+                        throw e;
                     }
-                });
+                }
+            });
         return waitFor(deleteLater(kafka));
     }
 

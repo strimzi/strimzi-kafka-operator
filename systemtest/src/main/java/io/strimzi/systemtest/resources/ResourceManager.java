@@ -127,7 +127,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                            .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                             .delete();
                     waitForDeletion((Kafka) resource);
                 });
@@ -138,7 +138,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                            .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                             .delete();
                     waitForDeletion((KafkaConnect) resource);
                 });
@@ -149,7 +149,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                            .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                             .delete();
                     waitForDeletion((KafkaConnectS2I) resource);
                 });
@@ -160,7 +160,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                            .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                             .delete();
                     waitForDeletion((KafkaMirrorMaker) resource);
                 });
@@ -171,7 +171,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                            .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                             .delete();
                     waitForDeletion((KafkaMirrorMaker2) resource);
                 });
@@ -182,7 +182,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                            .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                             .delete();
                     waitForDeletion((KafkaBridge) resource);
                 });
@@ -193,7 +193,7 @@ public class ResourceManager {
                         resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                         .withName(resource.getMetadata().getName())
-                        .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                        .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                         .delete();
                     KafkaTopicUtils.waitForKafkaTopicDeletion(resource.getMetadata().getName());
                 });
@@ -204,7 +204,7 @@ public class ResourceManager {
                         resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                         .withName(resource.getMetadata().getName())
-                        .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                        .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                         .delete();
                     KafkaUserUtils.waitForKafkaUserDeletion(resource.getMetadata().getName());
                 });
@@ -243,7 +243,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                            .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                             .delete();
                     kubeClient().deleteIngress((Ingress) resource);
                 });
@@ -254,7 +254,7 @@ public class ResourceManager {
                             resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                     operation.inNamespace(resource.getMetadata().getNamespace())
                             .withName(resource.getMetadata().getName())
-                            .withPropagationPolicy(DeletionPropagation.FOREGROUND)
+                            .withPropagationPolicy(DeletionPropagation.BACKGROUND)
                             .delete();
                 });
         }
