@@ -28,7 +28,7 @@ kubectl describe KafkaMirrorMaker2 _KAFKAMIRRORMAKER-2-NAME_
 ----
 
 . To restart the connector task, annotate the `KafkaMirrorMaker2` resource in Kubernetes. 
-For example, using `kubectl annotate` to restart task 0 of the connector named `+my-source->my-target.MirrorSourceConnector+`:
+In this example, `kubectl annotate` restarts task _0_ of a connector named `+my-source->my-target.MirrorSourceConnector+`:
 +
 [source,shell,subs="+quotes"]
 ----
