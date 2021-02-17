@@ -162,7 +162,7 @@ claimRef:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl apply -f install/cluster-operator -n _my-project_
+kubectl create -f install/cluster-operator -n _my-project_
 ----
 
 . Recreate your cluster.

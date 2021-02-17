@@ -28,7 +28,7 @@ public class KafkaRebalanceResource {
     public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = TestUtils.USER_PATH + "/../examples/cruise-control/kafka-rebalance.yaml";
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {
-        return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaRebalanceV1Beta2Operation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaRebalanceBuilder kafkaRebalance(String name) {

@@ -35,7 +35,7 @@ include::snip-cluster-operator-namespace-sed.adoc[]
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl apply -f install/cluster-operator
+kubectl replace -f install/cluster-operator
 ----
 +
 Wait for the rolling updates to complete.

@@ -33,7 +33,7 @@ public class KafkaConnectResource {
     public static final String PATH_TO_KAFKA_CONNECT_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect.yaml";
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectClient() {
-        return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaConnectV1Beta2Operation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaConnectBuilder kafkaConnect(String name, int kafkaConnectReplicas) {
