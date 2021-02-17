@@ -52,14 +52,14 @@ PASSWORD=$(kubectl get secret -n ${NAMESPACE} credential-example-keycloak -o=jso
 USERNAME=$(kubectl get secret -n ${NAMESPACE} credential-example-keycloak -o=jsonpath='{.data.ADMIN_USERNAME}' | base64 -d)
 
 echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Import realms - USER:${USERNAME} - PASS:${PASSWORD}"
-AUTHENTICATION_REALM_OUTPUT=$(kubectl exec keycloak-0 -n ${NAMESPACE} -- /tmp/create_realm.sh ${USERNAME} ${PASSWORD} localhost:8443)
+AUTHENTICATION_REALM_OUTPUT=$(kubectl exec keycloak-0 -n ${NAMESPACE} -- /tmp/create_realm.sh ${USERNAME} ${PASSWORD} localhost:8443 ${NAMESPACE})
 echo ${AUTHENTICATION_REALM_OUTPUT}
 if [[ ${AUTHENTICATION_REALM_OUTPUT} == *"Realm wasn't imported!"* ]]; then
   echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Authentication realm wasn't imported!"
   exit 1
 fi
 
-AUTHORIZATION_REALM_OUTPUT=$(kubectl exec keycloak-0 -n ${NAMESPACE} -- /tmp/create_realm_authorization.sh ${USERNAME} ${PASSWORD} localhost:8443)
+AUTHORIZATION_REALM_OUTPUT=$(kubectl exec keycloak-0 -n ${NAMESPACE} -- /tmp/create_realm_authorization.sh ${USERNAME} ${PASSWORD} localhost:8443 ${NAMESPACE})
 if [[ ${AUTHORIZATION_REALM_OUTPUT} == *"Realm wasn't imported!"* ]]; then
   echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Authorization realm wasn't imported!"
   exit 1
