@@ -182,7 +182,7 @@ public abstract class AbstractST implements TestSeparator {
 
             }
             clusterOperatorConfigs.push(entry.getKey().getPath());
-            cmdKubeClient().namespace(namespace).createContent(fileContents);
+            cmdKubeClient().namespace(namespace).replaceContent(fileContents);
         }
     }
 

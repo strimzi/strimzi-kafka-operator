@@ -234,11 +234,11 @@ public class AbstractUpgradeST extends AbstractST {
     protected void copyModifyApply(File root, String namespace) {
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
-                cmdKubeClient().applyContent(TestUtils.changeRoleBindingSubject(f, namespace));
+                cmdKubeClient().replaceContent(TestUtils.changeRoleBindingSubject(f, namespace));
             } else if (f.getName().matches(".*Deployment.*")) {
-                cmdKubeClient().applyContent(StUtils.changeDeploymentNamespace(f, namespace));
+                cmdKubeClient().replaceContent(StUtils.changeDeploymentNamespace(f, namespace));
             } else {
-                cmdKubeClient().apply(f);
+                cmdKubeClient().replaceContent(TestUtils.getContent(f, TestUtils::toYamlString));
             }
         });
     }
