@@ -540,15 +540,23 @@ public abstract class AbstractOperator<
     private void updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
         String key = reconciliation.namespace() + ":" + reconciliation.kind() + "/" + reconciliation.name();
 
-        Tags metricTagsWithReason = Tags.of(
-                Tag.of("kind", reconciliation.kind()),
-                Tag.of("name", reconciliation.name()),
-                Tag.of("resource-namespace", reconciliation.namespace()),
-                Tag.of("failure-reason", cause == null ? "none" : cause.getMessage() == null ? "unknown error" : cause.getMessage()));
+        Tags metricTags;
+        if (cause == null) {
+            metricTags = Tags.of(
+                    Tag.of("kind", reconciliation.kind()),
+                    Tag.of("name", reconciliation.name()),
+                    Tag.of("resource-namespace", reconciliation.namespace()));
+        } else {
+            metricTags = Tags.of(
+                    Tag.of("kind", reconciliation.kind()),
+                    Tag.of("name", reconciliation.name()),
+                    Tag.of("resource-namespace", reconciliation.namespace()),
+                    Tag.of("reason", cause.getMessage() == null ? "unknown error" : cause.getMessage()));
+        }
 
         T cr = resourceOperator.get(reconciliation.namespace(), reconciliation.name());
 
-        Optional<Meter> gauge = metrics.meterRegistry().getMeters()
+        Optional<Meter> metric = metrics.meterRegistry().getMeters()
                 .stream()
                 .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
                         meter.getId().getTags().contains(Tag.of("kind", reconciliation.kind())) &&
@@ -556,19 +564,19 @@ public abstract class AbstractOperator<
                         meter.getId().getTags().contains(Tag.of("resource-namespace", reconciliation.namespace()))
                 ).findFirst();
 
-        if (gauge.isPresent()) {
+        if (metric.isPresent()) {
             // remove metric so it can be re-added with new tags
-            metrics.meterRegistry().remove(gauge.get().getId());
+            metrics.meterRegistry().remove(metric.get().getId());
             resourcesStateCounter.remove(key);
             log.debug("{}: Removed metric " + METRICS_PREFIX + "resource.state{}", reconciliation, key);
         }
 
         if (cr != null) {
             resourcesStateCounter.computeIfAbsent(key, tags ->
-                    metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTagsWithReason)
+                    metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
             );
             resourcesStateCounter.get(key).set(ready ? 1 : 0);
-            log.debug("{}: Updated metric " + METRICS_PREFIX + "resource.state{} = {}", reconciliation, metricTagsWithReason, ready ? 1 : 0);
+            log.debug("{}: Updated metric " + METRICS_PREFIX + "resource.state{} = {}", reconciliation, metricTags, ready ? 1 : 0);
         }
     }
 
