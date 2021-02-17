@@ -1,29 +1,13 @@
 #!/usr/bin/env bash
+set +x
 
 USERNAME=$1
 PASSWORD=$2
 URL=$3
-NAMESPACE=$4
 
-TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token" | awk -F '\"' '{print $4}')
-
-RETRY=10
-while [[ ${TOKEN} == *"invalid_grant"* && ${RETRY} -gt 0 ]]
-do
-	echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Token wasn't granted! Retry in 2 sec (${RETRY})\n"
-	sleep 2
-
-	echo "$(kubectl get secrets -n ${NAMESPACE} -o yaml)"
-
-	PASSWORD=$(kubectl get secret -n ${NAMESPACE} credential-example-keycloak -o=jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d)
-	USERNAME=$(kubectl get secret -n ${NAMESPACE} credential-example-keycloak -o=jsonpath='{.data.ADMIN_USERNAME}' | base64 -d)
-	echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Credentials - USER:${USERNAME} - PASS:${PASSWORD}"
-
-	TMP_CURL=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token")
-	echo "[INFO] CURL OUTPUT: ${TMP_CURL}\n"
-	TOKEN=$(echo ${TMP_CURL} | awk -F '\"' '{print $4}')
-	((RETRY-=1))
-done
+TOKEN_CURL_OUT=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token")
+echo "[INFO] TOKEN_CURL_OUT: ${TOKEN_CURL_OUT}\n"
+TOKEN=$(echo ${TOKEN_CURL_OUT} | awk -F '\"' '{print $4}')
 
 
 TOKEN=$(curl --insecure -X POST -d "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=$USERNAME&password=$PASSWORD" "https://$URL/auth/realms/master/protocol/openid-connect/token" | awk -F '\"' '{print $4}')
@@ -396,8 +380,10 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
 }')
 
 if [[ ${RESULT} != "" && ${RESULT} != *"Conflict detected"* ]]; then
-  echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Realm wasn't imported!"
+  echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Authentication realm wasn't imported!"
   exit 1
 fi
 
-echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Realm was successfully imported!"
+echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Authentication realm was successfully imported!"
+
+exit 0

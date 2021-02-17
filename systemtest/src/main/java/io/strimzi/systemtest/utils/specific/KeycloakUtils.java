@@ -4,7 +4,9 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
 import io.vertx.core.json.JsonArray;
@@ -28,12 +30,18 @@ public class KeycloakUtils {
     public static void deployKeycloak(String namespace) {
         LOGGER.info("Prepare Keycloak in namespace: {}", namespace);
         ResourceManager.getPointerResources().push(() -> deleteKeycloak(namespace));
-        ExecResult result = Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, namespace);
 
-        if (!result.out().contains("All realms were successfully imported")) {
-            LOGGER.info("Errors occurred during Keycloak install: {}", result.err());
-            throw new RuntimeException("Keycloak wasn't deployed correctly!");
-        }
+        TestUtils.waitFor("Keycloak instance readiness", Constants.API_CRUISE_CONTROL_POLL, Constants.GLOBAL_TIMEOUT, () -> {
+            ExecResult result = Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, namespace);
+
+            if (!result.out().contains("All realms were successfully imported")) {
+                LOGGER.info("Errors occurred during Keycloak install: {}", result.err());
+                return false;
+//                throw new RuntimeException("Keycloak wasn't deployed correctly!");
+            }
+            return  true;
+        });
+
         LOGGER.info("Keycloak in namespace {} is ready", namespace);
     }
 
