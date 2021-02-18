@@ -374,7 +374,7 @@ public class OperatorMetricsTest {
                 class Foo extends MyResource {
                     @Override
                     public ObjectMeta getMetadata() {
-                        return null;
+                        return new ObjectMeta();
                     }
 
                     @Override
