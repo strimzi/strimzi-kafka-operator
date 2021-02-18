@@ -11,12 +11,12 @@ import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mockito.ArgumentMatchers;
@@ -115,6 +115,10 @@ class MockBuilder<T extends HasMetadata,
         if (resource == null) {
             return null;
         } else {
+            if (resource.getMetadata() == null) {
+                // mocked endpoints do not have metadata
+                resource.setMetadata(new ObjectMetaBuilder().withName("karel").withNamespace("lojza").build());
+            }
             ObjectMapper objectMapper = new ObjectMapper();
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -295,7 +299,8 @@ class MockBuilder<T extends HasMetadata,
             return doPatch(t.getMetadata().getName(), resource, (T) f.apply(t));
         });
         mockDelete(resourceName, resource);
-        if (Readiness.isReadinessApplicable(resourceTypeClass)) {
+        T t1 = resource.get();
+        if (t1 != null/* && Readiness.getInstance().isReady(t1)*/) {
             mockIsReady(resourceName, resource);
         }
         try {
@@ -419,7 +424,7 @@ class MockBuilder<T extends HasMetadata,
 
     private T doCreate(String resourceName, T argument) {
         checkNotExists(resourceName);
-        LOGGER.debug("create {} {} -> {}", resourceType, resourceName, argument);
+        LOGGER.info("create {} {} -> {}", resourceType, resourceName, argument);
         db.put(resourceName, incrementGeneration(incrementResourceVersion(copyResource(argument))));
         fireWatchers(resourceName, argument, Watcher.Action.ADDED, "create");
         return copyResource(argument);

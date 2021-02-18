@@ -138,12 +138,12 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000)
             .onComplete(context.succeeding(v -> {
                 if (clientType() == OpenShiftClient.class)    {
-                    verify(mockResource, times(OpenShiftReadiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
+                    verify(mockResource, times(OpenShiftReadiness.getInstance().isReady(resource) ? unreadyCount + 1 : 1)).get();
                 } else {
-                    verify(mockResource, times(Readiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
+                    verify(mockResource, times(Readiness.getInstance().isReady(resource) ? unreadyCount + 1 : 1)).get();
                 }
 
-                if (Readiness.isReadinessApplicable(resource.getClass())) {
+                if (Readiness.getInstance().isReady(resource)) {
                     verify(mockResource, times(unreadyCount + 1)).isReady();
                 }
                 async.flag();
@@ -155,7 +155,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         T resource = resource();
 
         // This test does not apply to the resource types without the Ready field
-        if (!Readiness.isReadinessApplicable(resource.getClass()))  {
+        if (!Readiness.getInstance().isReady(resource))  {
             context.completeNow();
         }
 
@@ -189,7 +189,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         T resource = resource();
 
         // This test does not apply to the resource types without the Ready field
-        if (!Readiness.isReadinessApplicable(resource.getClass()))  {
+        if (!Readiness.getInstance().isReady(resource))  {
             context.completeNow();
         }
 

@@ -108,7 +108,7 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> {
         // Parse resource into CM
         try {
             resourceName = CustomResource.class.isAssignableFrom(cls) ?
-                    prefix + "-" + cls.newInstance().getKind() + ".yaml" :
+                    prefix + "-" + cls.getDeclaredConstructor().newInstance().getKind() + ".yaml" :
                     prefix + "-" + cls.getSimpleName() + ".yaml";
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);

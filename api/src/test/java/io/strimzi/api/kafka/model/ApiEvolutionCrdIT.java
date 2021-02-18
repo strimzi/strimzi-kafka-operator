@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.V1ApiextensionsAPIGroupClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
@@ -125,14 +125,15 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
             assertIsListListener(v1beta2Get(nameC));
 
             LOGGER.info("Phase 2 : Updating CRD so v1beta1 has served=false");
-            CustomResourceDefinition crdPhase2Part2 = cluster.client().getClient().customResourceDefinitions()
+
+            CustomResourceDefinition crdPhase2Part2 = cluster.client().getClient().apiextensions().v1().customResourceDefinitions()
                     .createOrReplace(new CustomResourceDefinitionBuilder(crdPhase2).editSpec()
                             .editLastVersion().withServed(false).endVersion().endSpec().build());
 
             CustomResourceDefinition crdPhase2Part3 = waitForCrdUpdate(crdPhase2Part2.getMetadata().getGeneration());
 
             LOGGER.info("Phase 2 : Updating CRD status.stored versions = v1beta2");
-            CustomResourceDefinition crdPhase2Part4 = cluster.client().getClient().customResourceDefinitions()
+            CustomResourceDefinition crdPhase2Part4 = cluster.client().getClient().apiextensions().v1().customResourceDefinitions()
                     .updateStatus(new CustomResourceDefinitionBuilder(crdPhase2Part3).editStatus().withStoredVersions(asList("v1beta2")).endStatus().build());
 
             assertEquals(asList("v1beta2"), crdPhase2Part4.getStatus().getStoredVersions());
@@ -209,10 +210,10 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
 
     private CustomResourceDefinition waitForCrdUpdate(long crdGeneration2) {
         TestUtils.waitFor("CRD update", 1000, 30000, () ->
-                crdGeneration2 == cluster.client().getClient().customResourceDefinitions()
+                crdGeneration2 == cluster.client().getClient().apiextensions().v1().customResourceDefinitions()
                         .withName("kafkas.kafka.strimzi.io").get()
                         .getMetadata().getGeneration());
-        return cluster.client().getClient().customResourceDefinitions()
+        return cluster.client().getClient().apiextensions().v1().customResourceDefinitions()
                 .withName("kafkas.kafka.strimzi.io").get();
     }
 
@@ -260,7 +261,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
         @Override
         public CustomResourceDefinition createOrReplace() throws IOException {
             CustomResourceDefinition build = build();
-            return cluster.client().getClient().customResourceDefinitions()
+            return cluster.client().getClient().apiextensions().v1().customResourceDefinitions()
                     .createOrReplace(build);
         }
 
@@ -291,7 +292,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
     private void deleteCrd() {
         KubernetesClientException ex = null;
         try {
-            cluster.client().getClient().customResourceDefinitions()
+            cluster.client().getClient().apiextensions().v1().customResourceDefinitions()
                     .withName("kafkas.kafka.strimzi.io")
                     .delete();
         } catch (KubernetesClientException e) {

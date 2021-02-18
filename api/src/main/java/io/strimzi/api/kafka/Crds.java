@@ -4,17 +4,16 @@
  */
 package io.strimzi.api.kafka;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionBuilder;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceSubresourceStatus;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersionBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceSubresourceStatus;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
-import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaRebalance;
@@ -30,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.Constants.CRD_KIND;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -231,17 +231,17 @@ public class Crds {
                 .withNewSpec()
                     .withScope(scope)
                     .withGroup(group)
-                    .withVersion(version)
+                    .withVersions(singletonList(new CustomResourceDefinitionVersionBuilder().withNewName(version).build()))
                     .withNewNames()
                         .withSingular(singular)
                         .withPlural(plural)
                         .withKind(kind)
                         .withListKind(listKind)
                     .endNames()
-                    .withNewSubresources()
-                        .withStatus(status)
-                    .endSubresources()
                 .endSpec()
+                .withNewStatus()
+                    .withConditions(emptyList())
+                .endStatus()
                 .build();
     }
 
@@ -250,23 +250,23 @@ public class Crds {
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafka()), Kafka.class, KafkaList.class);
+        return client.customResources(Kafka.class, KafkaList.class);
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Alpha1Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1ALPHA1)), Kafka.class, KafkaList.class);
+        return client.customResources(Kafka.class, KafkaList.class);
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Beta1Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1BETA1)), Kafka.class, KafkaList.class);
+        return client.customResources(Kafka.class, KafkaList.class);
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Beta2Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1BETA2)), Kafka.class, KafkaList.class);
+        return client.customResources(Kafka.class, KafkaList.class);
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(Kafka.class, Constants.V1)), Kafka.class, KafkaList.class);
+        return client.customResources(Kafka.class, KafkaList.class);
     }
 
     public static CustomResourceDefinition kafkaConnect() {
@@ -274,7 +274,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaConnect()), KafkaConnect.class, KafkaConnectList.class);
+        return client.customResources(KafkaConnect.class, KafkaConnectList.class);
     }
 
     public static CustomResourceDefinition kafkaConnector() {
@@ -282,7 +282,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaConnector()), KafkaConnector.class, KafkaConnectorList.class);
+        return client.customResources(KafkaConnector.class, KafkaConnectorList.class);
     }
 
     public static CustomResourceDefinition kafkaConnectS2I() {
@@ -290,7 +290,7 @@ public class Crds {
     }
 
     public static <T extends CustomResource> MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2iOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaConnectS2I()), KafkaConnectS2I.class, KafkaConnectS2IList.class);
+        return client.customResources(KafkaConnectS2I.class, KafkaConnectS2IList.class);
     }
 
     public static CustomResourceDefinition kafkaTopic() {
@@ -298,7 +298,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> topicOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaTopic()), KafkaTopic.class, KafkaTopicList.class);
+        return client.customResources(KafkaTopic.class, KafkaTopicList.class);
     }
 
     public static CustomResourceDefinition kafkaUser() {
@@ -306,7 +306,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaUser()), KafkaUser.class, KafkaUserList.class);
+        return client.customResources(KafkaUser.class, KafkaUserList.class);
     }
 
     public static CustomResourceDefinition kafkaMirrorMaker() {
@@ -314,7 +314,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> mirrorMakerOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaMirrorMaker()), KafkaMirrorMaker.class, KafkaMirrorMakerList.class);
+        return client.customResources(KafkaMirrorMaker.class, KafkaMirrorMakerList.class);
     }
 
     public static CustomResourceDefinition kafkaBridge() {
@@ -322,7 +322,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaBridge()), KafkaBridge.class, KafkaBridgeList.class);
+        return client.customResources(KafkaBridge.class, KafkaBridgeList.class);
     }
 
     public static CustomResourceDefinition kafkaMirrorMaker2() {
@@ -330,7 +330,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Operation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaMirrorMaker2()), KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class);
+        return client.customResources(KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class);
     }
 
     public static CustomResourceDefinition kafkaRebalance() {
@@ -338,19 +338,19 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceOperation(KubernetesClient client) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(kafkaRebalance()), KafkaRebalance.class, KafkaRebalanceList.class);
+        return client.customResources(KafkaRebalance.class, KafkaRebalanceList.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>> MixedOperation<T, L, Resource<T>>
             operation(KubernetesClient client,
                       Class<T> cls,
                       Class<L> listCls) {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd(cls)), cls, listCls);
+        return client.customResources(cls, listCls);
     }
 
     public static <T extends CustomResource> String kind(Class<T> cls) {
         try {
-            return cls.newInstance().getKind();
+            return cls.getDeclaredConstructor().newInstance().getKind();
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

@@ -12,9 +12,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionCondition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionVersion;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionCondition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.VersionRange;
 import org.junit.jupiter.api.Test;
@@ -54,7 +54,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
 
     private void assertApiVersionsAreStructural(String api, ApiVersion crdApiVersion, VersionRange<ApiVersion> shouldBeStructural) {
         Pattern pattern = Pattern.compile("[^.]spec\\.versions\\[([0-9]+)\\]\\.[^,]*?");
-        CustomResourceDefinition crd = cluster.client().getClient().customResourceDefinitions().withName(api).get();
+        CustomResourceDefinition crd = cluster.client().getClient().apiextensions().v1().customResourceDefinitions().withName(api).get();
         // We can't make the following assertion because the current version of fabric8 always requests
         // the CRD using v1beta1 api version, so the apiserver just replaces it and serves it.
         //assertEquals(crdApiVersion, ApiVersion.parse(crd.getApiVersion().replace("apiextensions.k8s.io/", "")));

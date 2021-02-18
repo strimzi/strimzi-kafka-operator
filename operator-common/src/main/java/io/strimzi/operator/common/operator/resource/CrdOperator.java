@@ -6,13 +6,12 @@ package io.strimzi.operator.common.operator.resource;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -47,7 +46,7 @@ public class CrdOperator<C extends KubernetesClient,
 
     @Override
     protected MixedOperation<T, L, Resource<T>> operation() {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd), cls, listCls);
+        return client.customResources(cls, listCls);
     }
 
     /**

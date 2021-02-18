@@ -7,7 +7,6 @@ package io.strimzi.test.k8s;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
@@ -18,7 +17,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.Job;
@@ -28,6 +27,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
@@ -37,7 +37,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import okhttp3.Response;
@@ -558,12 +557,12 @@ public class KubeClient {
 
     @SuppressWarnings("deprecation")
     public List<Event> listEvents() {
-        return client.events().inNamespace(getNamespace()).list().getItems();
+        return client.v1().events().inNamespace(getNamespace()).list().getItems();
     }
 
     @SuppressWarnings("deprecation")
     public List<Event> listEvents(String resourceType, String resourceName) {
-        return client.events().inNamespace(getNamespace()).list().getItems().stream()
+        return client.v1().events().inNamespace(getNamespace()).list().getItems().stream()
                 .filter(event -> event.getInvolvedObject().getKind().equals(resourceType))
                 .filter(event -> event.getInvolvedObject().getName().equals(resourceName))
                 .collect(Collectors.toList());
@@ -607,8 +606,8 @@ public class KubeClient {
         return client.rbac().roleBindings().list().getItems();
     }
 
-    public <T extends HasMetadata, L extends KubernetesResourceList<T>> MixedOperation<T, L, Resource<T>> customResources(CustomResourceDefinitionContext crdContext, Class<T> resourceType, Class<L> listClass) {
-        return client.customResources(crdContext, resourceType, listClass); //TODO namespace here
+    public <T extends CustomResource, L extends KubernetesResourceList<T>> MixedOperation<T, L, Resource<T>> customResources(Class<T> resourceType, Class<L> listClass) {
+        return client.customResources(resourceType, listClass); //TODO namespace here
     }
 
     // =========================
@@ -616,7 +615,7 @@ public class KubeClient {
     // =========================
 
     public List<CustomResourceDefinition> listCustomResourceDefinition() {
-        return client.apiextensions().v1beta1().customResourceDefinitions().list().getItems();
+        return client.apiextensions().v1().customResourceDefinitions().list().getItems();
     }
 
     private static class SimpleListener implements ExecListener {

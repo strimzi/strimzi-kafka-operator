@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -95,7 +95,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         cmdKubeClient().waitForResourceCreation("Namespace", namespace);
 
         log.info("Creating CRD");
-        client.customResourceDefinitions().createOrReplace(getCrd());
+        client.apiextensions().v1().customResourceDefinitions().createOrReplace(getCrd());
         log.info("Created CRD");
     }
 

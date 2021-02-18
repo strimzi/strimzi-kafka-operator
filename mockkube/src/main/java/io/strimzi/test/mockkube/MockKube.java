@@ -21,8 +21,8 @@ import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionList;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
@@ -40,8 +40,8 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.RoleList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.V1NetworkAPIGroupDSL;
-import io.fabric8.kubernetes.client.V1beta1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.V1beta1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
@@ -167,6 +167,7 @@ public class MockKube {
         private final Map<String, T> instances;
         private final Function<T, S> getStatus;
         private final BiConsumer<T, S> setStatus;
+        private final CustomResourceDefinitionContext crdc;
 
         private MockedCrd(CustomResourceDefinition crd,
                           Class<T> crClass, Class<L> crListClass,
@@ -177,6 +178,7 @@ public class MockKube {
             this.crListClass = crListClass;
             this.getStatus = getStatus;
             this.setStatus = setStatus;
+            this.crdc = CustomResourceDefinitionContext.fromCrd(crd);
             instances = db(emptySet());
         }
 
@@ -194,6 +196,10 @@ public class MockKube {
 
         Class<L> getCrListClass() {
             return crListClass;
+        }
+
+        public CustomResourceDefinitionContext getCrdc() {
+            return crdc;
         }
 
         Function<T, S> getStatus() {
@@ -309,11 +315,11 @@ public class MockKube {
             }
 
             ApiextensionsAPIGroupDSL mockApiEx = mock(ApiextensionsAPIGroupDSL.class);
-            V1beta1ApiextensionAPIGroupDSL mockv1b1 = mock(V1beta1ApiextensionAPIGroupDSL.class);
+            V1ApiextensionAPIGroupDSL mockv1 = mock(V1ApiextensionAPIGroupDSL.class);
 
             when(mockClient.apiextensions()).thenReturn(mockApiEx);
-            when(mockApiEx.v1beta1()).thenReturn(mockv1b1);
-            when(mockv1b1.customResourceDefinitions()).thenReturn(mockCrds);
+            when(mockApiEx.v1()).thenReturn(mockv1);
+            when(mockv1.customResourceDefinitions()).thenReturn(mockCrds);
 
             mockCrs(mockClient);
         }
@@ -348,11 +354,11 @@ public class MockKube {
         buildConfigMockBuilder.build2(mockOpenShiftClient::buildConfigs);
         if (mockedCrds != null && !mockedCrds.isEmpty()) {
             ApiextensionsAPIGroupDSL mockApiEx = mock(ApiextensionsAPIGroupDSL.class);
-            V1beta1ApiextensionAPIGroupDSL mockv1b1 = mock(V1beta1ApiextensionAPIGroupDSL.class);
+            V1ApiextensionAPIGroupDSL mockv1 = mock(V1ApiextensionAPIGroupDSL.class);
 
-            when(mockOpenShiftClient.apiextensions()).thenReturn(mockApiEx);
-            when(mockApiEx.v1beta1()).thenReturn(mockv1b1);
-            when(mockv1b1.customResourceDefinitions()).thenReturn(mockCrds);
+            when(mockClient.apiextensions()).thenReturn(mockApiEx);
+            when(mockApiEx.v1()).thenReturn(mockv1);
+            when(mockv1.customResourceDefinitions()).thenReturn(mockCrds);
             mockCrs(mockOpenShiftClient);
         }
 
@@ -366,7 +372,8 @@ public class MockKube {
     }
 
     public String crdKey(CustomResourceDefinitionContext crdc) {
-        return crdc.getGroup() + "##" + crdc.getVersion() + "##" + crdc.getKind();
+        return crdc.getKind();
+        //return crdc.getGroup() + "##" + crdc.getVersion() + "##" + crdc.getKind();
     }
 
     @SuppressWarnings({"unchecked", "deprecation"})
@@ -374,8 +381,8 @@ public class MockKube {
         when(mockClient.customResources(any(CustomResourceDefinitionContext.class),
                 any(Class.class),
                 any(Class.class))).thenAnswer(invocation -> {
-                    CustomResourceDefinitionContext crdArg = invocation.getArgument(0);
-                    String key = crdKey(crdArg);
+                    Class c = invocation.getArgument(0);
+                    String key = c.getSimpleName();
                     CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
                     if (createOrReplaceable == null) {
                         throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));
@@ -383,11 +390,10 @@ public class MockKube {
                     return createOrReplaceable;
                 });
 
-        when(mockClient.customResources(any(CustomResourceDefinition.class),
-                any(Class.class),
+        when(mockClient.customResources(any(Class.class),
                 any(Class.class))).thenAnswer(invocation -> {
-                    CustomResourceDefinition crdArg = invocation.getArgument(0);
-                    String key = crdKey(CustomResourceDefinitionContext.fromCrd(crdArg));
+                    Class c = invocation.getArgument(0);
+                    String key = c.getSimpleName();
                     CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
                     if (createOrReplaceable == null) {
                         throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));

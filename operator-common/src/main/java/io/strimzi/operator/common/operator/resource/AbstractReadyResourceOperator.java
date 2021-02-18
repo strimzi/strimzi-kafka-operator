@@ -52,7 +52,8 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
         R resourceOp = operation().inNamespace(namespace).withName(name);
         T resource = resourceOp.get();
         if (resource != null)   {
-            if (Readiness.isReadinessApplicable(resource.getClass())) {
+            // TODO isReadinessApplicable is needed
+            if (Readiness.getInstance().isReady(resource)) {
                 return Boolean.TRUE.equals(resourceOp.isReady());
             } else {
                 log.warn("Method isReady was called on resource {} of kind {} on which readiness is not applicable.",
