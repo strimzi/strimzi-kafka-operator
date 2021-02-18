@@ -150,7 +150,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
     }
 
     @PresentInVersions("v1alpha1-v1beta1")
-    @DeprecatedProperty
+    @DeprecatedProperty(removalVersion = "v1beta2")
     @Deprecated
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
@@ -36,6 +37,8 @@ public class TopicOperatorSpec extends EntityTopicOperatorSpec {
 
     @Description("Pod affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
+    @DeprecatedProperty(movedToPath = "spec.entityOperator.template.pod.affinity", removalVersion = "v1beta2")
+    @Deprecated
     public Affinity getAffinity() {
         return affinity;
     }
@@ -46,6 +49,8 @@ public class TopicOperatorSpec extends EntityTopicOperatorSpec {
 
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @DeprecatedProperty(movedToPath = "spec.entityOperator.tlsSidecar", removalVersion = "v1beta2")
+    @Deprecated
     public TlsSidecar getTlsSidecar() {
         return tlsSidecar;
     }
