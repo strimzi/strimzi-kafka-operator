@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: strimzi-jmxtrans
@@ -10,8 +10,10 @@ spec:
       type: persistent-claim
       size: 500Gi
     listeners:
-      plain: {}
-      tls: {}
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092
   jmxTrans:
     outputDefinitions:
       - outputType: "wont matter about type"

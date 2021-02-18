@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -43,16 +44,20 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaBridgeWithExtraProperty() {
-        createDelete(KafkaBridge.class, "KafkaBridge-with-extra-property.yaml");
+        Throwable exception = assertThrows(
+            KubeClusterException.class,
+            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
     }
 
     @Test
     void testKafkaBridgeWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.bootstrapServers");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "bootstrapServers");
     }
 
     @Test
@@ -104,10 +109,10 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaBridgeWithMissingTracingType() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.tracing.type");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "type");
     }
 
     @Test

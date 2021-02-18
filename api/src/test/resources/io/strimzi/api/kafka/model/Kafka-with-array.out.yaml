@@ -1,5 +1,5 @@
 ---
-apiVersion: "kafka.strimzi.io/v1beta1"
+apiVersion: "kafka.strimzi.io/v1beta2"
 kind: "Kafka"
 metadata:
   name: "strimzi-ephemeral"
@@ -47,15 +47,6 @@ spec:
     config:
       min.insync.replicas: 3
     brokerRackInitImage: "strimzi/kafka-init:latest"
-    tolerations:
-    - effect: "NoSchedule"
-      key: "key1"
-      operator: "Equal"
-      value: "value1"
-    - effect: "NoSchedule"
-      key: "key2"
-      operator: "Equal"
-      value: "value2"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -102,11 +93,16 @@ spec:
     resources:
       limits:
         memory: "512Mi"
-  topicOperator:
-    watchedNamespace: "my-ns"
-    reconciliationIntervalSeconds: 90
-    zookeeperSessionTimeoutSeconds: 20
-    topicMetadataMaxAttempts: 6
+  entityOperator:
+    topicOperator:
+      watchedNamespace: "my-ns"
+      reconciliationIntervalSeconds: 60
+      zookeeperSessionTimeoutSeconds: 20
+      topicMetadataMaxAttempts: 6
+    userOperator:
+      watchedNamespace: "my-other-ns"
+      reconciliationIntervalSeconds: 60
+      zookeeperSessionTimeoutSeconds: 6
   clusterCa:
     generateCertificateAuthority: false
     generateSecretOwnerReference: true

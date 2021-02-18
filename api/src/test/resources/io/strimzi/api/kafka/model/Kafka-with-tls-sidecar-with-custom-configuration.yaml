@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: strimzi-ephemeral
@@ -9,28 +9,14 @@ spec:
       type: persistent-claim
       size: 500Gi
     listeners:
-      plain: {}
-      tls: {}
-    tlsSidecar:
-      logLevel: "info"
-      livenessProbe:
-        initialDelaySeconds: 5
-        timeoutSeconds: 1
-      readinessProbe:
-        initialDelaySeconds: 10
-        timeoutSeconds: 4
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092
   zookeeper:
     replicas: 3
     storage:
       type: ephemeral
-    tlsSidecar:
-      logLevel: "debug"
-      livenessProbe:
-        initialDelaySeconds: 5
-        timeoutSeconds: 1
-      readinessProbe:
-        initialDelaySeconds: 10
-        timeoutSeconds: 4
   entityOperator:
     topicOperator: {}
     userOperator: {}

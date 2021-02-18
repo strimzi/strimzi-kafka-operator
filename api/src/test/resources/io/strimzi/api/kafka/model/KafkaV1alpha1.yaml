@@ -1,9 +1,8 @@
-apiVersion: kafka.strimzi.io/v1alpha1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: strimzi-ephemeral
 spec:
-  someExtraThing: true
   kafka:
     replicas: 3
     image: "strimzi/kafka:latest"
@@ -11,15 +10,17 @@ spec:
     resources:
       limits:
         memory: "5Gi"
-    tolerations:
-      - key: "key1"
-        operator: "Equal"
-        value: "value1"
-        effect: "NoSchedule"
-      - key: "key2"
-        operator: "Equal"
-        value: "value2"
-        effect: "NoSchedule"
+    template:
+      pod:
+        tolerations:
+          - key: "key1"
+            operator: "Equal"
+            value: "value1"
+            effect: "NoSchedule"
+          - key: "key2"
+            operator: "Equal"
+            value: "value2"
+            effect: "NoSchedule"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -37,49 +38,78 @@ spec:
     config:
       min.insync.replicas: 3
     listeners:
-      plain:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
         authentication:
           type: scram-sha-512
         networkPolicyPeers:
-          - namespaceSelector:
-              matchLabels:
-                kafka-enabled: true
-            podSelector:
+          - podSelector:
               matchLabels:
                 app: kafka-consumer
           - podSelector:
               matchLabels:
                 app: kafka-producer
-      tls:
+          - podSelector:
+              matchLabels:
+                app: java-kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-producer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-streams
+          - podSelector:
+              matchLabels:
+                app: my-connect
+          - podSelector:
+              matchLabels:
+                app: my-connect-s2i
+          - podSelector:
+              matchLabels:
+                app: my-bridge
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
         authentication:
           type: tls
         networkPolicyPeers:
-          - namespaceSelector:
-              matchLabels:
-                kafka-enabled: true
-            podSelector:
+          - podSelector:
               matchLabels:
                 app: kafka-consumer
           - podSelector:
               matchLabels:
                 app: kafka-producer
-      external:
-        type: route
+          - podSelector:
+              matchLabels:
+                app: java-kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-producer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-streams
+          - podSelector:
+              matchLabels:
+                app: my-connect
+          - podSelector:
+              matchLabels:
+                app: my-connect-s2i
+          - podSelector:
+              matchLabels:
+                app: my-bridge
+      - name: external
+        port: 9094
+        type: nodeport
+        tls: true
         authentication:
           type: tls
-        networkPolicyPeers:
-          - namespaceSelector:
-              matchLabels:
-                kafka-enabled: true
-            podSelector:
-              matchLabels:
-                app: kafka-consumer
-          - podSelector:
-              matchLabels:
-                app: kafka-producer
-        overrides:
+        configuration:
           bootstrap:
-            address: my-bootstrap-host
+            alternativeNames:
+            - my-bootstrap-host
             host: my-bootstrap-host
           brokers:
             - broker: 0
@@ -116,15 +146,17 @@ spec:
     resources:
       limits:
         memory: "512Mi"
-    tolerations:
-      - key: "key1"
-        operator: "Equal"
-        value: "value1"
-        effect: "NoSchedule"
-      - key: "key2"
-        operator: "Equal"
-        value: "value2"
-        effect: "NoSchedule"
+    template:
+      pod:
+        tolerations:
+          - key: "key1"
+            operator: "Equal"
+            value: "value1"
+            effect: "NoSchedule"
+          - key: "key2"
+            operator: "Equal"
+            value: "value2"
+            effect: "NoSchedule"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -142,8 +174,13 @@ spec:
         configMapKeyRef:
           name: my-noexist-config-map
           key: my-key
-  topicOperator:
-    watchedNamespace: my-ns
+  entityOperator:
+    topicOperator:
+      watchedNamespace: my-ns
+      reconciliationIntervalSeconds: 60
+    userOperator:
+      watchedNamespace: my-other-ns
+      reconciliationIntervalSeconds: 60
   clusterCa:
     renewalDays: 32
     validityDays: 395

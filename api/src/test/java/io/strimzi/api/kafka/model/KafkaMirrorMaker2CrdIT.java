@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -42,26 +43,30 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMaker2WithExtraProperty() {
-        createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-extra-property.yaml");
+        Throwable exception = assertThrows(
+            KubeClusterException.class,
+            () -> createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
     }
 
     @Test
     void testKafkaMirrorMaker2WithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-missing-required-property.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.connectCluster", "spec.clusters.alias", "spec.mirrors.sourceCluster", "spec.mirrors.targetCluster");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "connectCluster", "clusters.alias", "sourceCluster", "targetCluster");
     }
 
     @Test
     void testKafkaMirrorMaker2WithInvalidReplicas() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-invalid-replicas.yaml"));
 
         assertThat(exception.getMessage(),
-                containsStringIgnoringCase("spec.replicas in body must be of type integer: \"string\""));
+                containsStringIgnoringCase("invalid type for io.strimzi.kafka.v1beta2.KafkaMirrorMaker2.spec.replicas: got \"string\", expected \"integer\""));
     }
 
     @Test
@@ -77,10 +82,10 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     @Test
     void testKafkaMirrorMaker2WithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-tls-auth-with-missing-required.yaml"));
         
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.clusters.authentication.certificateAndKey.certificate", "spec.clusters.authentication.certificateAndKey.key");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "certificate", "key");
     }
 
     @Test
@@ -101,10 +106,10 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaMirrorMaker2WithInvalidExternalConfiguration() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-invalid-external-configuration.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.externalConfiguration.env.valueFrom");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
     }
 
     @BeforeAll

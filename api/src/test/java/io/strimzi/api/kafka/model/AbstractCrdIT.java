@@ -117,7 +117,8 @@ public abstract class AbstractCrdIT {
         for (String requiredProperty: requiredProperties) {
             assertThat("Could not find" + requiredProperty + " in message: " + message, message, anyOf(
                     containsStringIgnoringCase(requiredProperty + " in body is required"),
-                    containsStringIgnoringCase(requiredProperty + ": Required value")
+                    containsStringIgnoringCase(requiredProperty + ": Required value"),
+                    containsStringIgnoringCase("missing required field \"" + requiredProperty + "\"")
             ));
         }
     }

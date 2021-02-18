@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -46,7 +47,11 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaConnectWithExtraProperty() {
-        createDelete(KafkaConnect.class, "KafkaConnect-with-extra-property.yaml");
+        Throwable exception = assertThrows(
+            KubeClusterException.class,
+            () -> createDelete(KafkaBridge.class, "KafkaConnect-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
     }
 
     @Test
@@ -61,11 +66,11 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaConnectWithInvalidReplicas() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-replicas.yaml"));
 
         assertThat(exception.getMessage(),
-                containsStringIgnoringCase("spec.replicas in body must be of type integer: \"string\""));
+                containsStringIgnoringCase("invalid type for io.strimzi.kafka.v1beta2.KafkaConnect.spec.replicas: got \"string\", expected \"integer\""));
     }
 
     @Test
@@ -81,10 +86,10 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaConnectWithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaConnect.class, "KafkaConnect-with-tls-auth-with-missing-required.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.authentication.certificateAndKey.certificate", "spec.authentication.certificateAndKey.key");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "certificate", "key");
     }
 
     @Test
@@ -105,10 +110,10 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     public void testKafkaConnectWithInvalidExternalConfiguration() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-external-configuration.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.externalConfiguration.env.valueFrom");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
     }
 
     @BeforeAll

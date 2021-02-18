@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: strimzi-ephemeral
@@ -11,15 +11,6 @@ spec:
     resources:
       limits:
         memory: "5Gi"
-    tolerations:
-      - key: "key1"
-        operator: "Equal"
-        value: "value1"
-        effect: "NoSchedule"
-      - key: "key2"
-        operator: "Equal"
-        value: "value2"
-        effect: "NoSchedule"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -100,8 +91,13 @@ spec:
       -Xms: "512Mi"
     storage:
       type: ephemeral
-  topicOperator:
-    watchedNamespace: my-ns
+  entityOperator:
+    topicOperator:
+      watchedNamespace: my-ns
+      reconciliationIntervalSeconds: 60
+    userOperator:
+      watchedNamespace: my-other-ns
+      reconciliationIntervalSeconds: 60
   clusterCa:
     renewalDays: 32
     validityDays: 395

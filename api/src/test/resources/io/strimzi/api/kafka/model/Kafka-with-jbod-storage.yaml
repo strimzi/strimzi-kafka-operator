@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: strimzi-ephemeral
@@ -19,8 +19,10 @@ spec:
       - id: 2
         type: ephemeral
     listeners:
-      plain: {}
-      tls: {}
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092
   zookeeper:
     replicas: 3
     storage:

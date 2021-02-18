@@ -10,6 +10,8 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -45,21 +47,25 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerWithExtraProperty() {
-        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-extra-property.yaml");
+        Throwable exception = assertThrows(
+            KubeClusterException.class,
+            () -> createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
     }
 
     @Test
     void testKafkaMirrorMakerWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> {
                 createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-missing-required-property.yaml");
             });
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(),
-                "spec.consumer.bootstrapServers",
-                "spec.producer",
-                "spec.whitelist");
+                "bootstrapServers",
+                "producer",
+                "whitelist");
     }
 
     @Test
