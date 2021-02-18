@@ -383,17 +383,19 @@ public class TopicST extends AbstractST {
         assertThat(received, is(sent));
     }
 
-    @Test
-    void testCreateTopicAfterUnsupportedOperation() {
+    @ParallelTest
+    void testCreateTopicAfterUnsupportedOperation(ExtensionContext extensionContext) {
         String topicName = "topic-with-replication-to-change";
         String newTopicName = "another-topic";
 
-        KafkaTopic kafkaTopic = KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(TOPIC_CLUSTER_NAME, topicName)
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(TOPIC_CLUSTER_NAME, topicName)
                 .editSpec()
                     .withReplicas(3)
                     .withPartitions(3)
                 .endSpec()
-                .build());
+                .build();
+
+        resourceManager.createResource(extensionContext, kafkaTopic);
 
         KafkaTopicResource.replaceTopicResource(topicName, t -> {
             t.getSpec().setReplicas(1);
@@ -408,7 +410,9 @@ public class TopicST extends AbstractST {
 
         assertThat(topicCRDMessage, containsString(exceptedMessage));
 
-        KafkaTopic newKafkaTopic = KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(TOPIC_CLUSTER_NAME, newTopicName, 1, 1).build());
+        KafkaTopic newKafkaTopic = KafkaTopicTemplates.topic(TOPIC_CLUSTER_NAME, newTopicName, 1, 1).build();
+
+        resourceManager.createResource(extensionContext, newKafkaTopic);
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(topicName, TOPIC_CLUSTER_NAME));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));

@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -180,30 +178,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapCO);
 
-        // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
-        ResourceManager.setClassResources();
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE)
-            .editOrNewSpec()
-                .editOrNewTemplate()
-                    .editOrNewSpec()
-                        .addNewVolume()
-                            .withName("logging-config-volume")
-                            .editOrNewConfigMap()
-                                .withName(configMapCOName)
-                            .endConfigMap()
-                        .endVolume()
-                        .editFirstContainer()
-                            .withVolumeMounts(new VolumeMountBuilder().withName("logging-config-volume").withMountPath("/tmp/log-config-map-file").build())
-                            .addToEnv(new EnvVarBuilder().withName("JAVA_OPTS").withValue("-Dlog4j2.configurationFile=file:/tmp/log-config-map-file/log4j2.properties").build())
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
-        // Now we set pointer stack to method again
-        ResourceManager.setMethodResources();
-
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     //.withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())

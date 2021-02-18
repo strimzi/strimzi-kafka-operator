@@ -1837,7 +1837,7 @@ class KafkaST extends AbstractST {
         installClusterOperator(extensionContext, NAMESPACE);
     }
 
-    protected void tearDownEnvironmentAfterEach(ExtensionContext extensionContext) throws Exception {
+    protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         resourceManager.deleteResources(extensionContext);
 
         if (cluster.getListOfDeployedResources().contains(TEMPLATE_PATH)) {

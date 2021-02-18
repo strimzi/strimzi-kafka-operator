@@ -13,9 +13,6 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -85,6 +82,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeKafkaWithoutVersion(ExtensionContext extensionContext) throws IOException {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         File dir = FileUtils.downloadAndUnzip(strimziReleaseWithOlderKafka);
         File startKafkaPersistent = new File(dir, "strimzi-" + strimziReleaseWithOlderKafkaVersion + "/examples/kafka/kafka-persistent.yaml");
         File startKafkaVersionsYaml = FileUtils.downloadYaml("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + strimziReleaseWithOlderKafkaVersion + "/kafka-versions.yaml");
@@ -131,6 +129,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @Test
     void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion(ExtensionContext extensionContext) throws IOException {
         JsonObject acrossUpgradeData = buildDataForUpgradeAcrossVersions();
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
@@ -159,6 +158,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @Test
     void testUpgradeAcrossVersionsWithNoKafkaVersion(ExtensionContext extensionContext) throws IOException {
         JsonObject acrossUpgradeData = buildDataForUpgradeAcrossVersions();
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
@@ -256,6 +256,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String continuousConsumerGroup = "continuous-consumer-group";
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);

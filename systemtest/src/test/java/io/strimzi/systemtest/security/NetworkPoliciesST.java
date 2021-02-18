@@ -20,6 +20,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -28,6 +29,7 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.specific.MetricsUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -93,7 +95,7 @@ public class NetworkPoliciesST extends AbstractST {
             .endSpec()
             .build());
 
-        KubernetesResource.allowNetworkPolicySettingsForKafkaExporter(clusterName);
+        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, clusterName);
 
         String topic0 = "topic-example-0";
         String topic1 = "topic-example-1";

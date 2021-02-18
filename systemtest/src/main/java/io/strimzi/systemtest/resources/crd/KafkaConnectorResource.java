@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnector;
+import io.strimzi.systemtest.enums.ResourceManagerPhase;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -28,6 +29,7 @@ public class KafkaConnectorResource  implements ResourceType<KafkaConnector> {
     public KafkaConnector get(String namespace, String name) {
         return kafkaConnectorClient().inNamespace(namespace).withName(name).get();
     }
+
     @Override
     public void create(KafkaConnector resource) {
         kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);

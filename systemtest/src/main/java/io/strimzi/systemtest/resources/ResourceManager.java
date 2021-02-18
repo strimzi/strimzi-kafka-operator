@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
+import io.strimzi.systemtest.enums.ResourceManagerPhase;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -210,17 +211,25 @@ public class ResourceManager {
         ResourceType<T> type = findResourceType(resource);
         assertNotNull(type);
 
+        int certaintyCounter = 0;
+        int certainty = 10;
+
         while (!timeout.timeoutExpired()) {
             T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             if (condition.test(res)) {
                 LOGGER.info("Resource {} in namespace {} is ready!", resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                return true;
+                certaintyCounter++;
+                if (certaintyCounter == certainty) {
+                    return true;
+                }
             }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 LOGGER.info("Resource {} in namespace {} is not ready!", resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                 Thread.currentThread().interrupt();
+                // reset certaintyCounter
+                certaintyCounter = 0;
                 return false;
             }
         }
