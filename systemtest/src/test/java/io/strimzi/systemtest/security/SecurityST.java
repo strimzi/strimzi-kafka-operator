@@ -76,6 +76,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -108,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 class SecurityST extends AbstractST {
 
-    public static final String NAMESPACE = "security-cluster-test2";
+    public static final String NAMESPACE = "security-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
     private static final String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
     private static final String TLS_PROTOCOL = "Protocol  : TLSv1";
@@ -770,9 +771,12 @@ class SecurityST extends AbstractST {
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
+        // TODO
         List<Secret> secrets = kubeClient().listSecrets().stream()
-                .filter(secret -> secret.getMetadata().getName().endsWith("ca-cert"))
-                .collect(Collectors.toList());
+            .filter(secret ->
+                secret.getMetadata().getName().startsWith(clusterName) &&
+                secret.getMetadata().getName().endsWith("ca-cert"))
+            .collect(Collectors.toList());
 
         for (Secret s : secrets) {
             LOGGER.info("Verifying that secret {} with name {} is present", s, s.getMetadata().getName());
@@ -1455,21 +1459,23 @@ class SecurityST extends AbstractST {
         });
     }
 
-    @Test
-    void testClusterCACertRenew() {
-        checkClusterCACertRenew(false);
+    @ParallelTest
+    void testClusterCACertRenew(ExtensionContext extensionContext) {
+        checkClusterCACertRenew(extensionContext,false);
     }
 
-    @Test
-    void testCustomClusterCACertRenew() {
-        checkClusterCACertRenew(true);
+    @ParallelTest
+    void testCustomClusterCACertRenew(ExtensionContext extensionContext) {
+        checkClusterCACertRenew(extensionContext, true);
     }
 
-    void checkClusterCACertRenew(Boolean customCA) {
+    void checkClusterCACertRenew(ExtensionContext extensionContext, boolean customCA) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         if (customCA) {
-            generateAndDeployCustomStrimziCA();
-            checkCustomCAsCorrectness();
-            KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
+            generateAndDeployCustomStrimziCA(clusterName);
+            checkCustomCAsCorrectness(clusterName);
+            resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editOrNewSpec()
                     .withNewClusterCa()
                         .withRenewalDays(15)
@@ -1479,7 +1485,7 @@ class SecurityST extends AbstractST {
                 .endSpec()
                 .build());
         } else {
-            KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
+            resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editOrNewSpec()
                     .withNewClusterCa()
                         .withRenewalDays(15)
@@ -1563,21 +1569,23 @@ class SecurityST extends AbstractST {
                 initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
     }
 
-    @Test
-    void testClientsCACertRenew() {
-        checkClientsCACertRenew(false);
+    @ParallelTest
+    void testClientsCACertRenew(ExtensionContext extensionContext) {
+        checkClientsCACertRenew(extensionContext, false);
     }
 
-    @Test
-    void testCustomClientsCACertRenew() {
-        checkClientsCACertRenew(true);
+    @ParallelTest
+    void testCustomClientsCACertRenew(ExtensionContext extensionContext) {
+        checkClientsCACertRenew(extensionContext, true);
     }
 
-    void checkClientsCACertRenew(Boolean customCA) {
+    void checkClientsCACertRenew(ExtensionContext extensionContext, boolean customCA) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+
         if (customCA) {
-            generateAndDeployCustomStrimziCA();
-            checkCustomCAsCorrectness();
-            KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
+            generateAndDeployCustomStrimziCA(clusterName);
+            checkCustomCAsCorrectness(clusterName);
+            resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editOrNewSpec()
                     .withNewClientsCa()
                         .withRenewalDays(15)
@@ -1587,7 +1595,7 @@ class SecurityST extends AbstractST {
                 .endSpec()
                 .build());
         } else {
-            KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
+            resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editOrNewSpec()
                     .withNewClientsCa()
                         .withRenewalDays(15)
@@ -1598,7 +1606,7 @@ class SecurityST extends AbstractST {
         }
 
         String username = "strimzi-tls-user-" + new Random().nextInt(Integer.MAX_VALUE);
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, username).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, username).build());
         Map<String, String> entityPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Check initial clientsCA validity days
@@ -1653,13 +1661,17 @@ class SecurityST extends AbstractST {
                 initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
-    @Test
-    void testCustomClusterCAClientsCA() {
-        generateAndDeployCustomStrimziCA();
-        checkCustomCAsCorrectness();
+    @ParallelTest
+    void testCustomClusterCAClientsCA(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+
+        generateAndDeployCustomStrimziCA(clusterName);
+        checkCustomCAsCorrectness(clusterName);
 
         LOGGER.info(" Deploy kafka with new certs/secrets.");
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .withNewClusterCa()
                     .withGenerateCertificateAuthority(false)
@@ -1697,25 +1709,26 @@ class SecurityST extends AbstractST {
         assertThat("ZookeeperCert does not have expected test Subject: " + zookeeperCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(zookeeperCert.getIssuerX500Principal().getName(), STRIMZI_TEST_CLUSTER_CA));
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         LOGGER.info("Check KafkaUser certificate.");
-        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
-        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(USER_NAME), "user.crt");
+        KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
+        resourceManager.createResource(extensionContext, user);
+        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(userName), "user.crt");
         assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), STRIMZI_TEST_CLIENTS_CA));
 
         LOGGER.info("Send and receive messages over TLS.");
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
         final String kafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
                 .withUsingPodName(kafkaClientsPodName)
-                .withTopicName(TOPIC_NAME)
+                .withTopicName(topicName)
                 .withNamespaceName(NAMESPACE)
                 .withClusterName(clusterName)
-                .withKafkaUsername(USER_NAME)
+                .withKafkaUsername(userName)
                 .withMessageCount(MESSAGE_COUNT)
                 .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
                 .build();
@@ -1744,7 +1757,7 @@ class SecurityST extends AbstractST {
         );
     }
 
-    void checkCustomCAsCorrectness() {
+    void checkCustomCAsCorrectness(String clusterName) {
         LOGGER.info("Check ClusterCA and ClientsCA certificates.");
         X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(KafkaResources.clientsCaCertificateSecretName(clusterName)), "ca.crt");
         X509Certificate clusterCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName)), "ca.crt");
@@ -1767,7 +1780,7 @@ class SecurityST extends AbstractST {
         return SystemTestCertManager.containsAllDN(certOutIssuer, expectedPrincipal);
     }
 
-    void generateAndDeployCustomStrimziCA() {
+    void generateAndDeployCustomStrimziCA(String clusterName) {
         LOGGER.info("Generating custom RootCA, IntermediateCA, and ClusterCA, ClientsCA for Strimzi and PEM bundles.");
         SystemTestCertAndKey strimziRootCA = SystemTestCertManager.generateRootCaCertAndKey();
         SystemTestCertAndKey intermediateCA = SystemTestCertManager.generateIntermediateCaCertAndKey(strimziRootCA);

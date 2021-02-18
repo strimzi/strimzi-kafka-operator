@@ -343,8 +343,14 @@ public class KubeClient {
     }
 
     public String getDeploymentNameByPrefix(String namePrefix) {
-        return client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream()
-                .filter(rs -> rs.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList()).get(0).getMetadata().getName();
+        List<Deployment> prefixDeployments = client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream().filter(
+            rs -> rs.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
+
+        if (prefixDeployments != null && prefixDeployments.size() > 0) {
+            return prefixDeployments.get(0).getMetadata().getName();
+        } else {
+            return null;
+        }
     }
 
     public String getDeploymentBySubstring(String subString) {

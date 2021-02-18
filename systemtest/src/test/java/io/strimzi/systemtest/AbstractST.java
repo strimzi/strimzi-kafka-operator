@@ -710,16 +710,6 @@ public abstract class AbstractST implements TestSeparator {
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
-    // TODO: how?v
-//    protected void tearDownEnvironmentAfterEach() throws Exception {
-//        ResourceManager.deleteMethodResources();
-//    }
-
-    // TODO: how?
-//    protected void tearDownEnvironmentAfterAll() {
-//        ResourceManager.deleteClassResources();
-//    }
-
     protected void testDockerImagesForKafkaCluster(String clusterName, String namespace, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
@@ -758,6 +748,36 @@ public abstract class AbstractST implements TestSeparator {
         assertThat(imgFromPod, containsString(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
 
         LOGGER.info("Docker images verified");
+    }
+    protected void afterEachMayOverride(ExtensionContext testContext) throws Exception {
+//        AssertionError assertionError = null;
+//        // this is because more threads can access 'testDuration' variable and modify it...
+//        synchronized (lockForTimeMeasuringSystem) {
+//            try {
+//                long testDuration = TimeMeasuringSystem.getInstance().getDurationInSeconds(
+//                    testContext.getRequiredTestClass().getName(),
+//                    testContext.getRequiredTestMethod().getName(),
+//                    Operation.TEST_EXECUTION.name());
+//                assertNoCoErrorsLogged(testDuration);
+//            } catch (AssertionError e) {
+//                LOGGER.error("Cluster Operator contains unexpected errors!");
+//                assertionError = new AssertionError(e);
+//            }
+//        }
+//
+//        if (assertionError != null) {
+//            throw assertionError;
+//        }
+        if (!Environment.SKIP_TEARDOWN) {
+            ResourceManager.getInstance().deleteResources(testContext);
+        }
+    }
+
+    protected void afterAllMayOverride(ExtensionContext testContext) throws Exception {
+        if (!Environment.SKIP_TEARDOWN) {
+            teardownEnvForOperator();
+            ResourceManager.getInstance().deleteResources(testContext);
+        }
     }
 
     /**
@@ -816,32 +836,11 @@ public abstract class AbstractST implements TestSeparator {
 
     @AfterEach
     void teardownEnvironmentMethod(ExtensionContext testContext) throws Exception {
-
-//        AssertionError assertionError = null;
-//
-//        // this is because more threads can access 'testDuration' variable and modify it...
-//        synchronized (lockForTimeMeasuringSystem) {
-//            try {
-//                long testDuration = TimeMeasuringSystem.getInstance().getDurationInSeconds(
-//                    testContext.getRequiredTestClass().getName(),
-//                    testContext.getRequiredTestMethod().getName(),
-//                    Operation.TEST_EXECUTION.name());
-//                assertNoCoErrorsLogged(testDuration);
-//            } catch (AssertionError e) {
-//                LOGGER.error("Cluster Operator contains unexpected errors!");
-//                assertionError = new AssertionError(e);
-//            }
-//        }
-
-//        if (assertionError != null) {
-//            throw assertionError;
-//        }
+       afterEachMayOverride(testContext);
     }
 
     @AfterAll
     void teardownEnvironmentClass(ExtensionContext testContext) throws Exception {
-        if (!Environment.SKIP_TEARDOWN) {
-            teardownEnvForOperator();
-        }
+        afterAllMayOverride(testContext);
     }
 }
