@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -178,6 +180,28 @@ public abstract class AbstractST implements TestSeparator {
         } else {
             applyBindings(extensionContext, namespace, bindingsNamespaces);
         }
+        String loggersConfigCO = "name = COConfig\n" +
+            "appender.console.type = Console\n" +
+            "appender.console.name = STDOUT\n" +
+            "appender.console.layout.type = JsonLayout\n" +
+            "rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}\n" +
+            "rootLogger.appenderRefs = stdout\n" +
+            "rootLogger.appenderRef.console.ref = STDOUT\n" +
+            "rootLogger.additivity = false\n" +
+            "logger.kafka.name = org.apache.kafka\n" +
+            "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}\n" +
+            "logger.kafka.additivity = false";
+
+        ConfigMap configMapCO = new ConfigMapBuilder()
+            .withNewMetadata()
+            .withNewName("json-layout-cluster-operator")
+            .withNamespace(namespace)
+            .endMetadata()
+            .addToData("log4j2.properties", loggersConfigCO)
+            .build();
+
+        kubeClient().getClient().configMaps().inNamespace(namespace).createOrReplace(configMapCO);
+
         // 060-Deployment
         ResourceManager.getInstance().createResource(extensionContext,
             BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval)

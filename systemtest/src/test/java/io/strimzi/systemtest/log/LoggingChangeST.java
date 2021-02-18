@@ -20,6 +20,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -70,7 +71,7 @@ class LoggingChangeST extends AbstractST {
 
     private static final String CONFIG_MAP_CO_NAME = "json-layout-cluster-operator";
 
-    @ParallelTest
+    @IsolatedTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -225,7 +226,7 @@ class LoggingChangeST extends AbstractST {
         assertTrue(StUtils.checkLogForJSONFormat(eoPods, "user-operator"));
     }
 
-    @ParallelTest
+    @IsolatedTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLoggingDeprecated(ExtensionContext extensionContext) {
         // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
@@ -263,18 +264,6 @@ class LoggingChangeST extends AbstractST {
                 "zookeeper.root.logger=INFO\n" +
                 "log4j.rootLogger=${zookeeper.root.logger}, CONSOLE";
 
-        String loggersConfigCO = "name = COConfig\n" +
-                "appender.console.type = Console\n" +
-                "appender.console.name = STDOUT\n" +
-                "appender.console.layout.type = JsonLayout\n" +
-                "rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}\n" +
-                "rootLogger.appenderRefs = stdout\n" +
-                "rootLogger.appenderRef.console.ref = STDOUT\n" +
-                "rootLogger.additivity = false\n" +
-                "logger.kafka.name = org.apache.kafka\n" +
-                "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}\n" +
-                "logger.kafka.additivity = false";
-
         String configMapOpName = "json-layout-operators";
         String configMapZookeeperName = "json-layout-zookeeper";
         String configMapKafkaName = "json-layout-kafka";
@@ -303,19 +292,10 @@ class LoggingChangeST extends AbstractST {
                 .addToData("log4j.properties", loggersConfigZookeeper)
                 .build();
 
-        ConfigMap configMapCO = new ConfigMapBuilder()
-            .withNewMetadata()
-                .withNewName(CONFIG_MAP_CO_NAME)
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .addToData("log4j2.properties", loggersConfigCO)
-            .build();
-
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapKafka);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapZookeeper);
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapOperators);
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapCO);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
@@ -627,7 +607,7 @@ class LoggingChangeST extends AbstractST {
         assertThat("Bridge pod should not roll", DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(clusterName)), equalTo(bridgeSnapshot));
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetClusterOperatorLoggingLevels(ExtensionContext extensionContext) throws InterruptedException {
         Map<String, String> coPod = DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME);
