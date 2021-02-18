@@ -14,6 +14,7 @@
 * Fix Cruise Control crash loop when updating container configurations
 * Configure extenal logging `ConfigMap` name and key.
 * Add support for Ingress v1 in Kubernetes 1.19 and newer
+* Add support for Kafka 2.6.1
 
 ### Changes, deprecations and removals
 
