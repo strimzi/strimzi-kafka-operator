@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -28,7 +29,10 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -44,11 +48,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
 class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
+
+    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
 
     @ParallelTest
     void testScramShaAuthWithWeirdUsername(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext);
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
@@ -78,7 +84,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testTlsAuthWithWeirdUsername(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext);
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
@@ -186,6 +192,8 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
+        LOGGER.info("===============================================================");
+        LOGGER.info("{} - [BEFORE ALL] has been called", this.getClass().getName());
         installClusterOperator(extensionContext, NAMESPACE);
     }
 }
