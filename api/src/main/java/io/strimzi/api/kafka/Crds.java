@@ -7,7 +7,6 @@ package io.strimzi.api.kafka;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersionBuilder;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceSubresourceStatus;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -97,7 +96,6 @@ public class Crds {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:JavaNCSS"})
     private static CustomResourceDefinition crd(Class<? extends CustomResource> cls, String version) {
         String scope, crdApiVersion, plural, singular, group, kind, listKind;
-        CustomResourceSubresourceStatus status = null;
 
         if (cls.equals(Kafka.class)) {
             scope = Kafka.SCOPE;
@@ -107,7 +105,6 @@ public class Crds {
             group = Kafka.RESOURCE_GROUP;
             kind = Kafka.RESOURCE_KIND;
             listKind = Kafka.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!Kafka.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -119,7 +116,6 @@ public class Crds {
             group = KafkaConnect.RESOURCE_GROUP;
             kind = KafkaConnect.RESOURCE_KIND;
             listKind = KafkaConnect.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!KafkaConnect.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -131,7 +127,6 @@ public class Crds {
             group = KafkaConnectS2I.RESOURCE_GROUP;
             kind = KafkaConnectS2I.RESOURCE_KIND;
             listKind = KafkaConnectS2I.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!KafkaConnectS2I.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -154,7 +149,6 @@ public class Crds {
             group = KafkaUser.RESOURCE_GROUP;
             kind = KafkaUser.RESOURCE_KIND;
             listKind = KafkaUser.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!KafkaUser.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -166,7 +160,6 @@ public class Crds {
             group = KafkaMirrorMaker.RESOURCE_GROUP;
             kind = KafkaMirrorMaker.RESOURCE_KIND;
             listKind = KafkaMirrorMaker.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!KafkaMirrorMaker.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -178,7 +171,6 @@ public class Crds {
             group = KafkaBridge.RESOURCE_GROUP;
             kind = KafkaBridge.RESOURCE_KIND;
             listKind = KafkaBridge.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!KafkaBridge.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -190,7 +182,6 @@ public class Crds {
             group = KafkaConnector.RESOURCE_GROUP;
             kind = KafkaConnector.RESOURCE_KIND;
             listKind = KafkaConnector.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!KafkaConnector.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -202,7 +193,6 @@ public class Crds {
             group = KafkaMirrorMaker2.RESOURCE_GROUP;
             kind = KafkaMirrorMaker2.RESOURCE_KIND;
             listKind = KafkaMirrorMaker2.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!KafkaMirrorMaker2.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
@@ -214,7 +204,6 @@ public class Crds {
             group = KafkaRebalance.RESOURCE_GROUP;
             kind = KafkaRebalance.RESOURCE_KIND;
             listKind = KafkaRebalance.RESOURCE_LIST_KIND;
-            status = new CustomResourceSubresourceStatus();
             if (!KafkaRebalance.VERSIONS.contains(version)) {
                 throw new RuntimeException();
             }
