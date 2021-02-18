@@ -15,6 +15,7 @@ import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,7 +33,8 @@ public class BundleResource implements ResourceType<Deployment> {
     }
     @Override
     public Deployment get(String namespace, String name) {
-        return ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name));
+        String deploymentName = ResourceManager.kubeClient().namespace(namespace).getDeploymentNameByPrefix(name);
+        return deploymentName != null ? ResourceManager.kubeClient().getDeployment(deploymentName) : null;
     }
     @Override
     public void create(Deployment resource) {
@@ -45,33 +47,20 @@ public class BundleResource implements ResourceType<Deployment> {
     @Override
     public boolean isReady(Deployment resource) {
         LOGGER.info("==========================================================");
-        LOGGER.info(resource);
+        LOGGER.info("Resource -_>" + resource);
+        LOGGER.info("Resource name ->" + resource.getMetadata().getName());
 
-        Deployment[] deployment = new Deployment[1];
-        deployment[0] = resource;
-
-        TestUtils.waitFor(" for resource: " + resource + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(deployment[0].getMetadata().getName()));
-            LOGGER.info("Resource is present: {}", deployment[0] != null);
-            return deployment[0] != null;
-        });
-
-        return DeploymentUtils.waitForDeploymentReady(deployment[0].getMetadata().getName());
+        return resource != null
+            && resource.getMetadata() != null
+            && resource.getMetadata().getName() != null
+            && resource.getStatus() != null
+            && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
     @Override
     public void refreshResource(Deployment existing, Deployment newResource) {
-        Deployment[] deployment = new Deployment[1];
-        deployment[0] = existing;
-
-        TestUtils.waitFor(" for resource: " + existing + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(deployment[0].getMetadata().getName()));
-            LOGGER.info("Resource is present: {}", deployment[0] != null);
-            return deployment[0] != null;
-        });
-
-        deployment[0].setMetadata(newResource.getMetadata());
-        deployment[0].setSpec(newResource.getSpec());
-        deployment[0].setStatus(newResource.getStatus());
+        existing.setMetadata(newResource.getMetadata());
+        existing.setSpec(newResource.getSpec());
+        existing.setStatus(newResource.getStatus());
     }
     public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout) {
         return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);

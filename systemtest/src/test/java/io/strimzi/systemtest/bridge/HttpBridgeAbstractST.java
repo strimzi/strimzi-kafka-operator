@@ -9,12 +9,16 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.vertx.ext.web.client.WebClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 
 /**
  * Base for test classes where HTTP Bridge is used.
  */
 public class HttpBridgeAbstractST extends AbstractST {
+
+    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
     protected static final String NAMESPACE = "bridge-cluster-test";
 
     public static int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
@@ -30,6 +34,9 @@ public class HttpBridgeAbstractST extends AbstractST {
 
     @BeforeAll
     void createBridgeClient() {
+        LOGGER.info("===============================================================");
+        LOGGER.info("{} - [BEFORE ALL] has been called", this.getClass().getName());
+
         kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)

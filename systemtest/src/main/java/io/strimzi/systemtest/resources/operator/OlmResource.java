@@ -51,7 +51,8 @@ public class OlmResource implements ResourceType<Deployment> {
     }
     @Override
     public Deployment get(String namespace, String name) {
-        return ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name));
+        String deploymentName = ResourceManager.kubeClient().namespace(namespace).getDeploymentNameByPrefix(name);
+        return deploymentName != null ?  ResourceManager.kubeClient().getDeployment(deploymentName) : null;
     }
     @Override
     public void create(Deployment resource) {
@@ -63,7 +64,11 @@ public class OlmResource implements ResourceType<Deployment> {
     }
     @Override
     public boolean isReady(Deployment resource) {
-        return DeploymentUtils.waitForDeploymentReady(resource.getMetadata().getName());
+        return resource != null
+            && resource.getMetadata() != null
+            && resource.getMetadata().getName() != null
+            && resource.getStatus() != null
+            && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
     @Override
     public void refreshResource(Deployment existing, Deployment newResource) {
