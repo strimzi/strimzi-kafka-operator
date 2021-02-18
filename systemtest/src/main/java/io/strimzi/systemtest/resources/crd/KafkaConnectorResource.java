@@ -10,14 +10,13 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.systemtest.enums.ResourceManagerPhase;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
-public class KafkaConnectorResource  implements ResourceType<KafkaConnector> {
+public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
 
     public KafkaConnectorResource() { }
 

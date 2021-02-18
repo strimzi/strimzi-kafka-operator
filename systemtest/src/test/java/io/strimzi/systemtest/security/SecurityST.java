@@ -1461,7 +1461,7 @@ class SecurityST extends AbstractST {
 
     @ParallelTest
     void testClusterCACertRenew(ExtensionContext extensionContext) {
-        checkClusterCACertRenew(extensionContext,false);
+        checkClusterCACertRenew(extensionContext, false);
     }
 
     @ParallelTest
