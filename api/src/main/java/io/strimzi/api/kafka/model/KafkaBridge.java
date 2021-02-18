@@ -92,7 +92,7 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     public static final String SCOPE = "Namespaced";
     public static final String V1BETA2 = Constants.V1BETA2;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final String CONSUMED_VERSION = V1ALPHA1;
+    public static final String CONSUMED_VERSION = V1BETA2;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaBridge";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";

@@ -35,18 +35,6 @@ public class StructuralCrdIT extends AbstractCrdIT {
             "kafkamirrormaker2s.kafka.strimzi.io", "048-Crd-kafkamirrormaker2.yaml",
             "kafkarebalances.kafka.strimzi.io", "049-Crd-kafkarebalance.yaml"
     );
-    
-    @Test
-    public void v1Beta2IsStructuralWithCrdV1Beta1() {
-        assumeKube1_16Plus();
-
-        for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
-            assertApiVersionsAreStructural(crd.getKey(),
-                    ApiVersion.V1BETA1,
-                    "../install/cluster-operator/" + crd.getValue(),
-                    ApiVersion.parseRange("v1beta2+"));
-        }
-    }
 
     @Test
     public void v1Beta2IsStructuralWithCrdV1() {
@@ -55,7 +43,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
             assertApiVersionsAreStructural(crd.getKey(),
                     ApiVersion.V1,
-                    "./src/test/resources/io/strimzi/api/kafka/model/" + crd.getValue(),
+                    "../install/cluster-operator/" + crd.getValue(),
                     ApiVersion.parseRange("v1beta2+"));
         }
     }
