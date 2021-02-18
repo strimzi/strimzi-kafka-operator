@@ -20,6 +20,8 @@ import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+// Deprecation is suppressed because of KafkaConnectS2I
+@SuppressWarnings("deprecation")
 public class KafkaConnectS2ITemplates {
 
     public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect-s2i.yaml";
@@ -73,30 +75,6 @@ public class KafkaConnectS2ITemplates {
                 .endInlineLogging()
             .endSpec();
     }
-
-//    private static DoneableKafkaConnectS2I deployKafkaConnectS2I(ExtensionContext extensionContext, KafkaConnectS2I kafkaConnectS2I) {
-//        // TODO: same as KafkaBridge and KafkaConnect
-//        if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-//            NetworkPolicyResource.allowNetworkPolicySettingsForResource(extensionContext, kafkaConnectS2I, KafkaConnectS2IResources.deploymentName(kafkaConnectS2I.getMetadata().getName()));
-//        }
-//        return new DoneableKafkaConnectS2I(kafkaConnectS2I, kC -> {
-//            TestUtils.waitFor("KafkaConnect creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-//                () -> {
-//                    try {
-//                        kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kC);
-//                        return true;
-//                    } catch (KubernetesClientException e) {
-//                        if (e.getMessage().contains("object is being deleted")) {
-//                            return false;
-//                        } else {
-//                            throw e;
-//                        }
-//                    }
-//                }
-//            );
-//            return kC;
-//        });
-//    }
 
     public static void deleteKafkaConnectS2IWithoutWait(String resourceName) {
         kafkaConnectS2IClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
