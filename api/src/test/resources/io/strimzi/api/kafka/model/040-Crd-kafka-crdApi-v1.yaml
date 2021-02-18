@@ -1840,6 +1840,26 @@ spec:
                             description: Metadata applied to the resource.
                         description: Template for Secret with Kafka Cluster certificate
                           public key.
+                      clusterRoleBinding:
+                        type: object
+                        properties:
+                          metadata:
+                            type: object
+                            properties:
+                              labels:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Labels added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                              annotations:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Annotations added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                            description: Metadata applied to the resource.
+                        description: Template for the Kafka ClusterRoleBinding.
                     description: Template for Kafka cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.

@@ -12,7 +12,8 @@
   * Validating tokens using JSONPath filter queries to perform custom checks
 * Updated Cruise Control to version 2.5.32
 * Fix Cruise Control crash loop when updating container configurations
-* Configure extenal logging `ConfigMap` name and key.
+* Configure external logging `ConfigMap` name and key.
+* Add support for configuring labels and annotations in ClusterRoleBindings created as part of Kafka and Kafka Connect clusters
 * Add support for Ingress v1 in Kubernetes 1.19 and newer
 
 ### Changes, deprecations and removals

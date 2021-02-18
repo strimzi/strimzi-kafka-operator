@@ -565,6 +565,9 @@ public class KafkaConnectClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
 
+        Map<String, String> crbLabels = TestUtils.map("l9", "v9", "l10", "v10");
+        Map<String, String> crbAnots = TestUtils.map("a9", "v9", "a10", "v10");
+
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
                 .withIp("192.168.1.86")
@@ -590,6 +593,7 @@ public class KafkaConnectClusterTest {
 
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
+                    .withNewRack("my-topology-key")
                     .withNewTemplate()
                         .withNewDeployment()
                             .withNewMetadata()
@@ -620,6 +624,12 @@ public class KafkaConnectClusterTest {
                                 .withAnnotations(pdbAnots)
                             .endMetadata()
                         .endPodDisruptionBudget()
+                        .withNewClusterRoleBinding()
+                            .withNewMetadata()
+                                .withLabels(crbLabels)
+                                .withAnnotations(crbAnots)
+                            .endMetadata()
+                        .endClusterRoleBinding()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -649,6 +659,11 @@ public class KafkaConnectClusterTest {
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+
+        // Check ClusterRoleBinding
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding();
+        assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
+        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
     }
 
     @Test
