@@ -37,8 +37,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -90,6 +88,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                    .withConfig(connectorConfig)
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -281,15 +280,10 @@ public class OauthPlainST extends OauthAbstractST {
                 .endSpec()
                 .build());
 
-        Map<String, Object> config = new HashMap<>();
-        config.put("config.storage.replication.factor", 1);
-        config.put("offset.storage.replication.factor", 1);
-        config.put("status.storage.replication.factor", 1);
-
         // Deploy Mirror Maker 2.0 with oauth
         KafkaMirrorMaker2ClusterSpec sourceClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
                 .withAlias(kafkaSourceClusterName)
-                .withConfig(config)
+                .withConfig(connectorConfig)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaSourceClusterName))
                 .withNewKafkaClientAuthenticationOAuth()
                     .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
@@ -303,7 +297,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         KafkaMirrorMaker2ClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
                 .withAlias(kafkaTargetClusterName)
-                .withConfig(config)
+                .withConfig(connectorConfig)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
                 .withNewKafkaClientAuthenticationOAuth()
                     .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())

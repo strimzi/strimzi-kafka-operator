@@ -94,6 +94,7 @@ public class OauthTlsST extends OauthAbstractST {
 
         KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(oauthClusterName, 1)
                 .editSpec()
+                    .withConfig(connectorConfig)
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")

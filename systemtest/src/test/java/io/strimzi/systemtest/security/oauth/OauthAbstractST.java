@@ -20,6 +20,8 @@ import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -49,6 +51,14 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_KEY = "clientSecret";
 
     protected KeycloakInstance keycloakInstance;
+
+    public static Map<String, Object> connectorConfig;
+    static {
+        connectorConfig = new HashMap<>();
+        connectorConfig.put("config.storage.replication.factor", 1);
+        connectorConfig.put("offset.storage.replication.factor", 1);
+        connectorConfig.put("status.storage.replication.factor", 1);
+    }
 
     protected WebClient client;
 
