@@ -1295,6 +1295,24 @@ spec:
                         description: The pod's topology spread constraints.
                     description: Template for Kafka Connect Build `Pods`. The build
                       pod is used only on Kubernetes.
+                  clusterRoleBinding:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            type: object
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                          annotations:
+                            type: object
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                        description: Metadata applied to the resource.
+                    description: Template for the Kafka Connect ClusterRoleBinding.
                   connectContainer:
                     type: object
                     properties:
@@ -3287,6 +3305,24 @@ spec:
                         description: The pod's topology spread constraints.
                     description: Template for Kafka Connect Build `Pods`. The build
                       pod is used only on Kubernetes.
+                  clusterRoleBinding:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            type: object
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                          annotations:
+                            type: object
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                        description: Metadata applied to the resource.
+                    description: Template for the Kafka Connect ClusterRoleBinding.
                   connectContainer:
                     type: object
                     properties:
@@ -5139,93 +5175,6 @@ spec:
                                       type: array
                                       items:
                                         type: string
-<<<<<<< HEAD
-                              matchLabels:
-                                type: object
-                          maxSkew:
-                            type: integer
-                          topologyKey:
-                            type: string
-                          whenUnsatisfiable:
-                            type: string
-                      description: The pod's topology spread constraints.
-                  description: Template for Kafka Connect Build `Pods`. The build
-                    pod is used only on Kubernetes.
-                clusterRoleBinding:
-                  type: object
-                  properties:
-                    metadata:
-                      type: object
-                      properties:
-                        labels:
-                          type: object
-                          description: Labels added to the resource template. Can
-                            be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
-                        annotations:
-                          type: object
-                          description: Annotations added to the resource template.
-                            Can be applied to different resources such as `StatefulSets`,
-                            `Deployments`, `Pods`, and `Services`.
-                      description: Metadata applied to the resource.
-                  description: Template for the Kafka Connect ClusterRoleBinding.
-                connectContainer:
-                  type: object
-                  properties:
-                    env:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            description: The environment variable key.
-                          value:
-                            type: string
-                            description: The environment variable value.
-                      description: Environment variables which should be applied to
-                        the container.
-                    securityContext:
-                      type: object
-                      properties:
-                        allowPrivilegeEscalation:
-                          type: boolean
-                        capabilities:
-                          type: object
-                          properties:
-                            add:
-                              type: array
-                              items:
-                                type: string
-                            drop:
-                              type: array
-                              items:
-                                type: string
-                        privileged:
-                          type: boolean
-                        procMount:
-                          type: string
-                        readOnlyRootFilesystem:
-                          type: boolean
-                        runAsGroup:
-                          type: integer
-                        runAsNonRoot:
-                          type: boolean
-                        runAsUser:
-                          type: integer
-                        seLinuxOptions:
-                          type: object
-                          properties:
-                            level:
-                              type: string
-                            role:
-                              type: string
-                            type:
-                              type: string
-                            user:
-                              type: string
-                        seccompProfile:
-=======
                                     topologyKey:
                                       type: string
                           podAntiAffinity:
@@ -5298,7 +5247,6 @@ spec:
                       tolerations:
                         type: array
                         items:
->>>>>>> Add v1beta2 to all CRDs and fix some deprecation issues
                           type: object
                           properties:
                             effect:
@@ -5367,6 +5315,24 @@ spec:
                         description: The pod's topology spread constraints.
                     description: Template for Kafka Connect Build `Pods`. The build
                       pod is used only on Kubernetes.
+                  clusterRoleBinding:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            type: object
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                          annotations:
+                            type: object
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                        description: Metadata applied to the resource.
+                    description: Template for the Kafka Connect ClusterRoleBinding.
                   connectContainer:
                     type: object
                     properties:

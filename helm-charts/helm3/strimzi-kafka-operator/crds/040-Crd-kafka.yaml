@@ -1376,6 +1376,20 @@ spec:
                                   description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                               description: Metadata applied to the resource.
                           description: Template for Secret with Kafka Cluster certificate public key.
+                        clusterRoleBinding:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  type: object
+                                  description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                                annotations:
+                                  type: object
+                                  description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              description: Metadata applied to the resource.
+                          description: Template for the Kafka ClusterRoleBinding.
                       description: Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
                     version:
                       type: string
@@ -2479,134 +2493,6 @@ spec:
                           properties:
                             metadata:
                               type: object
-<<<<<<< HEAD
-                              description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                          description: Metadata applied to the resource.
-                      description: Template for Secret with Kafka Cluster certificate public key.
-                    clusterRoleBinding:
-                      type: object
-                      properties:
-                        metadata:
-                          type: object
-                          properties:
-                            labels:
-                              type: object
-                              description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                            annotations:
-                              type: object
-                              description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                          description: Metadata applied to the resource.
-                      description: Template for the Kafka ClusterRoleBinding.
-                  description: Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
-                version:
-                  type: string
-                  description: The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
-              required:
-                - replicas
-                - storage
-                - listeners
-              description: Configuration of the Kafka cluster.
-            zookeeper:
-              type: object
-              properties:
-                replicas:
-                  type: integer
-                  minimum: 1
-                  description: The number of pods in the cluster.
-                image:
-                  type: string
-                  description: The docker image for the pods.
-                storage:
-                  type: object
-                  properties:
-                    class:
-                      type: string
-                      description: The storage class to use for dynamic volume allocation.
-                    deleteClaim:
-                      type: boolean
-                      description: Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
-                    id:
-                      type: integer
-                      minimum: 0
-                      description: Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
-                    overrides:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          class:
-                            type: string
-                            description: The storage class to use for dynamic volume allocation for this broker.
-                          broker:
-                            type: integer
-                            description: Id of the kafka broker (broker identifier).
-                      description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
-                    selector:
-                      type: object
-                      description: Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
-                    size:
-                      type: string
-                      description: When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
-                    sizeLimit:
-                      type: string
-                      pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                      description: When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (for example 1Gi).
-                    type:
-                      type: string
-                      enum:
-                        - ephemeral
-                        - persistent-claim
-                      description: Storage type, must be either 'ephemeral' or 'persistent-claim'.
-                  required:
-                    - type
-                  description: Storage configuration (disk). Cannot be updated.
-                config:
-                  type: object
-                  description: 'The ZooKeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum (with the exception of: ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites, ssl.hostnameVerification, ssl.quorum.hostnameVerification).'
-                affinity:
-                  type: object
-                  properties:
-                    nodeAffinity:
-                      type: object
-                      properties:
-                        preferredDuringSchedulingIgnoredDuringExecution:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              preference:
-                                type: object
-                                properties:
-                                  matchExpressions:
-                                    type: array
-                                    items:
-                                      type: object
-                                      properties:
-                                        key:
-                                          type: string
-                                        operator:
-                                          type: string
-                                        values:
-                                          type: array
-                                          items:
-                                            type: string
-                                  matchFields:
-                                    type: array
-                                    items:
-                                      type: object
-                                      properties:
-                                        key:
-                                          type: string
-                                        operator:
-                                          type: string
-                                        values:
-                                          type: array
-                                          items:
-                                            type: string
-                              weight:
-                                type: integer
-                        requiredDuringSchedulingIgnoredDuringExecution:
-=======
                               properties:
                                 labels:
                                   type: object
@@ -2617,7 +2503,6 @@ spec:
                               description: Metadata applied to the resource.
                           description: Template for Entity Operator `Deployment`.
                         pod:
->>>>>>> Add v1beta2 to all CRDs and fix some deprecation issues
                           type: object
                           properties:
                             metadata:
@@ -7524,6 +7409,20 @@ spec:
                                   description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                               description: Metadata applied to the resource.
                           description: Template for Secret with Kafka Cluster certificate public key.
+                        clusterRoleBinding:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  type: object
+                                  description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                                annotations:
+                                  type: object
+                                  description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              description: Metadata applied to the resource.
+                          description: Template for the Kafka ClusterRoleBinding.
                       description: Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
                     version:
                       type: string
@@ -14606,6 +14505,20 @@ spec:
                                   description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                               description: Metadata applied to the resource.
                           description: Template for Secret with Kafka Cluster certificate public key.
+                        clusterRoleBinding:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  type: object
+                                  description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                                annotations:
+                                  type: object
+                                  description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                              description: Metadata applied to the resource.
+                          description: Template for the Kafka ClusterRoleBinding.
                       description: Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
                     version:
                       type: string
