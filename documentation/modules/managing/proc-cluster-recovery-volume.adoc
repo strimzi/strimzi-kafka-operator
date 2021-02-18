@@ -17,7 +17,7 @@ The `KafkaTopic` resources must therefore be recovered before the cluster is sta
 
 . Use _Option 2_ when you are unable to recover all `KafkaTopic` resources.
 +
-This time you deploy your cluster without the Topic Operator, delete the Topic Operator topic store metadata, and then redeploy it so that the Topic Operator can recreate the `KafkaTopic` resources from the corresponding topics.
+In this case, you deploy your cluster without the Topic Operator, delete the Topic Operator topic store metadata, and then redeploy the Kafka cluster with the Topic Operator so it can recreate the `KafkaTopic` resources from the corresponding topics.
 
 NOTE: If the Topic Operator is not deployed, you only need to recover the `PersistentVolumeClaim` (PVC) resources.
 

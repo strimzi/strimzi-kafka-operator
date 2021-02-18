@@ -17,12 +17,12 @@ but should the in-memory cache crash it is automatically repopulated from the pe
 
 == Internal topic store topics
 
-Internal topics support the handling of topic metadata.
+Internal topics support the handling of topic metadata in the topic store.
 
 `__strimzi_store_topic`:: Input topic for storing the topic metadata
 `__strimzi-topic-operator-kstreams-topic-store-changelog`:: Retains a log of compacted topic store values
 
-IMPORTANT: Do not delete these topics, as they are essential to the running of the Topic Operator.
+WARNING: Do not delete these topics, as they are essential to the running of the Topic Operator.
 
 == Migrating topic metadata from ZooKeeper
 
@@ -38,7 +38,7 @@ If you are reverting back to a version of Strimzi earlier than 0.22, which uses 
 you still downgrade your Cluster Operator to the previous version,
 then downgrade Kafka brokers and client applications to the previous Kafka version as standard.
 
-However, you must also delete the topics created for the topic store using a `kafka-admin` command, specifying the bootstrap address of the Kafka cluster.
+However, you must also delete the topics that were created for the topic store using a `kafka-admin` command, specifying the bootstrap address of the Kafka cluster.
 For example:
 
 [source,shell]
@@ -52,7 +52,7 @@ The Topic Operator will reconstruct the ZooKeeper topic metadata from the state 
 
 == Topic Operator topic replication and scaling
 
-The recommended configuration for the Topic Operator topics is to have a topic replication factor of 3, and a minimum of 2 in-sync replicas.
+The recommended configuration for topics managed by the Topic Operator is a topic replication factor of 3, and a minimum of 2 in-sync replicas.
 
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -69,10 +69,10 @@ spec:
     min.insync.replicas=2 <2>
   #...
 ----
-<1> The number of replica topics. Currently, this cannot be changed in the `KafkaTopic` resource, but it can be changed using the `kafka-reassign-partitions.sh` tool.
+<1> The number of replica topic partitions. Currently, this cannot be changed in the `KafkaTopic` resource, but it can be changed using the `kafka-reassign-partitions.sh` tool.
 <2> The minimum number of replica partitions that a message must be successfully written to, or an exception is raised.
 
-NOTE: In-sync replicas are used in conjunction with the `acks` configuration for a producer application.
+NOTE: In-sync replicas are used in conjunction with the `acks` configuration for producer applications.
 The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
 The Topic Operator runs with `acks=all`, whereby messages must be acknowledged by all in-sync replicas.
 
@@ -84,8 +84,8 @@ the optimization proposals it generates for rebalancing Kafka include commands t
 
 == Handling changes to topics
 
-A fundamental problem that the Topic Operator has to solve is that there is no single source of truth:
-Both the `KafkaTopic` resource and the Kafka topic can be modified independently of the Topic Operator.
+A fundamental problem that the Topic Operator needs to solve is that there is no single source of truth:
+both the `KafkaTopic` resource and the Kafka topic can be modified independently of the Topic Operator.
 Complicating this, the Topic Operator might not always be able to observe changes at each end in real time.
 For example, when the Topic Operator is down.
 
@@ -101,7 +101,7 @@ If you update Kafka topic configuration or apply a change through the `KafkaTopi
 the topic store is updated after the Kafka cluster is reconciled.
 
 The topic store also allows the Topic Operator to manage scenarios where the topic configuration is changed in Kafka topics _and_ updated through Kubernetes `KafkaTopic` custom resources,
-so long as the changes are not incompatible.
+as long as the changes are not incompatible.
 For example, it is possible to make changes to the same topic config key, but to different values.
 For incompatible changes, the Kafka configuration takes priority, and the `KafkaTopic` is updated accordingly.
 
