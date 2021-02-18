@@ -32,27 +32,29 @@ To build Strimzi from source the operator and Kafka code needs to be compiled in
 
         docker login
 
-2. Make sure that the `DOCKER_ORG` environment variable is set to the same value as your username on Docker Hub.
+2. Make sure that the `DOCKER_ORG` and `DOCKER_REGISTRY` environment variables are set to the same value as your username on the Docker Registry, and the Docker Registry you are using.
 
         export DOCKER_ORG=docker_hub_username
+        export DOCKER_REGISTRY=docker_registry_name
 
 3. Now build the Docker images and push them to your repository on Docker Hub:
 
         make clean
         make all
 
-   Once this completes you should have several new repositories under your Docker Hub account (`docker_hub_username/operator`, `docker_hub_username/kafka` and `docker_hub_username/test-client`).
+   Once this completes you should have several new repositories under your Docker Hub account (`docker_registry_name/docker_hub_username/operator`, `docker_registry_name/docker_hub_username/kafka` and `docker_registry_name/docker_hub_username/test-client`).
 
    The tests run during the build can be skipped by setting the `MVN_ARGS` environment variable and passing that to the make command:
 
         make clean
         make MVN_ARGS='-DskipTests -DskipIT' all
 
-4. To use the newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images:
+4. To use the newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images:
 
     ```
-    sed -Ei -e "s#(image|value): strimzi/([a-z0-9-]+):latest#\1: $DOCKER_ORG/\2:latest#" \
-            -e "s#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_ORG/\2#" \
+    sed -Ei -e "s#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#" \
+            -e "s#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
+            -e "s#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
             install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
     ```
 
@@ -94,6 +96,7 @@ To build this project you must first install several command line utilities and 
 - [`yq`](https://github.com/mikefarah/yq) - (version 4.2.1 and above) YAML manipulation tool. 
     - **Warning:** There are several different `yq` YAML projects in the wild. Use [this one](https://github.com/mikefarah/yq). You need version 4 or above.
 - [`docker`](https://docs.docker.com/install/) - Docker command line client
+- [`shellcheck`](https://github.com/koalaman/shellcheck) - ShellCheck is a GPLv3 tool that gives warnings and suggestions for bash/sh shell scripts.
 
 In order to use `make` these all need to be available on your `$PATH`.
 
@@ -175,7 +178,7 @@ Target `docker_tag` tags the Docker images built by the `docker_build` target. T
 To configure the `docker_tag` and `docker_push` targets you can set following environment variables:
 * `DOCKER_ORG` configures the Docker organization for tagging/pushing the images (defaults to the value of the `$USER` environment variable)
 * `DOCKER_TAG` configured Docker tag (default is `latest`)
-* `DOCKER_REGISTRY` configures the Docker registry where the image will be pushed (default is `docker.io`)
+* `DOCKER_REGISTRY` configures the Docker registry where the image will be pushed (default is `quay.io`)
 
 ## Docker build options
 
@@ -224,17 +227,19 @@ To build the images on your local machine and push them to the Docker Hub, log i
 
     docker login
 
-By default the `docker_push` target will build the images under the strimzi organisation (e.g. `strimzi/operator:latest`) and attempt to push them to the strimzi repositories on the Docker Hub. Only certain users are approved to do this so you should push to your own Docker Hub organisation (account) instead. To do this, make sure that the `DOCKER_ORG` environment variable is set to the same value as your username on Docker Hub before running the `make` commands.
+By default the `docker_push` target will build the images under the strimzi organisation (e.g. `strimzi/operator:latest`) and attempt to push them to the strimzi repositories on the Docker Hub. Only certain users are approved to do this so you should push to your own Docker Hub organisation (account) instead. To do this, make sure that the `DOCKER_ORG` and `DOCKER_REGISTRY` environment variables are set to the same value as your username on the Docker Registry, and Docker Registry you are using before running the `make` commands.
 
     export DOCKER_ORG=docker_hub_username
+    export DOCKER_REGISTRY=docker_registry_name
 
-When the Docker images are build, they will be labeled in the form: `docker_hub_username/operator:latest` in your local repository and pushed to your Docker Hub account under the same label.
+When the Docker images are build, they will be labeled in the form: `docker_registry_name/docker_hub_username/operator:latest` in your local repository and pushed to your Docker Hub account under the same label.
 
-To use these newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Hub rather than the official Strimzi images, replacing `docker_hub_username` with the relevant value:
+To use these newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images, replacing `docker_hub_username` and `docker_registry_name` with the relevant value:
 
 ```
-sed -Ei -e 's#(image|value): strimzi/([a-z0-9-]+):latest#\1: docker_hub_username/\2:latest#' \
-        -e 's#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=docker_hub_username/\2#' \
+sed -Ei -e 's#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#' \
+        -e 's#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2#' \
+        -e 's#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_REGISTRY/$DOCKER_ORG/\2#' \
         install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
 ```
 
@@ -277,11 +282,12 @@ Assuming your OpenShift login is `developer` (a user with the `cluster-admin` ro
 
         DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=$(oc project -q) make docker_push
         
-5. To use the built images in a deployment, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from the registry at `172.30.1.1:5000`, rather than from DockerHub:
+5. To use the built images in a deployment, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from the registry at `172.30.1.1:5000`, rather than from Docker Registry:
 
     ```
-    sed -Ei -e 's#(image|value): strimzi/([a-z0-9-]+):latest#\1: 172.30.1.1:5000/myproject/\2:latest#' \
-            -e 's#([0-9.]+)=strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=172.30.1.1:5000/myproject/\2#' \
+    sed -Ei -e 's#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: 172.30.1.1:5000/myproject/\2:latest#' \
+            -e "s#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: 172.30.1.1:5000/myproject/\2#" \
+            -e 's#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=172.30.1.1:5000/myproject/\2#' \
             install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
     ```
 
