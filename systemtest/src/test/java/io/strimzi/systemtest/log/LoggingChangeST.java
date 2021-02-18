@@ -20,6 +20,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -71,7 +72,7 @@ class LoggingChangeST extends AbstractST {
 
     private static final String CONFIG_MAP_CO_NAME = "json-layout-cluster-operator";
 
-    @ParallelTest
+    @IsolatedTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -505,7 +506,7 @@ class LoggingChangeST extends AbstractST {
         assertThat("Bridge pod should not roll", DeploymentUtils.depSnapshot(KafkaBridgeResources.deploymentName(clusterName)), equalTo(bridgeSnapshot));
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetClusterOperatorLoggingLevels(ExtensionContext extensionContext) throws InterruptedException {
         Map<String, String> coPod = DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME);

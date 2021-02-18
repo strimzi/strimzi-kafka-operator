@@ -50,7 +50,6 @@ public class BundleResource implements ResourceType<Deployment> {
     public boolean isReady(Deployment resource) {
         LOGGER.info("==========================================================");
         LOGGER.info("Resource -_>" + resource);
-        LOGGER.info("Resource name ->" + resource.getMetadata().getName());
 
         return resource != null
             && resource.getMetadata() != null
