@@ -234,7 +234,7 @@ By default the `docker_push` target will build the images under the strimzi orga
 
 When the Docker images are build, they will be labeled in the form: `docker_registry_name/docker_hub_username/operator:latest` in your local repository and pushed to your Docker Hub account under the same label.
 
-To use these newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images, replacing `docker_hub_username` and `docker_registry` with the relevant value:
+To use these newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images, replacing `docker_hub_username` and `docker_registry_name` with the relevant value:
 
 ```
 sed -Ei -e 's#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#' \
