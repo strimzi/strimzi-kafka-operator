@@ -103,7 +103,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tlsSidecar           1.2+<.<|*The `tlsSidecar` property has been deprecated.* TLS sidecar configuration.
+|tlsSidecar           1.2+<.<|*The `tlsSidecar` property has been deprecated. The property tlsSidecar is removed in API version `v1beta2`.* TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
@@ -1526,7 +1526,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |integer
 |zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the ZooKeeper session.
 |integer
-|affinity                        1.2+<.<|Pod affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity                        1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.entityOperator.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* Pod affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
@@ -1536,7 +1536,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
 |integer
-|tlsSidecar                      1.2+<.<|TLS sidecar configuration.
+|tlsSidecar                      1.2+<.<|*The `tlsSidecar` property has been deprecated, and should now be configured using `spec.entityOperator.tlsSidecar`. The property tlsSidecar is removed in API version `v1beta2`.* TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
