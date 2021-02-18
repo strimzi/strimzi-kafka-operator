@@ -12,7 +12,7 @@ You might do this for security reasons, or if you have xref:con-certificate-rene
 
 A renewed certificate uses the same private key as the old certificate.
 
-NOTE: If you are using your own CA certificates, the renew annotation cannot be used.
+NOTE: If you are using your own CA certificates, the `force-renew` annotation cannot be used.
 Instead, follow the procedure for xref:renewing-your-own-ca-certificates-{context}[renewing your own CA certificates].
 
 .Prerequisites
