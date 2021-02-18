@@ -903,9 +903,9 @@ class TopicOperator {
                     reconciliation.observedTopicFuture(kafkaTopic != null ? topic : null);
                     Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
                     if (topic != null && Annotations.isReconciliationPausedWithAnnotation(topic)) {
-                        return reconcile(reconciliation, logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic);
-                    } else {
                         return Future.succeededFuture();
+                    } else {
+                        return reconcile(reconciliation, logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic);
                     }
                 });
             });
