@@ -125,6 +125,7 @@ public class BundleResource implements ResourceType<Deployment> {
         return new DeploymentBuilder(clusterOperator)
             .editMetadata()
                 .withName(name)
+                .withNamespace(namespace)
                 .addToLabels("deployment-type", DeploymentTypes.BundleClusterOperator.name())
             .endMetadata()
             .editSpec()
