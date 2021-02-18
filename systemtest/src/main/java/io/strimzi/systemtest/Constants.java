@@ -53,6 +53,10 @@ public interface Constants {
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
     long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
 
+    // Heycloak
+    long KEYCLOAK_DEPLOYMENT_POLL = Duration.ofSeconds(5).toMillis();
+    long KEYCLOAK_DEPLOYMENT_TIMEOUT = Duration.ofMinutes(10).toMillis();
+
     // stability count ensures that after some reconciliation we have some additional time
     int GLOBAL_STABILITY_OFFSET_COUNT = 20;
     // it is replacement instead of checking logs for reconciliation using dynamic waiting on some change for some period of time

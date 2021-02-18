@@ -31,7 +31,7 @@ public class KeycloakUtils {
         LOGGER.info("Prepare Keycloak in namespace: {}", namespace);
         ResourceManager.getPointerResources().push(() -> deleteKeycloak(namespace));
 
-        TestUtils.waitFor("Keycloak instance readiness", Constants.API_CRUISE_CONTROL_POLL, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {
             ExecResult result = Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, namespace);
 
             if (!result.out().contains("All realms were successfully imported")) {
