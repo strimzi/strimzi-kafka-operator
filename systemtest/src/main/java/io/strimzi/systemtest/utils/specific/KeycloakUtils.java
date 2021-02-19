@@ -31,13 +31,13 @@ public class KeycloakUtils {
         LOGGER.info("Prepare Keycloak in namespace: {}", namespace);
         ResourceManager.getPointerResources().push(() -> deleteKeycloak(namespace));
 
+        // This is needed because from time to time the first try fails on Azure
         TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {
             ExecResult result = Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, namespace);
 
             if (!result.out().contains("All realms were successfully imported")) {
                 LOGGER.info("Errors occurred during Keycloak install: {}", result.err());
                 return false;
-//                throw new RuntimeException("Keycloak wasn't deployed correctly!");
             }
             return  true;
         });
