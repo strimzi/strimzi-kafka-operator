@@ -24,6 +24,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.TracingUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
@@ -101,6 +102,8 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_AGENT_NAME = "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE = "const";
     private static final String JAEGER_SAMPLER_PARAM = "1";
+    private static final String JAEGER_OPERATOR_DEPLOYMENT_NAME = "jaeger-operator";
+    private static final String JAEGER_INSTANCE_NAME = "my-jaeger";
 
     private static final String TOPIC_NAME = "my-topic";
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
@@ -981,6 +984,8 @@ public class TracingST extends AbstractST {
             cmdKubeClient().namespace(cluster.getNamespace()).applyContent(fileContents);
         }
 
+        DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+
         installJaegerInstance();
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
@@ -1022,6 +1027,7 @@ public class TracingST extends AbstractST {
             jaegerConfigs.push(fileContents);
             cmdKubeClient().namespace(cluster.getNamespace()).applyContent(fileContents);
         }
+        DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_INSTANCE_NAME, 1);
     }
 
     @AfterEach

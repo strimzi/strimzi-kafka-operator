@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaeger-operator
-  namespace: tracing-cluster-test
 spec:
   replicas: 1
   selector:
@@ -16,15 +15,19 @@ spec:
       serviceAccountName: jaeger-operator
       containers:
         - name: jaeger-operator
-          image: jaegertracing/jaeger-operator:1.17.0
+          image: jaegertracing/jaeger-operator:1.21.3
           ports:
             - containerPort: 8383
-              name: metrics
+              name: http-metrics
+            - containerPort: 8686
+              name: cr-metrics
           args: ["start"]
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
-              value: ""
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: POD_NAME
               valueFrom:
                 fieldRef:
