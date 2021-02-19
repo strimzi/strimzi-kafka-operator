@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
-//
-//
+// configuring/assembly-config-kafka-connect.adoc
+// deploying/assembly-deploy-kafka-connect.adoc
 
 [id='proc-manual-restart-connector-task-{context}']
 = Performing a restart of a Kafka connector task
@@ -13,21 +13,34 @@ This procedure describes how to manually trigger a restart of a Kafka connector 
 
 .Procedure
 
-. Find the name of the KafkaConnector custom resource that controls the Kafka connector task you want to restart:
-[source,shell,subs=+quotes]
+. Find the name of the `KafkaConnector` custom resource that controls the Kafka connector task you want to restart:
++
+[source,shell,subs="+quotes"]
+----
 kubectl get KafkaConnector
+----
 
-. Find the ID of the task to be restarted from the KafkaConnector custom resource.
-Task IDs are non-negative integers, starting from 0:
-[source,shell,subs=+quotes]
-kubectl describe KafkaConnector _KafkaConnector-name_
+. Find the ID of the task to be restarted from the `KafkaConnector` custom resource.
+Task IDs are non-negative integers, starting from 0.
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe KafkaConnector _KAFKACONNECTOR-NAME_
+----
 
-. To restart the connector task, annotate the KafkaConnector resource in Kubernetes.
+. To restart the connector task, annotate the `KafkaConnector` resource in Kubernetes. 
 For example, using `kubectl annotate` to restart task 0:
-[source,shell,subs=+quotes]
-kubectl annotate KafkaConnector _KafkaConnector-name_ strimzi.io/restart-task=0
-
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate KafkaConnector _KAFKACONNECTOR-NAME_ strimzi.io/restart-task=0
+----
 
 . Wait for the next reconciliation to occur (every two minutes by default).
-The Kafka connector task is restarted, as long as the annotation was detected by the reconciliation process.
-When Kafka Connect accepts the restart request, the annotation is removed from the KafkaConnector custom resource.
++
+The Kafka connector task is restarted, as long as the annotation was detected by the reconciliation process. 
+When Kafka Connect accepts the restart request, the annotation is removed from the `KafkaConnector` custom resource.
+
+.Additional resources
+
+* link:{BookURLDeploying}#con-creating-managing-connectors-{context}[Creating and managing connectors^] in the _Deploying and Upgrading_ guide.
