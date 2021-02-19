@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import io.strimzi.systemtest.resources.KubernetesResource;
@@ -78,6 +79,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
+@Disabled
 public class TracingST extends AbstractST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
