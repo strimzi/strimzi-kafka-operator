@@ -6,18 +6,31 @@
 
 = Upgrading Kafka
 
-After you have upgraded your Cluster Operator, you can upgrade all Kafka brokers to a higher supported version of Kafka.
+After you have upgraded your Cluster Operator, the next step is to upgrade all Kafka brokers to a higher supported version of Kafka.
 
-Kafka upgrades are performed using the Cluster Operator. 
-How the Cluster Operator performs an upgrade depends on the differences between the versions of:
+Kafka upgrades are performed by the Cluster Operator through rolling updates of the Kafka brokers. 
 
-* Inter-broker protocol
-* Log message format
-* ZooKeeper
+The Cluster Operator initiates rolling updates based on the Kafka cluster configuration.
 
-When the versions are the same for the current and target Kafka version, as is typically the case for a patch level upgrade, the Cluster Operator can upgrade through a single rolling update of the Kafka brokers.
+[cols="2*",options="header",stripes="none",separator=¦]
+|===
 
-When one or more of these versions differ, the Cluster Operator requires two or three rolling updates of the Kafka brokers to perform the upgrade.
+¦If `Kafka.spec.kafka.config` contains...
+¦The Cluster Operator initiates...
+
+¦Both the `inter.broker.protocol.version` and the `log.message.format.version`.
+¦A single rolling update.
+
+¦Either the `inter.broker.protocol.version` or the `log.message.format.version`.
+¦Two rolling updates.
+
+¦No configuration for the `inter.broker.protocol.version` or the `log.message.format.version`.
+¦Two rolling updates.
+
+|===
+
+Additional rolling updates occur if the new version of Kafka requires a new ZooKeeper version.
+//check the above statement is still accurate
 
 .Additional resources
 
