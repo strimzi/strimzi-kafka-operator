@@ -21,6 +21,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaTracingExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -30,7 +31,6 @@ import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -47,13 +47,10 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Stack;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -84,8 +81,7 @@ public class TracingST extends AbstractST {
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
 
-    private static final String JI_INSTALL_DIR = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance/";
-    private static final String JO_INSTALL_DIR = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-operator/";
+    private static final String JAEGER_INSTANCE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
 
     private static final String JAEGER_PRODUCER_SERVICE = "hello-world-producer";
     private static final String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
@@ -104,6 +100,7 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_SAMPLER_PARAM = "1";
     private static final String JAEGER_OPERATOR_DEPLOYMENT_NAME = "jaeger-operator";
     private static final String JAEGER_INSTANCE_NAME = "my-jaeger";
+    private static final String JAEGER_VERSION = "1.21.3";
 
     private static final String TOPIC_NAME = "my-topic";
     private static final String TOPIC_TARGET_NAME = "cipot-ym";
@@ -964,29 +961,26 @@ public class TracingST extends AbstractST {
         }
     }
 
-    private void deployJaeger() {
+    private void deployJaegerContent(String fileUrl) throws IOException {
+        String yamlContent = TestUtils.setMetadataNamespace(FileUtils.downloadYaml(fileUrl), NAMESPACE)
+                .replace("namespace: \"observability\"", "namespace: \"" + NAMESPACE + "\"");
+        jaegerConfigs.push(yamlContent);
+        cmdKubeClient().applyContent(yamlContent);
+    }
+
+    private void deployJaegerOperator() throws IOException {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
-        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JO_INSTALL_DIR).listFiles()))
-                .collect(Collectors.toMap(
-                    file -> file,
-                    f -> TestUtils.getContent(f, TestUtils::toYamlString),
-                    (x, y) -> x,
-                    LinkedHashMap::new));
+        deployJaegerContent("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v" + JAEGER_VERSION + "/deploy/service_account.yaml");
+        deployJaegerContent("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v" + JAEGER_VERSION + "/deploy/role.yaml");
+        deployJaegerContent("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v" + JAEGER_VERSION + "/deploy/role_binding.yaml");
+        deployJaegerContent("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v" + JAEGER_VERSION + "/deploy/cluster_role.yaml");
+        deployJaegerContent("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v" + JAEGER_VERSION + "/deploy/cluster_role_binding.yaml");
+        deployJaegerContent("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v" + JAEGER_VERSION + "/deploy/crds/jaegertracing.io_jaegers_crd.yaml");
+        deployJaegerContent("https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v" + JAEGER_VERSION + "/deploy/operator.yaml");
 
-        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
-            LOGGER.info("Applying configuration file: {}", entry.getKey());
-            String fileContents = entry.getValue();
-            if (Environment.isNamespaceRbacScope()) {
-                fileContents = switchClusterRolesToRoles(fileContents);
-            }
-            jaegerConfigs.push(fileContents);
-            cmdKubeClient().namespace(cluster.getNamespace()).applyContent(fileContents);
-        }
-
+        ResourceManager.getPointerResources().push(this::deleteJaeger);
         DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
-
-        installJaegerInstance();
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withNewApiVersion("networking.k8s.io/v1")
@@ -1012,34 +1006,18 @@ public class TracingST extends AbstractST {
     /**
      * Install of Jaeger instance
      */
-    void installJaegerInstance() {
-        LOGGER.info("=== Applying jaeger instance install files ===");
+    void deployJaegerInstance() {
+        LOGGER.info("=== Applying jaeger instance install file ===");
 
-        Map<File, String> operatorFiles = Arrays.stream(Objects.requireNonNull(new File(JI_INSTALL_DIR).listFiles())
-        ).collect(Collectors.toMap(file -> file, f -> TestUtils.getContent(f, TestUtils::toYamlString), (x, y) -> x, LinkedHashMap::new));
-
-        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
-            LOGGER.info("Applying configuration file: {}", entry.getKey());
-            String fileContents = entry.getValue();
-            if (Environment.isNamespaceRbacScope()) {
-                fileContents = switchClusterRolesToRoles(fileContents);
-            }
-            jaegerConfigs.push(fileContents);
-            cmdKubeClient().namespace(cluster.getNamespace()).applyContent(fileContents);
-        }
+        String instanceYamlContent = TestUtils.getContent(new File(JAEGER_INSTANCE_PATH), TestUtils::toYamlString);
+        cmdKubeClient().applyContent(instanceYamlContent.replaceAll("image: 'all-in-one:*'", "image: 'all-in-one:" + JAEGER_VERSION.substring(0, 4) + "'"));
+        ResourceManager.getPointerResources().push(() -> cmdKubeClient().deleteContent(instanceYamlContent));
         DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_INSTANCE_NAME, 1);
-    }
-
-    @AfterEach
-    void tearDown() {
-        deleteJaeger();
     }
 
     @BeforeEach
     void createTestResources() {
-        // deployment of the jaeger
-        deployJaeger();
-
+        deployJaegerInstance();
         KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
 
         kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
@@ -1057,8 +1035,10 @@ public class TracingST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws IOException {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
+        // deployment of the jaeger
+        deployJaegerOperator();
     }
 }
