@@ -95,7 +95,7 @@ public class KafkaTopic extends CustomResource<KafkaTopicSpec, KafkaTopicStatus>
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final String V1BETA1 = Constants.V1BETA1;
     public static final String V1BETA2 = Constants.V1BETA2;
-    public static final String CONSUMED_VERSION = V1BETA1;
+    public static final String CONSUMED_VERSION = V1BETA2;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaTopic";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
