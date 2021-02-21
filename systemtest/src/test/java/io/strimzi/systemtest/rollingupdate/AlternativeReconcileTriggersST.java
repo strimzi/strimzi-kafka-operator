@@ -38,7 +38,6 @@ import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -57,7 +56,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
@@ -203,72 +201,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
         // ##############################
-    }
-
-    /**
-     * Scenario:
-     *  1. Setup Kafka persistent with 3 replicas
-     *  2. Create KafkaUser
-     *  3. Run producer and consumer to see if cluster is working
-     *  4. Remove cluster CA key
-     *  5. Kafka and ZK pods should roll, wiat until rolling update finish
-     *  6. Check that CA certificates were renewed
-     *  7. Try consumer, producer and consume rmeessages again with new certificates
-     */
-    @Test
-    @Disabled // fix-it ...
-    /*
-     * I'm guessing that this test passed before because we never had a consumer in this test,
-     * so there was no __consumer_offsets for it to fail on.
-     * The test topic which is used has min.isr == replicas,
-     * so KafkaAvailability would always have ignored that because it's unrollable otherwise.
-     * Now there's a partition with a minisr set to 1 but with >1 replicas,
-     * so KafkaAvailability cannot ignore it.
-     * And because the key was changed it means that the other brokers don't trust the new broker 0 cert
-     * (because it's signed with a key they don't yet trust). So they can't connect to do follower fetches.
-     * So we've kind of deadlocked.
-     */
-    void testRollingUpdateOnNextReconciliationAfterClusterCAKeyDel() {
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName, 2, 2).build());
-
-        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, USER_NAME).build());
-
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
-        final String defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(clusterName)
-            .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-            .build();
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
-
-        int sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(MESSAGE_COUNT));
-
-        String zookeeperDeletedCert = kubeClient(NAMESPACE).getSecret(clusterName + "-zookeeper-nodes").getData().get(clusterName + "-zookeeper-0.crt");
-        String kafkaDeletedCert = kubeClient(NAMESPACE).getSecret(clusterName + "-kafka-brokers").getData().get(clusterName + "-kafka-0.crt");
-
-        kubeClient().deleteSecret(KafkaResources.clusterCaKeySecretName(clusterName));
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
-
-        assertThat(kubeClient(NAMESPACE).getSecret(clusterName + "-zookeeper-nodes").getData().get(clusterName + "-zookeeper-0.crt"), is(not(zookeeperDeletedCert)));
-        assertThat(kubeClient(NAMESPACE).getSecret(clusterName + "-kafka-brokers").getData().get(clusterName + "-kafka-0.crt"), is(not(kafkaDeletedCert)));
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName)), is(not(zkPods)));
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName)), is(not(kafkaPods)));
-
-        int sentAfter = internalKafkaClient.sendMessagesTls();
-        assertThat(sentAfter, is(MESSAGE_COUNT));
     }
 
     // This test is affected by https://github.com/strimzi/strimzi-kafka-operator/issues/3913 so it needs longer operation timeout set in CO
