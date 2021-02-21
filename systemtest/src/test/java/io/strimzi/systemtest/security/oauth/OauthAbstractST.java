@@ -15,12 +15,13 @@ import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -51,10 +52,17 @@ public class OauthAbstractST extends AbstractST {
 
     protected KeycloakInstance keycloakInstance;
 
+    public static Map<String, Object> connectorConfig;
+    static {
+        connectorConfig = new HashMap<>();
+        connectorConfig.put("config.storage.replication.factor", 1);
+        connectorConfig.put("offset.storage.replication.factor", 1);
+        connectorConfig.put("status.storage.replication.factor", 1);
+    }
+
     protected WebClient client;
 
-    @BeforeAll
-    void setup() {
+    void setupCoAndKeycloak() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
         KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);

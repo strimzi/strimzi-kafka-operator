@@ -212,7 +212,7 @@ public class KafkaRollerST extends AbstractST {
 
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("123456"));
-        requests.put("memory", new Quantity("512Mi"));
+        requests.put("memory", new Quantity("128Mi"));
         KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests));
 
@@ -220,7 +220,7 @@ public class KafkaRollerST extends AbstractST {
 
         assertTrue(checkIfExactlyOneKafkaPodIsNotReady(clusterName));
 
-        requests.put("cpu", new Quantity("250m"));
+        requests.put("cpu", new Quantity("100m"));
 
         KafkaResource.replaceKafkaResource(clusterName, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests));
@@ -281,6 +281,8 @@ public class KafkaRollerST extends AbstractST {
 
         // kafka should get back ready in some reasonable time frame
         KafkaUtils.waitForKafkaReady(clusterName);
+        KafkaResource.deleteKafkaWithoutWait(clusterName);
+        KafkaUtils.waitForKafkaDeletion(clusterName);
     }
 
     boolean checkIfExactlyOneKafkaPodIsNotReady(String clusterName) {

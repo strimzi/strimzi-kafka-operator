@@ -94,6 +94,7 @@ public class OauthTlsST extends OauthAbstractST {
 
         KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(oauthClusterName, 1)
                 .editSpec()
+                    .withConfig(connectorConfig)
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -394,6 +395,7 @@ public class OauthTlsST extends OauthAbstractST {
 
     @BeforeAll
     void setUp() {
+        setupCoAndKeycloak();
         keycloakInstance.setRealm("internal", true);
 
         LOGGER.info("Keycloak settings {}", keycloakInstance.toString());
@@ -409,7 +411,7 @@ public class OauthTlsST extends OauthAbstractST {
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(oauthClusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(oauthClusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()

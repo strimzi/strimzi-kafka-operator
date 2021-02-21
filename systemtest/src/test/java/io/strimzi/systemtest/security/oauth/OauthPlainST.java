@@ -88,6 +88,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .withNewSpec()
                     .withReplicas(1)
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                    .withConfig(connectorConfig)
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -244,7 +245,7 @@ public class OauthPlainST extends OauthAbstractST {
         // mirror maker 2 adding prefix to mirrored topic for in this case mirrotopic will be : my-cluster.my-topic
         String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + TOPIC_NAME;
     
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 3, 1)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewListeners()
@@ -282,6 +283,7 @@ public class OauthPlainST extends OauthAbstractST {
         // Deploy Mirror Maker 2.0 with oauth
         KafkaMirrorMaker2ClusterSpec sourceClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
                 .withAlias(kafkaSourceClusterName)
+                .withConfig(connectorConfig)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaSourceClusterName))
                 .withNewKafkaClientAuthenticationOAuth()
                     .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
@@ -295,6 +297,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         KafkaMirrorMaker2ClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
                 .withAlias(kafkaTargetClusterName)
+                .withConfig(connectorConfig)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
                 .withNewKafkaClientAuthenticationOAuth()
                     .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
@@ -392,6 +395,7 @@ public class OauthPlainST extends OauthAbstractST {
 
     @BeforeAll
     void setUp() {
+        setupCoAndKeycloak();
         keycloakInstance.setRealm("internal", false);
 
         LOGGER.info("Setting producer and consumer properties");
@@ -407,7 +411,7 @@ public class OauthPlainST extends OauthAbstractST {
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(oauthClusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(oauthClusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
