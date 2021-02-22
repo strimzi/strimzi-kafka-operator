@@ -11,6 +11,8 @@ public enum ClientArgument {
     // Common
     TOPIC("--topic"),
     VERBOSE("--verbose"),
+    GROUP("--group"),
+    DESCRIBE("--describe"),
 
     // Consumer
     CONSUMER_CONFIG("--consumer.config"),

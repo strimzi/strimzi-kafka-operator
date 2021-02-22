@@ -1,0 +1,29 @@
+{
+    "spec": {
+        "containers": [
+            {
+                "name": "dummy",
+                "image": "centos:7",
+                "command": [
+                    "/bin/bash",
+                    "-c",
+                    "trap : TERM INT; sleep infinity & wait"
+                ],
+                "volumeMounts": [
+                    {
+                        "name": "data",
+                        "mountPath": "/data"
+                    }
+                ]
+            }
+        ],
+        "volumes": [
+            {
+                "name": "data",
+                "persistentVolumeClaim": {
+                    "claimName": "$name"
+                }
+            }
+        ]
+    }
+}
