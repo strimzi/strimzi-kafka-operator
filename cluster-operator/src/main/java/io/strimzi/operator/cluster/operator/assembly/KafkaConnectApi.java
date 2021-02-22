@@ -166,6 +166,16 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request.
      */
     Future<Void> restartTask(String host, int port, String connectorName, int taskID);
+
+    /**
+     * Make a {@code GET} request to {@code /connectors/${connectorName}/topics}.
+     * @param host The host to make the request to.
+     * @param port The port to make the request to.
+     * @param connectorName The name of the connector to get the status of.
+     * @return A Future which completes with the result of the request. If the request was successful,
+     * this returns the connector's topics.
+     */
+    Future<List<String>> getConnectorTopics(String host, int port, String connectorName);
 }
 
 class ConnectRestException extends RuntimeException {

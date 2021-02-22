@@ -44,9 +44,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     };
     public static final TypeReference<Map<String, String>> MAP_OF_STRINGS = new TypeReference<Map<String, String>>() {
     };
-
     public static final TypeReference<Map<String, Map<String, String>>> MAP_OF_MAP_OF_STRINGS = new TypeReference<Map<String, Map<String, String>>>() {
-
+    };
+    public static final TypeReference<Map<String, Map<String, List<String>>>> MAP_OF_MAP_OF_LIST_OF_STRING = new TypeReference<Map<String, Map<String, List<String>>>>() {
     };
     private final ObjectMapper mapper = new ObjectMapper();
     private final Vertx vertx;
@@ -511,6 +511,32 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 } else {
                     result.fail("Unexpected status code " + response.statusCode()
                         + " for POST request to " + host + ":" + port + path);
+                }
+            })
+            .exceptionHandler(result::tryFail)
+            .setFollowRedirects(true)
+            .putHeader("Accept", "application/json")
+            .end());
+    }
+
+    @Override
+    public Future<List<String>> getConnectorTopics(String host, int port, String connectorName) {
+        String path = String.format("/connectors/%s/topics", connectorName);
+        return withHttpClient((httpClient, result) -> httpClient
+            .get(port, host, path, response -> {
+                response.exceptionHandler(result::tryFail);
+                if (response.statusCode() == 200) {
+                    response.bodyHandler(buffer -> {
+                        try {
+                            Map<String, Map<String, List<String>>> t = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_LIST_OF_STRING);
+                            result.complete(t.get(connectorName).get("topics"));
+                        } catch (IOException e) {
+                            log.warn("Failed to parse list of connector topics", e);
+                            result.fail(new ConnectRestException(response, "Failed to parse list of connector topics", e));
+                        }
+                    });
+                } else {
+                    result.fail(new ConnectRestException(response, "Unexpected status code"));
                 }
             })
             .exceptionHandler(result::tryFail)

@@ -497,7 +497,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return A Future whose result, when successfully completed, is a ConnectorStatusAndConditions object containing the map of the current connector state plus any conditions that have arisen.
      */
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
-                                                                       String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
+                                                                                String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
         return apiClient.getConnectorConfig(new BackOff(200L, 2, 6), host, port, connectorName).compose(
             config -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, config)) {
@@ -508,11 +508,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         .compose(conditions -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions ->
                             apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port, connectorName)
-                                .compose(createConnectorStatusAndConditions(conditions)));
+                                .compose(createConnectorStatusAndConditions(conditions)))
+                        .compose(status -> updateConnectorTopics(host, apiClient, connectorName, status));
                 } else {
                     log.debug("{}: Connector {} exists but does not have desired config, {}!={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
-                        .compose(createConnectorStatusAndConditions());
+                        .compose(createConnectorStatusAndConditions())
+                        .compose(status -> updateConnectorTopics(host, apiClient, connectorName, status));
                 }
             },
             error -> {
@@ -520,7 +522,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         && ((ConnectRestException) error).getStatusCode() == 404) {
                     log.debug("{}: Connector {} does not exist", reconciliation, connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
-                        .compose(createConnectorStatusAndConditions());
+                        .compose(createConnectorStatusAndConditions())
+                        .compose(status -> updateConnectorTopics(host, apiClient, connectorName, status));
                 } else {
                     return Future.failedFuture(error);
                 }
@@ -613,6 +616,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
+    private Future<ConnectorStatusAndConditions> updateConnectorTopics(String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status) {
+        return apiClient.getConnectorTopics(host, port, connectorName)
+            .compose(updateConnectorStatusAndConditions(status));
+    }
+
     /**
      * Whether the provided resource instance is a KafkaConnector and has the strimzi.io/restart annotation
      *
@@ -678,15 +686,21 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     protected class ConnectorStatusAndConditions {
         Map<String, Object> statusResult;
+        List<String> topics;
         List<Condition> conditions;
 
-        ConnectorStatusAndConditions(Map<String, Object> statusResult, List<Condition> conditions) {
+        ConnectorStatusAndConditions(Map<String, Object> statusResult, List<String> topics, List<Condition> conditions) {
             this.statusResult = statusResult;
+            this.topics = topics;
             this.conditions = conditions;
         }
 
+        ConnectorStatusAndConditions(Map<String, Object> statusResult, List<Condition> conditions) {
+            this(statusResult, Collections.emptyList(), conditions);
+        }
+
         ConnectorStatusAndConditions(Map<String, Object> statusResult) {
-            this(statusResult, Collections.emptyList());
+            this(statusResult, Collections.emptyList(), Collections.emptyList());
         }
     }
 
@@ -696,6 +710,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     Function<Map<String, Object>, Future<ConnectorStatusAndConditions>> createConnectorStatusAndConditions(List<Condition> conditions) {
         return statusResult -> Future.succeededFuture(new ConnectorStatusAndConditions(statusResult, conditions));
+    }
+
+    Function<List<String>, Future<ConnectorStatusAndConditions>> updateConnectorStatusAndConditions(ConnectorStatusAndConditions status) {
+        return topics -> Future.succeededFuture(new ConnectorStatusAndConditions(status.statusResult, topics, status.conditions));
     }
 
     public Set<Condition> validate(KafkaConnector resource) {
@@ -717,10 +735,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         Map<String, Object> statusResult = null;
+        List<String> topics = new ArrayList<>();
         List<Condition> conditions = new ArrayList<>();
 
         if (connectorStatus != null) {
             statusResult = connectorStatus.statusResult;
+            topics = connectorStatus.topics.stream().sorted().collect(Collectors.toList());
             connectorStatus.conditions.forEach(condition -> conditions.add(condition));
         }
 
@@ -731,6 +751,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         status.setConnectorStatus(statusResult);
 
         status.setTasksMax(getActualTaskCount(connector, statusResult));
+        status.setTopics(topics);
         status.addConditions(conditions);
 
         return maybeUpdateStatusCommon(connectorOperator, connector, reconciliation, status,
