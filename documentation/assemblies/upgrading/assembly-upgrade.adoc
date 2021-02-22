@@ -11,6 +11,24 @@ Strimzi can be upgraded from a lower version to a higher version to take advanta
 As part of the upgrade, you upgrade Kafka to a higher supported version. 
 Each Kafka release introduces new features, improvements, and bug fixes.
 
+Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version if you encounter issues with a newer version.
+
+.Upgrade paths
+
+Two upgrade paths are possible:
+
+Incremental:: 
+Upgrading Strimzi from the current version to the next highest version.
++
+For example, upgrading from Strimzi 0.20.1 to 0.21.0.
+
+Multi-version::
+Upgrading Strimzi from the current version to any higher version within a single upgrade (skipping one or more versions).
++
+For example, upgrading from Strimzi 0.19.0 directly to Strimzi 0.21.0.
+
+The link:https://strimzi.io/downloads/[Supported versions^] table lists every released version of Strimzi.
+
 .Downtime and availability
 
 If topics are configured for high availability, upgrading Strimzi should not cause any downtime for consumers and producers that publish and read data from those topics. 
