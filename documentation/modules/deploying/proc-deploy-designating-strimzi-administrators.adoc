@@ -29,7 +29,7 @@ A system administrator can designate Strimzi administrators after the Cluster Op
 . Create the `strimzi-view` and `strimzi-admin` cluster roles in Kubernetes.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f install/strimzi-admin
+kubectl create -f install/strimzi-admin
 
 . If needed, assign the roles that provide access rights to users that require them.
 +

@@ -16,7 +16,7 @@ or they can be specified explicitly in the `spec` of the `KafkaConnect` or `Kafk
 .Example configuration properties in the `KafkaConnect` resource
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect

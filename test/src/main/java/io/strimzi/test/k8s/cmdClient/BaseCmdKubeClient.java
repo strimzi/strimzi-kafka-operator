@@ -187,6 +187,29 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     @SuppressWarnings("unchecked")
+    public K createContent(String yamlContent) {
+        try (Context context = defaultContext()) {
+            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"));
+            return (K) this;
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public K replaceContent(String yamlContent) {
+        try (Context context = defaultContext()) {
+            try {
+                createContent(yamlContent);
+            } catch (KubeClusterException.AlreadyExists e) {
+                Exec.exec(yamlContent, namespacedCommand(REPLACE, "-f", "-"));
+            }
+
+            return (K) this;
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public K deleteContent(String yamlContent) {
         try (Context context = defaultContext()) {
             Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"), 0, true, false);

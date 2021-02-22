@@ -61,6 +61,10 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
 
     K applyContent(String yamlContent);
 
+    K createContent(String yamlContent);
+
+    K replaceContent(String yamlContent);
+
     K deleteContent(String yamlContent);
 
     K createNamespace(String name);

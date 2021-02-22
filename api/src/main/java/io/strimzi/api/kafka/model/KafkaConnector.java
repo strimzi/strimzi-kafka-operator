@@ -39,10 +39,8 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaConnector.RESOURCE_GROUP,
                 scope = KafkaConnector.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(
-                                name = KafkaConnector.V1ALPHA1,
-                                served = true,
-                                storage = true)
+                        @Crd.Spec.Version(name = KafkaConnector.V1BETA2, served = true, storage = false),
+                        @Crd.Spec.Version(name = KafkaConnector.V1ALPHA1, served = true, storage = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status(),
@@ -88,12 +86,14 @@ import static java.util.Collections.unmodifiableList;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 @ToString
-@Version(Constants.V1ALPHA1)
+@Version(Constants.V1BETA2)
 @Group(Constants.STRIMZI_GROUP)
 public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
+    public static final String V1BETA2 = Constants.V1BETA2;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1ALPHA1));
+    public static final String CONSUMED_VERSION = V1ALPHA1;
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1ALPHA1));
     public static final String SCOPE = "Namespaced";
     public static final String CRD_API_VERSION = Constants.V1BETA1_API_VERSION;
     public static final String RESOURCE_PLURAL = "kafkaconnectors";

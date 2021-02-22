@@ -29,7 +29,7 @@ public class KafkaMirrorMakerResource {
     public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = TestUtils.USER_PATH + "/../examples/mirror-maker/kafka-mirror-maker.yaml";
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> kafkaMirrorMakerClient() {
-        return Crds.mirrorMakerOperation(ResourceManager.kubeClient().getClient());
+        return Crds.mirrorMakerV1Beta2Operation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaMirrorMakerBuilder kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {

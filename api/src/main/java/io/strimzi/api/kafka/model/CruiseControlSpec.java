@@ -100,7 +100,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
         this.config = config;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.cruiseControl.metricsConfig")
+    @DeprecatedProperty(movedToPath = "spec.cruiseControl.metricsConfig", removalVersion = "v1beta2")
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

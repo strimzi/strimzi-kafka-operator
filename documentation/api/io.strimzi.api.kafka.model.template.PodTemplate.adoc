@@ -31,7 +31,7 @@ This configuration is especially useful for Kafka Connect or MirrorMaker when a 
 .Example `hostAliases` configuration
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 #...
 spec:

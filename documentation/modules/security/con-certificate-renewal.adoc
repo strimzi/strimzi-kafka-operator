@@ -46,7 +46,7 @@ If you do not manually renew the certificates, the new periods will be used the 
 .Example Kafka configuration for certificate validity and renewal periods
 [source,shell,subs="+quotes"]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: {KafkaApiVersion}
 kind: Kafka
 # ...
 spec:

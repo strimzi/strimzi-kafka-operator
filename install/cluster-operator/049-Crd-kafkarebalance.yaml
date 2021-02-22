@@ -27,12 +27,15 @@ spec:
   conversion:
     strategy: None
   versions:
+  - name: v1beta2
+    served: true
+    storage: false
   - name: v1alpha1
     served: true
     storage: true
-  version: v1alpha1
   validation:
     openAPIV3Schema:
+      type: object
       properties:
         spec:
           type: object

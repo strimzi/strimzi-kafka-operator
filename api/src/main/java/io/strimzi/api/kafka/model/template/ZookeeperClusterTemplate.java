@@ -114,7 +114,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
     }
 
     @PresentInVersions("v1alpha1-v1beta1")
-    @DeprecatedProperty
+    @DeprecatedProperty(removalVersion = "v1beta2")
     @Deprecated
     @Description("Template for the Zookeeper server TLS sidecar container. " +
             "The TLS sidecar is not used anymore and this option will be ignored.")

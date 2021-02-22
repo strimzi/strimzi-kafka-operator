@@ -293,15 +293,16 @@ public class DocGenerator {
         String msg = String.format("*The `%s` property has been deprecated",
                 property.getName());
         if (!deprecated.movedToPath().isEmpty()) {
-            msg += ", and should now be configured using `" + deprecated.movedToPath() + "`.";
+            msg += ", and should now be configured using `" + deprecated.movedToPath() + "`";
         }
+        if (!deprecated.removalVersion().isEmpty()) {
+            msg += ". The property " + property.getName() + " is removed in API version `" + deprecated.removalVersion() + "`";
+        }
+        msg += ".* ";
         if (!deprecated.description().isEmpty()) {
             msg += deprecated.description() + " ";
         }
-        if (!deprecated.removalVersion().isEmpty()) {
-            msg += ". The Property " + property.getName() + " is scheduled for removal in version " + deprecated.removalVersion() + ".";
-        }
-        msg += "* ";
+
         return msg;
     }
 
@@ -395,7 +396,12 @@ public class DocGenerator {
                     && deprecatedType.replacedWithType() != null) {
                 Class<?> replacementClss = deprecatedType.replacedWithType();
 
-                out.append("*The type `" + cls.getSimpleName() + "` has been deprecated.*").append(NL);
+                out.append("*The type `" + cls.getSimpleName() + "` has been deprecated");
+                if (!deprecatedType.removalVersion().isEmpty()) {
+                    out.append(" and is removed in API version `" + deprecatedType.removalVersion() + "`");
+                }
+                out.append(".*").append(NL);
+
                 out.append("Please use ");
                 typeLink(crd, out, replacementClss);
                 out.append(" instead.").append(NL);

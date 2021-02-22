@@ -50,7 +50,6 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
     @Override
     protected KafkaBridge getResource(String resourceName) {
         return new KafkaBridgeBuilder()
-                .withApiVersion(KafkaBridge.RESOURCE_GROUP + "/" + KafkaBridge.V1ALPHA1)
                 .withNewMetadata()
                 .withName(resourceName)
                 .withNamespace(getNamespace())

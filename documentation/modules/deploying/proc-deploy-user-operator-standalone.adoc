@@ -51,7 +51,7 @@ Default is `30` days to initiate certificate renewal before the old certificates
 . Deploy the User Operator:
 +
 [source,shell,subs=+quotes]
-kubectl apply -f install/user-operator
+kubectl create -f install/user-operator
 
 . Verify that the User Operator has been deployed successfully:
 +

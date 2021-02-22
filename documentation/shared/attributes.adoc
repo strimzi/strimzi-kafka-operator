@@ -131,21 +131,29 @@
 :DockerImageUser: 1001
 
 // API Versions current
-:ApiVersion: v1beta1
-:KafkaApiVersion: kafka.strimzi.io/v1beta1
-:KafkaConnectApiVersion: kafka.strimzi.io/v1beta1
-:KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta1
-:KafkaTopicApiVersion: kafka.strimzi.io/v1beta1
-:KafkaUserApiVersion: kafka.strimzi.io/v1beta1
-:KafkaMirrorMakerApiVersion: kafka.strimzi.io/v1beta1
+:ApiVersion: v1beta2
+:KafkaApiVersion: kafka.strimzi.io/v1beta2
+:KafkaConnectApiVersion: kafka.strimzi.io/v1beta2
+:KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta2
+:KafkaConnectorApiVersion: kafka.strimzi.io/v1beta2
+:KafkaTopicApiVersion: kafka.strimzi.io/v1beta2
+:KafkaUserApiVersion: kafka.strimzi.io/v1beta2
+:KafkaMirrorMakerApiVersion: kafka.strimzi.io/v1beta2
+:KafkaMirrorMaker2ApiVersion: kafka.strimzi.io/v1beta2
+:KafkaRebalanceApiVersion: kafka.strimzi.io/v1beta2
+:KafkaBridgeApiVersion: kafka.strimzi.io/v1beta2
 
 // API Versions previous
-:KafkaApiVersionPrev: kafka.strimzi.io/v1alpha1
-:KafkaConnectApiVersionPrev: kafka.strimzi.io/v1alpha1
-:KafkaConnectS2IApiVersionPrev: kafka.strimzi.io/v1alpha1
-:KafkaTopicApiVersionPrev: kafka.strimzi.io/v1alpha1
-:KafkaUserApiVersionPrev: kafka.strimzi.io/v1alpha1
-:KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaApiVersionPrev: kafka.strimzi.io/v1beta1
+:KafkaConnectApiVersionPrev: kafka.strimzi.io/v1beta1
+:KafkaConnectS2IApiVersionPrev: kafka.strimzi.io/v1beta1
+:KafkaTopicApiVersionPrev: kafka.strimzi.io/v1beta1
+:KafkaUserApiVersionPrev: kafka.strimzi.io/v1beta1
+:KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1beta1
+:KafkaConnectorApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaMirrorMaker2ApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaRebalanceApiVersionPrev: kafka.strimzi.io/v1alpha1
+:KafkaBridgeApiVersionPrev: kafka.strimzi.io/v1alpha1
 
 // Tracing versions
 :JaegerClientVersion: 1.3.2

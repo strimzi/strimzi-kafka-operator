@@ -37,7 +37,7 @@ Here we see examples of `inline` and `external` logging:
 
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaMirrorMakerApiVersion}
 kind: KafkaMirrorMaker
 spec:
   # ...
@@ -50,7 +50,7 @@ spec:
 
 [source,yaml,subs="+quotes,attributes"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaMirrorMakerApiVersion}
 kind: KafkaMirrorMaker
 spec:
   # ...

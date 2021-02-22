@@ -42,16 +42,9 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaUser.RESOURCE_GROUP,
                 scope = KafkaUser.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(
-                                name = KafkaUser.V1BETA1,
-                                served = true,
-                                storage = true
-                        ),
-                        @Crd.Spec.Version(
-                                name = KafkaUser.V1ALPHA1,
-                                served = true,
-                                storage = false
-                        )
+                        @Crd.Spec.Version(name = KafkaUser.V1BETA2, served = true, storage = false),
+                        @Crd.Spec.Version(name = KafkaUser.V1BETA1, served = true, storage = true),
+                        @Crd.Spec.Version(name = KafkaUser.V1ALPHA1, served = true, storage = false)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status()
@@ -92,7 +85,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-@Version(Constants.V1BETA1)
+@Version(Constants.V1BETA2)
 @Group(Constants.STRIMZI_GROUP)
 public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -100,7 +93,9 @@ public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> im
     public static final String SCOPE = "Namespaced";
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final String V1BETA1 = Constants.V1BETA1;
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
+    public static final String V1BETA2 = Constants.V1BETA2;
+    public static final String CONSUMED_VERSION = V1BETA2;
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaUser";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;

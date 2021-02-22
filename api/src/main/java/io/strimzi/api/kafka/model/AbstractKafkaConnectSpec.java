@@ -159,7 +159,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.metricsConfig = metricsConfig;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.metricsConfig")
+    @DeprecatedProperty(movedToPath = "spec.metricsConfig", removalVersion = "v1beta2")
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -185,10 +185,11 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.tracing = tracing;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.template.pod.affinity")
+    @DeprecatedProperty(movedToPath = "spec.template.pod.affinity", removalVersion = "v1beta2")
     @Deprecated
     public Affinity getAffinity() {
         return affinity;
@@ -199,10 +200,11 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.affinity = affinity;
     }
 
+    @PresentInVersions("v1alpha1-v1beta1")
     @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations")
+    @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations", removalVersion = "v1beta2")
     @Deprecated
     public List<Toleration> getTolerations() {
         return tolerations;

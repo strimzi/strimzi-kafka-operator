@@ -51,7 +51,7 @@ Default `INFO`.
 . Deploy the Topic Operator:
 +
 [source,shell,subs=+quotes]
-kubectl apply -f install/topic-operator
+kubectl create -f install/topic-operator
 
 . Verify that the Topic Operator has been deployed successfully:
 +

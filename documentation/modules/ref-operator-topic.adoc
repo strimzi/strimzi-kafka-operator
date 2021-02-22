@@ -17,7 +17,7 @@ For example:
 
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: topic-name-1
@@ -81,7 +81,7 @@ For example:
 
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: topic-name-1
@@ -95,7 +95,7 @@ cannot be changed to:
 
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: topic-name-1
@@ -113,7 +113,7 @@ For example:
 
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
   name: mytopic---c55e57fe2546a33f9e603caf57165db4072e827e

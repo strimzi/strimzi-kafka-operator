@@ -25,7 +25,7 @@ Pod scheduling:: Pod schedules use _affinity/anti-affinity_ rules to determine u
 == Example YAML showing common configuration
 [source,yaml,subs=attributes+]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-cluster

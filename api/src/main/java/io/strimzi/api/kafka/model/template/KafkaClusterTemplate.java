@@ -184,7 +184,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     }
 
     @PresentInVersions("v1alpha1-v1beta1")
-    @DeprecatedProperty
+    @DeprecatedProperty(removalVersion = "v1beta2")
     @Deprecated
     @Description("Template for the Kafka broker TLS sidecar container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

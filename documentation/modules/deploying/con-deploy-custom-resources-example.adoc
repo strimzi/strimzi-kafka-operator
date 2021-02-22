@@ -78,7 +78,7 @@ Here is a corresponding example of a `KafkaTopic` custom resource.
 .Kafka topic custom resource
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic <1>
 metadata:
   name: my-topic

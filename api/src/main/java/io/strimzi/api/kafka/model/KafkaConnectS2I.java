@@ -47,16 +47,9 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaConnectS2I.RESOURCE_GROUP,
                 scope = KafkaConnectS2I.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(
-                                name = KafkaConnectS2I.V1BETA1,
-                                served = true,
-                                storage = true
-                        ),
-                        @Crd.Spec.Version(
-                                name = KafkaConnectS2I.V1ALPHA1,
-                                served = true,
-                                storage = false
-                        )
+                        @Crd.Spec.Version(name = KafkaConnectS2I.V1BETA2, served = true, storage = false),
+                        @Crd.Spec.Version(name = KafkaConnectS2I.V1BETA1, served = true, storage = true),
+                        @Crd.Spec.Version(name = KafkaConnectS2I.V1ALPHA1, served = true, storage = false)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status(),
@@ -90,7 +83,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
-@Version(Constants.V1BETA1)
+@Version(Constants.V1BETA2)
 @Group(Constants.STRIMZI_GROUP)
 @Deprecated
 @DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.connect.build.Build.class)
@@ -100,7 +93,9 @@ public class KafkaConnectS2I extends CustomResource<KafkaConnectS2ISpec, KafkaCo
     public static final String SCOPE = "Namespaced";
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final String V1BETA1 = Constants.V1BETA1;
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA1, V1ALPHA1));
+    public static final String V1BETA2 = Constants.V1BETA2;
+    public static final String CONSUMED_VERSION = V1BETA1;
+    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1BETA1, V1ALPHA1));
     public static final String RESOURCE_KIND = "KafkaConnectS2I";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;

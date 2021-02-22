@@ -26,7 +26,7 @@ public class KafkaTopicResource {
     public static final String PATH_TO_KAFKA_TOPIC_CONFIG = TestUtils.USER_PATH + "/../examples/topic/kafka-topic.yaml";
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> kafkaTopicClient() {
-        return Crds.topicOperation(ResourceManager.kubeClient().getClient());
+        return Crds.topicV1Beta2Operation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaTopicBuilder topic(String clusterName, String topicName) {

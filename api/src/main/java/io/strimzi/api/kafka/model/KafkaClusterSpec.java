@@ -150,7 +150,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
     }
 
     @PresentInVersions("v1alpha1-v1beta1")
-    @DeprecatedProperty
+    @DeprecatedProperty(removalVersion = "v1beta2")
     @Deprecated
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -235,7 +235,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
         this.jmxOptions = jmxOptions;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.kafka.metricsConfig")
+    @DeprecatedProperty(movedToPath = "spec.kafka.metricsConfig", removalVersion = "v1beta2")
     @PresentInVersions("v1alpha1-v1beta1")
     @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -267,7 +267,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
     @Description("The pod's affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.affinity")
+    @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.affinity", removalVersion = "v1beta2")
     @Deprecated
     public Affinity getAffinity() {
         return affinity;
@@ -282,7 +282,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
     @Description("The pod's tolerations.")
     @KubeLink(group = "core", version = "v1", kind = "toleration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.tolerations")
+    @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.tolerations", removalVersion = "v1beta2")
     @Deprecated
     public List<Toleration> getTolerations() {
         return tolerations;

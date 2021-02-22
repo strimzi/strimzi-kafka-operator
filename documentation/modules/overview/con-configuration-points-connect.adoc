@@ -20,7 +20,7 @@ If multiple different Kafka Connect instances are used, these settings must refl
 == Example YAML showing Kafka Connect configuration
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect
@@ -65,7 +65,7 @@ The `output` properties describe the type and name of the image, and optionally 
 The `plugins` properties describe the type of artifact and the URL from which the artifact is downloaded. Additionally, you can specify a SHA-512 checksum to verify the artifact before unpacking it.
 
 .Example Kafka Connect configuration to create a new image automatically
-[source,shell,subs="+quotes,attributes"]
+[source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
@@ -100,7 +100,7 @@ The `spec` for the KafkaConnector resource specifies the connector class and con
 == Example YAML showing KafkaConnector configuration
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectorApiVersion}
 kind: KafkaConnector
 metadata:
   name: my-source-connector
@@ -122,7 +122,7 @@ KafkaConnector resources must be deployed to the same namespace as the Kafka Con
 == Example YAML showing annotation to enable KafkaConnector
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   name: my-connect
