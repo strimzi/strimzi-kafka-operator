@@ -94,7 +94,7 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_SAMPLER_PARAM = "1";
     private static final String JAEGER_OPERATOR_DEPLOYMENT_NAME = "jaeger-operator";
     private static final String JAEGER_INSTANCE_NAME = "my-jaeger";
-    private static final String JAEGER_VERSION = "1.21.3";
+    private static final String JAEGER_VERSION = "1.18.1";
 
     private static final String CLUSTER_NAME = "tracing-cluster";
 
@@ -111,11 +111,6 @@ public class TracingST extends AbstractST {
     void testProducerService() {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
-
-        Map<String, Object> configOfSourceKafka = new HashMap<>();
-        configOfSourceKafka.put("offsets.topic.replication.factor", "1");
-        configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
-        configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
         KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, topicName)
                 .editSpec()
@@ -199,11 +194,6 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
         String targetTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-
-        Map<String, Object> configOfSourceKafka = new HashMap<>();
-        configOfSourceKafka.put("offsets.topic.replication.factor", "1");
-        configOfSourceKafka.put("transaction.state.log.replication.factor", "1");
-        configOfSourceKafka.put("transaction.state.log.min.isr", "1");
 
         KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, topicName)
                 .editSpec()
