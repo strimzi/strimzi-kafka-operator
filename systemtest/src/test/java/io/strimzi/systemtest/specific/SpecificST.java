@@ -137,6 +137,10 @@ public class SpecificST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAwareConnectWrongDeployment() {
         assumeFalse(Environment.isNamespaceRbacScope());
+
+        Map<String, String> label = Collections.singletonMap("my-label", "value");
+        Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
+
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
@@ -173,7 +177,16 @@ public class SpecificST extends AbstractST {
                     .addToConfig("value.converter.schemas.enable", false)
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .endSpec().build());
+                    .editOrNewTemplate()
+                        .withNewClusterRoleBinding()
+                            .withNewMetadata()
+                                .withAnnotations(anno)
+                                .withLabels(label)
+                            .endMetadata()
+                        .endClusterRoleBinding()
+                    .endTemplate()
+                .endSpec()
+                .build());
 
         KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(clusterName));
 
@@ -204,6 +217,13 @@ public class SpecificST extends AbstractST {
         BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
         ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
+
+        // check the ClusterRoleBinding annotations and labels in Kafka cluster
+        Map<String, String> actualLabel = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
+        Map<String, String> actualAnno = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getAnnotations();
+
+        assertThat(actualLabel, is(label));
+        assertThat(actualAnno, is(anno));
     }
 
     @Test

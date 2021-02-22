@@ -44,6 +44,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -351,6 +352,9 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePort() {
+        Map<String, String> label = Collections.singletonMap("my-label", "value");
+        Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
+
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
@@ -369,6 +373,14 @@ public class ListenersST extends AbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
+                    .editOrNewTemplate()
+                        .withNewClusterRoleBinding()
+                            .withNewMetadata()
+                                .withAnnotations(anno)
+                                .withLabels(label)
+                            .endMetadata()
+                        .endClusterRoleBinding()
+                    .endTemplate()
                 .endKafka()
             .endSpec()
             .build());
@@ -404,6 +416,13 @@ public class ListenersST extends AbstractST {
                 }
             }
         }
+
+        // check the ClusterRoleBinding annotations and labels in Kafka cluster
+        Map<String, String> actualLabel = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
+        Map<String, String> actualAnno = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getTemplate().getClusterRoleBinding().getMetadata().getAnnotations();
+
+        assertThat(actualLabel, is(label));
+        assertThat(actualAnno, is(anno));
     }
 
     @Test
