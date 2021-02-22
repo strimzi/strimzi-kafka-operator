@@ -4,6 +4,7 @@
  */
 package io.strimzi.kafka.crd.convert.cli;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.annotations.ApiVersion;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
@@ -11,6 +12,7 @@ import picocli.CommandLine;
 /**
  * The converter cli entry point
  */
+@SuppressFBWarnings("ISC_INSTANTIATE_STATIC_CLASS")
 @CommandLine.Command(
         name = "crd",
         description = "Simple entry command",

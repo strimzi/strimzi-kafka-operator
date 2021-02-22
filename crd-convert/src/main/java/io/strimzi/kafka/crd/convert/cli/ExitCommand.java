@@ -5,7 +5,9 @@
 package io.strimzi.kafka.crd.convert.cli;
 
 import picocli.CommandLine;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings("DM_EXIT")
 @CommandLine.Command(name = "exit", aliases = {"x"}, description = "Exit shell")
 public class ExitCommand implements Runnable {
     @Override
