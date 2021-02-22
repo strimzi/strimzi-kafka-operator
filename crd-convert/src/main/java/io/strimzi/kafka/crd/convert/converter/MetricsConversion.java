@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.ExternalConfigurationReference;
 import io.strimzi.api.kafka.model.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.MetricsConfig;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -169,12 +168,15 @@ public class MetricsConversion<U extends HasMetadata> implements Conversion<U> {
             if (holder == null) {
                 return null;
             }
-            MetricsConfig mc = holder.getMetricsConfig();
-            // null is not an instance of JmxPrometheusExporterMetrics
-            if (mc instanceof JmxPrometheusExporterMetrics) {
-                JmxPrometheusExporterMetrics jmxMC = (JmxPrometheusExporterMetrics) mc;
-                // TODO
-            }
+
+            // TODO
+
+//            MetricsConfig mc = holder.getMetricsConfig();
+//            // null is not an instance of JmxPrometheusExporterMetrics
+//            if (mc instanceof JmxPrometheusExporterMetrics) {
+//                JmxPrometheusExporterMetrics jmxMC = (JmxPrometheusExporterMetrics) mc;
+//
+//            }
             return holder;
         }
     }

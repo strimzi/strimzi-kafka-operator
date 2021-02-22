@@ -349,10 +349,7 @@ public class OpenSslCertManager implements CertManager {
         }
 
         // We need to remove CA serial file
-        Path path = Paths.get(caCert.getPath().replaceAll(".[a-zA-Z0-9]+$", ".srl"));
-        if (Files.exists(path)) {
-            Files.delete(path);
-        }
+        Files.deleteIfExists(Paths.get(caCert.getPath().replace(".crt", ".srl")));
     }
 
     @Override
@@ -393,7 +390,7 @@ public class OpenSslCertManager implements CertManager {
             outputStream.close();
 
             int result = proc.waitFor();
-            String stdout = Files.readString(out.toPath(), Charset.defaultCharset());
+            String stdout = new String(Files.readAllBytes(out.toPath()), Charset.defaultCharset());
 
             log.debug(stdout);
             log.debug("result {}", result);

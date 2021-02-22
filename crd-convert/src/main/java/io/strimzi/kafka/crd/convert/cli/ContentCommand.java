@@ -58,17 +58,17 @@ public abstract class ContentCommand extends AbstractCommand {
     @CommandLine.Option(names = {"-uo", "--openshift"}, description = "Use OpenShift client?")
     boolean openshift;
 
-    protected static Map<String, BiFunction<KubernetesClient, String, MixedOperation>> resources;
+    private static final Map<String, BiFunction<KubernetesClient, String, MixedOperation>> RESOURCES;
 
     public static class Resources implements Iterable<String> {
         @Override
         public Iterator<String> iterator() {
-            return resources.keySet().iterator();
+            return RESOURCES.keySet().iterator();
         }
     }
 
     static {
-        resources = new HashMap<>();
+        RESOURCES = new HashMap<>();
         readKubeCustomResourceName(Kafka.class, Crds::kafkaOperation);
         readKubeCustomResourceName(KafkaBridge.class, Crds::kafkaBridgeOperation);
         readKubeCustomResourceName(KafkaConnect.class, Crds::kafkaConnectOperation);
@@ -93,10 +93,10 @@ public abstract class ContentCommand extends AbstractCommand {
             if (spec != null) {
                 Crd.Spec.Names names = spec.names();
                 if (names != null) {
-                    resources.put(names.kind(), op);
-                    resources.put(names.kind().toLowerCase(Locale.ROOT), op);
-                    resources.put(names.plural(), op);
-                    Arrays.stream(names.shortNames()).forEach(n -> resources.put(n, op));
+                    RESOURCES.put(names.kind(), op);
+                    RESOURCES.put(names.kind().toLowerCase(Locale.ROOT), op);
+                    RESOURCES.put(names.plural(), op);
+                    Arrays.stream(names.shortNames()).forEach(n -> RESOURCES.put(n, op));
                     return;
                 }
             }
@@ -123,7 +123,7 @@ public abstract class ContentCommand extends AbstractCommand {
     protected abstract CustomResource run(CustomResource cr) throws IOException;
 
     private boolean useKubeApi() {
-        return kubeParams != null && kubeParams.length >= 2 && resources.containsKey(kubeParams[0]);
+        return kubeParams != null && kubeParams.length >= 2 && RESOURCES.containsKey(kubeParams[0]);
     }
 
     private static String toExtension(File file) {
@@ -156,7 +156,7 @@ public abstract class ContentCommand extends AbstractCommand {
                         new DefaultOpenShiftClient().inNamespace(namespace) :
                         new DefaultKubernetesClient().inNamespace(namespace);
                 Crds.registerCustomKinds();
-                BiFunction<KubernetesClient, String, MixedOperation> function = resources.get(kubeParams[0]);
+                BiFunction<KubernetesClient, String, MixedOperation> function = RESOURCES.get(kubeParams[0]);
                 MixedOperation<CustomResource, ?, ?> operation = get(function, client);
                 cr = operation.withName(kubeParams[1]).get();
                 if (cr == null) {
@@ -193,7 +193,7 @@ public abstract class ContentCommand extends AbstractCommand {
                 println("\n");
             } else {
                 cr = run(cr);
-                BiFunction<KubernetesClient, String, MixedOperation> function = resources.get(kubeParams[0]);
+                BiFunction<KubernetesClient, String, MixedOperation> function = RESOURCES.get(kubeParams[0]);
                 MixedOperation<CustomResource, ?, ?> operation = replace(function, client);
                 operation.withName(kubeParams[1]).createOrReplace(cr);
                 println(String.format("Custom resource replaced: %s", toArgs()));
