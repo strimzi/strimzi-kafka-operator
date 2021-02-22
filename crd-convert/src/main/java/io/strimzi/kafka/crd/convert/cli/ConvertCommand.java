@@ -40,18 +40,18 @@ import java.util.function.BiFunction;
 public class ConvertCommand extends JYCommand {
     @CommandLine.Option(
         names = {"-fv", "--from-version"},
-        description = "From K8s ApiVersion - required when used with Kube API",
+        description = "From K8s ApiVersion - required when converting Kubernetes resources directly inside Kubernetes cluster",
         completionCandidates = Versions.class
     )
     ApiVersion fromApiVersion;
 
-    @CommandLine.Option(
-        names = {"-tv", "--to-version"},
-        required = true,
-        description = "To K8s ApiVersion",
-        completionCandidates = Versions.class
-    )
-    ApiVersion toApiVersion;
+//    @CommandLine.Option(
+//        names = {"-tv", "--to-version"},
+//        description = "Target version of the Strimzi API",
+//        completionCandidates = Versions.class,
+//        defaultValue = "v1beta2"
+//    )
+    ApiVersion toApiVersion = ApiVersion.V1BETA2;
 
     @SuppressWarnings("rawtypes")
     static Map<Object, Converter> converters;

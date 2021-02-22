@@ -14,8 +14,8 @@ import picocli.CommandLine;
  */
 @SuppressFBWarnings("ISC_INSTANTIATE_STATIC_CLASS")
 @CommandLine.Command(
-        name = "crd",
-        description = "Simple entry command",
+        name = "bin/crd-convert.sh",
+        description = "Conversion tool for Strimzi Custom Resources",
         mixinStandardHelpOptions = true,
         version = "1.0",
         subcommands = {

@@ -128,7 +128,7 @@
                         <argument>picocli.AutoComplete</argument>
                         <argument>--force</argument><!-- overwrite if exists -->
                         <argument>--completionScript</argument>
-                        <argument>${project.build.directory}/crd_completion.sh</argument>
+                        <argument>${project.basedir}/bin/bash_autocompletion.sh</argument>
                         <argument>io.strimzi.kafka.crd.convert.cli.EntryCommand</argument>
                     </arguments>
                 </configuration>
@@ -138,21 +138,16 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>crd-cli</id>
-                        <configuration>
-                            <archive>
-                                <manifest>
-                                    <mainClass>io.strimzi.kafka.crd.convert.cli.Main</mainClass>
-                                </manifest>
-                            </archive>
-                            <descriptors>
-                                <descriptor>src/main/resources/jar-with-deps-cli.xml</descriptor>
-                            </descriptors>
-                        </configuration>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/main/assembly/zip.xml</descriptor>
+                            </descriptors>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
