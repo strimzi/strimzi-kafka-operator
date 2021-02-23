@@ -162,7 +162,7 @@
         <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
-        <module>crd-convert</module>
+        <module>api-conversion</module>
         <module>mockkube</module>
         <module>config-model</module>
         <module>config-model-generator</module>
@@ -451,7 +451,7 @@
                 <artifactId>jackson-module-scala_2.12</artifactId>
                 <version>${fasterxml.jackson-core.version}</version>
             </dependency>
-            <!-- used in crd-convert -->
+            <!-- used in api-conversion -->
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
