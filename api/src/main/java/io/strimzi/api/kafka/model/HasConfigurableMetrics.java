@@ -11,7 +11,6 @@ import java.util.Map;
  * inlined Map or using the reference to the ConfigMp with the configuration.
  */
 public interface HasConfigurableMetrics {
-    String getTypeName();
     Map<String, Object> getMetrics();
     void setMetrics(Map<String, Object> metrics);
     MetricsConfig getMetricsConfig();

@@ -107,33 +107,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>generate-autocompletion-script</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>java</executable>
-                    <arguments>
-                        <argument>-Dpicocli.autocomplete.systemExitOnError</argument>
-                        <argument>-cp</argument>
-                        <classpath/>
-                        <argument>picocli.AutoComplete</argument>
-                        <argument>--force</argument><!-- overwrite if exists -->
-                        <argument>--completionScript</argument>
-                        <argument>${project.basedir}/bin/bash_autocompletion.sh</argument>
-                        <argument>io.strimzi.kafka.crd.convert.cli.EntryCommand</argument>
-                    </arguments>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>

@@ -42,8 +42,8 @@ spec:
       type: jmxPrometheusExporter
       valueFrom:
         configMapKeyRef:
-          name: my-cluster-kafka-jmx-exporter-configuration-name
-          key: my-cluster-kafka-jmx-exporter-configuration-key
+          name: my-cluster-kafka-jmx-exporter-configuration
+          key: my-cluster-kafka-jmx-exporter-configuration.yaml
   zookeeper:
     replicas: 3
     storage:
@@ -54,8 +54,8 @@ spec:
       type: jmxPrometheusExporter
       valueFrom:
         configMapKeyRef:
-          name: my-cluster-zookeeper-jmx-exporter-configuration-name
-          key: my-cluster-zookeeper-jmx-exporter-configuration-key
+          name: my-cluster-zookeeper-jmx-exporter-configuration
+          key: my-cluster-zookeeper-jmx-exporter-configuration.yaml
   # added the defaults here ...
   entityOperator:
     topicOperator:
@@ -70,5 +70,5 @@ spec:
       type: jmxPrometheusExporter
       valueFrom:
         configMapKeyRef:
-          name: my-cluster-cruise-control-jmx-exporter-configuration-name
-          key: my-cluster-cruise-control-jmx-exporter-configuration-key
+          name: my-cluster-cruise-control-jmx-exporter-configuration
+          key: my-cluster-cruise-control-jmx-exporter-configuration.yaml

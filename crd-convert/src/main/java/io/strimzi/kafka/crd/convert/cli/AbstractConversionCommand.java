@@ -4,15 +4,12 @@
  */
 package io.strimzi.kafka.crd.convert.cli;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
@@ -22,36 +19,35 @@ import io.strimzi.kafka.crd.convert.converter.Converter;
 import io.strimzi.kafka.crd.convert.converter.KafkaBridgeConverter;
 import io.strimzi.kafka.crd.convert.converter.KafkaConnectConverter;
 import io.strimzi.kafka.crd.convert.converter.KafkaConnectS2IConverter;
+import io.strimzi.kafka.crd.convert.converter.KafkaConnectorConverter;
 import io.strimzi.kafka.crd.convert.converter.KafkaConverter;
 import io.strimzi.kafka.crd.convert.converter.KafkaMirrorMaker2Converter;
 import io.strimzi.kafka.crd.convert.converter.KafkaMirrorMakerConverter;
 import io.strimzi.kafka.crd.convert.converter.KafkaRebalanceConverter;
 import io.strimzi.kafka.crd.convert.converter.KafkaTopicConverter;
 import io.strimzi.kafka.crd.convert.converter.KafkaUserConverter;
-import picocli.CommandLine;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
+import java.util.Set;
 
 @SuppressWarnings("deprecation")
-@CommandLine.Command(name = "convert", aliases = {"c"}, description = "Convert CRDs")
-public class ConvertCommand extends JYCommand {
-    @CommandLine.Option(
-        names = {"-fv", "--from-version"},
-        description = "From K8s ApiVersion - required when converting Kubernetes resources directly inside Kubernetes cluster",
-        completionCandidates = Versions.class
-    )
-    ApiVersion fromApiVersion;
+public abstract class AbstractConversionCommand extends AbstractCommand {
+    protected static final ApiVersion TO_API_VERSION = ApiVersion.V1BETA2;
 
-//    @CommandLine.Option(
-//        names = {"-tv", "--to-version"},
-//        description = "Target version of the Strimzi API",
-//        completionCandidates = Versions.class,
-//        defaultValue = "v1beta2"
-//    )
-    ApiVersion toApiVersion = ApiVersion.V1BETA2;
+    protected static final String STRIMZI_API = "kafka.strimzi.io";
+    protected static final Set<String> STRIMZI_KINDS = Set.of(
+            "Kafka",
+            "KafkaConnect",
+            "KafkaConnectS2I",
+            "KafkaMirrorMaker",
+            "KafkaBridge",
+            "KafkaMirrorMaker2",
+            "KafkaTopic",
+            "KafkaUser",
+            "KafkaConnector",
+            "KafkaRebalance"
+    );
 
     @SuppressWarnings("rawtypes")
     static Map<Object, Converter> converters;
@@ -83,9 +79,9 @@ public class ConvertCommand extends JYCommand {
         converters.put("KafkaMirrorMaker2", kmm2c);
         converters.put(KafkaMirrorMaker2.class, kmm2c);
 
-        KafkaConnectConverter connectConverter = new KafkaConnectConverter();
-        converters.put("KafkaConnect", connectConverter);
-        converters.put(KafkaConnect.class, connectConverter);
+        KafkaConnectorConverter connectorConverter = new KafkaConnectorConverter();
+        converters.put("KafkaConnector", connectorConverter);
+        converters.put(KafkaConnector.class, connectorConverter);
 
         KafkaRebalanceConverter krc = new KafkaRebalanceConverter();
         converters.put("KafkaRebalance", krc);
@@ -101,49 +97,11 @@ public class ConvertCommand extends JYCommand {
     }
 
     @SuppressWarnings("rawtypes")
-    private static Converter getConverter(Object key) {
+    protected static Converter getConverter(Object key) {
         Converter converter = converters.get(key);
         if (converter == null) {
             throw new IllegalArgumentException("No converter for key: " + key);
         }
         return converter;
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    @Override
-    protected MixedOperation<CustomResource, ?, ?> get(BiFunction<KubernetesClient, String, MixedOperation> fn, KubernetesClient client) {
-        if (fromApiVersion == null) {
-            throw new IllegalArgumentException("Missing from api version argument: -fv=<version>!");
-        }
-        return fn.apply(client, fromApiVersion.toString());
-    }
-
-    @Override
-    protected void addArgs(List<String> args) {
-        args.add("-fv=" + fromApiVersion.toString());
-        args.add("-tv=" + toApiVersion.toString());
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    @Override
-    protected MixedOperation<CustomResource, ?, ?> replace(BiFunction<KubernetesClient, String, MixedOperation> fn, KubernetesClient client) {
-        return fn.apply(client, toApiVersion.toString());
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    @Override
-    protected CustomResource run(CustomResource cr) {
-        getConverter(cr.getClass()).convertTo(cr, toApiVersion);
-        return cr;
-    }
-
-    @Override
-    protected JsonNode run(JsonNode root) {
-        JsonNode kindNode = root.get("kind");
-        if (kindNode == null || kindNode.isNull()) {
-            throw new IllegalArgumentException("Missing 'kind' node: " + root);
-        }
-        getConverter(kindNode.asText()).convertTo(root, toApiVersion);
-        return root;
     }
 }

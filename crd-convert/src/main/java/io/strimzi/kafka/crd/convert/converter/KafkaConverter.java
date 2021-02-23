@@ -67,9 +67,9 @@ public class KafkaConverter extends Converter<Kafka> {
         Conversion.replaceLogging("/spec/entityOperator/topicOperator/logging", "log4j2.properties"),
         Conversion.replaceLogging("/spec/entityOperator/userOperator/logging", "log4j2.properties"),
         Conversion.replaceLogging("/spec/cruiseControl/logging", "log4j2.properties"),
-        new MetricsConversion<>("/spec/kafka", KafkaClusterSpec.class),
-        new MetricsConversion<>("/spec/zookeeper", ZookeeperClusterSpec.class),
-        new MetricsConversion<>("/spec/cruiseControl", CruiseControlSpec.class)
+        new MetricsConversion<>("/spec/kafka", KafkaClusterSpec.class, "kafka"),
+        new MetricsConversion<>("/spec/zookeeper", ZookeeperClusterSpec.class, "zookeeper"),
+        new MetricsConversion<>("/spec/cruiseControl", CruiseControlSpec.class, "cruise-control")
     );
 
     public KafkaConverter() {

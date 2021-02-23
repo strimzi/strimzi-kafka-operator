@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 @SuppressWarnings("deprecation")
 public class KafkaConnectS2IConverter extends AbstractSpecableConverter<KafkaConnectS2I> {
     public KafkaConnectS2IConverter() {
-        super(KafkaConnectS2ISpec.class);
+        super(KafkaConnectS2ISpec.class, "connect-s2i");
     }
 
     @Override

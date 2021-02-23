@@ -16,9 +16,8 @@ import static java.util.Arrays.asList;
  * @param <T> the actual custom resource type
  */
 public abstract class AbstractSpecableConverter<T extends HasMetadata> extends Converter<T> {
-
     @SuppressWarnings("unchecked")
-    public AbstractSpecableConverter(Class<? extends HasConfigurableMetrics> crClass) {
+    public AbstractSpecableConverter(Class<? extends HasConfigurableMetrics> crClass, String typeName) {
         super(asList(
             toVersionConversion(ApiVersion.V1ALPHA1, ApiVersion.V1BETA1),
             toVersionConversion(
@@ -27,7 +26,7 @@ public abstract class AbstractSpecableConverter<T extends HasMetadata> extends C
                 Conversion.move("/spec/tolerations", "/spec/template/pod/tolerations", Conversion.noop()),
                 Conversion.move("/spec/affinity", "/spec/template/pod/affinity", Conversion.noop()),
                 Conversion.replaceLogging("/spec/logging", "log4j.properties"),
-                new MetricsConversion<T>("/spec", crClass)
+                new MetricsConversion<T>("/spec", crClass, typeName)
             )
         ));
     }

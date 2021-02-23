@@ -11,27 +11,23 @@ import io.strimzi.api.annotations.ApiVersion;
 
 import java.util.function.Function;
 
-abstract class ConversionTestBase<V> {
+abstract class AbstractConversionTestBase<V> {
     private static final JsonMapper JSON_MAPPER = new JsonMapper();
 
-    protected <T extends HasMetadata> void conversion(
-        Converter<T> converter,
-        T cr,
-        ApiVersion toApiVersion,
-        Function<T, V> fn
-    ) throws Exception {
+    protected <T extends HasMetadata> V jsonConversion(Converter<T> converter, T cr, ApiVersion toApiVersion, Function<T, V> fn) throws Exception {
         // first do json node conversion, so we don't modify cr already
         byte[] bytes = JSON_MAPPER.writeValueAsBytes(cr);
         JsonNode node = JSON_MAPPER.readTree(bytes);
         converter.convertTo(node, toApiVersion);
         T converted = JSON_MAPPER.readerFor(converter.crClass()).readValue(node);
         V value = fn.apply(converted);
-        assertions(value);
-
-        converter.convertTo(cr, toApiVersion);
-        value = fn.apply(cr);
-        assertions(value);
+        return value;
     }
 
-    abstract void assertions(V value);
+    protected <T extends HasMetadata> V crConversion(Converter<T> converter, T cr, ApiVersion toApiVersion, Function<T, V> fn) {
+        converter.convertTo(cr, toApiVersion);
+        V value = fn.apply(cr);
+
+        return value;
+    }
 }

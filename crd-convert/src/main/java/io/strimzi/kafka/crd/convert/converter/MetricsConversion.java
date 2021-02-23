@@ -7,6 +7,8 @@ package io.strimzi.kafka.crd.convert.converter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -26,16 +28,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MetricsConversion<U extends HasMetadata> implements Conversion<U> {
-
-    private static final ObjectMapper MAPPER = new YAMLMapper();
+    private static final ObjectMapper MAPPER = new YAMLMapper(new YAMLFactory().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
     private static final ThreadLocal<Map<String, String>> TL = new ThreadLocal<>();
 
-    private Conversion<U> conversion;
-    private Conversion<U> reverse;
+    private final Conversion<U> conversion;
+    private final Conversion<U> reverse;
 
-    public <V extends HasConfigurableMetrics> MetricsConversion(String path, Class<V> type) {
-        conversion = Conversion.replace(path, new MetricsInvertibleFunction<>(type));
-        reverse = Conversion.replace(path, new InverseMetricsInvertibleFunction<>(type));
+    public <V extends HasConfigurableMetrics> MetricsConversion(String path, Class<V> type, String holderType) {
+        conversion = Conversion.replace(path, new MetricsInvertibleFunction<>(type, holderType));
+        reverse = Conversion.replace(path, new InverseMetricsInvertibleFunction<>(type, holderType));
     }
 
     @Override
@@ -74,27 +75,28 @@ public class MetricsConversion<U extends HasMetadata> implements Conversion<U> {
     }
 
     static class MetricsInvertibleFunction<T extends HasConfigurableMetrics> extends DefaultInvertibleFunction<T> {
-        private Class<T> clazz;
+        protected final String holderType;
+        private final Class<T> clazz;
 
-        public MetricsInvertibleFunction(Class<T> clazz) {
+        public MetricsInvertibleFunction(Class<T> clazz, String holderType) {
             this.clazz = clazz;
+            this.holderType = holderType;
         }
 
-        String get(T holder, String suffix) {
+        String get(String suffix) {
             String specName = TL.get().get("name");
             if (specName == null) {
                 throw new IllegalStateException("Missing ObjectMeta::name on root resource!");
             }
-            String holderType = holder.getTypeName();
-            return String.format("%s-%s-jmx-exporter-configuration-%s", specName, holderType, suffix);
+            return String.format("%s-%s-jmx-exporter-configuration%s", specName, holderType, suffix);
         }
 
-        String getKey(T holder) {
-            return get(holder, "key");
+        String getKey() {
+            return get(".yaml");
         }
 
-        String getName(T holder) {
-            return get(holder, "name");
+        String getName() {
+            return get("");
         }
 
         @Override
@@ -104,7 +106,7 @@ public class MetricsConversion<U extends HasMetadata> implements Conversion<U> {
 
         @Override
         public InvertibleFunction<T> inverse() {
-            return new InverseMetricsInvertibleFunction<>(convertedType());
+            return new InverseMetricsInvertibleFunction<>(convertedType(), holderType);
         }
 
         @Override
@@ -114,8 +116,8 @@ public class MetricsConversion<U extends HasMetadata> implements Conversion<U> {
             }
             Map<String, Object> metrics = holder.getMetrics();
             if (metrics != null && holder.getMetricsConfig() == null) {
-                String key = getKey(holder);
-                String name = getName(holder);
+                String key = getKey();
+                String name = getName();
 
                 JmxPrometheusExporterMetrics mc = new JmxPrometheusExporterMetrics();
                 ExternalConfigurationReference valueFrom = new ExternalConfigurationReference();
@@ -154,13 +156,13 @@ public class MetricsConversion<U extends HasMetadata> implements Conversion<U> {
     }
 
     static class InverseMetricsInvertibleFunction<T extends HasConfigurableMetrics> extends MetricsInvertibleFunction<T> {
-        public InverseMetricsInvertibleFunction(Class<T> clazz) {
-            super(clazz);
+        public InverseMetricsInvertibleFunction(Class<T> clazz, String holderType) {
+            super(clazz, holderType);
         }
 
         @Override
         public InvertibleFunction<T> inverse() {
-            return new MetricsInvertibleFunction<>(convertedType());
+            return new MetricsInvertibleFunction<>(convertedType(), holderType);
         }
 
         @Override

@@ -4,7 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -44,11 +43,6 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     private KafkaConnectTls tls;
     private KafkaClientAuthentication authentication;
     private Build build;
-
-    @JsonIgnore
-    public String getTypeName() {
-        return "kafka-connect";
-    }
 
     @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     public Map<String, Object> getConfig() {

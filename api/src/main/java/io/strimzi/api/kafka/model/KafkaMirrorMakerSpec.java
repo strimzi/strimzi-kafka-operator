@@ -4,7 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -122,11 +121,6 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
 
     public void setProducer(KafkaMirrorMakerProducerSpec producer) {
         this.producer = producer;
-    }
-
-    @JsonIgnore
-    public String getTypeName() {
-        return "kafka-mirror-maker";
     }
 
     @DeprecatedProperty(movedToPath = "spec.metricsConfig", removalVersion = "v1beta2")

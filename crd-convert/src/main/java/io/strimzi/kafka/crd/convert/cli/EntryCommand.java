@@ -5,7 +5,6 @@
 package io.strimzi.kafka.crd.convert.cli;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.api.annotations.ApiVersion;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 
@@ -20,14 +19,14 @@ import picocli.CommandLine;
         version = "1.0",
         subcommands = {
                 CommandLine.HelpCommand.class,
-                ConvertCommand.class
+                ConvertFileCommand.class,
+                ConvertResourceCommand.class
         }
 )
 class EntryCommand {
     public static void main(String[] args) {
         CommandLine cmd = new CommandLine(new EntryCommand());
         cmd.registerConverter(Level.class, Level::toLevel);
-        cmd.registerConverter(ApiVersion.class, ApiVersion::parse);
         int exit = cmd.execute(args);
         System.exit(exit);
     }

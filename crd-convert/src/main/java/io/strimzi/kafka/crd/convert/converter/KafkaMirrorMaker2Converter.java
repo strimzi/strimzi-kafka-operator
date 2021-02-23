@@ -9,7 +9,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 
 public class KafkaMirrorMaker2Converter extends AbstractSpecableConverter<KafkaMirrorMaker2> {
     public KafkaMirrorMaker2Converter() {
-        super(KafkaMirrorMaker2Spec.class);
+        super(KafkaMirrorMaker2Spec.class, "mirror-maker-2");
     }
 
     @Override

@@ -26,30 +26,38 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-class MetricsConversionTest extends ConversionTestBase<HasConfigurableMetrics> {
-
+class MetricsConversionTest extends AbstractConversionTestBase<HasConfigurableMetrics> {
     @Test
-    public void testMetricsConversion() throws Exception {
+    public void testKafkaMetricsConversion() throws Exception {
         Kafka k = new KafkaBuilder()
-            .withApiVersion("kafka.strimzi.io/v1beta1")
-            .withMetadata(new ObjectMetaBuilder().withName("test").build())
-            .withNewSpec()
+                .withApiVersion("kafka.strimzi.io/v1beta1")
+                .withMetadata(new ObjectMetaBuilder().withName("test").build())
+                .withNewSpec()
                 .withNewKafka()
-                    .withMetrics(Collections.singletonMap("foo", "bar"))
+                .withMetrics(Collections.singletonMap("foo", "bar"))
                 .endKafka()
                 .withNewZookeeper()
-                    .withMetrics(Collections.singletonMap("foo", "bar"))
+                .withMetrics(Collections.singletonMap("foo", "bar"))
                 .endZookeeper()
                 .withNewCruiseControl()
-                    .withMetrics(Collections.singletonMap("foo", "bar"))
+                .withMetrics(Collections.singletonMap("foo", "bar"))
                 .endCruiseControl()
                 .endSpec()
-            .build();
-        KafkaConverter converter = new KafkaConverter();
-        conversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getKafka());
-        conversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getZookeeper());
-        conversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getCruiseControl());
+                .build();
 
+        KafkaConverter converter = new KafkaConverter();
+
+        assertions(crConversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getKafka()), "kafka");
+        assertions(crConversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getZookeeper()), "zookeeper");
+        assertions(crConversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getCruiseControl()), "cruise-control");
+
+        assertions(jsonConversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getKafka()), "kafka");
+        assertions(jsonConversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getZookeeper()), "zookeeper");
+        assertions(jsonConversion(converter, k, ApiVersion.V1BETA2, v -> v.getSpec().getCruiseControl()), "cruise-control");
+    }
+
+    @Test
+    public void testConnectMetricsConversion() throws Exception {
         KafkaConnect kc = new KafkaConnectBuilder()
             .withApiVersion("kafka.strimzi.io/v1beta1")
             .withMetadata(new ObjectMetaBuilder().withName("test").build())
@@ -57,8 +65,13 @@ class MetricsConversionTest extends ConversionTestBase<HasConfigurableMetrics> {
                 .withMetrics(Collections.singletonMap("foo", "bar"))
             .endSpec()
             .build();
-        conversion(new KafkaConnectConverter(), kc, ApiVersion.V1BETA2, KafkaConnect::getSpec);
 
+        assertions(crConversion(new KafkaConnectConverter(), kc, ApiVersion.V1BETA2, KafkaConnect::getSpec), "connect");
+        assertions(jsonConversion(new KafkaConnectConverter(), kc, ApiVersion.V1BETA2, KafkaConnect::getSpec), "connect");
+    }
+
+    @Test
+    public void testConnectS2IMetricsConversion() throws Exception {
         KafkaConnectS2I kcs2i = new KafkaConnectS2IBuilder()
             .withApiVersion("kafka.strimzi.io/v1beta1")
             .withMetadata(new ObjectMetaBuilder().withName("test").build())
@@ -66,8 +79,13 @@ class MetricsConversionTest extends ConversionTestBase<HasConfigurableMetrics> {
                 .withMetrics(Collections.singletonMap("foo", "bar"))
             .endSpec()
             .build();
-        conversion(new KafkaConnectS2IConverter(), kcs2i, ApiVersion.V1BETA2, KafkaConnectS2I::getSpec);
 
+        assertions(crConversion(new KafkaConnectS2IConverter(), kcs2i, ApiVersion.V1BETA2, KafkaConnectS2I::getSpec), "connect-s2i");
+        assertions(jsonConversion(new KafkaConnectS2IConverter(), kcs2i, ApiVersion.V1BETA2, KafkaConnectS2I::getSpec), "connect-s2i");
+    }
+
+    @Test
+    public void testMirrorMakerMetricsConversion() throws Exception {
         KafkaMirrorMaker kmm = new KafkaMirrorMakerBuilder()
             .withApiVersion("kafka.strimzi.io/v1beta1")
             .withMetadata(new ObjectMetaBuilder().withName("test").build())
@@ -75,8 +93,13 @@ class MetricsConversionTest extends ConversionTestBase<HasConfigurableMetrics> {
                 .withMetrics(Collections.singletonMap("foo", "bar"))
             .endSpec()
             .build();
-        conversion(new KafkaMirrorMakerConverter(), kmm, ApiVersion.V1BETA2, KafkaMirrorMaker::getSpec);
 
+        assertions(crConversion(new KafkaMirrorMakerConverter(), kmm, ApiVersion.V1BETA2, KafkaMirrorMaker::getSpec), "mirror-maker");
+        assertions(jsonConversion(new KafkaMirrorMakerConverter(), kmm, ApiVersion.V1BETA2, KafkaMirrorMaker::getSpec), "mirror-maker");
+    }
+
+    @Test
+    public void testMirrorMaker2MetricsConversion() throws Exception {
         KafkaMirrorMaker2 kmm2 = new KafkaMirrorMaker2Builder()
             .withApiVersion("kafka.strimzi.io/v1beta1")
             .withMetadata(new ObjectMetaBuilder().withName("test").build())
@@ -84,10 +107,12 @@ class MetricsConversionTest extends ConversionTestBase<HasConfigurableMetrics> {
                 .withMetrics(Collections.singletonMap("foo", "bar"))
             .endSpec()
             .build();
-        conversion(new KafkaMirrorMaker2Converter(), kmm2, ApiVersion.V1BETA2, KafkaMirrorMaker2::getSpec);
+
+        assertions(crConversion(new KafkaMirrorMaker2Converter(), kmm2, ApiVersion.V1BETA2, KafkaMirrorMaker2::getSpec), "mirror-maker-2");
+        assertions(jsonConversion(new KafkaMirrorMaker2Converter(), kmm2, ApiVersion.V1BETA2, KafkaMirrorMaker2::getSpec), "mirror-maker-2");
     }
 
-    void assertions(HasConfigurableMetrics metrics) {
+    void assertions(HasConfigurableMetrics metrics, String type) {
         Assertions.assertNull(metrics.getMetrics());
         MetricsConfig metricsConfig = metrics.getMetricsConfig();
         Assertions.assertNotNull(metricsConfig);
@@ -97,6 +122,7 @@ class MetricsConversionTest extends ConversionTestBase<HasConfigurableMetrics> {
         Assertions.assertNotNull(valueFrom);
         ConfigMapKeySelector ref = valueFrom.getConfigMapKeyRef();
         Assertions.assertNotNull(ref);
-        Assertions.assertEquals("test-" + metrics.getTypeName() + "-jmx-exporter-configuration-name", ref.getName());
+        Assertions.assertEquals("test-" + type + "-jmx-exporter-configuration", ref.getName());
+        Assertions.assertEquals("test-" + type + "-jmx-exporter-configuration.yaml", ref.getKey());
     }
 }

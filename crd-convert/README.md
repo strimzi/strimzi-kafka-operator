@@ -1,74 +1,63 @@
 # CRD conversion
 
 With Strimzi's CRD evolving, there needs to be a way to easily migrate existing CR configuration to the new CRD schema.
-For this purpose a custom Converter for each CRD needs to be implemented.
+That is why we introduced the `v1beta2` version of the schema whicih removes several deprecated fields.
+To make it as easy as possible to convert the existing custom resources, we provide this conversion tool.
 
-There are two methods to implement:
+The tool can operate in two modes:
+* Converting YAML files
+* Converting Kubernetes resources
 
-```
-public void convertTo(T instance, ApiVersion toVersion)
-public void convertTo(JsonNode node, ApiVersion toVersion)
-```
-
-The first one does conversion directly on the CR instance, which might later lead to reordered configuration output (think "git merge" problems).
-That's why we added the second method, doing the conversion directly on the CR' JsonNode instance, preserving the configuration output as much as possible. 
-
-The code already provides useful conversion methods, such as `move`, `delete`, `replace`. 
-Hence you mostly just need to implement part of `replace` method; e.g. the actual replacement value when a CR is being changed in a non-trivial way (as was the case for Kafka.spec.kafka.listeners).
-
-Current Converters are:
-* [KafkaConverter](src/main/java/io/strimzi/kafka/crd/convert/converter/KafkaConverter.java)
-
-### CRD conversion tooling / CLI
-
-To simplify migration as much as possible, we added a new conversion CLI tool:
+You can list the available features using the `help` command:
 
 ```
-% crd --help                                                                                                                     
-Usage: crd [-hV] [COMMAND]
-Simple entry command
+> bin/crd-convert.sh help
+Usage: bin/crd-convert.sh [-hV] [COMMAND]
+Conversion tool for Strimzi Custom Resources
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
 Commands:
-  help        Displays help information about the specified command
-  convert, c  Convert CRDs
-  
-% crd c     
-Missing required option: '--to-version=<toApiVersion>'
-Usage: crd convert [-d] [-uo] [-fv=<fromApiVersion>] [-it=<inputType>]
-                   [-ll=<level>] [-n=<namespace>] [-o=<outputFile>]
-                   [-ot=<outputType>] -tv=<toApiVersion> [-f=<inputFile> |
-                   -c=<content>] [<Kube API params>...]
-Convert CRDs
-  [<Kube API params>...]
+  help                  Displays help information about the specified command
+  convert-file, cf      Convert Custom Resources from YAML file
+  convert-resource, cr  Convert Custom Resources directly in Kubernetes
 
-  -c, --content=<content>               CRD content
-  -d, --debug                           Use debug?
-  -f, --file=<inputFile>                CRD input file
-  -fv, --from-version=<fromApiVersion>  From K8s ApiVersion - required when used with Kube API
-  -it, --input-type=<inputType>         Content input type, e.g. json or yaml
-  -ll, --log-level=<level>              Set log level to enable logging
-  -n, --namespace=<namespace>           K8s / OpenShift namespace
-  -o, --output=<outputFile>             CRD output file
-  -ot, --output-type=<outputType>       Content output type, e.g. json or yaml
-  -tv, --to-version=<toApiVersion>      To K8s ApiVersion
-  -uo, --openshift                      Use OpenShift client?
 ```
 
-CRD conversion CLI uses [Picocli](https://picocli.info/) to implement its CLI commands.
+## Converting YAML files with custom resources
 
-At build time we create an uber-jar, holding all required dependencies.
-This uber-jar acts as a sort of executable.
+One way to use the tool is to convert YAML files. The converted YAML files can be applied to your Kubernetes cluster either directly or using GitOps mechanism etc.
+The input file is specified using the `--file` option.
+The output file where the converted YAML will be written can be specified in `-output`.
+If no output is specified, the converted YAML will be written directly into the input file.
 
-To ease the usage we suggest adding alias:
-* `alias crd='java -cp "<PATH_TO_STRIMZI_PROJECT>/crd-convert/target/crd-convert-0.22.0-SNAPSHOT-jar-with-deps-cli.jar" io.strimzi.kafka.crd.convert.cli.EntryCommand'`
+The convertor supports multi-document YAMLs.
+When your input YAML contains multiple Strimzi custom resources, they will be all converted.
+If the input YAL also contains any other Kubernetes resources, they will be kept in the output file without being modified.
 
-During the build you can also find completion script in target/ directory: `crd_completion.sh`.
-You can `source` this script and get tab completion ootb.
+Following example shows how to convert a resource from YAML file:
 
-Once you have things up-n-running, simply ask CLI for `help`. It will print out the usage, etc (see above).
+```
+> bin/crd-convert.sh convert-file --file input.yaml --output output.yaml
+```
 
-Using the CLI - examples:
-* crd c -tv v1beta2 -f=/strimzi-kafka-operator/crd-convert/src/test/resources/io/strimzi/kafka/crd/convert/converter/old-config.yaml
-* crd c -tv v1beta2 -f=/strimzi-kafka-operator/crd-convert/src/test/resources/io/strimzi/kafka/crd/convert/converter/old-config.yaml -o /tmp/test.yaml
-* crd c -fv v1beta1 -tv v1beta2 -n myproject kafka my-cluster 
+You can also list the help for the file convertor:
+
+```
+> bin/crd-convert.sh help help convert-file
+Usage: bin/crd-convert.sh convert-file [-d] -f=<inputFile> [-ll=<level>]
+                                       [-o=<outputFile>]
+Convert Custom Resources from YAML file
+  -d, --debug              Use debug?
+  -f, --file=<inputFile>   The YAML file with the Strimzi Custom Resource which
+                             should be converted
+      -ll, --log-level=<level>
+                           Set log level to enable logging
+  -o, --output=<outputFile>
+                           The YAML file with the converted Strimzi Custom
+                             Resource (if not specified, the input file will be
+                             overwritten)
+```
+
+## Converting Kubernetes resources
+
+TODO
