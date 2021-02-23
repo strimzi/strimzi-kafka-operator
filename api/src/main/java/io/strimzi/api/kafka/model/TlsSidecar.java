@@ -22,7 +22,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode(callSuper = true)
 public class TlsSidecar extends Sidecar {
     private static final long serialVersionUID = 1L;
@@ -38,7 +38,7 @@ public class TlsSidecar extends Sidecar {
     @Description("The log level for the TLS sidecar. " +
             "Default value is `notice`.")
     @DefaultValue("notice")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public TlsSidecarLogLevel getLogLevel() {
         return logLevel;
     }

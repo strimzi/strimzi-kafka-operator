@@ -10,7 +10,6 @@ spec:
     storage:
       type: "persistent-claim"
       size: "500Gi"
-      deleteClaim: false
     listeners:
       plain:
         networkPolicyPeers:
@@ -144,12 +143,10 @@ spec:
     topicMetadataMaxAttempts: 6
   clusterCa:
     generateCertificateAuthority: false
-    generateSecretOwnerReference: true
     validityDays: 395
     renewalDays: 32
   clientsCa:
     generateCertificateAuthority: false
-    generateSecretOwnerReference: true
     validityDays: 400
     renewalDays: 20
   someExtraThing: true

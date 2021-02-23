@@ -171,15 +171,7 @@ public class MetricsConversion<U extends HasMetadata> implements Conversion<U> {
                 return null;
             }
 
-            // TODO
-
-//            MetricsConfig mc = holder.getMetricsConfig();
-//            // null is not an instance of JmxPrometheusExporterMetrics
-//            if (mc instanceof JmxPrometheusExporterMetrics) {
-//                JmxPrometheusExporterMetrics jmxMC = (JmxPrometheusExporterMetrics) mc;
-//
-//            }
-            return holder;
+            throw new UnsupportedOperationException("Reverse conversion of metrics is not supported");
         }
     }
 

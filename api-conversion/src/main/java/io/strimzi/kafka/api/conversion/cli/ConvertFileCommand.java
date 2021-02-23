@@ -34,8 +34,16 @@ public class ConvertFileCommand extends AbstractConversionCommand {
     @CommandLine.Option(names = {"-f", "--file"}, description = "The YAML file with the Strimzi Custom Resource which should be converted", required = true)
     File inputFile;
 
-    @CommandLine.Option(names = {"-o", "--output"}, description = "The YAML file with the converted Strimzi Custom Resource (if not specified, the input file will be overwritten)")
-    File outputFile;
+    @CommandLine.ArgGroup
+    Exclusive exclusive;
+
+    static class Exclusive {
+        @CommandLine.Option(names = {"-o", "--output"}, description = "The output YAML file with the converted Strimzi Custom Resource")
+        File outputFile;
+
+        @CommandLine.Option(names = {"--in-place"}, description = "Apply the changes directly to the input file specified by --file", defaultValue = "false")
+        boolean inPlace;
+    }
 
     /**
      * Converts the JsonNode corresponding to a single YAML document
@@ -109,11 +117,7 @@ public class ConvertFileCommand extends AbstractConversionCommand {
             throw new IllegalArgumentException("Input YAML is missing 'kind' node: " + document);
         }
 
-        if (apiVersion.asText().startsWith(STRIMZI_API) && STRIMZI_KINDS.contains(kind.asText()))   {
-            return true;
-        }
-
-        return false;
+        return apiVersion.asText().startsWith(STRIMZI_API) && STRIMZI_KINDS.contains(kind.asText());
     }
 
     /**
@@ -135,10 +139,11 @@ public class ConvertFileCommand extends AbstractConversionCommand {
         MultipartConversions.remove();
     }
 
-    @Override
-    /*
+
+    /**
      * Reads the data from the input file into a byte array, converts them and writes it into the output file
      */
+    @Override
     public void run() {
         try {
             byte[] data;
@@ -153,8 +158,9 @@ public class ConvertFileCommand extends AbstractConversionCommand {
                 throw new RuntimeException("Failed to read input file - something went wrong!");
             }
 
-            if (outputFile == null) {
-                outputFile = inputFile;
+            // If in-place update is enabled, output file will be input file
+            if (exclusive != null && exclusive.inPlace) {
+                exclusive.outputFile = inputFile;
             }
 
             if (debug) {
@@ -170,11 +176,15 @@ public class ConvertFileCommand extends AbstractConversionCommand {
                     log.info("Result of the conversion: " + result);
                 }
 
-                Files.copy(
-                        new ByteArrayInputStream(IoUtil.toBytes(result)),
-                        outputFile.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING
-                );
+                if (exclusive != null && exclusive.outputFile != null) {
+                    Files.copy(
+                            new ByteArrayInputStream(IoUtil.toBytes(result)),
+                            exclusive.outputFile.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING
+                    );
+                } else {
+                    println(result);
+                }
             } else {
                 throw new RuntimeException("Result is null - something went wrong!");
             }

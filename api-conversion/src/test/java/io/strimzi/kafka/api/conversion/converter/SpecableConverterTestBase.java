@@ -20,24 +20,10 @@ abstract class SpecableConverterTestBase<T extends AbstractSpecableConverter<U>,
     protected abstract void convertTolerationsToV1beta2(String fromApiVersion);
 
     @Test
-    public void testTolerationToV1Beta1() {
-        convertTolerationsToV1beta1("kafka.strimzi.io/v1beta2");
-    }
-
-    protected abstract void convertTolerationsToV1beta1(String fromApiVersion);
-
-    @Test
     public void testAffinityToV1Beta2() {
         convertAffinityToV1beta2("kafka.strimzi.io/v1beta1");
         convertAffinityToV1beta2("kafka.strimzi.io/v1alpha1");
     }
 
     protected abstract void convertAffinityToV1beta2(String fromApiVersion);
-
-    @Test
-    public void testAffinityToV1Beta1() {
-        convertAffinityToV1beta1("kafka.strimzi.io/v1beta2");
-    }
-
-    protected abstract void convertAffinityToV1beta1(String fromApiVersion);
 }

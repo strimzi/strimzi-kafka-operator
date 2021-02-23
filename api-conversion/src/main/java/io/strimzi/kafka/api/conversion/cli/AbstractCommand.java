@@ -12,7 +12,7 @@ import picocli.CommandLine;
 public abstract class AbstractCommand implements Runnable {
     protected Logger log = LogManager.getLogger(getClass().getName());
 
-    @CommandLine.Option(names = {"-d", "--debug"}, description = "Use debug?")
+    @CommandLine.Option(names = {"-d", "--debug"}, description = "Use debug")
     boolean debug;
 
     @CommandLine.Option(names = {"-ll", "--log-level"}, description = "Set log level to enable logging")

@@ -52,36 +52,6 @@ abstract class KafkaConverterTestBase {
     }
 
     @Test
-    public void testListenersToV1Beta1() {
-        convertListenersToV1beta1("kafka.strimzi.io/v1beta2");
-    }
-
-    public void convertListenersToV1beta1(String fromApiVersion) {
-        Kafka converted = new KafkaBuilder()
-                .withApiVersion(fromApiVersion)
-                .withNewSpec()
-                .withNewKafka()
-                .withNewListeners()
-                .addNewGenericKafkaListener()
-                .withName("tls")
-                .withTls(true)
-                .withPort(9093)
-                .withType(KafkaListenerType.INTERNAL)
-                .endGenericKafkaListener()
-                .endListeners()
-                .endKafka()
-                .endSpec()
-                .build();
-        converted = kafkaConverter().testConvertTo(converted, ApiVersion.V1BETA2);
-        Assertions.assertEquals("kafka.strimzi.io/v1beta2", converted.getApiVersion());
-        Assertions.assertNotNull(converted.getSpec().getKafka().getListeners());
-        Assertions.assertNotNull(converted.getSpec().getKafka().getListeners().getGenericKafkaListeners());
-        Assertions.assertEquals(1, converted.getSpec().getKafka().getListeners().getGenericKafkaListeners().size());
-        Assertions.assertTrue(converted.getSpec().getKafka().getListeners().getGenericKafkaListeners().get(0).isTls());
-    }
-
-
-    @Test
     public void testKafkaTolerationToV1Beta2() {
         convertKafkaTolerationsToV1beta2("kafka.strimzi.io/v1beta1");
         convertKafkaTolerationsToV1beta2("kafka.strimzi.io/v1alpha1");
@@ -105,60 +75,6 @@ abstract class KafkaConverterTestBase {
         Assertions.assertEquals("foo", converted.getSpec().getKafka().getTemplate().getPod().getTolerations().get(0).getKey());
         Assertions.assertEquals("dbdb", converted.getSpec().getKafka().getTemplate().getPod().getTolerations().get(0).getEffect());
     }
-
-    @Test
-    public void testKafkaTolerationToV1Beta1() {
-        convertKafkaTolerationsToV1beta1("kafka.strimzi.io/v1beta2");
-    }
-
-    public void convertKafkaTolerationsToV1beta1(String fromApiVersion) {
-        Kafka converted = new KafkaBuilder()
-                .withApiVersion(fromApiVersion)
-                .withNewSpec()
-                .withNewKafka().withNewTemplate().withNewPod().withTolerations(new TolerationBuilder()
-                        .withKey("foo")
-                        .withEffect("dbdb")
-                        .build())
-                .endPod()
-                .endTemplate()
-                .endKafka()
-                .endSpec()
-                .build();
-        converted = kafkaConverter().testConvertTo(converted, ApiVersion.V1BETA2);
-        Assertions.assertEquals("kafka.strimzi.io/v1beta2", converted.getApiVersion());
-        Assertions.assertNull(converted.getSpec().getKafka().getTolerations());
-        Assertions.assertEquals(1, converted.getSpec().getKafka().getTemplate().getPod().getTolerations().size());
-        Assertions.assertEquals("foo", converted.getSpec().getKafka().getTemplate().getPod().getTolerations().get(0).getKey());
-        Assertions.assertEquals("dbdb", converted.getSpec().getKafka().getTemplate().getPod().getTolerations().get(0).getEffect());
-    }
-
-
-    @Test
-    public void testZookeeperTolerationToV1Beta1() {
-        convertZookeeperTolerationsToV1beta1("kafka.strimzi.io/v1beta2");
-    }
-
-    public void convertZookeeperTolerationsToV1beta1(String fromApiVersion) {
-        Kafka converted = new KafkaBuilder()
-                .withApiVersion(fromApiVersion)
-                .withNewSpec()
-                .withNewZookeeper().withNewTemplate().withNewPod().withTolerations(new TolerationBuilder()
-                        .withKey("foo")
-                        .withEffect("dbdb")
-                        .build())
-                .endPod()
-                .endTemplate()
-                .endZookeeper()
-                .endSpec()
-                .build();
-        converted = kafkaConverter().testConvertTo(converted, ApiVersion.V1BETA2);
-        Assertions.assertEquals("kafka.strimzi.io/v1beta2", converted.getApiVersion());
-        Assertions.assertNull(converted.getSpec().getZookeeper().getTolerations());
-        Assertions.assertEquals(1, converted.getSpec().getZookeeper().getTemplate().getPod().getTolerations().size());
-        Assertions.assertEquals("foo", converted.getSpec().getZookeeper().getTemplate().getPod().getTolerations().get(0).getKey());
-        Assertions.assertEquals("dbdb", converted.getSpec().getZookeeper().getTemplate().getPod().getTolerations().get(0).getEffect());
-    }
-
 
     @Test
     public void testZookeeperTolerationToV1Beta2() {
@@ -210,59 +126,6 @@ abstract class KafkaConverterTestBase {
         Assertions.assertNotNull(converted.getSpec().getKafka().getTemplate().getPod().getAffinity());
         Assertions.assertEquals(100, converted.getSpec().getKafka().getTemplate().getPod().getAffinity().getNodeAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getWeight());
     }
-
-    @Test
-    public void testKafkaAffinityToV1Beta1() {
-        convertKafkaAffinityToV1beta1();
-    }
-
-    public void convertKafkaAffinityToV1beta1() {
-        Kafka converted = new KafkaBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta2")
-                .withNewSpec()
-                .withNewKafka().withNewTemplate().withNewPod().withAffinity(new AffinityBuilder()
-                        .withNewNodeAffinity()
-                        .addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                        .withWeight(100)
-                        .endPreferredDuringSchedulingIgnoredDuringExecution()
-                        .endNodeAffinity()
-                        .build()).endPod().endTemplate()
-                .endKafka()
-                .endSpec()
-                .build();
-        converted = kafkaConverter().testConvertTo(converted, ApiVersion.V1BETA1);
-        Assertions.assertEquals("kafka.strimzi.io/v1beta1", converted.getApiVersion());
-        Assertions.assertNull(converted.getSpec().getKafka().getAffinity());
-        Assertions.assertNotNull(converted.getSpec().getKafka().getTemplate().getPod().getAffinity());
-        Assertions.assertEquals(100, converted.getSpec().getKafka().getTemplate().getPod().getAffinity().getNodeAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getWeight());
-    }
-
-    @Test
-    public void testZookeeperAffinityToV1Beta1() {
-        convertKafkaAffinityToV1beta1();
-    }
-
-    public void convertZookeeperAffinityToV1beta1() {
-        Kafka converted = new KafkaBuilder()
-                .withApiVersion("kafka.strimzi.io/v1beta2")
-                .withNewSpec()
-                .withNewZookeeper().withNewTemplate().withNewPod().withAffinity(new AffinityBuilder()
-                        .withNewNodeAffinity()
-                        .addNewPreferredDuringSchedulingIgnoredDuringExecution()
-                        .withWeight(100)
-                        .endPreferredDuringSchedulingIgnoredDuringExecution()
-                        .endNodeAffinity()
-                        .build()).endPod().endTemplate()
-                .endZookeeper()
-                .endSpec()
-                .build();
-        converted = kafkaConverter().testConvertTo(converted, ApiVersion.V1BETA1);
-        Assertions.assertEquals("kafka.strimzi.io/v1beta1", converted.getApiVersion());
-        Assertions.assertNull(converted.getSpec().getZookeeper().getAffinity());
-        Assertions.assertNotNull(converted.getSpec().getZookeeper().getTemplate().getPod().getAffinity());
-        Assertions.assertEquals(100, converted.getSpec().getZookeeper().getTemplate().getPod().getAffinity().getNodeAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getWeight());
-    }
-
 
     @Test
     public void testZookeeperAffinityToV1Beta2() {

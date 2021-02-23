@@ -195,13 +195,8 @@ spec:
             memberType: "$3"
   # added the defaults here ...
   entityOperator:
-      topicOperator:
-          reconciliationIntervalSeconds: 90
-          topicMetadataMaxAttempts: 6
-          zookeeperSessionTimeoutSeconds: 20
-      userOperator:
-          reconciliationIntervalSeconds: 120
-          zookeeperSessionTimeoutSeconds: 6
+      topicOperator: {}
+      userOperator: {}
   cruiseControl:
     metrics:
       lowercaseOutputName: true

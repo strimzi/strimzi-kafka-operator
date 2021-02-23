@@ -13,4 +13,4 @@ MYPATH="$(dirname "$0")"
 # Make sure that we use /dev/urandom
 #JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp -Djava.security.egd=file:/dev/./urandom"
 
-exec java $JAVA_OPTS $LOG4J_OPTS -classpath "${MYPATH}/../libs/*" io.strimzi.kafka.crd.convert.cli.EntryCommand "$@"
+exec java $JAVA_OPTS $LOG4J_OPTS -classpath "${MYPATH}/../libs/*" io.strimzi.kafka.api.conversion.cli.EntryCommand "$@"

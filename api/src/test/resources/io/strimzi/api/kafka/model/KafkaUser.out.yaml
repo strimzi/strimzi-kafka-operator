@@ -9,29 +9,22 @@ spec:
   authorization:
     type: "simple"
     acls:
-    - type: "allow"
-      resource:
+    - resource:
         type: "topic"
         name: "my-topic"
         patternType: "prefix"
-      host: "*"
       operation: "Read"
-    - type: "allow"
-      resource:
+    - resource:
         type: "topic"
         name: "my"
         patternType: "prefix"
       host: "127.0.0.1"
       operation: "Read"
-    - type: "allow"
-      resource:
+    - resource:
         type: "group"
         name: "my-group"
-        patternType: "literal"
       host: "127.0.0.1"
       operation: "Read"
-    - type: "allow"
-      resource:
+    - resource:
         type: "cluster"
-      host: "*"
       operation: "Read"

@@ -58,13 +58,8 @@ spec:
           key: my-cluster-zookeeper-jmx-exporter-configuration.yaml
   # added the defaults here ...
   entityOperator:
-    topicOperator:
-      reconciliationIntervalSeconds: 90
-      topicMetadataMaxAttempts: 6
-      zookeeperSessionTimeoutSeconds: 20
-    userOperator:
-      reconciliationIntervalSeconds: 120
-      zookeeperSessionTimeoutSeconds: 6
+    topicOperator: {}
+    userOperator: {}
   cruiseControl:
     metricsConfig:
       type: jmxPrometheusExporter

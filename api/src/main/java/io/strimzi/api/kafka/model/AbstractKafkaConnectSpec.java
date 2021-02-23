@@ -116,7 +116,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.livenessProbe = livenessProbe;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod readiness checking.")
     public Probe getReadinessProbe() {
         return readinessProbe;

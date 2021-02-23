@@ -24,7 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonPropertyOrder({"type", "size", "storageClass", "selector", "deleteClaim"})
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
 public class PersistentClaimStorage extends SingleVolumeStorage {
 
@@ -40,6 +40,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     @Description("Must be `" + TYPE_PERSISTENT_CLAIM + "`")
     @Override
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getType() {
         return TYPE_PERSISTENT_CLAIM;
     }
@@ -89,6 +90,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     @Description("Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.")
     @JsonProperty(defaultValue = "false")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isDeleteClaim() {
         return deleteClaim;
     }
