@@ -42,14 +42,19 @@
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
 
 //OAuth attributes and links
+:strimzi-project-name: Strimzi Operator
+:keycloak-project-name: Keycloak
 :oauth2-site: link:https://oauth.net/2/[OAuth 2.0 site^]
 :oauth-version: 0.7.2
 :keycloak-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
+:keycloak-server-install-doc: link:https://www.keycloak.org/docs/latest/server_installation/index.html#_operator[Installing the Keycloak Operator^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Authorization Services^]
+:authz-services-model-ref: xref:con-oauth-authorization-services-model-{context}[Keycloak Authorization Services model for managing permissions]
 :oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using OAuth 2.0^]
-:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-version}/examples[Using Keycloak as the OAuth 2.0 authorization server^]
-:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-version}/examples/docker[Using Hydra as the OAuth 2.0 authorization server^]
-:oauth-kubernetes-examples-link: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-version}/examples/kubernetes[https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-version}/examples/kubernetes]
+:oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the OAuth 2.0 authorization server^]
+:oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the OAuth 2.0 authorization server^]
+:oauth-kubernetes-examples-link: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-artifact-version}/examples/kubernetes[https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-artifact-version}/examples/kubernetes]
+:cli-kafka-image: quay.io/strimzi/kafka:0.21.1-kafka-2.6.0
 
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
