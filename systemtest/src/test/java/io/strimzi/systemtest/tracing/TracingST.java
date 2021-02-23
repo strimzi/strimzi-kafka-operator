@@ -180,7 +180,7 @@ public class TracingST extends AbstractST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("topics", topicName)
-                .endSpec()
+            .endSpec()
             .build());
 
         kafkaTracingClient.createAndWaitForReadiness(kafkaTracingClient.producerStrimzi().build());
@@ -470,7 +470,6 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = CLUSTER_NAME;
         final String kafkaClusterTargetName = CLUSTER_NAME + "-target";
 
-//        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
