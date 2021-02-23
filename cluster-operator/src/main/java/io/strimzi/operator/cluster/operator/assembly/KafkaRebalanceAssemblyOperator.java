@@ -27,7 +27,6 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
-import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
@@ -53,7 +52,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -345,7 +343,7 @@ public class KafkaRebalanceAssemblyOperator
             KafkaRebalanceStatus status = new KafkaRebalanceStatus();
 
             Condition pauseCondition = new ConditionBuilder()
-                    .withLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
+                    .withLastTransitionTime(StatusUtils.iso8601Now())
                     .withType("ReconciliationPaused")
                     .withStatus("True")
                     .build();
