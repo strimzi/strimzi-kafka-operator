@@ -108,7 +108,6 @@ For incompatible changes, the Kafka configuration takes priority, and the `Kafka
 NOTE: You can also use the `KafkaTopic` resource to delete topics using a `kubectl delete -f _KAFKA-TOPIC-CONFIG-FILE_` command.
 To be able to do this, `delete.topic.enable` must be set to `true` (default) in the `spec.kafka.config` of the Kafka resource.
 
-
 [role="_additional-resources"]
 .Additional resources
 * link:{BookURLDeploying}#assembly-downgrade-{context}[Downgrading Strimzi^]
