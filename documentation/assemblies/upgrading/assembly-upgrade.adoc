@@ -9,7 +9,7 @@
 Strimzi can be upgraded from a lower version to a higher version to take advantage of new features and enhancements, performance improvements, and security options.
 
 As part of the upgrade, you upgrade Kafka to a higher supported version. 
-Each Kafka release introduces new features, improvements, and bug fixes.
+Each Kafka release introduces new features, improvements, and bug fixes to your Strimzi deployment.
 
 Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version if you encounter issues with a newer version.
 
@@ -27,7 +27,21 @@ Upgrading Strimzi from the current version to any higher version within a single
 +
 For example, upgrading from Strimzi 0.19.0 directly to Strimzi 0.21.0.
 
-The link:https://strimzi.io/downloads/[Supported versions^] table lists every released version of Strimzi.
+.Kafka version support
+
+You can review supported Kafka versions in the link:https://strimzi.io/downloads/[Supported versions^] table.
+
+* The *Operators* column lists all released Strimzi versions (the Strimzi version is often called the "Operator version"). 
+
+* The *Kafka versions* column lists the set of Kafka versions that are supported by each Strimzi version. 
+
+Additional steps are required when upgrading to an Operator version that drops support for the Kafka version you are upgrading from. 
+In these situations, the upgraded Cluster Operator returns an error message, for example:
+
+[source]
+Version 2.4.0 is not supported. Supported versions are: 2.5.0, 2.5.1, 2.6.0, 2.7.0.
+
+To continue with the upgrade, you would need to change the `spec.Kafka.version` in the Kafka custom resource to a Kafka version that is supported by the new Operator version.
 
 .Downtime and availability
 
@@ -40,7 +54,6 @@ A reduction in cluster availability increases the chance that a broker failure w
 
 .Kafka version compatibility
 
-Each version of Strimzi supports one or more versions of Apache Kafka.
 You can upgrade to a higher Kafka version as long as it is supported by your version of Strimzi.
 In some cases, you can also downgrade to a lower supported Kafka version.
 
