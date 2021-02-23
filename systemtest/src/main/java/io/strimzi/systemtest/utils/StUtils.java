@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -321,5 +323,14 @@ public class StUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void waitForResourceReadiness(String resourceType, String resourceName) {
+        LOGGER.info("Waiting for " + resourceType + "/" + resourceName + " readiness");
+
+        TestUtils.waitFor("resource " + resourceType + "/" + resourceName + " readiness",
+                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CMD_CLIENT_TIMEOUT,
+            () -> ResourceManager.cmdKubeClient().getResourceReadiness(resourceType, resourceName));
+        LOGGER.info("Resource " + resourceType + "/" + resourceName + " is ready");
     }
 }

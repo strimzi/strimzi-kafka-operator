@@ -27,6 +27,7 @@ public interface Constants {
 
     long TIMEOUT_TEARDOWN = Duration.ofSeconds(10).toMillis();
     long GLOBAL_TIMEOUT = Duration.ofMinutes(5).toMillis();
+    long GLOBAL_CMD_CLIENT_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
     long GLOBAL_POLL_INTERVAL_MEDIUM = Duration.ofSeconds(10).toMillis();
@@ -41,7 +42,6 @@ public interface Constants {
     long OLM_UPGRADE_INSTALL_PLAN_TIMEOUT = Duration.ofMinutes(15).toMillis();
     long OLM_UPGRADE_INSTALL_PLAN_POLL = Duration.ofMinutes(1).toMillis();
 
-
     long GLOBAL_CLIENTS_POLL = Duration.ofSeconds(15).toMillis();
     long GLOBAL_CLIENTS_TIMEOUT = Duration.ofMinutes(2).toMillis();
     long HUGE_CLIENTS_TIMEOUT = Duration.ofMinutes(30).toMillis();
@@ -53,7 +53,7 @@ public interface Constants {
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
     long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
 
-    // Heycloak
+    // Keycloak
     long KEYCLOAK_DEPLOYMENT_POLL = Duration.ofSeconds(5).toMillis();
     long KEYCLOAK_DEPLOYMENT_TIMEOUT = Duration.ofMinutes(10).toMillis();
 
