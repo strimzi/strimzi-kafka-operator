@@ -386,7 +386,7 @@ public class KafkaRebalanceAssemblyOperator
                                                                         KafkaRebalanceAnnotation rebalanceAnnotation, RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
         switch (currentState) {
             case New:
-                return onNew(reconciliation, host, apiClient, rebalanceOptionsBuilder, kafkaRebalance);
+                return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
             case PendingProposal:
                 return onPendingProposal(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
             case ProposalReady:
@@ -394,7 +394,7 @@ public class KafkaRebalanceAssemblyOperator
             case Rebalancing:
                 return onRebalancing(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation);
             case Stopped:
-                return onStop(reconciliation, host, apiClient, rebalanceAnnotation, rebalanceOptionsBuilder, kafkaRebalance);
+                return onStop(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
             case Ready:
                 // Rebalance Complete
                 return Future.succeededFuture(buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), validate(kafkaRebalance)));
@@ -455,7 +455,7 @@ public class KafkaRebalanceAssemblyOperator
      */
     private Future<KafkaRebalanceStatus> onNew(Reconciliation reconciliation,
                                                String host, CruiseControlApi apiClient,
-                                               RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder, KafkaRebalance kafkaRebalance) {
+                                               KafkaRebalance kafkaRebalance, RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
         return requestRebalance(reconciliation, host, apiClient, true, rebalanceOptionsBuilder, kafkaRebalance);
     }
 
@@ -480,7 +480,7 @@ public class KafkaRebalanceAssemblyOperator
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
             // The user has fixed the error on the resource and want to 'refresh'
             // This actually requests a new rebalance proposal
-            return onNew(reconciliation, host, apiClient, rebalanceOptionsBuilder, kafkaRebalance);
+            return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
         } else {
             // Stay in the current NotReady state, returning null as next state
             return Future.succeededFuture();
@@ -752,8 +752,8 @@ public class KafkaRebalanceAssemblyOperator
      */
     private Future<KafkaRebalanceStatus> onStop(Reconciliation reconciliation,
                                                 String host, CruiseControlApi apiClient,
-                                                KafkaRebalanceAnnotation rebalanceAnnotation,
-                                                RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder, KafkaRebalance kafkaRebalance) {
+                                                KafkaRebalance kafkaRebalance, KafkaRebalanceAnnotation rebalanceAnnotation,
+                                                RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
             return requestRebalance(reconciliation, host, apiClient, true, rebalanceOptionsBuilder, kafkaRebalance);
         } else {
