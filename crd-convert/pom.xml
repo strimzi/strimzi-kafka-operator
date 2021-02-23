@@ -29,14 +29,6 @@
             <artifactId>picocli</artifactId>
         </dependency>
         <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli-shell-jline2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jline</groupId>
-            <artifactId>jline</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>crd-annotations</artifactId>
         </dependency>

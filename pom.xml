@@ -102,7 +102,6 @@
         <!-- keep in-sync with dataformat-yaml -->
         <snakeyaml.version>1.26</snakeyaml.version>
         <picocli.version>4.5.2</picocli.version>
-        <jline.version>2.14.6</jline.version>
         <json-path.version>4.1.1</json-path.version>
         <kafka.version>2.7.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
@@ -463,16 +462,6 @@
                 <groupId>info.picocli</groupId>
                 <artifactId>picocli</artifactId>
                 <version>${picocli.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>info.picocli</groupId>
-                <artifactId>picocli-shell-jline2</artifactId>
-                <version>${picocli.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jline</groupId>
-                <artifactId>jline</artifactId>
-                <version>${jline.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.vertx</groupId>
