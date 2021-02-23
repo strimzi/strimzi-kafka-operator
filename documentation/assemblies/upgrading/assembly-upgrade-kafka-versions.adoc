@@ -6,7 +6,7 @@
 
 = Upgrading Kafka
 
-After you have upgraded your Cluster Operator, the next step is to upgrade all Kafka brokers to a higher supported version of Kafka.
+After you have upgraded your Cluster Operator, the next step is to upgrade all Kafka brokers to a later supported version of Kafka.
 
 Kafka upgrades are performed by the Cluster Operator through rolling updates of the Kafka brokers. 
 

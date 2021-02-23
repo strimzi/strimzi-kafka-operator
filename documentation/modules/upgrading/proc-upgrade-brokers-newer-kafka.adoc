@@ -6,7 +6,7 @@
 
 = Upgrading Kafka brokers and client applications
 
-This procedure describes how to upgrade a Strimzi Kafka cluster to a higher version of Kafka.
+This procedure describes how to upgrade a Strimzi Kafka cluster to a later version of Kafka.
 
 .Prerequisites
 
@@ -18,7 +18,7 @@ For the `Kafka` resource to be upgraded, check:
 xref:ref-kafka-versions-{context}[Consult the Kafka versions table].
 
 Also, consider the xref:con-strategies-for-upgrading-clients-{context}[strategies for upgrading clients]. 
-Clients are upgraded in step 6 of this procedure according to your chosen strategy.
+Clients are upgraded in step 6 of this procedure, according to your chosen strategy.
 
 .Procedure
 
@@ -52,7 +52,9 @@ If the `log.message.format.version` and `inter.broker.protocol.version` are unse
 +
 NOTE: The value of `log.message.format.version` and `inter.broker.protocol.version` must be strings to prevent them from being interpreted as floating point numbers.
 
-. Change the `Kafka.spec.kafka.version` to specify the new version (leaving the `log.message.format.version` and `inter.broker.protocol.version` at the _current_ versions).
+. Change the `Kafka.spec.kafka.version` to specify the new Kafka version.
++
+*Leave the `log.message.format.version` and `inter.broker.protocol.version` at the _current_ versions.*
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
 +
@@ -107,7 +109,7 @@ If required, set the `version` property for Kafka Connect and MirrorMaker as the
 
 . _Optional step to reduce rolling updates_:
 +
-You can now perform one or more further product upgrades, starting with xref:proc-upgrading-the-co-{context}[Upgrading the Cluster Operator to a later version]. 
+You can now perform one or more further product upgrades, starting with xref:proc-upgrading-the-co-{context}[]. 
 After reaching this step for the last upgrade you want to perform, you can complete this procedure.
 +
 Alternatively, skip this step and go to step 8.

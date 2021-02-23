@@ -3,9 +3,9 @@
 // assembly-upgrade.adoc
 
 [id='proc-upgrading-the-co-{context}']
-= Upgrading the Cluster Operator to a later version
+= Upgrading the Cluster Operator
 
-This procedure describes how to upgrade a Cluster Operator deployment to a later version.
+This procedure describes how to upgrade a Cluster Operator deployment to use Strimzi {ProductVersion}.
 
 .Prerequisites
 
@@ -36,6 +36,16 @@ kubectl apply -f install/cluster-operator
 ----
 +
 Wait for the rolling updates to complete.
++
+The Cluster Operator might return an error message similar to:
++
+[source,shell,subs="+quotes"]
+----
+"Version {KafkaVersionLower} is not supported. Supported versions are: #...".
+----
++
+This error occurs when upgrading to an Operator version that drops support for the previous Kafka version. 
+You will upgrade to a supported Kafka version in the next procedure, when you upgrade all brokers to a later Kafka version.
 
 . Get the image for the Kafka pod to ensure the upgrade was successful:
 +
@@ -44,7 +54,7 @@ Wait for the rolling updates to complete.
 kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the new Strimzi version and the new Kafka version. For example: 
+The image tag shows the new Operator version. For example: 
 +
 [source,shell,subs="+quotes,attributes"]
 ----
