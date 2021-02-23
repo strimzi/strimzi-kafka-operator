@@ -36,16 +36,21 @@ kubectl apply -f install/cluster-operator
 ----
 +
 Wait for the rolling updates to complete.
+
+. If the new Operator version no longer supports the Kafka version you are upgrading from, an error message is returned by the Cluster Operator. For example:
 +
-The Cluster Operator might return an error message similar to:
-+
-[source,shell,subs="+quotes"]
+[source,shell,subs="+quotes,attributes"]
 ----
 "Version {KafkaVersionLower} is not supported. Supported versions are: #...".
 ----
 +
-This error occurs when upgrading to an Operator version that drops support for the previous Kafka version. 
-You will upgrade to a supported Kafka version in the next procedure, when you upgrade all brokers to a later Kafka version.
+If you see this message, upgrade to a Kafka version that is supported by the new Cluster Operator version:
+
+.. Edit the Kafka custom resource.
+
+.. Change the `spec.Kafka.version` property to a supported Kafka version.
++
+If the "Version not supported" message is _not_ displayed, go to the next step. You will upgrade the Kafka version later.
 
 . Get the image for the Kafka pod to ensure the upgrade was successful:
 +

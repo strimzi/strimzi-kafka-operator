@@ -23,7 +23,7 @@ Upgrading Strimzi from the current version to the next version.
 For example, upgrading from Strimzi 0.20.1 to 0.21.0.
 
 Multi-version::
-Upgrading Strimzi from the current version to any later version within a single upgrade (skipping one or more versions).
+Upgrading Strimzi from the current version to any later version within a single upgrade (skipping one or more intermediate versions).
 +
 For example, upgrading from Strimzi 0.19.0 directly to Strimzi 0.21.0.
 
@@ -33,14 +33,15 @@ You can review supported Kafka versions in the link:https://strimzi.io/downloads
 
 * The *Operators* column lists all released Strimzi versions (the Strimzi version is often called the "Operator version"). 
 
-* The *Kafka versions* column lists the Kafka versions that are supported by each Strimzi version. 
+* The *Kafka versions* column lists the supported Kafka versions for each Strimzi version.
 
-//When upgrading to an Operator version that drops support for the Kafka version you are upgrading from, the upgraded Cluster Operator returns an error message, for example:
+Decide which Kafka version to upgrade to before beginning the Strimzi upgrade process.
 
-//[source]
-//Version 2.4.0 is not supported. Supported versions are: 2.5.0, 2.5.1, 2.6.0, 2.7.0.
-
-//You can upgrade to a supported Kafka version when upgrading the brokers, you change the `spec.Kafka.version` in the Kafka custom resource to a later Kafka version that is supported by the new Operator version.
+[NOTE]
+====
+You can upgrade to a later Kafka version as long as it is supported by your version of Strimzi. 
+In some cases, you can also downgrade to a previous supported Kafka version.
+====
 
 .Downtime and availability
 
@@ -50,11 +51,6 @@ Highly available topics have a replication factor of at least 3 and partitions d
 Upgrading Strimzi triggers rolling updates, where all brokers are restarted in turn, at different stages of the process. 
 During rolling updates, not all brokers are online, so overall _cluster availability_ is temporarily reduced.  
 A reduction in cluster availability increases the chance that a broker failure will result in lost messages.
-
-.Kafka version compatibility
-
-You can upgrade to a later Kafka version as long as it is supported by your version of Strimzi.
-In some cases, you can also downgrade to a previous supported Kafka version.
 
 include::assembly-upgrade-kafka.adoc[leveloffset=+1]
 
