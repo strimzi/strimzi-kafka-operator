@@ -29,6 +29,8 @@ import java.util.List;
 
 @CommandLine.Command(name = "convert-file", aliases = {"cf"}, description = "Convert Custom Resources from YAML file")
 public class ConvertFileCommand extends AbstractConversionCommand {
+    private static final TypeReference<JsonNode> JSON_NODE_TYPE_REFERENCE = new TypeReference<JsonNode>() { };
+
     @CommandLine.Option(names = {"-f", "--file"}, description = "The YAML file with the Strimzi Custom Resource which should be converted", required = true)
     File inputFile;
 
@@ -65,7 +67,7 @@ public class ConvertFileCommand extends AbstractConversionCommand {
         YAMLFactory yamlFactory = new YAMLFactory();
         YAMLMapper yamlMapper = new YAMLMapper(yamlFactory.enable(YAMLGenerator.Feature.MINIMIZE_QUOTES));
         YAMLParser yamlParser = yamlFactory.createParser(data);
-        List<JsonNode> docs = yamlMapper.readValues(yamlParser, new TypeReference<JsonNode>() { }).readAll();
+        List<JsonNode> docs = yamlMapper.readValues(yamlParser, JSON_NODE_TYPE_REFERENCE).readAll();
 
         Writer writer = new StringWriter();
 
@@ -134,7 +136,7 @@ public class ConvertFileCommand extends AbstractConversionCommand {
     }
 
     @Override
-    /**
+    /*
      * Reads the data from the input file into a byte array, converts them and writes it into the output file
      */
     public void run() {
@@ -163,7 +165,7 @@ public class ConvertFileCommand extends AbstractConversionCommand {
             String result = run(data);
 
             // Write converted YAML to file
-            if (outputFile != null && result != null) {
+            if (result != null) {
                 if (debug) {
                     log.info("Result of the conversion: " + result);
                 }

@@ -141,7 +141,7 @@ public class MetricsConversion<U extends HasMetadata> implements Conversion<U> {
                 MultipartConversions.get().addLast(new MultipartResource(
                     name,
                     configMap,
-                    (c, ns) -> c.configMaps().inNamespace(ns).withName(name).createOrReplace(configMap)
+                    (c, namespace) -> c.configMaps().inNamespace(namespace).createOrReplace(configMap)
                 ));
 
                 holder.setMetrics(null); // clear old metrics
