@@ -51,11 +51,18 @@ metadata:
 The following procedures describe the steps to update specific resources to use the `{KafkaApiVersion}` API version:
 
 * xref:proc-upgrade-kafka-resources-{context}[]
+* xref:proc-upgrade-topic-operator-{context}[] 
+* xref:proc-upgrade-entity-operator-{context}[] 
+* xref:proc-upgrade-cruise-control-resources-{context}[]
 * xref:proc-upgrade-kafka-connect-resources-{context}[]
 * xref:proc-upgrade-kafka-connect-s2i-resources-{context}[]
 * xref:proc-upgrade-kafka-mirror-maker-resources-{context}[]
-* xref:proc-upgrade-kafka-topic-resources-{context}[]
+* xref:proc-upgrade-kafka-mirror-maker2-resources-{context}[]
+* xref:proc-upgrade-kafka-bridge-resources-{context}[]
 * xref:proc-upgrade-kafka-user-resources-{context}[]
+* xref:proc-upgrade-kafka-topic-resources-{context}[]
+* xref:proc-upgrade-kafkaconnector-resources-{context}[]
+* xref:proc-upgrade-kafka-rebalance-resources-{context}[]
 
 include::modules/proc-upgrade-kafka-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-topic-operator.adoc[leveloffset=+1]
