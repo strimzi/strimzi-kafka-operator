@@ -1,0 +1,30 @@
+// Module included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='proc-upgrade-cruise-control-resources-{context}']
+= Upgrading Cruise Control
+
+.Prerequisites
+
+* A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
+
+.Procedure
+Execute the following steps for each `RESOURCENAME` resource in your deployment.
+
+. Update the `RESOURCENAME` resource in an editor.
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl edit NAME _NAME_
+----
+
+. Step
+
+. Step
+
+. Step
+
+. Step
+
+. Save the file, exit the editor and wait for the updated resource to be reconciled.
