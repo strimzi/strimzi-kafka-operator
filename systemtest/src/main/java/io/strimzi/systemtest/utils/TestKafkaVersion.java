@@ -99,7 +99,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
      * -1 if version1 &lt; version2;
      * 1 if version1 &gt; version2.
      */
-    public int compareDottedVersions(String version1, String version2) {
+    public static int compareDottedVersions(String version1, String version2) {
         String[] components = version1.split("\\.");
         String[] otherComponents = version2.split("\\.");
         for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
