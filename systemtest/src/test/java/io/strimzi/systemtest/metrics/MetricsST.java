@@ -436,7 +436,7 @@ public class MetricsST extends AbstractST {
      * 4. Check, whether the metrics ConfigMap is changed
      */
     @Deprecated
-    @ParallelTest
+    @IsolatedTest("Modification of metricsClusterName shared Kafka cluster 'SECOND_CLUSTER' and triggering Rolling Update")
     void testKafkaMetricsSettingsDeprecatedMetrics() {
         AtomicReference<MetricsConfig> previousMetrics = new AtomicReference<>();
 
