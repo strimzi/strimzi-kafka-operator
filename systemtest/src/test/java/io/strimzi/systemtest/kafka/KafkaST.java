@@ -1739,17 +1739,21 @@ class KafkaST extends AbstractST {
 
     void verifyPVCDeletion(String clusterName, int kafkaReplicas, JbodStorage jbodStorage) {
         List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
-                .map(pvc -> pvc.getMetadata().getName())
-                .collect(Collectors.toList());
+            .map(pvc -> pvc.getMetadata().getName())
+            .collect(Collectors.toList());
+
+        List<String> filteredPvcs = pvcs.stream()
+            .filter(pvc -> pvc.startsWith(clusterName))
+            .collect(Collectors.toList());
 
         jbodStorage.getVolumes().forEach(singleVolumeStorage -> {
             for (int i = 0; i < kafkaReplicas; i++) {
                 String volumeName = "data-" + singleVolumeStorage.getId() + "-" + clusterName + "-kafka-" + i;
                 LOGGER.info("Verifying volume: " + volumeName);
                 if (((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()) {
-                    assertThat(pvcs, not(hasItem(volumeName)));
+                    assertThat(filteredPvcs, not(hasItem(volumeName)));
                 } else {
-                    assertThat(pvcs, hasItem(volumeName));
+                    assertThat(filteredPvcs, hasItem(volumeName));
                 }
             }
         });

@@ -208,25 +208,17 @@ public class ResourceManager {
         ResourceType<T> type = findResourceType(resource);
         assertNotNull(type);
 
-        int certaintyCounter = 0;
-        int certainty = 10;
-
         while (!timeout.timeoutExpired()) {
             T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             if (condition.test(res)) {
                 LOGGER.info("Resource {} in namespace {} is ready!", resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                certaintyCounter++;
-                if (certaintyCounter == certainty) {
                     return true;
-                }
             }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 LOGGER.info("Resource {} in namespace {} is not ready!", resource.getMetadata().getName(), resource.getMetadata().getNamespace());
                 Thread.currentThread().interrupt();
-                // reset certaintyCounter
-                certaintyCounter = 0;
                 return false;
             }
         }
