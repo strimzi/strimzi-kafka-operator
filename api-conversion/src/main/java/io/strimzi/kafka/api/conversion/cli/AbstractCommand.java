@@ -12,6 +12,9 @@ import picocli.CommandLine;
 public abstract class AbstractCommand implements Runnable {
     protected Logger log = LogManager.getLogger(getClass().getName());
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @CommandLine.Option(names = {"-d", "--debug"}, description = "Use debug")
     boolean debug;
 
@@ -22,7 +25,7 @@ public abstract class AbstractCommand implements Runnable {
         if (level != null) {
             log.log(level, String.valueOf(value));
         } else {
-            System.out.println(value);
+            spec.commandLine().getOut().println(value);
         }
     }
 }

@@ -45,6 +45,11 @@ spec:
           spec:
             type: object
             properties:
+              version:
+                type: string
+                description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
+                  Consult the user documentation to understand the process required
+                  to upgrade or downgrade the version.
               replicas:
                 type: integer
                 description: The number of pods in the Kafka Connect group.
@@ -59,6 +64,194 @@ spec:
                   requests:
                     type: object
                 description: CPU and memory resources to reserve.
+              bootstrapServers:
+                type: string
+                description: Bootstrap servers to connect to. This should be given
+                  as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+              tls:
+                type: object
+                properties:
+                  trustedCertificates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - secretName
+                    description: Trusted certificates for TLS connection.
+                description: TLS configuration.
+              authentication:
+                type: object
+                properties:
+                  accessToken:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the access token
+                      which was obtained from the authorization server.
+                  accessTokenIsJwt:
+                    type: boolean
+                    description: Configure whether access token should be treated
+                      as JWT. This should be set to `false` if the authorization server
+                      returns opaque tokens. Defaults to `true`.
+                  certificateAndKey:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                        description: The name of the file certificate in the Secret.
+                      key:
+                        type: string
+                        description: The name of the private key in the Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Secret containing the certificate.
+                    required:
+                    - certificate
+                    - key
+                    - secretName
+                    description: Reference to the `Secret` which holds the certificate
+                      and private key pair.
+                  clientId:
+                    type: string
+                    description: OAuth Client ID which the Kafka client can use to
+                      authenticate against the OAuth server and use the token endpoint
+                      URI.
+                  clientSecret:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the OAuth client
+                      secret which the Kafka client can use to authenticate against
+                      the OAuth server and use the token endpoint URI.
+                  disableTlsHostnameVerification:
+                    type: boolean
+                    description: Enable or disable TLS hostname verification. Default
+                      value is `false`.
+                  maxTokenExpirySeconds:
+                    type: integer
+                    description: Set or limit time-to-live of the access tokens to
+                      the specified number of seconds. This should be set if the authorization
+                      server returns opaque tokens.
+                  passwordSecret:
+                    type: object
+                    properties:
+                      password:
+                        type: string
+                        description: The name of the key in the Secret under which
+                          the password is stored.
+                      secretName:
+                        type: string
+                        description: The name of the Secret containing the password.
+                    required:
+                    - password
+                    - secretName
+                    description: Reference to the `Secret` which holds the password.
+                  refreshToken:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the refresh
+                      token which can be used to obtain access token from the authorization
+                      server.
+                  scope:
+                    type: string
+                    description: OAuth scope to use when authenticating against the
+                      authorization server. Some authorization servers require this
+                      to be set. The possible values depend on how authorization server
+                      is configured. By default `scope` is not specified when doing
+                      the token endpoint request.
+                  tlsTrustedCertificates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - secretName
+                    description: Trusted certificates for TLS connection to the OAuth
+                      server.
+                  tokenEndpointUri:
+                    type: string
+                    description: Authorization server token endpoint URI.
+                  type:
+                    type: string
+                    enum:
+                    - tls
+                    - scram-sha-512
+                    - plain
+                    - oauth
+                    description: Authentication type. Currently the only supported
+                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
+                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
+                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
+                      Authentication. The `tls` type uses TLS Client Authentication.
+                      The `tls` type is supported only over TLS connections.
+                  username:
+                    type: string
+                    description: Username used for the authentication.
+                required:
+                - type
+                description: Authentication configuration for Kafka Connect.
+              config:
+                type: object
+                description: 'The Kafka Connect configuration. Properties with the
+                  following prefixes cannot be set: ssl., sasl., security., listeners,
+                  plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
+                  producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
+                  ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+              resources:
+                type: object
+                properties:
+                  limits:
+                    type: object
+                  requests:
+                    type: object
+                description: The maximum limits for CPU and memory resources and the
+                  requested initial resources.
               livenessProbe:
                 type: object
                 properties:
@@ -202,6 +395,18 @@ spec:
                 required:
                 - type
                 description: Logging configuration for Kafka Connect.
+              tracing:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum:
+                    - jaeger
+                    description: Type of the tracing used. Currently the only supported
+                      type is `jaeger` for Jaeger tracing.
+                required:
+                - type
+                description: The configuration of tracing in Kafka Connect.
               template:
                 type: object
                 properties:
@@ -1292,159 +1497,110 @@ spec:
                 description: Template for Kafka Connect and Kafka Connect S2I resources.
                   The template allows users to specify how the `Deployment`, `Pods`
                   and `Service` are generated.
-              authentication:
+              externalConfiguration:
                 type: object
                 properties:
-                  accessToken:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the access token
-                      which was obtained from the authorization server.
-                  accessTokenIsJwt:
-                    type: boolean
-                    description: Configure whether access token should be treated
-                      as JWT. This should be set to `false` if the authorization server
-                      returns opaque tokens. Defaults to `true`.
-                  certificateAndKey:
-                    type: object
-                    properties:
-                      certificate:
-                        type: string
-                        description: The name of the file certificate in the Secret.
-                      key:
-                        type: string
-                        description: The name of the private key in the Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Secret containing the certificate.
-                    required:
-                    - certificate
-                    - key
-                    - secretName
-                    description: Reference to the `Secret` which holds the certificate
-                      and private key pair.
-                  clientId:
-                    type: string
-                    description: OAuth Client ID which the Kafka client can use to
-                      authenticate against the OAuth server and use the token endpoint
-                      URI.
-                  clientSecret:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the OAuth client
-                      secret which the Kafka client can use to authenticate against
-                      the OAuth server and use the token endpoint URI.
-                  disableTlsHostnameVerification:
-                    type: boolean
-                    description: Enable or disable TLS hostname verification. Default
-                      value is `false`.
-                  maxTokenExpirySeconds:
-                    type: integer
-                    description: Set or limit time-to-live of the access tokens to
-                      the specified number of seconds. This should be set if the authorization
-                      server returns opaque tokens.
-                  passwordSecret:
-                    type: object
-                    properties:
-                      password:
-                        type: string
-                        description: The name of the key in the Secret under which
-                          the password is stored.
-                      secretName:
-                        type: string
-                        description: The name of the Secret containing the password.
-                    required:
-                    - password
-                    - secretName
-                    description: Reference to the `Secret` which holds the password.
-                  refreshToken:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the refresh
-                      token which can be used to obtain access token from the authorization
-                      server.
-                  scope:
-                    type: string
-                    description: OAuth scope to use when authenticating against the
-                      authorization server. Some authorization servers require this
-                      to be set. The possible values depend on how authorization server
-                      is configured. By default `scope` is not specified when doing
-                      the token endpoint request.
-                  tlsTrustedCertificates:
+                  env:
                     type: array
                     items:
                       type: object
                       properties:
-                        certificate:
+                        name:
                           type: string
-                          description: The name of the file certificate in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
+                          description: Name of the environment variable which will
+                            be passed to the Kafka Connect pods. The name of the environment
+                            variable cannot start with `KAFKA_` or `STRIMZI_`.
+                        valueFrom:
+                          type: object
+                          properties:
+                            configMapKeyRef:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: Reference to a key in a ConfigMap.
+                            secretKeyRef:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: Reference to a key in a Secret.
+                          description: Value of the environment variable which will
+                            be passed to the Kafka Connect pods. It can be passed
+                            either as a reference to Secret or ConfigMap field. The
+                            field has to specify exactly one Secret or ConfigMap.
                       required:
-                      - certificate
-                      - secretName
-                    description: Trusted certificates for TLS connection to the OAuth
-                      server.
-                  tokenEndpointUri:
-                    type: string
-                    description: Authorization server token endpoint URI.
-                  type:
-                    type: string
-                    enum:
-                    - tls
-                    - scram-sha-512
-                    - plain
-                    - oauth
-                    description: Authentication type. Currently the only supported
-                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
-                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
-                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
-                      Authentication. The `tls` type uses TLS Client Authentication.
-                      The `tls` type is supported only over TLS connections.
-                  username:
-                    type: string
-                    description: Username used for the authentication.
-                required:
-                - type
-                description: Authentication configuration for Kafka Connect.
-              bootstrapServers:
-                type: string
-                description: Bootstrap servers to connect to. This should be given
-                  as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+                      - name
+                      - valueFrom
+                    description: Allows to pass data from Secret or ConfigMap to the
+                      Kafka Connect pods as environment variables.
+                  volumes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        configMap:
+                          type: object
+                          properties:
+                            defaultMode:
+                              type: integer
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                  mode:
+                                    type: integer
+                                  path:
+                                    type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to a key in a ConfigMap. Exactly
+                            one Secret or ConfigMap has to be specified.
+                        name:
+                          type: string
+                          description: Name of the volume which will be added to the
+                            Kafka Connect pods.
+                        secret:
+                          type: object
+                          properties:
+                            defaultMode:
+                              type: integer
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                  mode:
+                                    type: integer
+                                  path:
+                                    type: string
+                            optional:
+                              type: boolean
+                            secretName:
+                              type: string
+                          description: Reference to a key in a Secret. Exactly one
+                            Secret or ConfigMap has to be specified.
+                      required:
+                      - name
+                    description: Allows to pass data from Secret or ConfigMap to the
+                      Kafka Connect pods as volumes.
+                description: Pass data from Secrets or ConfigMaps to the Kafka Connect
+                  pods and use them to configure connectors.
               build:
                 type: object
                 properties:
@@ -1555,117 +1711,6 @@ spec:
                 type: string
                 description: The image of the init container used for initializing
                   the `client.rack`.
-              config:
-                type: object
-                description: 'The Kafka Connect configuration. Properties with the
-                  following prefixes cannot be set: ssl., sasl., security., listeners,
-                  plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
-                  producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
-                  ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
-              externalConfiguration:
-                type: object
-                properties:
-                  env:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                          description: Name of the environment variable which will
-                            be passed to the Kafka Connect pods. The name of the environment
-                            variable cannot start with `KAFKA_` or `STRIMZI_`.
-                        valueFrom:
-                          type: object
-                          properties:
-                            configMapKeyRef:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                name:
-                                  type: string
-                                optional:
-                                  type: boolean
-                              description: Reference to a key in a ConfigMap.
-                            secretKeyRef:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                name:
-                                  type: string
-                                optional:
-                                  type: boolean
-                              description: Reference to a key in a Secret.
-                          description: Value of the environment variable which will
-                            be passed to the Kafka Connect pods. It can be passed
-                            either as a reference to Secret or ConfigMap field. The
-                            field has to specify exactly one Secret or ConfigMap.
-                      required:
-                      - name
-                      - valueFrom
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as environment variables.
-                  volumes:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        configMap:
-                          type: object
-                          properties:
-                            defaultMode:
-                              type: integer
-                            items:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  key:
-                                    type: string
-                                  mode:
-                                    type: integer
-                                  path:
-                                    type: string
-                            name:
-                              type: string
-                            optional:
-                              type: boolean
-                          description: Reference to a key in a ConfigMap. Exactly
-                            one Secret or ConfigMap has to be specified.
-                        name:
-                          type: string
-                          description: Name of the volume which will be added to the
-                            Kafka Connect pods.
-                        secret:
-                          type: object
-                          properties:
-                            defaultMode:
-                              type: integer
-                            items:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  key:
-                                    type: string
-                                  mode:
-                                    type: integer
-                                  path:
-                                    type: string
-                            optional:
-                              type: boolean
-                            secretName:
-                              type: string
-                          description: Reference to a key in a Secret. Exactly one
-                            Secret or ConfigMap has to be specified.
-                      required:
-                      - name
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as volumes.
-                description: Pass data from Secrets or ConfigMaps to the Kafka Connect
-                  pods and use them to configure connectors.
               insecureSourceRepository:
                 type: boolean
                 description: When true this configures the source repository with
@@ -1714,51 +1759,6 @@ spec:
                 - topologyKey
                 description: Configuration of the node label which will be used as
                   the client.rack consumer configuration.
-              resources:
-                type: object
-                properties:
-                  limits:
-                    type: object
-                  requests:
-                    type: object
-                description: The maximum limits for CPU and memory resources and the
-                  requested initial resources.
-              tls:
-                type: object
-                properties:
-                  trustedCertificates:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
-                      required:
-                      - certificate
-                      - secretName
-                    description: Trusted certificates for TLS connection.
-                description: TLS configuration.
-              tracing:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    enum:
-                    - jaeger
-                    description: Type of the tracing used. Currently the only supported
-                      type is `jaeger` for Jaeger tracing.
-                required:
-                - type
-                description: The configuration of tracing in Kafka Connect.
-              version:
-                type: string
-                description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
-                  Consult the user documentation to understand the process required
-                  to upgrade or downgrade the version.
             required:
             - bootstrapServers
             description: The specification of the Kafka Connect Source-to-Image (S2I)
@@ -1839,6 +1839,11 @@ spec:
           spec:
             type: object
             properties:
+              version:
+                type: string
+                description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
+                  Consult the user documentation to understand the process required
+                  to upgrade or downgrade the version.
               replicas:
                 type: integer
                 description: The number of pods in the Kafka Connect group.
@@ -1853,6 +1858,194 @@ spec:
                   requests:
                     type: object
                 description: CPU and memory resources to reserve.
+              bootstrapServers:
+                type: string
+                description: Bootstrap servers to connect to. This should be given
+                  as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+              tls:
+                type: object
+                properties:
+                  trustedCertificates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - secretName
+                    description: Trusted certificates for TLS connection.
+                description: TLS configuration.
+              authentication:
+                type: object
+                properties:
+                  accessToken:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the access token
+                      which was obtained from the authorization server.
+                  accessTokenIsJwt:
+                    type: boolean
+                    description: Configure whether access token should be treated
+                      as JWT. This should be set to `false` if the authorization server
+                      returns opaque tokens. Defaults to `true`.
+                  certificateAndKey:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                        description: The name of the file certificate in the Secret.
+                      key:
+                        type: string
+                        description: The name of the private key in the Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Secret containing the certificate.
+                    required:
+                    - certificate
+                    - key
+                    - secretName
+                    description: Reference to the `Secret` which holds the certificate
+                      and private key pair.
+                  clientId:
+                    type: string
+                    description: OAuth Client ID which the Kafka client can use to
+                      authenticate against the OAuth server and use the token endpoint
+                      URI.
+                  clientSecret:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the OAuth client
+                      secret which the Kafka client can use to authenticate against
+                      the OAuth server and use the token endpoint URI.
+                  disableTlsHostnameVerification:
+                    type: boolean
+                    description: Enable or disable TLS hostname verification. Default
+                      value is `false`.
+                  maxTokenExpirySeconds:
+                    type: integer
+                    description: Set or limit time-to-live of the access tokens to
+                      the specified number of seconds. This should be set if the authorization
+                      server returns opaque tokens.
+                  passwordSecret:
+                    type: object
+                    properties:
+                      password:
+                        type: string
+                        description: The name of the key in the Secret under which
+                          the password is stored.
+                      secretName:
+                        type: string
+                        description: The name of the Secret containing the password.
+                    required:
+                    - password
+                    - secretName
+                    description: Reference to the `Secret` which holds the password.
+                  refreshToken:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the refresh
+                      token which can be used to obtain access token from the authorization
+                      server.
+                  scope:
+                    type: string
+                    description: OAuth scope to use when authenticating against the
+                      authorization server. Some authorization servers require this
+                      to be set. The possible values depend on how authorization server
+                      is configured. By default `scope` is not specified when doing
+                      the token endpoint request.
+                  tlsTrustedCertificates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - secretName
+                    description: Trusted certificates for TLS connection to the OAuth
+                      server.
+                  tokenEndpointUri:
+                    type: string
+                    description: Authorization server token endpoint URI.
+                  type:
+                    type: string
+                    enum:
+                    - tls
+                    - scram-sha-512
+                    - plain
+                    - oauth
+                    description: Authentication type. Currently the only supported
+                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
+                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
+                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
+                      Authentication. The `tls` type uses TLS Client Authentication.
+                      The `tls` type is supported only over TLS connections.
+                  username:
+                    type: string
+                    description: Username used for the authentication.
+                required:
+                - type
+                description: Authentication configuration for Kafka Connect.
+              config:
+                type: object
+                description: 'The Kafka Connect configuration. Properties with the
+                  following prefixes cannot be set: ssl., sasl., security., listeners,
+                  plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
+                  producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
+                  ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+              resources:
+                type: object
+                properties:
+                  limits:
+                    type: object
+                  requests:
+                    type: object
+                description: The maximum limits for CPU and memory resources and the
+                  requested initial resources.
               livenessProbe:
                 type: object
                 properties:
@@ -2174,6 +2367,22 @@ spec:
                             topologyKey:
                               type: string
                 description: The pod's affinity rules.
+              tolerations:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    effect:
+                      type: string
+                    key:
+                      type: string
+                    operator:
+                      type: string
+                    tolerationSeconds:
+                      type: integer
+                    value:
+                      type: string
+                description: The pod's tolerations.
               logging:
                 type: object
                 properties:
@@ -2213,6 +2422,18 @@ spec:
                 type: object
                 description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                   for details of the structure of this configuration.
+              tracing:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum:
+                    - jaeger
+                    description: Type of the tracing used. Currently the only supported
+                      type is `jaeger` for Jaeger tracing.
+                required:
+                - type
+                description: The configuration of tracing in Kafka Connect.
               template:
                 type: object
                 properties:
@@ -3303,159 +3524,110 @@ spec:
                 description: Template for Kafka Connect and Kafka Connect S2I resources.
                   The template allows users to specify how the `Deployment`, `Pods`
                   and `Service` are generated.
-              authentication:
+              externalConfiguration:
                 type: object
                 properties:
-                  accessToken:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the access token
-                      which was obtained from the authorization server.
-                  accessTokenIsJwt:
-                    type: boolean
-                    description: Configure whether access token should be treated
-                      as JWT. This should be set to `false` if the authorization server
-                      returns opaque tokens. Defaults to `true`.
-                  certificateAndKey:
-                    type: object
-                    properties:
-                      certificate:
-                        type: string
-                        description: The name of the file certificate in the Secret.
-                      key:
-                        type: string
-                        description: The name of the private key in the Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Secret containing the certificate.
-                    required:
-                    - certificate
-                    - key
-                    - secretName
-                    description: Reference to the `Secret` which holds the certificate
-                      and private key pair.
-                  clientId:
-                    type: string
-                    description: OAuth Client ID which the Kafka client can use to
-                      authenticate against the OAuth server and use the token endpoint
-                      URI.
-                  clientSecret:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the OAuth client
-                      secret which the Kafka client can use to authenticate against
-                      the OAuth server and use the token endpoint URI.
-                  disableTlsHostnameVerification:
-                    type: boolean
-                    description: Enable or disable TLS hostname verification. Default
-                      value is `false`.
-                  maxTokenExpirySeconds:
-                    type: integer
-                    description: Set or limit time-to-live of the access tokens to
-                      the specified number of seconds. This should be set if the authorization
-                      server returns opaque tokens.
-                  passwordSecret:
-                    type: object
-                    properties:
-                      password:
-                        type: string
-                        description: The name of the key in the Secret under which
-                          the password is stored.
-                      secretName:
-                        type: string
-                        description: The name of the Secret containing the password.
-                    required:
-                    - password
-                    - secretName
-                    description: Reference to the `Secret` which holds the password.
-                  refreshToken:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the refresh
-                      token which can be used to obtain access token from the authorization
-                      server.
-                  scope:
-                    type: string
-                    description: OAuth scope to use when authenticating against the
-                      authorization server. Some authorization servers require this
-                      to be set. The possible values depend on how authorization server
-                      is configured. By default `scope` is not specified when doing
-                      the token endpoint request.
-                  tlsTrustedCertificates:
+                  env:
                     type: array
                     items:
                       type: object
                       properties:
-                        certificate:
+                        name:
                           type: string
-                          description: The name of the file certificate in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
+                          description: Name of the environment variable which will
+                            be passed to the Kafka Connect pods. The name of the environment
+                            variable cannot start with `KAFKA_` or `STRIMZI_`.
+                        valueFrom:
+                          type: object
+                          properties:
+                            configMapKeyRef:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: Reference to a key in a ConfigMap.
+                            secretKeyRef:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: Reference to a key in a Secret.
+                          description: Value of the environment variable which will
+                            be passed to the Kafka Connect pods. It can be passed
+                            either as a reference to Secret or ConfigMap field. The
+                            field has to specify exactly one Secret or ConfigMap.
                       required:
-                      - certificate
-                      - secretName
-                    description: Trusted certificates for TLS connection to the OAuth
-                      server.
-                  tokenEndpointUri:
-                    type: string
-                    description: Authorization server token endpoint URI.
-                  type:
-                    type: string
-                    enum:
-                    - tls
-                    - scram-sha-512
-                    - plain
-                    - oauth
-                    description: Authentication type. Currently the only supported
-                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
-                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
-                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
-                      Authentication. The `tls` type uses TLS Client Authentication.
-                      The `tls` type is supported only over TLS connections.
-                  username:
-                    type: string
-                    description: Username used for the authentication.
-                required:
-                - type
-                description: Authentication configuration for Kafka Connect.
-              bootstrapServers:
-                type: string
-                description: Bootstrap servers to connect to. This should be given
-                  as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+                      - name
+                      - valueFrom
+                    description: Allows to pass data from Secret or ConfigMap to the
+                      Kafka Connect pods as environment variables.
+                  volumes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        configMap:
+                          type: object
+                          properties:
+                            defaultMode:
+                              type: integer
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                  mode:
+                                    type: integer
+                                  path:
+                                    type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to a key in a ConfigMap. Exactly
+                            one Secret or ConfigMap has to be specified.
+                        name:
+                          type: string
+                          description: Name of the volume which will be added to the
+                            Kafka Connect pods.
+                        secret:
+                          type: object
+                          properties:
+                            defaultMode:
+                              type: integer
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                  mode:
+                                    type: integer
+                                  path:
+                                    type: string
+                            optional:
+                              type: boolean
+                            secretName:
+                              type: string
+                          description: Reference to a key in a Secret. Exactly one
+                            Secret or ConfigMap has to be specified.
+                      required:
+                      - name
+                    description: Allows to pass data from Secret or ConfigMap to the
+                      Kafka Connect pods as volumes.
+                description: Pass data from Secrets or ConfigMaps to the Kafka Connect
+                  pods and use them to configure connectors.
               build:
                 type: object
                 properties:
@@ -3566,117 +3738,6 @@ spec:
                 type: string
                 description: The image of the init container used for initializing
                   the `client.rack`.
-              config:
-                type: object
-                description: 'The Kafka Connect configuration. Properties with the
-                  following prefixes cannot be set: ssl., sasl., security., listeners,
-                  plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
-                  producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
-                  ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
-              externalConfiguration:
-                type: object
-                properties:
-                  env:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                          description: Name of the environment variable which will
-                            be passed to the Kafka Connect pods. The name of the environment
-                            variable cannot start with `KAFKA_` or `STRIMZI_`.
-                        valueFrom:
-                          type: object
-                          properties:
-                            configMapKeyRef:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                name:
-                                  type: string
-                                optional:
-                                  type: boolean
-                              description: Reference to a key in a ConfigMap.
-                            secretKeyRef:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                name:
-                                  type: string
-                                optional:
-                                  type: boolean
-                              description: Reference to a key in a Secret.
-                          description: Value of the environment variable which will
-                            be passed to the Kafka Connect pods. It can be passed
-                            either as a reference to Secret or ConfigMap field. The
-                            field has to specify exactly one Secret or ConfigMap.
-                      required:
-                      - name
-                      - valueFrom
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as environment variables.
-                  volumes:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        configMap:
-                          type: object
-                          properties:
-                            defaultMode:
-                              type: integer
-                            items:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  key:
-                                    type: string
-                                  mode:
-                                    type: integer
-                                  path:
-                                    type: string
-                            name:
-                              type: string
-                            optional:
-                              type: boolean
-                          description: Reference to a key in a ConfigMap. Exactly
-                            one Secret or ConfigMap has to be specified.
-                        name:
-                          type: string
-                          description: Name of the volume which will be added to the
-                            Kafka Connect pods.
-                        secret:
-                          type: object
-                          properties:
-                            defaultMode:
-                              type: integer
-                            items:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  key:
-                                    type: string
-                                  mode:
-                                    type: integer
-                                  path:
-                                    type: string
-                            optional:
-                              type: boolean
-                            secretName:
-                              type: string
-                          description: Reference to a key in a Secret. Exactly one
-                            Secret or ConfigMap has to be specified.
-                      required:
-                      - name
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as volumes.
-                description: Pass data from Secrets or ConfigMaps to the Kafka Connect
-                  pods and use them to configure connectors.
               insecureSourceRepository:
                 type: boolean
                 description: When true this configures the source repository with
@@ -3725,67 +3786,6 @@ spec:
                 - topologyKey
                 description: Configuration of the node label which will be used as
                   the client.rack consumer configuration.
-              resources:
-                type: object
-                properties:
-                  limits:
-                    type: object
-                  requests:
-                    type: object
-                description: The maximum limits for CPU and memory resources and the
-                  requested initial resources.
-              tls:
-                type: object
-                properties:
-                  trustedCertificates:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
-                      required:
-                      - certificate
-                      - secretName
-                    description: Trusted certificates for TLS connection.
-                description: TLS configuration.
-              tolerations:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    effect:
-                      type: string
-                    key:
-                      type: string
-                    operator:
-                      type: string
-                    tolerationSeconds:
-                      type: integer
-                    value:
-                      type: string
-                description: The pod's tolerations.
-              tracing:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    enum:
-                    - jaeger
-                    description: Type of the tracing used. Currently the only supported
-                      type is `jaeger` for Jaeger tracing.
-                required:
-                - type
-                description: The configuration of tracing in Kafka Connect.
-              version:
-                type: string
-                description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
-                  Consult the user documentation to understand the process required
-                  to upgrade or downgrade the version.
             required:
             - bootstrapServers
             description: The specification of the Kafka Connect Source-to-Image (S2I)
@@ -3866,6 +3866,11 @@ spec:
           spec:
             type: object
             properties:
+              version:
+                type: string
+                description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
+                  Consult the user documentation to understand the process required
+                  to upgrade or downgrade the version.
               replicas:
                 type: integer
                 description: The number of pods in the Kafka Connect group.
@@ -3880,6 +3885,194 @@ spec:
                   requests:
                     type: object
                 description: CPU and memory resources to reserve.
+              bootstrapServers:
+                type: string
+                description: Bootstrap servers to connect to. This should be given
+                  as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+              tls:
+                type: object
+                properties:
+                  trustedCertificates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - secretName
+                    description: Trusted certificates for TLS connection.
+                description: TLS configuration.
+              authentication:
+                type: object
+                properties:
+                  accessToken:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the access token
+                      which was obtained from the authorization server.
+                  accessTokenIsJwt:
+                    type: boolean
+                    description: Configure whether access token should be treated
+                      as JWT. This should be set to `false` if the authorization server
+                      returns opaque tokens. Defaults to `true`.
+                  certificateAndKey:
+                    type: object
+                    properties:
+                      certificate:
+                        type: string
+                        description: The name of the file certificate in the Secret.
+                      key:
+                        type: string
+                        description: The name of the private key in the Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Secret containing the certificate.
+                    required:
+                    - certificate
+                    - key
+                    - secretName
+                    description: Reference to the `Secret` which holds the certificate
+                      and private key pair.
+                  clientId:
+                    type: string
+                    description: OAuth Client ID which the Kafka client can use to
+                      authenticate against the OAuth server and use the token endpoint
+                      URI.
+                  clientSecret:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the OAuth client
+                      secret which the Kafka client can use to authenticate against
+                      the OAuth server and use the token endpoint URI.
+                  disableTlsHostnameVerification:
+                    type: boolean
+                    description: Enable or disable TLS hostname verification. Default
+                      value is `false`.
+                  maxTokenExpirySeconds:
+                    type: integer
+                    description: Set or limit time-to-live of the access tokens to
+                      the specified number of seconds. This should be set if the authorization
+                      server returns opaque tokens.
+                  passwordSecret:
+                    type: object
+                    properties:
+                      password:
+                        type: string
+                        description: The name of the key in the Secret under which
+                          the password is stored.
+                      secretName:
+                        type: string
+                        description: The name of the Secret containing the password.
+                    required:
+                    - password
+                    - secretName
+                    description: Reference to the `Secret` which holds the password.
+                  refreshToken:
+                    type: object
+                    properties:
+                      key:
+                        type: string
+                        description: The key under which the secret value is stored
+                          in the Kubernetes Secret.
+                      secretName:
+                        type: string
+                        description: The name of the Kubernetes Secret containing
+                          the secret value.
+                    required:
+                    - key
+                    - secretName
+                    description: Link to Kubernetes Secret containing the refresh
+                      token which can be used to obtain access token from the authorization
+                      server.
+                  scope:
+                    type: string
+                    description: OAuth scope to use when authenticating against the
+                      authorization server. Some authorization servers require this
+                      to be set. The possible values depend on how authorization server
+                      is configured. By default `scope` is not specified when doing
+                      the token endpoint request.
+                  tlsTrustedCertificates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - secretName
+                    description: Trusted certificates for TLS connection to the OAuth
+                      server.
+                  tokenEndpointUri:
+                    type: string
+                    description: Authorization server token endpoint URI.
+                  type:
+                    type: string
+                    enum:
+                    - tls
+                    - scram-sha-512
+                    - plain
+                    - oauth
+                    description: Authentication type. Currently the only supported
+                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
+                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
+                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
+                      Authentication. The `tls` type uses TLS Client Authentication.
+                      The `tls` type is supported only over TLS connections.
+                  username:
+                    type: string
+                    description: Username used for the authentication.
+                required:
+                - type
+                description: Authentication configuration for Kafka Connect.
+              config:
+                type: object
+                description: 'The Kafka Connect configuration. Properties with the
+                  following prefixes cannot be set: ssl., sasl., security., listeners,
+                  plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
+                  producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
+                  ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+              resources:
+                type: object
+                properties:
+                  limits:
+                    type: object
+                  requests:
+                    type: object
+                description: The maximum limits for CPU and memory resources and the
+                  requested initial resources.
               livenessProbe:
                 type: object
                 properties:
@@ -4201,6 +4394,22 @@ spec:
                             topologyKey:
                               type: string
                 description: The pod's affinity rules.
+              tolerations:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    effect:
+                      type: string
+                    key:
+                      type: string
+                    operator:
+                      type: string
+                    tolerationSeconds:
+                      type: integer
+                    value:
+                      type: string
+                description: The pod's tolerations.
               logging:
                 type: object
                 properties:
@@ -4240,6 +4449,18 @@ spec:
                 type: object
                 description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                   for details of the structure of this configuration.
+              tracing:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum:
+                    - jaeger
+                    description: Type of the tracing used. Currently the only supported
+                      type is `jaeger` for Jaeger tracing.
+                required:
+                - type
+                description: The configuration of tracing in Kafka Connect.
               template:
                 type: object
                 properties:
@@ -5330,159 +5551,110 @@ spec:
                 description: Template for Kafka Connect and Kafka Connect S2I resources.
                   The template allows users to specify how the `Deployment`, `Pods`
                   and `Service` are generated.
-              authentication:
+              externalConfiguration:
                 type: object
                 properties:
-                  accessToken:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the access token
-                      which was obtained from the authorization server.
-                  accessTokenIsJwt:
-                    type: boolean
-                    description: Configure whether access token should be treated
-                      as JWT. This should be set to `false` if the authorization server
-                      returns opaque tokens. Defaults to `true`.
-                  certificateAndKey:
-                    type: object
-                    properties:
-                      certificate:
-                        type: string
-                        description: The name of the file certificate in the Secret.
-                      key:
-                        type: string
-                        description: The name of the private key in the Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Secret containing the certificate.
-                    required:
-                    - certificate
-                    - key
-                    - secretName
-                    description: Reference to the `Secret` which holds the certificate
-                      and private key pair.
-                  clientId:
-                    type: string
-                    description: OAuth Client ID which the Kafka client can use to
-                      authenticate against the OAuth server and use the token endpoint
-                      URI.
-                  clientSecret:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the OAuth client
-                      secret which the Kafka client can use to authenticate against
-                      the OAuth server and use the token endpoint URI.
-                  disableTlsHostnameVerification:
-                    type: boolean
-                    description: Enable or disable TLS hostname verification. Default
-                      value is `false`.
-                  maxTokenExpirySeconds:
-                    type: integer
-                    description: Set or limit time-to-live of the access tokens to
-                      the specified number of seconds. This should be set if the authorization
-                      server returns opaque tokens.
-                  passwordSecret:
-                    type: object
-                    properties:
-                      password:
-                        type: string
-                        description: The name of the key in the Secret under which
-                          the password is stored.
-                      secretName:
-                        type: string
-                        description: The name of the Secret containing the password.
-                    required:
-                    - password
-                    - secretName
-                    description: Reference to the `Secret` which holds the password.
-                  refreshToken:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
-                      secretName:
-                        type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
-                    required:
-                    - key
-                    - secretName
-                    description: Link to Kubernetes Secret containing the refresh
-                      token which can be used to obtain access token from the authorization
-                      server.
-                  scope:
-                    type: string
-                    description: OAuth scope to use when authenticating against the
-                      authorization server. Some authorization servers require this
-                      to be set. The possible values depend on how authorization server
-                      is configured. By default `scope` is not specified when doing
-                      the token endpoint request.
-                  tlsTrustedCertificates:
+                  env:
                     type: array
                     items:
                       type: object
                       properties:
-                        certificate:
+                        name:
                           type: string
-                          description: The name of the file certificate in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
+                          description: Name of the environment variable which will
+                            be passed to the Kafka Connect pods. The name of the environment
+                            variable cannot start with `KAFKA_` or `STRIMZI_`.
+                        valueFrom:
+                          type: object
+                          properties:
+                            configMapKeyRef:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: Reference to a key in a ConfigMap.
+                            secretKeyRef:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                              description: Reference to a key in a Secret.
+                          description: Value of the environment variable which will
+                            be passed to the Kafka Connect pods. It can be passed
+                            either as a reference to Secret or ConfigMap field. The
+                            field has to specify exactly one Secret or ConfigMap.
                       required:
-                      - certificate
-                      - secretName
-                    description: Trusted certificates for TLS connection to the OAuth
-                      server.
-                  tokenEndpointUri:
-                    type: string
-                    description: Authorization server token endpoint URI.
-                  type:
-                    type: string
-                    enum:
-                    - tls
-                    - scram-sha-512
-                    - plain
-                    - oauth
-                    description: Authentication type. Currently the only supported
-                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
-                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
-                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
-                      Authentication. The `tls` type uses TLS Client Authentication.
-                      The `tls` type is supported only over TLS connections.
-                  username:
-                    type: string
-                    description: Username used for the authentication.
-                required:
-                - type
-                description: Authentication configuration for Kafka Connect.
-              bootstrapServers:
-                type: string
-                description: Bootstrap servers to connect to. This should be given
-                  as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+                      - name
+                      - valueFrom
+                    description: Allows to pass data from Secret or ConfigMap to the
+                      Kafka Connect pods as environment variables.
+                  volumes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        configMap:
+                          type: object
+                          properties:
+                            defaultMode:
+                              type: integer
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                  mode:
+                                    type: integer
+                                  path:
+                                    type: string
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                          description: Reference to a key in a ConfigMap. Exactly
+                            one Secret or ConfigMap has to be specified.
+                        name:
+                          type: string
+                          description: Name of the volume which will be added to the
+                            Kafka Connect pods.
+                        secret:
+                          type: object
+                          properties:
+                            defaultMode:
+                              type: integer
+                            items:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                  mode:
+                                    type: integer
+                                  path:
+                                    type: string
+                            optional:
+                              type: boolean
+                            secretName:
+                              type: string
+                          description: Reference to a key in a Secret. Exactly one
+                            Secret or ConfigMap has to be specified.
+                      required:
+                      - name
+                    description: Allows to pass data from Secret or ConfigMap to the
+                      Kafka Connect pods as volumes.
+                description: Pass data from Secrets or ConfigMaps to the Kafka Connect
+                  pods and use them to configure connectors.
               build:
                 type: object
                 properties:
@@ -5593,117 +5765,6 @@ spec:
                 type: string
                 description: The image of the init container used for initializing
                   the `client.rack`.
-              config:
-                type: object
-                description: 'The Kafka Connect configuration. Properties with the
-                  following prefixes cannot be set: ssl., sasl., security., listeners,
-                  plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
-                  producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
-                  ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
-              externalConfiguration:
-                type: object
-                properties:
-                  env:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                          description: Name of the environment variable which will
-                            be passed to the Kafka Connect pods. The name of the environment
-                            variable cannot start with `KAFKA_` or `STRIMZI_`.
-                        valueFrom:
-                          type: object
-                          properties:
-                            configMapKeyRef:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                name:
-                                  type: string
-                                optional:
-                                  type: boolean
-                              description: Reference to a key in a ConfigMap.
-                            secretKeyRef:
-                              type: object
-                              properties:
-                                key:
-                                  type: string
-                                name:
-                                  type: string
-                                optional:
-                                  type: boolean
-                              description: Reference to a key in a Secret.
-                          description: Value of the environment variable which will
-                            be passed to the Kafka Connect pods. It can be passed
-                            either as a reference to Secret or ConfigMap field. The
-                            field has to specify exactly one Secret or ConfigMap.
-                      required:
-                      - name
-                      - valueFrom
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as environment variables.
-                  volumes:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        configMap:
-                          type: object
-                          properties:
-                            defaultMode:
-                              type: integer
-                            items:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  key:
-                                    type: string
-                                  mode:
-                                    type: integer
-                                  path:
-                                    type: string
-                            name:
-                              type: string
-                            optional:
-                              type: boolean
-                          description: Reference to a key in a ConfigMap. Exactly
-                            one Secret or ConfigMap has to be specified.
-                        name:
-                          type: string
-                          description: Name of the volume which will be added to the
-                            Kafka Connect pods.
-                        secret:
-                          type: object
-                          properties:
-                            defaultMode:
-                              type: integer
-                            items:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  key:
-                                    type: string
-                                  mode:
-                                    type: integer
-                                  path:
-                                    type: string
-                            optional:
-                              type: boolean
-                            secretName:
-                              type: string
-                          description: Reference to a key in a Secret. Exactly one
-                            Secret or ConfigMap has to be specified.
-                      required:
-                      - name
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as volumes.
-                description: Pass data from Secrets or ConfigMaps to the Kafka Connect
-                  pods and use them to configure connectors.
               insecureSourceRepository:
                 type: boolean
                 description: When true this configures the source repository with
@@ -5752,67 +5813,6 @@ spec:
                 - topologyKey
                 description: Configuration of the node label which will be used as
                   the client.rack consumer configuration.
-              resources:
-                type: object
-                properties:
-                  limits:
-                    type: object
-                  requests:
-                    type: object
-                description: The maximum limits for CPU and memory resources and the
-                  requested initial resources.
-              tls:
-                type: object
-                properties:
-                  trustedCertificates:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
-                      required:
-                      - certificate
-                      - secretName
-                    description: Trusted certificates for TLS connection.
-                description: TLS configuration.
-              tolerations:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    effect:
-                      type: string
-                    key:
-                      type: string
-                    operator:
-                      type: string
-                    tolerationSeconds:
-                      type: integer
-                    value:
-                      type: string
-                description: The pod's tolerations.
-              tracing:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    enum:
-                    - jaeger
-                    description: Type of the tracing used. Currently the only supported
-                      type is `jaeger` for Jaeger tracing.
-                required:
-                - type
-                description: The configuration of tracing in Kafka Connect.
-              version:
-                type: string
-                description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
-                  Consult the user documentation to understand the process required
-                  to upgrade or downgrade the version.
             required:
             - bootstrapServers
             description: The specification of the Kafka Connect Source-to-Image (S2I)

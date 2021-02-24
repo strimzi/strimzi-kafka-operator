@@ -91,6 +91,11 @@ public class ConversionUtil {
     static void move(JsonNode node, String fromPath, String toPath) {
         JsonNode value = get(node, fromPath);
         if (value != null) {
+            JsonNode target = get(node, toPath);
+            if (target != null) {
+                throw new RuntimeException("Cannot move " + fromPath + " to " + toPath + ". The target path already exists. Please resolve the issue manually and run the API conversion tool again.");
+            }
+
             set(node, fromPath, null);
             set(node, toPath, value);
         }

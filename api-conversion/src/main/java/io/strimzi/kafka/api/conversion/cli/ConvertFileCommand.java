@@ -91,9 +91,8 @@ public class ConvertFileCommand extends AbstractConversionCommand {
             JsonGenerator generator = yamlMapper.getFactory().createGenerator(writer);
             yamlMapper.writeTree(generator, result);
             writer.write(System.lineSeparator());
+            handleMultipartResources(yamlMapper, writer);
         }
-
-        handleMultipartResources(yamlMapper, writer);
 
         return writer.toString();
     }

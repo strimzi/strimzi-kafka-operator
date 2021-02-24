@@ -19,9 +19,11 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({ "replicas", "image", "buildResources",
-        "livenessProbe", "readinessProbe", "jvmOptions",  "jmxOptions",
-        "affinity", "logging", "metrics", "template"})
+@JsonPropertyOrder({ "version", "replicas", "image", "buildResources",
+        "bootstrapServers", "tls", "authentication", "config", "resources",
+        "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
+        "affinity", "tolerations", "logging", "metrics", "tracing",
+        "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 

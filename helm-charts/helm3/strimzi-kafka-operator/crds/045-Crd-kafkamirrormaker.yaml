@@ -56,6 +56,9 @@ spec:
             spec:
               type: object
               properties:
+                version:
+                  type: string
+                  description: The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
                 replicas:
                   type: integer
                   minimum: 0
@@ -63,9 +66,6 @@ spec:
                 image:
                   type: string
                   description: The docker image for the pods.
-                whitelist:
-                  type: string
-                  description: List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
                 consumer:
                   type: object
                   properties:
@@ -76,12 +76,12 @@ spec:
                     offsetCommitInterval:
                       type: integer
                       description: Specifies the offset auto-commit interval in ms. Default value is 60000.
-                    groupId:
-                      type: string
-                      description: A unique string that identifies the consumer group this consumer belongs to.
                     bootstrapServers:
                       type: string
                       description: A list of host:port pairs for establishing the initial connection to the Kafka cluster.
+                    groupId:
+                      type: string
+                      description: A unique string that identifies the consumer group this consumer belongs to.
                     authentication:
                       type: object
                       properties:
@@ -224,8 +224,8 @@ spec:
                           description: Trusted certificates for TLS connection.
                       description: TLS configuration for connecting MirrorMaker to the cluster.
                   required:
-                    - groupId
                     - bootstrapServers
+                    - groupId
                   description: Configuration of source cluster.
                 producer:
                   type: object
@@ -388,6 +388,9 @@ spec:
                     requests:
                       type: object
                   description: CPU and memory resources to reserve.
+                whitelist:
+                  type: string
+                  description: List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
                 jvmOptions:
                   type: object
                   properties:
@@ -999,14 +1002,11 @@ spec:
                       minimum: 1
                       description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod readiness checking.
-                version:
-                  type: string
-                  description: The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
               required:
                 - replicas
-                - whitelist
                 - consumer
                 - producer
+                - whitelist
               description: The specification of Kafka MirrorMaker.
             status:
               type: object
@@ -1052,6 +1052,9 @@ spec:
             spec:
               type: object
               properties:
+                version:
+                  type: string
+                  description: The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
                 replicas:
                   type: integer
                   minimum: 0
@@ -1059,9 +1062,6 @@ spec:
                 image:
                   type: string
                   description: The docker image for the pods.
-                whitelist:
-                  type: string
-                  description: List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
                 consumer:
                   type: object
                   properties:
@@ -1072,12 +1072,12 @@ spec:
                     offsetCommitInterval:
                       type: integer
                       description: Specifies the offset auto-commit interval in ms. Default value is 60000.
-                    groupId:
-                      type: string
-                      description: A unique string that identifies the consumer group this consumer belongs to.
                     bootstrapServers:
                       type: string
                       description: A list of host:port pairs for establishing the initial connection to the Kafka cluster.
+                    groupId:
+                      type: string
+                      description: A unique string that identifies the consumer group this consumer belongs to.
                     authentication:
                       type: object
                       properties:
@@ -1220,8 +1220,8 @@ spec:
                           description: Trusted certificates for TLS connection.
                       description: TLS configuration for connecting MirrorMaker to the cluster.
                   required:
-                    - groupId
                     - bootstrapServers
+                    - groupId
                   description: Configuration of source cluster.
                 producer:
                   type: object
@@ -1384,6 +1384,9 @@ spec:
                     requests:
                       type: object
                   description: CPU and memory resources to reserve.
+                whitelist:
+                  type: string
+                  description: List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
                 affinity:
                   type: object
                   properties:
@@ -2226,14 +2229,11 @@ spec:
                       minimum: 1
                       description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod readiness checking.
-                version:
-                  type: string
-                  description: The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
               required:
                 - replicas
-                - whitelist
                 - consumer
                 - producer
+                - whitelist
               description: The specification of Kafka MirrorMaker.
             status:
               type: object
@@ -2279,6 +2279,9 @@ spec:
             spec:
               type: object
               properties:
+                version:
+                  type: string
+                  description: The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
                 replicas:
                   type: integer
                   minimum: 0
@@ -2286,9 +2289,6 @@ spec:
                 image:
                   type: string
                   description: The docker image for the pods.
-                whitelist:
-                  type: string
-                  description: List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
                 consumer:
                   type: object
                   properties:
@@ -2299,12 +2299,12 @@ spec:
                     offsetCommitInterval:
                       type: integer
                       description: Specifies the offset auto-commit interval in ms. Default value is 60000.
-                    groupId:
-                      type: string
-                      description: A unique string that identifies the consumer group this consumer belongs to.
                     bootstrapServers:
                       type: string
                       description: A list of host:port pairs for establishing the initial connection to the Kafka cluster.
+                    groupId:
+                      type: string
+                      description: A unique string that identifies the consumer group this consumer belongs to.
                     authentication:
                       type: object
                       properties:
@@ -2447,8 +2447,8 @@ spec:
                           description: Trusted certificates for TLS connection.
                       description: TLS configuration for connecting MirrorMaker to the cluster.
                   required:
-                    - groupId
                     - bootstrapServers
+                    - groupId
                   description: Configuration of source cluster.
                 producer:
                   type: object
@@ -2611,6 +2611,9 @@ spec:
                     requests:
                       type: object
                   description: CPU and memory resources to reserve.
+                whitelist:
+                  type: string
+                  description: List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
                 affinity:
                   type: object
                   properties:
@@ -3453,14 +3456,11 @@ spec:
                       minimum: 1
                       description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                   description: Pod readiness checking.
-                version:
-                  type: string
-                  description: The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
               required:
                 - replicas
-                - whitelist
                 - consumer
                 - producer
+                - whitelist
               description: The specification of Kafka MirrorMaker.
             status:
               type: object

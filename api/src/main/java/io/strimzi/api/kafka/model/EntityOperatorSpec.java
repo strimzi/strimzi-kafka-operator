@@ -31,7 +31,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "topicOperator", "userOperator", "affinity",
-        "tolerations", "tlsSidecar"})
+        "tolerations", "tlsSidecar", "template"})
 @EqualsAndHashCode
 public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializable {
 

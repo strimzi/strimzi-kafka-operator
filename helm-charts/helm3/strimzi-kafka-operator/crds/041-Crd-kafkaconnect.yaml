@@ -46,12 +46,12 @@ spec:
             spec:
               type: object
               properties:
-                replicas:
-                  type: integer
-                  description: The number of pods in the Kafka Connect group.
                 version:
                   type: string
                   description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+                replicas:
+                  type: integer
+                  description: The number of pods in the Kafka Connect group.
                 image:
                   type: string
                   description: The docker image for the pods.
@@ -1618,12 +1618,12 @@ spec:
             spec:
               type: object
               properties:
-                replicas:
-                  type: integer
-                  description: The number of pods in the Kafka Connect group.
                 version:
                   type: string
                   description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+                replicas:
+                  type: integer
+                  description: The number of pods in the Kafka Connect group.
                 image:
                   type: string
                   description: The docker image for the pods.
@@ -3421,12 +3421,12 @@ spec:
             spec:
               type: object
               properties:
-                replicas:
-                  type: integer
-                  description: The number of pods in the Kafka Connect group.
                 version:
                   type: string
                   description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+                replicas:
+                  type: integer
+                  description: The number of pods in the Kafka Connect group.
                 image:
                   type: string
                   description: The docker image for the pods.

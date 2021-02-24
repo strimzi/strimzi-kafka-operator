@@ -17,6 +17,8 @@ import io.strimzi.api.kafka.model.template.ExternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -36,9 +38,12 @@ public class KafkaConverter extends Converter<Kafka> {
         Conversion.move("/spec/entityOperator/tolerations", "/spec/entityOperator/template/pod/tolerations", Conversion.noop()),
         Conversion.move("/spec/entityOperator/affinity", "/spec/entityOperator/template/pod/affinity", Conversion.noop()),
         Conversion.move("/spec/topicOperator/tlsSidecar", "/spec/entityOperator/tlsSidecar", Conversion.noop()),
+        Conversion.move("/spec/topicOperator/affinity", "/spec/entityOperator/template/pod/affinity", Conversion.noop()),
         Conversion.move("/spec/topicOperator", "/spec/entityOperator/topicOperator"),
         Conversion.delete("/spec/kafka/tlsSidecar"),
+        Conversion.delete("/spec/kafka/template/tlsSidecarContainer"),
         Conversion.delete("/spec/zookeeper/tlsSidecar"),
+        Conversion.delete("/spec/zookeeper/template/tlsSidecarContainer"),
         Conversion.replace("/spec/kafka/listeners", new Conversion.DefaultInvertibleFunction<ArrayOrObjectKafkaListeners>() {
                 @Override
                 Class<ArrayOrObjectKafkaListeners> convertedType() {
@@ -62,8 +67,8 @@ public class KafkaConverter extends Converter<Kafka> {
             }
         ),
         Conversion.replace("/spec/kafka", new ReplaceExternalServiceTemplate()),
-        Conversion.replaceLogging("/spec/kafka/logging", "log4j2.properties"),
-        Conversion.replaceLogging("/spec/zookeeper/logging", "log4j2.properties"),
+        Conversion.replaceLogging("/spec/kafka/logging", "log4j.properties"),
+        Conversion.replaceLogging("/spec/zookeeper/logging", "log4j.properties"),
         Conversion.replaceLogging("/spec/entityOperator/topicOperator/logging", "log4j2.properties"),
         Conversion.replaceLogging("/spec/entityOperator/userOperator/logging", "log4j2.properties"),
         Conversion.replaceLogging("/spec/cruiseControl/logging", "log4j2.properties"),
@@ -145,11 +150,12 @@ public class KafkaConverter extends Converter<Kafka> {
                     ExternalServiceTemplate bootstrapService = kct.getExternalBootstrapService();
                     ExternalServiceTemplate podService = kct.getPerPodService();
                     if (bootstrapService != null && podService != null) {
-                        if (bootstrapService.equals(podService)) {
+                        if (bootstrapService.getExternalTrafficPolicy() == podService.getExternalTrafficPolicy()
+                                && loadBalancerSourceRangesMatch(bootstrapService, podService)) {
                             apply(spec, bootstrapService);
                             apply(spec, podService); // called twice, so we nullify both
                         } else {
-                            throw new IllegalArgumentException("KafkaClusterSpec's ExternalBootstrapService and PerPodService are not equal!");
+                            throw new RuntimeException("KafkaClusterSpec's ExternalBootstrapService and PerPodService (fields externalTrafficPolicy and/or loadBalancerSourceRanges) are not equal and cannot be converted automatically! Please resolve the issue manually and run the API conversion tool again.");
                         }
                     } else if (bootstrapService != null) {
                         apply(spec, bootstrapService);
@@ -159,6 +165,23 @@ public class KafkaConverter extends Converter<Kafka> {
                 }
             }
             return spec;
+        }
+
+        private boolean loadBalancerSourceRangesMatch(ExternalServiceTemplate bootstrapService, ExternalServiceTemplate podService) {
+            if (bootstrapService.getLoadBalancerSourceRanges() == null && podService.getLoadBalancerSourceRanges() == null) {
+                return true;
+            } else if (bootstrapService.getLoadBalancerSourceRanges() != null && podService.getLoadBalancerSourceRanges() != null)  {
+                List<String> bootstrapSources = new ArrayList<>(bootstrapService.getLoadBalancerSourceRanges());
+                Collections.sort(bootstrapSources);
+
+                List<String> perPodSources = new ArrayList<>(podService.getLoadBalancerSourceRanges());
+                Collections.sort(perPodSources);
+
+                return bootstrapSources.equals(perPodSources);
+            } else {
+                // One is null and the otner one is not
+                return false;
+            }
         }
     }
 }

@@ -22,7 +22,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"numStreams", "offsetCommitInterval", "groupId", "bootstrapServers", "logging"})
+@JsonPropertyOrder({"numStreams", "offsetCommitInterval", "bootstrapServers", "groupId", "logging"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaMirrorMakerConsumerSpec extends KafkaMirrorMakerClientSpec {
     private static final long serialVersionUID = 1L;

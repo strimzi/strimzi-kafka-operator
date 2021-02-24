@@ -7,6 +7,10 @@ package io.strimzi.kafka.api.conversion.converter;
 import io.strimzi.api.kafka.model.KafkaBridge;
 
 public class KafkaBridgeConverter extends AbstractLogableConverter<KafkaBridge> {
+    public KafkaBridgeConverter() {
+        super("log4j2.properties");
+    }
+
     @Override
     public Class<KafkaBridge> crClass() {
         return KafkaBridge.class;

@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
  */
 public abstract class AbstractSpecableConverter<T extends HasMetadata> extends Converter<T> {
     @SuppressWarnings("unchecked")
-    public AbstractSpecableConverter(Class<? extends HasConfigurableMetrics> crClass, String typeName) {
+    public AbstractSpecableConverter(Class<? extends HasConfigurableMetrics> crClass, String typeName, String log4jProperties) {
         super(asList(
             toVersionConversion(ApiVersion.V1ALPHA1, ApiVersion.V1BETA1),
             toVersionConversion(
@@ -25,7 +25,7 @@ public abstract class AbstractSpecableConverter<T extends HasMetadata> extends C
                 ApiVersion.V1BETA2,
                 Conversion.move("/spec/tolerations", "/spec/template/pod/tolerations", Conversion.noop()),
                 Conversion.move("/spec/affinity", "/spec/template/pod/affinity", Conversion.noop()),
-                Conversion.replaceLogging("/spec/logging", "log4j.properties"),
+                Conversion.replaceLogging("/spec/logging", log4jProperties),
                 new MetricsConversion<T>("/spec", crClass, typeName)
             )
         ));

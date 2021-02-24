@@ -6,12 +6,12 @@ metadata:
 spec:
   kafka:
     replicas: 1
-    storage:
-      type: "ephemeral"
     listeners:
       tls:
         authentication:
           type: "tls"
+    storage:
+      type: "ephemeral"
   zookeeper:
     replicas: 1
     storage:

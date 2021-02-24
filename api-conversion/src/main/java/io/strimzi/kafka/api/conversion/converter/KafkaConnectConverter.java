@@ -9,7 +9,7 @@ import io.strimzi.api.kafka.model.KafkaConnectSpec;
 
 public class KafkaConnectConverter extends AbstractSpecableConverter<KafkaConnect> {
     public KafkaConnectConverter() {
-        super(KafkaConnectSpec.class, "connect");
+        super(KafkaConnectSpec.class, "connect", "log4j.properties");
     }
 
     @Override

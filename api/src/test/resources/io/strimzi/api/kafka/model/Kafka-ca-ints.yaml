@@ -6,13 +6,13 @@ metadata:
 spec:
   kafka:
     replicas: 1
-    storage:
-      type: "ephemeral"
     listeners:
     - name: "lst"
       port: 9092
       type: "internal"
       tls: true
+    storage:
+      type: "ephemeral"
   zookeeper:
     replicas: 1
     storage:

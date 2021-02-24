@@ -17,13 +17,13 @@ import static java.util.Arrays.asList;
 public abstract class AbstractLogableConverter<T extends HasMetadata> extends Converter<T> {
 
     @SuppressWarnings("unchecked")
-    public AbstractLogableConverter() {
+    public AbstractLogableConverter(String log4jConfigFile) {
         super(asList(
             toVersionConversion(ApiVersion.V1ALPHA1, ApiVersion.V1BETA1),
             toVersionConversion(
                 ApiVersion.V1BETA1,
                 ApiVersion.V1BETA2,
-                Conversion.replaceLogging("/spec/logging", "log4j.properties")
+                Conversion.replaceLogging("/spec/logging", log4jConfigFile)
             )
         ));
     }

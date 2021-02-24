@@ -61,18 +61,20 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property                    |Description
+|version              1.2+<.<|The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
 |replicas             1.2+<.<|The number of pods in the cluster.
 |integer
 |image                1.2+<.<|The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.
 |string
-|storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim, jbod].
-|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
 |listeners            1.2+<.<|Configures listeners of Kafka brokers.
 |xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] array or xref:type-KafkaListeners-{context}[`KafkaListeners`]
-|authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, opa, keycloak].
-|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
 |config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).
 |map
+|storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim, jbod].
+|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
+|authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, opa, keycloak].
+|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |xref:type-Rack-{context}[`Rack`]
 |brokerRackInitImage  1.2+<.<|The image of the init container used for initializing the `broker.rack`.
@@ -107,86 +109,6 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
-|version              1.2+<.<|The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
-|string
-|====
-
-[id='type-EphemeralStorage-{context}']
-### `EphemeralStorage` schema reference
-
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-
-
-The `type` property is a discriminator that distinguishes use of the `EphemeralStorage` type from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
-It must have the value `ephemeral` for the type `EphemeralStorage`.
-[options="header"]
-|====
-|Property          |Description
-|id         1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
-|integer
-|sizeLimit  1.2+<.<|When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (for example 1Gi).
-|string
-|type       1.2+<.<|Must be `ephemeral`.
-|string
-|====
-
-[id='type-PersistentClaimStorage-{context}']
-### `PersistentClaimStorage` schema reference
-
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-
-
-The `type` property is a discriminator that distinguishes use of the `PersistentClaimStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
-It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
-[options="header"]
-|====
-|Property            |Description
-|type         1.2+<.<|Must be `persistent-claim`.
-|string
-|size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
-|string
-|selector     1.2+<.<|Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
-|map
-|deleteClaim  1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
-|boolean
-|class        1.2+<.<|The storage class to use for dynamic volume allocation.
-|string
-|id           1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
-|integer
-|overrides    1.2+<.<|Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
-|xref:type-PersistentClaimStorageOverride-{context}[`PersistentClaimStorageOverride`] array
-|====
-
-[id='type-PersistentClaimStorageOverride-{context}']
-### `PersistentClaimStorageOverride` schema reference
-
-Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
-
-
-[options="header"]
-|====
-|Property       |Description
-|class   1.2+<.<|The storage class to use for dynamic volume allocation for this broker.
-|string
-|broker  1.2+<.<|Id of the kafka broker (broker identifier).
-|integer
-|====
-
-[id='type-JbodStorage-{context}']
-### `JbodStorage` schema reference
-
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
-
-
-The `type` property is a discriminator that distinguishes use of the `JbodStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
-It must have the value `jbod` for the type `JbodStorage`.
-[options="header"]
-|====
-|Property        |Description
-|type     1.2+<.<|Must be `jbod`.
-|string
-|volumes  1.2+<.<|List of volumes as Storage objects representing the JBOD disks array.
-|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`] array
 |====
 
 [id='type-GenericKafkaListener-{context}']
@@ -894,6 +816,84 @@ Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfig
 |string
 |dnsAnnotations  1.2+<.<|Annotations that will be added to the `Ingress` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
 |map
+|====
+
+[id='type-EphemeralStorage-{context}']
+### `EphemeralStorage` schema reference
+
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `EphemeralStorage` type from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
+It must have the value `ephemeral` for the type `EphemeralStorage`.
+[options="header"]
+|====
+|Property          |Description
+|id         1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+|integer
+|sizeLimit  1.2+<.<|When type=ephemeral, defines the total amount of local storage required for this EmptyDir volume (for example 1Gi).
+|string
+|type       1.2+<.<|Must be `ephemeral`.
+|string
+|====
+
+[id='type-PersistentClaimStorage-{context}']
+### `PersistentClaimStorage` schema reference
+
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `PersistentClaimStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
+It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
+[options="header"]
+|====
+|Property            |Description
+|type         1.2+<.<|Must be `persistent-claim`.
+|string
+|size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
+|string
+|selector     1.2+<.<|Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
+|map
+|deleteClaim  1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+|boolean
+|class        1.2+<.<|The storage class to use for dynamic volume allocation.
+|string
+|id           1.2+<.<|Storage identification number. It is mandatory only for storage volumes defined in a storage of type 'jbod'.
+|integer
+|overrides    1.2+<.<|Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
+|xref:type-PersistentClaimStorageOverride-{context}[`PersistentClaimStorageOverride`] array
+|====
+
+[id='type-PersistentClaimStorageOverride-{context}']
+### `PersistentClaimStorageOverride` schema reference
+
+Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
+
+
+[options="header"]
+|====
+|Property       |Description
+|class   1.2+<.<|The storage class to use for dynamic volume allocation for this broker.
+|string
+|broker  1.2+<.<|Id of the kafka broker (broker identifier).
+|integer
+|====
+
+[id='type-JbodStorage-{context}']
+### `JbodStorage` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `JbodStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
+It must have the value `jbod` for the type `JbodStorage`.
+[options="header"]
+|====
+|Property        |Description
+|type     1.2+<.<|Must be `jbod`.
+|string
+|volumes  1.2+<.<|List of volumes as Storage objects representing the JBOD disks array.
+|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`] array
 |====
 
 [id='type-KafkaAuthorizationSimple-{context}']
@@ -2016,10 +2016,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property                      |Description
-|replicas               1.2+<.<|The number of pods in the Kafka Connect group.
-|integer
 |version                1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
+|replicas               1.2+<.<|The number of pods in the Kafka Connect group.
+|integer
 |image                  1.2+<.<|The docker image for the pods.
 |string
 |bootstrapServers       1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
@@ -2563,11 +2563,25 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=
 [options="header"]
 |====
 |Property                         |Description
+|version                   1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
 |replicas                  1.2+<.<|The number of pods in the Kafka Connect group.
 |integer
 |image                     1.2+<.<|The docker image for the pods.
 |string
 |buildResources            1.2+<.<|CPU and memory resources to reserve. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
+|bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+|string
+|tls                       1.2+<.<|TLS configuration.
+|xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
+|authentication            1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
+|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
+|map
+|resources                 1.2+<.<|The maximum limits for CPU and memory resources and the requested initial resources. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
@@ -2583,44 +2597,30 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
+|tolerations               1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |logging                   1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metrics                   1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`. The property metrics is removed in API version `v1beta2`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
+|tracing                   1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template                  1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
-|authentication            1.2+<.<|Authentication configuration for Kafka Connect. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
-|xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
-|bootstrapServers          1.2+<.<|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
-|string
+|externalConfiguration     1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+|xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |build                     1.2+<.<|Configures how the Connect container image should be built. Optional.
 |xref:type-Build-{context}[`Build`]
 |clientRackInitImage       1.2+<.<|The image of the init container used for initializing the `client.rack`.
 |string
-|config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
-|map
-|externalConfiguration     1.2+<.<|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
-|xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |insecureSourceRepository  1.2+<.<|When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
 |boolean
 |metricsConfig             1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |rack                      1.2+<.<|Configuration of the node label which will be used as the client.rack consumer configuration.
 |xref:type-Rack-{context}[`Rack`]
-|resources                 1.2+<.<|The maximum limits for CPU and memory resources and the requested initial resources. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|tls                       1.2+<.<|TLS configuration.
-|xref:type-KafkaConnectTls-{context}[`KafkaConnectTls`]
-|tolerations               1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
-|tracing                   1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
-|xref:type-JaegerTracing-{context}[`JaegerTracing`]
-|version                   1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
-|string
 |====
 
 [id='type-KafkaConnectS2IStatus-{context}']
@@ -2964,11 +2964,11 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 [options="header"]
 |====
 |Property               |Description
+|version         1.2+<.<|The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
+|string
 |replicas        1.2+<.<|The number of pods in the `Deployment`.
 |integer
 |image           1.2+<.<|The docker image for the pods.
-|string
-|whitelist       1.2+<.<|List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
 |string
 |consumer        1.2+<.<|Configuration of source cluster.
 |xref:type-KafkaMirrorMakerConsumerSpec-{context}[`KafkaMirrorMakerConsumerSpec`]
@@ -2978,6 +2978,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
+|whitelist       1.2+<.<|List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
+|string
 |affinity        1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
 
 
@@ -3002,8 +3004,6 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe  1.2+<.<|Pod readiness checking.
 |xref:type-Probe-{context}[`Probe`]
-|version         1.2+<.<|The Kafka MirrorMaker version. Defaults to {DefaultKafkaVersion}. Consult the documentation to understand the process required to upgrade or downgrade the version.
-|string
 |====
 
 [id='type-KafkaMirrorMakerConsumerSpec-{context}']
@@ -3026,9 +3026,9 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec.adoc[lev
 |integer
 |offsetCommitInterval  1.2+<.<|Specifies the offset auto-commit interval in ms. Default value is 60000.
 |integer
-|groupId               1.2+<.<|A unique string that identifies the consumer group this consumer belongs to.
-|string
 |bootstrapServers      1.2+<.<|A list of host:port pairs for establishing the initial connection to the Kafka cluster.
+|string
+|groupId               1.2+<.<|A unique string that identifies the consumer group this consumer belongs to.
 |string
 |authentication        1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
@@ -3396,10 +3396,10 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 [options="header"]
 |====
 |Property                      |Description
-|replicas               1.2+<.<|The number of pods in the Kafka Connect group.
-|integer
 |version                1.2+<.<|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
+|replicas               1.2+<.<|The number of pods in the Kafka Connect group.
+|integer
 |image                  1.2+<.<|The docker image for the pods.
 |string
 |connectCluster         1.2+<.<|The cluster alias used for Kafka Connect. The alias must match a cluster in the list at `spec.clusters`.
@@ -3462,12 +3462,12 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec.adoc[lev
 |string
 |bootstrapServers  1.2+<.<|A comma-separated list of `host:port` pairs for establishing the connection to the Kafka cluster.
 |string
-|config            1.2+<.<|The MirrorMaker 2.0 cluster config. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
-|map
 |tls               1.2+<.<|TLS configuration for connecting MirrorMaker 2.0 connectors to a cluster.
 |xref:type-KafkaMirrorMaker2Tls-{context}[`KafkaMirrorMaker2Tls`]
 |authentication    1.2+<.<|Authentication configuration for connecting to the cluster. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, plain, oauth].
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
+|config            1.2+<.<|The MirrorMaker 2.0 cluster config. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).
+|map
 |====
 
 [id='type-KafkaMirrorMaker2Tls-{context}']
@@ -3498,9 +3498,9 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 |string
 |sourceConnector         1.2+<.<|The specification of the Kafka MirrorMaker 2.0 source connector.
 |xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
-|checkpointConnector     1.2+<.<|The specification of the Kafka MirrorMaker 2.0 checkpoint connector.
-|xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
 |heartbeatConnector      1.2+<.<|The specification of the Kafka MirrorMaker 2.0 heartbeat connector.
+|xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
+|checkpointConnector     1.2+<.<|The specification of the Kafka MirrorMaker 2.0 checkpoint connector.
 |xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
 |topicsPattern           1.2+<.<|A regular expression matching the topics to be mirrored, for example, "topic1\|topic2\|topic3". Comma-separated lists are also supported.
 |string

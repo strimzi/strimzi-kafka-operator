@@ -7,9 +7,6 @@ spec:
   kafka:
     replicas: 3
     image: "strimzi/kafka:latest"
-    storage:
-      type: "persistent-claim"
-      size: "500Gi"
     listeners:
       plain:
         networkPolicyPeers:
@@ -68,6 +65,11 @@ spec:
         - podSelector:
             matchLabels:
               app: "kafka-producer"
+    config:
+      min.insync.replicas: 3
+    storage:
+      type: "persistent-claim"
+      size: "500Gi"
     authorization:
       type: "simple"
       superUsers:
@@ -78,8 +80,6 @@ spec:
       - "CN=kyle"
       - "CN=sergey"
       - "CN=andryi"
-    config:
-      min.insync.replicas: 3
     brokerRackInitImage: "strimzi/kafka-init:latest"
     tolerations:
     - effect: "NoSchedule"
