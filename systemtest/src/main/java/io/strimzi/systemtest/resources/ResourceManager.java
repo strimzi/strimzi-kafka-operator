@@ -212,7 +212,7 @@ public class ResourceManager {
             T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             if (condition.test(res)) {
                 LOGGER.info("Resource {} in namespace {} is ready!", resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-                    return true;
+                return true;
             }
             try {
                 Thread.sleep(1000);

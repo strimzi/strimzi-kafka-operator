@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.kafka.listeners;
 
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -27,8 +26,6 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -37,7 +34,6 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-import io.strimzi.test.TestUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,8 +51,6 @@ import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TLS_LISTENER_DEFAULT_NAME;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
@@ -70,32 +64,6 @@ public class BackwardsCompatibleListenersST extends AbstractST {
     // Backwards compatibility needs to use v1beta1. That is why we have some custom methods here instead of using KafkaResource class
     private static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaV1Beta1Client() {
         return Crds.kafkaV1Beta1Operation(ResourceManager.kubeClient().getClient());
-    }
-
-    private static Kafka createAndWaitForReadiness(Kafka kafka) {
-        TestUtils.waitFor("Kafka creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-            () -> {
-                try {
-                    kafkaV1Beta1Client().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(kafka);
-                    return true;
-                } catch (KubernetesClientException e) {
-                    if (e.getMessage().contains("object is being deleted")) {
-                        return false;
-                    } else {
-                        throw e;
-                    }
-                }
-            });
-        return waitFor(deleteLater(kafka));
-    }
-
-    private static Kafka waitFor(Kafka kafka) {
-        long timeout = ResourceOperation.getTimeoutForResourceReadiness(kafka.getKind());
-        return ResourceManager.waitForResourceStatus(kafkaV1Beta1Client(), kafka, Ready, timeout);
-    }
-
-    private static Kafka deleteLater(Kafka kafka) {
-        return ResourceManager.deleteLater(KafkaResource.kafkaClient(), kafka);
     }
 
     /**

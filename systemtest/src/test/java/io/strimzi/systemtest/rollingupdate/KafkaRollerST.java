@@ -298,7 +298,7 @@ public class KafkaRollerST extends AbstractST {
 
         // kafka should get back ready in some reasonable time frame
         KafkaUtils.waitForKafkaReady(clusterName);
-        KafkaResource.deleteKafkaWithoutWait(clusterName);
+        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaUtils.waitForKafkaDeletion(clusterName);
     }
 

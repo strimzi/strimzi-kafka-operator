@@ -53,9 +53,8 @@ public class OpaIntegrationST extends AbstractST {
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
 
-        KafkaUser goodUser = KafkaUserTemplates.tlsUser(SHARED_CLUSTER_NAME, OPA_GOOD_USER).build();
-        KafkaUser badUser = KafkaUserTemplates.tlsUser(SHARED_CLUSTER_NAME, OPA_BAD_USER).build();
-        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        KafkaUser goodUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, OPA_GOOD_USER).build();
+        KafkaUser badUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, OPA_BAD_USER).build();
 
         resourceManager.createResource(extensionContext, goodUser);
         resourceManager.createResource(extensionContext, badUser);
@@ -94,15 +93,15 @@ public class OpaIntegrationST extends AbstractST {
     }
 
     @ParallelTest
-    void testOpaAuthorizationSuperUser() {
+    void testOpaAuthorizationSuperUser(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         final String consumerGroupName = "consumer-group-name-2";
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
 
-        KafkaUser superuser = KafkaUserTemplates.tlsUser(SHARED_CLUSTER_NAME, OPA_SUPERUSER).build();
+        KafkaUser superuser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, OPA_SUPERUSER).build();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(SHARED_CLUSTER_NAME, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName).build());
         resourceManager.createResource(extensionContext, superuser);
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsDeploymentName, false, superuser).build());
 
@@ -157,16 +156,6 @@ public class OpaIntegrationST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).build());
-        KafkaUser goodUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(CLUSTER_NAME, OPA_GOOD_USER).build());
-        KafkaUser badUser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(CLUSTER_NAME, OPA_BAD_USER).build());
-        KafkaUser superuser = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(CLUSTER_NAME, OPA_SUPERUSER).build());
-
-        final String kafkaClientsDeploymentName = CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS;
-        // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsDeploymentName, false, goodUser, badUser, superuser).build());
-        clientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsDeploymentName).get(0).getMetadata().getName();
     }
 
     @AfterAll

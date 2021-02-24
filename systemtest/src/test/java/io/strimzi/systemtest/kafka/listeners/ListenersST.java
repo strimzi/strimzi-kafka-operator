@@ -382,7 +382,7 @@ public class ListenersST extends AbstractST {
                     .endListeners()
                     .withConfig(singletonMap("default.replication.factor", 3))
                     .editOrNewTemplate()
-                        .withNewClusterRoleBinding() 
+                        .withNewClusterRoleBinding()
                             .withNewMetadata()
                                 .withAnnotations(anno)
                                 .withLabels(label)

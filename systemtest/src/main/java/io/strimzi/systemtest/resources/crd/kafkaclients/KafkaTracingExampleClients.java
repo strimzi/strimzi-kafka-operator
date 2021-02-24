@@ -4,11 +4,9 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.HashMap;
@@ -133,7 +131,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
             .withJaegerServiceProducerName(getJaegerServiceProducerName())
             .withJaegerServiceConsumerName(getJaegerServiceConsumerName())
             .withJaegerServiceStreamsName(getJaegerServiceStreamsName())
-            .withJaegerServiceAgentName(getJaegerServiceAgentName());
+            .withJaegerServiceAgentName(getJaegerServiceAgentName())
             .withStreamsTopicTargetName(getStreamsTopicTargetName());
     }
 

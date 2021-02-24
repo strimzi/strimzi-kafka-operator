@@ -480,11 +480,9 @@ public class OauthTlsST extends OauthAbstractST {
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
-        setupCoAndKeycloak(extensionContext);
-
         super.beforeAllMayOverride(extensionContext);
         // for namespace
-        super.beforeAllOverrideMe(extensionContext, NAMESPACE);
+        super.setupCoAndKeycloak(extensionContext, NAMESPACE);
 
         keycloakInstance.setRealm("internal", true);
 
