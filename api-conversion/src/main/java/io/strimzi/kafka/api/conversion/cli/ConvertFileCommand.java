@@ -31,17 +31,17 @@ import java.util.List;
 public class ConvertFileCommand extends AbstractConversionCommand {
     private static final TypeReference<JsonNode> JSON_NODE_TYPE_REFERENCE = new TypeReference<JsonNode>() { };
 
-    @CommandLine.Option(names = {"-f", "--file"}, description = "The YAML file with the Strimzi Custom Resource which should be converted", required = true)
+    @CommandLine.Option(names = {"-f", "--file"}, description = "Specifies the YAML file for the custom resource being converted", required = true)
     File inputFile;
 
     @CommandLine.ArgGroup
     Exclusive exclusive;
 
     static class Exclusive {
-        @CommandLine.Option(names = {"-o", "--output"}, description = "The output YAML file with the converted Strimzi Custom Resource")
+        @CommandLine.Option(names = {"-o", "--output"}, description = "Creates an output YAML file for the converted custom resource")
         File outputFile;
 
-        @CommandLine.Option(names = {"--in-place"}, description = "Apply the changes directly to the input file specified by --file", defaultValue = "false")
+        @CommandLine.Option(names = {"--in-place"}, description = "Applies the changes directly to the input file specified by --file", defaultValue = "false")
         boolean inPlace;
     }
 

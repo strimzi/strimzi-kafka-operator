@@ -15,10 +15,10 @@ public abstract class AbstractCommand implements Runnable {
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
-    @CommandLine.Option(names = {"-d", "--debug"}, description = "Use debug")
+    @CommandLine.Option(names = {"-d", "--debug"}, description = "Runs the tool in debug mode")
     boolean debug;
 
-    @CommandLine.Option(names = {"-ll", "--log-level"}, description = "Set log level to enable logging")
+    @CommandLine.Option(names = {"-ll", "--log-level"}, description = "Sets the log level to enable logging")
     Level level;
 
     protected void println(Object value) {

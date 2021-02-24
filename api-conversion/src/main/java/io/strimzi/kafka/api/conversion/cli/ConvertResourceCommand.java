@@ -73,6 +73,10 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
 
     private KubernetesClient client;
 
+    static {
+        Crds.registerCustomKinds();
+    }
+
     /**
      * Gets resources of given kind from one or all namespaces
      *
@@ -196,7 +200,6 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
             String namespace;
             boolean allNamespaces;
             client = new DefaultKubernetesClient();
-            Crds.registerCustomKinds();
 
             // Handle the --namespace and --all-namespaces options
             if (exclusive == null)  {

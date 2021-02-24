@@ -24,7 +24,13 @@
             <directory>${project.basedir}</directory>
             <includes>
                 <include>README*</include>
-                <include>LICENSE*</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/..</directory>
+            <includes>
+                <include>LICENSE</include>
             </includes>
             <fileMode>0644</fileMode>
         </fileSet>
