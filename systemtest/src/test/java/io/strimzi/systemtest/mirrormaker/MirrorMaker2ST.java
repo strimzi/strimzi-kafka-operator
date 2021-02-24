@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
@@ -37,16 +35,16 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -78,6 +76,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -903,7 +902,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @Test
     void testRestoreOffsetsInConsumerGroup() {
-        final String SYNC_GROUP_OFFSETS_INTERVAL_SECONDS = "1";
+        final String syncGroupOffsetsIntervalSeconds = "1";
         final String topicSourceNameMirrored = "test-sync-offset-" + new Random().nextInt(Integer.MAX_VALUE);
         final String topicTargetNameMirrored = kafkaClusterSourceName + "." + topicSourceNameMirrored;
         final String consumerGroup = "mm2-test-consumer-group";
@@ -911,41 +910,39 @@ class MirrorMaker2ST extends AbstractST {
         final String sourceConsumerName = "mm2-consumer-source-" + ClientUtils.generateRandomConsumerGroup();
         final String targetProducerName = "mm2-producer-target-" + ClientUtils.generateRandomConsumerGroup();
         final String targetConsumerName = "mm2-consumer-target-" + ClientUtils.generateRandomConsumerGroup();
+        final String mm2SrcTrgName = clusterName + "-src-trg";
+        final String mm2TrgSrcName = clusterName + "-trg-src";
 
         // Deploy source kafka
-        KafkaResource.kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(
-                KafkaResource.kafkaPersistent(kafkaClusterSourceName, 3, 3).build()
-        );
-        // Deploy target kafka
-        KafkaResource.kafkaClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(
-                KafkaResource.kafkaPersistent(kafkaClusterTargetName, 3, 3).build()
-        );
-        // wait for Kafka clusters readiness
-        waitForReadinessOfKafkaCluster(kafkaClusterSourceName, 3, 3, 1);
-        waitForReadinessOfKafkaCluster(kafkaClusterTargetName, 3, 3, 1);
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaPersistent(kafkaClusterSourceName, 1, 1).build());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceNameMirrored, 3).build());
+        // Deploy target kafka
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaPersistent(kafkaClusterTargetName, 1, 1).build());
+
+        // Wait for Kafka clusters readiness
+        KafkaUtils.waitForKafkaReady(kafkaClusterSourceName);
+        KafkaUtils.waitForKafkaReady(kafkaClusterTargetName);
 
         // MM2 Active (S) <-> Active (T) // direction S -> T mirroring
-        // Note: replication.factor(s) to 1 are added just to speed up test
-        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        // TODO: replication.factor(s) to 1 are added just to speed up test
+        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(mm2TrgSrcName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
             .editFirstMirror()
             .editSourceConnector()
                 .addToConfig("refresh.topics.interval.seconds", "1")
-//                .addToConfig("replication.factor", "1")
-//                .addToConfig("offset-syncs.topic.replication.factor", "1")
+                .addToConfig("replication.factor", "1")
+                .addToConfig("offset-syncs.topic.replication.factor", "1")
             .endSourceConnector()
             .editCheckpointConnector()
                 .addToConfig("refresh.groups.interval.seconds", "1")
                 .addToConfig("sync.group.offsets.enabled", "true")
-                .addToConfig("sync.group.offsets.interval.seconds", SYNC_GROUP_OFFSETS_INTERVAL_SECONDS)
+                .addToConfig("sync.group.offsets.interval.seconds", syncGroupOffsetsIntervalSeconds)
                 .addToConfig("emit.checkpoints.enabled", "true")
                 .addToConfig("emit.checkpoints.interval.seconds", "1")
-//                .addToConfig("checkpoints.topic.replication.factor", "1")
+                .addToConfig("checkpoints.topic.replication.factor", "1")
             .endCheckpointConnector()
             .editHeartbeatConnector()
-//                .addToConfig("heartbeats.topic.replication.factor", "1")
+                .addToConfig("heartbeats.topic.replication.factor", "1")
             .endHeartbeatConnector()
                 .withTopicsPattern(".*")
                 .withGroupsPattern(".*")
@@ -953,34 +950,31 @@ class MirrorMaker2ST extends AbstractST {
             .endSpec().build());
 
         // MM2 Active (S) <-> Active (T) // direction S <- T mirroring
-        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(clusterName, kafkaClusterSourceName, kafkaClusterTargetName, 1, false)
+        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(mm2SrcTrgName, kafkaClusterSourceName, kafkaClusterTargetName, 1, false)
                 .editSpec()
                 .editFirstMirror()
                     .editSourceConnector()
                     .addToConfig("refresh.topics.interval.seconds", "1")
-//                    .addToConfig("replication.factor", "1")
-//                    .addToConfig("offset-syncs.topic.replication.factor", "1")
+                    .addToConfig("replication.factor", "1")
+                    .addToConfig("offset-syncs.topic.replication.factor", "1")
                     .endSourceConnector()
                     .editCheckpointConnector()
                     .addToConfig("refresh.groups.interval.seconds", "1")
                     .addToConfig("sync.group.offsets.enabled", "true")
-                    .addToConfig("sync.group.offsets.interval.seconds", SYNC_GROUP_OFFSETS_INTERVAL_SECONDS)
+                    .addToConfig("sync.group.offsets.interval.seconds", syncGroupOffsetsIntervalSeconds)
                     .addToConfig("emit.checkpoints.enabled", "true")
                     .addToConfig("emit.checkpoints.interval.seconds", "1")
-//                    .addToConfig("checkpoints.topic.replication.factor", "1")
+                    .addToConfig("checkpoints.topic.replication.factor", "1")
                     .endCheckpointConnector()
                     .editHeartbeatConnector()
-//                    .addToConfig("heartbeats.topic.replication.factor", "1")
+                    .addToConfig("heartbeats.topic.replication.factor", "1")
                     .endHeartbeatConnector()
                     .withTopicsPattern(".*")
                     .withGroupsPattern(".*")
                 .endMirror()
                 .endSpec().build());
 
-        // Deploy Topic
-//        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceNameMirrored, 3).build());
-
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceNameMirrored, 3).build());
 
         KafkaBasicExampleClients internalClientSourceJob = new KafkaBasicExampleClients.Builder()
                 .withProducerName(sourceProducerName)
@@ -992,7 +986,7 @@ class MirrorMaker2ST extends AbstractST {
                 .withConsumerGroup(consumerGroup)
                 .build();
 
-        KafkaBasicExampleClients internalClientTargetJob = new KafkaBasicExampleClients.Builder()
+        KafkaBasicExampleClients initialInternalClientTargetJob = new KafkaBasicExampleClients.Builder()
                 .withProducerName(targetProducerName)
                 .withConsumerName(targetConsumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
@@ -1016,10 +1010,10 @@ class MirrorMaker2ST extends AbstractST {
         internalClientSourceJob = internalClientSourceJob.toBuilder().withMessage("Producer B").build();
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
-        LOGGER.info("Wait {} secs -> sync.group.offsets.interval.seconds, check msgs in target cluster", SYNC_GROUP_OFFSETS_INTERVAL_SECONDS);
-        waitForMM2OffsetIntervalMirroring(SYNC_GROUP_OFFSETS_INTERVAL_SECONDS);
+        LOGGER.info("Wait {} secs -> sync.group.offsets.interval.seconds, check msgs in target cluster", syncGroupOffsetsIntervalSeconds);
+        waitForMM2OffsetIntervalMirroring(syncGroupOffsetsIntervalSeconds);
 
-        internalClientTargetJob.createAndWaitForReadiness(internalClientTargetJob.consumerStrimzi().build());
+        initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
         JobUtils.deleteJobWithWait(NAMESPACE, targetConsumerName);
@@ -1031,33 +1025,29 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, 50);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
 
-        waitForMM2OffsetIntervalMirroring(SYNC_GROUP_OFFSETS_INTERVAL_SECONDS);
+        waitForMM2OffsetIntervalMirroring(syncGroupOffsetsIntervalSeconds);
 
         LOGGER.info("Receive 10 msgs from source cluster");
-        internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(10).build();
+        internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(10).withAdditionalConfig("max.poll.records=10").build();
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceConsumerName, NAMESPACE, 10);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceConsumerName);
 
-        // wait N secs -> sync.group.offsets.interval.seconds, check msgs in target cluster
-        waitForMM2OffsetIntervalMirroring(SYNC_GROUP_OFFSETS_INTERVAL_SECONDS);
+        waitForMM2OffsetIntervalMirroring(syncGroupOffsetsIntervalSeconds);
 
         LOGGER.info("Receive 40 msgs from target cluster");
-        internalClientTargetJob = internalClientTargetJob.toBuilder().withMessageCount(40).build();
-//        internalClientTargetJob = internalClientTargetJob.toBuilder().withMessageCount(40).withAdditionalConfig(createNewConsumerCliendId("lala")).build();
+        KafkaBasicExampleClients internalClientTargetJob = initialInternalClientTargetJob.toBuilder().withMessageCount(40).withAdditionalConfig("max.poll.records=40").build();
         internalClientTargetJob.createAndWaitForReadiness(internalClientTargetJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, 40);
         JobUtils.deleteJobWithWait(NAMESPACE, targetConsumerName);
 
-//        assertThat("Expected to receive 40 messages.", receivedMessagesTargetPart2 == 40);
-//        internalKafkaClientTarget.checkProducedAndConsumedMessages(sentMessagesSource, receivedMessagesTarget + receivedMessagesTargetPart2);
-    }
-
-    private String createNewConsumerCliendId(String prefix) {
-        return  "client.id=" + prefix + "-id-" + consumerCounter++;
+        // There should be no more messages to read
+        initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
+        assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, 1));
     }
 
     void waitForMM2OffsetIntervalMirroring(String timeout) {
+        // wait sync.group.offsets.interval.seconds to sync in target cluster
         try {
             Thread.sleep(Duration.ofSeconds(Long.parseLong(timeout)).toMillis());
         } catch (InterruptedException e) {
@@ -1085,14 +1075,5 @@ class MirrorMaker2ST extends AbstractST {
             LOGGER.info("Topic {} deleted", kafkaTopic.getMetadata().getName());
             KafkaTopicUtils.waitForKafkaTopicDeletion(kafkaTopic.getMetadata().getName());
         });
-    }
-
-    protected static void waitForReadinessOfKafkaCluster(String kafkaClusterName, int zookeeperPods, int kafkaPods, int entityOperatorPods) {
-        LOGGER.info("Waiting for Zookeeper StatefulSet");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(kafkaClusterName), zookeeperPods);
-        LOGGER.info("Waiting for Kafka StatefulSet");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(kafkaClusterName), kafkaPods);
-        LOGGER.info("Waiting for EO Deployment");
-        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(kafkaClusterName), entityOperatorPods);
     }
 }
