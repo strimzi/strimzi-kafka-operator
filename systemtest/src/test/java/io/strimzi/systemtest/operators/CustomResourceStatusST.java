@@ -109,6 +109,7 @@ class CustomResourceStatusST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusST.class);
     private static int topicOperatorReconciliationInterval;
     private static final String CUSTOM_RESOURCE_STATUS_CLUSTER_NAME = "custom-resource-status-cluster-name";
+    private static final String EXAMPLE_TOPIC_NAME = "example-topic-name";
 
     @ParallelTest
     @Tag(NODEPORT_SUPPORTED)

@@ -601,9 +601,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
     void setUp(ExtensionContext extensionContext)  {
         super.beforeAllMayOverride(extensionContext);
         // for namespace
-        super.beforeAllOverrideMe(extensionContext, NAMESPACE);
+        super.setupCoAndKeycloak(extensionContext, NAMESPACE);
 
-        setupCoAndKeycloak(extensionContext);
         keycloakInstance.setRealm(TEST_REALM, true);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)

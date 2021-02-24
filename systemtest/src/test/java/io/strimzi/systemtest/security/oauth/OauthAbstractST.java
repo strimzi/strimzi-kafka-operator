@@ -68,7 +68,7 @@ public class OauthAbstractST extends AbstractST {
 
     protected WebClient client;
     
-    protected void beforeAllOverrideMe(ExtensionContext extensionContext, String namespace) {
+    protected void setupCoAndKeycloak(ExtensionContext extensionContext, String namespace) {
 
         installClusterOperator(extensionContext, namespace);
         NetworkPolicyResource.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);

@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
@@ -29,7 +28,8 @@ public class KeycloakUtils {
 
     public static void deployKeycloak(String namespace) {
         LOGGER.info("Prepare Keycloak in namespace: {}", namespace);
-        ResourceManager.getPointerResources().push(() -> deleteKeycloak(namespace));
+        // TODO: how???
+//        ResourceManager.getPointerResources().push(() -> deleteKeycloak(namespace));
 
         // This is needed because from time to time the first try fails on Azure
         TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {
