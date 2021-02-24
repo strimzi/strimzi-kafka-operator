@@ -6,7 +6,7 @@
 
 = Upgrading Kafka
 
-After you have upgraded your Cluster Operator, the next step is to upgrade all Kafka brokers to a later supported version of Kafka.
+After you have upgraded your Cluster Operator to {ProductVersion}, the next step is to upgrade all Kafka brokers to the latest supported version of Kafka.
 
 Kafka upgrades are performed by the Cluster Operator through rolling updates of the Kafka brokers. 
 
@@ -29,8 +29,10 @@ The Cluster Operator initiates rolling updates based on the Kafka cluster config
 
 |===
 
-Additional rolling updates occur if the new version of Kafka requires a new ZooKeeper version.
-//check the above statement is still accurate
+As part of the Kafka upgrade, the Cluster Operator initiates rolling updates for ZooKeeper.
+
+* A single rolling update occurs even if the ZooKeeper version is unchanged.
+* Additional rolling updates occur if the new version of Kafka requires a new ZooKeeper version.
 
 .Additional resources
 

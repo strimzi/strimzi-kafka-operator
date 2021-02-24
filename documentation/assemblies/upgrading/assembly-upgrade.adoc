@@ -6,26 +6,24 @@
 [id='assembly-upgrade-{context}']
 = Upgrading Strimzi
 
-Strimzi can be upgraded from a given version to a later version to take advantage of new features and enhancements, performance improvements, and security options.
+Strimzi can be upgraded to version {ProductVersion} to take advantage of new features and enhancements, performance improvements, and security options.
 
-As part of the upgrade, you upgrade Kafka to a later supported version. 
+As part of the upgrade, you upgrade Kafka to the latest supported version.  
 Each Kafka release introduces new features, improvements, and bug fixes to your Strimzi deployment.
 
-Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version if you encounter issues with a newer version.
+Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version if you encounter issues with the newer version.
 
 .Upgrade paths
 
 Two upgrade paths are possible:
 
 Incremental:: 
-Upgrading Strimzi from the current version to the next version.
-+
-For example, upgrading from Strimzi 0.20.1 to 0.21.0.
+Upgrading Strimzi from version 0.21.1 to version {ProductVersion}.
 
 Multi-version::
-Upgrading Strimzi from the current version to any later version within a single upgrade (skipping one or more intermediate versions).
+Upgrading Strimzi from an old version to version {ProductVersion} within a single upgrade (skipping one or more intermediate versions).
 +
-For example, upgrading from Strimzi 0.19.0 directly to Strimzi 0.21.0.
+For example, upgrading from Strimzi 0.20.0 directly to Strimzi {ProductVersion}.
 
 .Kafka version support
 
@@ -39,7 +37,7 @@ Decide which Kafka version to upgrade to before beginning the Strimzi upgrade pr
 
 [NOTE]
 ====
-You can upgrade to a later Kafka version as long as it is supported by your version of Strimzi. 
+You can upgrade to a higher Kafka version as long as it is supported by your version of Strimzi. 
 In some cases, you can also downgrade to a previous supported Kafka version.
 ====
 

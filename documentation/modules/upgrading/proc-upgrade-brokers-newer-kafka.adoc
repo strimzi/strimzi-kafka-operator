@@ -6,15 +6,15 @@
 
 = Upgrading Kafka brokers and client applications
 
-This procedure describes how to upgrade a Strimzi Kafka cluster to a later version of Kafka.
+This procedure describes how to upgrade a Strimzi Kafka cluster to the latest supported Kafka version.
 
 .Prerequisites
 
 For the `Kafka` resource to be upgraded, check:
 
 * The Cluster Operator, which supports both versions of Kafka, is up and running.
-* The `Kafka.spec.kafka.config` does _not_ contain options that are not supported in the version of Kafka that you are upgrading to.
-* Whether the `log.message.format.version` and `inter.broker.protocol.version` for the current Kafka version need to be updated for the new version.
+* The `Kafka.spec.kafka.config` does _not_ contain options that are not supported in the new Kafka version.
+* Whether the `log.message.format.version` and `inter.broker.protocol.version` for the current Kafka version need to be updated for the new Kafka version.
 xref:ref-kafka-versions-{context}[Consult the Kafka versions table].
 
 Also, consider the xref:con-strategies-for-upgrading-clients-{context}[strategies for upgrading clients]. 

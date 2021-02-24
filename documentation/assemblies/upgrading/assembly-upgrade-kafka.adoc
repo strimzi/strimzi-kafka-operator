@@ -8,13 +8,13 @@
 Upgrading Strimzi is a three-stage process. 
 To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the following order:
 
-. Update your Cluster Operator to a later Strimzi version.
+. Update your Cluster Operator to Strimzi version {ProductVersion}.
 +
 The approach you take depends on how you xref:cluster-operator-{context}[deployed the Cluster Operator].
 +
 * If you deployed the Cluster Operator using the installation YAML files, perform your upgrade by modifying the Operator installation files, as described in xref:assembly-upgrade-cluster-operator-{context}[Upgrading the Cluster Operator]. 
 +
-* If you deployed the Cluster Operator from {OperatorHub}, use the Operator Lifecycle Manager (OLM) to change the update channel for the Strimzi Operators to the new Strimzi version.
+* If you deployed the Cluster Operator from {OperatorHub}, use the Operator Lifecycle Manager (OLM) to change the update channel for the Strimzi Operators to the Strimzi version {ProductVersion}.
 +
 Depending on your chosen upgrade strategy, after updating the channel, either:
 +
@@ -24,7 +24,7 @@ Depending on your chosen upgrade strategy, after updating the channel, either:
 +
 For more information on using {OperatorHub} to upgrade Operators, see the {OLMOperatorDocs}.
 
-. Upgrade all Kafka brokers and client applications to a later supported Kafka version.
+. Upgrade all Kafka brokers and client applications to the latest supported Kafka version.
 +
 * xref:assembly-upgrading-kafka-versions-{context}[]
 * xref:con-strategies-for-upgrading-clients-{context}[] 
