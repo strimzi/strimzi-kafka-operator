@@ -155,7 +155,7 @@ public class KafkaConverter extends Converter<Kafka> {
                             apply(spec, bootstrapService);
                             apply(spec, podService); // called twice, so we nullify both
                         } else {
-                            throw new APIConversionFailedException("KafkaClusterSpec's ExternalBootstrapService and PerPodService (fields externalTrafficPolicy and/or loadBalancerSourceRanges) are not equal and cannot be converted automatically! Please resolve the issue manually and run the API conversion tool again.");
+                            throw new ApiConversionFailedException("KafkaClusterSpec's ExternalBootstrapService and PerPodService (fields externalTrafficPolicy and/or loadBalancerSourceRanges) are not equal and cannot be converted automatically! Please resolve the issue manually and run the API conversion tool again.");
                         }
                     } else if (bootstrapService != null) {
                         apply(spec, bootstrapService);

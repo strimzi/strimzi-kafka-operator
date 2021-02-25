@@ -63,7 +63,7 @@ Convert Custom Resources from YAML file
       -ll, --log-level=<level>
                            Sets the log level to enable logging
   -o, --output=<outputFile>
-                          Creates an output YAML file for the converted custom resource.
+                          Creates an output YAML file for the converted custom resource
 ```
 
 ## Converting Kubernetes resources

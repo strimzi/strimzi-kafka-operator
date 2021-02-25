@@ -93,7 +93,7 @@ public class ConversionUtil {
         if (value != null) {
             JsonNode target = get(node, toPath);
             if (target != null) {
-                throw new APIConversionFailedException("Cannot move " + fromPath + " to " + toPath + ". The target path already exists. Please resolve the issue manually and run the API conversion tool again.");
+                throw new ApiConversionFailedException("Cannot move " + fromPath + " to " + toPath + ". The target path already exists. Please resolve the issue manually and run the API conversion tool again.");
             }
 
             set(node, fromPath, null);

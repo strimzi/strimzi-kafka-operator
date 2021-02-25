@@ -249,7 +249,7 @@ public interface Conversion<T> {
                             Object originalValue = getValueFromPath(from, toPath, pu);
 
                             if (originalValue != null)  {
-                                throw new APIConversionFailedException("Cannot move " + fromPath + " to " + toPath + ". The target path already exists. Please resolve the issue manually and run the API conversion tool again.");
+                                throw new ApiConversionFailedException("Cannot move " + fromPath + " to " + toPath + ". The target path already exists. Please resolve the issue manually and run the API conversion tool again.");
                             }
 
                             property.set(target, null);

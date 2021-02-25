@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.kafka.api.conversion.converter.APIConversionFailedException;
+import io.strimzi.kafka.api.conversion.converter.ApiConversionFailedException;
 import io.strimzi.kafka.api.conversion.converter.MultipartConversions;
 import io.strimzi.kafka.api.conversion.converter.MultipartResource;
 import picocli.CommandLine;
@@ -162,7 +162,7 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
             getConverter(cr.getClass()).convertTo(cr, TO_API_VERSION);
             println(cr.getKind() + " resource named " + cr.getMetadata().getName() + " in namespace " + cr.getMetadata().getNamespace() + " has been converted");
             return cr;
-        } catch (APIConversionFailedException e)    {
+        } catch (ApiConversionFailedException e)    {
             println("Failed to convert " + cr.getKind() + " resource named " + cr.getMetadata().getName() + " in namespace " + cr.getMetadata().getNamespace() + ": " + e.getMessage());
             throw new RuntimeException("Failed to convert " + cr.getKind() + " resource named " + cr.getMetadata().getName() + " in namespace " + cr.getMetadata().getNamespace() + ": " + e.getMessage());
         }

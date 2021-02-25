@@ -7,8 +7,8 @@ package io.strimzi.kafka.api.conversion.converter;
 /**
  * Exception used to indicate an conversion issue
  */
-public class APIConversionFailedException extends RuntimeException {
-    public APIConversionFailedException(String s) {
+public class ApiConversionFailedException extends RuntimeException {
+    public ApiConversionFailedException(String s) {
         super(s);
     }
 }

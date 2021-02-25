@@ -129,13 +129,15 @@ public class ConvertFileCommand extends AbstractConversionCommand {
      * @throws IOException  Throws IOException if conversion to YAML fails
      */
     private void handleMultipartResources(YAMLMapper yamlMapper, Writer writer) throws IOException {
-        List<MultipartResource> resources = MultipartConversions.get().getResources();
+        try {
+            List<MultipartResource> resources = MultipartConversions.get().getResources();
 
-        for (MultipartResource resource : resources) {
-            writer.write(yamlMapper.writeValueAsString(resource.getResource()));
+            for (MultipartResource resource : resources) {
+                writer.write(yamlMapper.writeValueAsString(resource.getResource()));
+            }
+        } finally {
+            MultipartConversions.remove();
         }
-
-        MultipartConversions.remove();
     }
 
 
