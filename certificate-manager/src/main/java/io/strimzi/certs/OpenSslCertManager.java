@@ -285,7 +285,10 @@ public class OpenSslCertManager implements CertManager {
         }
 
         // We need to remove CA serial file
-        Files.deleteIfExists(Paths.get(caCert.getPath().replace(".crt", ".srl")));
+        Path path = Paths.get(caCert.getPath().replaceAll(".[a-zA-Z0-9]+$", ".srl"));
+        if (Files.exists(path)) {
+            Files.delete(path);
+        }
     }
 
     private Path createDefaultConfig() throws IOException {
