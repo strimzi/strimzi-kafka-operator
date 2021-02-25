@@ -901,6 +901,7 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testRestoreOffsetsInConsumerGroup() {
         final String syncGroupOffsetsIntervalSeconds = "1";
         final String topicSourceNameMirrored = "test-sync-offset-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -976,7 +977,7 @@ class MirrorMaker2ST extends AbstractST {
 
         KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceNameMirrored, 3).build());
 
-        KafkaBasicExampleClients internalClientSourceJob = new KafkaBasicExampleClients.Builder()
+        KafkaBasicExampleClients initialInternalClientSourceJob = new KafkaBasicExampleClients.Builder()
                 .withProducerName(sourceProducerName)
                 .withConsumerName(sourceConsumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
@@ -999,16 +1000,16 @@ class MirrorMaker2ST extends AbstractST {
                 AVAILABILITY_TOPIC_SOURCE_NAME, kafkaClusterSourceName, MESSAGE_COUNT);
 
         LOGGER.info("Send & receive {} messages to/from Source cluster.", MESSAGE_COUNT);
-        internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
+        initialInternalClientSourceJob.createAndWaitForReadiness(initialInternalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
-        internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.consumerStrimzi().build());
+        initialInternalClientSourceJob.createAndWaitForReadiness(initialInternalClientSourceJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceConsumerName, NAMESPACE, MESSAGE_COUNT);
 
         JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceConsumerName);
 
         LOGGER.info("Send {} messages to Source cluster.", MESSAGE_COUNT);
-        internalClientSourceJob = internalClientSourceJob.toBuilder().withMessage("Producer B").build();
+        KafkaBasicExampleClients internalClientSourceJob = initialInternalClientSourceJob.toBuilder().withMessage("Producer B").build();
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
 
@@ -1019,7 +1020,6 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
         JobUtils.deleteJobWithWait(NAMESPACE, targetConsumerName);
-
 
         LOGGER.info("Send 50 messages to Source cluster");
         internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(50).withMessage("Producer C").build();
@@ -1047,6 +1047,11 @@ class MirrorMaker2ST extends AbstractST {
                 "This client job should fail on timeout.");
         initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
         assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, 1));
+
+        LOGGER.info("As it's Active-Active MM2 mode, there should be no more messages to read from Source cluster" +
+                " topic. This client job should fail on timeout.");
+        initialInternalClientSourceJob.createAndWaitForReadiness(initialInternalClientSourceJob.consumerStrimzi().build());
+        assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(sourceConsumerName, NAMESPACE, 1));
     }
 
     void waitForMM2OffsetIntervalMirroring(String timeout) {
