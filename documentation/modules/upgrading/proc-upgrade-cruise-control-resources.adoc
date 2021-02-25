@@ -10,21 +10,82 @@
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `RESOURCENAME` resource in your deployment.
+Execute the following steps for each `Kafka.spec.cruiseControl` configuration in your Kafka cluster.
 
-. Update the `RESOURCENAME` resource in an editor.
+. Update the `Kafka` resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit NAME _NAME_
+kubectl edit kafka _my-cluster_
 ----
 
-. Step
+. If `type: external` logging is configured in `.spec.cruiseControl.logging`:
++
+Replace the `name` of the ConfigMap containing the logging configuration:
++
+[source,yaml,subs="attributes+"]
+----
+logging:
+  type: external
+  name: my-config-map
+----
++
+With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
++
+[source,yaml,subs="attributes+"]
+----
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: my-config-map
+      key: log4j2.properties
+----
 
-. Step
+. If the `.spec.cruiseControl.metrics` field is used to enable metrics:
 
-. Step
+.. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
+The YAML is the same as that currently defined in `.spec.cruiseControl.metrics`.
++
+[source,yaml,subs="attributes+"]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kafka-metrics
+  labels:
+    app: strimzi
+data:
+  cruise-control-metrics-config.yml: |
+      <YAML>
+----
 
-. Step
+.. Create a new `.spec.cruiseControl.metricsConfig` field pointing to the ConfigMap and key:
++
+[source,yaml,subs="attributes+"]
+----
+metricsConfig:
+  type: jmxPrometheusExporter
+  valueFrom:
+    configMapKeyRef:
+      name: kafka-metrics
+      key: cruise-control-metrics-config.yml
+----
+
+.. Delete the old `.spec.cruiseControl.metrics` field.
+
+. Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaApiVersion}
+----
 
 . Save the file, exit the editor and wait for the updated resource to be reconciled.
