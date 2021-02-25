@@ -75,6 +75,10 @@
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>test</artifactId>
+        </dependency>
 
     </dependencies>
     <build>

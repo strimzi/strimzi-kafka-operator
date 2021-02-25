@@ -208,6 +208,8 @@ public interface Conversion<T> {
             V value = (V) lastProperty.get(to);
             V newValue = fn.apply(value);
             lastProperty.set(to, newValue);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -227,22 +229,34 @@ public interface Conversion<T> {
                     pu.setBeanAccess(BeanAccess.PROPERTY);
                     List<String> fromNames = pathTokens(fromPath);
                     Object target = from;
+
                     for (int i = 0; i < fromNames.size(); i++) {
                         Class<?> targetClass = target.getClass();
                         String name = fromNames.get(i);
                         Property property = pu.getProperty(targetClass, name);
+
                         if (property == null || !property.isReadable()) {
                             break;
                         }
+
                         Object value = property.get(target);
+
                         if (value == null) {
                             break;
                         }
+
                         if (i == fromNames.size() - 1) {
+                            Object originalValue = getValueFromPath(from, toPath, pu);
+
+                            if (originalValue != null)  {
+                                throw new APIConversionFailedException("Cannot move " + fromPath + " to " + toPath + ". The target path already exists. Please resolve the issue manually and run the API conversion tool again.");
+                            }
+
                             property.set(target, null);
                             replace(toPath, from, pu, v -> value, true);
                             break;
                         }
+
                         target = value;
                     }
                 } catch (RuntimeException e) {
@@ -250,6 +264,35 @@ public interface Conversion<T> {
                 } catch (Exception e) {
                     throw new IllegalStateException(e);
                 }
+            }
+
+            private Object getValueFromPath(T from, String path, PropertyUtils pu)   {
+                List<String> pathNames = pathTokens(path);
+                Object target = from;
+
+                for (int i = 0; i < pathNames.size(); i++) {
+                    Class<?> targetClass = target.getClass();
+                    String name = pathNames.get(i);
+                    Property property = pu.getProperty(targetClass, name);
+
+                    if (property == null || !property.isReadable()) {
+                        return null;
+                    }
+
+                    Object value = property.get(target);
+
+                    if (value == null) {
+                        return null;
+                    }
+
+                    if (i == pathNames.size() - 1) {
+                        return value;
+                    }
+
+                    target = value;
+                }
+
+                return null;
             }
 
             @Override
