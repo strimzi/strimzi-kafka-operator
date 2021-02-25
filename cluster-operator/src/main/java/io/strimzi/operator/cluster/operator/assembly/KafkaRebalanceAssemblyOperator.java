@@ -50,6 +50,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -270,7 +271,10 @@ public class KafkaRebalanceAssemblyOperator
 
             Condition cond = rebalanceStateCondition(desiredStatus);
 
-            List<Condition> previous = desiredStatus.getConditions().stream().filter(condition -> condition != cond).collect(Collectors.toList());
+            List<Condition> previous = Collections.emptyList();
+            if (desiredStatus.getConditions() != null) {
+                previous = desiredStatus.getConditions().stream().filter(condition -> condition != cond).collect(Collectors.toList());
+            }
             String rebalanceType = rebalanceStateConditionType(desiredStatus);
 
             // If a throwable is supplied, it is set in the status with priority
