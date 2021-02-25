@@ -1,7 +1,7 @@
 # API Conversion CLI Tool
 
-With Strimzi's CRD evolving, there needs to be a way to easily migrate existing CR configuration to the new CRD schema.
-That is why we introduced the `v1beta2` version of the schema which removes several deprecated fields.
+With Strimzi's CRD evolving, there needs to be a way to easily migrate existing custom resource configuration to the new CRD schema.
+That is why we introduced the `v1beta2` version of the schema, which removes several deprecated fields.
 To make it as easy as possible to convert existing Strimzi custom resources, a conversion tool is provided.
 
 The tool can operate in two modes:
@@ -28,11 +28,11 @@ One way to use the tool is to convert YAML files.
 The converted YAML files can be applied to your Kubernetes cluster either directly or for example using GitOps mechanism.
 The input YAML file is specified using the `--file` option.
 
-The converted YAML will be by default printed to standard output.
+By default, the converted YAML is printed to standard output.
 You can use the `--in-place` option to write the converted YAML into the original source file.
 Alternatively, you can create a new YAML file for the conversion using the `--output` option.
 
-Following example commands show how the tool can be used:
+The following example commands show how the tool is used:
 
 ```
 # Convert input.yaml and print the converted resource to standard output
@@ -46,8 +46,8 @@ bin/api-conversion.sh convert-file --file input.yaml --output output.yaml
 ```
 
 The convertor supports multi-document YAMLs.
-When your input YAML contains multiple Strimzi custom resources, they will be all converted.
-If the input YAML also contains any other Kubernetes resources, they will be kept in the output file without being modified.
+When your input YAML contains multiple Strimzi custom resources, they are all converted.
+If the input YAML also contains any other Kubernetes resources, they are kept in the output file without being modified.
 
 You can also list the help for the file conversion:
 
@@ -71,15 +71,15 @@ Convert Custom Resources from YAML file
 You can also use the tool to convert Strimzi custom resources directly in your Kubernetes cluster.
 
 You can use the `--kind` option to specify one or more kinds of Strimzi resources.
-If you do not specify any Kind, the tool will convert Strimzi resources of all kinds.
+If you do not specify any kind, the tool will convert Strimzi resources of all kinds.
 
-The `--namespace` option can be used to specify a namespace in which the resources should be converted.
+The `--namespace` option targets the custom resources in a specified namespace for conversion.
 You can also use `--all-namespace` to convert resources in the whole Kubernetes cluster.
-When neither `--namespace` nor `--all-namespace` is specified your current namespace will used.
+If  `--namespace` and `--all-namespace` are not specified, your current namespace is used.
 
-If you want to convert only one resource, you can also use the combination of `--name` and `--kind` options.
+If you want to convert only one resource, you can also use a combination of `--name` and `--kind` options.
 
-Following example commands show how the tool can be used:
+The following example commands show how the tool is used:
 
 ```
 # Converts all Strimzi resources in current namespace
