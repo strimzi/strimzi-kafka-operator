@@ -44,7 +44,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -52,7 +51,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +74,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -1013,7 +1010,7 @@ class MirrorMaker2ST extends AbstractST {
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
 
-        waitForMM2OffsetIntervalMirroring(syncGroupOffsetsIntervalSeconds);
+        LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
 
         LOGGER.info("Receive {} messages from mirrored topic on Target cluster.", MESSAGE_COUNT);
         initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
@@ -1027,15 +1024,14 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, 50);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
 
-        waitForMM2OffsetIntervalMirroring(syncGroupOffsetsIntervalSeconds);
-
+        LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
         LOGGER.info("Receive 10 msgs from source cluster");
         internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(10).withAdditionalConfig("max.poll.records=10").build();
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceConsumerName, NAMESPACE, 10);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceConsumerName);
 
-        waitForMM2OffsetIntervalMirroring(syncGroupOffsetsIntervalSeconds);
+        LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
 
         LOGGER.info("Receive 40 msgs from mirrored topic on Target cluster");
         KafkaBasicExampleClients internalClientTargetJob = initialInternalClientTargetJob.toBuilder().withMessageCount(40).build();
@@ -1046,22 +1042,12 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("There should be no more messages to read. Try to consume at least 1 message. " +
                 "This client job should fail on timeout.");
         initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
-        assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, 1));
+        ClientUtils.waitForClientTimeout(targetConsumerName, NAMESPACE, 1);
 
         LOGGER.info("As it's Active-Active MM2 mode, there should be no more messages to read from Source cluster" +
                 " topic. This client job should fail on timeout.");
         initialInternalClientSourceJob.createAndWaitForReadiness(initialInternalClientSourceJob.consumerStrimzi().build());
-        assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(sourceConsumerName, NAMESPACE, 1));
-    }
-
-    void waitForMM2OffsetIntervalMirroring(String timeout) {
-        // wait sync.group.offsets.interval.seconds to sync in target cluster
-        LOGGER.info("Wait {} secs -> sync.group.offsets.interval.seconds, check msgs in target cluster", timeout);
-        try {
-            Thread.sleep(Duration.ofSeconds(Long.parseLong(timeout)).toMillis());
-        } catch (InterruptedException e) {
-            LOGGER.error("Error while waiting on syncGroupOffsetsIntervalSeconds");
-        }
+        ClientUtils.waitForClientTimeout(sourceConsumerName, NAMESPACE, 1);
     }
 
     @BeforeAll
