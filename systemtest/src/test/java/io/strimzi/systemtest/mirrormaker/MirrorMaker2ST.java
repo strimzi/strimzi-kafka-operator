@@ -924,7 +924,7 @@ class MirrorMaker2ST extends AbstractST {
         KafkaUtils.waitForKafkaReady(kafkaClusterTargetName);
 
         // MM2 Active (S) <-> Active (T) // direction S -> T mirroring
-        // TODO: replication.factor(s) to 1 are added just to speed up test
+        // *.replication.factor(s) to 1 are added just to speed up test by using only 1 ZK and 1 Kafka
         KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(mm2TrgSrcName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
             .editFirstMirror()
@@ -998,6 +998,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
                 AVAILABILITY_TOPIC_SOURCE_NAME, kafkaClusterSourceName, MESSAGE_COUNT);
 
+        LOGGER.info("Send & receive {} messages to/from Source cluster.", MESSAGE_COUNT);
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.consumerStrimzi().build());
@@ -1006,20 +1007,21 @@ class MirrorMaker2ST extends AbstractST {
         JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceConsumerName);
 
-
+        LOGGER.info("Send {} messages to Source cluster.", MESSAGE_COUNT);
         internalClientSourceJob = internalClientSourceJob.toBuilder().withMessage("Producer B").build();
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
-        LOGGER.info("Wait {} secs -> sync.group.offsets.interval.seconds, check msgs in target cluster", syncGroupOffsetsIntervalSeconds);
+
         waitForMM2OffsetIntervalMirroring(syncGroupOffsetsIntervalSeconds);
 
+        LOGGER.info("Receive {} messages from mirrored topic on Target cluster.", MESSAGE_COUNT);
         initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
         JobUtils.deleteJobWithWait(NAMESPACE, targetConsumerName);
 
 
-        LOGGER.info("Send 50 msgs to Source cluster");
+        LOGGER.info("Send 50 messages to Source cluster");
         internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(50).withMessage("Producer C").build();
         internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, 50);
@@ -1035,23 +1037,25 @@ class MirrorMaker2ST extends AbstractST {
 
         waitForMM2OffsetIntervalMirroring(syncGroupOffsetsIntervalSeconds);
 
-        LOGGER.info("Receive 40 msgs from target cluster");
-        KafkaBasicExampleClients internalClientTargetJob = initialInternalClientTargetJob.toBuilder().withMessageCount(40).withAdditionalConfig("max.poll.records=40").build();
+        LOGGER.info("Receive 40 msgs from mirrored topic on Target cluster");
+        KafkaBasicExampleClients internalClientTargetJob = initialInternalClientTargetJob.toBuilder().withMessageCount(40).build();
         internalClientTargetJob.createAndWaitForReadiness(internalClientTargetJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, 40);
         JobUtils.deleteJobWithWait(NAMESPACE, targetConsumerName);
 
-        // There should be no more messages to read
+        LOGGER.info("There should be no more messages to read. Try to consume at least 1 message. " +
+                "This client job should fail on timeout.");
         initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
         assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, 1));
     }
 
     void waitForMM2OffsetIntervalMirroring(String timeout) {
         // wait sync.group.offsets.interval.seconds to sync in target cluster
+        LOGGER.info("Wait {} secs -> sync.group.offsets.interval.seconds, check msgs in target cluster", timeout);
         try {
             Thread.sleep(Duration.ofSeconds(Long.parseLong(timeout)).toMillis());
         } catch (InterruptedException e) {
-            LOGGER.error("Error while waiting on SYNC_GROUP_OFFSETS_INTERVAL_SECONDS");
+            LOGGER.error("Error while waiting on syncGroupOffsetsIntervalSeconds");
         }
     }
 
