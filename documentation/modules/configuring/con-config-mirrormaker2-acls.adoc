@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-mirrormaker.adoc
+// assembly-config-mirrormaker2.adoc
 
 [id='con-mirrormaker-acls-{context}']
 = ACL rules synchronization
