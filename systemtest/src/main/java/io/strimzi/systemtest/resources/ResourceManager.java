@@ -133,6 +133,8 @@ public class ResourceManager {
 
     @SafeVarargs
     public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
+        LOGGER.warn("Resources are:");
+        LOGGER.warn(resources);
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
             if (type == null) {
@@ -211,13 +213,13 @@ public class ResourceManager {
         while (!timeout.timeoutExpired()) {
             T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             if (condition.test(res)) {
-                LOGGER.info("Resource {} in namespace {} is ready!", resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                LOGGER.info("Resource {} in namespace {} is {}}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
                 return true;
             }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                LOGGER.info("Resource {} in namespace {} is not ready!", resource.getMetadata().getName(), resource.getMetadata().getNamespace());
+                LOGGER.info("Resource {} in namespace {} is not {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
                 Thread.currentThread().interrupt();
                 return false;
             }

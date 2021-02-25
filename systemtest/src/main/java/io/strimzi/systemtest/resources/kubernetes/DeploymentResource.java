@@ -11,10 +11,15 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class DeploymentResource implements ResourceType<Deployment> {
+
+    private static final Logger LOGGER = LogManager.getLogger(DeploymentResource.class);
+
 
     @Override
     public String getKind() {
@@ -22,7 +27,9 @@ public class DeploymentResource implements ResourceType<Deployment> {
     }
     @Override
     public Deployment get(String namespace, String name) {
-        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+        Deployment dep = ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+        LOGGER.info("sranec: {}", dep);
+        return dep;
     }
     @Override
     public void create(Deployment resource) {
@@ -35,6 +42,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
 
     @Override
     public boolean isReady(Deployment resource) {
+        LOGGER.info("IsReady: {}", resource);
         return DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
 
     }
