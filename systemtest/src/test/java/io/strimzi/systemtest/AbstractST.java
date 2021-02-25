@@ -828,7 +828,9 @@ public abstract class AbstractST implements TestSeparator {
             mapTestWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
             mapTestWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
 
-            LOGGER.info("THIS IS MAP:\n{}", mapTestWithClusterNames);
+            LOGGER.info("CLUSTER_NAMES_MAP: \n{}", mapTestWithClusterNames);
+            LOGGER.info("USERS_NAME_MAP: \n{}", mapTestWithTestUsers);
+            LOGGER.info("TOPIC_NAMES_MAP: \n{}", mapTestWithTestTopics);
             LOGGER.info("============THIS IS CLIENTS MAP:\n{}", mapTestWithKafkaClientNames);
         }
     }
