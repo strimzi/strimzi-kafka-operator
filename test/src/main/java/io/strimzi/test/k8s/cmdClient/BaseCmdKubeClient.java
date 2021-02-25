@@ -392,6 +392,11 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    public String getResources(String resourceType) {
+        return Exec.exec(namespacedCommand("get", resourceType)).out();
+    }
+
+    @Override
     public String getResourcesAsYaml(String resourceType) {
         return Exec.exec(namespacedCommand("get", resourceType, "-o", "yaml")).out();
     }
@@ -456,5 +461,20 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     public List<String> listResourcesByLabel(String resourceType, String label) {
         return asList(Exec.exec(namespacedCommand("get", resourceType, "-l", label, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().split("\\s+"));
+    }
+
+    @Override
+    public String getResourceJsonPath(String resourceType, String resourceName, String path) {
+        return Exec.exec(namespacedCommand("get", resourceType, "-o", "jsonpath={.items[?(.metadata.name==\"" + resourceName + "\")]" + path + "}")).out().trim();
+    }
+
+    @Override
+    public boolean getResourceReadiness(String resourceType, String resourceName) {
+        return Exec.exec(namespacedCommand("get", resourceType, "-o", "jsonpath={.items[?(.metadata.name==\"" + resourceName + "\")].status.conditions[?(.type==\"Ready\")].status}")).out().contains("True");
+    }
+
+    @Override
+    public void patchResource(String resourceType, String resourceName, String patchPath, String value) {
+        Exec.exec(namespacedCommand("patch", resourceType, resourceName, "--type=json", "-p=[{\"op\": \"replace\",\"path\":\"" + patchPath + "\",\"value\":\"" + value + "\"}]"));
     }
 }

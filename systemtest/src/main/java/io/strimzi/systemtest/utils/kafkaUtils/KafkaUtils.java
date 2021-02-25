@@ -380,6 +380,10 @@ public class KafkaUtils {
     }
 
     public static String changeOrRemoveKafkaVersion(File file, String version) {
+        return changeOrRemoveKafkaConfiguration(file, version, null, null);
+    }
+
+    public static String changeOrRemoveKafkaConfiguration(File file, String version, String logMessageFormat, String interBrokerProtocol) {
         YAMLMapper mapper = new YAMLMapper();
         try {
             JsonNode node = mapper.readTree(file);
@@ -390,6 +394,12 @@ public class KafkaUtils {
             } else if (!version.equals("")) {
                 kafkaNode.put("version", version);
                 ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", version.substring(0, 3));
+            }
+            if (logMessageFormat != null) {
+                ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", logMessageFormat);
+            }
+            if (interBrokerProtocol != null) {
+                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", interBrokerProtocol);
             }
             return mapper.writeValueAsString(node);
         } catch (IOException e) {
