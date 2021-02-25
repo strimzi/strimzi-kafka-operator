@@ -231,4 +231,4 @@ You can use comma-separated lists.
 . Create or update the resource:
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _MIRRORMAKER-CONFIGURATION_FILE_
+kubectl apply -f _MIRRORMAKER-CONFIGURATION-FILE_
