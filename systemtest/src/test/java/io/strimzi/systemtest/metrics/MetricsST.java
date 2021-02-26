@@ -58,6 +58,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
@@ -76,6 +77,8 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
+import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -201,16 +204,12 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
 
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-
-        final String defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, topicName).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
+            .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(metricsClusterName)
@@ -224,13 +223,23 @@ public class MetricsST extends AbstractST {
         );
 
         kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
-        kafkaExporterMetricsData.forEach((key, value) -> {
-            assertThat("Value from collected metric should be non-empty", !value.isEmpty());
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_current_offset"));
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_lag"));
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + topicName + "\"} 7"));
-        });
+
+        TestUtils.waitFor(" metrics has all data", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+            () -> {
+                kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(kafkaClientsPodName, metricsClusterName);
+
+                // Kafka Exporter metrics should be non-empty
+                if (!(kafkaExporterMetricsData.size() > 0)) {
+                    return false;
+                }
+
+                for (Map.Entry<String, String> item : kafkaExporterMetricsData.entrySet()) {
+                    if (!item.getValue().isEmpty() == false) {
+                        return false;
+                    }
+                }
+                return true;
+            });
     }
 
     @ParallelTest
