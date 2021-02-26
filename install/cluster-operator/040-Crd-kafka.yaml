@@ -52,6 +52,11 @@ spec:
               kafka:
                 type: object
                 properties:
+                  version:
+                    type: string
+                    description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
+                      Consult the user documentation to understand the process required
+                      to upgrade or downgrade the version.
                   replicas:
                     type: integer
                     minimum: 1
@@ -60,124 +65,6 @@ spec:
                     type: string
                     description: The docker image for the pods. The default value
                       depends on the configured `Kafka.spec.kafka.version`.
-                  storage:
-                    type: object
-                    properties:
-                      class:
-                        type: string
-                        description: The storage class to use for dynamic volume allocation.
-                      deleteClaim:
-                        type: boolean
-                        description: Specifies if the persistent volume claim has
-                          to be deleted when the cluster is un-deployed.
-                      id:
-                        type: integer
-                        minimum: 0
-                        description: Storage identification number. It is mandatory
-                          only for storage volumes defined in a storage of type 'jbod'.
-                      overrides:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            class:
-                              type: string
-                              description: The storage class to use for dynamic volume
-                                allocation for this broker.
-                            broker:
-                              type: integer
-                              description: Id of the kafka broker (broker identifier).
-                        description: Overrides for individual brokers. The `overrides`
-                          field allows to specify a different configuration for different
-                          brokers.
-                      selector:
-                        type: object
-                        description: Specifies a specific persistent volume to use.
-                          It contains key:value pairs representing labels for selecting
-                          such a volume.
-                      size:
-                        type: string
-                        description: When type=persistent-claim, defines the size
-                          of the persistent volume claim (i.e 1Gi). Mandatory when
-                          type=persistent-claim.
-                      sizeLimit:
-                        type: string
-                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                        description: When type=ephemeral, defines the total amount
-                          of local storage required for this EmptyDir volume (for
-                          example 1Gi).
-                      type:
-                        type: string
-                        enum:
-                        - ephemeral
-                        - persistent-claim
-                        - jbod
-                        description: Storage type, must be either 'ephemeral', 'persistent-claim',
-                          or 'jbod'.
-                      volumes:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            class:
-                              type: string
-                              description: The storage class to use for dynamic volume
-                                allocation.
-                            deleteClaim:
-                              type: boolean
-                              description: Specifies if the persistent volume claim
-                                has to be deleted when the cluster is un-deployed.
-                            id:
-                              type: integer
-                              minimum: 0
-                              description: Storage identification number. It is mandatory
-                                only for storage volumes defined in a storage of type
-                                'jbod'.
-                            overrides:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  class:
-                                    type: string
-                                    description: The storage class to use for dynamic
-                                      volume allocation for this broker.
-                                  broker:
-                                    type: integer
-                                    description: Id of the kafka broker (broker identifier).
-                              description: Overrides for individual brokers. The `overrides`
-                                field allows to specify a different configuration
-                                for different brokers.
-                            selector:
-                              type: object
-                              description: Specifies a specific persistent volume
-                                to use. It contains key:value pairs representing labels
-                                for selecting such a volume.
-                            size:
-                              type: string
-                              description: When type=persistent-claim, defines the
-                                size of the persistent volume claim (i.e 1Gi). Mandatory
-                                when type=persistent-claim.
-                            sizeLimit:
-                              type: string
-                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                              description: When type=ephemeral, defines the total
-                                amount of local storage required for this EmptyDir
-                                volume (for example 1Gi).
-                            type:
-                              type: string
-                              enum:
-                              - ephemeral
-                              - persistent-claim
-                              description: Storage type, must be either 'ephemeral'
-                                or 'persistent-claim'.
-                          required:
-                          - type
-                        description: List of volumes as Storage objects representing
-                          the JBOD disks array.
-                    required:
-                    - type
-                    description: Storage configuration (disk). Cannot be updated.
                   listeners:
                     type: array
                     minItems: 1
@@ -669,6 +556,136 @@ spec:
                       - port
                       - type
                       - tls
+                  config:
+                    type: object
+                    description: 'Kafka broker config properties with the following
+                      prefixes cannot be set: listeners, advertised., broker., listener.,
+                      host.name, port, inter.broker.listener.name, sasl., ssl., security.,
+                      password., principal.builder.class, log.dir, zookeeper.connect,
+                      zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket,
+                      authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers
+                      (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
+                      ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
+                      cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries,
+                      cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).'
+                  storage:
+                    type: object
+                    properties:
+                      class:
+                        type: string
+                        description: The storage class to use for dynamic volume allocation.
+                      deleteClaim:
+                        type: boolean
+                        description: Specifies if the persistent volume claim has
+                          to be deleted when the cluster is un-deployed.
+                      id:
+                        type: integer
+                        minimum: 0
+                        description: Storage identification number. It is mandatory
+                          only for storage volumes defined in a storage of type 'jbod'.
+                      overrides:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            class:
+                              type: string
+                              description: The storage class to use for dynamic volume
+                                allocation for this broker.
+                            broker:
+                              type: integer
+                              description: Id of the kafka broker (broker identifier).
+                        description: Overrides for individual brokers. The `overrides`
+                          field allows to specify a different configuration for different
+                          brokers.
+                      selector:
+                        type: object
+                        description: Specifies a specific persistent volume to use.
+                          It contains key:value pairs representing labels for selecting
+                          such a volume.
+                      size:
+                        type: string
+                        description: When type=persistent-claim, defines the size
+                          of the persistent volume claim (i.e 1Gi). Mandatory when
+                          type=persistent-claim.
+                      sizeLimit:
+                        type: string
+                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                        description: When type=ephemeral, defines the total amount
+                          of local storage required for this EmptyDir volume (for
+                          example 1Gi).
+                      type:
+                        type: string
+                        enum:
+                        - ephemeral
+                        - persistent-claim
+                        - jbod
+                        description: Storage type, must be either 'ephemeral', 'persistent-claim',
+                          or 'jbod'.
+                      volumes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            class:
+                              type: string
+                              description: The storage class to use for dynamic volume
+                                allocation.
+                            deleteClaim:
+                              type: boolean
+                              description: Specifies if the persistent volume claim
+                                has to be deleted when the cluster is un-deployed.
+                            id:
+                              type: integer
+                              minimum: 0
+                              description: Storage identification number. It is mandatory
+                                only for storage volumes defined in a storage of type
+                                'jbod'.
+                            overrides:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  class:
+                                    type: string
+                                    description: The storage class to use for dynamic
+                                      volume allocation for this broker.
+                                  broker:
+                                    type: integer
+                                    description: Id of the kafka broker (broker identifier).
+                              description: Overrides for individual brokers. The `overrides`
+                                field allows to specify a different configuration
+                                for different brokers.
+                            selector:
+                              type: object
+                              description: Specifies a specific persistent volume
+                                to use. It contains key:value pairs representing labels
+                                for selecting such a volume.
+                            size:
+                              type: string
+                              description: When type=persistent-claim, defines the
+                                size of the persistent volume claim (i.e 1Gi). Mandatory
+                                when type=persistent-claim.
+                            sizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: When type=ephemeral, defines the total
+                                amount of local storage required for this EmptyDir
+                                volume (for example 1Gi).
+                            type:
+                              type: string
+                              enum:
+                              - ephemeral
+                              - persistent-claim
+                              description: Storage type, must be either 'ephemeral'
+                                or 'persistent-claim'.
+                          required:
+                          - type
+                        description: List of volumes as Storage objects representing
+                          the JBOD disks array.
+                    required:
+                    - type
+                    description: Storage configuration (disk). Cannot be updated.
                   authorization:
                     type: object
                     properties:
@@ -770,18 +787,6 @@ spec:
                     required:
                     - type
                     description: Authorization configuration for Kafka brokers.
-                  config:
-                    type: object
-                    description: 'Kafka broker config properties with the following
-                      prefixes cannot be set: listeners, advertised., broker., listener.,
-                      host.name, port, inter.broker.listener.name, sasl., ssl., security.,
-                      password., principal.builder.class, log.dir, zookeeper.connect,
-                      zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket,
-                      authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers
-                      (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
-                      ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
-                      cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries,
-                      cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).'
                   rack:
                     type: object
                     properties:
@@ -1767,15 +1772,10 @@ spec:
                     description: Template for Kafka cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  version:
-                    type: string
-                    description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
-                      Consult the user documentation to understand the process required
-                      to upgrade or downgrade the version.
                 required:
                 - replicas
-                - storage
                 - listeners
+                - storage
                 description: Configuration of the Kafka cluster.
               zookeeper:
                 type: object
@@ -5888,6 +5888,11 @@ spec:
               kafka:
                 type: object
                 properties:
+                  version:
+                    type: string
+                    description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
+                      Consult the user documentation to understand the process required
+                      to upgrade or downgrade the version.
                   replicas:
                     type: integer
                     minimum: 1
@@ -5896,124 +5901,6 @@ spec:
                     type: string
                     description: The docker image for the pods. The default value
                       depends on the configured `Kafka.spec.kafka.version`.
-                  storage:
-                    type: object
-                    properties:
-                      class:
-                        type: string
-                        description: The storage class to use for dynamic volume allocation.
-                      deleteClaim:
-                        type: boolean
-                        description: Specifies if the persistent volume claim has
-                          to be deleted when the cluster is un-deployed.
-                      id:
-                        type: integer
-                        minimum: 0
-                        description: Storage identification number. It is mandatory
-                          only for storage volumes defined in a storage of type 'jbod'.
-                      overrides:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            class:
-                              type: string
-                              description: The storage class to use for dynamic volume
-                                allocation for this broker.
-                            broker:
-                              type: integer
-                              description: Id of the kafka broker (broker identifier).
-                        description: Overrides for individual brokers. The `overrides`
-                          field allows to specify a different configuration for different
-                          brokers.
-                      selector:
-                        type: object
-                        description: Specifies a specific persistent volume to use.
-                          It contains key:value pairs representing labels for selecting
-                          such a volume.
-                      size:
-                        type: string
-                        description: When type=persistent-claim, defines the size
-                          of the persistent volume claim (i.e 1Gi). Mandatory when
-                          type=persistent-claim.
-                      sizeLimit:
-                        type: string
-                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                        description: When type=ephemeral, defines the total amount
-                          of local storage required for this EmptyDir volume (for
-                          example 1Gi).
-                      type:
-                        type: string
-                        enum:
-                        - ephemeral
-                        - persistent-claim
-                        - jbod
-                        description: Storage type, must be either 'ephemeral', 'persistent-claim',
-                          or 'jbod'.
-                      volumes:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            class:
-                              type: string
-                              description: The storage class to use for dynamic volume
-                                allocation.
-                            deleteClaim:
-                              type: boolean
-                              description: Specifies if the persistent volume claim
-                                has to be deleted when the cluster is un-deployed.
-                            id:
-                              type: integer
-                              minimum: 0
-                              description: Storage identification number. It is mandatory
-                                only for storage volumes defined in a storage of type
-                                'jbod'.
-                            overrides:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  class:
-                                    type: string
-                                    description: The storage class to use for dynamic
-                                      volume allocation for this broker.
-                                  broker:
-                                    type: integer
-                                    description: Id of the kafka broker (broker identifier).
-                              description: Overrides for individual brokers. The `overrides`
-                                field allows to specify a different configuration
-                                for different brokers.
-                            selector:
-                              type: object
-                              description: Specifies a specific persistent volume
-                                to use. It contains key:value pairs representing labels
-                                for selecting such a volume.
-                            size:
-                              type: string
-                              description: When type=persistent-claim, defines the
-                                size of the persistent volume claim (i.e 1Gi). Mandatory
-                                when type=persistent-claim.
-                            sizeLimit:
-                              type: string
-                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                              description: When type=ephemeral, defines the total
-                                amount of local storage required for this EmptyDir
-                                volume (for example 1Gi).
-                            type:
-                              type: string
-                              enum:
-                              - ephemeral
-                              - persistent-claim
-                              description: Storage type, must be either 'ephemeral'
-                                or 'persistent-claim'.
-                          required:
-                          - type
-                        description: List of volumes as Storage objects representing
-                          the JBOD disks array.
-                    required:
-                    - type
-                    description: Storage configuration (disk). Cannot be updated.
                   listeners:
                     oneOf:
                     - type: array
@@ -7463,6 +7350,136 @@ spec:
                           required:
                           - type
                           description: Configures external listener on port 9094.
+                  config:
+                    type: object
+                    description: 'Kafka broker config properties with the following
+                      prefixes cannot be set: listeners, advertised., broker., listener.,
+                      host.name, port, inter.broker.listener.name, sasl., ssl., security.,
+                      password., principal.builder.class, log.dir, zookeeper.connect,
+                      zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket,
+                      authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers
+                      (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
+                      ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
+                      cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries,
+                      cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).'
+                  storage:
+                    type: object
+                    properties:
+                      class:
+                        type: string
+                        description: The storage class to use for dynamic volume allocation.
+                      deleteClaim:
+                        type: boolean
+                        description: Specifies if the persistent volume claim has
+                          to be deleted when the cluster is un-deployed.
+                      id:
+                        type: integer
+                        minimum: 0
+                        description: Storage identification number. It is mandatory
+                          only for storage volumes defined in a storage of type 'jbod'.
+                      overrides:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            class:
+                              type: string
+                              description: The storage class to use for dynamic volume
+                                allocation for this broker.
+                            broker:
+                              type: integer
+                              description: Id of the kafka broker (broker identifier).
+                        description: Overrides for individual brokers. The `overrides`
+                          field allows to specify a different configuration for different
+                          brokers.
+                      selector:
+                        type: object
+                        description: Specifies a specific persistent volume to use.
+                          It contains key:value pairs representing labels for selecting
+                          such a volume.
+                      size:
+                        type: string
+                        description: When type=persistent-claim, defines the size
+                          of the persistent volume claim (i.e 1Gi). Mandatory when
+                          type=persistent-claim.
+                      sizeLimit:
+                        type: string
+                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                        description: When type=ephemeral, defines the total amount
+                          of local storage required for this EmptyDir volume (for
+                          example 1Gi).
+                      type:
+                        type: string
+                        enum:
+                        - ephemeral
+                        - persistent-claim
+                        - jbod
+                        description: Storage type, must be either 'ephemeral', 'persistent-claim',
+                          or 'jbod'.
+                      volumes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            class:
+                              type: string
+                              description: The storage class to use for dynamic volume
+                                allocation.
+                            deleteClaim:
+                              type: boolean
+                              description: Specifies if the persistent volume claim
+                                has to be deleted when the cluster is un-deployed.
+                            id:
+                              type: integer
+                              minimum: 0
+                              description: Storage identification number. It is mandatory
+                                only for storage volumes defined in a storage of type
+                                'jbod'.
+                            overrides:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  class:
+                                    type: string
+                                    description: The storage class to use for dynamic
+                                      volume allocation for this broker.
+                                  broker:
+                                    type: integer
+                                    description: Id of the kafka broker (broker identifier).
+                              description: Overrides for individual brokers. The `overrides`
+                                field allows to specify a different configuration
+                                for different brokers.
+                            selector:
+                              type: object
+                              description: Specifies a specific persistent volume
+                                to use. It contains key:value pairs representing labels
+                                for selecting such a volume.
+                            size:
+                              type: string
+                              description: When type=persistent-claim, defines the
+                                size of the persistent volume claim (i.e 1Gi). Mandatory
+                                when type=persistent-claim.
+                            sizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: When type=ephemeral, defines the total
+                                amount of local storage required for this EmptyDir
+                                volume (for example 1Gi).
+                            type:
+                              type: string
+                              enum:
+                              - ephemeral
+                              - persistent-claim
+                              description: Storage type, must be either 'ephemeral'
+                                or 'persistent-claim'.
+                          required:
+                          - type
+                        description: List of volumes as Storage objects representing
+                          the JBOD disks array.
+                    required:
+                    - type
+                    description: Storage configuration (disk). Cannot be updated.
                   authorization:
                     type: object
                     properties:
@@ -7564,18 +7581,6 @@ spec:
                     required:
                     - type
                     description: Authorization configuration for Kafka brokers.
-                  config:
-                    type: object
-                    description: 'Kafka broker config properties with the following
-                      prefixes cannot be set: listeners, advertised., broker., listener.,
-                      host.name, port, inter.broker.listener.name, sasl., ssl., security.,
-                      password., principal.builder.class, log.dir, zookeeper.connect,
-                      zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket,
-                      authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers
-                      (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
-                      ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
-                      cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries,
-                      cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).'
                   rack:
                     type: object
                     properties:
@@ -9009,15 +9014,10 @@ spec:
                     description: Template for Kafka cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  version:
-                    type: string
-                    description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
-                      Consult the user documentation to understand the process required
-                      to upgrade or downgrade the version.
                 required:
                 - replicas
-                - storage
                 - listeners
+                - storage
                 description: Configuration of the Kafka cluster.
               zookeeper:
                 type: object
@@ -14263,6 +14263,11 @@ spec:
               kafka:
                 type: object
                 properties:
+                  version:
+                    type: string
+                    description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
+                      Consult the user documentation to understand the process required
+                      to upgrade or downgrade the version.
                   replicas:
                     type: integer
                     minimum: 1
@@ -14271,124 +14276,6 @@ spec:
                     type: string
                     description: The docker image for the pods. The default value
                       depends on the configured `Kafka.spec.kafka.version`.
-                  storage:
-                    type: object
-                    properties:
-                      class:
-                        type: string
-                        description: The storage class to use for dynamic volume allocation.
-                      deleteClaim:
-                        type: boolean
-                        description: Specifies if the persistent volume claim has
-                          to be deleted when the cluster is un-deployed.
-                      id:
-                        type: integer
-                        minimum: 0
-                        description: Storage identification number. It is mandatory
-                          only for storage volumes defined in a storage of type 'jbod'.
-                      overrides:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            class:
-                              type: string
-                              description: The storage class to use for dynamic volume
-                                allocation for this broker.
-                            broker:
-                              type: integer
-                              description: Id of the kafka broker (broker identifier).
-                        description: Overrides for individual brokers. The `overrides`
-                          field allows to specify a different configuration for different
-                          brokers.
-                      selector:
-                        type: object
-                        description: Specifies a specific persistent volume to use.
-                          It contains key:value pairs representing labels for selecting
-                          such a volume.
-                      size:
-                        type: string
-                        description: When type=persistent-claim, defines the size
-                          of the persistent volume claim (i.e 1Gi). Mandatory when
-                          type=persistent-claim.
-                      sizeLimit:
-                        type: string
-                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                        description: When type=ephemeral, defines the total amount
-                          of local storage required for this EmptyDir volume (for
-                          example 1Gi).
-                      type:
-                        type: string
-                        enum:
-                        - ephemeral
-                        - persistent-claim
-                        - jbod
-                        description: Storage type, must be either 'ephemeral', 'persistent-claim',
-                          or 'jbod'.
-                      volumes:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            class:
-                              type: string
-                              description: The storage class to use for dynamic volume
-                                allocation.
-                            deleteClaim:
-                              type: boolean
-                              description: Specifies if the persistent volume claim
-                                has to be deleted when the cluster is un-deployed.
-                            id:
-                              type: integer
-                              minimum: 0
-                              description: Storage identification number. It is mandatory
-                                only for storage volumes defined in a storage of type
-                                'jbod'.
-                            overrides:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  class:
-                                    type: string
-                                    description: The storage class to use for dynamic
-                                      volume allocation for this broker.
-                                  broker:
-                                    type: integer
-                                    description: Id of the kafka broker (broker identifier).
-                              description: Overrides for individual brokers. The `overrides`
-                                field allows to specify a different configuration
-                                for different brokers.
-                            selector:
-                              type: object
-                              description: Specifies a specific persistent volume
-                                to use. It contains key:value pairs representing labels
-                                for selecting such a volume.
-                            size:
-                              type: string
-                              description: When type=persistent-claim, defines the
-                                size of the persistent volume claim (i.e 1Gi). Mandatory
-                                when type=persistent-claim.
-                            sizeLimit:
-                              type: string
-                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                              description: When type=ephemeral, defines the total
-                                amount of local storage required for this EmptyDir
-                                volume (for example 1Gi).
-                            type:
-                              type: string
-                              enum:
-                              - ephemeral
-                              - persistent-claim
-                              description: Storage type, must be either 'ephemeral'
-                                or 'persistent-claim'.
-                          required:
-                          - type
-                        description: List of volumes as Storage objects representing
-                          the JBOD disks array.
-                    required:
-                    - type
-                    description: Storage configuration (disk). Cannot be updated.
                   listeners:
                     oneOf:
                     - type: array
@@ -15838,6 +15725,136 @@ spec:
                           required:
                           - type
                           description: Configures external listener on port 9094.
+                  config:
+                    type: object
+                    description: 'Kafka broker config properties with the following
+                      prefixes cannot be set: listeners, advertised., broker., listener.,
+                      host.name, port, inter.broker.listener.name, sasl., ssl., security.,
+                      password., principal.builder.class, log.dir, zookeeper.connect,
+                      zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket,
+                      authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers
+                      (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
+                      ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
+                      cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries,
+                      cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).'
+                  storage:
+                    type: object
+                    properties:
+                      class:
+                        type: string
+                        description: The storage class to use for dynamic volume allocation.
+                      deleteClaim:
+                        type: boolean
+                        description: Specifies if the persistent volume claim has
+                          to be deleted when the cluster is un-deployed.
+                      id:
+                        type: integer
+                        minimum: 0
+                        description: Storage identification number. It is mandatory
+                          only for storage volumes defined in a storage of type 'jbod'.
+                      overrides:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            class:
+                              type: string
+                              description: The storage class to use for dynamic volume
+                                allocation for this broker.
+                            broker:
+                              type: integer
+                              description: Id of the kafka broker (broker identifier).
+                        description: Overrides for individual brokers. The `overrides`
+                          field allows to specify a different configuration for different
+                          brokers.
+                      selector:
+                        type: object
+                        description: Specifies a specific persistent volume to use.
+                          It contains key:value pairs representing labels for selecting
+                          such a volume.
+                      size:
+                        type: string
+                        description: When type=persistent-claim, defines the size
+                          of the persistent volume claim (i.e 1Gi). Mandatory when
+                          type=persistent-claim.
+                      sizeLimit:
+                        type: string
+                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                        description: When type=ephemeral, defines the total amount
+                          of local storage required for this EmptyDir volume (for
+                          example 1Gi).
+                      type:
+                        type: string
+                        enum:
+                        - ephemeral
+                        - persistent-claim
+                        - jbod
+                        description: Storage type, must be either 'ephemeral', 'persistent-claim',
+                          or 'jbod'.
+                      volumes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            class:
+                              type: string
+                              description: The storage class to use for dynamic volume
+                                allocation.
+                            deleteClaim:
+                              type: boolean
+                              description: Specifies if the persistent volume claim
+                                has to be deleted when the cluster is un-deployed.
+                            id:
+                              type: integer
+                              minimum: 0
+                              description: Storage identification number. It is mandatory
+                                only for storage volumes defined in a storage of type
+                                'jbod'.
+                            overrides:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  class:
+                                    type: string
+                                    description: The storage class to use for dynamic
+                                      volume allocation for this broker.
+                                  broker:
+                                    type: integer
+                                    description: Id of the kafka broker (broker identifier).
+                              description: Overrides for individual brokers. The `overrides`
+                                field allows to specify a different configuration
+                                for different brokers.
+                            selector:
+                              type: object
+                              description: Specifies a specific persistent volume
+                                to use. It contains key:value pairs representing labels
+                                for selecting such a volume.
+                            size:
+                              type: string
+                              description: When type=persistent-claim, defines the
+                                size of the persistent volume claim (i.e 1Gi). Mandatory
+                                when type=persistent-claim.
+                            sizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: When type=ephemeral, defines the total
+                                amount of local storage required for this EmptyDir
+                                volume (for example 1Gi).
+                            type:
+                              type: string
+                              enum:
+                              - ephemeral
+                              - persistent-claim
+                              description: Storage type, must be either 'ephemeral'
+                                or 'persistent-claim'.
+                          required:
+                          - type
+                        description: List of volumes as Storage objects representing
+                          the JBOD disks array.
+                    required:
+                    - type
+                    description: Storage configuration (disk). Cannot be updated.
                   authorization:
                     type: object
                     properties:
@@ -15939,18 +15956,6 @@ spec:
                     required:
                     - type
                     description: Authorization configuration for Kafka brokers.
-                  config:
-                    type: object
-                    description: 'Kafka broker config properties with the following
-                      prefixes cannot be set: listeners, advertised., broker., listener.,
-                      host.name, port, inter.broker.listener.name, sasl., ssl., security.,
-                      password., principal.builder.class, log.dir, zookeeper.connect,
-                      zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket,
-                      authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers
-                      (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
-                      ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
-                      cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries,
-                      cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).'
                   rack:
                     type: object
                     properties:
@@ -17384,15 +17389,10 @@ spec:
                     description: Template for Kafka cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
-                  version:
-                    type: string
-                    description: The kafka broker version. Defaults to {DefaultKafkaVersion}.
-                      Consult the user documentation to understand the process required
-                      to upgrade or downgrade the version.
                 required:
                 - replicas
-                - storage
                 - listeners
+                - storage
                 description: Configuration of the Kafka cluster.
               zookeeper:
                 type: object

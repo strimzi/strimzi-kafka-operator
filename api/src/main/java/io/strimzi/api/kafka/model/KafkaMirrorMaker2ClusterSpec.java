@@ -27,7 +27,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "alias", "bootstrapServers", "config", "tls", "authentication"})
+@JsonPropertyOrder({ "alias", "bootstrapServers", "tls", "authentication", "config"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -64,8 +64,8 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, 
         this.authentication = authentication;
     }
 
-
     @Description("The MirrorMaker 2.0 cluster config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
     }

@@ -26,7 +26,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"watchedNamespace", "image",
         "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
         "startupProbe", "livenessProbe", "readinessProbe",
@@ -78,6 +78,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
 
     @Description("Interval between periodic reconciliations.")
     @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
     }
@@ -88,6 +89,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
 
     @Description("Timeout for the ZooKeeper session")
     @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;
     }
@@ -98,6 +100,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
 
     @Description("The number of attempts at getting topic metadata")
     @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getTopicMetadataMaxAttempts() {
         return topicMetadataMaxAttempts;
     }

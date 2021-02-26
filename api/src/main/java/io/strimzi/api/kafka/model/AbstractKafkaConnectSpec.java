@@ -62,9 +62,9 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
     }
 
     @Description("Logging configuration for Kafka Connect")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonInclude(value = JsonInclude.Include.NON_EMPTY)
     public Logging getLogging() {
-        return logging == null ? new InlineLogging() : logging;
+        return logging;
     }
 
     public void setLogging(Logging logging) {
@@ -116,7 +116,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.livenessProbe = livenessProbe;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Description("Pod readiness checking.")
     public Probe getReadinessProbe() {
         return readinessProbe;

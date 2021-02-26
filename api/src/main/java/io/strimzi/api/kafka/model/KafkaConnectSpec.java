@@ -23,7 +23,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "version", "image",
+@JsonPropertyOrder({ "version", "replicas", "image",
         "bootstrapServers", "tls", "authentication", "config", "resources",
         "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
         "affinity", "tolerations", "logging", "metrics", "tracing",

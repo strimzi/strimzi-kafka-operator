@@ -43,6 +43,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Se
         this.authentication = authentication;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
     }

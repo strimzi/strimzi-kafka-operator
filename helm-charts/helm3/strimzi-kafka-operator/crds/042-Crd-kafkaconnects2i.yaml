@@ -46,6 +46,9 @@ spec:
             spec:
               type: object
               properties:
+                version:
+                  type: string
+                  description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
                 replicas:
                   type: integer
                   description: The number of pods in the Kafka Connect group.
@@ -60,6 +63,158 @@ spec:
                     requests:
                       type: object
                   description: CPU and memory resources to reserve.
+                bootstrapServers:
+                  type: string
+                  description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+                tls:
+                  type: object
+                  properties:
+                    trustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                          - certificate
+                          - secretName
+                      description: Trusted certificates for TLS connection.
+                  description: TLS configuration.
+                authentication:
+                  type: object
+                  properties:
+                    accessToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
+                    accessTokenIsJwt:
+                      type: boolean
+                      description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                    certificateAndKey:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        key:
+                          type: string
+                          description: The name of the private key in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                        - certificate
+                        - key
+                        - secretName
+                      description: Reference to the `Secret` which holds the certificate and private key pair.
+                    clientId:
+                      type: string
+                      description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                    clientSecret:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                    disableTlsHostnameVerification:
+                      type: boolean
+                      description: Enable or disable TLS hostname verification. Default value is `false`.
+                    maxTokenExpirySeconds:
+                      type: integer
+                      description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
+                    passwordSecret:
+                      type: object
+                      properties:
+                        password:
+                          type: string
+                          description: The name of the key in the Secret under which the password is stored.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the password.
+                      required:
+                        - password
+                        - secretName
+                      description: Reference to the `Secret` which holds the password.
+                    refreshToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
+                    scope:
+                      type: string
+                      description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
+                    tlsTrustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                          - certificate
+                          - secretName
+                      description: Trusted certificates for TLS connection to the OAuth server.
+                    tokenEndpointUri:
+                      type: string
+                      description: Authorization server token endpoint URI.
+                    type:
+                      type: string
+                      enum:
+                        - tls
+                        - scram-sha-512
+                        - plain
+                        - oauth
+                      description: Authentication type. Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections.
+                    username:
+                      type: string
+                      description: Username used for the authentication.
+                  required:
+                    - type
+                  description: Authentication configuration for Kafka Connect.
+                config:
+                  type: object
+                  description: 'The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                  description: The maximum limits for CPU and memory resources and the requested initial resources.
                 livenessProbe:
                   type: object
                   properties:
@@ -182,6 +337,17 @@ spec:
                   required:
                     - type
                   description: Logging configuration for Kafka Connect.
+                tracing:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - jaeger
+                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
+                  required:
+                    - type
+                  description: The configuration of tracing in Kafka Connect.
                 template:
                   type: object
                   properties:
@@ -1188,209 +1354,6 @@ spec:
                           description: Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1.
                       description: Template for Kafka Connect `PodDisruptionBudget`.
                   description: Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
-                authentication:
-                  type: object
-                  properties:
-                    accessToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
-                    accessTokenIsJwt:
-                      type: boolean
-                      description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
-                    certificateAndKey:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
-                        key:
-                          type: string
-                          description: The name of the private key in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
-                      required:
-                        - certificate
-                        - key
-                        - secretName
-                      description: Reference to the `Secret` which holds the certificate and private key pair.
-                    clientId:
-                      type: string
-                      description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                    clientSecret:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                    disableTlsHostnameVerification:
-                      type: boolean
-                      description: Enable or disable TLS hostname verification. Default value is `false`.
-                    maxTokenExpirySeconds:
-                      type: integer
-                      description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
-                    passwordSecret:
-                      type: object
-                      properties:
-                        password:
-                          type: string
-                          description: The name of the key in the Secret under which the password is stored.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the password.
-                      required:
-                        - password
-                        - secretName
-                      description: Reference to the `Secret` which holds the password.
-                    refreshToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
-                    scope:
-                      type: string
-                      description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
-                    tlsTrustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
-                          secretName:
-                            type: string
-                            description: The name of the Secret containing the certificate.
-                        required:
-                          - certificate
-                          - secretName
-                      description: Trusted certificates for TLS connection to the OAuth server.
-                    tokenEndpointUri:
-                      type: string
-                      description: Authorization server token endpoint URI.
-                    type:
-                      type: string
-                      enum:
-                        - tls
-                        - scram-sha-512
-                        - plain
-                        - oauth
-                      description: Authentication type. Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections.
-                    username:
-                      type: string
-                      description: Username used for the authentication.
-                  required:
-                    - type
-                  description: Authentication configuration for Kafka Connect.
-                bootstrapServers:
-                  type: string
-                  description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
-                build:
-                  type: object
-                  properties:
-                    output:
-                      type: object
-                      properties:
-                        additionalKanikoOptions:
-                          type: array
-                          items:
-                            type: string
-                          description: 'Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image.'
-                        image:
-                          type: string
-                          description: The name of the image which will be built. Required.
-                        pushSecret:
-                          type: string
-                          description: Container Registry Secret with the credentials for pushing the newly built image.
-                        type:
-                          type: string
-                          enum:
-                            - docker
-                            - imagestream
-                          description: Output type. Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. Required.
-                      required:
-                        - image
-                        - type
-                      description: Configures where should the newly built image be stored. Required.
-                    resources:
-                      type: object
-                      properties:
-                        limits:
-                          type: object
-                        requests:
-                          type: object
-                      description: CPU and memory resources to reserve for the build.
-                    plugins:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
-                            description: 'The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
-                          artifacts:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                sha512sum:
-                                  type: string
-                                  description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
-                                type:
-                                  type: string
-                                  enum:
-                                    - jar
-                                    - tgz
-                                    - zip
-                                  description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, and `zip`.
-                                url:
-                                  type: string
-                                  pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
-                                  description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
-                              required:
-                                - type
-                                - url
-                            description: List of artifacts which belong to this connector plugin. Required.
-                        required:
-                          - name
-                          - artifacts
-                      description: List of connector plugins which should be added to the Kafka Connect. Required.
-                  required:
-                    - output
-                    - plugins
-                  description: Configures how the Connect container image should be built. Optional.
-                clientRackInitImage:
-                  type: string
-                  description: The image of the init container used for initializing the `client.rack`.
-                config:
-                  type: object
-                  description: 'The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                 externalConfiguration:
                   type: object
                   properties:
@@ -1484,6 +1447,84 @@ spec:
                           - name
                       description: Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.
                   description: Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+                build:
+                  type: object
+                  properties:
+                    output:
+                      type: object
+                      properties:
+                        additionalKanikoOptions:
+                          type: array
+                          items:
+                            type: string
+                          description: 'Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image.'
+                        image:
+                          type: string
+                          description: The name of the image which will be built. Required.
+                        pushSecret:
+                          type: string
+                          description: Container Registry Secret with the credentials for pushing the newly built image.
+                        type:
+                          type: string
+                          enum:
+                            - docker
+                            - imagestream
+                          description: Output type. Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. Required.
+                      required:
+                        - image
+                        - type
+                      description: Configures where should the newly built image be stored. Required.
+                    resources:
+                      type: object
+                      properties:
+                        limits:
+                          type: object
+                        requests:
+                          type: object
+                      description: CPU and memory resources to reserve for the build.
+                    plugins:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
+                            description: 'The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
+                          artifacts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                sha512sum:
+                                  type: string
+                                  description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+                                type:
+                                  type: string
+                                  enum:
+                                    - jar
+                                    - tgz
+                                    - zip
+                                  description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, and `zip`.
+                                url:
+                                  type: string
+                                  pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
+                                  description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+                              required:
+                                - type
+                                - url
+                            description: List of artifacts which belong to this connector plugin. Required.
+                        required:
+                          - name
+                          - artifacts
+                      description: List of connector plugins which should be added to the Kafka Connect. Required.
+                  required:
+                    - output
+                    - plugins
+                  description: Configures how the Connect container image should be built. Optional.
+                clientRackInitImage:
+                  type: string
+                  description: The image of the init container used for initializing the `client.rack`.
                 insecureSourceRepository:
                   type: boolean
                   description: When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
@@ -1523,47 +1564,6 @@ spec:
                   required:
                     - topologyKey
                   description: Configuration of the node label which will be used as the client.rack consumer configuration.
-                resources:
-                  type: object
-                  properties:
-                    limits:
-                      type: object
-                    requests:
-                      type: object
-                  description: The maximum limits for CPU and memory resources and the requested initial resources.
-                tls:
-                  type: object
-                  properties:
-                    trustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
-                          secretName:
-                            type: string
-                            description: The name of the Secret containing the certificate.
-                        required:
-                          - certificate
-                          - secretName
-                      description: Trusted certificates for TLS connection.
-                  description: TLS configuration.
-                tracing:
-                  type: object
-                  properties:
-                    type:
-                      type: string
-                      enum:
-                        - jaeger
-                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
-                  required:
-                    - type
-                  description: The configuration of tracing in Kafka Connect.
-                version:
-                  type: string
-                  description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
               required:
                 - bootstrapServers
               description: The specification of the Kafka Connect Source-to-Image (S2I) cluster.
@@ -1632,6 +1632,9 @@ spec:
             spec:
               type: object
               properties:
+                version:
+                  type: string
+                  description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
                 replicas:
                   type: integer
                   description: The number of pods in the Kafka Connect group.
@@ -1646,6 +1649,158 @@ spec:
                     requests:
                       type: object
                   description: CPU and memory resources to reserve.
+                bootstrapServers:
+                  type: string
+                  description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+                tls:
+                  type: object
+                  properties:
+                    trustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                          - certificate
+                          - secretName
+                      description: Trusted certificates for TLS connection.
+                  description: TLS configuration.
+                authentication:
+                  type: object
+                  properties:
+                    accessToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
+                    accessTokenIsJwt:
+                      type: boolean
+                      description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                    certificateAndKey:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        key:
+                          type: string
+                          description: The name of the private key in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                        - certificate
+                        - key
+                        - secretName
+                      description: Reference to the `Secret` which holds the certificate and private key pair.
+                    clientId:
+                      type: string
+                      description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                    clientSecret:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                    disableTlsHostnameVerification:
+                      type: boolean
+                      description: Enable or disable TLS hostname verification. Default value is `false`.
+                    maxTokenExpirySeconds:
+                      type: integer
+                      description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
+                    passwordSecret:
+                      type: object
+                      properties:
+                        password:
+                          type: string
+                          description: The name of the key in the Secret under which the password is stored.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the password.
+                      required:
+                        - password
+                        - secretName
+                      description: Reference to the `Secret` which holds the password.
+                    refreshToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
+                    scope:
+                      type: string
+                      description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
+                    tlsTrustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                          - certificate
+                          - secretName
+                      description: Trusted certificates for TLS connection to the OAuth server.
+                    tokenEndpointUri:
+                      type: string
+                      description: Authorization server token endpoint URI.
+                    type:
+                      type: string
+                      enum:
+                        - tls
+                        - scram-sha-512
+                        - plain
+                        - oauth
+                      description: Authentication type. Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections.
+                    username:
+                      type: string
+                      description: Username used for the authentication.
+                  required:
+                    - type
+                  description: Authentication configuration for Kafka Connect.
+                config:
+                  type: object
+                  description: 'The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                  description: The maximum limits for CPU and memory resources and the requested initial resources.
                 livenessProbe:
                   type: object
                   properties:
@@ -1948,6 +2103,22 @@ spec:
                               topologyKey:
                                 type: string
                   description: The pod's affinity rules.
+                tolerations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      effect:
+                        type: string
+                      key:
+                        type: string
+                      operator:
+                        type: string
+                      tolerationSeconds:
+                        type: integer
+                      value:
+                        type: string
+                  description: The pod's tolerations.
                 logging:
                   type: object
                   properties:
@@ -1983,6 +2154,17 @@ spec:
                 metrics:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+                tracing:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - jaeger
+                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
+                  required:
+                    - type
+                  description: The configuration of tracing in Kafka Connect.
                 template:
                   type: object
                   properties:
@@ -2989,209 +3171,6 @@ spec:
                           description: Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1.
                       description: Template for Kafka Connect `PodDisruptionBudget`.
                   description: Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
-                authentication:
-                  type: object
-                  properties:
-                    accessToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
-                    accessTokenIsJwt:
-                      type: boolean
-                      description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
-                    certificateAndKey:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
-                        key:
-                          type: string
-                          description: The name of the private key in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
-                      required:
-                        - certificate
-                        - key
-                        - secretName
-                      description: Reference to the `Secret` which holds the certificate and private key pair.
-                    clientId:
-                      type: string
-                      description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                    clientSecret:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                    disableTlsHostnameVerification:
-                      type: boolean
-                      description: Enable or disable TLS hostname verification. Default value is `false`.
-                    maxTokenExpirySeconds:
-                      type: integer
-                      description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
-                    passwordSecret:
-                      type: object
-                      properties:
-                        password:
-                          type: string
-                          description: The name of the key in the Secret under which the password is stored.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the password.
-                      required:
-                        - password
-                        - secretName
-                      description: Reference to the `Secret` which holds the password.
-                    refreshToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
-                    scope:
-                      type: string
-                      description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
-                    tlsTrustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
-                          secretName:
-                            type: string
-                            description: The name of the Secret containing the certificate.
-                        required:
-                          - certificate
-                          - secretName
-                      description: Trusted certificates for TLS connection to the OAuth server.
-                    tokenEndpointUri:
-                      type: string
-                      description: Authorization server token endpoint URI.
-                    type:
-                      type: string
-                      enum:
-                        - tls
-                        - scram-sha-512
-                        - plain
-                        - oauth
-                      description: Authentication type. Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections.
-                    username:
-                      type: string
-                      description: Username used for the authentication.
-                  required:
-                    - type
-                  description: Authentication configuration for Kafka Connect.
-                bootstrapServers:
-                  type: string
-                  description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
-                build:
-                  type: object
-                  properties:
-                    output:
-                      type: object
-                      properties:
-                        additionalKanikoOptions:
-                          type: array
-                          items:
-                            type: string
-                          description: 'Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image.'
-                        image:
-                          type: string
-                          description: The name of the image which will be built. Required.
-                        pushSecret:
-                          type: string
-                          description: Container Registry Secret with the credentials for pushing the newly built image.
-                        type:
-                          type: string
-                          enum:
-                            - docker
-                            - imagestream
-                          description: Output type. Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. Required.
-                      required:
-                        - image
-                        - type
-                      description: Configures where should the newly built image be stored. Required.
-                    resources:
-                      type: object
-                      properties:
-                        limits:
-                          type: object
-                        requests:
-                          type: object
-                      description: CPU and memory resources to reserve for the build.
-                    plugins:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
-                            description: 'The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
-                          artifacts:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                sha512sum:
-                                  type: string
-                                  description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
-                                type:
-                                  type: string
-                                  enum:
-                                    - jar
-                                    - tgz
-                                    - zip
-                                  description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, and `zip`.
-                                url:
-                                  type: string
-                                  pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
-                                  description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
-                              required:
-                                - type
-                                - url
-                            description: List of artifacts which belong to this connector plugin. Required.
-                        required:
-                          - name
-                          - artifacts
-                      description: List of connector plugins which should be added to the Kafka Connect. Required.
-                  required:
-                    - output
-                    - plugins
-                  description: Configures how the Connect container image should be built. Optional.
-                clientRackInitImage:
-                  type: string
-                  description: The image of the init container used for initializing the `client.rack`.
-                config:
-                  type: object
-                  description: 'The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                 externalConfiguration:
                   type: object
                   properties:
@@ -3285,6 +3264,84 @@ spec:
                           - name
                       description: Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.
                   description: Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+                build:
+                  type: object
+                  properties:
+                    output:
+                      type: object
+                      properties:
+                        additionalKanikoOptions:
+                          type: array
+                          items:
+                            type: string
+                          description: 'Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image.'
+                        image:
+                          type: string
+                          description: The name of the image which will be built. Required.
+                        pushSecret:
+                          type: string
+                          description: Container Registry Secret with the credentials for pushing the newly built image.
+                        type:
+                          type: string
+                          enum:
+                            - docker
+                            - imagestream
+                          description: Output type. Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. Required.
+                      required:
+                        - image
+                        - type
+                      description: Configures where should the newly built image be stored. Required.
+                    resources:
+                      type: object
+                      properties:
+                        limits:
+                          type: object
+                        requests:
+                          type: object
+                      description: CPU and memory resources to reserve for the build.
+                    plugins:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
+                            description: 'The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
+                          artifacts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                sha512sum:
+                                  type: string
+                                  description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+                                type:
+                                  type: string
+                                  enum:
+                                    - jar
+                                    - tgz
+                                    - zip
+                                  description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, and `zip`.
+                                url:
+                                  type: string
+                                  pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
+                                  description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+                              required:
+                                - type
+                                - url
+                            description: List of artifacts which belong to this connector plugin. Required.
+                        required:
+                          - name
+                          - artifacts
+                      description: List of connector plugins which should be added to the Kafka Connect. Required.
+                  required:
+                    - output
+                    - plugins
+                  description: Configures how the Connect container image should be built. Optional.
+                clientRackInitImage:
+                  type: string
+                  description: The image of the init container used for initializing the `client.rack`.
                 insecureSourceRepository:
                   type: boolean
                   description: When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
@@ -3324,63 +3381,6 @@ spec:
                   required:
                     - topologyKey
                   description: Configuration of the node label which will be used as the client.rack consumer configuration.
-                resources:
-                  type: object
-                  properties:
-                    limits:
-                      type: object
-                    requests:
-                      type: object
-                  description: The maximum limits for CPU and memory resources and the requested initial resources.
-                tls:
-                  type: object
-                  properties:
-                    trustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
-                          secretName:
-                            type: string
-                            description: The name of the Secret containing the certificate.
-                        required:
-                          - certificate
-                          - secretName
-                      description: Trusted certificates for TLS connection.
-                  description: TLS configuration.
-                tolerations:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      effect:
-                        type: string
-                      key:
-                        type: string
-                      operator:
-                        type: string
-                      tolerationSeconds:
-                        type: integer
-                      value:
-                        type: string
-                  description: The pod's tolerations.
-                tracing:
-                  type: object
-                  properties:
-                    type:
-                      type: string
-                      enum:
-                        - jaeger
-                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
-                  required:
-                    - type
-                  description: The configuration of tracing in Kafka Connect.
-                version:
-                  type: string
-                  description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
               required:
                 - bootstrapServers
               description: The specification of the Kafka Connect Source-to-Image (S2I) cluster.
@@ -3449,6 +3449,9 @@ spec:
             spec:
               type: object
               properties:
+                version:
+                  type: string
+                  description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
                 replicas:
                   type: integer
                   description: The number of pods in the Kafka Connect group.
@@ -3463,6 +3466,158 @@ spec:
                     requests:
                       type: object
                   description: CPU and memory resources to reserve.
+                bootstrapServers:
+                  type: string
+                  description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+                tls:
+                  type: object
+                  properties:
+                    trustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                          - certificate
+                          - secretName
+                      description: Trusted certificates for TLS connection.
+                  description: TLS configuration.
+                authentication:
+                  type: object
+                  properties:
+                    accessToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
+                    accessTokenIsJwt:
+                      type: boolean
+                      description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                    certificateAndKey:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        key:
+                          type: string
+                          description: The name of the private key in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                        - certificate
+                        - key
+                        - secretName
+                      description: Reference to the `Secret` which holds the certificate and private key pair.
+                    clientId:
+                      type: string
+                      description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                    clientSecret:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                    disableTlsHostnameVerification:
+                      type: boolean
+                      description: Enable or disable TLS hostname verification. Default value is `false`.
+                    maxTokenExpirySeconds:
+                      type: integer
+                      description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
+                    passwordSecret:
+                      type: object
+                      properties:
+                        password:
+                          type: string
+                          description: The name of the key in the Secret under which the password is stored.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the password.
+                      required:
+                        - password
+                        - secretName
+                      description: Reference to the `Secret` which holds the password.
+                    refreshToken:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                          description: The key under which the secret value is stored in the Kubernetes Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Kubernetes Secret containing the secret value.
+                      required:
+                        - key
+                        - secretName
+                      description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
+                    scope:
+                      type: string
+                      description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
+                    tlsTrustedCertificates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          certificate:
+                            type: string
+                            description: The name of the file certificate in the Secret.
+                          secretName:
+                            type: string
+                            description: The name of the Secret containing the certificate.
+                        required:
+                          - certificate
+                          - secretName
+                      description: Trusted certificates for TLS connection to the OAuth server.
+                    tokenEndpointUri:
+                      type: string
+                      description: Authorization server token endpoint URI.
+                    type:
+                      type: string
+                      enum:
+                        - tls
+                        - scram-sha-512
+                        - plain
+                        - oauth
+                      description: Authentication type. Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections.
+                    username:
+                      type: string
+                      description: Username used for the authentication.
+                  required:
+                    - type
+                  description: Authentication configuration for Kafka Connect.
+                config:
+                  type: object
+                  description: 'The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+                resources:
+                  type: object
+                  properties:
+                    limits:
+                      type: object
+                    requests:
+                      type: object
+                  description: The maximum limits for CPU and memory resources and the requested initial resources.
                 livenessProbe:
                   type: object
                   properties:
@@ -3765,6 +3920,22 @@ spec:
                               topologyKey:
                                 type: string
                   description: The pod's affinity rules.
+                tolerations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      effect:
+                        type: string
+                      key:
+                        type: string
+                      operator:
+                        type: string
+                      tolerationSeconds:
+                        type: integer
+                      value:
+                        type: string
+                  description: The pod's tolerations.
                 logging:
                   type: object
                   properties:
@@ -3800,6 +3971,17 @@ spec:
                 metrics:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+                tracing:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - jaeger
+                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
+                  required:
+                    - type
+                  description: The configuration of tracing in Kafka Connect.
                 template:
                   type: object
                   properties:
@@ -4806,209 +4988,6 @@ spec:
                           description: Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1.
                       description: Template for Kafka Connect `PodDisruptionBudget`.
                   description: Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
-                authentication:
-                  type: object
-                  properties:
-                    accessToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
-                    accessTokenIsJwt:
-                      type: boolean
-                      description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
-                    certificateAndKey:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
-                        key:
-                          type: string
-                          description: The name of the private key in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
-                      required:
-                        - certificate
-                        - key
-                        - secretName
-                      description: Reference to the `Secret` which holds the certificate and private key pair.
-                    clientId:
-                      type: string
-                      description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                    clientSecret:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                    disableTlsHostnameVerification:
-                      type: boolean
-                      description: Enable or disable TLS hostname verification. Default value is `false`.
-                    maxTokenExpirySeconds:
-                      type: integer
-                      description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
-                    passwordSecret:
-                      type: object
-                      properties:
-                        password:
-                          type: string
-                          description: The name of the key in the Secret under which the password is stored.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the password.
-                      required:
-                        - password
-                        - secretName
-                      description: Reference to the `Secret` which holds the password.
-                    refreshToken:
-                      type: object
-                      properties:
-                        key:
-                          type: string
-                          description: The key under which the secret value is stored in the Kubernetes Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Kubernetes Secret containing the secret value.
-                      required:
-                        - key
-                        - secretName
-                      description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
-                    scope:
-                      type: string
-                      description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
-                    tlsTrustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
-                          secretName:
-                            type: string
-                            description: The name of the Secret containing the certificate.
-                        required:
-                          - certificate
-                          - secretName
-                      description: Trusted certificates for TLS connection to the OAuth server.
-                    tokenEndpointUri:
-                      type: string
-                      description: Authorization server token endpoint URI.
-                    type:
-                      type: string
-                      enum:
-                        - tls
-                        - scram-sha-512
-                        - plain
-                        - oauth
-                      description: Authentication type. Currently the only supported types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections.
-                    username:
-                      type: string
-                      description: Username used for the authentication.
-                  required:
-                    - type
-                  description: Authentication configuration for Kafka Connect.
-                bootstrapServers:
-                  type: string
-                  description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
-                build:
-                  type: object
-                  properties:
-                    output:
-                      type: object
-                      properties:
-                        additionalKanikoOptions:
-                          type: array
-                          items:
-                            type: string
-                          description: 'Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image.'
-                        image:
-                          type: string
-                          description: The name of the image which will be built. Required.
-                        pushSecret:
-                          type: string
-                          description: Container Registry Secret with the credentials for pushing the newly built image.
-                        type:
-                          type: string
-                          enum:
-                            - docker
-                            - imagestream
-                          description: Output type. Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. Required.
-                      required:
-                        - image
-                        - type
-                      description: Configures where should the newly built image be stored. Required.
-                    resources:
-                      type: object
-                      properties:
-                        limits:
-                          type: object
-                        requests:
-                          type: object
-                      description: CPU and memory resources to reserve for the build.
-                    plugins:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                            pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
-                            description: 'The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
-                          artifacts:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                sha512sum:
-                                  type: string
-                                  description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
-                                type:
-                                  type: string
-                                  enum:
-                                    - jar
-                                    - tgz
-                                    - zip
-                                  description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, and `zip`.
-                                url:
-                                  type: string
-                                  pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
-                                  description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
-                              required:
-                                - type
-                                - url
-                            description: List of artifacts which belong to this connector plugin. Required.
-                        required:
-                          - name
-                          - artifacts
-                      description: List of connector plugins which should be added to the Kafka Connect. Required.
-                  required:
-                    - output
-                    - plugins
-                  description: Configures how the Connect container image should be built. Optional.
-                clientRackInitImage:
-                  type: string
-                  description: The image of the init container used for initializing the `client.rack`.
-                config:
-                  type: object
-                  description: 'The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                 externalConfiguration:
                   type: object
                   properties:
@@ -5102,6 +5081,84 @@ spec:
                           - name
                       description: Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.
                   description: Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
+                build:
+                  type: object
+                  properties:
+                    output:
+                      type: object
+                      properties:
+                        additionalKanikoOptions:
+                          type: array
+                          items:
+                            type: string
+                          description: 'Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image.'
+                        image:
+                          type: string
+                          description: The name of the image which will be built. Required.
+                        pushSecret:
+                          type: string
+                          description: Container Registry Secret with the credentials for pushing the newly built image.
+                        type:
+                          type: string
+                          enum:
+                            - docker
+                            - imagestream
+                          description: Output type. Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. Required.
+                      required:
+                        - image
+                        - type
+                      description: Configures where should the newly built image be stored. Required.
+                    resources:
+                      type: object
+                      properties:
+                        limits:
+                          type: object
+                        requests:
+                          type: object
+                      description: CPU and memory resources to reserve for the build.
+                    plugins:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
+                            description: 'The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
+                          artifacts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                sha512sum:
+                                  type: string
+                                  description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+                                type:
+                                  type: string
+                                  enum:
+                                    - jar
+                                    - tgz
+                                    - zip
+                                  description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, and `zip`.
+                                url:
+                                  type: string
+                                  pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
+                                  description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+                              required:
+                                - type
+                                - url
+                            description: List of artifacts which belong to this connector plugin. Required.
+                        required:
+                          - name
+                          - artifacts
+                      description: List of connector plugins which should be added to the Kafka Connect. Required.
+                  required:
+                    - output
+                    - plugins
+                  description: Configures how the Connect container image should be built. Optional.
+                clientRackInitImage:
+                  type: string
+                  description: The image of the init container used for initializing the `client.rack`.
                 insecureSourceRepository:
                   type: boolean
                   description: When true this configures the source repository with the 'Local' reference policy and an import policy that accepts insecure source tags.
@@ -5141,63 +5198,6 @@ spec:
                   required:
                     - topologyKey
                   description: Configuration of the node label which will be used as the client.rack consumer configuration.
-                resources:
-                  type: object
-                  properties:
-                    limits:
-                      type: object
-                    requests:
-                      type: object
-                  description: The maximum limits for CPU and memory resources and the requested initial resources.
-                tls:
-                  type: object
-                  properties:
-                    trustedCertificates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          certificate:
-                            type: string
-                            description: The name of the file certificate in the Secret.
-                          secretName:
-                            type: string
-                            description: The name of the Secret containing the certificate.
-                        required:
-                          - certificate
-                          - secretName
-                      description: Trusted certificates for TLS connection.
-                  description: TLS configuration.
-                tolerations:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      effect:
-                        type: string
-                      key:
-                        type: string
-                      operator:
-                        type: string
-                      tolerationSeconds:
-                        type: integer
-                      value:
-                        type: string
-                  description: The pod's tolerations.
-                tracing:
-                  type: object
-                  properties:
-                    type:
-                      type: string
-                      enum:
-                        - jaeger
-                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
-                  required:
-                    - type
-                  description: The configuration of tracing in Kafka Connect.
-                version:
-                  type: string
-                  description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
               required:
                 - bootstrapServers
               description: The specification of the Kafka Connect Source-to-Image (S2I) cluster.

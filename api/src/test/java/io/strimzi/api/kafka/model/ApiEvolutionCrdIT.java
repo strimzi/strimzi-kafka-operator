@@ -191,20 +191,12 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
         return v1beta2Op().create(buildKafkaCr(Kafka.V1BETA2, name, kafkaListeners, o));
     }
 
-    private void v1Create(String name, KafkaListeners kafkaListeners, GenericKafkaListener o) {
-        v1Op().create(buildKafkaCr(Kafka.V1BETA2, name, kafkaListeners, o));
-    }
-
     private Kafka v1beta1Get(String s) {
         return v1beta1Op().withName(s).get();
     }
 
     private Kafka v1beta2Get(String s) {
         return v1beta2Op().withName(s).get();
-    }
-
-    private Kafka v1Get(String s) {
-        return v1Op().withName(s).get();
     }
 
     private CustomResourceDefinition waitForCrdUpdate(long crdGeneration2) {
@@ -343,10 +335,6 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
 
     private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1beta2Op() {
         return Crds.kafkaV1Beta2Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
-    }
-
-    private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1Op() {
-        return Crds.kafkaV1Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
     }
 
     private GenericKafkaListener listListener() {

@@ -10,10 +10,8 @@ spec:
   clusters:
   - alias: "source"
     bootstrapServers: "my-source-kafka:9092"
-    config: {}
   - alias: "target"
     bootstrapServers: "my-target-kafka:9092"
-    config: {}
   mirrors:
   - sourceCluster: "source"
     targetCluster: "target"
@@ -22,14 +20,14 @@ spec:
       config:
         replication.factor: 1
         offset-syncs.topic.replication.factor: 1
-    checkpointConnector:
-      tasksMax: 2
-      config:
-        checkpoints.topic.replication.factor: 1
     heartbeatConnector:
       tasksMax: 2
       config:
         heartbeats.topic.replication.factor: 1
+    checkpointConnector:
+      tasksMax: 2
+      config:
+        checkpoints.topic.replication.factor: 1
     topicsPattern: "my-topic"
     groupsPattern: "my-group"
   tolerations:
@@ -41,8 +39,6 @@ spec:
     key: "key2"
     operator: "Equal"
     value: "value2"
-  logging:
-    type: "inline"
   externalConfiguration:
     env:
     - name: "SOME_VARIABLE"

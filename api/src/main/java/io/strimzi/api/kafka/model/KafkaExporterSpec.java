@@ -24,7 +24,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({
         "image", "groupRegex",
         "topicRegex", "resources", "logging",
@@ -57,7 +57,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
 
     @Description("Regular expression to specify which consumer groups to collect. " +
             "Default value is `.*`.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getGroupRegex() {
         return groupRegex;
     }
@@ -68,7 +68,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
 
     @Description("Regular expression to specify which topics to collect. " +
             "Default value is `.*`.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getTopicRegex() {
         return topicRegex;
     }
@@ -78,7 +78,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @Description("Enable Sarama logging, a Go client library used by the Kafka Exporter.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean getEnableSaramaLogging() {
         return enableSaramaLogging;
     }
@@ -90,7 +90,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     @Description("Only log messages with the given severity or above. " +
             "Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. " +
             "Default log level is `info`.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getLogging() {
         return logging;
     }

@@ -24,7 +24,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
 public class AclRule implements UnknownPropertyPreserving, Serializable {
 
@@ -51,7 +51,7 @@ public class AclRule implements UnknownPropertyPreserving, Serializable {
             "ACL rules with type `allow` are used to allow user to execute the specified operations. " +
             "Default value is `allow`.")
     @DefaultValue("allow")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public AclRuleType getType() {
         return type;
     }
@@ -72,7 +72,7 @@ public class AclRule implements UnknownPropertyPreserving, Serializable {
 
     @Description("The host from which the action described in the ACL rule is allowed or denied.")
     @DefaultValue("*")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getHost() {
         return host;
     }
