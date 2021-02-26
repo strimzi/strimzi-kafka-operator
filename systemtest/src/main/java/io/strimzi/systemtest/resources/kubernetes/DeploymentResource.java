@@ -27,9 +27,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
     }
     @Override
     public Deployment get(String namespace, String name) {
-        Deployment dep = ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
-        LOGGER.info("sranec: {}", dep);
-        return dep;
+        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
     }
     @Override
     public void create(Deployment resource) {
@@ -42,7 +40,6 @@ public class DeploymentResource implements ResourceType<Deployment> {
 
     @Override
     public boolean isReady(Deployment resource) {
-        LOGGER.info("IsReady: {}", resource);
         return DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
 
     }
