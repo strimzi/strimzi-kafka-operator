@@ -133,8 +133,6 @@ public class ResourceManager {
 
     @SafeVarargs
     public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
-        LOGGER.warn("Resources are:");
-        LOGGER.warn(resources);
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
             if (type == null) {
