@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -54,9 +55,23 @@ public class ClientUtils {
     }
 
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
-        LOGGER.info("Waiting for producer/consumer:{} will be finished", jobName);
+        LOGGER.info("Waiting for producer/consumer:{} to finished", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> kubeClient().namespace(namespace).getJobStatus(jobName));
+    }
+
+    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) {
+        LOGGER.info("Waiting for producer/consumer:{} to finish with failure.", jobName);
+        try {
+            TestUtils.waitFor("Job did not finish within time limit (as expected).", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+                () -> kubeClient().namespace(namespace).getJobStatus(jobName));
+        } catch (WaitException e) {
+            if (e.getMessage().contains("Timeout after ")) {
+                LOGGER.info("Client job '{}' finished with expected timeout.", jobName);
+            } else {
+                throw e;
+            }
+        }
     }
 
     private static long timeoutForClientFinishJob(int messagesCount) {

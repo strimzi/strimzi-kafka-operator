@@ -39,7 +39,9 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -52,6 +54,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -83,6 +86,7 @@ class MirrorMaker2ST extends AbstractST {
     public static final String NAMESPACE = "mirrormaker2-cluster-test";
 
     private static final String MIRRORMAKER2_TOPIC_NAME = "mirrormaker2-topic-example";
+    private static int consumerCounter = 0;
     private final int messagesCount = 200;
 
     private String kafkaClusterSourceName;
@@ -891,6 +895,159 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(kmm2.getStatus().getObservedGeneration(), is(2L));
         assertThat(kmm2.getMetadata().getLabels().toString(), containsString("another=label"));
         assertThat(kmm2.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
+    }
+
+    @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
+    void testRestoreOffsetsInConsumerGroup() {
+        final String syncGroupOffsetsIntervalSeconds = "1";
+        final String topicSourceNameMirrored = "test-sync-offset-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String topicTargetNameMirrored = kafkaClusterSourceName + "." + topicSourceNameMirrored;
+        final String consumerGroup = "mm2-test-consumer-group";
+        final String sourceProducerName = "mm2-producer-source-" + ClientUtils.generateRandomConsumerGroup();
+        final String sourceConsumerName = "mm2-consumer-source-" + ClientUtils.generateRandomConsumerGroup();
+        final String targetProducerName = "mm2-producer-target-" + ClientUtils.generateRandomConsumerGroup();
+        final String targetConsumerName = "mm2-consumer-target-" + ClientUtils.generateRandomConsumerGroup();
+        final String mm2SrcTrgName = clusterName + "-src-trg";
+        final String mm2TrgSrcName = clusterName + "-trg-src";
+
+        // Deploy source kafka
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaPersistent(kafkaClusterSourceName, 1, 1).build());
+
+        // Deploy target kafka
+        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaPersistent(kafkaClusterTargetName, 1, 1).build());
+
+        // Wait for Kafka clusters readiness
+        KafkaUtils.waitForKafkaReady(kafkaClusterSourceName);
+        KafkaUtils.waitForKafkaReady(kafkaClusterTargetName);
+
+        // MM2 Active (S) <-> Active (T) // direction S -> T mirroring
+        // *.replication.factor(s) to 1 are added just to speed up test by using only 1 ZK and 1 Kafka
+        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(mm2TrgSrcName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+            .editSpec()
+                .editFirstMirror()
+                    .editSourceConnector()
+                        .addToConfig("refresh.topics.interval.seconds", "1")
+                        .addToConfig("replication.factor", "1")
+                        .addToConfig("offset-syncs.topic.replication.factor", "1")
+                    .endSourceConnector()
+                    .editCheckpointConnector()
+                        .addToConfig("refresh.groups.interval.seconds", "1")
+                        .addToConfig("sync.group.offsets.enabled", "true")
+                        .addToConfig("sync.group.offsets.interval.seconds", syncGroupOffsetsIntervalSeconds)
+                        .addToConfig("emit.checkpoints.enabled", "true")
+                        .addToConfig("emit.checkpoints.interval.seconds", "1")
+                        .addToConfig("checkpoints.topic.replication.factor", "1")
+                    .endCheckpointConnector()
+                    .editHeartbeatConnector()
+                        .addToConfig("heartbeats.topic.replication.factor", "1")
+                    .endHeartbeatConnector()
+                    .withTopicsPattern(".*")
+                    .withGroupsPattern(".*")
+                .endMirror()
+            .endSpec().build());
+
+        // MM2 Active (S) <-> Active (T) // direction S <- T mirroring
+        KafkaMirrorMaker2Resource.createAndWaitForReadiness(KafkaMirrorMaker2Resource.kafkaMirrorMaker2(mm2SrcTrgName, kafkaClusterSourceName, kafkaClusterTargetName, 1, false)
+            .editSpec()
+                .editFirstMirror()
+                    .editSourceConnector()
+                        .addToConfig("refresh.topics.interval.seconds", "1")
+                        .addToConfig("replication.factor", "1")
+                        .addToConfig("offset-syncs.topic.replication.factor", "1")
+                    .endSourceConnector()
+                    .editCheckpointConnector()
+                        .addToConfig("refresh.groups.interval.seconds", "1")
+                        .addToConfig("sync.group.offsets.enabled", "true")
+                        .addToConfig("sync.group.offsets.interval.seconds", syncGroupOffsetsIntervalSeconds)
+                        .addToConfig("emit.checkpoints.enabled", "true")
+                        .addToConfig("emit.checkpoints.interval.seconds", "1")
+                        .addToConfig("checkpoints.topic.replication.factor", "1")
+                    .endCheckpointConnector()
+                    .editHeartbeatConnector()
+                        .addToConfig("heartbeats.topic.replication.factor", "1")
+                    .endHeartbeatConnector()
+                    .withTopicsPattern(".*")
+                    .withGroupsPattern(".*")
+                .endMirror()
+            .endSpec().build());
+
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(kafkaClusterSourceName, topicSourceNameMirrored, 3).build());
+
+        KafkaBasicExampleClients initialInternalClientSourceJob = new KafkaBasicExampleClients.Builder()
+                .withProducerName(sourceProducerName)
+                .withConsumerName(sourceConsumerName)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+                .withTopicName(topicSourceNameMirrored)
+                .withMessageCount(MESSAGE_COUNT)
+                .withMessage("Producer A")
+                .withConsumerGroup(consumerGroup)
+                .build();
+
+        KafkaBasicExampleClients initialInternalClientTargetJob = new KafkaBasicExampleClients.Builder()
+                .withProducerName(targetProducerName)
+                .withConsumerName(targetConsumerName)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+                .withTopicName(topicTargetNameMirrored)
+                .withMessageCount(MESSAGE_COUNT)
+                .withConsumerGroup(consumerGroup)
+                .build();
+
+        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
+                AVAILABILITY_TOPIC_SOURCE_NAME, kafkaClusterSourceName, MESSAGE_COUNT);
+
+        LOGGER.info("Send & receive {} messages to/from Source cluster.", MESSAGE_COUNT);
+        initialInternalClientSourceJob.createAndWaitForReadiness(initialInternalClientSourceJob.producerStrimzi().build());
+        ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
+        initialInternalClientSourceJob.createAndWaitForReadiness(initialInternalClientSourceJob.consumerStrimzi().build());
+        ClientUtils.waitForClientSuccess(sourceConsumerName, NAMESPACE, MESSAGE_COUNT);
+
+        JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
+        JobUtils.deleteJobWithWait(NAMESPACE, sourceConsumerName);
+
+        LOGGER.info("Send {} messages to Source cluster.", MESSAGE_COUNT);
+        KafkaBasicExampleClients internalClientSourceJob = initialInternalClientSourceJob.toBuilder().withMessage("Producer B").build();
+        internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
+        ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, MESSAGE_COUNT);
+
+        LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
+
+        LOGGER.info("Receive {} messages from mirrored topic on Target cluster.", MESSAGE_COUNT);
+        initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
+        ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
+        JobUtils.deleteJobWithWait(NAMESPACE, targetConsumerName);
+
+        LOGGER.info("Send 50 messages to Source cluster");
+        internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(50).withMessage("Producer C").build();
+        internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.producerStrimzi().build());
+        ClientUtils.waitForClientSuccess(sourceProducerName, NAMESPACE, 50);
+        JobUtils.deleteJobWithWait(NAMESPACE, sourceProducerName);
+
+        LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
+        LOGGER.info("Receive 10 msgs from source cluster");
+        internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(10).withAdditionalConfig("max.poll.records=10").build();
+        internalClientSourceJob.createAndWaitForReadiness(internalClientSourceJob.consumerStrimzi().build());
+        ClientUtils.waitForClientSuccess(sourceConsumerName, NAMESPACE, 10);
+        JobUtils.deleteJobWithWait(NAMESPACE, sourceConsumerName);
+
+        LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
+
+        LOGGER.info("Receive 40 msgs from mirrored topic on Target cluster");
+        KafkaBasicExampleClients internalClientTargetJob = initialInternalClientTargetJob.toBuilder().withMessageCount(40).build();
+        internalClientTargetJob.createAndWaitForReadiness(internalClientTargetJob.consumerStrimzi().build());
+        ClientUtils.waitForClientSuccess(targetConsumerName, NAMESPACE, 40);
+        JobUtils.deleteJobWithWait(NAMESPACE, targetConsumerName);
+
+        LOGGER.info("There should be no more messages to read. Try to consume at least 1 message. " +
+                "This client job should fail on timeout.");
+        initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
+        ClientUtils.waitForClientTimeout(targetConsumerName, NAMESPACE, 1);
+
+        LOGGER.info("As it's Active-Active MM2 mode, there should be no more messages to read from Source cluster" +
+                " topic. This client job should fail on timeout.");
+        initialInternalClientSourceJob.createAndWaitForReadiness(initialInternalClientSourceJob.consumerStrimzi().build());
+        ClientUtils.waitForClientTimeout(sourceConsumerName, NAMESPACE, 1);
     }
 
     @BeforeAll
