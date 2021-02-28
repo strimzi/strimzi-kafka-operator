@@ -66,6 +66,8 @@ Convert Custom Resources from YAML file
                           Creates an output YAML file for the converted custom resource
 ```
 
+**Once you converted the YAML files, apply the changes to Kubernetes using `kubectl apply -f` or `kubectl replace -f`.** 
+
 ## Converting Kubernetes resources
 
 You can also use the tool to convert Strimzi custom resources directly in your Kubernetes cluster.
@@ -124,3 +126,35 @@ Convert Custom Resources directly in Kubernetes
       --name=<name>      Name of the resource which should be converted (can be
                            used onl with --namespace and single --kind options)
 ```
+
+### Required access rights
+
+To convert the resources directly in your Kubernetes cluster, you need to run the tool with a user which has the following RBAC rights:
+
+* Get the Strimzi custom resources you are going to convert (when using the `--name` option)
+* List the Strimzi custom resources you are going to convert (when not using the `--name` option)
+* Replace the Strimzi custom resources you are going to convert
+
+## Upgrading CRDs to v1beta2
+
+You can also use the tool to update the Strimzi CRDs to use the new `v1eta2` version as a stored version.
+This is required before upgrading to Strimzi 0.23 and newer.
+You have to first convert all Strimzi custom resources to `v1beta2` using one of the previous commands.
+Once the custom resources are ready, you can use the `crd-upgrade` subcommand to upgrade the CRDs.
+The following example command show how the tool is used:
+
+```
+# Upgrade the Strimzi CRDs to v1beta2
+> bin/api-conversion.sh crd-upgrade
+```
+
+**Once you upgrade the CRDs to use `v1beta2` as storage version, you should only use the fields available in `v1beta2` in your custom resources.**
+
+### Required access rights
+
+To upgrade the Strimzi CRDs to `v1beta2`, you need to run the tool with a user which has the following RBAC rights:
+
+* List the Strimzi custom resources in all namespaces
+* Replace the Strimzi custom resources in all namespaces
+* Patch the CRD resources
+* Replace the status of the CRD resources
