@@ -37,7 +37,6 @@ import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
@@ -435,12 +434,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         if (connector != null && Annotations.isReconciliationPausedWithAnnotation(connector)) {
             Set<Condition> conditions = validate(connector);
-            Condition pausedCondition = new ConditionBuilder()
-                    .withLastTransitionTime(StatusUtils.iso8601Now())
-                    .withType("ReconciliationPaused")
-                    .withStatus("True")
-                    .build();
-            conditions.add(pausedCondition);
+            conditions.add(StatusUtils.getPausedCondition());
 
             return maybeUpdateConnectorStatus(reconciliation, connector, new ConnectorStatusAndConditions(emptyMap(), new ArrayList<>(conditions)), null).compose(
                 i -> {

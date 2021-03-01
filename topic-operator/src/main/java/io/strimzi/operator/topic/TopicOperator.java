@@ -14,8 +14,6 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.Annotations;
@@ -1022,12 +1020,7 @@ class TopicOperator {
                         Promise<Void> promise = Promise.promise();
                         statusFuture = promise.future();
 
-                        Condition pausedCondition = new ConditionBuilder()
-                                .withLastTransitionTime(StatusUtils.iso8601Now())
-                                .withType("ReconciliationPaused")
-                                .withStatus("True")
-                                .build();
-                        kts.setConditions(singletonList(pausedCondition));
+                        kts.setConditions(singletonList(StatusUtils.getPausedCondition()));
 
                         k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).onComplete(ar -> {
                             if (ar.succeeded() && ar.result() != null) {

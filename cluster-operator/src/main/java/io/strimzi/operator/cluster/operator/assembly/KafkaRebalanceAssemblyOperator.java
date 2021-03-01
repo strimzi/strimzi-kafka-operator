@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
@@ -342,13 +341,7 @@ public class KafkaRebalanceAssemblyOperator
             // we need to do this check again because it was triggered by a watcher
             KafkaRebalanceStatus status = new KafkaRebalanceStatus();
 
-            Condition pauseCondition = new ConditionBuilder()
-                    .withLastTransitionTime(StatusUtils.iso8601Now())
-                    .withType("ReconciliationPaused")
-                    .withStatus("True")
-                    .build();
-
-            unknownAndDeprecatedConditions.add(pauseCondition);
+            unknownAndDeprecatedConditions.add(StatusUtils.getPausedCondition());
             status.setConditions(new ArrayList<>(unknownAndDeprecatedConditions));
 
             return  updateStatus(kafkaRebalance, status, null).compose(i -> Future.succeededFuture());

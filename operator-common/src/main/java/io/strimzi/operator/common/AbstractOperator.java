@@ -208,12 +208,7 @@ public abstract class AbstractOperator<
                 if (Annotations.isReconciliationPausedWithAnnotation(cr)) {
                     S status = createStatus();
                     Set<Condition> conditions = validate(cr);
-                    Condition pausedCondition = new ConditionBuilder()
-                            .withLastTransitionTime(StatusUtils.iso8601Now())
-                            .withType("ReconciliationPaused")
-                            .withStatus("True")
-                            .build();
-                    conditions.add(pausedCondition);
+                    conditions.add(StatusUtils.getPausedCondition());
                     status.setConditions(new ArrayList<>(conditions));
 
                     updateStatus(reconciliation, status).onComplete(statusResult -> {
