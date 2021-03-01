@@ -97,7 +97,7 @@ function fetch_and_unpack_kafka_binaries {
         if [ $get_file -gt 0 ]
         then
             echo "Fetching Kafka $kafka_version binaries from: $binary_file_url"
-            curl --output "$binary_file_path" "$binary_file_url"
+            curl --location --output "$binary_file_path" "$binary_file_url"
         fi
 
         # If we haven't already checksum'd the file do it now before the build.
