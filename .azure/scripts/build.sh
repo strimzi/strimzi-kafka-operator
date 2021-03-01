@@ -59,7 +59,9 @@ fi
 
 # Push artifatcs (Docker containers, JARs, docs)
 if [ "$BUILD_REASON" == "PullRequest" ] ; then
-    echo "Building Pull Request - nothing to push"
+    #echo "Building Pull Request - nothing to push"
+    echo "Test pushing api-conversion to Nexus"
+    make pushtonexus
 elif [[ "$BRANCH" != "refs/tags/"* ]] && [ "$BRANCH" != "refs/heads/master" ]; then
     echo "Not in master branch and not in release tag - nothing to push"
 else
