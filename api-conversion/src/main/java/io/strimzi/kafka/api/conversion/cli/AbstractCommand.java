@@ -76,6 +76,12 @@ public abstract class AbstractCommand implements Runnable {
     @CommandLine.Option(names = {"-ll", "--log-level"}, description = "Sets the log level to enable logging")
     Level level;
 
+    /**
+     * Prints the value to the standard output using PicoCLI. It is important to use this instead of regular
+     * System.out.println to be able to easily capture the output in tests.
+     *
+     * @param value     Object which should be printed
+     */
     protected void println(Object value) {
         if (level != null) {
             log.log(level, String.valueOf(value));
@@ -84,6 +90,10 @@ public abstract class AbstractCommand implements Runnable {
         }
     }
 
+    /**
+     * Prints empty line to the standard output using PicoCLI. It is important to use this instead of regular
+     * System.out.println to be able to easily capture the output in tests.
+     */
     protected void println() {
         if (level == null) {
             spec.commandLine().getOut().println();

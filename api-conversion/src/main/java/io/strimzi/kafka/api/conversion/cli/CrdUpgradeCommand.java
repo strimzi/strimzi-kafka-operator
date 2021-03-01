@@ -21,6 +21,7 @@ import java.util.Map;
 @SuppressWarnings({"rawtypes"})
 @CommandLine.Command(name = "crd-upgrade", aliases = {"crd"}, description = "Upgrades the Strimzi CRDs and CRs to use v1beta2 version")
 public class CrdUpgradeCommand extends AbstractCommand {
+    // Mapping between kinds and the CRD names used to get the right CRD from the Kuberneets API
     final static Map<String, String> CRD_NAMES = Map.of(
             "Kafka", "kafkas.kafka.strimzi.io",
             "KafkaConnect", "kafkaconnects.kafka.strimzi.io",
@@ -40,6 +41,14 @@ public class CrdUpgradeCommand extends AbstractCommand {
         Crds.registerCustomKinds();
     }
 
+    /**
+     * Touches all Strimzi custom resources of given kind to make sure they are stored under the new version. It is
+     * using the replace command to make sure this happens.
+     *
+     * @param kind  The kind of the resources which should be updated
+     * @param <R>   The custom resource class
+     * @param <L>   The custom resource list class
+     */
     @SuppressWarnings({"unchecked"})
     private <R extends CustomResource, L extends CustomResourceList<R>> void storeCrsUnderNewVersionForKind(String kind) {
         MixedOperation<R, L, ?> op = VERSIONED_OPERATIONS.get(kind).apply(client, TO_API_VERSION.toString());
@@ -52,12 +61,22 @@ public class CrdUpgradeCommand extends AbstractCommand {
         }
     }
 
+    /**
+     * Touches all existing Strimzi custom resurces to make sure they are stored in Kubernetes API under the latest
+     * version.
+     */
     private void storeCrsUnderNewVersion()   {
         for (String kind : STRIMZI_KINDS)  {
             storeCrsUnderNewVersionForKind(kind);
         }
     }
 
+    /**
+     * Changes the stored versions in the CRD spec to keep v1beta2 as stored and the other versions as served. This
+     * method does the change to a single Strimzi CRD.
+     *
+     * @param kind Kind of the custom resource definition where the stored version should be changed
+     */
     private void changeStoredVersionInSpecForKind(String kind) {
         String crdName = CRD_NAMES.get(kind);
         CustomResourceDefinition crd = client.apiextensions().v1beta1().customResourceDefinitions().withName(crdName).get();
@@ -84,12 +103,21 @@ public class CrdUpgradeCommand extends AbstractCommand {
         }
     }
 
+    /**
+     * Changes the stored versions in the CRD spec to keep v1beta2 as stored and the other versions as served. This does
+     * the change for all Strimzi CRDs.
+     */
     private void changeStoredVersionInSpec()   {
         for (String kind : STRIMZI_KINDS)  {
             changeStoredVersionInSpecForKind(kind);
         }
     }
 
+    /**
+     * Changes the stored versions in the CRD status to keep only v1beta2 for given Strimzi kind.
+     *
+     * @param kind Kind of the custom resource definition where the stored versions should be changed
+     */
     private void changeStoredVersionInStatusForKind(String kind) {
         String crdName = CRD_NAMES.get(kind);
         CustomResourceDefinition crd = client.apiextensions().v1beta1().customResourceDefinitions().withName(crdName).get();
@@ -111,6 +139,9 @@ public class CrdUpgradeCommand extends AbstractCommand {
         }
     }
 
+    /**
+     * Changes the stored versions in the CRD status to keep only v1beta2 there. This does the change for all Strimzi CRDs.
+     */
     private void changeStoredVersionInStatus()   {
         for (String kind : STRIMZI_KINDS)  {
             changeStoredVersionInStatusForKind(kind);
@@ -118,7 +149,9 @@ public class CrdUpgradeCommand extends AbstractCommand {
     }
 
     /**
-     * Reads the resources from the Kubernetes API and converts them
+     * The mainline of the crd-upgrade command. It first converts the stored version in the spec section of the CRDs,
+     * then it touches all the custom resources to make sure they are stored under the new version and at the end it
+     * removes the previous versions from the CRD status section.
      */
     @Override
     public void run() {
