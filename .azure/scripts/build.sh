@@ -63,7 +63,9 @@ if [ "$BUILD_REASON" == "PullRequest" ] ; then
     echo "Test pushing api-conversion to Nexus"
     make pushtonexus
 elif [[ "$BRANCH" != "refs/tags/"* ]] && [ "$BRANCH" != "refs/heads/master" ]; then
-    echo "Not in master branch and not in release tag - nothing to push"
+    #echo "Not in master branch and not in release tag - nothing to push"
+    echo "Test pushing api-conversion to Nexus"
+    make pushtonexus
 else
     if [ "${MAIN_BUILD}" == "TRUE" ] ; then
         echo "Main build on master branch or release tag - going to push to Docker Hub, Nexus and website"
