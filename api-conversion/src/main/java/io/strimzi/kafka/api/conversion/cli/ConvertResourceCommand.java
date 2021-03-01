@@ -24,17 +24,17 @@ import java.util.List;
 @SuppressWarnings({"rawtypes"})
 @CommandLine.Command(name = "convert-resource", aliases = {"cr", "convert-resources"}, description = "Convert Custom Resources directly in Kubernetes")
 public class ConvertResourceCommand extends AbstractConversionCommand {
-    @CommandLine.Option(names = {"-k", "--kind"}, arity = "0..10", description = "Resource Kind which should be converted (if not specified, all Strimzi resources will be converted)")
+    @CommandLine.Option(names = {"-k", "--kind"}, arity = "0..10", description = "Specifies the kinds of custom resources to be converted, or converts all resources if not specified")
     String[] kinds;
 
     @CommandLine.ArgGroup
     ConvertResourceCommand.Exclusive exclusive;
 
     static class Exclusive {
-        @CommandLine.Option(names = {"-n", "--namespace"}, description = "Kubernetes namespace / OpenShift project (if not specified, current namespace will be used)")
+        @CommandLine.Option(names = {"-n", "--namespace"}, description = "Specifies a Kubernetes namespace or OpenShift project, or uses the current namespace if not specified")
         String namespace;
 
-        @CommandLine.Option(names = {"-a", "--all-namespaces"}, description = "Convert resources in all namespaces", defaultValue = "false")
+        @CommandLine.Option(names = {"-a", "--all-namespaces"}, description = "Converts resources in all namespaces", defaultValue = "false")
         boolean allNamespaces;
     }
 
