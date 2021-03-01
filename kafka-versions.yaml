@@ -69,7 +69,7 @@
 - version: 2.5.0
   format: 2.5
   protocol: 2.5
-  url: https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=kafka/2.5.0/kafka_2.12-2.5.0.tgz
+  url: "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download\\&filename=kafka/2.5.0/kafka_2.12-2.5.0.tgz"
   checksum: 447A7057BCD9FACA98B6F4807BD6019EF73EEE90EFDC1E7B10005F669E2537A8A190CB8B9C9F4C20DB1D95B13D0F0487E9CC560D0759532058439CE7F722C7CD
   zookeeper: 3.5.7
   third-party-libs: 2.5.x
@@ -78,7 +78,7 @@
 - version: 2.5.1
   format: 2.5
   protocol: 2.5
-  url: https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=kafka/2.5.1/kafka_2.12-2.5.1.tgz
+  url: "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download\\&filename=kafka/2.5.1/kafka_2.12-2.5.1.tgz"
   checksum: 91F96F28C016BDAA3FE025F87ACE188417A1E594C8E32B7D23A104AA390BC25F5DB5897E23CCCF00EA7EDE3AC20B3028C10363EBE99DCBD7DB2CF6237EE7553A
   zookeeper: 3.5.8
   third-party-libs: 2.5.x
@@ -87,7 +87,7 @@
 - version: 2.6.0
   format: 2.6
   protocol: 2.6
-  url: https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=kafka/2.6.0/kafka_2.12-2.6.0.tgz
+  url: "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download\\&filename=kafka/2.6.0/kafka_2.12-2.6.0.tgz"
   checksum: 022AB51605DFFB8A0E4522DF297F02F4C5E488696520BB38DA8E8E70457C0B2696A47D7AD39A86389B747981215B385B2659AC25B3D43A6093AF13239723560D
   zookeeper: 3.5.8
   third-party-libs: 2.6.x
@@ -96,7 +96,7 @@
 - version: 2.6.1
   format: 2.6
   protocol: 2.6
-  url: https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=kafka/2.6.1/kafka_2.12-2.6.1.tgz
+  url: "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download\\&filename=kafka/2.6.1/kafka_2.12-2.6.1.tgz"
   checksum: 105BF29E4BED9F1B7A7A3CAADF016DF8AA774F6F509E3606529F8231EA4CAB89C38236C58BE9C2E9BD3C52C2917892EA5D3A5EC0BD94BD8A5F7257522A5AF4DB
   zookeeper: 3.5.8
   third-party-libs: 2.6.x
@@ -105,7 +105,7 @@
 - version: 2.7.0
   format: 2.7
   protocol: 2.7
-  url: https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=kafka/2.7.0/kafka_2.12-2.7.0.tgz
+  url: "https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download\\&filename=kafka/2.7.0/kafka_2.12-2.7.0.tgz"
   checksum: ADAD48E6D9C9BF6577FC97DB10BFE9EF3755DA7B3060ED633EDB89EB99722DC81B111BAB2C91E7875E0A866A1020C8C31904B088D2A9F9950796EDA8ED789CCD
   zookeeper: 3.5.8
   third-party-libs: 2.7.x
