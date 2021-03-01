@@ -19,20 +19,6 @@ Execute the following steps for each `KafkaConnect` resource in your deployment.
 kubectl edit kafkaconnect _my-connect_
 ----
 
-. Replace:
-+
-[source,shell,subs="attributes"]
-----
-apiVersion: {KafkaConnectApiVersionPrev}
-----
-+
-with:
-+
-[source,shell,subs="attributes"]
-----
-apiVersion: {KafkaConnectApiVersion}
-----
-
 . If present, move:
 +
 [source,shell]
@@ -77,6 +63,75 @@ spec:
     pod:
       affinity {}
       tolerations {}
+----
+
+. If `type: external` logging is configured in `.spec.logging`:
++
+Replace the `name` of the ConfigMap containing the logging configuration:
++
+[source,yaml,subs="attributes+"]
+----
+logging:
+  type: external
+  name: my-config-map
+----
++
+With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
++
+[source,yaml,subs="attributes+"]
+----
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: my-config-map
+      key: log4j.properties
+----
+
+. If the `.spec.metrics` field is used to enable metrics:
+
+.. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
+The YAML is the same as is currently in `.spec.metrics`.
++
+[source,yaml,subs="attributes+"]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kafka-connect-metrics
+  labels:
+    app: strimzi
+data:
+  connect-metrics-config.yml: |
+      <YAML>
+----
+
+.. Create a new `.spec.metricsConfig` field pointing to the ConfigMap and key:
++
+[source,yaml,subs="attributes+"]
+----
+metricsConfig:
+  type: jmxPrometheusExporter
+  valueFrom:
+    configMapKeyRef:
+      name: kafka-connect-metrics
+      key: connect-metrics-config.yml
+----
+
+.. Delete the old `.spec.metrics` field.
+
+. Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaConnectApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaConnectApiVersion}
 ----
 
 . Save the file, exit the editor and wait for the updated resource to be reconciled.
