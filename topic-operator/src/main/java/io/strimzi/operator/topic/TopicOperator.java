@@ -73,6 +73,7 @@ class TopicOperator {
     private Counter successfulReconciliationsCounter;
     private Counter lockedReconciliationsCounter;
     private AtomicInteger topicCounter;
+    private AtomicInteger pausedTopicCounter;
     protected Timer reconciliationsTimer;
 
     enum EventType {
@@ -413,6 +414,10 @@ class TopicOperator {
 
             topicCounter = metrics.gauge(METRICS_PREFIX + "resources",
                     "Number of topics the operator sees",
+                    metricTags);
+
+            pausedTopicCounter = metrics.gauge(METRICS_PREFIX + "resources.paused",
+                    "Number of topics the operator sees but does not reconcile due to paused reconciliations",
                     metricTags);
 
             reconciliationsTimer = metrics.timer(METRICS_PREFIX + "reconciliations.duration",
@@ -1293,8 +1298,12 @@ class TopicOperator {
             });
         }).compose(reconcileState -> {
             List<Future> futs = new ArrayList<>();
+            pausedTopicCounter.set(0);
             topicCounter.set(reconcileState.ktList.size());
             for (KafkaTopic kt : reconcileState.ktList) {
+                if (Annotations.isReconciliationPausedWithAnnotation(kt)) {
+                    pausedTopicCounter.getAndIncrement();
+                }
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName()).withKubeTopic(kt);
                 Topic topic = TopicSerialization.fromTopicResource(kt);
                 TopicName topicName = topic.getTopicName();

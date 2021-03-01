@@ -1520,7 +1520,7 @@ public class ConnectorMockTest {
     }
 
     @Test
-    public void testConnectorReconciliationPaused() {
+    public void testConnectorReconciliationPausedUnpaused() {
         String connectName = "cluster";
         String connectorName = "connector";
 
@@ -1537,26 +1537,32 @@ public class ConnectorMockTest {
                 .build());
         waitForConnectReady(connectName);
 
-        String yaml = "apiVersion: kafka.strimzi.io/v1alpha1\n" +
-                "kind: KafkaConnector\n" +
-                "metadata:\n" +
-                "  name: " + connectorName + "\n" +
-                "  namespace: " + NAMESPACE + "\n" +
-                "  labels:\n" +
-                "    strimzi.io/cluster: " + connectName + "\n" +
-                "  annotations:\n" +
-                "    strimzi.io/pause-reconciliation: \"true\"\n" +
-                "spec:\n" +
-                "  class: EchoSink\n" +
-                "  tasksMax: 1\n" +
-                "  unknownField: \"value\"\n" +
-                "  config:\n" +
-                "    level: INFO\n" +
-                "    topics: timer-topic";
+        // paused
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName(connectorName)
+                    .withNamespace(NAMESPACE)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .addToAnnotations("strimzi.io/pause-reconciliation", "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
+                .endSpec()
+                .build();
 
-        KafkaConnector kcr = TestUtils.fromYamlString(yaml, KafkaConnector.class);
-        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(kcr);
-
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector);
         waitForConnectorCondition(connectorName, "ReconciliationPaused", null);
+
+        // unpaused
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).edit(cntctr ->
+                new KafkaConnectorBuilder(cntctr)
+                        .editMetadata()
+                            .addToAnnotations("strimzi.io/pause-reconciliation", "false")
+                        .endMetadata()
+                .build());
+
+        waitForConnectorReady(connectorName);
+        waitForConnectorState(connectorName, "RUNNING");
     }
 }

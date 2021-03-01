@@ -55,6 +55,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -171,7 +172,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     }
 
     @Test
-    public void testPauseReconcile(VertxTestContext context) {
+    public void testPauseReconcileUnpause(VertxTestContext context) {
         setConnectResource(new KafkaConnectBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(CLUSTER_NAME)
@@ -210,6 +211,40 @@ public class KafkaConnectAssemblyOperatorMockTest {
                         }
                     }
                     assertTrue(conditionFound);
+
+                    async.flag();
+                })))
+                .compose(v -> {
+                    setConnectResource(new KafkaConnectBuilder()
+                            .withMetadata(new ObjectMetaBuilder()
+                                    .withName(CLUSTER_NAME)
+                                    .withNamespace(NAMESPACE)
+                                    .withLabels(TestUtils.map("foo", "bar"))
+                                    .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "false"))
+                                    .build())
+                            .withNewSpec()
+                            .withReplicas(replicas)
+                            .endSpec()
+                            .build());
+                    LOGGER.info("Reconciling again -> update");
+                    return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(mockClient).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+                    if (resource.get().getStatus() == null) {
+                        fail();
+                    }
+                    List<Condition> conditions = resource.get().getStatus().getConditions();
+                    boolean conditionFound = false;
+                    if (conditions != null && !conditions.isEmpty()) {
+                        for (Condition condition: conditions) {
+                            if ("ReconciliationPaused".equals(condition.getType())) {
+                                conditionFound = true;
+                                break;
+                            }
+                        }
+                    }
+                    assertFalse(conditionFound);
 
                     async.flag();
                 })));

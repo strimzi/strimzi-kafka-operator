@@ -90,6 +90,7 @@ public abstract class AbstractOperator<
     private final Counter failedReconciliationsCounter;
     private final Counter successfulReconciliationsCounter;
     private final Counter lockedReconciliationsCounter;
+    private final AtomicInteger pausedResourceCounter;
     private final AtomicInteger resourceCounter;
     private final Timer reconciliationsTimer;
     private final Map<Tags, AtomicInteger> resourcesStateCounter;
@@ -110,6 +111,10 @@ public abstract class AbstractOperator<
 
         reconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",
                 "Number of reconciliations done by the operator for individual resources",
+                metricTags);
+
+        pausedResourceCounter = metrics.gauge(METRICS_PREFIX + "resources.paused",
+                "Number of custom resources the operator sees but does not reconcile due to paused reconciliations",
                 metricTags);
 
         failedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.failed",
@@ -218,6 +223,8 @@ public abstract class AbstractOperator<
                             createOrUpdate.fail(statusResult.cause());
                         }
                     });
+                    getPausedResourceCounter().getAndIncrement();
+                    log.debug("{}: Reconciliation of {} {} is paused", reconciliation, kind, name);
                     return createOrUpdate.future();
                 } else if (cr.getSpec() == null) {
                     InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
@@ -508,6 +515,10 @@ public abstract class AbstractOperator<
 
     public AtomicInteger getResourceCounter() {
         return resourceCounter;
+    }
+
+    public AtomicInteger getPausedResourceCounter() {
+        return pausedResourceCounter;
     }
 
     /**
