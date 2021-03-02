@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-resources-{context}']
-= Upgrading Kafka resources to {ApiVersion}
+= Upgrading Kafka resources to support {ApiVersion}
 
 .Prerequisites
 
@@ -107,20 +107,11 @@ metricsConfig:
 
 .. Delete the old `.spec.kafka.metrics` field.
 
-. Update the `apiVersion` of the `Kafka` resource to `{ApiVersion}`:
-+
-Replace:
-+
-[source,shell,subs="attributes"]
-----
-apiVersion: {KafkaApiVersionPrev}
-----
-+
-with:
-+
-[source,shell,subs="attributes"]
-----
-apiVersion: {KafkaApiVersion}
-----
-
 . Save the file, exit the editor and wait for the updated resource to be reconciled.
+
+.What to do next
+
+For each `Kafka` resource, upgrade the configurations for ZooKeeper, Topic Operator, Entity Operator, and Cruise Control (if deployed) to support version `{ApiVersion}`. 
+This is described in the following procedures.
+
+When all configurations are updated to support `{ApiVersion}`, you can xref:proc-upgrade-kafka-api-version-{context}[upgrade the `Kafka` resource to `{ApiVersion}`]. 
