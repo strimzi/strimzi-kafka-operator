@@ -6,8 +6,6 @@
 [options="header"]
 |=================
 |Kafka version |Interbroker protocol version |Log message format version| ZooKeeper version
-| 2.5.0 | 2.5 | 2.5 | 3.5.7
-| 2.5.1 | 2.5 | 2.5 | 3.5.8
 | 2.6.0 | 2.6 | 2.6 | 3.5.8
 | 2.6.1 | 2.6 | 2.6 | 3.5.8
 | 2.7.0 | 2.7 | 2.7 | 3.5.8
