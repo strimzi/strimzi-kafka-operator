@@ -50,7 +50,7 @@ function fetch_and_unpack_kafka_binaries {
     declare -Ag version_dist_dirs
 
     # Set the cache folder to store the binary files
-    binary_file_dir="$kafka_image/tmp"
+    binary_file_dir="$kafka_image/tmp/archives"
     test -d "$binary_file_dir" || mkdir -p "$binary_file_dir"
 
     for kafka_version in "${!version_checksums[@]}"
@@ -111,7 +111,7 @@ function fetch_and_unpack_kafka_binaries {
         fi
 
         # We now have a verified tar archive for this version of Kafka. Unpack it into the temp dir
-        dist_dir="$binary_file_dir/$kafka_version"
+        dist_dir="$kafka_image/tmp/$kafka_version"
         # If an unpacked directory with the same name exists then delete it
         test -d "$dist_dir" && rm -r "$dist_dir"
         mkdir -p "$dist_dir"
@@ -124,7 +124,7 @@ function fetch_and_unpack_kafka_binaries {
         # create a file listing all the jars with colliding class files in the Kafka dist
         # (on the assumption that this is OK). This file will be used after building the images to detect any collisions
         # added by the third-party jars mechanism.
-        whilelist_file="$binary_file_dir/$kafka_version.whitelist"
+        whilelist_file="$dist_dir.whitelist"
         if [ ! -e $whilelist_file ]
         then
             unzipped_dir=`mktemp -d`
