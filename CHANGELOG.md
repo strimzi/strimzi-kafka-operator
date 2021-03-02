@@ -18,6 +18,7 @@
 * Add support for Ingress v1 in Kubernetes 1.19 and newer
 * Add support for Kafka 2.6.1
 * List topics used by a Kafka Connect connector in the `.status` section of the `KafkaConnector` custom resource
+* Bump Cruise Control to v2.5.37 for Kafka 2.7 support.
 
 ### Changes, deprecations and removals
 
