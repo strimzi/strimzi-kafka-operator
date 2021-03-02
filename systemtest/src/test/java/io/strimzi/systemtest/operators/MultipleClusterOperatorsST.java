@@ -29,6 +29,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import static org.hamcrest.CoreMatchers.is;
@@ -88,7 +89,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
         LOGGER.info("Deploying Kafka with CR selector pointing at first CO");
         KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 3, 3).build());
 
-        KafkaUtils.waitForClusterStability(clusterName);
+        PodUtils.waitUntilPodStabilityReplicasCount(clusterName, 0);
+
         LOGGER.info("Add selector for {} into Kafka CR", FIRST_CO_NAME);
         KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR));
         KafkaUtils.waitForKafkaReady(clusterName);
