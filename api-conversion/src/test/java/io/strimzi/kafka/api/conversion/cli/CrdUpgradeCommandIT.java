@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
@@ -24,6 +25,7 @@ import picocli.CommandLine;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -41,6 +43,9 @@ public class CrdUpgradeCommandIT {
         CLUSTER.cluster();
         CLUSTER.createNamespace(NAMESPACE);
         CliTestUtils.setupAllCrds(CLUSTER);
+
+        // Checks that the old CRDs are really deployed as expected => v1beta1 or v1alpha1 are the stored versions
+        CliTestUtils.crdHasTheExpectedInitialState(client);
     }
 
     @AfterEach
@@ -49,6 +54,10 @@ public class CrdUpgradeCommandIT {
         CLUSTER.deleteNamespaces();
     }
 
+    /**
+     * Tests the upgrade of CRDs (to use v1beta2 as the stored version) after all custom resources have been converted
+     * and are compatible with v1beta2.
+     */
     @Test
     public void testCrdUpgradeWithConvertedResources() {
         MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
@@ -63,6 +72,11 @@ public class CrdUpgradeCommandIT {
                             .withReplicas(3)
                             .withNewEphemeralStorage()
                             .endEphemeralStorage()
+                            .withNewJmxPrometheusExporterMetricsConfig()
+                                .withNewValueFrom()
+                                    .withNewConfigMapKeyRef("zoo-metrics", "metrics-cm", false)
+                                .endValueFrom()
+                            .endJmxPrometheusExporterMetricsConfig()
                         .endZookeeper()
                         .withNewKafka()
                             .withVersion("2.7.0")
@@ -84,6 +98,11 @@ public class CrdUpgradeCommandIT {
                             .endListeners()
                             .withNewEphemeralStorage()
                             .endEphemeralStorage()
+                            .withNewJmxPrometheusExporterMetricsConfig()
+                                .withNewValueFrom()
+                                    .withNewConfigMapKeyRef("kafka-metrics", "metrics-cm", false)
+                                .endValueFrom()
+                            .endJmxPrometheusExporterMetricsConfig()
                         .endKafka()
                         .withNewEntityOperator()
                             .withNewUserOperator()
@@ -129,11 +148,22 @@ public class CrdUpgradeCommandIT {
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getKafkaListeners(), is(nullValue()));
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getGenericKafkaListeners(), is(notNullValue()));
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getGenericKafkaListeners().size(), is(2));
+            assertThat(actualKafka1.getSpec().getKafka().getMetrics(), is(nullValue()));
+            assertThat(actualKafka1.getSpec().getKafka().getMetricsConfig(), is(notNullValue()));
+            assertThat(actualKafka1.getSpec().getKafka().getMetricsConfig().getType(), is(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetrics(), is(nullValue()));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetricsConfig(), is(notNullValue()));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetricsConfig().getType(), is(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER));
         } finally {
             op.inNamespace(NAMESPACE).withName("kafka1").delete();
         }
     }
 
+    /**
+     * Tests the upgrade of CRDs (to use v1beta2 as the stored version) without all resources being converted and
+     * compatible with v1beta2. This should cause a failure of the crd-upgrade command because it cannot store all CRs
+     * as v1beta2.
+     */
     @Test
     public void testUpgradeWithUnconvertedResourcesFails() {
         MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
@@ -148,6 +178,7 @@ public class CrdUpgradeCommandIT {
                             .withReplicas(3)
                             .withNewEphemeralStorage()
                             .endEphemeralStorage()
+                            .withMetrics(Map.of("somekey1", "somevalue1", "somekey2", "somevalue2"))
                         .endZookeeper()
                         .withNewKafka()
                             .withVersion("2.7.0")
@@ -164,6 +195,7 @@ public class CrdUpgradeCommandIT {
                             .endListeners()
                             .withNewEphemeralStorage()
                             .endEphemeralStorage()
+                            .withMetrics(Map.of("somekey3", "somevalue3", "somekey4", "somevalue4"))
                         .endKafka()
                         .withNewEntityOperator()
                             .withNewUserOperator()
@@ -206,6 +238,10 @@ public class CrdUpgradeCommandIT {
             Kafka actualKafka1 = op.inNamespace(NAMESPACE).withName("kafka1").get();
             assertThat(actualKafka1, is(notNullValue()));
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getKafkaListeners(), is(notNullValue()));
+            assertThat(actualKafka1.getSpec().getKafka().getMetrics(), is(Map.of("somekey3", "somevalue3", "somekey4", "somevalue4")));
+            assertThat(actualKafka1.getSpec().getKafka().getMetricsConfig(), is(nullValue()));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetrics(), is(Map.of("somekey1", "somevalue1", "somekey2", "somevalue2")));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetricsConfig(), is(nullValue()));
         } finally {
             op.inNamespace(NAMESPACE).withName("kafka1").delete();
         }

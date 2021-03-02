@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
@@ -22,6 +23,7 @@ import picocli.CommandLine;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -38,6 +40,9 @@ public class FullUpgradeLifecycleIT {
         CLUSTER.cluster();
         CLUSTER.createNamespace(NAMESPACE);
         CliTestUtils.setupAllCrds(CLUSTER);
+
+        // Checks that the old CRDs are really deployed as expected => v1beta1 or v1alpha1 are the stored versions
+        CliTestUtils.crdHasTheExpectedInitialState(client);
     }
 
     @AfterEach
@@ -46,6 +51,17 @@ public class FullUpgradeLifecycleIT {
         CLUSTER.deleteNamespaces();
     }
 
+    /**
+     * Tests the full lifecycle of the CRD upgrade. It:
+     *     1) Starts with the initial CRDs containing all versions
+     *     2) Creates the resources with the old versions and APIs
+     *     3) Converts them using convert-resources subcommand
+     *     4) Upgrades the CRDs to use v1beta2 as stored version using the crd-upgrade subcommand
+     *     5) Installs the CRD v1 definitions containing only the v1beta2 version
+     *     6) Checks that the KAfka CR is still there and looks good
+     *
+     * This test checks the whole lifecycle as the user should run it.
+     */
     @Test
     public void testFullLifecycleAsExpected() {
         MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta2 = Crds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
@@ -61,6 +77,7 @@ public class FullUpgradeLifecycleIT {
                             .withReplicas(3)
                             .withNewEphemeralStorage()
                             .endEphemeralStorage()
+                            .withMetrics(Map.of("somekey1", "somevalue1", "somekey2", "somevalue2"))
                         .endZookeeper()
                         .withNewKafka()
                             .withVersion("2.7.0")
@@ -77,6 +94,7 @@ public class FullUpgradeLifecycleIT {
                             .endListeners()
                             .withNewEphemeralStorage()
                             .endEphemeralStorage()
+                            .withMetrics(Map.of("somekey3", "somevalue3", "somekey4", "somevalue4"))
                         .endKafka()
                         .withNewEntityOperator()
                             .withNewUserOperator()
@@ -115,12 +133,31 @@ public class FullUpgradeLifecycleIT {
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getKafkaListeners(), is(nullValue()));
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getGenericKafkaListeners(), is(notNullValue()));
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getGenericKafkaListeners().size(), is(3));
+            assertThat(actualKafka1.getSpec().getKafka().getMetrics(), is(nullValue()));
+            assertThat(actualKafka1.getSpec().getKafka().getMetricsConfig(), is(notNullValue()));
+            assertThat(actualKafka1.getSpec().getKafka().getMetricsConfig().getType(), is(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetrics(), is(nullValue()));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetricsConfig(), is(notNullValue()));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetricsConfig().getType(), is(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER));
         } finally {
             opV1Beta2.inNamespace(NAMESPACE).withName("kafka1").delete();
             CliTestUtils.deleteV1Crds(CLUSTER);
         }
     }
 
+    /**
+     * Tests the full lifecycle of the CRD upgrade when user forgets to convert all custom resources. It:
+     *     1) Starts with the initial CRDs containing all versions
+     *     2) Creates the resources with the old versions and APIs
+     *     3) Upgrades the CRDs to use v1beta2 as stored version using the crd-upgrade subcommand => this fails because they were not converted first
+     *     4) Converts them using convert-resources subcommand
+     *     5) Upgrades the CRDs to use v1beta2 as stored version using the crd-upgrade subcommand => this fails because they were not converted first
+     *     6) Installs the CRD v1 definitions containing only the v1beta2 version
+     *     7) Checks that the KAfka CR is still there and looks good
+     *
+     * This test checks the whole lifecycle but expects that the user forgot to convert something and the crd-upgrade
+     * step fails. So the user needs to go back, convert it and then run the CRD upgrade again.
+     */
     @Test
     public void testFullLifecycleOnSecondTry() {
         MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta2 = Crds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
@@ -136,6 +173,7 @@ public class FullUpgradeLifecycleIT {
                             .withReplicas(3)
                             .withNewEphemeralStorage()
                             .endEphemeralStorage()
+                            .withMetrics(Map.of("somekey1", "somevalue1", "somekey2", "somevalue2"))
                         .endZookeeper()
                         .withNewKafka()
                             .withVersion("2.7.0")
@@ -152,6 +190,7 @@ public class FullUpgradeLifecycleIT {
                             .endListeners()
                             .withNewEphemeralStorage()
                             .endEphemeralStorage()
+                            .withMetrics(Map.of("somekey3", "somevalue3", "somekey4", "somevalue4"))
                         .endKafka()
                         .withNewEntityOperator()
                             .withNewUserOperator()
@@ -197,6 +236,12 @@ public class FullUpgradeLifecycleIT {
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getKafkaListeners(), is(nullValue()));
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getGenericKafkaListeners(), is(notNullValue()));
             assertThat(actualKafka1.getSpec().getKafka().getListeners().getGenericKafkaListeners().size(), is(3));
+            assertThat(actualKafka1.getSpec().getKafka().getMetrics(), is(nullValue()));
+            assertThat(actualKafka1.getSpec().getKafka().getMetricsConfig(), is(notNullValue()));
+            assertThat(actualKafka1.getSpec().getKafka().getMetricsConfig().getType(), is(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetrics(), is(nullValue()));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetricsConfig(), is(notNullValue()));
+            assertThat(actualKafka1.getSpec().getZookeeper().getMetricsConfig().getType(), is(JmxPrometheusExporterMetrics.TYPE_JMX_EXPORTER));
         } finally {
             opV1Beta2.inNamespace(NAMESPACE).withName("kafka1").delete();
             CliTestUtils.deleteV1Crds(CLUSTER);

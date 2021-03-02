@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 
+import java.util.List;
+
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -32,6 +34,11 @@ public class CliTestUtils {
     public static final String CRD_V1_KAFKA_CONNECTOR = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model//047-Crd-kafkaconnector.yaml";
     public static final String CRD_V1_KAFKA_REBALANCE = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/049-Crd-kafkarebalance.yaml";
 
+    /**
+     * Creates all CRDs of extensions/v1beta1 version containing all Strimzi API versions
+     *
+     * @param cluster   Kubernetes cluster
+     */
     public static void setupAllCrds(KubeClusterResource cluster)  {
         cluster.createCustomResources(TestUtils.CRD_KAFKA);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
@@ -56,6 +63,12 @@ public class CliTestUtils {
         waitForCrd(cluster, "kafkarebalances.kafka.strimzi.io");
     }
 
+    /**
+     * Waits for CRDs to be deployed and recognized by the Kube cluster
+     *
+     * @param cluster   Kubernetes cluster
+     * @param name      Name of the CRD
+     */
     private static void waitForCrd(KubeClusterResource cluster, String name) {
         cluster.cmdClient().waitFor("crd", name, crd -> {
             JsonNode json = (JsonNode) crd;
@@ -69,6 +82,11 @@ public class CliTestUtils {
         });
     }
 
+    /**
+     * Deletes all Strimzi CRDs
+     *
+     * @param cluster   Kubernetes cluster
+     */
     public static void deleteAllCrds(KubeClusterResource cluster) {
         cluster.deleteCustomResources(TestUtils.CRD_KAFKA);
         cluster.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECT);
@@ -82,6 +100,11 @@ public class CliTestUtils {
         cluster.deleteCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
     }
 
+    /**
+     * Checks the status of the CRDs after the upgrade is complete => v1beta2 should be the only stored version
+     *
+     * @param client    Kubernetes client
+     */
     public static void crdStatusHasUpdatedStorageVersions(KubernetesClient client)    {
         for (String kind : AbstractCommand.STRIMZI_KINDS)  {
             String crdName = CrdUpgradeCommand.CRD_NAMES.get(kind);
@@ -93,6 +116,12 @@ public class CliTestUtils {
         }
     }
 
+    /**
+     * Checks the status of the CRDs in the middle of the upgrade after the spec has been changed but not the status
+     * => v1beta2 and one of v1beta1 and v1alpha1 (depends if the resource has v1beta1 or not) should be stored
+     *
+     * @param client    Kubernetes client
+     */
     public static void crdStatusHasNotUpdatedStorageVersions(KubernetesClient client)    {
         for (String kind : AbstractCommand.STRIMZI_KINDS)  {
             String crdName = CrdUpgradeCommand.CRD_NAMES.get(kind);
@@ -103,23 +132,55 @@ public class CliTestUtils {
         }
     }
 
+    /**
+     * Checks the spec of the CRDs after the upgrade. v1beta2 should be the stored version, all versions should be served.
+     *
+     * @param client    Kubernetes client
+     */
     public static void crdSpecHasUpdatedStorage(KubernetesClient client)    {
         for (String kind : AbstractCommand.STRIMZI_KINDS)  {
             String crdName = CrdUpgradeCommand.CRD_NAMES.get(kind);
             CustomResourceDefinition crd = client.apiextensions().v1beta1().customResourceDefinitions().withName(crdName).get();
 
-            for (CustomResourceDefinitionVersion crdVersion : crd.getSpec().getVersions()) {
-                if ("v1beta2".equals(crdVersion.getName())) {
-                    assertThat(crdVersion.getStorage(), is(true));
-                    assertThat(crdVersion.getServed(), is(true));
-                } else {
-                    assertThat(crdVersion.getStorage(), is(false));
-                    assertThat(crdVersion.getServed(), is(true));
-                }
-            }
+            List<String> allVersions = crd.getSpec().getVersions().stream().map(CustomResourceDefinitionVersion::getName).collect(toList());
+            List<String> storedVersions = crd.getSpec().getVersions().stream().filter(CustomResourceDefinitionVersion::getStorage).map(CustomResourceDefinitionVersion::getName).collect(toList());
+            List<String> servedVersions = crd.getSpec().getVersions().stream().filter(CustomResourceDefinitionVersion::getServed).map(CustomResourceDefinitionVersion::getName).collect(toList());
+
+            assertThat(storedVersions, hasItem("v1beta2"));
+            assertThat(storedVersions, hasItem(not("v1alpha1")));
+            assertThat(storedVersions, hasItem(not("v1beta1")));
+            assertThat(servedVersions, is(allVersions));
         }
     }
 
+    /**
+     * Checks that the CRDs have the expected initial state => v1beta2 is present and served but not stored.
+     *
+     * @param client    Kubernetes client
+     */
+    public static void crdHasTheExpectedInitialState(KubernetesClient client)    {
+        for (String kind : AbstractCommand.STRIMZI_KINDS)  {
+            String crdName = CrdUpgradeCommand.CRD_NAMES.get(kind);
+            CustomResourceDefinition crd = client.apiextensions().v1beta1().customResourceDefinitions().withName(crdName).get();
+
+            List<String> allVersions = crd.getSpec().getVersions().stream().map(CustomResourceDefinitionVersion::getName).collect(toList());
+            List<String> storedVersions = crd.getSpec().getVersions().stream().filter(CustomResourceDefinitionVersion::getStorage).map(CustomResourceDefinitionVersion::getName).collect(toList());
+            List<String> servedVersions = crd.getSpec().getVersions().stream().filter(CustomResourceDefinitionVersion::getServed).map(CustomResourceDefinitionVersion::getName).collect(toList());
+
+            assertThat(storedVersions, hasItem(not("v1beta2")));
+            assertThat(storedVersions, hasItem(oneOf("v1alpha1", "v1beta1")));
+            assertThat(servedVersions, is(allVersions));
+
+            assertThat(crd.getStatus().getStoredVersions(), hasItem(not("v1beta2")));
+            assertThat(crd.getStatus().getStoredVersions(), hasItem(oneOf("v1alpha1", "v1beta1")));
+        }
+    }
+
+    /**
+     * Creates all CRDs of extensions/v1 containing only Strimzi v1beta2 API version
+     *
+     * @param cluster   Kubernetes cluster
+     */
     public static void setupV1Crds(KubeClusterResource cluster)  {
         cluster.replaceCustomResources(CRD_V1_KAFKA);
         cluster.replaceCustomResources(CRD_V1_KAFKA_CONNECT);
@@ -144,6 +205,11 @@ public class CliTestUtils {
         waitForCrd(cluster, "kafkarebalances.kafka.strimzi.io");
     }
 
+    /**
+     * Deletes all Strimzi CRDs (extensions/v1 version)
+     *
+     * @param cluster   Kubernetes cluster
+     */
     public static void deleteV1Crds(KubeClusterResource cluster) {
         cluster.deleteCustomResources(CRD_V1_KAFKA);
         cluster.deleteCustomResources(CRD_V1_KAFKA_CONNECT);
@@ -157,6 +223,11 @@ public class CliTestUtils {
         cluster.deleteCustomResources(CRD_V1_KAFKA_REBALANCE);
     }
 
+    /**
+     * Checks that the CRD now has only the v1beta2 version
+     *
+     * @param client    Kubernetes client
+     */
     public static void crdHasV1Beta2Only(KubernetesClient client)    {
         for (String kind : AbstractCommand.STRIMZI_KINDS)  {
             String crdName = CrdUpgradeCommand.CRD_NAMES.get(kind);

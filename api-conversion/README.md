@@ -137,7 +137,7 @@ To convert the resources directly in your Kubernetes cluster, you must run the t
 
 ## Upgrading CRDs to v1beta2
 
-You can also use the tool to update the Strimzi CRDs to use the new `v1eta2` version as a stored version.
+You can also use the tool to update the Strimzi CRDs to use the new `v1beta2` version as a stored version.
 This is required before upgrading to Strimzi 0.23 and newer.
 You have to first convert all Strimzi custom resources to `v1beta2` using one of the previous commands.
 Once the custom resources are ready, you can use the `crd-upgrade` subcommand to upgrade the CRDs.
