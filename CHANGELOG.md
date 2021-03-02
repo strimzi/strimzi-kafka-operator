@@ -19,6 +19,7 @@
 * Add support for Kafka 2.6.1
 * List topics used by a Kafka Connect connector in the `.status` section of the `KafkaConnector` custom resource
 * Bump Cruise Control to v2.5.37 for Kafka 2.7 support.
+* New Cruise Control supports `log4j2` implementation thus we support dynamic logging changes for it. The logging configuration has to be changed.
 
 ### Changes, deprecations and removals
 
@@ -49,6 +50,7 @@
         name: my-config-map
         key: my-key
   ``` 
+* Cruise Control logging configuration does not contain `cruisecontrol.root.logger` property anymore. It has been replaced by `rootLogger.level`.
 
 ## 0.21.0
 
