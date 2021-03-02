@@ -12,6 +12,7 @@ Strimzi supports most of the optimization goals developed in the Cruise Control 
 The supported goals, in the default descending order of priority, are as follows:
 
 . Rack-awareness
+. Minimum topic leaders per broker
 . Replica capacity
 . _Capacity_: Disk capacity, Network inbound capacity, Network outbound capacity, CPU capacity
 . Replica distribution
