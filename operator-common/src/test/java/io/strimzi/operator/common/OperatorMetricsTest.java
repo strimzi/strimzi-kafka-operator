@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -156,6 +157,58 @@ public class OperatorMetricsTest {
                             .tag("name", "my-resource")
                             .tag("resource-namespace", "my-namespace")
                             .gauge().value(), is(0.0));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testPauseReconcile(VertxTestContext context)  {
+        MetricsProvider metrics = createCleanMetricsProvider();
+
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
+
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+            @Override
+            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+                return Future.succeededFuture();
+            }
+
+            @Override
+            public Set<Condition> validate(CustomResource resource) {
+                return new HashSet<>();
+            }
+
+            @Override
+            protected Future<Boolean> delete(Reconciliation reconciliation) {
+                return null;
+            }
+
+            @Override
+            protected Status createStatus() {
+                return new Status() { };
+            }
+        };
+
+        Checkpoint async = context.checkpoint();
+        operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    MeterRegistry registry = metrics.meterRegistry();
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources.paused").tag("kind", "TestResource").gauge().value(), is(1.0));
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                            .tag("kind", "TestResource")
+                            .tag("name", "my-resource")
+                            .tag("resource-namespace", "my-namespace")
+                            .gauge().value(), is(1.0));
 
                     async.flag();
                 })));
@@ -298,6 +351,11 @@ public class OperatorMetricsTest {
             }
 
             @Override
+            Future<Void> updateStatus(Reconciliation reconciliation, Status desiredStatus) {
+                return Future.succeededFuture();
+            }
+
+            @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
             }
@@ -417,6 +475,128 @@ public class OperatorMetricsTest {
                     }
                 }
                 return new Foo();
+            }
+        };
+    }
+
+    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource()    {
+        return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+            @Override
+            public Future updateStatusAsync(HasMetadata resource) {
+                return Future.succeededFuture();
+            }
+
+            @Override
+            protected MixedOperation operation() {
+                return null;
+            }
+
+            @Override
+            public CustomResource get(String namespace, String name) {
+                @Group("strimzi")
+                @Version("v1")
+                class Foo extends MyResource {
+                    @Override
+                    public ObjectMeta getMetadata() {
+                        ObjectMeta md = new ObjectMeta();
+                        md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
+                        return md;
+                    }
+
+                    @Override
+                    public void setMetadata(ObjectMeta objectMeta) {
+
+                    }
+
+                    @Override
+                    public String getKind() {
+                        return "TestResource";
+                    }
+
+                    @Override
+                    public String getApiVersion() {
+                        return "v1";
+                    }
+
+                    @Override
+                    public void setApiVersion(String s) {
+
+                    }
+
+                    @Override
+                    public Spec getSpec() {
+                        return new Spec() { };
+                    }
+
+                    @Override
+                    public void setSpec(Object spec) {
+                    }
+
+                    @Override
+                    public Status getStatus() {
+                        return null;
+                    }
+
+                    @Override
+                    public void setStatus(Object status) {
+
+                    }
+                }
+                return new Foo();
+            }
+
+            @Override
+            public Future getAsync(String namespace, String name) {
+                @Group("strimzi")
+                @Version("v1")
+                class Foo extends MyResource {
+                    @Override
+                    public ObjectMeta getMetadata() {
+                        ObjectMeta md = new ObjectMeta();
+                        md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
+                        return md;
+                    }
+
+                    @Override
+                    public void setMetadata(ObjectMeta objectMeta) {
+
+                    }
+
+                    @Override
+                    public String getKind() {
+                        return "TestResource";
+                    }
+
+                    @Override
+                    public String getApiVersion() {
+                        return "v1";
+                    }
+
+                    @Override
+                    public void setApiVersion(String s) {
+
+                    }
+
+                    @Override
+                    public Spec getSpec() {
+                        return new Spec() { };
+                    }
+
+                    @Override
+                    public void setSpec(Object spec) {
+                    }
+
+                    @Override
+                    public Status getStatus() {
+                        return null;
+                    }
+
+                    @Override
+                    public void setStatus(Object status) {
+
+                    }
+                }
+                return Future.succeededFuture(new Foo());
             }
         };
     }
