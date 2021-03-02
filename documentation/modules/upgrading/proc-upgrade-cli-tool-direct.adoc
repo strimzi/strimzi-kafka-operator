@@ -6,7 +6,7 @@
 = Converting custom resources directly using the API conversion tool
 
 [role="_abstract"]
-This procedure describes how to use the API conversion tool to convert Strimzi custom resources directly in the kubernetes cluster into a format applicable to `{ApiVersion}`.
+This procedure describes how to use the API conversion tool to convert Strimzi custom resources directly in the Kubernetes cluster into a format applicable to `{ApiVersion}`.
 To do so, you use the `convert-resource` (`cr`) command.
 The command uses Kubernetes APIs to make the conversions.
 
@@ -14,10 +14,13 @@ You can specify one or more of types of Strimzi custom resources, based on the `
 You can also target a specific namespace or all namespaces for conversion.
 When targeting a namespace, you can convert all custom resources in that namespace, or convert a single custom resource by specifying its name and kind.
 
+Alternatively, you can use the xref:proc-upgrade-cli-tool-files-{context}[`convert-file` procedure to convert and apply the YAML files describing the custom resources].
+
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 * The API conversion tool, which is provided with the release artifacts.
+* The tool requires Java 11 (OpenJDK).
 * The steps require a user admin account with RBAC permission to:
 ** Get the Strimzi custom resources being converted using the `--name` option
 ** List the Strimzi custom resources being converted without using the `--name` option
@@ -30,6 +33,8 @@ Use the CLI help for more information on the API conversion tool, and the flags 
 bin/api-conversion.sh help
 bin/api-conversion.sh help convert-resource
 ----
+
+Use `bin/api-conversion.cmd` for this procedure if you are using Windows.
 
 .Flags for converting custom resources
 [cols="2*",options="header",stripes="none"]
@@ -49,12 +54,6 @@ bin/api-conversion.sh help convert-resource
 
 |`--name`
 |If `--namespace` and a single custom resource `--kind` is used, specifies the name of the custom resource being converted
-
-|`-ll`, `--log-level=<level>`
-|Sets the log level to enable logging
-
-|`-d`, `--debug`
-|Runs the tool in debug mode
 
 |===
 

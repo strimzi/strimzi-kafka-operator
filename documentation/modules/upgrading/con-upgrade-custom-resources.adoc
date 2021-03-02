@@ -38,7 +38,7 @@ The `v1beta1` API version is deprecated for the following Strimzi resources:
 * `KafkaTopic`
 * `KafkaUser`
 
-NOTE: Deprecated API versions might also be simultaneously supported by a CRD, as long as the schema for the custom resources is valid.
+IMPORTANT: The `v1alpha1` and `v1beta1` versions will be removed in the next minor release.
 
 API versioning policy indicates the relative stability of the version.
 Alpha version APIs are the least mature, beta versions more mature, and stable versions represent a durable release.
@@ -46,7 +46,7 @@ Alpha version APIs are the least mature, beta versions more mature, and stable v
 Example API versions:
 
 * Alpha version: `v1alpha1`
-* Beta version: `v1beta1`
+* Beta version: `v1beta1`, `v1beta2`
 * Stable version: `v1`
 
 After a new custom resource type is added to a cluster by installing a CRD, you can create instances of the resource based on its specification.

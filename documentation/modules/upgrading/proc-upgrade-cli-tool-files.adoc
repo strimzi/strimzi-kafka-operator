@@ -15,11 +15,15 @@ Any non-Strimzi Kubernetes resources are replicated unmodified in the converted 
 
 After you have converted the YAML file, you can apply the configuration to update the custom resource in the cluster.
 Alternatively, if the GitOps synchronization mechanism is being used for updates on your cluster, you can use it to apply the changes.
+The conversion is only complete when the custom resource is updated in the Kubernetes cluster.
+
+Alternatively, you can use the xref:proc-upgrade-cli-tool-direct-{context}[`convert-resource` procedure to convert custom resources directly].
 
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 * The API conversion tool, which is provided with the release artifacts.
+* The tool requires Java 11 (OpenJDK).
 
 Use the CLI help for more information on the API conversion tool, and the flags available for the `convert-file` command:
 
@@ -28,6 +32,8 @@ Use the CLI help for more information on the API conversion tool, and the flags 
 bin/api-conversion.sh help
 bin/api-conversion.sh help convert-file
 ----
+
+Use `bin/api-conversion.cmd` for this procedure if you are using Windows.
 
 .Flags for YAML file conversion
 [cols="2*",options="header",stripes="none"]
@@ -44,12 +50,6 @@ bin/api-conversion.sh help convert-file
 
 |`--in-place`
 |Writes the converted YAML into the original source file
-
-|`-ll`, `--log-level=<level>`
-|Sets the log level to enable logging
-
-|`-d`, `--debug`
-|Runs the tool in debug mode
 
 |===
 
@@ -82,3 +82,8 @@ bin/api-conversion.sh convert-file --file input.yaml --output output.yaml
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _CONVERTED-CONFIG-FILE_
+
+. Verify that the custom resources have been converted.
++
+[source,shell,subs=+quotes]
+kubectl get _KIND_ _CUSTOM-RESOURCE-NAME_ -o yaml

@@ -9,7 +9,7 @@
 This procedure describes how to use the API conversion tool to convert the CRDs that define the schemas used to instantiate and manage Strimzi-specific resources in a format applicable to `{ApiVersion}`.
 To do so, you use the `crd-upgrade` command.
 
-Perform this procedure after converting your custom resources to `{ApiVersion}`.
+*Perform this procedure after converting all Strimzi custom resources in the whole Kubernetes cluster to `{ApiVersion}`.*
 If you upgrade your CRDs first, and then convert your custom resources, you will need to run this command again.
 
 The command updates `spec.versions` in the CRDs to declare `{ApiVersion}` as the _storage_ API version.
@@ -22,6 +22,7 @@ When you have upgraded the CRDs to use `{ApiVersion}` as the storage version, yo
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 * The API conversion tool, which is provided with the release artifacts.
+* The tool requires Java 11 (OpenJDK).
 * Custom resources have been converted to `{ApiVersion}`.
 * The steps require a user admin account with RBAC permission to:
 ** List the Strimzi custom resources in all namespaces
@@ -36,12 +37,18 @@ Use the CLI help for more information on the API conversion tool:
 bin/api-conversion.sh help
 ----
 
+Use `bin/api-conversion.cmd` for this procedure if you are using Windows.
+
 .Procedure
 
 . If you have not done so, convert your custom resources to use `{ApiVersion}`.
 +
+You can use the API conversion tool to do this in one of two ways:
++
 * xref:proc-upgrade-cli-tool-files-{context}[]
 * xref:proc-upgrade-cli-tool-direct-{context}[]
++
+Or you can make the changes manually.
 
 . Run the API conversion tool with the upgrade command.
 +

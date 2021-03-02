@@ -7,13 +7,26 @@
 
 [role="_abstract"]
 After you have upgraded Strimzi to {ProductVersion}, you must ensure that your custom resources are using API version `{ApiVersion}`.
+You can do this any time after moving to {ProductVersion}, but the upgrades must be completed before the next minor version update.
 
 IMPORTANT: The upgrade of resources _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
 
+NOTE: Upgrade of the custom resources to `{ApiVersion}` prepares Strimzi for a move to Kubernetes CRD `v1`, 
+which is required for Kubernetes 1.22.
+
 .CLI upgrades to custom resources
 
-Strimzi provides am _API conversion tool_ with its release artifacts
-From its CLI, you can use the tool to convert the format of your custom resources to `{ApiVersion}`:
+Strimzi provides an _API conversion tool_ with its release artifacts.
+
+ifdef::Downloading[]
+You can download its ZIP or TAR.GZ file from {ReleaseDownload}.
+endif::Downloading[]
+ifndef::Downloading[]
+You can download its ZIP or TAR.GZ from {ZipDownload}.
+endif::Downloading[]
+To use the tool, unpack it and use the scripts in the `bin` directory.
+
+From its CLI, you can then use the tool to convert the format of your custom resources to `{ApiVersion}`:
 
 * xref:proc-upgrade-cli-tool-files-{context}[]
 * xref:proc-upgrade-cli-tool-direct-{context}[]
@@ -34,21 +47,7 @@ As an alternative to using the API conversion tool, you can manually update each
 * xref:proc-upgrade-kafka-user-resources-{context}[]
 
 The manual procedures show the changes that are made to each custom resource.
-
-.What if a resource upgrade does not take effect?
-If an upgrade does not take effect, a warning is given in the logs on reconciliation to indicate that the resource cannot be updated until the `apiVersion` is updated.
-
-To trigger the update, make a cosmetic change to the custom resource, such as adding an annotation.
-
-Example annotation:
-
-[source,shell,subs="+quotes,attributes"]
-----
-metadata:
-  # ...
-  annotations:
-    upgrade: "Upgraded to {KafkaApiVersion}"
-----
+After these changes, you must use the API conversion tool to upgrade your CRDs.
 
 include::modules/con-upgrade-custom-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-cli-tool-files.adoc[leveloffset=+1]
