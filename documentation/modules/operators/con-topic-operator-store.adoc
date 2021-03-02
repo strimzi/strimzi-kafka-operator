@@ -30,7 +30,7 @@ In previous releases of Strimzi, topic metadata was stored in ZooKeeper.
 The new process removes this requirement, bringing the metadata into the Kafka cluster, and under the control of the Topic Operator.
 
 When upgrading to Strimzi {ProductVersion}, the transition to Topic Operator control of the topic store is seamless.
-Metadata is found and migrated from ZooKeeper, and the old store is cleansed.
+Metadata is found and migrated from ZooKeeper, and the old store is deleted.
 
 == Downgrading to a Strimzi version that uses ZooKeeper to store topic metadata
 
@@ -63,14 +63,15 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  partitions: 1
-  replicas: 3 <1>
+  partitions: 1 <1>
+  replicas: 3 <2>
   config:
-    min.insync.replicas=2 <2>
+    min.insync.replicas=2 <3>
   #...
 ----
-<1> The number of replica topic partitions. Currently, this cannot be changed in the `KafkaTopic` resource, but it can be changed using the `kafka-reassign-partitions.sh` tool.
-<2> The minimum number of replica partitions that a message must be successfully written to, or an exception is raised.
+<1> The number of partitions for the topic. Generally, 1 partition is sufficient. 
+<2> The number of replica topic partitions. Currently, this cannot be changed in the `KafkaTopic` resource, but it can be changed using the `kafka-reassign-partitions.sh` tool.
+<3> The minimum number of replica partitions that a message must be successfully written to, or an exception is raised.
 
 NOTE: In-sync replicas are used in conjunction with the `acks` configuration for producer applications.
 The `acks` configuration determines the number of follower partitions a message must be replicated to before the message is acknowledged as successfully received.
