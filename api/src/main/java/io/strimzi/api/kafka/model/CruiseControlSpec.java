@@ -128,7 +128,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
         this.metricsConfig = metricsConfig;
     }
 
-    @Description("Logging configuration (log4j1) for Cruise Control.")
+    @Description("Logging configuration (log4j2) for Cruise Control.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging;

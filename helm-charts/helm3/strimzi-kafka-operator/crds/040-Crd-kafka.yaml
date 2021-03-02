@@ -3316,7 +3316,7 @@ spec:
                           description: '`ConfigMap` entry where the logging configuration is stored. '
                       required:
                         - type
-                      description: Logging configuration (log4j1) for Cruise Control.
+                      description: Logging configuration (log4j2) for Cruise Control.
                     template:
                       type: object
                       properties:
@@ -10409,7 +10409,7 @@ spec:
                           description: '`ConfigMap` entry where the logging configuration is stored. '
                       required:
                         - type
-                      description: Logging configuration (log4j1) for Cruise Control.
+                      description: Logging configuration (log4j2) for Cruise Control.
                     template:
                       type: object
                       properties:
@@ -17505,7 +17505,7 @@ spec:
                           description: '`ConfigMap` entry where the logging configuration is stored. '
                       required:
                         - type
-                      description: Logging configuration (log4j1) for Cruise Control.
+                      description: Logging configuration (log4j2) for Cruise Control.
                     template:
                       type: object
                       properties:
