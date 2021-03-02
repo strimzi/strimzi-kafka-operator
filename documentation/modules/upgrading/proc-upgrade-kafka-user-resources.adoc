@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-user-resources-{context}']
-= Upgrading Kafka User resources
+= Upgrading Kafka User resources to {ApiVersion}
 
 .Prerequisites
 
@@ -19,7 +19,9 @@ Execute the following steps for each `KafkaUser` resource in your deployment.
 kubectl edit kafkauser _my-user_
 ----
 
-. Replace:
+. Update the `apiVersion` of the `KafkaUser` resource to `{ApiVersion}`:
++
+Replace:
 +
 [source,shell,subs="attributes"]
 ----

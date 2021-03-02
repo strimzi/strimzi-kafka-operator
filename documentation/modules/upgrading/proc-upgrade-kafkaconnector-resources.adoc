@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafkaconnector-resources-{context}']
-= Upgrading Kafka Connector resources
+= Upgrading Kafka Connector resources to {ApiVersion}
 
 .Prerequisites
 
@@ -19,7 +19,9 @@ Execute the following steps for each `KafkaConnector` resource in your deploymen
 kubectl edit kafkaconnector _my-connector_
 ----
 
-. Replace:
+. Update the `apiVersion` of the `KafkaConnector` resource to `{ApiVersion}`:
++
+Replace:
 +
 [source,shell,subs="attributes"]
 ----

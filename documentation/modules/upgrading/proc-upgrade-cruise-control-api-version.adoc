@@ -2,8 +2,8 @@
 //
 // assembly-upgrade-resources.adoc
 
-[id='proc-upgrade-cruise-control-resources-{context}']
-= Upgrading Cruise Control
+[id='proc-upgrade-cruise-control-api-version-{context}']
+= Upgrading Cruise Control to support {ApiVersion}
 
 .Prerequisites
 
@@ -45,7 +45,7 @@ logging:
 . If the `.spec.cruiseControl.metrics` field is used to enable metrics:
 
 .. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
-The YAML is the same as that currently defined in `.spec.cruiseControl.metrics`.
+The YAML must match what is currently in the `.spec.cruiseControl.metrics` field.
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -73,19 +73,5 @@ metricsConfig:
 ----
 
 .. Delete the old `.spec.cruiseControl.metrics` field.
-
-. Replace:
-+
-[source,shell,subs="attributes"]
-----
-apiVersion: {KafkaApiVersionPrev}
-----
-+
-with:
-+
-[source,shell,subs="attributes"]
-----
-apiVersion: {KafkaApiVersion}
-----
 
 . Save the file, exit the editor and wait for the updated resource to be reconciled.

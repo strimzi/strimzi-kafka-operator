@@ -2,12 +2,13 @@
 //
 // assembly-upgrade-resources.adoc
 
-[id='proc-upgrade-entity-operator-{context}']
-= Upgrading the Entity Operator
+[id='proc-upgrade-entity-operator-api-version-{context}']
+= Upgrading the Entity Operator to support {ApiVersion}
 
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
+* `Kafka.spec.entityOperator` is configured, as described in xref:proc-upgrade-topic-operator-api-version-{context}[].
 
 .Procedure
 
@@ -18,7 +19,7 @@
 kubectl edit kafka _my-cluster_
 ----
 
-. If `.spec.entityOperator` is used:
+. If `.spec.entityOperator` is configured:
 
 .. Move `affinity` from `.spec.entityOperator.affinity` to `.spec.entityOperator.template.pod.affinity`.
 

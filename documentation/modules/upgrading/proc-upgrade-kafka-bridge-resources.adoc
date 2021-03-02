@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-bridge-resources-{context}']
-= Upgrading Kafka Bridge resources
+= Upgrading Kafka Bridge resources to {ApiVersion}
 
 .Prerequisites
 
@@ -42,7 +42,9 @@ logging:
       key: log4j2.properties
 ----
 
-. Replace:
+. Update the `apiVersion` of the `KafkaBridge` resource to `{ApiVersion}`:
++
+Replace:
 +
 [source,shell,subs="attributes"]
 ----

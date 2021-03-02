@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-mirror-maker-resources-{context}']
-= Upgrading Kafka MirrorMaker resources
+= Upgrading Kafka MirrorMaker resources to {ApiVersion}
 
 .Prerequisites
 
@@ -92,7 +92,7 @@ logging:
 . If the `.spec.metrics` field is used to enable metrics:
 
 .. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
-The YAML is the same as is currently in `.spec.metrics`.
+The YAML must match what is currently in the `.spec.metrics` field.
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -121,7 +121,9 @@ metricsConfig:
 
 .. Delete the old `.spec.metrics` field.
 
-. Replace:
+. Update the `apiVersion` of the `KafkaMirrorMaker` resource to `{ApiVersion}`:
++
+Replace:
 +
 [source,shell,subs="attributes"]
 ----

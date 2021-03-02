@@ -2,8 +2,8 @@
 //
 // assembly-upgrade-resources.adoc
 
-[id='proc-upgrade-topic-operator-{context}']
-= Upgrading the Topic Operator
+[id='proc-upgrade-topic-operator-api-version-{context}']
+= Upgrading the Topic Operator to support {ApiVersion}
 
 .Prerequisites
 
@@ -48,9 +48,9 @@ logging:
   valueFrom:
     configMapKeyRef:
       name: my-config-map
-      key: log4j.properties
+      key: log4j2.properties
 ----
 +
-NOTE: You can also complete this step as part of the Entity Operator upgrade.
+NOTE: You can also complete this step as part of the xref:proc-upgrade-entity-operator-api-version-{context}[Entity Operator upgrade].
 
 . Save the file, exit the editor and wait for the updated resource to be reconciled.

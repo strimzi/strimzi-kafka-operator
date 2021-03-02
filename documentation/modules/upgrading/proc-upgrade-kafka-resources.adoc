@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-resources-{context}']
-= Upgrading Kafka resources
+= Upgrading Kafka resources to {ApiVersion}
 
 .Prerequisites
 
@@ -23,7 +23,7 @@ kubectl edit kafka _my-cluster_
 +
 [WARNING]
 ====
-The old listener format is not supported in version `{ApiVersion}`.
+The old listener format is not supported in API version `{ApiVersion}`.
 ====
 
 . If present, move `affinity` from `.spec.kafka.affinity` to `.spec.kafka.template.pod.affinity`.
@@ -78,7 +78,7 @@ logging:
 . If the `.spec.kafka.metrics` field is used to enable metrics:
 
 .. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
-The YAML is the same as is currently in `.spec.kafka.metrics`.
+The YAML must match what is currently in the `.spec.kafka.metrics` field.
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -106,5 +106,21 @@ metricsConfig:
 ----
 
 .. Delete the old `.spec.kafka.metrics` field.
+
+. Update the `apiVersion` of the `Kafka` resource to `{ApiVersion}`:
++
+Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaApiVersion}
+----
 
 . Save the file, exit the editor and wait for the updated resource to be reconciled.

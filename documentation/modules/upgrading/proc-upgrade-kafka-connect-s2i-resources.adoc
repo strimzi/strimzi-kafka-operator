@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-connect-s2i-resources-{context}']
-= Upgrading Kafka Connect S2I resources
+= Upgrading Kafka Connect S2I resources to {ApiVersion}
 
 .Prerequisites
 
@@ -16,7 +16,7 @@ Execute the following steps for each `KafkaConnectS2I` resource in your deployme
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkaconnects2i _my-connect_
+kubectl edit kafkaconnects2i _my-connect-cluster_
 ----
 
 . If present, move:
@@ -91,7 +91,7 @@ logging:
 . If the `.spec.metrics` field is used to enable metrics:
 
 .. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
-The YAML is the same as is currently in `.spec.metrics`.
+The YAML must match what is currently in the `.spec.metrics` field.
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -120,7 +120,9 @@ metricsConfig:
 
 .. Delete the old `.spec.metrics` field
 
-. Replace:
+. Update the `apiVersion` of the `KafkaConnectS2I` resource to `{ApiVersion}`:
++
+Replace:
 +
 [source,shell,subs="attributes"]
 ----

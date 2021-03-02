@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-topic-resources-{context}']
-= Upgrading Kafka Topic resources
+= Upgrading Kafka Topic resources to {ApiVersion}
 
 .Prerequisites
 
@@ -19,7 +19,9 @@ Execute the following steps for each `KafkaTopic` resource in your deployment.
 kubectl edit kafkatopic _my-topic_
 ----
 
-. Replace:
+. Update the `apiVersion` of the `KafkaTopic` resource to `{ApiVersion}`:
++
+Replace:
 +
 [source,shell,subs="attributes"]
 ----

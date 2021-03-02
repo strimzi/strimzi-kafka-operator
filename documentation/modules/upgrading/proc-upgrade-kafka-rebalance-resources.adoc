@@ -3,7 +3,7 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-rebalance-resources-{context}']
-= Upgrading Kafka Rebalance resources
+= Upgrading Kafka Rebalance resources to {ApiVersion}
 
 .Prerequisites
 
@@ -19,7 +19,9 @@ Execute the following steps for each `KafkaRebalance` resource in your deploymen
 kubectl edit kafkarebalance _my-rebalance_
 ----
 
-. Replace:
+. Update the `apiVersion` of the `KafkaRebalance` resource to `{ApiVersion}`:
++
+Replace:
 +
 [source,shell,subs="attributes"]
 ----
