@@ -105,7 +105,7 @@
 - version: 2.7.0
   format: 2.7
   protocol: 2.7
-  url: https://downloads.apache.org/kafka/2.7.0/kafka_2.12-2.7.0.tgz
+  url: https://archive.apache.org/dist/kafka/2.7.0/kafka_2.12-2.7.0.tgz
   checksum: ADAD48E6D9C9BF6577FC97DB10BFE9EF3755DA7B3060ED633EDB89EB99722DC81B111BAB2C91E7875E0A866A1020C8C31904B088D2A9F9950796EDA8ED789CCD
   zookeeper: 3.5.8
   third-party-libs: 2.7.x
