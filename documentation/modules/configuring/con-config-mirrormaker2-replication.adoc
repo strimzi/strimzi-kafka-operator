@@ -15,10 +15,6 @@ MirrorMaker 2.0 uses:
 MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
 A MirrorMaker 2.0 `MirrorSourceConnector` replicates topics from a source cluster to a target cluster.
 
-By default, a check for new topics in the source cluster is made every 10 minutes.
-You can change the frequency by adding `refresh.topics.interval.seconds` to the source connector configuration of the `KafkaMirrorMaker2` resource.
-However, increasing the frequency of the operation might affect overall performance.
-
 The process of _mirroring_ data from one cluster to another cluster is asynchronous.
 The recommended pattern is for messages to be produced locally alongside the source Kafka cluster, then consumed remotely close to the target Kafka cluster.
 
@@ -26,6 +22,10 @@ MirrorMaker 2.0 can be used with more than one source cluster.
 
 .Replication across two clusters
 image::mirrormaker.png[MirrorMaker 2.0 replication]
+
+By default, a check for new topics in the source cluster is made every 10 minutes.
+You can change the frequency by adding `refresh.topics.interval.seconds` to the source connector configuration of the `KafkaMirrorMaker2` resource.
+However, increasing the frequency of the operation might affect overall performance.
 
 = Cluster configuration
 
@@ -87,25 +87,27 @@ MirrorMaker 2.0 uses its `MirrorCheckpointConnector` to emit _checkpoints_ for o
 
 == Synchronizing consumer group offsets
 
-The `__consumer_offsets` topic stores information on committed offsets, according to consumer group.
+The `__consumer_offsets` topic stores information on committed offsets, for each consumer group.
 Offset synchronization periodically transfers the consumer offsets for the consumer groups of a source cluster into the consumer offsets topic of a target cluster.
 
 Offset synchronization is particularly useful in an _active/passive_ configuration.
-Should the active cluster go down, consumer applications can switch to the passive (standby) cluster and pick up from the last offset position.
+If the active cluster goes down, consumer applications can switch to the passive (standby) cluster and pick up from the last transferred offset position.
 
 To use topic offset synchronization:
 
 * Enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration of the `KafkaMirrorMaker2` resource,
 and setting the property to `true`. Synchronization is disabled by default.
-* Add the `IdentityReplicationPolicy` to the source connector configuration so that topics in the target cluster retain their original names.
+* Add the `IdentityReplicationPolicy` to the source and checkpoint connector configuration so that topics in the target cluster retain their original names.
 
-For topic offset synchronization to work, consumer groups in the source cluster cannot be active in the target cluster.
-Consequently, if you are using an _active/active_ configuration that does not support or require offset synchronization, do not enable topic offset synchronization.
+For topic offset synchronization to work, consumer groups in the target cluster cannot use the same ids as groups in the source cluster.
 
 If enabled, the synchronization of offsets from the source cluster is made periodically.
 You can change the frequency by adding `sync.group.offsets.interval.seconds` and `emit.checkpoints.interval.seconds` to the checkpoint connector configuration.
 The properties specify the frequency in seconds that the consumer group offsets are synchronized, and the frequency of checkpoints emitted for offset tracking.
 The default for both properties is 60 seconds.
+You might also want to change the frequency of checks for new consumer groups using the `refresh.groups.interval.seconds` property, which is performed every 10 minutes by default.
+
+Because the synchronization is time-based, any switchover by consumers to a passive cluster will likely result in some duplication of messages.
 
 == Connectivity checks
 
