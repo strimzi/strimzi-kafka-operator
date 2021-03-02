@@ -1,0 +1,104 @@
+// This module is included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='con-upgrade-custom-resources-{context}']
+
+= API versioning
+
+[role="_abstract"]
+Custom resources are created as instances of APIs added by CRDs to extend Kubernetes resources.
+CRDs are installed in a Kubernetes cluster to define the schemas used to instantiate and manage the custom resources.
+
+For release {ProductVersion}, Strimzi CRDs must specify `{ApiVersion}` as the API version and `{KafkaApiVersion}` as the API path for custom resources.
+Strimzi Operators access custom resources using the API path.
+
+The introduction of `{ApiVersion}` updates the schemas of the custom resources.
+Older API versions are deprecated.
+
+The `v1alpha1` API version is deprecated for the following Strimzi resources:
+
+* `Kafka`
+* `KafkaConnect`
+* `KafkaConnectS2I`
+* `KafkaConnector`
+* `KafkaMirrorMaker`
+* `KafkaMirrorMaker2`
+* `KafkaTopic`
+* `KafkaUser`
+* `KafkaBridge`
+* `KafkaRebalance`
+
+The `v1beta1` API version is deprecated for the following Strimzi resources:
+
+* `Kafka`
+* `KafkaConnect`
+* `KafkaConnectS2I`
+* `KafkaMirrorMaker`
+* `KafkaTopic`
+* `KafkaUser`
+
+NOTE: Deprecated API versions might also be simultaneously supported by a CRD, as long as the schema for the custom resources is valid.
+
+API versioning policy indicates the relative stability of the version.
+Alpha version APIs are the least mature, beta versions more mature, and stable versions represent a durable release.
+
+Example API versions:
+
+* Alpha version: `v1alpha1`
+* Beta version: `v1beta1`
+* Stable version: `v1`
+
+After a new custom resource type is added to a cluster by installing a CRD, you can create instances of the resource based on its specification.
+Strimzi CRDs strictly adhere to a structural schema specification.
+
+Structural schemas are based on the OpenAPI v3.0 validation schema.
+OpenAPI v3.0 provides validation for the creation of custom resources.
+
+A complete structural schema:
+
+* Follows OpenAPI structure and syntax standards
+* Specifies the types for _all_ properties
+* Allows only intended values for properties
+
+For example, the specification for a Kafka topic specifies that a topic customer resource must have at least one partition and one replica to be valid.
+
+.Example CRD for topic custom resources
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion} <1>
+kind: CustomResourceDefinition
+metadata:
+  name: kafkatopics.kafka.strimzi.io
+  #...
+spec:
+  group: kafka.strimzi.io <2>
+  #...
+  versions: <3>
+  - name: {ApiVersion}
+    served: true
+    storage: true
+    #...
+  validation:
+    openAPIV3Schema: <4>
+      properties:
+        spec:
+          type: object
+          properties:
+            partitions:
+              type: integer
+              minimum: 1
+            replicas:
+              type: integer
+              minimum: 1
+              maximum: 32767
+      #...
+----
+<1> Specifies the API path for custom resources using the API group and API version.
+<2> The API group (domain) name.
+<3> The supported API versions. The API version declared as the _storage_ version is used to create new custom resource instances.
+<4> Schema validation used when creating custom resources.
+
+[role="_additional-resources"]
+.Additional resources
+* {K8sCRDs}

@@ -3,38 +3,40 @@
 // // assembly-upgrade.adoc
 
 [id='assembly-upgrade-resources-{context}']
-= Strimzi resource upgrades
+= Strimzi custom resource upgrades
 
-The `v1alpha1` API version is deprecated for the following Strimzi resources:
-
-* `Kafka`
-* `KafkaConnect`
-* `KafkaConnectS2I`
-* `KafkaConnector`
-* `KafkaMirrorMaker`
-* `KafkaMirrorMaker2`
-* `KafkaTopic`
-* `KafkaUser`
-* `KafkaBridge`
-* `KafkaRebalance`
-
-The `v1beta1` API version is deprecated for the following Strimzi resources:
-
-* `Kafka`
-* `KafkaConnect`
-* `KafkaConnectS2I`
-* `KafkaMirrorMaker`
-* `KafkaTopic`
-* `KafkaUser`
-
-Update these resources to use the `{KafkaApiVersion}` API version.
-
-This section describes the upgrade steps for the resources.
+[role="_abstract"]
+After you have upgraded Strimzi to {ProductVersion}, you must ensure that your custom resources are using API version `{ApiVersion}`.
 
 IMPORTANT: The upgrade of resources _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
 
-.What if the resource upgrade does not take effect?
-If the upgrade does not take effect, a warning is given in the logs on reconciliation to indicate that the resource cannot be updated until the `apiVersion` is updated.
+.CLI upgrades to custom resources
+
+Strimzi provides am _API conversion tool_ with its release artifacts
+From its CLI, you can use the tool to convert the format of your custom resources to `{ApiVersion}`:
+
+* xref:proc-upgrade-cli-tool-files-{context}[]
+* xref:proc-upgrade-cli-tool-direct-{context}[]
+
+Following on from the conversion of your custom resources, you can also set `{ApiVersion}` as the _storage_ API version in your CRDs:
+
+* xref:proc-upgrade-cli-tool-crds-{context}[]
+
+.Manual upgrades to custom resources
+
+As an alternative to using the API conversion tool, you can manually update each custom resource to use `{ApiVersion}`:
+
+* xref:proc-upgrade-kafka-resources-{context}[]
+* xref:proc-upgrade-kafka-connect-resources-{context}[]
+* xref:proc-upgrade-kafka-connect-s2i-resources-{context}[]
+* xref:proc-upgrade-kafka-mirror-maker-resources-{context}[]
+* xref:proc-upgrade-kafka-topic-resources-{context}[]
+* xref:proc-upgrade-kafka-user-resources-{context}[]
+
+The manual procedures show the changes that are made to each custom resource.
+
+.What if a resource upgrade does not take effect?
+If an upgrade does not take effect, a warning is given in the logs on reconciliation to indicate that the resource cannot be updated until the `apiVersion` is updated.
 
 To trigger the update, make a cosmetic change to the custom resource, such as adding an annotation.
 
@@ -48,15 +50,10 @@ metadata:
     upgrade: "Upgraded to {KafkaApiVersion}"
 ----
 
-The following procedures describe the steps to update specific resources to use the `{KafkaApiVersion}` API version:
-
-* xref:proc-upgrade-kafka-resources-{context}[]
-* xref:proc-upgrade-kafka-connect-resources-{context}[]
-* xref:proc-upgrade-kafka-connect-s2i-resources-{context}[]
-* xref:proc-upgrade-kafka-mirror-maker-resources-{context}[]
-* xref:proc-upgrade-kafka-topic-resources-{context}[]
-* xref:proc-upgrade-kafka-user-resources-{context}[]
-
+include::modules/con-upgrade-custom-resources.adoc[leveloffset=+1]
+include::modules/proc-upgrade-cli-tool-files.adoc[leveloffset=+1]
+include::modules/proc-upgrade-cli-tool-direct.adoc[leveloffset=+1]
+include::modules/proc-upgrade-cli-tool-crds.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-connect-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-connect-s2i-resources.adoc[leveloffset=+1]
