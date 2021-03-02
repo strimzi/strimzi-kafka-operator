@@ -19,196 +19,92 @@ Execute the following steps for each `Kafka` resource in your deployment.
 kubectl edit kafka _my-cluster_
 ----
 
-. Replace:
+. If you have not already done so, update `.spec.kafka.listener` to the new generic listener format, as described in xref:con-upgrade-listeners-{context}[].
 +
-[source,shell,subs="attributes"]
+[WARNING]
+====
+The old listener format is not supported in version `{ApiVersion}`.
+====
+
+. If present, move `affinity` from `.spec.kafka.affinity` to `.spec.kafka.template.pod.affinity`.
+
+. If present, move `tolerations` from `.spec.kafka.tolerations` to `.spec.kafka.template.pod.tolerations`.
+
+. If present, remove `.spec.kafka.template.tlsSidecarContainer`.
+
+. If present, remove `.spec.kafka.tlsSidecarContainer`.
+
+. If either of the following policy configurations exist:
+
+* `.spec.kafka.template.externalBootstrapService.externalTrafficPolicy`
+* `.spec.kafka.template.perPodService.externalTrafficPolicy`
+
+.. Move the configuration to `.spec.kafka.listeners[].configuration.externalTrafficPolicy`, for both `type: loadbalancer` and `type: nodeport` listeners.
+
+.. Remove `.spec.kafka.template.externalBootstrapService.externalTrafficPolicy` or `.spec.kafka.template.perPodService.externalTrafficPolicy`.
+
+. If either of the following `loadbalancer` listener configurations exist:
+
+* `.spec.kafka.template.externalBootstrapService.loadBalancerSourceRanges`
+* `.spec.kafka.template.perPodService.loadBalancerSourceRanges`
+
+.. Move the configuration to `.spec.kafka.listeners[].configuration.loadBalancerSourceRanges`, for `type: loadbalancer` listeners.
+
+.. Remove `.spec.kafka.template.externalBootstrapService.loadBalancerSourceRanges` or `.spec.kafka.template.perPodService.loadBalancerSourceRanges`.
+
+. If `type: external` logging is configured in `.spec.kafka.logging`:
++
+Replace the `name` of the ConfigMap containing the logging configuration:
++
+[source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+logging:
+  type: external
+  name: my-config-map
 ----
 +
-with:
+With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
-[source,shell,subs="attributes"]
+[source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: my-config-map
+      key: log4j.properties
 ----
 
-. If the `Kafka` resource has:
+. If the `.spec.kafka.metrics` field is used to enable metrics:
+
+.. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
+The YAML is the same as is currently in `.spec.kafka.metrics`.
 +
-[source,shell]
+[source,yaml,subs="attributes+"]
 ----
-Kafka.spec.topicOperator
-----
-+
-Replace it with:
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.topicOperator
-----
-+
-For example, replace:
-+
-[source,shell]
-----
-spec:
-  # ...
-  topicOperator: {}
-----
-+
-with:
-+
-[source,shell]
-----
-spec:
-  # ...
-  entityOperator:
-    topicOperator: {}
-----
-. If present, move:
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.tolerations
-----
-+
-to:
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.template.pod.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.template.pod.tolerations
-----
-+
-For example, move:
-+
-[source,shell]
-----
-spec:
-  # ...
-  entityOperator:
-    affinity {}
-    tolerations {}
-----
-+
-to:
-+
-[source,shell]
-----
-spec:
-  # ...
-  entityOperator:
-    template:
-      pod:
-        affinity {}
-        tolerations {}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kafka-metrics
+  labels:
+    app: strimzi
+data:
+  kafka-metrics-config.yml: |
+      <YAML>
 ----
 
-
-. If present, move:
+.. Create a new `.spec.kafka.metricsConfig` field pointing to the ConfigMap and key:
 +
-[source,shell]
+[source,yaml,subs="attributes+"]
 ----
-Kafka.spec.kafka.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.kafka.tolerations
-----
-+
-to:
-+
-[source,shell]
-----
-Kafka.spec.kafka.template.pod.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.kafka.template.pod.tolerations
-----
-+
-For example, move:
-+
-[source,shell]
-----
-spec:
-  # ...
-  kafka:
-    affinity {}
-    tolerations {}
-----
-+
-to:
-+
-[source,shell]
-----
-spec:
-  # ...
-  kafka:
-    template:
-      pod:
-        affinity {}
-        tolerations {}
+metricsConfig:
+  type: jmxPrometheusExporter
+  valueFrom:
+    configMapKeyRef:
+      name: kafka-metrics
+      key: kafka-metrics-config.yml
 ----
 
-
-. If present, move:
-+
-[source,shell]
-----
-Kafka.spec.zookeeper.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.zookeeper.tolerations
-----
-+
-to:
-+
-[source,shell]
-----
-Kafka.spec.zookeeper.template.pod.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.zookeeper.template.pod.tolerations
-----
-+
-For example, move:
-+
-[source,shell]
-----
-spec:
-  # ...
-  zookeeper:
-    affinity {}
-    tolerations {}
-----
-+
-to:
-+
-[source,shell]
-----
-spec:
-  # ...
-  zookeeper:
-    template:
-      pod:
-        affinity {}
-        tolerations {}
-----
+.. Delete the old `.spec.kafka.metrics` field.
 
 . Save the file, exit the editor and wait for the updated resource to be reconciled.
