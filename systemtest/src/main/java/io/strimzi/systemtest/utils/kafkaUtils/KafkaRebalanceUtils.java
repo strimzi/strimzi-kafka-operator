@@ -60,13 +60,16 @@ public class KafkaRebalanceUtils {
     }
 
     public static void doRebalancingProcess(String rebalanceName) {
-        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
+        // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
+        if (!rebalanceStateCondition(rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
+            LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
-        waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.PendingProposal);
+            waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.PendingProposal);
 
-        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
+            LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
 
-        waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.ProposalReady);
+            waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.ProposalReady);
+        }
 
         LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 

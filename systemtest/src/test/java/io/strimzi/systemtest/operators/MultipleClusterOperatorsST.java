@@ -6,7 +6,6 @@ package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
@@ -27,7 +26,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
@@ -44,6 +42,7 @@ import java.util.Map;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
@@ -58,33 +57,21 @@ public class MultipleClusterOperatorsST extends AbstractST {
     public static final String FIRST_CO_NAME = "first-" + Constants.STRIMZI_DEPLOYMENT_NAME;
     public static final String SECOND_CO_NAME = "second-" + Constants.STRIMZI_DEPLOYMENT_NAME;
 
-    public static final EnvVar FIRST_CO_SELECTOR_ENV = new EnvVar("STRIMZI_CUSTOM_RESOURCE_SELECTOR", "co-name=" + FIRST_CO_NAME, null);
-    public static final EnvVar SECOND_CO_SELECTOR_ENV = new EnvVar("STRIMZI_CUSTOM_RESOURCE_SELECTOR", "co-name=" + SECOND_CO_NAME, null);
+    public static final EnvVar FIRST_CO_SELECTOR_ENV = new EnvVar("STRIMZI_CUSTOM_RESOURCE_SELECTOR", "app.kubernetes.io/operator=" + FIRST_CO_NAME, null);
+    public static final EnvVar SECOND_CO_SELECTOR_ENV = new EnvVar("STRIMZI_CUSTOM_RESOURCE_SELECTOR", "app.kubernetes.io/operator=" + SECOND_CO_NAME, null);
 
-    public static final Map<String, String> FIRST_CO_SELECTOR = Collections.singletonMap("co-name", FIRST_CO_NAME);
-    public static final Map<String, String> SECOND_CO_SELECTOR = Collections.singletonMap("co-name", SECOND_CO_NAME);
-
-    @Test
-    void testMultipleCOsWithDifferentCustomResourceSelector() {
-        deployCOInNamespace(FIRST_CO_NAME, DEFAULT_NAMESPACE, FIRST_CO_SELECTOR_ENV, false);
-        deployCOInNamespace(SECOND_CO_NAME, DEFAULT_NAMESPACE, SECOND_CO_SELECTOR_ENV, false);
-
-        testMultipleCOsWithDifferentCRSelectors();
-    }
+    public static final Map<String, String> FIRST_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", FIRST_CO_NAME);
+    public static final Map<String, String> SECOND_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", SECOND_CO_NAME);
 
     @Test
     void testMultipleCOsInDifferentNamespaces() {
+        String producerName = "hello-world-producer";
+        String consumerName = "hello-world-consumer";
+
         deployCOInNamespace(FIRST_CO_NAME, FIRST_NAMESPACE, FIRST_CO_SELECTOR_ENV, true);
         deployCOInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE, SECOND_CO_SELECTOR_ENV, true);
 
         cluster.setNamespace(DEFAULT_NAMESPACE);
-
-        testMultipleCOsWithDifferentCRSelectors();
-    }
-
-    void testMultipleCOsWithDifferentCRSelectors() {
-        String producerName = "hello-world-producer";
-        String consumerName = "hello-world-consumer";
 
         LOGGER.info("Deploying Kafka with CR selector pointing at first CO");
         KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 3, 3).build());
@@ -95,12 +82,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR));
         KafkaUtils.waitForKafkaReady(clusterName);
 
-        LOGGER.info("Deploying topic with different CR selector than Kafka has");
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME)
-            .editOrNewMetadata()
-                .addToLabels(SECOND_CO_SELECTOR)
-            .endMetadata()
-            .build());
+        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
 
         KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
             .editOrNewMetadata()
@@ -140,13 +122,14 @@ public class MultipleClusterOperatorsST extends AbstractST {
     }
 
     @Test
-    void testLabelingAndUnlabelingOfResource() {
+    void testKafkaCCAndRebalanceWithMultipleCOs() {
         int scaleTo = 4;
+
         deployCOInNamespace(FIRST_CO_NAME, DEFAULT_NAMESPACE, FIRST_CO_SELECTOR_ENV, false);
         deployCOInNamespace(SECOND_CO_NAME, DEFAULT_NAMESPACE, SECOND_CO_SELECTOR_ENV, false);
 
         LOGGER.info("Deploying Kafka with CR selector of first CO");
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
             .editOrNewMetadata()
                 .addToLabels(FIRST_CO_SELECTOR)
             .endMetadata()
@@ -157,43 +140,27 @@ public class MultipleClusterOperatorsST extends AbstractST {
             kafka.getMetadata().getLabels().clear();
             kafka.getSpec().getKafka().setReplicas(scaleTo);
         });
+
+        // because KafkaRebalance is pointing to Kafka with CC cluster, we need to create KR before adding the label back
+        // to test if KR will be ignored
+
+        LOGGER.info("Creating KafkaRebalance when CC doesn't have label for CO, the KR should be ignored");
+        KafkaRebalanceResource.kafkaRebalanceWithoutWait(KafkaRebalanceResource.kafkaRebalance(clusterName).build());
+
         KafkaUtils.waitForClusterStability(clusterName);
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
-        Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        LOGGER.info("Checking if KafkaRebalance is still ignored, after the cluster stability wait");
+
+        // because KR is ignored, it shouldn't contain any status
+        assertNull(KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(DEFAULT_NAMESPACE).withName(clusterName).get().getStatus());
 
         LOGGER.info("Adding CR selector of second CO to Kafka");
         KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR));
 
-        LOGGER.info("Waiting for rolling update because of new label, also Kafka should scale to {}", scaleTo);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), scaleTo, kafkaPods);
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        LOGGER.info("Waiting for Kafka to scales pods to {}", scaleTo);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), scaleTo);
 
-        Kafka kafka = KafkaResource.kafkaClient().inNamespace(DEFAULT_NAMESPACE).withName(clusterName).get();
-        assertThat(kafka.getSpec().getKafka().getReplicas(), is(scaleTo));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName)).size(), is(scaleTo));
-    }
-
-    @Test
-    void testKafkaCCAndRebalanceWithDifferentCRSelectors() {
-        deployCOInNamespace(FIRST_CO_NAME, DEFAULT_NAMESPACE, FIRST_CO_SELECTOR_ENV, false);
-        deployCOInNamespace(SECOND_CO_NAME, DEFAULT_NAMESPACE, SECOND_CO_SELECTOR_ENV, false);
-
-        LOGGER.info("Deploying Kafka with CruiseControl and CR selector of first CO");
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
-            .editOrNewMetadata()
-                .addToLabels(FIRST_CO_SELECTOR)
-            .endMetadata()
-            .build());
-
-        LOGGER.info("Creating KafkaRebalance with different CR selector than CC");
-        KafkaRebalanceResource.createAndWaitForReadiness(KafkaRebalanceResource.kafkaRebalance(clusterName)
-            .editOrNewMetadata()
-                .addToLabels(SECOND_CO_SELECTOR)
-            .endMetadata()
-            .build());
 
         KafkaRebalanceUtils.doRebalancingProcess(clusterName);
     }
@@ -221,11 +188,11 @@ public class MultipleClusterOperatorsST extends AbstractST {
             .endMetadata()
             .editOrNewSpec()
                 .editOrNewSelector()
-                    .addToMatchLabels("co-name", coName)
+                    .addToMatchLabels("app.kubernetes.io/operator", coName)
                 .endSelector()
                 .editOrNewTemplate()
                     .editOrNewMetadata()
-                        .addToLabels("co-name", coName)
+                        .addToLabels("app.kubernetes.io/operator", coName)
                     .endMetadata()
                     .editOrNewSpec()
                         .editContainer(0)
