@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -118,8 +119,8 @@ public class TopicST extends AbstractST {
         verifyTopicViaKafka(topicName, topicPartitions, TOPIC_CLUSTER_NAME);
     }
 
-    @Tag(NODEPORT_SUPPORTED)
     @ParallelTest
+    @Tag(NODEPORT_SUPPORTED)
     void testCreateTopicViaAdminClient(ExtensionContext extensionContext) throws ExecutionException, InterruptedException, TimeoutException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
@@ -211,7 +212,7 @@ public class TopicST extends AbstractST {
 
         try (AdminClient adminClient = AdminClient.create(properties)) {
 
-            String topicName = "topic-create-delete-create";
+            String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
             resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName)
                 .editSpec()
