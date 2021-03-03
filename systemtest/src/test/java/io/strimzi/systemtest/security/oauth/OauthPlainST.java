@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
@@ -24,6 +25,7 @@ import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
@@ -67,6 +69,86 @@ public class OauthPlainST extends OauthAbstractST {
 
         oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+    }
+
+    @Test
+    void testProducerConsumerAudienceTokenChecks() {
+        LOGGER.info("Update Kafka broker configuration to use OAuth2 access token audience checks");
+        KafkaResource.replaceKafkaResource(oauthClusterName, kafka -> {
+            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListenersBuilder()
+                    .addNewGenericKafkaListener()
+                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                    .withPort(9092)
+                    .withType(KafkaListenerType.INTERNAL)
+                    .withTls(false)
+                    .withNewKafkaListenerAuthenticationOAuth()
+                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                    .withEnablePlain(true)
+                    .withCheckAudience(true)
+                    .withClientId("kafka-component")
+                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .endKafkaListenerAuthenticationOAuth()
+                    .endGenericKafkaListener().build());
+        });
+
+        KafkaUtils.waitForKafkaReady(oauthClusterName);
+
+        LOGGER.info("Use clients without access token containing audience token");
+        oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
+                .withProducerName(OAUTH_PRODUCER_NAME)
+                .withConsumerName(OAUTH_CONSUMER_NAME)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .withTopicName(TOPIC_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withOAuthClientId(OAUTH_CLIENT_NAME)
+                .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .build();
+
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientTimeout(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
+        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientTimeout(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+
+        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
+        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
+
+
+        LOGGER.info("Use clients with Access token containing audience token");
+        KafkaOauthExampleClients oauthInternalClientProducerJob = new KafkaOauthExampleClients.Builder()
+                .withProducerName(OAUTH_CLIENT_AUDIENCE_PRODUCER)
+                .withConsumerName(OAUTH_CLIENT_AUDIENCE_CONSUMER)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .withTopicName(TOPIC_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withOAuthClientId(OAUTH_CLIENT_AUDIENCE_PRODUCER)
+                .withOAuthClientSecret(OAUTH_CLIENT_AUDIENCE_SECRET)
+                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .build();
+
+        KafkaOauthExampleClients oauthInternalClientConsumerJob = new KafkaOauthExampleClients.Builder()
+                .withProducerName(OAUTH_CLIENT_AUDIENCE_PRODUCER)
+                .withConsumerName(OAUTH_CLIENT_AUDIENCE_CONSUMER)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .withTopicName(TOPIC_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withOAuthClientId(OAUTH_CLIENT_AUDIENCE_CONSUMER)
+                .withOAuthClientSecret(OAUTH_CLIENT_AUDIENCE_SECRET)
+                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .build();
+
+        oauthInternalClientProducerJob.createAndWaitForReadiness(oauthInternalClientProducerJob.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT);
+
+        oauthInternalClientConsumerJob.createAndWaitForReadiness(oauthInternalClientConsumerJob.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_CONSUMER, NAMESPACE, MESSAGE_COUNT);
+
+        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_PRODUCER);
+        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_CONSUMER);
     }
 
     @Description("As an oauth KafkaConnect, I should be able to sink messages from kafka broker topic.")

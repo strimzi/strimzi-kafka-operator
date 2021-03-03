@@ -35,6 +35,10 @@ public class OauthAbstractST extends AbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAbstractST.class);
     protected static final String OAUTH_CLIENT_NAME = "hello-world-producer";
     protected static final String OAUTH_CLIENT_SECRET = "hello-world-producer-secret";
+    protected static final String OAUTH_CLIENT_AUDIENCE_PRODUCER = "kafka-audience-producer";
+    protected static final String OAUTH_CLIENT_AUDIENCE_CONSUMER = "kafka-audience-consumer";
+    protected static final String OAUTH_CLIENT_AUDIENCE_SECRET = "kafka-audience-secret";
+
     protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-broker";
     protected static final String OAUTH_PRODUCER_NAME = "oauth-producer";
     protected static final String OAUTH_CONSUMER_NAME = "oauth-consumer";
@@ -101,6 +105,7 @@ public class OauthAbstractST extends AbstractST {
         SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
         SecretUtils.createSecret(MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");
         SecretUtils.createSecret(BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
+        SecretUtils.createSecret(OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, "a2Fma2EtYXVkaWVuY2Utc2VjcmV0");
     }
 }
 
