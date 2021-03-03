@@ -28,14 +28,13 @@ public class TopicScalabilityST extends AbstractST {
 
     @ParallelTest
     void testBigAmountOfTopicsCreatingViaK8s(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = "topic-example";
 
         LOGGER.info("Creating topics via Kubernetes");
         for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
             String currentTopic = topicName + i;
             LOGGER.debug("Creating {} topic", currentTopic);
-            resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, currentTopic, 3, 1, 1).build());
+            resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(sharedClusterName, currentTopic, 3, 1, 1).build());
         }
 
         for (int i = 0; i < NUMBER_OF_TOPICS; i = i + SAMPLE_OFFSET) {
@@ -47,7 +46,7 @@ public class TopicScalabilityST extends AbstractST {
 
         LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);
 
-        KafkaTopicUtils.waitForKafkaTopicsCount(NUMBER_OF_TOPICS, clusterName);
+        KafkaTopicUtils.waitForKafkaTopicsCount(NUMBER_OF_TOPICS, sharedClusterName);
     }
 
     @BeforeAll

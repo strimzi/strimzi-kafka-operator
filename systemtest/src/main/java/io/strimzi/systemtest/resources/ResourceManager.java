@@ -333,7 +333,7 @@ public class ResourceManager {
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
             () -> operation.inNamespace(namespace)
                 .withName(name)
-                .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status.toString())),
+                .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status.toString()) && condition.getStatus().equals("True")),
             () -> logCurrentResourceStatus(operation.inNamespace(namespace)
                 .withName(name)
                 .get()));
