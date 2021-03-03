@@ -18,8 +18,7 @@
 * Add support for Ingress v1 in Kubernetes 1.19 and newer
 * Add support for Kafka 2.6.1
 * List topics used by a Kafka Connect connector in the `.status` section of the `KafkaConnector` custom resource
-* Bump Cruise Control to v2.5.37 for Kafka 2.7 support.
-* New Cruise Control supports `log4j2` implementation thus we support dynamic logging changes for it. The logging configuration has to be changed.
+* Bump Cruise Control to v2.5.37 for Kafka 2.7 support. Note this new version of Cruise Control uses `log4j2` and is supported by dynamic logging configuration. However, existing `log4j` configurations must be updated to `log4j2` configurations.
 
 ### Changes, deprecations and removals
 
@@ -50,7 +49,9 @@
         name: my-config-map
         key: my-key
   ``` 
-* Cruise Control logging configuration does not contain `cruisecontrol.root.logger` property anymore. It has been replaced by `rootLogger.level`.
+* Exisiting Cruise Control logging configurations must be updated from `log4j` syntax to `log4j2` syntax.
+  * For existing inline configurations, replace the `cruisecontrol.root.logger` property with `rootLogger.level`.
+  * For existing external configurations, replace the existing configuration a new configuration file named `log4j2.properties` using `log4j2` syntax. 
 
 ## 0.21.0
 

@@ -3964,7 +3964,7 @@ spec:
                           is stored. '
                     required:
                     - type
-                    description: Logging configuration (log4j2) for Cruise Control.
+                    description: Logging configuration (Log4j 2) for Cruise Control.
                   template:
                     type: object
                     properties:
@@ -12335,7 +12335,7 @@ spec:
                           is stored. '
                     required:
                     - type
-                    description: Logging configuration (log4j2) for Cruise Control.
+                    description: Logging configuration (Log4j 2) for Cruise Control.
                   template:
                     type: object
                     properties:
@@ -20710,7 +20710,7 @@ spec:
                           is stored. '
                     required:
                     - type
-                    description: Logging configuration (log4j2) for Cruise Control.
+                    description: Logging configuration (Log4j 2) for Cruise Control.
                   template:
                     type: object
                     properties:
