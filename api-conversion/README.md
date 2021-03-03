@@ -141,7 +141,7 @@ You can also use the tool to update the Strimzi CRDs to use the new `v1beta2` ve
 This is required before upgrading to Strimzi 0.23 and newer.
 You have to first convert all Strimzi custom resources to `v1beta2` using one of the previous commands.
 Once the custom resources are ready, you can use the `crd-upgrade` subcommand to upgrade the CRDs.
-The following example command show how the tool is used:
+The following example command shows how the tool is used:
 
 ```
 # Upgrade the Strimzi CRDs to v1beta2
