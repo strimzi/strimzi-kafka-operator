@@ -540,19 +540,11 @@ public abstract class AbstractOperator<
     private void updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
         String key = reconciliation.namespace() + ":" + reconciliation.kind() + "/" + reconciliation.name();
 
-        Tags metricTags;
-        if (cause == null) {
-            metricTags = Tags.of(
-                    Tag.of("kind", reconciliation.kind()),
-                    Tag.of("name", reconciliation.name()),
-                    Tag.of("resource-namespace", reconciliation.namespace()));
-        } else {
-            metricTags = Tags.of(
+        Tags metricTags = Tags.of(
                     Tag.of("kind", reconciliation.kind()),
                     Tag.of("name", reconciliation.name()),
                     Tag.of("resource-namespace", reconciliation.namespace()),
-                    Tag.of("reason", cause.getMessage() == null ? "unknown error" : cause.getMessage()));
-        }
+                    Tag.of("reason", cause == null ? "none" : cause.getMessage() == null ? "unknown error" : cause.getMessage()));
 
         T cr = resourceOperator.get(reconciliation.namespace(), reconciliation.name());
 
