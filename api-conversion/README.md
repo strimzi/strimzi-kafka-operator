@@ -7,6 +7,7 @@ To make it as easy as possible to convert existing Strimzi custom resources, a c
 The tool can operate in two modes:
 * Converting YAML files
 * Converting Kubernetes resources
+* Upgrading CRDs to v1beta2
 
 You can list the available features using the `help` command:
 
@@ -17,9 +18,10 @@ Conversion tool for Strimzi Custom Resources
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
 Commands:
-  help                  Displays help information about the specified command
-  convert-file, cf      Convert custom resources from a YAML file
-  convert-resource, cr  Convert custom resources directly in Kubernetes
+  help                                     Displays help information about the specified command
+  convert-file, cf                         Convert Custom Resources from YAML file
+  convert-resource, cr, convert-resources  Convert Custom Resources directly in Kubernetes
+  crd-upgrade, crd                         Upgrades the Strimzi CRDs and CRs to use v1beta2 version
 ```
 
 ## Converting YAML files with custom resources
