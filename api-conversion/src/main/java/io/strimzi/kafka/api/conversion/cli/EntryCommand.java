@@ -20,7 +20,8 @@ import picocli.CommandLine;
         subcommands = {
                 CommandLine.HelpCommand.class,
                 ConvertFileCommand.class,
-                ConvertResourceCommand.class
+                ConvertResourceCommand.class,
+                CrdUpgradeCommand.class
         }
 )
 class EntryCommand {

@@ -4,7 +4,6 @@
  */
 package io.strimzi.kafka.api.conversion.utils;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,18 +35,6 @@ public class IoUtil {
             throw new UncheckedIOException(e);
         } catch (Exception e) {
             throw new IllegalStateException(e);
-        }
-    }
-
-    /**
-     * Close auto-closeable, ignore any exception.
-     *
-     * @param closeable the closeable
-     */
-    public static void closeIgnore(AutoCloseable closeable) {
-        try {
-            close(closeable);
-        } catch (Exception ignored) {
         }
     }
 
@@ -103,20 +90,6 @@ public class IoUtil {
      */
     public static byte[] toBytes(String string) {
         return string == null ? null : string.getBytes(StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Get stream from content.
-     *
-     * @param content the content
-     * @return content as stream
-     */
-    public static InputStream toStream(String content) {
-        return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public static InputStream toStream(byte[] content) {
-        return new ByteArrayInputStream(content);
     }
 
     public static long copy(InputStream input, OutputStream output) throws IOException {

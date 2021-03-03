@@ -20,57 +20,26 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 @SuppressWarnings({"rawtypes"})
-@CommandLine.Command(name = "convert-resource", aliases = {"cr"}, description = "Convert Custom Resources directly in Kubernetes")
+@CommandLine.Command(name = "convert-resource", aliases = {"cr", "convert-resources"}, description = "Convert Custom Resources directly in Kubernetes")
 public class ConvertResourceCommand extends AbstractConversionCommand {
-    @CommandLine.Option(names = {"-k", "--kind"}, arity = "0..10", description = "Resource Kind which should be converted (if not specified, all Strimzi resources will be converted)")
+    @CommandLine.Option(names = {"-k", "--kind"}, arity = "0..10", description = "Specifies the kinds of custom resources to be converted, or converts all resources if not specified")
     String[] kinds;
 
     @CommandLine.ArgGroup
     ConvertResourceCommand.Exclusive exclusive;
 
     static class Exclusive {
-        @CommandLine.Option(names = {"-n", "--namespace"}, description = "Kubernetes namespace / OpenShift project (if not specified, current namespace will be used)")
+        @CommandLine.Option(names = {"-n", "--namespace"}, description = "Specifies a Kubernetes namespace or OpenShift project, or uses the current namespace if not specified")
         String namespace;
 
-        @CommandLine.Option(names = {"-a", "--all-namespaces"}, description = "Convert resources in all namespaces", defaultValue = "false")
+        @CommandLine.Option(names = {"-a", "--all-namespaces"}, description = "Converts resources in all namespaces", defaultValue = "false")
         boolean allNamespaces;
     }
 
     @CommandLine.Option(names = {"--name"}, description = "Name of the resource which should be converted (can be used onl with --namespace and single --kind options)")
     String name;
-
-    // Versioned operations are used to write the converted resource using the target API
-    private final static Map<String, BiFunction<KubernetesClient, String, MixedOperation>> VERSIONED_OPERATIONS = Map.of(
-            "Kafka", Crds::kafkaOperation,
-            "KafkaConnect", Crds::kafkaConnectOperation,
-            "KafkaConnectS2I", Crds::kafkaConnectS2iOperation,
-            "KafkaMirrorMaker", Crds::mirrorMakerOperation,
-            "KafkaBridge", Crds::kafkaBridgeOperation,
-            "KafkaMirrorMaker2", Crds::kafkaMirrorMaker2Operation,
-            "KafkaTopic", Crds::topicOperation,
-            "KafkaUser", Crds::kafkaUserOperation,
-            "KafkaConnector", Crds::kafkaConnectorOperation,
-            "KafkaRebalance", Crds::kafkaRebalanceOperation
-    );
-
-    // The operation with the default versions
-    private final static Map<String, Function<KubernetesClient, MixedOperation>> DEFAULT_OPERATIONS = Map.of(
-            "Kafka", Crds::kafkaOperation,
-            "KafkaConnect", Crds::kafkaConnectOperation,
-            "KafkaConnectS2I", Crds::kafkaConnectS2iOperation,
-            "KafkaMirrorMaker", Crds::mirrorMakerOperation,
-            "KafkaBridge", Crds::kafkaBridgeOperation,
-            "KafkaMirrorMaker2", Crds::kafkaMirrorMaker2Operation,
-            "KafkaTopic", Crds::topicOperation,
-            "KafkaUser", Crds::kafkaUserOperation,
-            "KafkaConnector", Crds::kafkaConnectorOperation,
-            "KafkaRebalance", Crds::kafkaRebalanceOperation
-    );
 
     private KubernetesClient client;
 
@@ -110,7 +79,7 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
     protected CustomResource replace(String kind, CustomResource cr) {
         MixedOperation<CustomResource, CustomResourceList, ?> op = VERSIONED_OPERATIONS.get(kind).apply(client, TO_API_VERSION.toString());
 
-        return op.inNamespace(cr.getMetadata().getNamespace()).createOrReplace(cr);
+        return op.inNamespace(cr.getMetadata().getNamespace()).withName(cr.getMetadata().getName()).replace(cr);
     }
 
     /**

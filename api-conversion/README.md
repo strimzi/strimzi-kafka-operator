@@ -7,6 +7,7 @@ To make it as easy as possible to convert existing Strimzi custom resources, a c
 The tool can operate in two modes:
 * Converting YAML files
 * Converting Kubernetes resources
+* Upgrading CRDs to v1beta2
 
 You can list the available features using the `help` command:
 
@@ -17,9 +18,10 @@ Conversion tool for Strimzi Custom Resources
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
 Commands:
-  help                  Displays help information about the specified command
-  convert-file, cf      Convert custom resources from a YAML file
-  convert-resource, cr  Convert custom resources directly in Kubernetes
+  help                                     Displays help information about the specified command
+  convert-file, cf                         Convert Custom Resources from YAML file
+  convert-resource, cr, convert-resources  Convert Custom Resources directly in Kubernetes
+  crd-upgrade, crd                         Upgrades the Strimzi CRDs and CRs to use v1beta2 version
 ```
 
 ## Converting YAML files with custom resources
@@ -66,6 +68,8 @@ Convert Custom Resources from YAML file
                           Creates an output YAML file for the converted custom resource
 ```
 
+**When you have converted the YAML files, apply the changes to Kubernetes using `kubectl apply -f` or `kubectl replace -f`.** 
+
 ## Converting Kubernetes resources
 
 You can also use the tool to convert Strimzi custom resources directly in your Kubernetes cluster.
@@ -110,17 +114,49 @@ Usage: bin/api-conversion.sh convert-resource [-d] [-ll=<level>]
        [<kinds> [<kinds> [<kinds> [<kinds> [<kinds>]]]]]]]]]]]...
        [-n=<namespace> | [-a]]
 Convert Custom Resources directly in Kubernetes
-  -a, --all-namespaces   Convert resources in all namespaces
-  -d, --debug            Use debug?
+  -a, --all-namespaces   Converts resources in all namespaces
+  -d, --debug            Runs the tool in debug mode
   -k, --kind[=<kinds> [<kinds> [<kinds> [<kinds> [<kinds> [<kinds> [<kinds>
         [<kinds> [<kinds> [<kinds>]]]]]]]]]]
-                         Resource Kind which should be converted (if not
-                           specified, all Strimzi resources will be converted)
+                         Specifies the kinds of custom resources to be
+                           converted, or converts all resources if not specified
       -ll, --log-level=<level>
-                         Set log level to enable logging
+                         Sets the log level to enable logging
   -n, --namespace=<namespace>
-                         Kubernetes namespace / OpenShift project (if not
-                           specified, current namespace will be used)
+                         Specifies a Kubernetes namespace or OpenShift project,
+                           or uses the current namespace if not specified
       --name=<name>      Name of the resource which should be converted (can be
                            used onl with --namespace and single --kind options)
 ```
+
+### Required access rights
+
+To convert the resources directly in your Kubernetes cluster, you must run the tool as a user with RBAC permission to:
+
+* Get the Strimzi custom resources you are going to convert (when using the `--name` option)
+* List the Strimzi custom resources you are going to convert (when not using the `--name` option)
+* Replace the Strimzi custom resources you are going to convert
+
+## Upgrading CRDs to v1beta2
+
+You can also use the tool to update the Strimzi CRDs to use the new `v1beta2` version as a stored version.
+This is required before upgrading to Strimzi 0.23 and newer.
+You have to first convert all Strimzi custom resources to `v1beta2` using one of the previous commands.
+Once the custom resources are ready, you can use the `crd-upgrade` subcommand to upgrade the CRDs.
+The following example command shows how the tool is used:
+
+```
+# Upgrade the Strimzi CRDs to v1beta2
+> bin/api-conversion.sh crd-upgrade
+```
+
+**After you have upgraded the CRDs to use `v1beta2` as storage version, you must only use the fields available in `v1beta2` in your custom resources.**
+
+### Required access rights
+
+To upgrade the Strimzi CRDs to `v1beta2`, you must run the tool as a user with RBAC permission to:
+
+* List the Strimzi custom resources in all namespaces
+* Replace the Strimzi custom resources in all namespaces
+* Patch the CRD resources
+* Replace the status of the CRD resources
