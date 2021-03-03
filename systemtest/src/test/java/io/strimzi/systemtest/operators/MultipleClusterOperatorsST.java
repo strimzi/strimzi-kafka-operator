@@ -73,12 +73,13 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         cluster.setNamespace(DEFAULT_NAMESPACE);
 
-        LOGGER.info("Deploying Kafka with CR selector pointing at first CO");
+        LOGGER.info("Deploying Kafka without CR selector");
         KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 3, 3).build());
 
+        // checking that no pods with prefix 'clusterName' will be created in some time
         PodUtils.waitUntilPodStabilityReplicasCount(clusterName, 0);
 
-        LOGGER.info("Add selector for {} into Kafka CR", FIRST_CO_NAME);
+        LOGGER.info("Adding {} selector of {} into Kafka CR", FIRST_CO_SELECTOR, FIRST_CO_NAME);
         KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR));
         KafkaUtils.waitForKafkaReady(clusterName);
 
@@ -93,7 +94,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         String kafkaConnectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        LOGGER.info("Deploying KafkaConnector with file sink and different CR selector than Kafka");
+        LOGGER.info("Deploying KafkaConnector with file sink and CR selector - {} - different than selector in Kafka", SECOND_CO_SELECTOR);
         KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(clusterName)
             .editOrNewMetadata()
                 .addToLabels(SECOND_CO_SELECTOR)
@@ -128,7 +129,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         deployCOInNamespace(FIRST_CO_NAME, DEFAULT_NAMESPACE, FIRST_CO_SELECTOR_ENV, false);
         deployCOInNamespace(SECOND_CO_NAME, DEFAULT_NAMESPACE, SECOND_CO_SELECTOR_ENV, false);
 
-        LOGGER.info("Deploying Kafka with CR selector of first CO");
+        LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_SELECTOR, FIRST_CO_NAME);
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3)
             .editOrNewMetadata()
                 .addToLabels(FIRST_CO_SELECTOR)
@@ -154,7 +155,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         // because KR is ignored, it shouldn't contain any status
         assertNull(KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(DEFAULT_NAMESPACE).withName(clusterName).get().getStatus());
 
-        LOGGER.info("Adding CR selector of second CO to Kafka");
+        LOGGER.info("Adding {} selector of {} to Kafka", SECOND_CO_SELECTOR, SECOND_CO_NAME);
         KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR));
 
         LOGGER.info("Waiting for Kafka to scales pods to {}", scaleTo);
