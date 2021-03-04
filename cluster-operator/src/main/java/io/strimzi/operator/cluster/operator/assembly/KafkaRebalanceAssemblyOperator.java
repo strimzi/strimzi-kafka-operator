@@ -341,10 +341,11 @@ public class KafkaRebalanceAssemblyOperator
             // we need to do this check again because it was triggered by a watcher
             KafkaRebalanceStatus status = new KafkaRebalanceStatus();
 
+            Set<Condition> unknownAndDeprecatedConditions = validate(kafkaRebalance);
             unknownAndDeprecatedConditions.add(StatusUtils.getPausedCondition());
             status.setConditions(new ArrayList<>(unknownAndDeprecatedConditions));
 
-            return  updateStatus(kafkaRebalance, status, null).compose(i -> Future.succeededFuture());
+            return updateStatus(kafkaRebalance, status, null).compose(i -> Future.succeededFuture());
         }
 
         RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
