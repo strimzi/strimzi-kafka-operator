@@ -436,6 +436,7 @@ public class KafkaRebalanceAssemblyOperator
 
         return new KafkaRebalanceStatusBuilder()
                 .withSessionId(currentStatus.getSessionId())
+                .withOptimizationResult(currentStatus.getOptimizationResult())
                 .withConditions(conditions)
                 .build();
     }
