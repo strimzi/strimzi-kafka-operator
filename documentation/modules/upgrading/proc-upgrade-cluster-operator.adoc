@@ -37,20 +37,24 @@ kubectl apply -f install/cluster-operator
 +
 Wait for the rolling updates to complete.
 
-. If the new Operator version no longer supports the Kafka version you are upgrading from, an error message is returned by the Cluster Operator. For example:
+. If the new Operator version no longer supports the Kafka version you are upgrading from, the Cluster Operator returns a "Version not found" error message. 
+Otherwise, no error message is returned.
++
+For example:
 +
 [source,shell,subs="+quotes,attributes"]
 ----
 "Version 2.4.0 is not supported. Supported versions are: 2.6.0, 2.6.1, 2.7.0."
 ----
-+
-If you see this message, upgrade to a Kafka version that is supported by the new Cluster Operator version:
 
-.. Edit the Kafka custom resource.
+* If the error message is returned, upgrade to a Kafka version that is supported by the new Cluster Operator version:
+
+.. Edit the `Kafka` custom resource.
 
 .. Change the `spec.kafka.version` property to a supported Kafka version.
-+
-If the "Version not supported" message is _not_ displayed, go to the next step. You will upgrade the Kafka version later.
+
+* If the error message is _not_ returned, go to the next step. 
+You will upgrade the Kafka version later.
 
 . Get the image for the Kafka pod to ensure the upgrade was successful:
 +
@@ -66,6 +70,6 @@ The image tag shows the new Operator version. For example:
 {ExampleImageTagUpgrades}
 ----
 
-Your Cluster Operator was upgraded to version {ProductVersion}, but the version of Kafka running in the cluster it manages is unchanged.
+Your Cluster Operator was upgraded to version {ProductVersion} but the version of Kafka running in the cluster it manages is unchanged.
 
 Following the Cluster Operator upgrade, you must perform a xref:assembly-upgrading-kafka-versions-str[Kafka upgrade].
