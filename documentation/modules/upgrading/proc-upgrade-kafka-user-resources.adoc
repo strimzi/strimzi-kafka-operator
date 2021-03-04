@@ -10,16 +10,16 @@
 * A User Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `KafkaUser` resource in your deployment.
+Perform the following steps for each `KafkaUser` custom resource in your deployment.
 
-. Update the `KafkaUser` resource in an editor.
+. Update the `KafkaUser` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
 kubectl edit kafkauser _my-user_
 ----
 
-. Update the `apiVersion` of the `KafkaUser` resource to `{ApiVersion}`:
+. Update the `apiVersion` of the `KafkaUser` custom resource to `{ApiVersion}`:
 +
 Replace:
 +
@@ -35,4 +35,4 @@ with:
 apiVersion: {KafkaUserApiVersion}
 ----
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.

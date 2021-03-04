@@ -10,9 +10,9 @@
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `Kafka.spec.cruiseControl` configuration in your Kafka cluster.
+Perform the following steps for each `Kafka.spec.cruiseControl` configuration in your Kafka cluster.
 
-. Update the `Kafka` resource in an editor.
+. Update the `Kafka` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -30,7 +30,7 @@ logging:
   name: my-config-map
 ----
 +
-With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -74,4 +74,4 @@ metricsConfig:
 
 .. Delete the old `.spec.cruiseControl.metrics` field.
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.

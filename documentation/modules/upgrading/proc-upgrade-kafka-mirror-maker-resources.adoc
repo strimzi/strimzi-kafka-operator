@@ -10,10 +10,9 @@
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
+Perform the following steps for each `KafkaMirrorMaker` custom resource in your deployment.
 
-Execute the following steps for each `KafkaMirrorMaker` resource in your deployment.
-
-. Update the `KafkaMirrorMaker` resource in an editor.
+. Update the `KafkaMirrorMaker` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -77,7 +76,7 @@ logging:
   name: my-config-map
 ----
 +
-With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -121,7 +120,7 @@ metricsConfig:
 
 .. Delete the old `.spec.metrics` field.
 
-. Update the `apiVersion` of the `KafkaMirrorMaker` resource to `{ApiVersion}`:
+. Update the `apiVersion` of the `KafkaMirrorMaker` custom resource to `{ApiVersion}`:
 +
 Replace:
 +
@@ -137,4 +136,4 @@ with:
 apiVersion: {KafkaMirrorMakerApiVersion}
 ----
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.

@@ -10,9 +10,9 @@
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `Kafka` resource in your deployment.
+Perform the following steps for each `Kafka` custom resource in your deployment.
 
-. Update the `Kafka` resource in an editor.
+. Update the `Kafka` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -63,7 +63,7 @@ logging:
   name: my-config-map
 ----
 +
-With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -107,11 +107,11 @@ metricsConfig:
 
 .. Delete the old `.spec.kafka.metrics` field.
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.
 
 .What to do next
 
-For each `Kafka` resource, upgrade the configurations for ZooKeeper, Topic Operator, Entity Operator, and Cruise Control (if deployed) to support version `{ApiVersion}`. 
+For each `Kafka` custom resource, upgrade the configurations for ZooKeeper, Topic Operator, Entity Operator, and Cruise Control (if deployed) to support version `{ApiVersion}`. 
 This is described in the following procedures.
 
-When all configurations are updated to support `{ApiVersion}`, you can xref:proc-upgrade-kafka-api-version-{context}[upgrade the `Kafka` resource to `{ApiVersion}`]. 
+When all `Kafka` configurations are updated to support `{ApiVersion}`, you can xref:proc-upgrade-kafka-api-version-{context}[upgrade the `Kafka` custom resource to `{ApiVersion}`]. 

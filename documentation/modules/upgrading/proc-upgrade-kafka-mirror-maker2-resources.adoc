@@ -3,16 +3,16 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-mirror-maker2-resources-{context}']
-= Upgrading Kafka MirrorMaker 2 resources to {ApiVersion}
+= Upgrading Kafka MirrorMaker 2.0 resources to {ApiVersion}
 
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `KafkaMirrorMaker2` resource in your deployment.
+Perform the following steps for each `KafkaMirrorMaker2` custom resource in your deployment.
 
-. Update the `KafkaMirrorMaker2` resource in an editor.
+. Update the `KafkaMirrorMaker2` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -34,7 +34,7 @@ logging:
   name: my-config-map
 ----
 +
-With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -78,7 +78,7 @@ metricsConfig:
 
 .. Delete the old `.spec.metrics` field.
 
-. Update the `apiVersion` of the `KafkaMirrorMaker2` resource to `{ApiVersion}`:
+. Update the `apiVersion` of the `KafkaMirrorMaker2` custom resource to `{ApiVersion}`:
 +
 Replace:
 +
@@ -94,4 +94,4 @@ with:
 apiVersion: {KafkaMirrorMaker2ApiVersion}
 ----
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.

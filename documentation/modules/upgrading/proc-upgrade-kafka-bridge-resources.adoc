@@ -10,9 +10,9 @@
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `KafkaBridge` resource in your deployment.
+Perform the following steps for each `KafkaBridge` resource in your deployment.
 
-. Update the `KafkaBridge` resource in an editor.
+. Update the `KafkaBridge` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -30,7 +30,7 @@ logging:
   name: my-config-map
 ----
 +
-With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -42,7 +42,7 @@ logging:
       key: log4j2.properties
 ----
 
-. Update the `apiVersion` of the `KafkaBridge` resource to `{ApiVersion}`:
+. Update the `apiVersion` of the `KafkaBridge` custom resource to `{ApiVersion}`:
 +
 Replace:
 +
@@ -58,4 +58,4 @@ with:
 apiVersion: {KafkaBridgeApiVersion}
 ----
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.

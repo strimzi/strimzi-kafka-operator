@@ -10,8 +10,9 @@
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
+Perform the following steps for each `Kafka` custom resource in your deployment.
 
-. Update the `Kafka` resource in an editor.
+. Update the `Kafka` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
@@ -39,7 +40,7 @@ logging:
   name: my-config-map
 ----
 +
-With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -53,4 +54,4 @@ logging:
 +
 NOTE: You can also complete this step as part of the xref:proc-upgrade-entity-operator-api-version-{context}[Entity Operator upgrade].
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.

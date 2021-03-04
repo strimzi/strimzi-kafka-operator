@@ -11,19 +11,18 @@
 * `Kafka.spec.entityOperator` is configured, as described in xref:proc-upgrade-topic-operator-api-version-{context}[].
 
 .Procedure
+Perform the following steps for each `Kafka` custom resource in your deployment.
 
-. Update the `Kafka` resource in an editor.
+. Update the `Kafka` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
 kubectl edit kafka _my-cluster_
 ----
 
-. If `.spec.entityOperator` is configured:
+. Move `affinity` from `.spec.entityOperator.affinity` to `.spec.entityOperator.template.pod.affinity`.
 
-.. Move `affinity` from `.spec.entityOperator.affinity` to `.spec.entityOperator.template.pod.affinity`.
-
-.. Move `tolerations` from `.spec.entityOperator.tolerations` to `.spec.entityOperator.template.pod.tolerations`.
+. Move `tolerations` from `.spec.entityOperator.tolerations` to `.spec.entityOperator.template.pod.tolerations`.
 
 . If `type: external` logging is configured in `.spec.entityOperator.userOperator.logging` or `.spec.entityOperator.topicOperator.logging`:
 +
@@ -36,7 +35,7 @@ logging:
   name: my-config-map
 ----
 +
-With the `valueFrom.configMapKeyRef` field and specify both the ConfigMap `name` and the `key` under which the logging is stored:
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -48,4 +47,4 @@ logging:
       key: log4j2.properties
 ----
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.
