@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,7 +33,7 @@ public class CrdGeneratorTest {
     @Test
     public void simpleTestWithoutDescriptions() throws IOException {
         CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1, CrdGenerator.YAML_MAPPER, emptyMap(),
-                new CrdGenerator.DefaultReporter(), emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), List.of(ApiVersion.V1));
+                new CrdGenerator.DefaultReporter(), emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), ApiVersion.parseRange("v1+"));
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
@@ -60,7 +59,7 @@ public class CrdGeneratorTest {
         labels.put("heritage", "{{ .Release.Service }}");
         CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1,
                 CrdGenerator.YAML_MAPPER, labels,
-                new CrdGenerator.DefaultReporter(), emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), emptyList());
+                new CrdGenerator.DefaultReporter(), emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null);
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
@@ -90,7 +89,7 @@ public class CrdGeneratorTest {
                         errors.add(s);
                     }
                 },
-                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), emptyList());
+                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null);
         StringWriter w = new StringWriter();
         crdGenerator.generate(VersionedExampleCrd.class, w);
         assertTrue(errors.contains("Multiple scales specified but 1.11 doesn't support schema per version"), errors.toString());

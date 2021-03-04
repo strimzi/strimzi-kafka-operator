@@ -172,7 +172,7 @@ public class CrdGenerator {
     private final List<ApiVersion> generateVersions;
     private final ApiVersion storageVersion;
     private final VersionRange<ApiVersion> servedVersion;
-    private final List<ApiVersion> describeVersions;
+    private final VersionRange<ApiVersion> describeVersions;
     // TODO CrdValidator
     // extraProperties
     // @Buildable
@@ -268,7 +268,7 @@ public class CrdGenerator {
 
     public CrdGenerator(VersionRange<KubeVersion> targetKubeVersions, ApiVersion crdApiVersion) {
         this(targetKubeVersions, crdApiVersion, CrdGenerator.YAML_MAPPER, emptyMap(), new DefaultReporter(),
-                emptyList(), null, null, new NoneConversionStrategy(), emptyList());
+                emptyList(), null, null, new NoneConversionStrategy(), null);
     }
 
     /**
@@ -281,7 +281,7 @@ public class CrdGenerator {
      * @param storageVersion If not null, override the storageVersion to the given value.
      * @param servedVersions If not null, override the serverd versions according to the given range.
      * @param conversionStrategy The conversion strategy.
-     * @param describeVersions The API versions to which descriptions should be added
+     * @param describeVersions The range of API versions for which descriptions should be added
      */
     public CrdGenerator(VersionRange<KubeVersion> targetKubeVersions, ApiVersion crdApiVersion,
                  ObjectMapper mapper, Map<String, String> labels, Reporter reporter,
@@ -289,7 +289,7 @@ public class CrdGenerator {
                  ApiVersion storageVersion,
                  VersionRange<ApiVersion> servedVersions,
                  ConversionStrategy conversionStrategy,
-                 List<ApiVersion> describeVersions) {
+                 VersionRange<ApiVersion> describeVersions) {
         this.reporter = reporter;
         if (targetKubeVersions.isEmpty()
             || targetKubeVersions.isAll()) {
@@ -475,6 +475,7 @@ public class CrdGenerator {
     private boolean shouldDescribeVersion(ApiVersion version) {
         return describeVersions == null
                 || describeVersions.isEmpty()
+                || describeVersions.isAll()
                 || describeVersions.contains(version);
     }
 
@@ -1038,7 +1039,7 @@ public class CrdGenerator {
         VersionRange<KubeVersion> targetKubeVersions = null;
         ApiVersion crdApiVersion = null;
         List<ApiVersion> apiVersions = null;
-        List<ApiVersion> describeVersions = null;
+        VersionRange<ApiVersion> describeVersions = null;
         ApiVersion storageVersion = null;
         Map<String, Class<? extends CustomResource>> classes = new HashMap<>();
         private final ConversionStrategy conversionStrategy;
@@ -1099,7 +1100,7 @@ public class CrdGenerator {
                             } else if (i >= arg.length() - 1) {
                                 argParseErr("--describe-api-versions needs an argument");
                             } else {
-                                describeVersions = Arrays.stream(args[++i].split(",")).map(v -> ApiVersion.parse(v)).collect(Collectors.toList());
+                                describeVersions = ApiVersion.parseRange(args[++i]);
                             }
                             break;
                         case "--storage-version":
