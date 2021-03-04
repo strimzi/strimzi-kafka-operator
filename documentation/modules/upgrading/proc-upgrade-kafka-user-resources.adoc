@@ -16,7 +16,7 @@ Perform the following steps for each `KafkaUser` custom resource in your deploym
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkauser _my-user_
+kubectl edit kafkauser _KAFKA-USER_
 ----
 
 . Update the `apiVersion` of the `KafkaUser` custom resource to `{ApiVersion}`:

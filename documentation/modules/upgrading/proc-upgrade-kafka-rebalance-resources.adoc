@@ -8,6 +8,8 @@
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
+* Cruise Control is configured and deployed. 
+See link:{BookURLUsing}#proc-deploying-cruise-control-str[Deploying Cruise Control^] in the _Using Strimzi_ guide. 
 
 .Procedure
 Perform the following steps for each `KafkaRebalance` custom resource in your deployment.
@@ -16,7 +18,7 @@ Perform the following steps for each `KafkaRebalance` custom resource in your de
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkarebalance _my-rebalance_
+kubectl edit kafkarebalance _KAFKA-REBALANCE_
 ----
 
 . Update the `apiVersion` of the `KafkaRebalance` custom resource to `{ApiVersion}`:

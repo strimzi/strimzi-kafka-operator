@@ -8,6 +8,8 @@
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
+* The Kafka Bridge is configured and deployed. 
+See xref:deploying-kafka-bridge-{context}[].
 
 .Procedure
 Perform the following steps for each `KafkaBridge` resource in your deployment.
@@ -16,7 +18,7 @@ Perform the following steps for each `KafkaBridge` resource in your deployment.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkabridge _my-bridge_
+kubectl edit kafkabridge _KAFKA-BRIDGE_
 ----
 
 . If `type: external` logging is configured in `KafkaBridge.spec.logging`:

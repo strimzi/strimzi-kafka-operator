@@ -16,7 +16,7 @@ Perform the following steps for each `KafkaConnectS2I` custom resource in your d
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkaconnects2i _my-connect-cluster_
+kubectl edit kafkaconnects2i _S2I-CLUSTER_
 ----
 
 . If present, move:

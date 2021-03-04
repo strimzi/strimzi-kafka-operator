@@ -16,7 +16,7 @@ Perform the following steps for each `KafkaTopic` custom resource in your deploy
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkatopic _my-topic_
+kubectl edit kafkatopic _KAFKA-TOPIC_
 ----
 
 . Update the `apiVersion` of the `KafkaTopic` custom resource to `{ApiVersion}`:

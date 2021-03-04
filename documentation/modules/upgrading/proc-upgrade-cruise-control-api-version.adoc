@@ -8,6 +8,8 @@
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
+* Cruise Control is configured and deployed. 
+See link:{BookURLUsing}#proc-deploying-cruise-control-str[Deploying Cruise Control^] in the _Using Strimzi_ guide. 
 
 .Procedure
 Perform the following steps for each `Kafka.spec.cruiseControl` configuration in your Kafka cluster.
@@ -16,7 +18,7 @@ Perform the following steps for each `Kafka.spec.cruiseControl` configuration in
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafka _my-cluster_
+kubectl edit kafka _KAFKA-CLUSTER_
 ----
 
 . If `type: external` logging is configured in `.spec.cruiseControl.logging`:

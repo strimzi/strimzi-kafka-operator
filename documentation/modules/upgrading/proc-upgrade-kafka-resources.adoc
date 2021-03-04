@@ -16,7 +16,7 @@ Perform the following steps for each `Kafka` custom resource in your deployment.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafka _my-cluster_
+kubectl edit kafka _KAFKA-CLUSTER_
 ----
 
 . If you have not already done so, update `.spec.kafka.listener` to the new generic listener format, as described in xref:con-upgrade-listeners-{context}[].

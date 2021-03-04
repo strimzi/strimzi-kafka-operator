@@ -16,7 +16,7 @@ Perform the following steps for each `KafkaConnect` custom resource in your depl
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkaconnect _my-connect-cluster_
+kubectl edit kafkaconnect _KAFKA-CONNECT-CLUSTER_
 ----
 
 . If present, move:
