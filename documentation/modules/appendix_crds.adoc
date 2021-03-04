@@ -1725,7 +1725,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions      1.2+<.<|JVM Options for the Cruise Control container.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
-|logging         1.2+<.<|Logging configuration (log4j1) for Cruise Control. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
+|logging         1.2+<.<|Logging configuration (Log4j 2) for Cruise Control. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |template        1.2+<.<|Template to specify how Cruise Control resources, `Deployments` and `Pods`, are generated.
 |xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`]

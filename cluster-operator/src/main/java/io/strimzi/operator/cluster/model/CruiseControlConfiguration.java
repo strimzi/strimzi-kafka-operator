@@ -28,6 +28,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     protected static final List<String> CRUISE_CONTROL_GOALS_LIST = Collections.unmodifiableList(
         Arrays.asList(
                 CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+                CruiseControlGoals.MIN_TOPIC_LEADERS_PER_BROKER_GOAL.toString(),
                 CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
                 CruiseControlGoals.DISK_CAPACITY_GOAL.toString(),
                 CruiseControlGoals.NETWORK_INBOUND_CAPACITY_GOAL.toString(),
@@ -68,6 +69,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
     protected static final List<String> CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST = Collections.unmodifiableList(
         Arrays.asList(
                 CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
+                CruiseControlGoals.MIN_TOPIC_LEADERS_PER_BROKER_GOAL.toString(),
                 CruiseControlGoals.REPLICA_CAPACITY_GOAL.toString(),
                 CruiseControlGoals.DISK_CAPACITY_GOAL.toString()
         )

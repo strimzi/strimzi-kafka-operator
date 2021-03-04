@@ -10,5 +10,6 @@ spec:
     - NetworkInboundCapacityGoal
     - DiskCapacityGoal
     - RackAwareGoal
+    - MinTopicLeadersPerBrokerGoal
     - NetworkOutboundCapacityGoal
     - ReplicaCapacityGoal
