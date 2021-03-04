@@ -5,15 +5,17 @@
 [id='ref-operator-cluster-{context}']
 = Cluster Operator configuration
 
-The Cluster Operator can be configured through the following supported environment variables and through the logging configuration.
+You can configure the Cluster Operator using supported environment variables, and through its logging configuration.
 
-For more information of `image` configuration, see, xref:con-common-configuration-images-reference[].
+The environment variables relate to container configuration for the deployment of the Cluster Operator image.
+For more information on `image` configuration, see, xref:con-common-configuration-images-reference[].
 
 `STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator should operate in.
-When not set, set to empty string, or to `*` the Cluster Operator will operate in all namespaces.
+When not set, set to empty string, or set to `*`, the Cluster Operator will operate in all namespaces.
 The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^]
-to set this automatically to the namespace the Cluster Operator is deployed in. See the example below:
+to set this automatically to the namespace the Cluster Operator is deployed in.
 +
+.Example configuration for Cluster Operator namespaces
 [source,yaml,options="nowrap"]
 ----
 env:
@@ -120,8 +122,8 @@ Changing this list results in a rolling update of all your Kafka, Kafka Connect,
 
 `STRIMZI_KUBERNETES_VERSION`:: Optional.
 Overrides the Kubernetes version information detected from the API server.
-See the example below:
 +
+.Example configuration for Kubernetes version override
 [source,yaml,options="nowrap"]
 ----
 env:
@@ -158,8 +160,7 @@ If you are using a different DNS domain name suffix in your cluster, change the 
 The timeout for building new Kafka Connect images with additional connectots, in milliseconds.
 This value should be increased when using Strimzi to build container images containing many connectors or using a slow container registry.
 
-[discrete]
-== Configuration by ConfigMap
+== Logging configuration by ConfigMap
 
 The Cluster Operator's logging is configured by the `strimzi-cluster-operator` `ConfigMap`.
 
@@ -182,7 +183,31 @@ If the `ConfigMap` is missing when the Cluster Operator is deployed, the default
 If the `ConfigMap` is accidentally deleted after the Cluster Operator is deployed, the most recently loaded logging configuration is used.
 Create a new `ConfigMap` to load a new logging configuration.
 
-NOTE: Do not remove the monitorInterval option from the ConfigMap.
+NOTE: Do not remove the `monitorInterval` option from the ConfigMap.
+
+== Restricting Cluster Operator access with network policy
+
+The Cluster Operator can run in the same namespace as the resources it manages, or in a separate namespace.
+The `STRIMZI_OPERATOR_NAMESPACE` environment variable is configured by default, and uses the Kubernetes Downward API to find which namespace the Cluster Operator is running in.
+If the Cluster Operator is running in the same namespace, only local access is required, and allowed by Strimzi.
+
+If the Cluster Operator is running in a separate namespace to the resources it manages, any namespace in the Kubernetes cluster is allowed access to the Cluster Operator unless network policy is configured.
+Use the optional `STRIMZI_OPERATOR_NAMESPACE_LABELS` environment variable to establish network policy for the Cluster Operator using namespace labels.
+By adding namespace labels, access to the Cluster Operator is restricted to the namespaces specified.
+
+.Network policy configured for the Cluster Operator deployment
+[source,yaml,options="nowrap"]
+----
+#...
+env:
+  - name: STRIMZI_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+  - name: STRIMZI_OPERATOR_NAMESPACE_LABELS
+    value: label1=value1,label2=value2
+  #...
+----
 
 == Periodic reconciliation
 
