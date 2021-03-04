@@ -11,14 +11,13 @@
   * OAuth authentication over SASL PLAIN mechanism
   * Checking token audience
   * Validating tokens using JSONPath filter queries to perform custom checks
-* Updated Cruise Control to version 2.5.32
 * Fix Cruise Control crash loop when updating container configurations
 * Configure external logging `ConfigMap` name and key.
 * Add support for configuring labels and annotations in ClusterRoleBindings created as part of Kafka and Kafka Connect clusters
 * Add support for Ingress v1 in Kubernetes 1.19 and newer
 * Add support for Kafka 2.6.1
 * List topics used by a Kafka Connect connector in the `.status` section of the `KafkaConnector` custom resource
-* Bump Cruise Control to v2.5.37 for Kafka 2.7 support. Note this new version of Cruise Control uses `log4j2` and is supported by dynamic logging configuration. However, existing `log4j` configurations must be updated to `log4j2` configurations.
+* Bump Cruise Control to v2.5.37 for Kafka 2.7 support. Note this new version of Cruise Control uses `Log4j 2` and is supported by dynamic logging configuration (where logging properties are defined in a ConfigMap). However, existing `Log4j` configurations must be updated to `Log4j 2` configurations.
 
 ### Changes, deprecations and removals
 
@@ -49,9 +48,9 @@
         name: my-config-map
         key: my-key
   ``` 
-* Exisiting Cruise Control logging configurations must be updated from `log4j` syntax to `log4j2` syntax.
+* Existing Cruise Control logging configurations must be updated from `Log4j` syntax to `Log4j 2` syntax.
   * For existing inline configurations, replace the `cruisecontrol.root.logger` property with `rootLogger.level`.
-  * For existing external configurations, replace the existing configuration a new configuration file named `log4j2.properties` using `log4j2` syntax. 
+  * For existing external configurations, replace the existing configuration with a new configuration file named `log4j2.properties` using `log4j 2` syntax.
 
 ## 0.21.0
 

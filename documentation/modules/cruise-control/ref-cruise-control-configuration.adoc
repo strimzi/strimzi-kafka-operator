@@ -124,7 +124,7 @@ Cruise Control has its own configurable logger:
 
 * `rootLogger.level`
 
-Cruise Control uses the Apache `log4j2` logger implementation.
+Cruise Control uses the Apache `log4j 2` logger implementation.
 
 Use the `logging` property to configure loggers and logger levels.
 
