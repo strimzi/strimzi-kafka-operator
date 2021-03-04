@@ -54,7 +54,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
         logPodImages(clusterName);
         //  Upgrade kafka
         changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresBeforeOperatorDowngrade"), testParameters, clusterName, extensionContext);

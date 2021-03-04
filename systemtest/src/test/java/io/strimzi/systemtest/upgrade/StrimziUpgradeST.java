@@ -9,11 +9,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.crd.KafkaTemplates;
-import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -137,7 +133,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), NAMESPACE);
         // Make snapshots of all pods
         makeSnapshots(clusterName);
         // Upgrade CO
@@ -166,7 +162,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, NAMESPACE);
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, NAMESPACE);
         // Wait till first upgrade finished
@@ -251,7 +247,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
         // Upgrade CO
         changeClusterOperator(testParameters, NAMESPACE);
         // Wait for Kafka cluster rolling update

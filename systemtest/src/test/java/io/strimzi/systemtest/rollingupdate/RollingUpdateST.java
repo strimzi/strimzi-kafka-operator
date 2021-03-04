@@ -43,7 +43,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.parallel.Isolated;
 
 import java.time.Duration;
 import java.util.ArrayList;
