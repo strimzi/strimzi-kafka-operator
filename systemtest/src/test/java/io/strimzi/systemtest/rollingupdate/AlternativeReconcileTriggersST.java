@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -68,7 +69,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     static final String NAMESPACE = "alternative-reconcile-triggers-cluster-test";
 
-    @ParallelTest
+    @IsolatedTest
     void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
@@ -329,7 +330,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      * Adding and removing JBOD volumes requires rolling updates in the sequential order. Otherwise the StatefulSet does
      * not like it. This tests tries to add and remove volume from JBOD to test both of these situations.
      */
-    @ParallelTest
+    @IsolatedTest
     void testAddingAndRemovingJbodVolumes(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());

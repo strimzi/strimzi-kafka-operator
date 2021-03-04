@@ -173,7 +173,17 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         ServiceResource.createServiceResource(extensionContext, service, NAMESPACE);
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
-        
+
+//        KafkaBasicExampleClients kafkaBasicClientResource = new KafkaBasicExampleClients.Builder()
+//            .withConsumerName(consumerName)
+//            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(clusterName))
+//            .withTopicName(topicName)
+//            .withMessageCount(MESSAGE_COUNT)
+//            .withDelayMs(0)
+//            .wit
+//            .withAdditionalConfig("security.protocol=" + securityProtocol)
+//            .build();
+
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withClusterName(clusterName)
             .withNamespaceName(NAMESPACE)

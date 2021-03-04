@@ -58,7 +58,7 @@ public class NetworkPoliciesST extends AbstractST {
     public static final String NAMESPACE = "np-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(NetworkPoliciesST.class);
 
-    @IsolatedTest("Specific cluster oprator for test case")
+    @IsolatedTest("Specific cluster operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
     void testNetworkPoliciesWithPlainListener(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -282,7 +282,7 @@ public class NetworkPoliciesST extends AbstractST {
         clusterRoleBindingList.forEach(clusterRoleBinding ->
             ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator("*", Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE, "*", Constants.CO_OPERATION_TIMEOUT_DEFAULT)
             .editOrNewSpec()
                 .editOrNewTemplate()
                     .editOrNewSpec()
