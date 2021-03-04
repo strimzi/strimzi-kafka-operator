@@ -264,7 +264,11 @@ class CustomResourceStatusST extends AbstractST {
             .endMetadata()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).build());
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)
+            .editSpec()
+                .addToConfig("topic", EXAMPLE_TOPIC_NAME)
+            .endSpec()
+            .build());
 
         assertKafkaConnectStatus(1, connectUrl);
         assertKafkaConnectorStatus(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source", List.of());
