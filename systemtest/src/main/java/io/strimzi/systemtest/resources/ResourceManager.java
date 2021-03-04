@@ -79,7 +79,7 @@ public class ResourceManager {
     public static final String STRIMZI_PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
     public static final long CR_CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
-    private static final Map<String, Stack<ThrowableRunner>> STORED_RESOURCES = new LinkedHashMap<>();
+    public static final Map<String, Stack<ThrowableRunner>> STORED_RESOURCES = new LinkedHashMap<>();
 
     private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
     private static ResourceManager instance;

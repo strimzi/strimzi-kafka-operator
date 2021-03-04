@@ -12,12 +12,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -337,7 +332,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void setupEnvAndUpgradeClusterOperator(JsonObject testParameters, String producerName, String consumerName,
+    protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, JsonObject testParameters, String producerName, String consumerName,
                                                    String continuousTopicName, String continuousConsumerGroup,
                                                    String kafkaVersion, String namespace) throws IOException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -405,7 +400,7 @@ public class AbstractUpgradeST extends AbstractST {
         if (testParameters.getBoolean("generateTopics")) {
             for (int x = 0; x < upgradeTopicCount; x++) {
                 if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-                    KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(clusterName, topicName + "-" + x, 1, 1, 1)
+                    resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, topicName + "-" + x, 1, 1, 1)
                         .editSpec()
                             .withTopicName(topicName + "-" + x)
                         .endSpec()

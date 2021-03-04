@@ -123,7 +123,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
-        int sent = internalKafkaClient. sendMessagesPlain();
+        int sent = internalKafkaClient.sendMessagesPlain();
         assertThat(sent, is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");

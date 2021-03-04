@@ -16,6 +16,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaTracingExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -320,6 +321,7 @@ public class TracingST extends AbstractST {
         LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
         KafkaTracingExampleClients sourceKafkaTracingClient = kafkaTracingClient.toBuilder()
+            .withTopicName(topicName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
@@ -361,10 +363,10 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build());
 
-        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, "To_" + topicName);
-        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, "From_" + kafkaClusterSourceName + "." + topicName);
-        TracingUtils.verify(JAEGER_MIRROR_MAKER2_SERVICE, kafkaClientsPodName, "From_" + topicName);
-        TracingUtils.verify(JAEGER_MIRROR_MAKER2_SERVICE, kafkaClientsPodName, "To_" + kafkaClusterSourceName + "." + topicName);
+        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, "To_" + topicName, JAEGER_QUERY_SERVICE);
+        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, "From_" + kafkaClusterSourceName + "." + topicName, JAEGER_QUERY_SERVICE);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER2_SERVICE, kafkaClientsPodName, "From_" + topicName, JAEGER_QUERY_SERVICE);
+        TracingUtils.verify(JAEGER_MIRROR_MAKER2_SERVICE, kafkaClientsPodName, "To_" + kafkaClusterSourceName + "." + topicName, JAEGER_QUERY_SERVICE);
     }
 
     @IsolatedTest
@@ -669,7 +671,7 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(CLUSTER_NAME)
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(kafkaConnectS2IName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
@@ -773,8 +775,8 @@ public class TracingST extends AbstractST {
 
         deployJaegerContent();
 
-        // TODO: how?
-//        ResourceManager.getPointerResources().push(this::deleteJaeger);
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(() -> this.deleteJaeger());
         DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
@@ -801,13 +803,13 @@ public class TracingST extends AbstractST {
     /**
      * Install of Jaeger instance
      */
-    void deployJaegerInstance() {
+    void deployJaegerInstance(ExtensionContext extensionContext) {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
         String instanceYamlContent = TestUtils.getContent(new File(JAEGER_INSTANCE_PATH), TestUtils::toYamlString);
         cmdKubeClient().applyContent(instanceYamlContent.replaceAll("image: 'all-in-one:*'", "image: 'all-in-one:" + JAEGER_VERSION.substring(0, 4) + "'"));
-        // TODO: how??
-//        ResourceManager.getPointerResources().push(() -> cmdKubeClient().deleteContent(instanceYamlContent));
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(() -> cmdKubeClient().deleteContent(instanceYamlContent));
         DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_INSTANCE_NAME, 1);
     }
 
@@ -816,7 +818,7 @@ public class TracingST extends AbstractST {
         topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        deployJaegerInstance();
+        deployJaegerInstance(extensionContext);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 

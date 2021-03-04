@@ -48,13 +48,18 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
 
     public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace) {
         LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
+        return clusterRoleBindingsForAllNamespaces(namespace, "strimzi-cluster-operator");
+    }
+
+    public static List<ClusterRoleBinding> clusterRoleBindingsForAllNamespaces(String namespace, String coName) {
+        LOGGER.info("Creating ClusterRoleBinding that grant cluster-wide access to all OpenShift projects");
 
         List<ClusterRoleBinding> kCRBList = new ArrayList<>();
 
         kCRBList.add(
             new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName("strimzi-cluster-operator-namespaced")
+                .withName(coName + "-namespaced")
                 .endMetadata()
                 .withNewRoleRef()
                 .withApiGroup("rbac.authorization.k8s.io")
@@ -73,7 +78,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         kCRBList.add(
             new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName("strimzi-entity-operator")
+                .withName(coName + "-entity-operator")
                 .endMetadata()
                 .withNewRoleRef()
                 .withApiGroup("rbac.authorization.k8s.io")
@@ -92,7 +97,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         kCRBList.add(
             new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName("strimzi-topic-operator")
+                .withName(coName + "-topic-operator")
                 .endMetadata()
                 .withNewRoleRef()
                 .withApiGroup("rbac.authorization.k8s.io")
