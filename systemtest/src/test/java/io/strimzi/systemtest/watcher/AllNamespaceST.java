@@ -116,9 +116,10 @@ class AllNamespaceST extends AbstractNamespaceST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String kafkaConnectName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         // Deploy Kafka Connect in other namespace than CO
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, kafkaConnectName, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
@@ -126,7 +127,7 @@ class AllNamespaceST extends AbstractNamespaceST {
             .endMetadata()
             .build());
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND);
+        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND, SECOND_CLUSTER_NAME);
 
         cluster.setNamespace(previousNamespace);
     }
@@ -142,8 +143,9 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         String kafkaConnectS2IName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect-s2i";
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         // Deploy Kafka Connect in other namespace than CO
         resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, kafkaConnectS2IName, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
@@ -151,7 +153,7 @@ class AllNamespaceST extends AbstractNamespaceST {
             .endMetadata()
             .build());
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(extensionContext, kafkaConnectS2IName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnectS2I.RESOURCE_KIND);
+        deployKafkaConnectorWithSink(extensionContext, kafkaConnectS2IName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnectS2I.RESOURCE_KIND, SECOND_CLUSTER_NAME);
 
         cluster.setNamespace(previousNamespace);
     }
@@ -246,7 +248,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         clusterRoleBindingList.forEach(clusterRoleBinding ->
             ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator("*").build());
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(CO_NAMESPACE, "*", Constants.RECONCILIATION_INTERVAL).build());
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
