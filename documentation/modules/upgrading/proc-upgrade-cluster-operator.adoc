@@ -48,7 +48,7 @@ If you see this message, upgrade to a Kafka version that is supported by the new
 
 .. Edit the Kafka custom resource.
 
-.. Change the `spec.Kafka.version` property to a supported Kafka version.
+.. Change the `spec.kafka.version` property to a supported Kafka version.
 +
 If the "Version not supported" message is _not_ displayed, go to the next step. You will upgrade the Kafka version later.
 

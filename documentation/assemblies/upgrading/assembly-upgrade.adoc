@@ -18,7 +18,7 @@ Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous ver
 Two upgrade paths are possible:
 
 Incremental:: 
-Upgrading Strimzi from version 0.21.1 to version {ProductVersion}.
+Upgrading Strimzi from the previous minor version to version {ProductVersion}.
 
 Multi-version::
 Upgrading Strimzi from an old version to version {ProductVersion} within a single upgrade (skipping one or more intermediate versions).
