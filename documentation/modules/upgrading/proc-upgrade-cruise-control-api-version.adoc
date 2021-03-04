@@ -58,11 +58,11 @@ metadata:
   labels:
     app: strimzi
 data:
-  cruise-control-metrics-config.yml: |
+  cruise-control-metrics-config.yaml: |
       <YAML>
 ----
 
-.. Create a new `.spec.cruiseControl.metricsConfig` field pointing to the ConfigMap and key:
+.. Add a `.spec.cruiseControl.metricsConfig` property that points to the ConfigMap and key:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -71,7 +71,7 @@ metricsConfig:
   valueFrom:
     configMapKeyRef:
       name: kafka-metrics
-      key: cruise-control-metrics-config.yml
+      key: cruise-control-metrics-config.yaml
 ----
 
 .. Delete the old `.spec.cruiseControl.metrics` field.

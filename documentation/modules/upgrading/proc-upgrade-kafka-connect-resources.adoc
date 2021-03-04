@@ -102,11 +102,11 @@ metadata:
   labels:
     app: strimzi
 data:
-  connect-metrics-config.yml: |
+  connect-metrics-config.yaml: |
       <YAML>
 ----
 
-.. Create a new `.spec.metricsConfig` field pointing to the ConfigMap and key:
+.. Add a `.spec.metricsConfig` property that points to the ConfigMap and key:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -115,7 +115,7 @@ metricsConfig:
   valueFrom:
     configMapKeyRef:
       name: kafka-connect-metrics
-      key: connect-metrics-config.yml
+      key: connect-metrics-config.yaml
 ----
 
 .. Delete the old `.spec.metrics` field.

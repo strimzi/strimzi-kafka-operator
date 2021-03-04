@@ -64,11 +64,11 @@ metadata:
   labels:
     app: strimzi
 data:
-  zookeeper-metrics-config.yml: |
+  zookeeper-metrics-config.yaml: |
       <YAML>
 ----
 
-.. Create a new `.spec.zookeeper.metricsConfig` field pointing to the ConfigMap and key:
+.. Add a `.spec.zookeeper.metricsConfig` property that points to the ConfigMap and key:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -77,7 +77,7 @@ metricsConfig:
   valueFrom:
     configMapKeyRef:
       name: kafka-metrics
-      key: zookeeper-metrics-config.yml
+      key: zookeeper-metrics-config.yaml
 ----
 
 .. Delete the old `.spec.zookeeper.metrics` field.
