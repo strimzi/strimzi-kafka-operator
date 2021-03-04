@@ -4,14 +4,10 @@
  */
 package io.strimzi.systemtest;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -169,71 +165,6 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void installClusterOperator(ExtensionContext extensionContext, String namespace) {
         installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    protected void installLoggingClusterOperator(ExtensionContext extensionContext, String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) {
-        LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-        prepareEnvForOperator(extensionContext,  namespace, bindingsNamespaces);
-        if (Environment.isNamespaceRbacScope()) {
-            // if roles only, only deploy the rolebindings
-            applyRoleBindings(extensionContext, namespace, namespace);
-        } else {
-            applyBindings(extensionContext, namespace, bindingsNamespaces);
-        }
-        String loggersConfigCO = "name = COConfig\n" +
-            "appender.console.type = Console\n" +
-            "appender.console.name = STDOUT\n" +
-            "appender.console.layout.type = JsonLayout\n" +
-            "rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}\n" +
-            "rootLogger.appenderRefs = stdout\n" +
-            "rootLogger.appenderRef.console.ref = STDOUT\n" +
-            "rootLogger.additivity = false\n" +
-            "logger.kafka.name = org.apache.kafka\n" +
-            "logger.kafka.level = ${env:STRIMZI_AC_LOG_LEVEL:-WARN}\n" +
-            "logger.kafka.additivity = false";
-
-        ConfigMap configMapCO = new ConfigMapBuilder()
-            .withNewMetadata()
-            .withNewName("json-layout-cluster-operator")
-            .withNamespace(namespace)
-            .endMetadata()
-            .addToData("log4j2.properties", loggersConfigCO)
-            .build();
-
-        kubeClient().getClient().configMaps().inNamespace(namespace).createOrReplace(configMapCO);
-
-        // 060-Deployment
-        ResourceManager.getInstance().createResource(extensionContext,
-            BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval)
-            .editOrNewSpec()
-                .editOrNewTemplate()
-                    .editOrNewSpec()
-                        .addNewVolume()
-                            .withName("logging-config-volume")
-                            .editOrNewConfigMap()
-                                .withName("json-layout-cluster-operator")
-                            .endConfigMap()
-                        .endVolume()
-                        .editFirstContainer()
-                            .withVolumeMounts(new VolumeMountBuilder().withName("logging-config-volume").withMountPath("/tmp/log-config-map-file").build())
-                            .addToEnv(new EnvVarBuilder().withName("JAVA_OPTS").withValue("-Dlog4j2.configurationFile=file:/tmp/log-config-map-file/log4j2.properties").build())
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
-    }
-
-    protected void installLoggingClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
-        installLoggingClusterOperator(extensionContext, namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
-    }
-
-    protected void installLoggingClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout) {
-        installLoggingClusterOperator(extensionContext, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    protected void installLoggingClusterOperator(ExtensionContext extensionContext, String namespace) {
-        installLoggingClusterOperator(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     /**

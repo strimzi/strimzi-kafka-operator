@@ -124,7 +124,7 @@ class LoggingChangeST extends AbstractST {
         String configMapOpName = "json-layout-operators";
         String configMapZookeeperName = "json-layout-zookeeper";
         String configMapKafkaName = "json-layout-kafka";
-        String configMapCOName = "json-layout-cluster-operator";
+        String configMapCOName = "strimzi-cluster-operator";
 
         ConfigMap configMapKafka = new ConfigMapBuilder()
             .withNewMetadata()
@@ -220,11 +220,11 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
 
-        assertTrue(StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName()));
-        assertTrue(StUtils.checkLogForJSONFormat(kafkaPods, "kafka"));
-        assertTrue(StUtils.checkLogForJSONFormat(zkPods, "zookeeper"));
-        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "topic-operator"));
-        assertTrue(StUtils.checkLogForJSONFormat(eoPods, "user-operator"));
+        StUtils.checkLogForJSONFormat(operatorSnapshot, ResourceManager.getCoDeploymentName());
+        StUtils.checkLogForJSONFormat(kafkaPods, "kafka");
+        StUtils.checkLogForJSONFormat(zkPods, "zookeeper");
+        StUtils.checkLogForJSONFormat(eoPods, "topic-operator");
+        StUtils.checkLogForJSONFormat(eoPods, "user-operator");
     }
 
     @Test
@@ -1052,7 +1052,7 @@ class LoggingChangeST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        installLoggingClusterOperator(extensionContext, NAMESPACE);
+        installClusterOperator(extensionContext, NAMESPACE);
     }
 
     @AfterAll
