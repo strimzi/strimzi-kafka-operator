@@ -149,7 +149,7 @@ public class AbstractUpgradeST extends AbstractST {
         String toUrl = testParameters.getString("urlTo");
         String examplesPath = "";
         if (toUrl.equals("HEAD")) {
-            examplesPath = TestUtils.USER_PATH + "/../examples";
+            examplesPath = TestUtils.USER_PATH + "/../packaging/examples";
         } else {
             File dir = FileUtils.downloadAndUnzip(toUrl);
             examplesPath = dir.getAbsolutePath() + "/" + testParameters.getString("toExamples") + "/examples";
@@ -250,7 +250,7 @@ public class AbstractUpgradeST extends AbstractST {
         // Modify + apply installation files
         LOGGER.info("Going to update CO from {} to {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
         if ("HEAD".equals(testParameters.getString("toVersion"))) {
-            coDir = new File(TestUtils.USER_PATH + "/../install/cluster-operator");
+            coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
         } else {
             String url = testParameters.getString("urlTo");
             File dir = FileUtils.downloadAndUnzip(url);
@@ -345,7 +345,7 @@ public class AbstractUpgradeST extends AbstractST {
         File dir = null;
 
         if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-            coDir = new File(TestUtils.USER_PATH + "/../install/cluster-operator");
+            coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
         } else {
             url = testParameters.getString("urlFrom");
             dir = FileUtils.downloadAndUnzip(url);

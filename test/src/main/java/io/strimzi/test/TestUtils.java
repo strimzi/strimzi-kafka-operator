@@ -70,25 +70,25 @@ public final class TestUtils {
 
     public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-    public static final String CRD_TOPIC = USER_PATH + "/../install/cluster-operator/043-Crd-kafkatopic.yaml";
+    public static final String CRD_TOPIC = USER_PATH + "/../packaging/install/cluster-operator/043-Crd-kafkatopic.yaml";
 
-    public static final String CRD_KAFKA = USER_PATH + "/../install/cluster-operator/040-Crd-kafka.yaml";
+    public static final String CRD_KAFKA = USER_PATH + "/../packaging/install/cluster-operator/040-Crd-kafka.yaml";
 
-    public static final String CRD_KAFKA_CONNECT = USER_PATH + "/../install/cluster-operator/041-Crd-kafkaconnect.yaml";
+    public static final String CRD_KAFKA_CONNECT = USER_PATH + "/../packaging/install/cluster-operator/041-Crd-kafkaconnect.yaml";
 
-    public static final String CRD_KAFKA_CONNECT_S2I = USER_PATH + "/../install/cluster-operator/042-Crd-kafkaconnects2i.yaml";
+    public static final String CRD_KAFKA_CONNECT_S2I = USER_PATH + "/../packaging/install/cluster-operator/042-Crd-kafkaconnects2i.yaml";
 
-    public static final String CRD_KAFKA_USER = USER_PATH + "/../install/cluster-operator/044-Crd-kafkauser.yaml";
+    public static final String CRD_KAFKA_USER = USER_PATH + "/../packaging/install/cluster-operator/044-Crd-kafkauser.yaml";
 
-    public static final String CRD_KAFKA_MIRROR_MAKER = USER_PATH + "/../install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
+    public static final String CRD_KAFKA_MIRROR_MAKER = USER_PATH + "/../packaging/install/cluster-operator/045-Crd-kafkamirrormaker.yaml";
 
-    public static final String CRD_KAFKA_BRIDGE = USER_PATH + "/../install/cluster-operator/046-Crd-kafkabridge.yaml";
+    public static final String CRD_KAFKA_BRIDGE = USER_PATH + "/../packaging/install/cluster-operator/046-Crd-kafkabridge.yaml";
 
-    public static final String CRD_KAFKA_MIRROR_MAKER_2 = USER_PATH + "/../install/cluster-operator/048-Crd-kafkamirrormaker2.yaml";
+    public static final String CRD_KAFKA_MIRROR_MAKER_2 = USER_PATH + "/../packaging/install/cluster-operator/048-Crd-kafkamirrormaker2.yaml";
 
-    public static final String CRD_KAFKA_CONNECTOR = USER_PATH + "/../install/cluster-operator/047-Crd-kafkaconnector.yaml";
+    public static final String CRD_KAFKA_CONNECTOR = USER_PATH + "/../packaging/install/cluster-operator/047-Crd-kafkaconnector.yaml";
 
-    public static final String CRD_KAFKA_REBALANCE = USER_PATH + "/../install/cluster-operator/049-Crd-kafkarebalance.yaml";
+    public static final String CRD_KAFKA_REBALANCE = USER_PATH + "/../packaging/install/cluster-operator/049-Crd-kafkarebalance.yaml";
 
     private TestUtils() {
         // All static methods

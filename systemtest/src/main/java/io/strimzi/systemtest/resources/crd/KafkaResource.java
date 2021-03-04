@@ -41,9 +41,9 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaResource {
-    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = TestUtils.USER_PATH + "/../examples/cruise-control/kafka-cruise-control.yaml";
-    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = TestUtils.USER_PATH + "/../examples/kafka/kafka-ephemeral.yaml";
-    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = TestUtils.USER_PATH + "/../examples/kafka/kafka-persistent.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/cruise-control/kafka-cruise-control.yaml";
+    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/kafka/kafka-ephemeral.yaml";
+    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/kafka/kafka-persistent.yaml";
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {
         return Crds.kafkaV1Beta2Operation(ResourceManager.kubeClient().getClient());

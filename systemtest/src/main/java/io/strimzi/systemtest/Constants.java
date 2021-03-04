@@ -122,11 +122,11 @@ public interface Constants {
     /**
      * File paths for metrics YAMLs
      */
-    String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-metrics.yaml";
-    String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-cruise-control-metrics.yaml";
-    String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-connect-metrics.yaml";
-    String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect-s2i.yaml";
-    String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-mirror-maker-2-metrics.yaml";
+    String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-metrics.yaml";
+    String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-cruise-control-metrics.yaml";
+    String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-connect-metrics.yaml";
+    String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/kafka-connect-s2i.yaml";
+    String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     String METRICS_CONFIG_YAML_NAME = "metrics-config.yml";
 

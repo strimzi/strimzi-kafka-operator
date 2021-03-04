@@ -38,7 +38,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
     static final String MAIN_NAMESPACE_CLUSTER_NAME = "my-cluster";
-    private static final String TOPIC_EXAMPLES_DIR = TestUtils.USER_PATH + "/../examples/topic/kafka-topic.yaml";
+    private static final String TOPIC_EXAMPLES_DIR = TestUtils.USER_PATH + "/../packaging/examples/topic/kafka-topic.yaml";
 
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
         String previousNamespace = cluster.setNamespace(namespace);

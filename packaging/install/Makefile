@@ -1,9 +1,9 @@
 PROJECT_NAME=install
 
-include ../Makefile.os
+include ../../Makefile.os
 
 RELEASE_VERSION ?= latest
-RELEASE_PATH ?= ../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
+RELEASE_PATH ?= ../../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
 
 crd_install_helm3:
 	$(CP) ./cluster-operator/043-Crd-kafkatopic.yaml ./topic-operator/04-Crd-kafkatopic.yaml

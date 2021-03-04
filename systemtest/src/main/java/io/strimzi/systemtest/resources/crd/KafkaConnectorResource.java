@@ -23,7 +23,7 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaConnectorResource {
-    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../examples/connect/source-connector.yaml";
+    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/source-connector.yaml";
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {
         return Crds.kafkaConnectorV1Beta2Operation(ResourceManager.kubeClient().getClient());

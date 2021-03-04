@@ -71,7 +71,7 @@ public class ResourceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
 
-    public static final String STRIMZI_PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
+    public static final String STRIMZI_PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
     public static final long CR_CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
     private static Stack<Runnable> classResources = new Stack<>();

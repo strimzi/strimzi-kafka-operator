@@ -94,6 +94,6 @@ public class HelmResource {
     public static void deleteClusterOperator() {
         ResourceManager.helmClient().delete(HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
-        cmdKubeClient().delete(TestUtils.USER_PATH + "/../install/cluster-operator");
+        cmdKubeClient().delete(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
     }
 }

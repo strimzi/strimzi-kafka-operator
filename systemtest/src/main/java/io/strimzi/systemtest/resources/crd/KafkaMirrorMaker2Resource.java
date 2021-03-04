@@ -30,7 +30,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaMirrorMaker2Resource {
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = TestUtils.USER_PATH + "/../examples/mirror-maker/kafka-mirror-maker-2.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/mirror-maker/kafka-mirror-maker-2.yaml";
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
         return Crds.kafkaMirrorMaker2V1Beta2Operation(ResourceManager.kubeClient().getClient());

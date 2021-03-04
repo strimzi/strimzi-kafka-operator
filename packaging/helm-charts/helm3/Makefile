@@ -1,13 +1,13 @@
 PROJECT_NAME=helm-charts
 
-include ../../Makefile.os
+include ../../../Makefile.os
 
 RELEASE_VERSION ?= latest
-CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ../../release.version | tr A-Z a-z)
+CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ../../../release.version | tr A-Z a-z)
 CHART_NAME=strimzi-kafka-operator
 CHART_PATH ?= ../helm3/strimzi-kafka-operator/
-CHART_RENDERED_TEMPLATES_TMP=../../target/charts
-CHART_RENDERED_TEMPLATES_CLUSTERROLES=../../cluster-operator/src/main/resources/cluster-roles/
+CHART_RENDERED_TEMPLATES_TMP=../../../target/charts
+CHART_RENDERED_TEMPLATES_CLUSTERROLES=../../../cluster-operator/src/main/resources/cluster-roles/
 CHART_RENDERED_TEMPLATES_INSTALL=../../install/cluster-operator/
 HELM_CLI=helm
 

@@ -105,7 +105,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 class KafkaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
-    private static final String TEMPLATE_PATH = TestUtils.USER_PATH + "/../examples/templates/cluster-operator";
+    private static final String TEMPLATE_PATH = TestUtils.USER_PATH + "/../packaging/examples/templates/cluster-operator";
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
 

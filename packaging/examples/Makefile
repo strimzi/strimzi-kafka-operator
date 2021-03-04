@@ -1,9 +1,9 @@
 PROJECT_NAME=examples
 
-include ../Makefile.os
+include ../../Makefile.os
 
 RELEASE_VERSION ?= latest
-RELEASE_PATH ?= ../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
+RELEASE_PATH ?= ../../strimzi-$(RELEASE_VERSION)/$(PROJECT_NAME)
 
 release:
 	mkdir -p $(RELEASE_PATH)

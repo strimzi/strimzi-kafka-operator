@@ -100,11 +100,11 @@ public class ClusterOperatorRbacST extends AbstractST {
 
     private static void applyRoleBindingsWithoutCRBs() {
         // 020-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", NAMESPACE, NAMESPACE);
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", NAMESPACE, NAMESPACE);
         // 031-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", NAMESPACE, NAMESPACE);
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", NAMESPACE, NAMESPACE);
         // 032-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", NAMESPACE, NAMESPACE);
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", NAMESPACE, NAMESPACE);
     }
 
     @BeforeAll

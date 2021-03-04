@@ -31,6 +31,7 @@ documentation/**/build/**
 master.html
 
 helm-charts/helm3/strimzi-kafka-operator-*.*.*.tgz
+packaging/helm-charts/helm3/strimzi-kafka-operator-*.*.*.tgz
 
 docker-images/kafka/.*.tmp
 docker-images/kafka/tmp/**

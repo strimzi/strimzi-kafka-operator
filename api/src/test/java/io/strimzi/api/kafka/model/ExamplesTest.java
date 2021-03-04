@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The purpose of this test is to check that all the resources in the
- * {@code ../examples} directory are valid.
+ * {@code ../packaging/examples} directory are valid.
  */
 public class ExamplesTest {
 
@@ -50,13 +50,13 @@ public class ExamplesTest {
      */
     @Test
     public void examples() {
-        validateRecursively(new File(TestUtils.USER_PATH + "/../examples"));
+        validateRecursively(new File(TestUtils.USER_PATH + "/../packaging/examples"));
     }
 
     private void validateRecursively(File directory) {
         for (File f : directory.listFiles()) {
             if (f.isDirectory()) {
-                if (f.getAbsolutePath().contains("examples/metrics/grafana") || f.getAbsolutePath().contains("examples/metrics/prometheus"))  {
+                if (f.getAbsolutePath().contains("packaging/examples/metrics/grafana") || f.getAbsolutePath().contains("packaging/examples/metrics/prometheus"))  {
                     continue;
                 } else {
                     validateRecursively(f);

@@ -35,8 +35,8 @@ if [ ! -e documentation/modules/appendix_crds.adoc ] ; then
     exit 1
 fi
 
-CHANGED_DERIVED=$(git diff --name-status -- install/ helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
-GENERATED_FILES=$(git ls-files --other --exclude-standard -- install/ helm-charts/ cluster-operator/src/main/resources/cluster-roles)
+CHANGED_DERIVED=$(git diff --name-status -- packaging/install/ packaging/helm-charts/ documentation/modules/appendix_crds.adoc cluster-operator/src/main/resources/cluster-roles)
+GENERATED_FILES=$(git ls-files --other --exclude-standard -- packaging/install/ packaging/helm-charts/ cluster-operator/src/main/resources/cluster-roles api/src/test/resources/io/strimzi/api/kafka/model)
 if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
     if [ -n "$CHANGED_DERIVED" ] ; then
         echo "ERROR: Uncommitted changes in derived resources:"
