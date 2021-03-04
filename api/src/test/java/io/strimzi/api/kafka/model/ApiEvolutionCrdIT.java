@@ -240,7 +240,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
             new CrdGenerator(KubeVersion.V1_16_PLUS, V1BETA1, CrdGenerator.YAML_MAPPER, emptyMap(),
                     new CrdGenerator.DefaultReporter(), asList(versions), storageVersion,
                     servedVersions,
-                    new CrdGenerator.NoneConversionStrategy()).generate(Kafka.class, sw);
+                    new CrdGenerator.NoneConversionStrategy(), null).generate(Kafka.class, sw);
             return CrdGenerator.YAML_MAPPER.readValue(sw.toString(), CustomResourceDefinition.class);
         }
 
@@ -264,7 +264,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
             StringWriter sw = new StringWriter();
             new CrdGenerator(KubeVersion.V1_16_PLUS, V1, CrdGenerator.YAML_MAPPER, emptyMap(),
                     new CrdGenerator.DefaultReporter(), asList(versions), storageVersion, servedVersions,
-                    new CrdGenerator.NoneConversionStrategy()).generate(Kafka.class, sw);
+                    new CrdGenerator.NoneConversionStrategy(), null).generate(Kafka.class, sw);
             return CrdGenerator.YAML_MAPPER.readValue(sw.toString(), io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition.class);
         }
 

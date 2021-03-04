@@ -31,6 +31,16 @@ public class CrdGeneratorTest {
     }
 
     @Test
+    public void simpleTestWithoutDescriptions() throws IOException {
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1, CrdGenerator.YAML_MAPPER, emptyMap(),
+                new CrdGenerator.DefaultReporter(), emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), ApiVersion.parseRange("v1+"));
+        StringWriter w = new StringWriter();
+        crdGenerator.generate(ExampleCrd.class, w);
+        String s = w.toString();
+        assertEquals(CrdTestUtils.readResource("simpleTestWithoutDescriptions.yaml"), s);
+    }
+
+    @Test
     public void simpleTestWithSubresources() throws IOException {
         CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1);
         StringWriter w = new StringWriter();
@@ -49,7 +59,7 @@ public class CrdGeneratorTest {
         labels.put("heritage", "{{ .Release.Service }}");
         CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1,
                 CrdGenerator.YAML_MAPPER, labels,
-                new CrdGenerator.DefaultReporter(), emptyList(), null, null, new CrdGenerator.NoneConversionStrategy());
+                new CrdGenerator.DefaultReporter(), emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null);
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
@@ -79,7 +89,7 @@ public class CrdGeneratorTest {
                         errors.add(s);
                     }
                 },
-                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy());
+                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null);
         StringWriter w = new StringWriter();
         crdGenerator.generate(VersionedExampleCrd.class, w);
         assertTrue(errors.contains("Multiple scales specified but 1.11 doesn't support schema per version"), errors.toString());
