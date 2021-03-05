@@ -73,13 +73,13 @@ release_helm_version:
 	$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml; \
 	$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md; \
 	$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md; \
-	$(SED) -i '/name: quay\.io\/kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml; \
+	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml; \
 	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md
 
 release_helm_repo:
 	echo "Updating Helm Repository index.yaml"
-	helm repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./helm-charts/index.yaml
-	$(CP) ./index.yaml ./helm-charts/index.yaml
+	helm repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./packaging/helm-charts/index.yaml
+	$(CP) ./index.yaml ./packaging/helm-charts/index.yaml
 	rm ./index.yaml
 
 release_single_file:
@@ -91,7 +91,7 @@ release_single_file:
 helm_pkg:
 	# Copying unarchived Helm Chart to release directory
 	mkdir -p strimzi-$(RELEASE_VERSION)/helm3-charts/
-	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ ./helm-charts/helm3/strimzi-kafka-operator/
+	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ ./packaging/helm-charts/helm3/strimzi-kafka-operator/
 	$(CP) strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz strimzi-kafka-operator-helm-3-chart-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
 	rm -rf strimzi-$(RELEASE_VERSION)/helm3-charts/
 	rm strimzi-kafka-operator-$(CHART_SEMANTIC_RELEASE_VERSION).tgz
