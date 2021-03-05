@@ -3,52 +3,41 @@
 // // assembly-upgrade.adoc
 
 [id='assembly-upgrade-resources-{context}']
-= Strimzi resource upgrades
+= Strimzi custom resource upgrades
 
-The `v1alpha1` API version is deprecated for the following Strimzi resources:
+[role="_abstract"]
+After you have upgraded Strimzi to {ProductVersion}, you must ensure that your custom resources are using API version `{ApiVersion}`.
+You can do this any time after upgrading to {ProductVersion}, but the upgrades must be completed before the next Strimzi minor version update.
 
-* `Kafka`
-* `KafkaConnect`
-* `KafkaConnectS2I`
-* `KafkaConnector`
-* `KafkaMirrorMaker`
-* `KafkaMirrorMaker2`
-* `KafkaTopic`
-* `KafkaUser`
-* `KafkaBridge`
-* `KafkaRebalance`
+IMPORTANT: Upgrade of the custom resources to `{ApiVersion}` _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
 
-The `v1beta1` API version is deprecated for the following Strimzi resources:
+NOTE: Upgrade of the custom resources to `{ApiVersion}` prepares Strimzi for a move to Kubernetes CRD `v1`,
+which will be required for Kubernetes 1.22.
 
-* `Kafka`
-* `KafkaConnect`
-* `KafkaConnectS2I`
-* `KafkaMirrorMaker`
-* `KafkaTopic`
-* `KafkaUser`
+.CLI upgrades to custom resources
 
-Update these resources to use the `{KafkaApiVersion}` API version.
+Strimzi provides an _API conversion tool_ with its release artifacts.
 
-This section describes the upgrade steps for the resources.
+ifdef::Downloading[]
+You can download its ZIP or TAR.GZ file from {ReleaseDownload}.
+endif::Downloading[]
+ifndef::Downloading[]
+You can download its ZIP or TAR.GZ from {ZipDownload}.
+endif::Downloading[]
+To use the tool, extract it and use the scripts in the `bin` directory.
 
-IMPORTANT: The upgrade of resources _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
+From its CLI, you can then use the tool to convert the format of your custom resources to `{ApiVersion}` in one of two ways:
 
-.What if the resource upgrade does not take effect?
-If the upgrade does not take effect, a warning is given in the logs on reconciliation to indicate that the resource cannot be updated until the `apiVersion` is updated.
+* xref:proc-upgrade-cli-tool-files-{context}[]
+* xref:proc-upgrade-cli-tool-direct-{context}[]
 
-To trigger the update, make a cosmetic change to the custom resource, such as adding an annotation.
+After the conversion of your custom resources, you must set `{ApiVersion}` as the _storage_ API version in your CRDs:
 
-Example annotation:
+* xref:proc-upgrade-cli-tool-crds-{context}[]
 
-[source,shell,subs="+quotes,attributes"]
-----
-metadata:
-  # ...
-  annotations:
-    upgrade: "Upgraded to {KafkaApiVersion}"
-----
+.Manual upgrades to custom resources
 
-The following procedures describe the steps to update specific resources to use the `{KafkaApiVersion}` API version:
+Instead of using the API conversion tool to update custom resources to `{ApiVersion}`, you can manually update each custom resource to use `{ApiVersion}`:
 
 Update the `Kafka` custom resource, including the configurations for the other components:
 
@@ -71,6 +60,13 @@ Update the other custom resources that apply to your deployment:
 * xref:proc-upgrade-kafkaconnector-resources-{context}[]
 * xref:proc-upgrade-kafka-rebalance-resources-{context}[]
 
+The manual procedures show the changes that are made to each custom resource.
+After these changes, you must use the API conversion tool to upgrade your CRDs.
+
+include::modules/con-upgrade-custom-resources.adoc[leveloffset=+1]
+include::modules/proc-upgrade-cli-tool-files.adoc[leveloffset=+1]
+include::modules/proc-upgrade-cli-tool-direct.adoc[leveloffset=+1]
+include::modules/proc-upgrade-cli-tool-crds.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-zookeeper-api-version.adoc[leveloffset=+1]
 include::modules/proc-upgrade-topic-operator-api-version.adoc[leveloffset=+1]

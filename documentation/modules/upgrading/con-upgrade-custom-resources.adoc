@@ -1,0 +1,46 @@
+// This module is included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='con-upgrade-custom-resources-{context}']
+
+= API versioning
+
+[role="_abstract"]
+Custom resources are edited and controlled using APIs added to Kubernetes by CRDs.
+Put another way, CRDs extend the Kubernetes API to allow the creation of custom resources.
+CRDs are themselves resources within Kubernetes.
+They are installed in a Kubernetes cluster to define the versions of API for the custom resource.
+Each version of the custom resource API can define its own schema for that version.
+Kubernetes clients, including the Strimzi Operators, access the custom resources served by the Kubernetes API server using a URL path (_API path_), which includes the API version.
+
+The introduction of `{ApiVersion}` updates the schemas of the custom resources.
+Older API versions are deprecated.
+
+The `v1alpha1` API version is deprecated for the following Strimzi custom resources:
+
+* `Kafka`
+* `KafkaConnect`
+* `KafkaConnectS2I`
+* `KafkaConnector`
+* `KafkaMirrorMaker`
+* `KafkaMirrorMaker2`
+* `KafkaTopic`
+* `KafkaUser`
+* `KafkaBridge`
+* `KafkaRebalance`
+
+The `v1beta1` API version is deprecated for the following Strimzi custom resources:
+
+* `Kafka`
+* `KafkaConnect`
+* `KafkaConnectS2I`
+* `KafkaMirrorMaker`
+* `KafkaTopic`
+* `KafkaUser`
+
+IMPORTANT: The `v1alpha1` and `v1beta1` versions will be removed in the next minor release.
+
+[role="_additional-resources"]
+.Additional resources
+* {K8sCRDs}
