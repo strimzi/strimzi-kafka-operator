@@ -105,7 +105,7 @@ If enabled, the synchronization of offsets from the source cluster is made perio
 You can change the frequency by adding `sync.group.offsets.interval.seconds` and `emit.checkpoints.interval.seconds` to the checkpoint connector configuration.
 The properties specify the frequency in seconds that the consumer group offsets are synchronized, and the frequency of checkpoints emitted for offset tracking.
 The default for both properties is 60 seconds.
-You might also want to change the frequency of checks for new consumer groups using the `refresh.groups.interval.seconds` property, which is performed every 10 minutes by default.
+You can also change the frequency of checks for new consumer groups using the `refresh.groups.interval.seconds` property, which is performed every 10 minutes by default.
 
 Because the synchronization is time-based, any switchover by consumers to a passive cluster will likely result in some duplication of messages.
 

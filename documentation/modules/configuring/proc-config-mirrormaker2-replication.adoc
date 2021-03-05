@@ -112,15 +112,15 @@ spec:
         offset-syncs.topic.replication.factor: 1 <21>
         sync.topic.acls.enabled: "false" <22>
         refresh.topics.interval.seconds: 60 <23>
-        refresh.groups.interval.seconds: 600 <24>
-        replication.policy.separator: "" <25>
-        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy" <26>
-    heartbeatConnector: <27>
+        replication.policy.separator: "" <24>
+        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy" <25>
+    heartbeatConnector: <26>
       config:
-        heartbeats.topic.replication.factor: 1 <28>
-    checkpointConnector: <29>
+        heartbeats.topic.replication.factor: 1 <27>
+    checkpointConnector: <28>
       config:
-        checkpoints.topic.replication.factor: 1 <30>
+        checkpoints.topic.replication.factor: 1 <29>
+        refresh.groups.interval.seconds: 600 <30>
         sync.group.offsets.enabled: true <31>
         sync.group.offsets.interval.seconds: 60 <32>
         emit.checkpoints.interval.seconds: 60 <33>
@@ -208,14 +208,14 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <21> Replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
 <22> When xref:con-mirrormaker-acls-{context}[ACL rules synchronization] is enabled, ACLs are applied to synchronized topics. The default is `true`.
 <23> Optional setting to change the frequency of checks for new topics. The default is for a check every 10 minutes.
-<24> Optional setting to change the frequency of checks for new consumer groups. The default is for a check every 10 minutes.
-<25> Defines the separator used for the renaming of remote topics.
-<26> Adds a policy that overrides the automatic renaming of remote topics. Instead of prepending the name with the name of the source cluster, the topic retains its original name. This optional setting is useful for active/passive backups and data migration.
+<24> Defines the separator used for the renaming of remote topics.
+<25> Adds a policy that overrides the automatic renaming of remote topics. Instead of prepending the name with the name of the source cluster, the topic retains its original name. This optional setting is useful for active/passive backups and data migration.
 To configure topic offset synchronization, this property must also be set for the `checkpointConnector.config`.
-<27> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorHeartbeatConnector`] that performs connectivity checks. The `config` overrides the default configuration options.
-<28> Replication factor for the heartbeat topic created at the target cluster.
-<29> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorCheckpointConnector`] that tracks offsets. The `config` overrides the default configuration options.
-<30> Replication factor for the checkpoints topic created at the target cluster.
+<26> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorHeartbeatConnector`] that performs connectivity checks. The `config` overrides the default configuration options.
+<27> Replication factor for the heartbeat topic created at the target cluster.
+<28> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorCheckpointConnector`] that tracks offsets. The `config` overrides the default configuration options.
+<29> Replication factor for the checkpoints topic created at the target cluster.
+<30> Optional setting to change the frequency of checks for new consumer groups. The default is for a check every 10 minutes.
 <31> Optional setting to synchronize consumer group offsets, which is useful for recovery in an active/passive configuration. Synchronization is not enabled by default.
 <32> If the synchronization of consumer group offsets is enabled, you can adjust the frequency of the synchronization.
 <33> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.
