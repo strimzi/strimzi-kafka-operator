@@ -44,7 +44,7 @@ and xref:proc-renewing-ca-certs-manually-{context}[manually renew the CA certifi
 If you do not manually renew the certificates, the new periods will be used the next time the certificate is renewed automatically.
 
 .Example Kafka configuration for certificate validity and renewal periods
-[source,shell,subs="+quotes"]
+[source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka

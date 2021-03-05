@@ -99,6 +99,11 @@
         <fasterxml.jackson-dataformat.version>2.10.5</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.10.5</fasterxml.jackson-annotations.version>
         <kafka.version>2.7.0</kafka.version>
+        <!-- keep in-sync with dataformat-yaml -->
+        <snakeyaml.version>1.26</snakeyaml.version>
+        <picocli.version>4.5.2</picocli.version>
+        <json-path.version>4.1.1</json-path.version>
+        <kafka.version>2.7.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.12</scala-library.version>
         <zookeeper.version>3.5.8</zookeeper.version>
@@ -157,6 +162,7 @@
         <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
+        <module>api-conversion</module>
         <module>mockkube</module>
         <module>config-model</module>
         <module>config-model-generator</module>
@@ -176,6 +182,11 @@
                 <artifactId>crd-annotations</artifactId>
                 <version>${project.version}</version>
                 <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>crd-generator</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.strimzi</groupId>
@@ -439,6 +450,18 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-scala_2.12</artifactId>
                 <version>${fasterxml.jackson-core.version}</version>
+            </dependency>
+            <!-- used in api-conversion -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
+            <!-- Picocli -->
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.vertx</groupId>

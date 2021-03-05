@@ -26,6 +26,7 @@ public class KafkaBasicExampleClients {
     protected String consumerName;
     protected String bootstrapAddress;
     protected String topicName;
+    protected String message;
     protected int messageCount;
     protected String additionalConfig;
     protected String consumerGroup;
@@ -36,6 +37,7 @@ public class KafkaBasicExampleClients {
         private String consumerName;
         private String bootstrapAddress;
         private String topicName;
+        private String message;
         private int messageCount;
         private String additionalConfig;
         private String consumerGroup;
@@ -63,6 +65,11 @@ public class KafkaBasicExampleClients {
 
         public Builder withMessageCount(int messageCount) {
             this.messageCount = messageCount;
+            return this;
+        }
+
+        public Builder withMessage(String message) {
+            this.message = message;
             return this;
         }
 
@@ -94,11 +101,15 @@ public class KafkaBasicExampleClients {
             LOGGER.info("Consumer group were not specified going to create the random one.");
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
         }
+        if (builder.message == null || builder.message.isEmpty()) builder.message = "Hello-world";
+
+
 
         producerName = builder.producerName;
         consumerName = builder.consumerName;
         bootstrapAddress = builder.bootstrapAddress;
         topicName = builder.topicName;
+        message = builder.message;
         messageCount = builder.messageCount;
         additionalConfig = builder.additionalConfig;
         consumerGroup = builder.consumerGroup;
@@ -119,6 +130,10 @@ public class KafkaBasicExampleClients {
 
     public String getTopicName() {
         return topicName;
+    }
+
+    public String getMessage() {
+        return message;
     }
 
     public int getMessageCount() {
@@ -150,7 +165,8 @@ public class KafkaBasicExampleClients {
             .withDelayMs(getDelayMs())
             .withMessageCount(getMessageCount())
             .withProducerName(getProducerName())
-            .withTopicName(getTopicName());
+            .withTopicName(getTopicName())
+            .withMessage(getMessage());
     }
 
     public Builder toBuilder() {
@@ -213,7 +229,7 @@ public class KafkaBasicExampleClients {
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("MESSAGE")
-                                    .withValue("Hello-world")
+                                    .withValue(message)
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("PRODUCER_ACKS")

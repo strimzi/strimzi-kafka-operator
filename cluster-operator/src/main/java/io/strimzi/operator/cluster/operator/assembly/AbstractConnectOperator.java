@@ -432,6 +432,19 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         connectorsReconciliationsCounter.increment();
         Timer.Sample connectorsReconciliationsTimerSample = Timer.start(metrics.meterRegistry());
 
+        if (connector != null && Annotations.isReconciliationPausedWithAnnotation(connector)) {
+            Set<Condition> conditions = validate(connector);
+            conditions.add(StatusUtils.getPausedCondition());
+
+            return maybeUpdateConnectorStatus(reconciliation, connector, new ConnectorStatusAndConditions(emptyMap(), new ArrayList<>(conditions)), null).compose(
+                i -> {
+                    connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer);
+                    connectorsSuccessfulReconciliationsCounter.increment();
+                    return Future.succeededFuture();
+                }
+            );
+        }
+
         reconcileConnector(reconciliation, host, apiClient, useResources, connectorName, connector)
                 .onComplete(result -> {
                     connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer);

@@ -191,20 +191,12 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
         return v1beta2Op().create(buildKafkaCr(Kafka.V1BETA2, name, kafkaListeners, o));
     }
 
-    private void v1Create(String name, KafkaListeners kafkaListeners, GenericKafkaListener o) {
-        v1Op().create(buildKafkaCr(Kafka.V1BETA2, name, kafkaListeners, o));
-    }
-
     private Kafka v1beta1Get(String s) {
         return v1beta1Op().withName(s).get();
     }
 
     private Kafka v1beta2Get(String s) {
         return v1beta2Op().withName(s).get();
-    }
-
-    private Kafka v1Get(String s) {
-        return v1Op().withName(s).get();
     }
 
     private CustomResourceDefinition waitForCrdUpdate(long crdGeneration2) {
@@ -248,7 +240,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
             new CrdGenerator(KubeVersion.V1_16_PLUS, V1BETA1, CrdGenerator.YAML_MAPPER, emptyMap(),
                     new CrdGenerator.DefaultReporter(), asList(versions), storageVersion,
                     servedVersions,
-                    new CrdGenerator.NoneConversionStrategy()).generate(Kafka.class, sw);
+                    new CrdGenerator.NoneConversionStrategy(), null).generate(Kafka.class, sw);
             return CrdGenerator.YAML_MAPPER.readValue(sw.toString(), CustomResourceDefinition.class);
         }
 
@@ -272,7 +264,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
             StringWriter sw = new StringWriter();
             new CrdGenerator(KubeVersion.V1_16_PLUS, V1, CrdGenerator.YAML_MAPPER, emptyMap(),
                     new CrdGenerator.DefaultReporter(), asList(versions), storageVersion, servedVersions,
-                    new CrdGenerator.NoneConversionStrategy()).generate(Kafka.class, sw);
+                    new CrdGenerator.NoneConversionStrategy(), null).generate(Kafka.class, sw);
             return CrdGenerator.YAML_MAPPER.readValue(sw.toString(), io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition.class);
         }
 
@@ -343,10 +335,6 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
 
     private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1beta2Op() {
         return Crds.kafkaV1Beta2Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
-    }
-
-    private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1Op() {
-        return Crds.kafkaV1Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
     }
 
     private GenericKafkaListener listListener() {

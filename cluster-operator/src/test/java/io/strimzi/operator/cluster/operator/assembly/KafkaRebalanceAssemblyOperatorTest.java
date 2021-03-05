@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -54,6 +55,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Map;
 
 import static java.util.Collections.singleton;
@@ -61,6 +63,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -472,6 +476,48 @@ public class KafkaRebalanceAssemblyOperatorTest {
                                 "Add skip_hard_goal_check=true parameter to ignore this sanity check.'."));
                 checkpoint.flag();
             })));
+    }
+
+    @Test
+    public void testUnknownPropertyInSpec(VertxTestContext context) throws IOException, URISyntaxException {
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
+
+        String yaml = "apiVersion: kafka.strimzi.io/v1alpha1\n" +
+                "kind: KafkaRebalance\n" +
+                "metadata:\n" +
+                "  name: " + RESOURCE_NAME + "\n" +
+                "  namespace: " + CLUSTER_NAMESPACE + "\n" +
+                "  labels:\n" +
+                "    strimzi.io/cluster: " + CLUSTER_NAME + "\n" +
+                "spec:\n" +
+                "  unknown: \"property\"\n" +
+                "  goals:\n" +
+                "    - CpuCapacityGoal\n" +
+                "    - NetworkInboundCapacityGoal\n" +
+                "    - DiskCapacityGoal\n" +
+                "    - RackAwareGoal\n" +
+                "    - NetworkOutboundCapacityGoal\n" +
+                "    - ReplicaCapacityGoal\n";
+        KafkaRebalance kr = TestUtils.fromYamlString(yaml, KafkaRebalance.class);
+
+        Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).create(kr);
+
+        // the Kafka cluster isn't deployed in the namespace
+        when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
+        mockRebalanceOperator(mockRebalanceOps, CLUSTER_NAMESPACE, RESOURCE_NAME, kubernetesClient);
+
+        Checkpoint checkpoint = context.checkpoint();
+        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME), kr)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
+                    assertThat(kr1, StateMatchers.hasState());
+                    Optional<Condition> condition = kr1.getStatus().getConditions().stream().filter(cond -> "UnknownFields".equals(cond.getReason())).findFirst();
+                    assertTrue(condition.isPresent());
+                    assertThat(condition.get().getStatus(), is("True"));
+                    assertThat(condition.get().getMessage(), is("Contains object at path spec with an unknown property: unknown"));
+                    assertThat(condition.get().getType(), is("Warning"));
+                    checkpoint.flag();
+                })));
     }
 
     /**
@@ -971,6 +1017,51 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME,
                         KafkaRebalanceState.NotReady, ConnectException.class,
                         "Connection refused");
+                checkpoint.flag();
+            }));
+    }
+
+    /**
+     * Test KafkaRebalance status in ProposalReady state
+     *
+     * 1. KafkaRebalance resource is created; it is in the 'New' state
+     * 2. KafkaRebalance go through the `PendingProposal` to `ProposalReady` state
+     * 3. KafkaRebalance status should contain optimization result and session id
+     */
+    @Test
+    public void testRebalanceStatusInProposalReadyState(VertxTestContext context) throws IOException, URISyntaxException {
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
+
+        KafkaRebalance kr =
+            createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
+
+        Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).create(kr);
+
+        when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME))
+            .thenReturn(Future.succeededFuture(kafka));
+
+        mockRebalanceOperator(mockRebalanceOps, CLUSTER_NAMESPACE, RESOURCE_NAME, kubernetesClient);
+
+        Checkpoint checkpoint = context.checkpoint();
+        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME), kr)
+            .onComplete(context.succeeding(v -> {
+                assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.PendingProposal);
+            }))
+            .compose(v -> {
+                // trigger another reconcile to process the PendingProposal state
+                KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
+
+                return kcrao.reconcileRebalance(
+                    new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                    kr1);
+            })
+            .onComplete(context.succeeding(v -> {
+                assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                context.verify(() -> {
+                    KafkaRebalanceStatus rebalanceStatus = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get().getStatus();
+                    assertTrue(rebalanceStatus.getOptimizationResult().size() > 0);
+                    assertNotNull(rebalanceStatus.getSessionId());
+                });
                 checkpoint.flag();
             }));
     }

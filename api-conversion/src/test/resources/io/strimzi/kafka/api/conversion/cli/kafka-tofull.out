@@ -1,0 +1,71 @@
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    version: 2.7.0
+    replicas: 3
+    listeners:
+    - name: plain
+      port: 9092
+      type: internal
+      tls: false
+    - name: tls
+      port: 9093
+      type: internal
+      tls: true
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      log.message.format.version: 2.7
+      inter.broker.protocol.version: 2.7
+    storage:
+      volumes:
+      - type: persistent-claim
+        size: 100Gi
+        id: 0
+      type: jbod
+  zookeeper:
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 100Gi
+  entityOperator:
+    tlsSidecar:
+      resources:
+        requests:
+          cpu: 200m
+          memory: 64Mi
+        limits:
+          cpu: 500m
+          memory: 128Mi
+      logLevel: debug
+      readinessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
+      livenessProbe:
+        initialDelaySeconds: 15
+        timeoutSeconds: 5
+    template:
+      pod:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: dedicated
+                  operator: In
+                  values:
+                  - Kafka
+    topicOperator:
+      watchedNamespace: my-topic-namespace
+      reconciliationIntervalSeconds: 60
+      logging:
+        type: external
+        valueFrom:
+          configMapKeyRef:
+            key: log4j2.properties
+            name: my-config-map

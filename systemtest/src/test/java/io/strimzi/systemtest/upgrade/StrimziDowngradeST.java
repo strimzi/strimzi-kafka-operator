@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -34,27 +35,27 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
     @MethodSource("loadJsonDowngradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testDowngradeStrimziVersion(String from, String to, JsonObject parameters) throws Exception {
+    void testDowngradeStrimziVersion(String from, String to, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
 
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
         LOGGER.debug("Running downgrade test from version {} to {}", from, to);
-        performDowngrade(parameters, MESSAGE_COUNT, MESSAGE_COUNT);
+        performDowngrade(parameters, extensionContext);
     }
 
     @SuppressWarnings("MethodLength")
-    private void performDowngrade(JsonObject testParameters, int produceMessagesCount, int consumeMessagesCount) throws IOException {
+    private void performDowngrade(JsonObject testParameters, ExtensionContext extensionContext) throws IOException {
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(testParameters, produceMessagesCount, consumeMessagesCount, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
         logPodImages(clusterName);
         //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresBeforeOperatorDowngrade"), clusterName, NAMESPACE);
+        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresBeforeOperatorDowngrade"), testParameters, clusterName, extensionContext);
         // Downgrade CO
         changeClusterOperator(testParameters, NAMESPACE);
         // Wait for Kafka cluster rolling update
@@ -62,7 +63,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         logPodImages(clusterName);
         checkAllImages(testParameters.getJsonObject("imagesAfterOperatorDowngrade"));
         // Verify upgrade
-        verifyProcedure(testParameters, produceMessagesCount, consumeMessagesCount, producerName, consumerName, NAMESPACE);
+        verifyProcedure(testParameters, producerName, consumerName, NAMESPACE);
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
     }

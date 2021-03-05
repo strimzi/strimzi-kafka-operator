@@ -13,7 +13,7 @@
 :toclevels: 3
 
 //Latest Strimzi version
-:ProductVersion: 0.21.1
+:ProductVersion: 0.22.0
 
 // Kubernetes and OpenShift versions
 :OpenShiftVersion: 4.3 and later
@@ -21,7 +21,7 @@
 
 // Kafka upgrade attributes used in kafka upgrades section
 :DefaultKafkaVersion: 2.7.0
-:KafkaVersionLower: 2.6.0
+:KafkaVersionLower: 2.6.1
 :KafkaVersionHigher: 2.7.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 

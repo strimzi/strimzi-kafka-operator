@@ -23,7 +23,7 @@ import static java.util.Collections.emptyMap;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"sourceCluster", "targetCluster", "sourceConnector", "checkpointConnector", "heartbeatConnector", "topicsPattern", "topicsBlacklistPattern", "groupsPattern", "groupsBlacklistPattern"})
+@JsonPropertyOrder({"sourceCluster", "targetCluster", "sourceConnector", "heartbeatConnector", "checkpointConnector", "topicsPattern", "topicsBlacklistPattern", "groupsPattern", "groupsBlacklistPattern"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

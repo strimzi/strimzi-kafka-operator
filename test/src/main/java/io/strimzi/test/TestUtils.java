@@ -418,6 +418,18 @@ public final class TestUtils {
         }
     }
 
+    public static String setMetadataNamespace(File roleBindingFile, String namespace) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            JsonNode node = mapper.readTree(roleBindingFile);
+            ObjectNode metadata = (ObjectNode) node.get("metadata");
+            metadata.put("namespace", namespace);
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static String getContent(File file, Function<JsonNode, String> edit) {
         YAMLMapper mapper = new YAMLMapper();
         try {

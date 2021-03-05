@@ -122,9 +122,9 @@ For more information, refer to the xref:type-BrokerCapacity-reference[].
 
 Cruise Control has its own configurable logger:
 
-* `cruisecontrol.root.logger`
+* `rootLogger.level`
 
-Cruise Control uses the Apache `log4j` logger implementation.
+Cruise Control uses the Apache `log4j 2` logger implementation.
 
 Use the `logging` property to configure loggers and logger levels.
 
@@ -144,7 +144,7 @@ spec:
     logging:
       type: inline
       loggers:
-        cruisecontrol.root.logger: "INFO"
+        rootLogger.level: "INFO"
     # ...
 ----
 

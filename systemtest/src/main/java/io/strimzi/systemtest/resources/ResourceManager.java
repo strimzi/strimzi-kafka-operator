@@ -477,4 +477,13 @@ public class ResourceManager {
     public static void setCoDeploymentName(String newName) {
         coDeploymentName = newName;
     }
+
+    public static void waitForResourceReadiness(String resourceType, String resourceName) {
+        LOGGER.info("Waiting for " + resourceType + "/" + resourceName + " readiness");
+
+        TestUtils.waitFor("resource " + resourceType + "/" + resourceName + " readiness",
+                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CMD_CLIENT_TIMEOUT,
+            () -> ResourceManager.cmdKubeClient().getResourceReadiness(resourceType, resourceName));
+        LOGGER.info("Resource " + resourceType + "/" + resourceName + " is ready");
+    }
 }

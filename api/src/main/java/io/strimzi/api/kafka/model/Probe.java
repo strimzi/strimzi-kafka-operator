@@ -22,7 +22,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
 public class Probe implements UnknownPropertyPreserving, Serializable {
 
@@ -46,6 +46,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
     @Description("The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.")
     @Minimum(0)
     @DefaultValue("15")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getInitialDelaySeconds() {
         return initialDelaySeconds;
     }
@@ -57,6 +58,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
     @Description("The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.")
     @Minimum(1)
     @DefaultValue("5")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getTimeoutSeconds() {
         return timeoutSeconds;
     }

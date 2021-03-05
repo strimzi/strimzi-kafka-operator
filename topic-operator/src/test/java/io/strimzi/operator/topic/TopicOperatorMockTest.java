@@ -47,7 +47,9 @@ import java.util.function.Predicate;
 
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
@@ -219,6 +221,28 @@ public class TopicOperatorMockTest {
         testCreatedInKube(context, kt);
     }
 
+    @Test
+    public void testReconciliationPaused(VertxTestContext context) throws InterruptedException {
+        LOGGER.info("Test started");
+
+        int retention = 100_000_000;
+        KafkaTopic kt = new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withName("my-topic")
+                    .withNamespace("myproject")
+                    .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
+                    .addToLabels(Labels.KUBERNETES_NAME_LABEL, "topic-operator")
+                    .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))
+                .endMetadata()
+                .withNewSpec()
+                    .withPartitions(1)
+                    .withReplicas(1)
+                    .addToConfig("retention.bytes", retention)
+                .endSpec().build();
+
+        testNotCreatedInKube(context, kt);
+    }
+
     void testCreatedInKube(VertxTestContext context, KafkaTopic kt) throws InterruptedException {
         String kubeName = kt.getMetadata().getName();
         String kafkaName = kt.getSpec().getTopicName() != null ? kt.getSpec().getTopicName() : kubeName;
@@ -258,6 +282,31 @@ public class TopicOperatorMockTest {
         // Check things still the same (recover from error)
         // Try to remove spec.topicName
         // Check things still the same
+    }
+
+    void testNotCreatedInKube(VertxTestContext context, KafkaTopic kt) throws InterruptedException {
+        String kubeName = kt.getMetadata().getName();
+        String kafkaName = kt.getSpec().getTopicName() != null ? kt.getSpec().getTopicName() : kubeName;
+        int retention = (Integer) kt.getSpec().getConfig().get("retention.bytes");
+
+        createInKube(kt);
+
+        Thread.sleep(2000);
+        LOGGER.info("Topic has not been created");
+        Topic fromKafka = getFromKafka(context, kafkaName);
+        context.verify(() -> assertThat(fromKafka, is(nullValue())));
+        // Reconcile after no changes
+        reconcile(context);
+        // Check things still the same
+        context.verify(() -> assertThat(fromKafka, is(nullValue())));
+
+        // Config change + reconcile
+        updateInKube(new KafkaTopicBuilder(kt).editSpec().addToConfig("retention.bytes", retention + 1).endSpec().build());
+        // Another reconciliation
+        reconcile(context);
+
+        // Check things still the same
+        context.verify(() -> assertThat(getFromKafka(context, kafkaName), is(nullValue())));
     }
 
     Topic getFromKafka(VertxTestContext context, String topicName) throws InterruptedException {

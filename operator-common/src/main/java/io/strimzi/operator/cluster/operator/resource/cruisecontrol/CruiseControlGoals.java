@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 public enum CruiseControlGoals {
 
     RACK_AWARENESS_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal"),
+    MIN_TOPIC_LEADERS_PER_BROKER_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.MinTopicLeadersPerBrokerGoal"),
     REPLICA_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal"),
     DISK_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal"),
     NETWORK_INBOUND_CAPACITY_GOAL("com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal"),

@@ -36,6 +36,7 @@ import io.vertx.core.shareddata.Lock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Collections;
@@ -89,6 +90,7 @@ public abstract class AbstractOperator<
     private final Counter failedReconciliationsCounter;
     private final Counter successfulReconciliationsCounter;
     private final Counter lockedReconciliationsCounter;
+    private final AtomicInteger pausedResourceCounter;
     private final AtomicInteger resourceCounter;
     private final Timer reconciliationsTimer;
     private final Map<Tags, AtomicInteger> resourcesStateCounter;
@@ -109,6 +111,10 @@ public abstract class AbstractOperator<
 
         reconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",
                 "Number of reconciliations done by the operator for individual resources",
+                metricTags);
+
+        pausedResourceCounter = metrics.gauge(METRICS_PREFIX + "resources.paused",
+                "Number of custom resources the operator sees but does not reconcile due to paused reconciliations",
                 metricTags);
 
         failedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.failed",
@@ -204,8 +210,23 @@ public abstract class AbstractOperator<
                 }
 
                 Promise<Void> createOrUpdate = Promise.promise();
+                if (Annotations.isReconciliationPausedWithAnnotation(cr)) {
+                    S status = createStatus();
+                    Set<Condition> conditions = validate(cr);
+                    conditions.add(StatusUtils.getPausedCondition());
+                    status.setConditions(new ArrayList<>(conditions));
 
-                if (cr.getSpec() == null)   {
+                    updateStatus(reconciliation, status).onComplete(statusResult -> {
+                        if (statusResult.succeeded()) {
+                            createOrUpdate.complete();
+                        } else {
+                            createOrUpdate.fail(statusResult.cause());
+                        }
+                    });
+                    getPausedResourceCounter().getAndIncrement();
+                    log.debug("{}: Reconciliation of {} {} is paused", reconciliation, kind, name);
+                    return createOrUpdate.future();
+                } else if (cr.getSpec() == null) {
                     InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
 
                     S status = createStatus();
@@ -496,6 +517,10 @@ public abstract class AbstractOperator<
         return resourceCounter;
     }
 
+    public AtomicInteger getPausedResourceCounter() {
+        return pausedResourceCounter;
+    }
+
     /**
      * Updates the resource state metric for the provided reconciliation which brings kind, name and namespace
      * of the custom resource.
@@ -554,4 +579,5 @@ public abstract class AbstractOperator<
             }
         );
     }
+
 }

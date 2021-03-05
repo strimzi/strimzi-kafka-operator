@@ -31,8 +31,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "whitelist",
-        "consumer", "producer", "resources",
+        "version", "replicas", "image", "consumer",
+        "producer", "resources", "whitelist",
         "affinity", "tolerations", "jvmOptions",
         "logging", "metrics", "metricsConfig", "tracing", "template"})
 @EqualsAndHashCode

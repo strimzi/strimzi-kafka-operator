@@ -36,7 +36,8 @@ public interface CertManager {
     /**
      * Renew a new self-signed certificate, keeping the existing private key
      * @param keyFile path to the file containing the existing private key
-     * @param certFile path to the file which will contain the new self signed certificate
+     * @param certFile path to the file which contains the old certificate and
+     *                 will contain the new self signed certificate.
      * @param sbj subject information
      * @param days certificate duration
      * @throws IOException If an input or output file could not be read/written.

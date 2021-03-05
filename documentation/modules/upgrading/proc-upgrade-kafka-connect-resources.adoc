@@ -3,34 +3,20 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-connect-resources-{context}']
-= Upgrading Kafka Connect resources
+= Upgrading Kafka Connect resources to {ApiVersion}
 
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `KafkaConnect` resource in your deployment.
+Perform the following steps for each `KafkaConnect` custom resource in your deployment.
 
-. Update the `KafkaConnect` resource in an editor.
+. Update the `KafkaConnect` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkaconnect _my-connect_
-----
-
-. Replace:
-+
-[source,shell,subs="attributes"]
-----
-apiVersion: {KafkaConnectApiVersionPrev}
-----
-+
-with:
-+
-[source,shell,subs="attributes"]
-----
-apiVersion: {KafkaConnectApiVersion}
+kubectl edit kafkaconnect _KAFKA-CONNECT-CLUSTER_
 ----
 
 . If present, move:
@@ -79,4 +65,75 @@ spec:
       tolerations {}
 ----
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. If `type: external` logging is configured in `.spec.logging`:
++
+Replace the `name` of the ConfigMap containing the logging configuration:
++
+[source,yaml,subs="attributes+"]
+----
+logging:
+  type: external
+  name: my-config-map
+----
++
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
++
+[source,yaml,subs="attributes+"]
+----
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: my-config-map
+      key: log4j.properties
+----
+
+. If the `.spec.metrics` field is used to enable metrics:
+
+.. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
+The YAML must match what is currently in the `.spec.metrics` field.
++
+[source,yaml,subs="attributes+"]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kafka-connect-metrics
+  labels:
+    app: strimzi
+data:
+  connect-metrics-config.yaml: |
+      <YAML>
+----
+
+.. Add a `.spec.metricsConfig` property that points to the ConfigMap and key:
++
+[source,yaml,subs="attributes+"]
+----
+metricsConfig:
+  type: jmxPrometheusExporter
+  valueFrom:
+    configMapKeyRef:
+      name: kafka-connect-metrics
+      key: connect-metrics-config.yaml
+----
+
+.. Delete the old `.spec.metrics` field.
+
+. Update the `apiVersion` of the `KafkaConnect` custom resource to `{ApiVersion}`:
++
+Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaConnectApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaConnectApiVersion}
+----
+
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.

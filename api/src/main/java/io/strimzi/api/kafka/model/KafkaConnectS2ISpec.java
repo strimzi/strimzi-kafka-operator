@@ -18,10 +18,12 @@ import lombok.EqualsAndHashCode;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "replicas", "image", "buildResources",
-        "livenessProbe", "readinessProbe", "jvmOptions",  "jmxOptions",
-        "affinity", "logging", "metrics", "template"})
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
+@JsonPropertyOrder({ "version", "replicas", "image", "buildResources",
+        "bootstrapServers", "tls", "authentication", "config", "resources",
+        "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
+        "affinity", "tolerations", "logging", "metrics", "tracing",
+        "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 
@@ -44,6 +46,7 @@ public class KafkaConnectS2ISpec extends KafkaConnectSpec {
 
     @Description("When true this configures the source repository with the 'Local' reference policy " +
             "and an import policy that accepts insecure source tags.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isInsecureSourceRepository() {
         return insecureSourceRepository;
     }

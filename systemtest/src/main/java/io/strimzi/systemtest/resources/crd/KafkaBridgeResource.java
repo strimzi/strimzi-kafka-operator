@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -78,7 +79,7 @@ public class KafkaBridgeResource {
                 .withBootstrapServers(bootstrap)
                 .withReplicas(kafkaBridgeReplicas)
                 .withNewInlineLogging()
-                    .addToLoggers("bridge.root.logger", "DEBUG")
+                    .addToLoggers("bridge.root.logger", Environment.STRIMZI_COMPONENTS_LOG_LEVEL)
                 .endInlineLogging()
             .endSpec();
     }

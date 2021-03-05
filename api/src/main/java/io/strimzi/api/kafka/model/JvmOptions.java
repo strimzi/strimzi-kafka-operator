@@ -59,6 +59,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     }
 
     @Description("Specifies whether the Garbage Collection logging is enabled. The default is false.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isGcLoggingEnabled() {
         return gcLoggingEnabled;
     }

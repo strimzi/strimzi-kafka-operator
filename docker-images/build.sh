@@ -50,7 +50,7 @@ function fetch_and_unpack_kafka_binaries {
     declare -Ag version_dist_dirs
 
     # Set the cache folder to store the binary files
-    binary_file_dir="$kafka_image/tmp"
+    binary_file_dir="$kafka_image/tmp/archives"
     test -d "$binary_file_dir" || mkdir -p "$binary_file_dir"
 
     for kafka_version in "${!version_checksums[@]}"
@@ -97,7 +97,7 @@ function fetch_and_unpack_kafka_binaries {
         if [ $get_file -gt 0 ]
         then
             echo "Fetching Kafka $kafka_version binaries from: $binary_file_url"
-            curl --output "$binary_file_path" "$binary_file_url"
+            download_kafka_binaries_from_mirror "$binary_file_url" "$binary_file_path"
         fi
 
         # If we haven't already checksum'd the file do it now before the build.
@@ -111,7 +111,7 @@ function fetch_and_unpack_kafka_binaries {
         fi
 
         # We now have a verified tar archive for this version of Kafka. Unpack it into the temp dir
-        dist_dir="$binary_file_dir/$kafka_version"
+        dist_dir="$kafka_image/tmp/$kafka_version"
         # If an unpacked directory with the same name exists then delete it
         test -d "$dist_dir" && rm -r "$dist_dir"
         mkdir -p "$dist_dir"
@@ -124,7 +124,7 @@ function fetch_and_unpack_kafka_binaries {
         # create a file listing all the jars with colliding class files in the Kafka dist
         # (on the assumption that this is OK). This file will be used after building the images to detect any collisions
         # added by the third-party jars mechanism.
-        whilelist_file="$binary_file_dir/$kafka_version.whitelist"
+        whilelist_file="$dist_dir.whitelist"
         if [ ! -e $whilelist_file ]
         then
             unzipped_dir=`mktemp -d`
@@ -134,6 +134,28 @@ function fetch_and_unpack_kafka_binaries {
         fi
     done
 
+}
+
+function download_kafka_binaries_from_mirror {
+    # This function tries to extract the Kafka file name from the URL and checks if it is present on the Kafka mirrors.
+    # If not, it downloads from the original URL. If for any reason some completely custom URL is used, it will not
+    # match and be found on the mirror and the download will happen directly from it.
+
+    local url=$1
+    local path=$2
+
+    local filename="${url/https:\/\/archive.apache.org\/dist\//}"
+    local dynamic_url="https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=${filename}"
+    local redirect=$(curl -Ls -o /dev/null -w %{url_effective} "${dynamic_url}")
+    local code=$(curl -Ls --output "${path}" -w %{http_code} "${redirect}")
+
+    if [[ "$code" == "404" ]]
+    then
+        echo "Kafka ${filename} not found on mirrors. Using the original URL"
+        curl -L --output "${path}" "${url}"
+    else
+        echo "Kafka ${filename} downloaded from one of the Apache mirrors"
+    fi
 }
 
 function build {

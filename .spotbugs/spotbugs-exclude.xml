@@ -17,4 +17,8 @@
   <Match>
     <Class name="~io\.fabric8\.kubernetes\.api\.model\..+(Builder|FluentImpl)(\$.*)?" />
   </Match>
+  <Match>
+    <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+    <Class name="~io\.strimzi\.certs\.OpenSslCertManager" />
+  </Match>
 </FindBugsFilter>

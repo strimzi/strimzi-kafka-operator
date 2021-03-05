@@ -34,7 +34,7 @@ import java.util.Map;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
         "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases"})
 @EqualsAndHashCode
@@ -93,7 +93,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
             "A zero value indicates delete immediately. " +
             "You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. " +
             "Defaults to 30 seconds.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @DefaultValue("30")
     @Minimum(0)
     public int getTerminationGracePeriodSeconds() {

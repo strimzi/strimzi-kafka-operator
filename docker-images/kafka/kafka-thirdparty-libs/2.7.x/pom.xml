@@ -17,7 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.7.0</strimzi-oauth.version>
-        <cruise-control.version>2.5.32</cruise-control.version>
+        <cruise-control.version>2.5.37</cruise-control.version>
         <opa-authorizer.version>0.4.2</opa-authorizer.version>
     </properties>
 
@@ -241,6 +241,14 @@
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

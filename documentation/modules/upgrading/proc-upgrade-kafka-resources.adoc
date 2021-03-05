@@ -3,212 +3,115 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-resources-{context}']
-= Upgrading Kafka resources
+= Upgrading Kafka resources to support {ApiVersion}
 
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `Kafka` resource in your deployment.
+Perform the following steps for each `Kafka` custom resource in your deployment.
 
-. Update the `Kafka` resource in an editor.
+. Update the `Kafka` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafka _my-cluster_
+kubectl edit kafka _KAFKA-CLUSTER_
 ----
 
-. Replace:
+. If you have not already done so, update `.spec.kafka.listener` to the new generic listener format, as described in xref:con-upgrade-listeners-{context}[].
 +
-[source,shell,subs="attributes"]
+[WARNING]
+====
+The old listener format is not supported in API version `{ApiVersion}`.
+====
+
+. If present, move `affinity` from `.spec.kafka.affinity` to `.spec.kafka.template.pod.affinity`.
+
+. If present, move `tolerations` from `.spec.kafka.tolerations` to `.spec.kafka.template.pod.tolerations`.
+
+. If present, remove `.spec.kafka.template.tlsSidecarContainer`.
+
+. If present, remove `.spec.kafka.tlsSidecarContainer`.
+
+. If either of the following policy configurations exist:
+
+* `.spec.kafka.template.externalBootstrapService.externalTrafficPolicy`
+* `.spec.kafka.template.perPodService.externalTrafficPolicy`
+
+.. Move the configuration to `.spec.kafka.listeners[].configuration.externalTrafficPolicy`, for both `type: loadbalancer` and `type: nodeport` listeners.
+
+.. Remove `.spec.kafka.template.externalBootstrapService.externalTrafficPolicy` or `.spec.kafka.template.perPodService.externalTrafficPolicy`.
+
+. If either of the following `loadbalancer` listener configurations exist:
+
+* `.spec.kafka.template.externalBootstrapService.loadBalancerSourceRanges`
+* `.spec.kafka.template.perPodService.loadBalancerSourceRanges`
+
+.. Move the configuration to `.spec.kafka.listeners[].configuration.loadBalancerSourceRanges`, for `type: loadbalancer` listeners.
+
+.. Remove `.spec.kafka.template.externalBootstrapService.loadBalancerSourceRanges` or `.spec.kafka.template.perPodService.loadBalancerSourceRanges`.
+
+. If `type: external` logging is configured in `.spec.kafka.logging`:
++
+Replace the `name` of the ConfigMap containing the logging configuration:
++
+[source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersionPrev}
+logging:
+  type: external
+  name: my-config-map
 ----
 +
-with:
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
 +
-[source,shell,subs="attributes"]
+[source,yaml,subs="attributes+"]
 ----
-apiVersion: {KafkaApiVersion}
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: my-config-map
+      key: log4j.properties
 ----
 
-. If the `Kafka` resource has:
+. If the `.spec.kafka.metrics` field is used to enable metrics:
+
+.. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
+The YAML must match what is currently in the `.spec.kafka.metrics` field.
 +
-[source,shell]
+[source,yaml,subs="attributes+"]
 ----
-Kafka.spec.topicOperator
-----
-+
-Replace it with:
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.topicOperator
-----
-+
-For example, replace:
-+
-[source,shell]
-----
-spec:
-  # ...
-  topicOperator: {}
-----
-+
-with:
-+
-[source,shell]
-----
-spec:
-  # ...
-  entityOperator:
-    topicOperator: {}
-----
-. If present, move:
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.tolerations
-----
-+
-to:
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.template.pod.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.entityOperator.template.pod.tolerations
-----
-+
-For example, move:
-+
-[source,shell]
-----
-spec:
-  # ...
-  entityOperator:
-    affinity {}
-    tolerations {}
-----
-+
-to:
-+
-[source,shell]
-----
-spec:
-  # ...
-  entityOperator:
-    template:
-      pod:
-        affinity {}
-        tolerations {}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kafka-metrics
+  labels:
+    app: strimzi
+data:
+  kafka-metrics-config.yaml: |
+      <YAML>
 ----
 
-
-. If present, move:
+.. Add a `.spec.kafka.metricsConfig` property that points to the ConfigMap and key:
 +
-[source,shell]
+[source,yaml,subs="attributes+"]
 ----
-Kafka.spec.kafka.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.kafka.tolerations
-----
-+
-to:
-+
-[source,shell]
-----
-Kafka.spec.kafka.template.pod.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.kafka.template.pod.tolerations
-----
-+
-For example, move:
-+
-[source,shell]
-----
-spec:
-  # ...
-  kafka:
-    affinity {}
-    tolerations {}
-----
-+
-to:
-+
-[source,shell]
-----
-spec:
-  # ...
-  kafka:
-    template:
-      pod:
-        affinity {}
-        tolerations {}
+metricsConfig:
+  type: jmxPrometheusExporter
+  valueFrom:
+    configMapKeyRef:
+      name: kafka-metrics
+      key: kafka-metrics-config.yaml
 ----
 
+.. Delete the old `.spec.kafka.metrics` field.
 
-. If present, move:
-+
-[source,shell]
-----
-Kafka.spec.zookeeper.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.zookeeper.tolerations
-----
-+
-to:
-+
-[source,shell]
-----
-Kafka.spec.zookeeper.template.pod.affinity
-----
-+
-[source,shell]
-----
-Kafka.spec.zookeeper.template.pod.tolerations
-----
-+
-For example, move:
-+
-[source,shell]
-----
-spec:
-  # ...
-  zookeeper:
-    affinity {}
-    tolerations {}
-----
-+
-to:
-+
-[source,shell]
-----
-spec:
-  # ...
-  zookeeper:
-    template:
-      pod:
-        affinity {}
-        tolerations {}
-----
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+.What to do next
+
+For each `Kafka` custom resource, upgrade the configurations for ZooKeeper, Topic Operator, Entity Operator, and Cruise Control (if deployed) to support version `{ApiVersion}`. 
+This is described in the following procedures.
+
+When all `Kafka` configurations are updated to support `{ApiVersion}`, you can xref:proc-upgrade-kafka-api-version-{context}[upgrade the `Kafka` custom resource to `{ApiVersion}`]. 

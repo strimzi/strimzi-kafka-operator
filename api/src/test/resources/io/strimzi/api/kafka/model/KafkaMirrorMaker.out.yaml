@@ -6,14 +6,14 @@ metadata:
 spec:
   replicas: 1
   image: "foo"
-  whitelist: "*"
   consumer:
     numStreams: 2
-    groupId: "my-source-group-id"
     bootstrapServers: "my-source-kafka:9092"
+    groupId: "my-source-group-id"
     config:
       foo: "bar"
   producer:
     bootstrapServers: "my-target-kafka:9092"
     config:
       foo: "buz"
+  whitelist: "*"
