@@ -91,7 +91,7 @@ kubectl apply -f _kafka.yaml_
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get deployments -l app.kubernetes.io/name=strimzi
+kubectl get deployments -l app.kubernetes.io/name=cruise-control
 ----
 
 [discrete]
