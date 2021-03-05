@@ -255,7 +255,7 @@ class RecoveryST extends AbstractST {
      * check that Kafka pods are stable in `Pending` phase (for one minute), we change the memory request so that the pods are again schedulable
      * and wait until the Kafka cluster recovers and becomes `Ready`.
      *
-     * @see KafkaRollerST#testKafkaPodPending()
+     * @see {@link io.strimzi.systemtest.rollingupdate.KafkaRollerST#testKafkaPodPending(ExtensionContext)}
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromImpossibleMemoryRequest(ExtensionContext extensionContext) {
