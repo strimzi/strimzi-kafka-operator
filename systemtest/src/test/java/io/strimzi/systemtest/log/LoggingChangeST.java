@@ -1166,7 +1166,9 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Changing external logging's CM to not existing one");
         KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getSpec().getKafka().setLogging(
             new ExternalLoggingBuilder()
-                .withName("not-existing-cm-name")
+                .withNewValueFrom()
+                    .withNewConfigMapKeyRef("log4j.properties", "not-existing-cm-name", false)
+                .endValueFrom()
                 .build()));
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
