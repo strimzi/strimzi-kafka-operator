@@ -59,7 +59,7 @@ Use `bin/api-conversion.cmd` for this procedure if you are using Windows.
 
 .Procedure
 
-. Run the API conversion tool with the appropriate command and flags.
+. Run the API conversion tool with the `convert-resource` command and appropriate flags.
 +
 Example 1, converts all Strimzi resources in current namespace:
 +
@@ -79,7 +79,7 @@ Example 3, converts all Strimzi resources in the `my-kafka` namespace:
 +
 [source,shell]
 ----
-bin/api-conversion.sh convert-resource --namespaces my-kafka
+bin/api-conversion.sh convert-resource --namespace my-kafka
 ----
 +
 Example 4, converts only Kafka resources in all namespaces:

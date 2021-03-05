@@ -50,7 +50,7 @@ You can use the API conversion tool to do this in one of two ways:
 +
 Or you can make the changes manually.
 
-. Run the API conversion tool with the upgrade command.
+. Run the API conversion tool with the `crd-upgrade` command.
 +
 [source,shell]
 ----

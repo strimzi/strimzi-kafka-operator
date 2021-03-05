@@ -7,11 +7,11 @@
 
 [role="_abstract"]
 After you have upgraded Strimzi to {ProductVersion}, you must ensure that your custom resources are using API version `{ApiVersion}`.
-You can do this any time after moving to {ProductVersion}, but the upgrades must be completed before the next minor version update.
+You can do this any time after upgrading to {ProductVersion}, but the upgrades must be completed before the next Strimzi minor version update.
 
-IMPORTANT: The upgrade of resources _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
+IMPORTANT: Upgrade of the custom resources to `{ApiVersion}` _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
 
-NOTE: Upgrade of the custom resources to `{ApiVersion}` prepares Strimzi for a move to Kubernetes CRD `v1`, 
+NOTE: Upgrade of the custom resources to `{ApiVersion}` prepares Strimzi for a move to Kubernetes CRD `v1`,
 which is required for Kubernetes 1.22.
 
 .CLI upgrades to custom resources
@@ -24,20 +24,20 @@ endif::Downloading[]
 ifndef::Downloading[]
 You can download its ZIP or TAR.GZ from {ZipDownload}.
 endif::Downloading[]
-To use the tool, unpack it and use the scripts in the `bin` directory.
+To use the tool, extract it and use the scripts in the `bin` directory.
 
-From its CLI, you can then use the tool to convert the format of your custom resources to `{ApiVersion}`:
+From its CLI, you can then use the tool to convert the format of your custom resources to `{ApiVersion}` in one of two ways:
 
 * xref:proc-upgrade-cli-tool-files-{context}[]
 * xref:proc-upgrade-cli-tool-direct-{context}[]
 
-Following on from the conversion of your custom resources, you can also set `{ApiVersion}` as the _storage_ API version in your CRDs:
+After the conversion of your custom resources, you can also set `{ApiVersion}` as the _storage_ API version in your CRDs:
 
 * xref:proc-upgrade-cli-tool-crds-{context}[]
 
 .Manual upgrades to custom resources
 
-As an alternative to using the API conversion tool, you can manually update each custom resource to use `{ApiVersion}`:
+Instead of using the API conversion tool to update custom resources to `{ApiVersion}`, you can manually update each custom resource to use `{ApiVersion}`:
 
 * xref:proc-upgrade-kafka-resources-{context}[]
 * xref:proc-upgrade-kafka-connect-resources-{context}[]
