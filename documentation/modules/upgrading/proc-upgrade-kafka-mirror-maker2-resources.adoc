@@ -2,68 +2,28 @@
 //
 // assembly-upgrade-resources.adoc
 
-[id='proc-upgrade-kafka-connect-resources-{context}']
-= Upgrading Kafka Connect resources to {ApiVersion}
+[id='proc-upgrade-kafka-mirror-maker2-resources-{context}']
+= Upgrading Kafka MirrorMaker 2.0 resources to {ApiVersion}
 
 .Prerequisites
 
 * A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
+* MirrorMaker 2.0 is configured and deployed. 
+See xref:deploying-kafka-mirror-maker-{context}[]. 
 
 .Procedure
-Perform the following steps for each `KafkaConnect` custom resource in your deployment.
+Perform the following steps for each `KafkaMirrorMaker2` custom resource in your deployment.
 
-. Update the `KafkaConnect` custom resource in an editor.
+. Update the `KafkaMirrorMaker2` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkaconnect _KAFKA-CONNECT-CLUSTER_
+kubectl edit kafkamirrormaker2 _MIRROR-MAKER-2_
 ----
 
-. If present, move:
-+
-[source,shell]
-----
-KafkaConnect.spec.affinity
-----
-+
-[source,shell]
-----
-KafkaConnect.spec.tolerations
-----
-+
-to:
-+
-[source,shell]
-----
-KafkaConnect.spec.template.pod.affinity
-----
-+
-[source,shell]
-----
-KafkaConnect.spec.template.pod.tolerations
-----
-+
-For example, move:
-+
-[source,shell]
-----
-spec:
-  # ...
-  affinity {}
-  tolerations {}
-----
-+
-to:
-+
-[source,shell]
-----
-spec:
-  # ...
-  template:
-    pod:
-      affinity {}
-      tolerations {}
-----
+. If present, move `affinity` from `.spec.affinity` to `.spec.template.pod.affinity`.
+
+. If present, move `tolerations` from `.spec.tolerations` to `.spec.template.pod.tolerations`.
 
 . If `type: external` logging is configured in `.spec.logging`:
 +
@@ -98,11 +58,11 @@ The YAML must match what is currently in the `.spec.metrics` field.
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: kafka-connect-metrics
+  name: kafka-mm2-metrics
   labels:
     app: strimzi
 data:
-  connect-metrics-config.yaml: |
+  mm2-metrics-config.yaml: |
       <YAML>
 ----
 
@@ -114,26 +74,26 @@ metricsConfig:
   type: jmxPrometheusExporter
   valueFrom:
     configMapKeyRef:
-      name: kafka-connect-metrics
-      key: connect-metrics-config.yaml
+      name: kafka-mm2-metrics
+      key: mm2-metrics-config.yaml
 ----
 
 .. Delete the old `.spec.metrics` field.
 
-. Update the `apiVersion` of the `KafkaConnect` custom resource to `{ApiVersion}`:
+. Update the `apiVersion` of the `KafkaMirrorMaker2` custom resource to `{ApiVersion}`:
 +
 Replace:
 +
 [source,shell,subs="attributes"]
 ----
-apiVersion: {KafkaConnectApiVersionPrev}
+apiVersion: {KafkaMirrorMaker2ApiVersionPrev}
 ----
 +
 with:
 +
 [source,shell,subs="attributes"]
 ----
-apiVersion: {KafkaConnectApiVersion}
+apiVersion: {KafkaMirrorMaker2ApiVersion}
 ----
 
 . Save the file, exit the editor and wait for the updated custom resource to be reconciled.

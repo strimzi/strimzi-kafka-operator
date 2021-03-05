@@ -3,23 +3,25 @@
 // assembly-upgrade-resources.adoc
 
 [id='proc-upgrade-kafka-topic-resources-{context}']
-= Upgrading Kafka Topic resources
+= Upgrading Kafka Topic resources to {ApiVersion}
 
 .Prerequisites
 
 * A Topic Operator supporting the `{ApiVersion}` API version is up and running.
 
 .Procedure
-Execute the following steps for each `KafkaTopic` resource in your deployment.
+Perform the following steps for each `KafkaTopic` custom resource in your deployment.
 
-. Update the `KafkaTopic` resource in an editor.
+. Update the `KafkaTopic` custom resource in an editor.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl edit kafkatopic _my-topic_
+kubectl edit kafkatopic _KAFKA-TOPIC_
 ----
 
-. Replace:
+. Update the `apiVersion` of the `KafkaTopic` custom resource to `{ApiVersion}`:
++
+Replace:
 +
 [source,shell,subs="attributes"]
 ----
@@ -33,4 +35,4 @@ with:
 apiVersion: {KafkaTopicApiVersion}
 ----
 
-. Save the file, exit the editor and wait for the updated resource to be reconciled.
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.
