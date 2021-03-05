@@ -12,7 +12,7 @@ You can do this any time after upgrading to {ProductVersion}, but the upgrades m
 IMPORTANT: Upgrade of the custom resources to `{ApiVersion}` _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
 
 NOTE: Upgrade of the custom resources to `{ApiVersion}` prepares Strimzi for a move to Kubernetes CRD `v1`,
-which is required for Kubernetes 1.22.
+which will be required for Kubernetes 1.22.
 
 .CLI upgrades to custom resources
 
@@ -31,7 +31,7 @@ From its CLI, you can then use the tool to convert the format of your custom res
 * xref:proc-upgrade-cli-tool-files-{context}[]
 * xref:proc-upgrade-cli-tool-direct-{context}[]
 
-After the conversion of your custom resources, you can also set `{ApiVersion}` as the _storage_ API version in your CRDs:
+After the conversion of your custom resources, you must set `{ApiVersion}` as the _storage_ API version in your CRDs:
 
 * xref:proc-upgrade-cli-tool-crds-{context}[]
 
@@ -39,12 +39,26 @@ After the conversion of your custom resources, you can also set `{ApiVersion}` a
 
 Instead of using the API conversion tool to update custom resources to `{ApiVersion}`, you can manually update each custom resource to use `{ApiVersion}`:
 
+Update the `Kafka` custom resource, including the configurations for the other components:
+
 * xref:proc-upgrade-kafka-resources-{context}[]
+* xref:proc-upgrade-zookeeper-api-version-{context}[]
+* xref:proc-upgrade-topic-operator-api-version-{context}[]
+* xref:proc-upgrade-entity-operator-api-version-{context}[]
+* xref:proc-upgrade-cruise-control-api-version-{context}[] (if Cruise Control is deployed)
+* xref:proc-upgrade-kafka-api-version-{context}[]
+
+Update the other custom resources that apply to your deployment:
+
 * xref:proc-upgrade-kafka-connect-resources-{context}[]
 * xref:proc-upgrade-kafka-connect-s2i-resources-{context}[]
 * xref:proc-upgrade-kafka-mirror-maker-resources-{context}[]
-* xref:proc-upgrade-kafka-topic-resources-{context}[]
+* xref:proc-upgrade-kafka-mirror-maker2-resources-{context}[]
+* xref:proc-upgrade-kafka-bridge-resources-{context}[]
 * xref:proc-upgrade-kafka-user-resources-{context}[]
+* xref:proc-upgrade-kafka-topic-resources-{context}[]
+* xref:proc-upgrade-kafkaconnector-resources-{context}[]
+* xref:proc-upgrade-kafka-rebalance-resources-{context}[]
 
 The manual procedures show the changes that are made to each custom resource.
 After these changes, you must use the API conversion tool to upgrade your CRDs.
@@ -54,8 +68,17 @@ include::modules/proc-upgrade-cli-tool-files.adoc[leveloffset=+1]
 include::modules/proc-upgrade-cli-tool-direct.adoc[leveloffset=+1]
 include::modules/proc-upgrade-cli-tool-crds.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-resources.adoc[leveloffset=+1]
+include::modules/proc-upgrade-zookeeper-api-version.adoc[leveloffset=+1]
+include::modules/proc-upgrade-topic-operator-api-version.adoc[leveloffset=+1]
+include::modules/proc-upgrade-entity-operator-api-version.adoc[leveloffset=+1]
+include::modules/proc-upgrade-cruise-control-api-version.adoc[leveloffset=+1]
+include::modules/proc-upgrade-kafka-api-version.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-connect-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-connect-s2i-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-mirror-maker-resources.adoc[leveloffset=+1]
-include::modules/proc-upgrade-kafka-topic-resources.adoc[leveloffset=+1]
+include::modules/proc-upgrade-kafka-mirror-maker2-resources.adoc[leveloffset=+1]
+include::modules/proc-upgrade-kafka-bridge-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-kafka-user-resources.adoc[leveloffset=+1]
+include::modules/proc-upgrade-kafka-topic-resources.adoc[leveloffset=+1]
+include::modules/proc-upgrade-kafkaconnector-resources.adoc[leveloffset=+1]
+include::modules/proc-upgrade-kafka-rebalance-resources.adoc[leveloffset=+1]

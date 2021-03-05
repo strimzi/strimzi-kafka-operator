@@ -75,4 +75,9 @@ spec:
   - name: {ApiVersion}
     served: true
     storage: true
+    #...
+status:
+  #...
+  storedVersions:
+  - v1beta2
 ----

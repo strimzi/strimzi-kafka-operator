@@ -13,7 +13,7 @@ The `convert-file` command can convert YAML files containing multiple documents.
 For a multi-document YAML file, all the Strimzi custom resources it contains are converted.
 Any non-Strimzi Kubernetes resources are replicated unmodified in the converted output file.
 
-After you have converted the YAML file, you can apply the configuration to update the custom resource in the cluster.
+After you have converted the YAML file, you must apply the configuration to update the custom resource in the cluster.
 Alternatively, if the GitOps synchronization mechanism is being used for updates on your cluster, you can use it to apply the changes.
 The conversion is only complete when the custom resource is updated in the Kubernetes cluster.
 
