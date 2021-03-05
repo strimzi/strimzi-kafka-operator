@@ -9,12 +9,13 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.api.kafka.model.status.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.function.Function;
 
-class CustomResourceMockBuilder<T extends CustomResource, L extends KubernetesResource & KubernetesResourceList<T>, S>
+class CustomResourceMockBuilder<T extends CustomResource, L extends KubernetesResource & KubernetesResourceList<T>, S extends Status>
         extends MockBuilder<T, L, Resource<T>> {
 
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceMockBuilder.class);

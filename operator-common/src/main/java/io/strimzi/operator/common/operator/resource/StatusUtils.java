@@ -109,4 +109,13 @@ public class StatusUtils {
     public static <R extends CustomResource> boolean isResourceV1alpha1(R resource) {
         return resource.getApiVersion() != null && resource.getApiVersion().equals(V1ALPHA1);
     }
+
+    public static Condition getPausedCondition() {
+        Condition pausedCondition = new ConditionBuilder()
+                .withLastTransitionTime(StatusUtils.iso8601Now())
+                .withType("ReconciliationPaused")
+                .withStatus("True")
+                .build();
+        return pausedCondition;
+    }
 }
