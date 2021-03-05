@@ -9,7 +9,7 @@
 The Topic Operator uses Kafka to store topic metadata describing topic configuration as key-value pairs.
 The _topic store_ is based on the Kafka Streams key-value mechanism, which uses Kafka topics to persist the state.
 
-Topic metadata is cached in-memory and accessed locally.
+Topic metadata is cached in-memory and accessed locally within the Topic Operator.
 Updates from operations applied to the local in-memory cache are persisted to a backup topic store on disk.
 The topic store is continually synchronized with updates from Kafka topics or Kubernetes `KafkaTopic` custom resources.
 Operations are handled rapidly with the topic store set up this way,
@@ -69,7 +69,7 @@ spec:
     min.insync.replicas=2 <3>
   #...
 ----
-<1> The number of partitions for the topic. Generally, 1 partition is sufficient. 
+<1> The number of partitions for the topic. Generally, 1 partition is sufficient.
 <2> The number of replica topic partitions. Currently, this cannot be changed in the `KafkaTopic` resource, but it can be changed using the `kafka-reassign-partitions.sh` tool.
 <3> The minimum number of replica partitions that a message must be successfully written to, or an exception is raised.
 
