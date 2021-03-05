@@ -16,7 +16,7 @@ The command updates `spec.versions` in the CRDs to declare `{ApiVersion}` as the
 The command also updates custom resources so they are stored under `{ApiVersion}`.
 New custom resource instances are created from the specification of the storage API version, so only one API version is ever marked as the storage version.
 
-When you have upgraded the CRDs to use `{ApiVersion}` as the storage version, you must only use `{ApiVersion}` properties in your custom resources.
+When you have upgraded the CRDs to use `{ApiVersion}` as the storage version, you should only use `{ApiVersion}` properties in your custom resources.
 
 .Prerequisites
 

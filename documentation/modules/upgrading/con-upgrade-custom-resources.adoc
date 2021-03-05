@@ -8,13 +8,11 @@
 
 [role="_abstract"]
 Custom resources are edited and controlled using APIs added to Kubernetes by CRDs.
-Put another way, CRDs extend the Kubernetes API to allow creation of custom resources.
+Put another way, CRDs extend the Kubernetes API to allow the creation of custom resources.
 CRDs are themselves resources within Kubernetes.
 They are installed in a Kubernetes cluster to define the versions of API for the custom resource.
 Each version of the custom resource API can define its own schema for that version.
-
-For release {ProductVersion}, Strimzi custom resources must specify `{ApiVersion}` as the API version.
-Strimzi Operators access the custom resources served by the Kubernetes API server using a URL path (_API path_) which includes the API version.
+Strimzi Operators access the custom resources served by the Kubernetes API server using a URL path (_API path_), which includes the API version.
 
 The introduction of `{ApiVersion}` updates the schemas of the custom resources.
 Older API versions are deprecated.
@@ -42,65 +40,6 @@ The `v1beta1` API version is deprecated for the following Strimzi custom resourc
 * `KafkaUser`
 
 IMPORTANT: The `v1alpha1` and `v1beta1` versions will be removed in the next minor release.
-
-API versioning policy indicates the relative stability of the version.
-Alpha version APIs are the least mature, beta versions more mature, and stable versions represent a durable release.
-
-Example API versions:
-
-* Alpha version: `v1alpha1`
-* Beta version: `v1beta1`, `v1beta2`
-* Stable version: `v1`
-
-After a new custom resource type is added to a cluster by installing a CRD, you can create instances of the custom resource based on its specification.
-Custom resources using `{ApiVersion}` strictly adhere to a structural schema specification.
-
-Structural schemas are based on the OpenAPI v3.0 validation schema.
-OpenAPI v3.0 provides validation for the creation of custom resources.
-
-A complete structural schema:
-
-* Follows OpenAPI structure and syntax standards
-* Specifies the types for _all_ properties
-* Allows only intended values for properties
-
-For example, the specification for a Kafka topic specifies that a topic custom resource must have at least one partition and one replica to be valid.
-
-.Example CRD for topic custom resources
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaApiVersion} <1>
-kind: CustomResourceDefinition
-metadata:
-  name: kafkatopics.kafka.strimzi.io
-  #...
-spec:
-  group: kafka.strimzi.io <2>
-  #...
-  versions: <3>
-  - name: {ApiVersion}
-    served: true
-    storage: true
-    #...
-  validation:
-    openAPIV3Schema: <4>
-      properties:
-        spec:
-          type: object
-          properties:
-            partitions:
-              type: integer
-              minimum: 1
-            replicas:
-              type: integer
-              minimum: 1
-              maximum: 32767
-      #...
-----
-<1> Specifies the API path for custom resources using the API group and API version.
-<2> The API group (domain) name.
-<3> The supported API versions. The API version declared as the _storage_ version is used to create new custom resource instances.
-<4> Schema validation used when creating custom resources.
 
 [role="_additional-resources"]
 .Additional resources
