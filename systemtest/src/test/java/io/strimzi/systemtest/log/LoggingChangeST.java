@@ -1130,8 +1130,7 @@ class LoggingChangeST extends AbstractST {
             "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
             "log4j.logger.org.apache.zookeeper=INFO\n" +
             "log4j.logger.kafka=INFO\n" +
-            "log4j.logger.org.apache.kafka=INFO\n" +
-            "kafka.my.level.string=INFO";
+            "log4j.logger.org.apache.kafka=INFO";
 
         ConfigMap configMap = new ConfigMapBuilder()
             .withNewMetadata()
@@ -1171,7 +1170,7 @@ class LoggingChangeST extends AbstractST {
                 .endValueFrom()
                 .build()));
 
-        StatefulSetUtils.waitTillSsHasRolled(kafkaSsName, 3, kafkaPods);
+        StatefulSetUtils.waitForNoRollingUpdate(kafkaSsName, kafkaPods);
 
         LOGGER.info("Checking that log4j.properties in custom-config isn't empty and configuration is default");
         log4jFile = cmdKubeClient().execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
