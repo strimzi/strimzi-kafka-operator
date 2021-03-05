@@ -27,7 +27,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 public class HelmResource {
     private static final Logger LOGGER = LogManager.getLogger(HelmResource.class);
 
-    public static final String HELM_CHART = TestUtils.USER_PATH + "/../helm-charts/helm3/strimzi-kafka-operator/";
+    public static final String HELM_CHART = TestUtils.USER_PATH + "/../packaging/helm-charts/helm3/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
 
     public static final String REQUESTS_MEMORY = "512Mi";
