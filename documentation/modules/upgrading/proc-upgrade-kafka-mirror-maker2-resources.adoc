@@ -1,0 +1,99 @@
+// Module included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='proc-upgrade-kafka-mirror-maker2-resources-{context}']
+= Upgrading Kafka MirrorMaker 2.0 resources to {ApiVersion}
+
+.Prerequisites
+
+* A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
+* MirrorMaker 2.0 is configured and deployed. 
+See xref:deploying-kafka-mirror-maker-{context}[]. 
+
+.Procedure
+Perform the following steps for each `KafkaMirrorMaker2` custom resource in your deployment.
+
+. Update the `KafkaMirrorMaker2` custom resource in an editor.
++
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl edit kafkamirrormaker2 _MIRROR-MAKER-2_
+----
+
+. If present, move `affinity` from `.spec.affinity` to `.spec.template.pod.affinity`.
+
+. If present, move `tolerations` from `.spec.tolerations` to `.spec.template.pod.tolerations`.
+
+. If `type: external` logging is configured in `.spec.logging`:
++
+Replace the `name` of the ConfigMap containing the logging configuration:
++
+[source,yaml,subs="attributes+"]
+----
+logging:
+  type: external
+  name: my-config-map
+----
++
+With the `valueFrom.configMapKeyRef` field, and specify both the ConfigMap `name` and the `key` under which the logging is stored:
++
+[source,yaml,subs="attributes+"]
+----
+logging:
+  type: external
+  valueFrom:
+    configMapKeyRef:
+      name: my-config-map
+      key: log4j.properties
+----
+
+. If the `.spec.metrics` field is used to enable metrics:
+
+.. Create a new ConfigMap that stores the YAML configuration for the JMX Prometheus exporter under a key. 
+The YAML must match what is currently in the `.spec.metrics` field.
++
+[source,yaml,subs="attributes+"]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: kafka-mm2-metrics
+  labels:
+    app: strimzi
+data:
+  mm2-metrics-config.yaml: |
+      <YAML>
+----
+
+.. Add a `.spec.metricsConfig` property that points to the ConfigMap and key:
++
+[source,yaml,subs="attributes+"]
+----
+metricsConfig:
+  type: jmxPrometheusExporter
+  valueFrom:
+    configMapKeyRef:
+      name: kafka-mm2-metrics
+      key: mm2-metrics-config.yaml
+----
+
+.. Delete the old `.spec.metrics` field.
+
+. Update the `apiVersion` of the `KafkaMirrorMaker2` custom resource to `{ApiVersion}`:
++
+Replace:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersionPrev}
+----
++
+with:
++
+[source,shell,subs="attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+----
+
+. Save the file, exit the editor and wait for the updated custom resource to be reconciled.

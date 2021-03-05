@@ -419,11 +419,14 @@ public class ConnectorMockTest {
             .inNamespace(NAMESPACE)
             .withName(connectorName);
         waitForStatus(resource, connectorName, s -> {
+            if (s.getStatus() == null) {
+                return false;
+            }
             List<Condition> conditions = s.getStatus().getConditions();
             boolean conditionFound = false;
             if (conditions != null && !conditions.isEmpty()) {
                 for (Condition condition: conditions) {
-                    if (conditionType.equals(condition.getType()) && conditionReason.equals(condition.getReason())) {
+                    if (conditionType.equals(condition.getType()) && (conditionReason == null || conditionReason.equals(condition.getReason()))) {
                         conditionFound = true;
                         break;
                     }
@@ -1514,5 +1517,52 @@ public class ConnectorMockTest {
         waitForConnectorReady(connectorName);
         waitForConnectorState(connectorName, "RUNNING");
         waitForConnectorCondition(connectorName, "Warning", "UnknownFields");
+    }
+
+    @Test
+    public void testConnectorReconciliationPausedUnpaused() {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        // Create KafkaConnect cluster and wait till it's ready
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(new KafkaConnectBuilder()
+                .withNewMetadata()
+                .withNamespace(NAMESPACE)
+                .withName(connectName)
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                .withReplicas(1)
+                .endSpec()
+                .build());
+        waitForConnectReady(connectName);
+
+        // paused
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName(connectorName)
+                    .withNamespace(NAMESPACE)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .addToAnnotations("strimzi.io/pause-reconciliation", "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
+                .endSpec()
+                .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector);
+        waitForConnectorCondition(connectorName, "ReconciliationPaused", null);
+
+        // unpaused
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).edit(cntctr ->
+                new KafkaConnectorBuilder(cntctr)
+                        .editMetadata()
+                            .addToAnnotations("strimzi.io/pause-reconciliation", "false")
+                        .endMetadata()
+                .build());
+
+        waitForConnectorReady(connectorName);
+        waitForConnectorState(connectorName, "RUNNING");
     }
 }

@@ -9,23 +9,30 @@ if [ "$JMX_ENABLED" = "true" ]; then
   KAFKA_JMX_OPTS="-Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote=true -Djava.rmi.server.hostname=$(hostname -i) -Djava.net.preferIPv4Stack=true"
 
   if [ -n "$JMX_USERNAME" ]; then
+    mkdir -p /tmp/jmx/
+
     # Secure JMX port on 9999 with username and password
-    JMX_ACCESS_FILE="/tmp/access.file"
-    JMX_PASSWORD_FILE="/tmp/password.file"
+    JMX_ACCESS_FILE="/tmp/jmx/access.file"
+    rm -f "${JMX_ACCESS_FILE}"
+    JMX_PASSWORD_FILE="/tmp/jmx/password.file"
+    rm -f "${JMX_PASSWORD_FILE}"
 
     cat << EOF > "${JMX_ACCESS_FILE}"
 ${JMX_USERNAME} readonly
 EOF
 
     cat << EOF > "${JMX_PASSWORD_FILE}"
-$JMX_USERNAME $JMX_PASSWORD
+${JMX_USERNAME} ${JMX_PASSWORD}
 EOF
     chmod 400 "${JMX_PASSWORD_FILE}"
     KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.access.file=${JMX_ACCESS_FILE} -Dcom.sun.management.jmxremote.password.file=${JMX_PASSWORD_FILE}  -Dcom.sun.management.jmxremote.authenticate=true"
-    export KAFKA_JMX_OPTS
+
+    KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"
+    export KAFKA_OPTS
   else
     # expose the port insecurely
     KAFKA_JMX_OPTS="${KAFKA_JMX_OPTS} -Dcom.sun.management.jmxremote.authenticate=false"
-    export KAFKA_JMX_OPTS
+    KAFKA_OPTS="${KAFKA_OPTS} ${KAFKA_JMX_OPTS}"
+    export KAFKA_OPTS
   fi
 fi

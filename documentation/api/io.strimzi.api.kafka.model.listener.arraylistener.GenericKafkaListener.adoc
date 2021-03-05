@@ -307,7 +307,7 @@ The syntax of the `networkPolicyPeers` field is the same as the `from` field in 
 To convert the listeners configured using the `KafkaListeners` schema into the format of the `GenericKafkaListener` schema, with backwards compatibility,
 use the following names, ports and types:
 
-[source,shell,subs="+quotes,attributes"]
+[source,yaml,subs="+quotes,attributes"]
 ----
 listeners:
   #...

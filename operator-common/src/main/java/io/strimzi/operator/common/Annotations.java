@@ -7,6 +7,7 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.client.CustomResource;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +35,8 @@ public class Annotations {
     public static final String STRIMZI_IO_CONNECT_BUILD_REVISION = STRIMZI_DOMAIN + "connect-build-revision";
     // Use to force rebuild of the container image even if the dockerfile did not changed
     public static final String STRIMZI_IO_CONNECT_FORCE_REBUILD = STRIMZI_DOMAIN + "force-rebuild";
+    // Use to pause resource reconciliation
+    public static final String ANNO_STRIMZI_IO_PAUSE_RECONCILIATION = STRIMZI_DOMAIN + "pause-reconciliation";
     public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = STRIMZI_DOMAIN + "manual-rolling-update";
     // This annotation with related possible values (approve, stop, refresh) is set by the user for interacting
     // with the rebalance operator in order to start, stop, or refresh rebalancing proposals and operations.
@@ -85,6 +88,11 @@ public class Annotations {
 
     public static boolean booleanAnnotation(HasMetadata resource, String annotation, boolean defaultValue, String... deprecatedAnnotations) {
         ObjectMeta metadata = resource.getMetadata();
+        String str = annotation(annotation, null, metadata, deprecatedAnnotations);
+        return str != null ? parseBoolean(str) : defaultValue;
+    }
+
+    public static boolean booleanAnnotation(ObjectMeta metadata, String annotation, boolean defaultValue, String... deprecatedAnnotations) {
         String str = annotation(annotation, null, metadata, deprecatedAnnotations);
         return str != null ? parseBoolean(str) : defaultValue;
     }
@@ -160,6 +168,16 @@ public class Annotations {
             }
         }
         return value;
+    }
+
+    /**
+     * Whether the provided resource instance is a KafkaConnector and has the strimzi.io/pause-reconciliation annotation
+     *
+     * @param resource resource instance to check
+     * @return true if the provided resource instance has the strimzi.io/pause-reconciliation annotation; false otherwise
+     */
+    public static boolean isReconciliationPausedWithAnnotation(CustomResource resource) {
+        return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, false);
     }
 
 }

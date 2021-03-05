@@ -186,9 +186,22 @@ public class KubeClusterResource {
         setNamespace(testNamespace);
     }
 
+    /**
+     * Replaces custom resources for CO such as templates. Deletion is up to caller and can be managed
+     * by calling {@link #deleteCustomResources()}
+     *
+     * @param resources array of paths to yaml files with resources specifications
+     */
+    public void replaceCustomResources(String... resources) {
+        for (String resource : resources) {
+            LOGGER.info("Replacing resources {} in Namespace {}", resource, getNamespace());
+            deploymentResources.add(resource);
+            cmdKubeClient().namespace(getNamespace()).replace(resource);
+        }
+    }
 
     /**
-     * Apply custom resources for CO such as templates. Deletion is up to caller and can be managed
+     * Creates custom resources for CO such as templates. Deletion is up to caller and can be managed
      * by calling {@link #deleteCustomResources()}
      * @param resources array of paths to yaml files with resources specifications
      */

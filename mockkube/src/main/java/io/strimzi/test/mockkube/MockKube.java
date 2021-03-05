@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.mockkube;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
@@ -63,6 +64,8 @@ import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -225,9 +228,10 @@ public class MockKube {
         return mockedCrd;
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends CustomResource, L extends KubernetesResourceList<T>, S> MockedCrd<T, L, S>
         withCustomResourceDefinition(CustomResourceDefinition crd, Class<T> instanceClass, Class<L> instanceListClass) {
-        return withCustomResourceDefinition(crd, instanceClass, instanceListClass, null, null);
+        return withCustomResourceDefinition(crd, instanceClass, instanceListClass, t -> (S) t.getStatus(), T::setStatus);
     }
 
     private final Map<Class<? extends HasMetadata>, MockBuilder<?, ?, ?>> mockBuilders = new HashMap<>();
@@ -411,9 +415,20 @@ public class MockKube {
             c -> copyResource(c))));
     }
 
+
     @SuppressWarnings("unchecked")
-    private static <T extends HasMetadata> T copyResource(T resource) {
-        return resource;
+    protected static <T extends HasMetadata> T copyResource(T resource) {
+        if (resource == null) {
+            return null;
+        } else {
+            ObjectMapper objectMapper = new ObjectMapper();
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                objectMapper.writeValue(baos, resource);
+                return (T) objectMapper.readValue(baos.toByteArray(), resource.getClass());
+            } catch (IOException e) {
+                return null;
+            }
+        }
     }
 
 }

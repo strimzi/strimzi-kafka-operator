@@ -42,11 +42,11 @@ Instead of using the API conversion tool to update custom resources to `{ApiVers
 Update the `Kafka` custom resource, including the configurations for the other components:
 
 * xref:proc-upgrade-kafka-resources-{context}[]
-* xref:proc-upgrade-zookeeper-api-version-{context}[]
-* xref:proc-upgrade-topic-operator-api-version-{context}[]
-* xref:proc-upgrade-entity-operator-api-version-{context}[]
+* xref:proc-upgrade-zookeeper-api-version-{context}[] 
+* xref:proc-upgrade-topic-operator-api-version-{context}[] 
+* xref:proc-upgrade-entity-operator-api-version-{context}[] 
 * xref:proc-upgrade-cruise-control-api-version-{context}[] (if Cruise Control is deployed)
-* xref:proc-upgrade-kafka-api-version-{context}[]
+* xref:proc-upgrade-kafka-api-version-{context}[] 
 
 Update the other custom resources that apply to your deployment:
 

@@ -48,6 +48,10 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
         return create(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
     }
 
+    default K replace(String... files) {
+        return replace(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
+    }
+
     default K apply(String... files) {
         return apply(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
     }
@@ -165,6 +169,8 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
 
     String getResourceAsYaml(String resourceType, String resourceName);
 
+    String getResources(String resourceType);
+
     String getResourcesAsYaml(String resourceType);
 
     void createResourceAndApply(String template, Map<String, String> params);
@@ -205,4 +211,10 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     List<String> listResourcesByLabel(String resourceType, String label);
 
     String cmd();
+
+    String getResourceJsonPath(String resourceType, String resourceName, String path);
+
+    boolean getResourceReadiness(String resourceType, String resourceName);
+
+    void patchResource(String resourceType, String resourceName, String patchPath, String value);
 }

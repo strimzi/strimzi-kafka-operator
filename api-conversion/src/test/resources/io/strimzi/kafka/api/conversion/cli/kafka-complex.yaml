@@ -1,0 +1,496 @@
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: my-cluster
+  labels:
+    app: my-cluster
+spec:
+  kafka:
+    replicas: 3
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: "1"
+    jvmOptions:
+      -Xms: 1024m
+      -Xmx: 1024m
+    listeners:
+      plain:
+        authentication:
+          type: scram-sha-512
+        networkPolicyPeers:
+          - podSelector:
+              matchLabels:
+                app: kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: kafka-producer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-producer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-streams
+          - podSelector:
+              matchLabels:
+                app: my-connect
+          - podSelector:
+              matchLabels:
+                app: my-connect-s2i
+          - podSelector:
+              matchLabels:
+                app: my-bridge
+      tls:
+        authentication:
+          type: tls
+        networkPolicyPeers:
+          - podSelector:
+              matchLabels:
+                app: kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: kafka-producer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-consumer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-producer
+          - podSelector:
+              matchLabels:
+                app: java-kafka-streams
+          - podSelector:
+              matchLabels:
+                app: my-connect
+          - podSelector:
+              matchLabels:
+                app: my-connect-s2i
+          - podSelector:
+              matchLabels:
+                app: my-bridge
+      external:
+        type: nodeport
+        authentication:
+          type: tls
+        tls: true
+    authorization:
+      type: simple
+      superUsers:
+        - CN=my-connect
+        - my-connect
+        - CN=my-bridge
+        - my-bridge
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    config:
+      auto.create.topics.enable: "false"
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      replica.selector.class: org.apache.kafka.common.replica.RackAwareReplicaSelector
+    storage:
+      type: jbod
+      volumes:
+        - id: 0
+          type: persistent-claim
+          size: 100Gi
+          class: ssd
+          deleteClaim: true
+    rack:
+      topologyKey: kubernetes.io/hostname
+    tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "Kafka"
+          effect: "NoSchedule"
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: dedicated
+                  operator: In
+                  values:
+                    - Kafka
+    template:
+      statefulset:
+        metadata:
+          labels:
+            key1: label1x
+            key2: label2x
+            app.kubernetes.io/part-of: part-of-something
+            app.kubernetes.io/managed-by: managed-by-something
+          annotations:
+            akey1: label1
+            akey2: label2
+      pod:
+        metadata:
+          labels:
+            key1: label1y
+            key2: label2y
+          annotations:
+            akey1: label1
+            akey2: label2
+        securityContext:
+          runAsUser: 1000001
+          runAsGroup: 1000001
+          fsGroup: 1000001
+      bootstrapService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      brokersService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      externalBootstrapService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      perPodService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      externalBootstrapRoute:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      perPodRoute:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      persistentVolumeClaim:
+        metadata:
+          labels:
+            testLabel: testValue
+          annotations:
+            testAnno: testValue
+    metrics:
+      # Inspired by config from Kafka 2.0.0 example rules:
+      # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-2_0_0.yml
+      lowercaseOutputName: true
+      rules:
+      # Special cases and very specific rules
+      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          topic: "$4"
+          partition: "$5"
+      - pattern : kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          broker: "$4:$5"
+      # Some percent metrics use MeanRate attribute
+      # Ex) kafka.server<type=(KafkaRequestHandlerPool), name=(RequestHandlerAvgIdlePercent)><>MeanRate
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate
+        name: kafka_$1_$2_$3_percent
+        type: GAUGE
+      # Generic gauges for percents
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>Value
+        name: kafka_$1_$2_$3_percent
+        type: GAUGE
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*, (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3_percent
+        type: GAUGE
+        labels:
+          "$4": "$5"
+      # Generic per-second counters with 0-2 key/value pairs
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+), (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*, (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+        labels:
+          "$4": "$5"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)PerSec\w*><>Count
+        name: kafka_$1_$2_$3_total
+        type: COUNTER
+      # Generic gauges with 0-2 key/value pairs
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Value
+        name: kafka_$1_$2_$3
+        type: GAUGE
+      # Emulate Prometheus 'Summary' metrics for the exported 'Histogram's.
+      # Note that these are missing the '_sum' metric!
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+), (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*), (.+)=(.+)><>(\d+)thPercentile
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+          "$6": "$7"
+          quantile: "0.$8"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+        labels:
+          "$4": "$5"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+), (.+)=(.*)><>(\d+)thPercentile
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          "$4": "$5"
+          quantile: "0.$6"
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>Count
+        name: kafka_$1_$2_$3_count
+        type: COUNTER
+      - pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\d+)thPercentile
+        name: kafka_$1_$2_$3
+        type: GAUGE
+        labels:
+          quantile: "0.$4"
+  zookeeper:
+    replicas: 3
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: "0.3"
+      limits:
+        memory: 1Gi
+        cpu: "0.5"
+    jvmOptions:
+      -Xms: 512m
+      -Xmx: 512m
+    readinessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe:
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      class: ssd
+      deleteClaim: true
+    tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "Kafka"
+          effect: "NoSchedule"
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: dedicated
+                  operator: In
+                  values:
+                    - Kafka
+    template:
+      statefulset:
+        metadata:
+          labels:
+            key1: label1z
+            key2: label2z
+          annotations:
+            akey1: label1
+            akey2: label2
+      pod:
+        metadata:
+          labels:
+            key1: label1v
+            key2: label2v
+          annotations:
+            akey1: label1
+            akey2: label2
+        securityContext:
+          runAsUser: 1000001
+          runAsGroup: 1000001
+          fsGroup: 1000001
+      clientService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      nodesService:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      persistentVolumeClaim:
+        metadata:
+          labels:
+            testLabel: testValue
+          annotations:
+            testAnno: testValue
+    metrics:
+      # Inspired by Zookeeper rules
+      # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/zookeeper.yaml
+      lowercaseOutputName: true
+      rules:
+      # replicated Zookeeper
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
+        name: "zookeeper_$2"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)"
+        name: "zookeeper_$3"
+        labels:
+          replicaId: "$2"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+)><>(\\w+)"
+        name: "zookeeper_$4"
+        labels:
+          replicaId: "$2"
+          memberType: "$3"
+      - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+), name2=(\\w+), name3=(\\w+)><>(\\w+)"
+        name: "zookeeper_$4_$5"
+        labels:
+          replicaId: "$2"
+          memberType: "$3"
+      # standalone Zookeeper
+      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
+        name: "zookeeper_$2"
+      - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+), name1=(InMemoryDataTree)><>(\\w+)"
+        name: "zookeeper_$2_$3"
+  entityOperator:
+    topicOperator:
+      resources:
+        requests:
+          memory: 256Mi
+          cpu: "0.2"
+        limits:
+          memory: 256Mi
+          cpu: "0.5"
+      logging:
+        loggers:
+          rootLogger.level: DEBUG
+        type: inline
+    userOperator:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "0.2"
+        limits:
+          memory: 512Mi
+          cpu: "0.5"
+      logging:
+        loggers:
+          rootLogger.level: INFO
+        type: inline
+    template:
+      deployment:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      pod:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+  kafkaExporter:
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: "0.1"
+      limits:
+        memory: 256Mi
+        cpu: "0.5"
+    template:
+      deployment:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      pod:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      service:
+        metadata:
+          labels:
+            key1: label1
+            key2: label2
+          annotations:
+            akey1: label1
+            akey2: label2
+      container:
+        env:
+          - name: SOME-ENV
+            value: someValue
+  cruiseControl:
+    metrics:
+      # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
+      lowercaseOutputName: true
+      rules:
+        - pattern: kafka.cruisecontrol<name=(.+)><>(\w+)
+          name: kafka_cruisecontrol_$1_$2
+          type: GAUGE
+  clusterCa:
+    validityDays: 1000
+  clientsCa:
+    validityDays: 1000

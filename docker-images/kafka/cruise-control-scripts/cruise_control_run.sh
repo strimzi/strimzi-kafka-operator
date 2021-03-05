@@ -21,7 +21,7 @@ export STRIMZI_KEYSTORE_LOCATION=/tmp/cruise-control/replication.keystore.p12
 export STRIMZI_KEYSTORE_PASSWORD="$CERTS_STORE_PASSWORD"
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
-  export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$CRUISE_CONTROL_HOME/custom-config/log4j.properties"
+  export KAFKA_LOG4J_OPTS="-Dlog4j2.configurationFile=file:$CRUISE_CONTROL_HOME/custom-config/log4j2.properties"
 fi
 
 # enabling Prometheus JMX exporter as Java agent

@@ -18,7 +18,7 @@ import lombok.EqualsAndHashCode;
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"type", "name", "patternType"})
 @EqualsAndHashCode
 public class AclRuleTransactionalIdResource extends AclRuleResource {
@@ -52,7 +52,7 @@ public class AclRuleTransactionalIdResource extends AclRuleResource {
             "With `prefix` pattern type, the resource name will be used only as a prefix. " +
             "Default value is `literal`.")
     @DefaultValue("literal")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public AclResourcePatternType getPatternType() {
         return patternType;
     }

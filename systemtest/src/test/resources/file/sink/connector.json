@@ -1,9 +1,0 @@
-{
-  "name": "file-sink",
-  "config": {
-    "connector.class": "FileStreamSink",
-    "tasks.max": "1",
-    "file": "/tmp/test-file-sink.txt",
-    "topics": "test-topic"
-  }
-}

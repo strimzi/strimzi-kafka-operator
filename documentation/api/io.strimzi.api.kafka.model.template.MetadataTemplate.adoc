@@ -6,14 +6,14 @@ For example:
 ----
 # ...
 template:
-    statefulset:
-        metadata:
-            labels:
-                label1: value1
-                label2: value2
-            annotations:
-                annotation1: value1
-                annotation2: value2
+  statefulset:
+    metadata:
+      labels:
+        label1: value1
+        label2: value2
+      annotations:
+        annotation1: value1
+        annotation2: value2
 # ...
 ----
 

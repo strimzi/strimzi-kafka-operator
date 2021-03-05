@@ -45,14 +45,14 @@ spec:
           spec:
             type: object
             properties:
-              replicas:
-                type: integer
-                description: The number of pods in the Kafka Connect group.
               version:
                 type: string
                 description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
                   Consult the user documentation to understand the process required
                   to upgrade or downgrade the version.
+              replicas:
+                type: integer
+                description: The number of pods in the Kafka Connect group.
               image:
                 type: string
                 description: The docker image for the pods.
@@ -73,14 +73,6 @@ spec:
                       type: string
                       description: A comma-separated list of `host:port` pairs for
                         establishing the connection to the Kafka cluster.
-                    config:
-                      x-kubernetes-preserve-unknown-fields: true
-                      type: object
-                      description: 'The MirrorMaker 2.0 cluster config. Properties
-                        with the following prefixes cannot be set: ssl., sasl., security.,
-                        listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
-                        producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
-                        ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                     tls:
                       type: object
                       properties:
@@ -257,6 +249,14 @@ spec:
                       - type
                       description: Authentication configuration for connecting to
                         the cluster.
+                    config:
+                      x-kubernetes-preserve-unknown-fields: true
+                      type: object
+                      description: 'The MirrorMaker 2.0 cluster config. Properties
+                        with the following prefixes cannot be set: ssl., sasl., security.,
+                        listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
+                        producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
+                        ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                   required:
                   - alias
                   - bootstrapServers
@@ -294,24 +294,6 @@ spec:
                             to false.
                       description: The specification of the Kafka MirrorMaker 2.0
                         source connector.
-                    checkpointConnector:
-                      type: object
-                      properties:
-                        tasksMax:
-                          type: integer
-                          minimum: 1
-                          description: The maximum number of tasks for the Kafka Connector.
-                        config:
-                          x-kubernetes-preserve-unknown-fields: true
-                          type: object
-                          description: 'The Kafka Connector configuration. The following
-                            properties cannot be set: connector.class, tasks.max.'
-                        pause:
-                          type: boolean
-                          description: Whether the connector should be paused. Defaults
-                            to false.
-                      description: The specification of the Kafka MirrorMaker 2.0
-                        checkpoint connector.
                     heartbeatConnector:
                       type: object
                       properties:
@@ -330,6 +312,24 @@ spec:
                             to false.
                       description: The specification of the Kafka MirrorMaker 2.0
                         heartbeat connector.
+                    checkpointConnector:
+                      type: object
+                      properties:
+                        tasksMax:
+                          type: integer
+                          minimum: 1
+                          description: The maximum number of tasks for the Kafka Connector.
+                        config:
+                          x-kubernetes-preserve-unknown-fields: true
+                          type: object
+                          description: 'The Kafka Connector configuration. The following
+                            properties cannot be set: connector.class, tasks.max.'
+                        pause:
+                          type: boolean
+                          description: Whether the connector should be paused. Defaults
+                            to false.
+                      description: The specification of the Kafka MirrorMaker 2.0
+                        checkpoint connector.
                     topicsPattern:
                       type: string
                       description: A regular expression matching the topics to be

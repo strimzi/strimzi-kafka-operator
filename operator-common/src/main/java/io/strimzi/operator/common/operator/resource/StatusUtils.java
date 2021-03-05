@@ -15,9 +15,7 @@ import io.vertx.core.AsyncResult;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 public class StatusUtils {
     private static final String V1ALPHA1 = Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1;
@@ -100,19 +98,8 @@ public class StatusUtils {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
-        List<Condition> conditionList = new ArrayList<>();
         Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
-        conditionList.add(condition);
-
-        if (status.getConditions() != null) {
-            status.getConditions().forEach(cond -> {
-                if ("UnknownFields".equals(cond.getReason()) || "DeprecatedFields".equals(cond.getReason())) {
-                    conditionList.add(cond);
-                }
-            });
-        }
-
-        status.setConditions(conditionList);
+        status.setConditions(Collections.singletonList(condition));
     }
 
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type) {
@@ -121,5 +108,14 @@ public class StatusUtils {
 
     public static <R extends CustomResource> boolean isResourceV1alpha1(R resource) {
         return resource.getApiVersion() != null && resource.getApiVersion().equals(V1ALPHA1);
+    }
+
+    public static Condition getPausedCondition() {
+        Condition pausedCondition = new ConditionBuilder()
+                .withLastTransitionTime(StatusUtils.iso8601Now())
+                .withType("ReconciliationPaused")
+                .withStatus("True")
+                .build();
+        return pausedCondition;
     }
 }

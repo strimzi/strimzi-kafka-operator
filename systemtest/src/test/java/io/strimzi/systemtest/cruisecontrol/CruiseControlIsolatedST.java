@@ -91,27 +91,7 @@ public class CruiseControlIsolatedST extends AbstractST {
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
         KafkaRebalanceResource.createAndWaitForReadiness(KafkaRebalanceResource.kafkaRebalance(clusterName).build());
 
-        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
-
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.PendingProposal);
-
-        LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
-
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
-
-        LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
-
-        String response = KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.approve);
-
-        LOGGER.info("Response from the annotation process {}", response);
-
-        LOGGER.info("Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
-
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Rebalancing);
-
-        LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
-
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Ready);
+        KafkaRebalanceUtils.doRebalancingProcess(clusterName);
     }
 
     @Test
