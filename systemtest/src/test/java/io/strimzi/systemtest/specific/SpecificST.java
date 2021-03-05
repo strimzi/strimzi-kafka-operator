@@ -22,6 +22,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -80,8 +81,9 @@ public class SpecificST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);
     public static final String NAMESPACE = "specific-cluster-test";
+    private ExtensionContext sharedExtensionContext;
 
-    @Test
+    @IsolatedTest
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAware(ExtensionContext extensionContext) {
@@ -138,7 +140,7 @@ public class SpecificST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
     }
 
-    @Test
+    @IsolatedTest("Modification of shared Cluster Operator configuration")
     @Tag(CONNECT)
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -156,7 +158,7 @@ public class SpecificST extends AbstractST {
 
         // TODO: how to solve this SHIT???
 //        ResourceManager.setClassResources();
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
         // Now we set pointer stack to method again
 //        ResourceManager.setMethodResources();
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
@@ -228,7 +230,7 @@ public class SpecificST extends AbstractST {
         // Revert changes for CO deployment
         // TODO: how to solve this...???
 //        ResourceManager.setClassResources();
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
 //        ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
@@ -255,7 +257,7 @@ public class SpecificST extends AbstractST {
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         // TODO: how to solve this...???
 //        ResourceManager.setClassResources();
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
         // Now we set pointer stack to method again
 //        ResourceManager.setMethodResources();
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
@@ -316,12 +318,12 @@ public class SpecificST extends AbstractST {
         // Revert changes for CO deployment
         // TODO: how???
 //        ResourceManager.setClassResources();
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
 //        ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 
-    @Test
+    @ParallelTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerIpOverride(ExtensionContext extensionContext) {
@@ -370,7 +372,7 @@ public class SpecificST extends AbstractST {
         );
     }
 
-    @Test
+    @ParallelTest
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka(ExtensionContext extensionContext) {
         String nonExistingVersion = "6.6.6";
@@ -392,7 +394,7 @@ public class SpecificST extends AbstractST {
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
-    @Test
+    @ParallelTest
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerSourceRanges(ExtensionContext extensionContext) {
@@ -466,11 +468,14 @@ public class SpecificST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        LOGGER.info(BridgeUtils.getBridgeVersion());
-        prepareEnvForOperator(extensionContext, NAMESPACE);
+        sharedExtensionContext = extensionContext;
 
-        applyBindings(extensionContext, NAMESPACE);
+
+        LOGGER.info(BridgeUtils.getBridgeVersion());
+        prepareEnvForOperator(sharedExtensionContext, NAMESPACE);
+
+        applyBindings(sharedExtensionContext, NAMESPACE);
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
     }
 }
