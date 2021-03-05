@@ -25,8 +25,8 @@ import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.cli.annotations.Description;
@@ -39,7 +39,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Map;
 
+import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -74,7 +76,7 @@ public class OauthPlainST extends OauthAbstractST {
     @Test
     void testProducerConsumerAudienceTokenChecks() {
         LOGGER.info("Update Kafka broker configuration to use OAuth2 access token audience checks");
-
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(oauthClusterName));
         KafkaResource.replaceKafkaResource(oauthClusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListenersBuilder()
                     .addNewGenericKafkaListener()
@@ -95,8 +97,7 @@ public class OauthPlainST extends OauthAbstractST {
                         .endKafkaListenerAuthenticationOAuth()
                     .endGenericKafkaListener().build());
         });
-
-        KafkaUtils.waitForKafkaReady(oauthClusterName);
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(oauthClusterName), 1, kafkaPods);
 
         LOGGER.info("Use clients without access token containing audience token");
         oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
@@ -158,6 +159,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .endGenericKafkaListener()
                 .build());
         });
+        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(oauthClusterName), 1, kafkaPods);
     }
 
     @Description("As an oauth KafkaConnect, I should be able to sink messages from kafka broker topic.")
