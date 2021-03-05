@@ -20,4 +20,4 @@ Use `KafkaUser` to enable the authentication and authorization mechanisms that a
 
 For more information on using `KafkUser` to manage users and secure access to Kafka brokers, see xref:assembly-securing-kafka-{context}[Securing access to Kafka brokers].
 
-include::../modules/proc-user-operator-with-resource-requests-limits.adoc[leveloffset=+1]
+include::../../modules/operators/proc-user-operator-with-resource-requests-limits.adoc[leveloffset=+1]
