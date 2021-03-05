@@ -12,7 +12,7 @@ Put another way, CRDs extend the Kubernetes API to allow the creation of custom 
 CRDs are themselves resources within Kubernetes.
 They are installed in a Kubernetes cluster to define the versions of API for the custom resource.
 Each version of the custom resource API can define its own schema for that version.
-Strimzi Operators access the custom resources served by the Kubernetes API server using a URL path (_API path_), which includes the API version.
+Kubernetes clients, including the Strimzi Operators, access the custom resources served by the Kubernetes API server using a URL path (_API path_), which includes the API version.
 
 The introduction of `{ApiVersion}` updates the schemas of the custom resources.
 Older API versions are deprecated.
