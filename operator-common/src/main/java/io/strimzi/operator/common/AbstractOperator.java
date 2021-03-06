@@ -75,6 +75,7 @@ public abstract class AbstractOperator<
 
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
 
+    private static final long PROGRESS_WARNING = 60_000L;
     protected static final int LOCK_TIMEOUT_MS = 10000;
     public static final String METRICS_PREFIX = "strimzi.";
 
@@ -391,7 +392,12 @@ public abstract class AbstractOperator<
         vertx.sharedData().getLockWithTimeout(lockName, lockTimeoutMs, res -> {
             if (res.succeeded()) {
                 log.debug("{}: Lock {} acquired", reconciliation, lockName);
+
                 Lock lock = res.result();
+                long timerId = vertx.setPeriodic(PROGRESS_WARNING, timer -> {
+                    log.info("{}: Reconciliation is in progress", reconciliation);
+                });
+
                 try {
                     callable.call().onComplete(callableRes -> {
                         if (callableRes.succeeded()) {
@@ -400,17 +406,19 @@ public abstract class AbstractOperator<
                             handler.fail(callableRes.cause());
                         }
 
+                        vertx.cancelTimer(timerId);
                         lock.release();
                         log.debug("{}: Lock {} released", reconciliation, lockName);
                     });
                 } catch (Throwable ex) {
+                    vertx.cancelTimer(timerId);
                     lock.release();
                     log.debug("{}: Lock {} released", reconciliation, lockName);
                     log.error("{}: Reconciliation failed", reconciliation, ex);
                     handler.fail(ex);
                 }
             } else {
-                log.warn("{}: Failed to acquire lock {} within {}ms.", reconciliation, lockName, lockTimeoutMs);
+                log.debug("{}: Failed to acquire lock {} within {}ms.", reconciliation, lockName, lockTimeoutMs);
                 handler.fail(new UnableToAcquireLockException());
             }
         });
