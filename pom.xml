@@ -647,12 +647,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>com.jayway.jsonpath</groupId>
-                <artifactId>json-path</artifactId>
-                <version>${jayway-jsonpath.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>${gson.version}</version>
@@ -723,6 +717,11 @@
                 <groupId>io.strimzi</groupId>
                 <artifactId>kafka-oauth-keycloak-authorizer</artifactId>
                 <version>${strimzi-oauth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jayway.jsonpath</groupId>
+                <artifactId>json-path</artifactId>
+                <version>${jayway-jsonpath.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.micrometer</groupId>
