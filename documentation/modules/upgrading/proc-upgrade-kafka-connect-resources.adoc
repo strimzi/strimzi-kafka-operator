@@ -49,8 +49,10 @@ For example, move:
 ----
 spec:
   # ...
-  affinity {}
-  tolerations {}
+  affinity:
+    # ...
+  tolerations:
+    # ...
 ----
 +
 to:
@@ -61,8 +63,10 @@ spec:
   # ...
   template:
     pod:
-      affinity {}
-      tolerations {}
+      affinity:
+        # ...
+      tolerations:
+        # ...
 ----
 
 . If `type: external` logging is configured in `.spec.logging`:
