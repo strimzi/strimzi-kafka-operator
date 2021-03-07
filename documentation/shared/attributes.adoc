@@ -42,7 +42,7 @@
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
 
 //OAuth attributes and links
-:strimzi-project-name: Strimzi Operator
+:strimzi-project-name: Strimzi
 :keycloak-project-name: Keycloak
 :oauth2-site: link:https://oauth.net/2/[OAuth 2.0 site^]
 :oauth-version: 0.7.2
@@ -55,6 +55,9 @@
 :oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the OAuth 2.0 authorization server^]
 :oauth-kubernetes-examples-link: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-artifact-version}/examples/kubernetes[https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-artifact-version}/examples/kubernetes]
 :cli-kafka-image: quay.io/strimzi/kafka:0.21.1-kafka-2.6.0
+:kubectl: kubectl
+:kubernetes: Kubernetes
+:ingress: ingress
 
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
