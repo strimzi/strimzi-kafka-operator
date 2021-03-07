@@ -57,6 +57,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -1116,6 +1117,68 @@ class LoggingChangeST extends AbstractST {
         );
 
         assertThat("MirrorMaker2 pod should not roll", DeploymentUtils.depSnapshot(KafkaMirrorMaker2Resources.deploymentName(clusterName)), equalTo(mm2Snapshot));
+    }
+
+    @Test
+    void testNotExistingCMSetsDefaultLogging() {
+        String defaultProps = TestUtils.getFileAsString(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/kafkaDefaultLoggingProperties");
+
+        String cmData = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+            "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+            "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+            "log4j.rootLogger=INFO, CONSOLE\n" +
+            "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+            "log4j.logger.org.apache.zookeeper=INFO\n" +
+            "log4j.logger.kafka=INFO\n" +
+            "log4j.logger.org.apache.kafka=INFO";
+
+        ConfigMap configMap = new ConfigMapBuilder()
+            .withNewMetadata()
+                .withName("external-cm")
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .withData(Collections.singletonMap("log4j.properties", cmData))
+            .build();
+
+        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
+
+        LOGGER.info("Deploying Kafka with custom logging");
+        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 1)
+            .editOrNewSpec()
+                .editKafka()
+                .withExternalLogging(new ExternalLoggingBuilder()
+                    .withNewValueFrom()
+                        .withNewConfigMapKeyRef("log4j.properties", "external-cm", false)
+                    .endValueFrom()
+                    .build())
+                .endKafka()
+            .endSpec()
+            .build());
+
+        String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaSsName);
+
+        String log4jFile =  cmdKubeClient().execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
+            "kafka", "/bin/bash", "-c", "cat custom-config/log4j.properties").out();
+        assertTrue(log4jFile.contains(cmData));
+
+        LOGGER.info("Changing external logging's CM to not existing one");
+        KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getSpec().getKafka().setLogging(
+            new ExternalLoggingBuilder()
+                .withNewValueFrom()
+                    .withNewConfigMapKeyRef("log4j.properties", "not-existing-cm-name", false)
+                .endValueFrom()
+                .build()));
+
+        StatefulSetUtils.waitForNoRollingUpdate(kafkaSsName, kafkaPods);
+
+        LOGGER.info("Checking that log4j.properties in custom-config isn't empty and configuration is default");
+        log4jFile = cmdKubeClient().execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
+            "kafka", "/bin/bash", "-c", "cat custom-config/log4j.properties").out();
+
+        assertFalse(log4jFile.isEmpty());
+        assertFalse(log4jFile.contains(cmData));
+        assertTrue(log4jFile.contains(defaultProps));
     }
 
     @BeforeAll
