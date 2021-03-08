@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-mirrormaker.adoc
+// assembly-config-mirrormaker2.adoc
 
 [id='con-mirrormaker-{context}']
 = MirrorMaker 2.0 data replication
@@ -22,6 +22,10 @@ MirrorMaker 2.0 can be used with more than one source cluster.
 
 .Replication across two clusters
 image::mirrormaker.png[MirrorMaker 2.0 replication]
+
+By default, a check for new topics in the source cluster is made every 10 minutes.
+You can change the frequency by adding `refresh.topics.interval.seconds` to the source connector configuration of the `KafkaMirrorMaker2` resource.
+However, increasing the frequency of the operation might affect overall performance.
 
 = Cluster configuration
 
@@ -80,6 +84,30 @@ Offsets for the _checkpoint_ topic are tracked at predetermined intervals throug
 Both topics enable replication to be fully restored from the correct offset position on failover.
 
 MirrorMaker 2.0 uses its `MirrorCheckpointConnector` to emit _checkpoints_ for offset tracking.
+
+== Synchronizing consumer group offsets
+
+The `__consumer_offsets` topic stores information on committed offsets, for each consumer group.
+Offset synchronization periodically transfers the consumer offsets for the consumer groups of a source cluster into the consumer offsets topic of a target cluster.
+
+Offset synchronization is particularly useful in an _active/passive_ configuration.
+If the active cluster goes down, consumer applications can switch to the passive (standby) cluster and pick up from the last transferred offset position.
+
+To use topic offset synchronization:
+
+* Enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration of the `KafkaMirrorMaker2` resource,
+and setting the property to `true`. Synchronization is disabled by default.
+* Add the `IdentityReplicationPolicy` to the source and checkpoint connector configuration so that topics in the target cluster retain their original names.
+
+For topic offset synchronization to work, consumer groups in the target cluster cannot use the same ids as groups in the source cluster.
+
+If enabled, the synchronization of offsets from the source cluster is made periodically.
+You can change the frequency by adding `sync.group.offsets.interval.seconds` and `emit.checkpoints.interval.seconds` to the checkpoint connector configuration.
+The properties specify the frequency in seconds that the consumer group offsets are synchronized, and the frequency of checkpoints emitted for offset tracking.
+The default for both properties is 60 seconds.
+You can also change the frequency of checks for new consumer groups using the `refresh.groups.interval.seconds` property, which is performed every 10 minutes by default.
+
+Because the synchronization is time-based, any switchover by consumers to a passive cluster will likely result in some duplication of messages.
 
 == Connectivity checks
 
