@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.7.0</strimzi-oauth.version>
+        <strimzi-oauth.version>0.7.1</strimzi-oauth.version>
         <cruise-control.version>2.5.37</cruise-control.version>
         <opa-authorizer.version>0.4.2</opa-authorizer.version>
     </properties>
@@ -25,6 +25,10 @@
         <repository>
             <id>jcenter</id>
             <url>https://jcenter.bintray.com/</url>
+        </repository>
+        <repository>
+            <id>strimzi-oauth-0.7.1</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1092/</url>
         </repository>
     </repositories>
 
