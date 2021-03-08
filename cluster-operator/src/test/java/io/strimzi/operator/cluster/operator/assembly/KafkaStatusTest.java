@@ -212,7 +212,7 @@ public class KafkaStatusTest {
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getStatus(), is("True"));
             assertThat(status.getConditions().get(0).getType(), is("ReconciliationPaused"));
-            assertThat(status.getObservedGeneration(), is(0L));
+            assertThat(status.getObservedGeneration(), is(1L));
             async.flag();
         });
     }
