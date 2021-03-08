@@ -118,26 +118,29 @@ public class KafkaUserQuotasIT {
 
     @Test
     public void testCreateOrUpdateTlsUser() throws Exception {
+        testUserQuotasNotExist("CN=tlsUser");
         testCreateOrUpdate("CN=tlsUser");
     }
 
     @Test
     public void testCreateOrUpdateRegularUser() throws Exception {
+        testUserQuotasNotExist("user");
         testCreateOrUpdate("user");
     }
 
-    public void testCreateOrUpdate(String username) throws Exception {
-        assertThat(kuq.describeUserQuotas(username), is(nullValue()));
-        assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(false));
+    @Test
+    public void testCreateOrUpdateScramShaUser() throws Exception {
+        createScramShaUser("scramShaUser", "scramShaPassword");
+        testCreateOrUpdate("scramShaUser");
+    }
 
+    public void testCreateOrUpdate(String username) throws Exception {
         KafkaUserQuotas newQuotas = new KafkaUserQuotas();
         newQuotas.setConsumerByteRate(1000);
         newQuotas.setProducerByteRate(2000);
         kuq.createOrUpdate(username, newQuotas);
-        assertThat(kuq.describeUserQuotas(username), is(notNullValue()));
-        assertThat(kuq.describeUserQuotas(username).getConsumerByteRate(), is(1000));
-        assertThat(kuq.describeUserQuotas(username).getProducerByteRate(), is(2000));
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+        testDescribeUserQuotas(username, newQuotas);
     }
 
     @Test
@@ -156,10 +159,8 @@ public class KafkaUserQuotasIT {
 
         kuq.createOrUpdate(username, defaultQuotas);
         kuq.createOrUpdate(username, defaultQuotas);
-        assertThat(kuq.describeUserQuotas(username), is(notNullValue()));
-        assertThat(kuq.describeUserQuotas(username).getConsumerByteRate(), is(1000));
-        assertThat(kuq.describeUserQuotas(username).getProducerByteRate(), is(2000));
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+        testDescribeUserQuotas(username, defaultQuotas);
     }
 
     @Test
@@ -281,10 +282,8 @@ public class KafkaUserQuotasIT {
         kuq.reconcile(username, quotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
-                assertThat(kuq.describeUserQuotas(username).getConsumerByteRate(), is(2000000));
-                assertThat(kuq.describeUserQuotas(username).getProducerByteRate(), is(1000000));
-                assertThat(kuq.describeUserQuotas(username).getRequestPercentage(), is(50));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+                testDescribeUserQuotas(username, quotas);
                 async.flag();
             })));
     }
@@ -307,6 +306,7 @@ public class KafkaUserQuotasIT {
 
         kuq.createOrUpdate(username, initialQuotas);
         assertThat(kuq.exists(username), is(true));
+        testDescribeUserQuotas(username, initialQuotas);
 
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
         updatedQuotas.setConsumerByteRate(4_000_000);
@@ -317,10 +317,8 @@ public class KafkaUserQuotasIT {
         kuq.reconcile(username, updatedQuotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
-                assertThat(kuq.describeUserQuotas(username).getConsumerByteRate(), is(4000000));
-                assertThat(kuq.describeUserQuotas(username).getProducerByteRate(), is(3000000));
-                assertThat(kuq.describeUserQuotas(username).getRequestPercentage(), is(75));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+                testDescribeUserQuotas(username, updatedQuotas);
                 async.flag();
             })));
     }
@@ -343,6 +341,7 @@ public class KafkaUserQuotasIT {
 
         kuq.createOrUpdate(username, initialQuotas);
         assertThat(kuq.exists(username), is(true));
+        testDescribeUserQuotas(username, initialQuotas);
 
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
         updatedQuotas.setConsumerByteRate(4_000_000);
@@ -352,10 +351,8 @@ public class KafkaUserQuotasIT {
         kuq.reconcile(username, updatedQuotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
-                assertThat(kuq.describeUserQuotas(username).getConsumerByteRate(), is(4000000));
-                assertThat(kuq.describeUserQuotas(username).getProducerByteRate(), is(3000000));
-                assertThat(kuq.describeUserQuotas(username).getRequestPercentage(), is(nullValue()));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+                testDescribeUserQuotas(username, updatedQuotas);
                 async.flag();
             })));
 
@@ -379,6 +376,7 @@ public class KafkaUserQuotasIT {
 
         kuq.createOrUpdate(username, initialQuotas);
         assertThat(kuq.exists(username), is(true));
+        testDescribeUserQuotas(username, initialQuotas);
 
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(username, null)
@@ -398,5 +396,25 @@ public class KafkaUserQuotasIT {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Failed to encode username", e);
         }
+    }
+
+    private void createScramShaUser(String username, String password) {
+        // creating SCRAM-SHA user upfront to check it works because it shares same path in ZK as quotas
+        ScramShaCredentials scramShaCred = new ScramShaCredentials("localhost:" + kafkaCluster.zkPort(), 6_000);
+        scramShaCred.createOrUpdate(username, password);
+        assertThat(scramShaCred.exists(username), is(true));
+        assertThat(scramShaCred.isPathExist("/config/users/" + username), is(true));
+    }
+
+    private void testUserQuotasNotExist(String username) throws Exception {
+        assertThat(kuq.describeUserQuotas(username), is(nullValue()));
+        assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(false));
+    }
+
+    private void testDescribeUserQuotas(String username, KafkaUserQuotas quotas) throws Exception {
+        assertThat(kuq.describeUserQuotas(username), is(notNullValue()));
+        assertThat(kuq.describeUserQuotas(username).getConsumerByteRate(), is(quotas.getConsumerByteRate()));
+        assertThat(kuq.describeUserQuotas(username).getProducerByteRate(), is(quotas.getProducerByteRate()));
+        assertThat(kuq.describeUserQuotas(username).getRequestPercentage(), is(quotas.getRequestPercentage()));
     }
 }
