@@ -146,7 +146,7 @@ public class AbstractUpgradeST extends AbstractST {
         // #######################################################################
         // #################    Update CRs to latest version   ###################
         // #######################################################################
-        String toUrl = operatorVersion;
+        String toUrl = testParameters.getString("urlTo");
         String examplesPath = "";
         if (toUrl.equals("HEAD")) {
             examplesPath = TestUtils.USER_PATH + "/../examples";
@@ -207,9 +207,6 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Wait until kafka rolling update is finished");
                 kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
             }
-        } else {
-            LOGGER.info("Waiting for all rolling updates finished - update of version)");
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
         }
     }
 
@@ -329,15 +326,15 @@ public class AbstractUpgradeST extends AbstractST {
         List<Pod> pods1 = kubeClient().listPods(matchLabels);
         for (Pod pod : pods1) {
             if (!image.equals(pod.getSpec().getContainers().get(container).getImage())) {
-                LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), StUtils.changeOrgAndTag(image), pod.getSpec().getContainers().get(container).getImage());
-                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), containsString(StUtils.changeOrgAndTag(image)));
+                LOGGER.debug("Expected image for pod {}: {} \nCurrent image: {}", pod.getMetadata().getName(), image, pod.getSpec().getContainers().get(container).getImage());
+                assertThat("Used image for pod " + pod.getMetadata().getName() + " is not valid!", pod.getSpec().getContainers().get(container).getImage(), containsString(image));
             }
         }
     }
 
     protected void setupEnvAndUpgradeClusterOperator(JsonObject testParameters, String producerName, String consumerName,
-                                                   String continuousTopicName, String continuousConsumerGroup,
-                                                   String kafkaVersion, String namespace) throws IOException {
+                                                     String continuousTopicName, String continuousConsumerGroup,
+                                                     String kafkaVersion, String namespace) throws IOException {
         int continuousClientsMessageCount = testParameters.getJsonObject("client").getInteger("continuousClientsMessages");
 
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
@@ -417,8 +414,9 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion)).contains(continuousTopicName)) {
+                String pathToTopicExamples = testParameters.getString("fromExamples").equals("HEAD") ? KafkaTopicResource.PATH_TO_KAFKA_TOPIC_CONFIG : testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml";
 
-                kafkaTopicYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
+                kafkaTopicYaml = new File(dir, pathToTopicExamples);
                 cmdKubeClient().applyContent(TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString)
                         .replace("name: \"my-topic\"", "name: \"" + continuousTopicName + "\"")
                         .replace("partitions: 1", "partitions: 3")

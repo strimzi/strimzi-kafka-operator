@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,6 +62,8 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
+        // Verify that pods are stable
+        PodUtils.verifyThatRunningPodsAreStable(clusterName);
         checkAllImages(testParameters.getJsonObject("imagesAfterOperatorDowngrade"));
         // Verify upgrade
         verifyProcedure(testParameters, producerName, consumerName, NAMESPACE);
