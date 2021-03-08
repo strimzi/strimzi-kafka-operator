@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -127,5 +128,26 @@ public class KafkaTopicUtils {
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.listTopicsUsingPodCli(clusterName, 0).size() == topicCount);
         LOGGER.info("{} KafkaTopics were created", topicCount);
+    }
+
+    public static void waitForKafkaTopicSpecStability(String topicName) {
+        int[] stableCounter = {0};
+
+        KafkaTopicSpec oldSpec = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getSpec();
+        TestUtils.waitFor("KafkaTopic's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            if (oldSpec == KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getSpec()) {
+                stableCounter[0]++;
+                if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                    LOGGER.info("KafkaTopic's spec is stable for {} polls intervals", stableCounter[0]);
+                    return true;
+                }
+            } else {
+                LOGGER.info("KafkaTopic's spec is not stable. Going to set the counter to zero.");
+                stableCounter[0] = 0;
+                return false;
+            }
+            LOGGER.info("KafkaTopic's spec gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            return false;
+        });
     }
 }

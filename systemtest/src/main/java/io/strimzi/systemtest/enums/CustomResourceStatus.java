@@ -7,5 +7,6 @@ package io.strimzi.systemtest.enums;
 public enum CustomResourceStatus {
     Ready,
     NotReady,
-    Warning
+    Warning,
+    ReconciliationPaused
 }

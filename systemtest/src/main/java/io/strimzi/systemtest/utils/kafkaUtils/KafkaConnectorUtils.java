@@ -126,4 +126,24 @@ public class KafkaConnectorUtils {
             () -> !oldConfig.equals(getConnectorConfig(podName, connectorName, apiUrl)));
         return getConnectorConfig(podName, connectorName, apiUrl);
     }
+
+    public static void waitForConnectorsSpecStability(String podName, String connectorName, String oldSpec) {
+        int[] stableCounter = {0};
+
+        TestUtils.waitFor("Connector's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            if (getConnectorSpecFromConnectAPI(podName, connectorName).equals(oldSpec)) {
+                stableCounter[0]++;
+                if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                    LOGGER.info("Connector's spec is stable for {} polls intervals", stableCounter[0]);
+                    return true;
+                }
+            } else {
+                LOGGER.info("Connector's spec is not stable. Going to set the counter to zero.");
+                stableCounter[0] = 0;
+                return false;
+            }
+            LOGGER.info("Connector's spec gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            return false;
+        });
+    }
 }
