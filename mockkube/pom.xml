@@ -88,12 +88,11 @@
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
-            <artifactId>api</artifactId>
-            <scope>test</scope>
+            <artifactId>test</artifactId>
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
-            <artifactId>test</artifactId>
+            <artifactId>api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.spotbugs</groupId>

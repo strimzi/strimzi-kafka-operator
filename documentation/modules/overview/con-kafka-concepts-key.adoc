@@ -14,7 +14,7 @@ Partitions are replicated across topics for fault tolerance.
 
 .Kafka brokers and topics
 
-image:overview/kafka-concepts-key-concepts.png[Kafka brokers and topics inside a Kafka cluster, showing the partition leader of each topic]
+image:overview/kafka-concepts-key-concepts.png[Kafka brokers and topics inside a Kafka cluster showing the partition leader of each topic]
 
 Broker:: A broker, sometimes referred to as a server or node, orchestrates the storage and passing of messages.
 Topic:: A topic provides a destination for the storage of data.

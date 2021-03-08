@@ -65,5 +65,5 @@ spec:
       type: external
       valueFrom:
         configMapKeyRef:
-          key: log4j.properties
+          key: log4j2.properties
           name: my-config-map

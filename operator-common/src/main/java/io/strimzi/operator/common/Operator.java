@@ -51,6 +51,7 @@ public interface Operator {
      */
     default void reconcileAll(String trigger, String namespace, Handler<AsyncResult<Void>> handler) {
         allResourceNames(namespace).onComplete(ar -> {
+            getPausedResourceCounter().set(0);
             if (ar.succeeded()) {
                 reconcileThese(trigger, ar.result(), handler);
                 getPeriodicReconciliationsCounter().increment();
@@ -96,4 +97,6 @@ public interface Operator {
     Counter getPeriodicReconciliationsCounter();
 
     AtomicInteger getResourceCounter();
+
+    AtomicInteger getPausedResourceCounter();
 }

@@ -4,7 +4,6 @@
  */
 package io.strimzi.kafka.api.conversion.cli;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -24,7 +23,6 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.kafka.api.conversion.converter.MultipartConversions;
-import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,54 +55,13 @@ public class ConvertResourceCommandIT {
     @BeforeAll
     static void setupEnvironment() {
         CLUSTER.createNamespace(NAMESPACE);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA_CONNECT_S2I);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
-        CLUSTER.createCustomResources(TestUtils.CRD_TOPIC);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA_USER);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA_CONNECTOR);
-        CLUSTER.createCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
-        waitForCrd("kafkas.kafka.strimzi.io");
-        waitForCrd("kafkaconnects2is.kafka.strimzi.io");
-        waitForCrd("kafkaconnects.kafka.strimzi.io");
-        waitForCrd("kafkamirrormaker2s.kafka.strimzi.io");
-        waitForCrd("kafkamirrormakers.kafka.strimzi.io");
-        waitForCrd("kafkabridges.kafka.strimzi.io");
-        waitForCrd("kafkatopics.kafka.strimzi.io");
-        waitForCrd("kafkausers.kafka.strimzi.io");
-        waitForCrd("kafkaconnectors.kafka.strimzi.io");
-        waitForCrd("kafkarebalances.kafka.strimzi.io");
+        CliTestUtils.setupAllCrds(CLUSTER);
     }
 
     @AfterAll
     static void teardownEnvironment() {
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECT);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECT_S2I);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_TOPIC);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA_USER);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECTOR);
-        CLUSTER.deleteCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
+        CliTestUtils.deleteAllCrds(CLUSTER);
         CLUSTER.deleteNamespaces();
-    }
-
-    private static void waitForCrd(String name) {
-        CLUSTER.cmdClient().waitFor("crd", name, crd -> {
-            JsonNode json = (JsonNode) crd;
-            if (json != null
-                    && json.hasNonNull("status")
-                    && json.get("status").hasNonNull("conditions")) {
-                return true;
-            }
-
-            return false;
-        });
     }
 
     @Test

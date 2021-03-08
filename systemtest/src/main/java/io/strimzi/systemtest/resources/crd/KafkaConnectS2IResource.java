@@ -56,7 +56,7 @@ public class KafkaConnectS2IResource {
                 .endTls()
                 .withInsecureSourceRepository(true)
                 .withNewInlineLogging()
-                    .addToLoggers("connect.root.logger.level", "DEBUG")
+                    .addToLoggers("connect.root.logger.level", Environment.STRIMZI_COMPONENTS_LOG_LEVEL)
                 .endInlineLogging()
             .endSpec();
     }

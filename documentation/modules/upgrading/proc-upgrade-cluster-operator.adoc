@@ -3,21 +3,21 @@
 // assembly-upgrade.adoc
 
 [id='proc-upgrading-the-co-{context}']
-= Upgrading the Cluster Operator to a later version
+= Upgrading the Cluster Operator
 
-This procedure describes how to upgrade a Cluster Operator deployment to a later version.
+This procedure describes how to upgrade a Cluster Operator deployment to use Strimzi {ProductVersion}.
 
 .Prerequisites
 
 * An existing Cluster Operator deployment is available.
-* You have xref:downloads-{context}[downloaded the installation files for the new version].
+* You have xref:downloads-{context}[downloaded the release artifacts for Strimzi {ProductVersion}].
 
 .Procedure
 
 . Take note of any configuration changes made to the existing Cluster Operator resources (in the `/install/cluster-operator` directory).
 Any changes will be *overwritten* by the new version of the Cluster Operator.
 
-. Update your custom resources to reflect the supported configuration options available for the version of Strimzi you are upgrading to.
+. Update your custom resources to reflect the supported configuration options available for Strimzi version {ProductVersion}.
 
 . Update the Cluster Operator.
 
@@ -37,6 +37,25 @@ kubectl replace -f install/cluster-operator
 +
 Wait for the rolling updates to complete.
 
+. If the new Operator version no longer supports the Kafka version you are upgrading from, the Cluster Operator returns a "Version not found" error message. 
+Otherwise, no error message is returned.
++
+For example:
++
+[source,shell,subs="+quotes,attributes"]
+----
+"Version 2.4.0 is not supported. Supported versions are: 2.6.0, 2.6.1, 2.7.0."
+----
+
+* If the error message is returned, upgrade to a Kafka version that is supported by the new Cluster Operator version:
+
+.. Edit the `Kafka` custom resource.
+
+.. Change the `spec.kafka.version` property to a supported Kafka version.
+
+* If the error message is _not_ returned, go to the next step. 
+You will upgrade the Kafka version later.
+
 . Get the image for the Kafka pod to ensure the upgrade was successful:
 +
 [source,shell,subs="+quotes,attributes"]
@@ -44,13 +63,13 @@ Wait for the rolling updates to complete.
 kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the new Strimzi version and the new Kafka version. For example: 
+The image tag shows the new Operator version. For example: 
 +
 [source,shell,subs="+quotes,attributes"]
 ----
 {ExampleImageTagUpgrades}
 ----
 
-Your Cluster Operator was upgraded to the later version, but the version of Kafka running in the cluster it manages is unchanged.
+Your Cluster Operator was upgraded to version {ProductVersion} but the version of Kafka running in the cluster it manages is unchanged.
 
 Following the Cluster Operator upgrade, you must perform a xref:assembly-upgrading-kafka-versions-str[Kafka upgrade].

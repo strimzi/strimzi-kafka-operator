@@ -18,4 +18,4 @@ NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image fe
 * link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^] in the _Deploying and Upgrading Strimzi_ guide.
 * xref:assembly-config-kafka-str[Kafka Cluster configuration].
 
-include::../modules/ref-operator-cluster.adoc[leveloffset=+1]
+include::../../modules/operators/ref-operator-cluster.adoc[leveloffset=+1]

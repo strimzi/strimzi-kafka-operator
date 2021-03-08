@@ -15,7 +15,7 @@ include::assemblies/assembly-securing-external-listeners.adoc[leveloffset=+1]
 
 include::assemblies/assembly-securing-access.adoc[leveloffset=+1]
 
-include::assemblies/assembly-operators.adoc[leveloffset=+1]
+include::assemblies/operators/assembly-operators.adoc[leveloffset=+1]
 
 include::assemblies/assembly-kafka-bridge-concepts.adoc[leveloffset=+1]
 

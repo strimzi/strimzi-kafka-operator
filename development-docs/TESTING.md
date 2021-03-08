@@ -206,7 +206,8 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | BRIDGE_IMAGE                           | Specify the kafka bridge image used in system tests                                      | quay.io/strimzi/kafka-bridge:latest            |
 | TEST_LOG_DIR                           | Directory for storing logs collected during the tests                                    | ../systemtest/target/logs/                       |
 | ST_KAFKA_VERSION                       | Kafka version used in images during the system tests                                     | 2.3.0                                            |
-| STRIMZI_DEFAULT_LOG_LEVEL              | Log level for the cluster operator                                                       | DEBUG                                            |
+| STRIMZI_LOG_LEVEL                      | Log level for the cluster operator                                                       | DEBUG                                            |
+| STRIMZI_COMPONENTS_LOG_LEVEL           | Log level for the components                                                             | INFO                                            |
 | KUBERNETES_DOMAIN                      | Cluster domain                                                                           | .nip.io                                          |
 | TEST_CLUSTER_CONTEXT                   | Context which will be used to reach the cluster*                                         | currently active kubernetes context              |
 | TEST_CLUSTER_USER                      | Default user which will be used for command line admin operations                        | developer                                        |

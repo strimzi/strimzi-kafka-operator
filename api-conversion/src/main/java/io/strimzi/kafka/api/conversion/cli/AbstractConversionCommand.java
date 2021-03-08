@@ -4,7 +4,6 @@
  */
 package io.strimzi.kafka.api.conversion.cli;
 
-import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -29,26 +28,9 @@ import io.strimzi.kafka.api.conversion.converter.KafkaRebalanceConverter;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @SuppressWarnings("deprecation")
 public abstract class AbstractConversionCommand extends AbstractCommand {
-    protected static final ApiVersion TO_API_VERSION = ApiVersion.V1BETA2;
-
-    protected static final String STRIMZI_API = "kafka.strimzi.io";
-    protected static final Set<String> STRIMZI_KINDS = Set.of(
-            "Kafka",
-            "KafkaConnect",
-            "KafkaConnectS2I",
-            "KafkaMirrorMaker",
-            "KafkaBridge",
-            "KafkaMirrorMaker2",
-            "KafkaTopic",
-            "KafkaUser",
-            "KafkaConnector",
-            "KafkaRebalance"
-    );
-
     @SuppressWarnings("rawtypes")
     static Map<Object, Converter> converters;
 

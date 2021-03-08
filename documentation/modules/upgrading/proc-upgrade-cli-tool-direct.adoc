@@ -1,0 +1,109 @@
+// Module included in the following assemblies:
+//
+// assembly-upgrade-resources.adoc
+
+[id='proc-upgrade-cli-tool-direct-{context}']
+= Converting custom resources directly using the API conversion tool
+
+[role="_abstract"]
+This procedure describes how to use the API conversion tool to convert Strimzi custom resources directly in the Kubernetes cluster into a format applicable to `{ApiVersion}`.
+To do so, you use the `convert-resource` (`cr`) command.
+The command uses Kubernetes APIs to make the conversions.
+
+You can specify one or more of types of Strimzi custom resources, based on the `kind` property, or you can convert all types.
+You can also target a specific namespace or all namespaces for conversion.
+When targeting a namespace, you can convert all custom resources in that namespace, or convert a single custom resource by specifying its name and kind.
+
+Alternatively, you can use the xref:proc-upgrade-cli-tool-files-{context}[`convert-file` procedure to convert and apply the YAML files describing the custom resources].
+
+.Prerequisites
+
+* A Cluster Operator supporting the `{ApiVersion}` API version is up and running.
+* The API conversion tool, which is provided with the release artifacts.
+* The tool requires Java 11 (OpenJDK).
+* The steps require a user admin account with RBAC permission to:
+** Get the Strimzi custom resources being converted using the `--name` option
+** List the Strimzi custom resources being converted without using the `--name` option
+** Replace the Strimzi custom resources being converted
+
+Use the CLI help for more information on the API conversion tool, and the flags available for the `convert-resource` command:
+
+[source,shell]
+----
+bin/api-conversion.sh help
+bin/api-conversion.sh help convert-resource
+----
+
+Use `bin/api-conversion.cmd` for this procedure if you are using Windows.
+
+.Flags for converting custom resources
+[cols="2*",options="header",stripes="none"]
+|===
+
+|Flag
+|Description
+
+|`-k`, `--kind`
+|Specifies the kinds of custom resources to be converted, or converts all resources if not specified
+
+|`-a`, `--all-namespaces`
+|Converts custom resources in all namespaces
+
+|`-n`, `--namespace`
+|Specifies a Kubernetes namespace or OpenShift project, or uses the current namespace if not specified
+
+|`--name`
+|If `--namespace` and a single custom resource `--kind` is used, specifies the name of the custom resource being converted
+
+|===
+
+.Procedure
+
+. Run the API conversion tool with the `convert-resource` command and appropriate flags.
++
+Example 1, converts all Strimzi resources in current namespace:
++
+[source,shell]
+----
+bin/api-conversion.sh convert-resource
+----
++
+Example 2, converts all Strimzi resources in all namespaces:
++
+[source,shell]
+----
+bin/api-conversion.sh convert-resource --all-namespaces
+----
++
+Example 3, converts all Strimzi resources in the `my-kafka` namespace:
++
+[source,shell]
+----
+bin/api-conversion.sh convert-resource --namespace my-kafka
+----
++
+Example 4, converts only Kafka resources in all namespaces:
++
+[source,shell]
+----
+bin/api-conversion.sh convert-resource --all-namespaces --kind Kafka
+----
++
+Example 5, converts Kafka and Kafka Connect resources in all namespaces:
++
+[source,shell]
+----
+bin/api-conversion.sh convert-resource --all-namespaces --kind Kafka --kind KafkaConnect
+----
++
+Example 6, converts a Kafka custom resource named `my-cluster` in the `my-kafka` namespace:
++
+[source,shell]
+----
+bin/api-conversion.sh convert-resource --kind Kafka --namespace my-kafka --name my-cluster
+----
+
+. Verify that the custom resources have been converted.
++
+[source,shell,subs=+quotes]
+kubectl get _KIND_ _CUSTOM-RESOURCE-NAME_ -o yaml

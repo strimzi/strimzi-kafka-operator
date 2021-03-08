@@ -17,7 +17,7 @@ The `KafkaTopic` resources must therefore be recovered before the cluster is sta
 
 . Use _Option 2_ when you are unable to recover all `KafkaTopic` resources.
 +
-This time you deploy your cluster without the Topic Operator, delete the Topic Operator data in ZooKeeper, and then redeploy it so that the Topic Operator can recreate the `KafkaTopic` resources from the corresponding topics.
+In this case, you deploy your cluster without the Topic Operator, delete the Topic Operator topic store metadata, and then redeploy the Kafka cluster with the Topic Operator so it can recreate the `KafkaTopic` resources from the corresponding topics.
 
 NOTE: If the Topic Operator is not deployed, you only need to recover the `PersistentVolumeClaim` (PVC) resources.
 
@@ -193,20 +193,15 @@ kubectl apply -f _kafka.yaml_
 +
 If you include the Topic Operator in the deployment, the Topic Operator will delete all the topics.
 
-. Run an `exec` command to one of the Kafka broker pods to open the ZooKeeper shell script.
+. Delete the internal topic store topics from the Kafka cluster:
 +
-For example, where _my-cluster-kafka-0_ is the name of the broker pod:
+[source,shell]
+----
+kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
+----
 +
-[source,shell,subs="+quotes,attributes"]
-----
-kubectl exec -ti _my-cluster-zookeeper-0_ -- bin/zookeeper-shell.sh localhost:12181
-----
-. Delete the whole `/strimzi` path to remove the Topic Operator storage:
-+
-[source,shell,subs="+quotes,attributes"]
-----
-deleteall /strimzi
-----
+The command must correspond to the type of listener and authentication used to access the Kafka cluster.
+
 . Enable the Topic Operator by redeploying the Kafka cluster with the `topicOperator` property to recreate the `KafkaTopic` resources.
 +
 For example:

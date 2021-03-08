@@ -48,6 +48,10 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
         return create(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
     }
 
+    default K replace(String... files) {
+        return replace(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
+    }
+
     default K apply(String... files) {
         return apply(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
     }

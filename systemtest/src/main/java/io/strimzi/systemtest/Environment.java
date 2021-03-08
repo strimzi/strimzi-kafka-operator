@@ -69,7 +69,11 @@ public class Environment {
     /**
      * Log level for cluster operator.
      */
-    private static final String STRIMZI_LOG_LEVEL_ENV = "STRIMZI_DEFAULT_LOG_LEVEL";
+    private static final String STRIMZI_LOG_LEVEL_ENV = "STRIMZI_LOG_LEVEL";
+    /**
+     * Log level for components.
+     */
+    private static final String STRIMZI_COMPONENTS_LOG_LEVEL_ENV = "STRIMZI_COMPONENTS_LOG_LEVEL";
     /**
      * Cluster domain. It's used for specify URL endpoint of testing clients.
      */
@@ -122,6 +126,7 @@ public class Environment {
     public static final String STRIMZI_CLIENTS_ORG_DEFAULT = "strimzi-examples";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
+    private static final String STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT = "INFO";
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
@@ -141,6 +146,7 @@ public class Environment {
     public static final String TEST_LOG_DIR = getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
     public static final String ST_KAFKA_VERSION = getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
+    public static final String STRIMZI_COMPONENTS_LOG_LEVEL = getOrDefault(STRIMZI_COMPONENTS_LOG_LEVEL_ENV, STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT);
     public static final String KUBERNETES_DOMAIN = getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);

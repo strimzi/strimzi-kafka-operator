@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -336,6 +337,17 @@ public class KafkaRebalanceAssemblyOperator
 
         log.info("{}: Rebalance action from state [{}]", reconciliation, currentState);
 
+        if (Annotations.isReconciliationPausedWithAnnotation(kafkaRebalance)) {
+            // we need to do this check again because it was triggered by a watcher
+            KafkaRebalanceStatus status = new KafkaRebalanceStatus();
+
+            Set<Condition> unknownAndDeprecatedConditions = validate(kafkaRebalance);
+            unknownAndDeprecatedConditions.add(StatusUtils.getPausedCondition());
+            status.setConditions(new ArrayList<>(unknownAndDeprecatedConditions));
+
+            return updateStatus(kafkaRebalance, status, null).compose(i -> Future.succeededFuture());
+        }
+
         RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
 
         return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
@@ -436,6 +448,7 @@ public class KafkaRebalanceAssemblyOperator
 
         return new KafkaRebalanceStatusBuilder()
                 .withSessionId(currentStatus.getSessionId())
+                .withOptimizationResult(currentStatus.getOptimizationResult())
                 .withConditions(conditions)
                 .build();
     }

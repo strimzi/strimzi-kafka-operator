@@ -63,6 +63,7 @@ import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -175,6 +176,43 @@ public class KafkaStatusTest {
 
             assertThat(status.getObservedGeneration(), is(2L));
 
+            async.flag();
+        });
+    }
+
+    @Test
+    public void testPauseReconciliationsStatus(VertxTestContext context) throws ParseException {
+        Kafka kafka = getKafkaCrd();
+        kafka.getMetadata().setAnnotations(singletonMap("strimzi.io/pause-reconciliation", Boolean.toString(true)));
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the Kafka Operator
+        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
+        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
+
+        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
+        when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+                certManager,
+                passwordGenerator,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
+            assertThat(res.succeeded(), is(true));
+
+            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
+            KafkaStatus status = kafkaCaptor.getValue().getStatus();
+
+            assertThat(status.getConditions().size(), is(1));
+            assertThat(status.getConditions().get(0).getStatus(), is("True"));
+            assertThat(status.getConditions().get(0).getType(), is("ReconciliationPaused"));
+            assertThat(status.getObservedGeneration(), is(0L));
             async.flag();
         });
     }
