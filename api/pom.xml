@@ -183,6 +183,8 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <!-- This step generates all CRDs apiextensions/v1 which contain only the v1beta2 version. This
+                             should be all of them apart from KafkaUser and KafkaTopic. -->
                         <id>generate-crd-co-install-v1</id>
                         <phase>process-classes</phase>
                         <goals>
@@ -213,6 +215,11 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <!-- This step generates CRDs apiextensions/v1 for resources which keep v1alpha1 and v1beta1.
+                             These should be only KafkaUser and KafkaTopic CRDs which need to keep the older versions
+                             in order to allow smooth upgrade of Topic and User Operators without deleting the operands
+                             (topics and users inside Kafka) when the CRDs are upgraded from apiextensions/v1beta1
+                             to apiextensions/v1. -->
                         <id>generate-crd-co-install-v1-eo</id>
                         <phase>process-classes</phase>
                         <goals>

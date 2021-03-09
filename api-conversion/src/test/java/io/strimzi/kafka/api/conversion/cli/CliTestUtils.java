@@ -225,7 +225,8 @@ public class CliTestUtils {
     }
 
     /**
-     * Checks that the CRD now has only the v1beta2 version apart from KafkaUser and KafkaTopic which have also v1beta1 and v1alpha1
+     * Checks that the CRD now has only the v1beta2 version apart from KafkaUser and KafkaTopic which have also v1beta1
+     * and v1alpha1.
      *
      * @param client    Kubernetes client
      */
@@ -235,6 +236,9 @@ public class CliTestUtils {
             CustomResourceDefinition crd = client.apiextensions().v1beta1().customResourceDefinitions().withName(crdName).get();
 
             if (kind.equals("KafkaTopic") || kind.equals("KafkaUser"))  {
+                // KafkaTopic and KafkaUser resources have even in CRD v1 also the old versions v1alpha1 and v1beta1.
+                // This is in order to allow smooth migration for the Topic and User Operators without users or topics
+                // deleted when the CRDs are upgraded from apiextensions/v1beta1 to apiextensions/v1.
                 assertThat(crd.getSpec().getVersions().size(), is(3));
                 assertThat(crd.getSpec().getVersions().stream().map(CustomResourceDefinitionVersion::getName).collect(toList()), containsInAnyOrder("v1alpha1", "v1beta1", "v1beta2"));
             } else {
