@@ -188,8 +188,8 @@ NOTE: Do not remove the `monitorInterval` option from the ConfigMap.
 == Restricting Cluster Operator access with network policy
 
 The Cluster Operator can run in the same namespace as the resources it manages, or in a separate namespace.
-The `STRIMZI_OPERATOR_NAMESPACE` environment variable is configured by default, and uses the Kubernetes Downward API to find which namespace the Cluster Operator is running in.
-If the Cluster Operator is running in the same namespace, only local access is required, and allowed by Strimzi.
+By default, the `STRIMZI_OPERATOR_NAMESPACE` environment variable is configured to use the Kubernetes Downward API to find which namespace the Cluster Operator is running in.
+If the Cluster Operator is running in the same namespace as the resources, only local access is required, and allowed by Strimzi.
 
 If the Cluster Operator is running in a separate namespace to the resources it manages, any namespace in the Kubernetes cluster is allowed access to the Cluster Operator unless network policy is configured.
 Use the optional `STRIMZI_OPERATOR_NAMESPACE_LABELS` environment variable to establish network policy for the Cluster Operator using namespace labels.
