@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -479,6 +480,8 @@ class TopicOperator {
                 LOGGER.debug("{}: Executing action {} on topic {}", logContext, action, lockName);
                 action.execute().onComplete(actionResult -> {
                     LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
+                    LOGGER.info("actionResult ", actionResult.cause());
+
                     action.result = actionResult;
                     // Update status with lock held so that event is ignored via statusUpdateGeneration
                     action.updateStatus(logContext).onComplete(statusResult -> {
@@ -1025,13 +1028,13 @@ class TopicOperator {
                             topic.getMetadata().getResourceVersion(),
                             topic.getMetadata().getGeneration());
                     KafkaTopicStatus kts = new KafkaTopicStatus();
-                    StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result);
 
                     if (Annotations.isReconciliationPausedWithAnnotation(topic)) {
                         Promise<Void> promise = Promise.promise();
                         statusFuture = promise.future();
 
                         kts.setConditions(singletonList(StatusUtils.getPausedCondition()));
+                        kts.setObservedGeneration(topic.getStatus() == null ? 0 : topic.getStatus().getObservedGeneration());
 
                         k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).onComplete(ar -> {
                             if (ar.succeeded() && ar.result() != null) {
@@ -1047,6 +1050,7 @@ class TopicOperator {
                             statusFuture.handle(ar.map((Void) null));
                         });
                     } else {
+                        StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result);
                         StatusDiff ksDiff = new StatusDiff(topic.getStatus(), kts);
                         if (!ksDiff.isEmpty()) {
                             Promise<Void> promise = Promise.promise();
@@ -1080,27 +1084,51 @@ class TopicOperator {
         }
     }
 
+    private boolean shouldReconcile(KafkaTopic kafkaTopic, ObjectMeta metadata) {
+        return kafkaTopic.getStatus() == null // Not status => new KafkaTopic
+                || !Objects.equals(metadata.getGeneration(), kafkaTopic.getStatus().getObservedGeneration()); // KT has changed
+    }
+
     /** Called when a resource is isModify in k8s */
     Future<Void> onResourceEvent(LogContext logContext, KafkaTopic modifiedTopic, Watcher.Action action) {
+
+
         return executeWithTopicLockHeld(logContext, new TopicName(modifiedTopic),
                 new Reconciliation("onResourceEvent", false) {
                     @Override
                     public Future<Void> execute() {
                         return k8s.getFromName(new ResourceName(modifiedTopic))
-                            .compose(mt ->  {
-                                final Topic k8sTopic;
-                                if (mt != null) {
-                                    observedTopicFuture(mt);
-                                    try {
-                                        k8sTopic = TopicSerialization.fromTopicResource(mt);
-                                    } catch (InvalidTopicException e) {
-                                        return Future.failedFuture(e);
+                                .compose(mt -> {
+                                    final Topic k8sTopic;
+                                    if (mt != null) {
+                                        observedTopicFuture(mt);
+                                        try {
+                                            k8sTopic = TopicSerialization.fromTopicResource(mt);
+                                        } catch (InvalidTopicException e) {
+                                            return Future.failedFuture(e);
+                                        }
+                                    } else {
+                                        k8sTopic = null;
                                     }
-                                } else {
-                                    k8sTopic = null;
-                                }
-                                return reconcileOnResourceChange(this, logContext, mt != null ? mt : modifiedTopic, k8sTopic, action == Watcher.Action.MODIFIED);
-                            });
+
+                                    if (action.equals(Watcher.Action.DELETED) || shouldReconcile(modifiedTopic, modifiedTopic.getMetadata())) {
+                                        LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, modifiedTopic.getMetadata().getName(),
+                                                modifiedTopic.getMetadata().getGeneration(), modifiedTopic.getMetadata().getLabels());
+
+                                        if (modifiedTopic.getStatus() != null && StatusUtils.hasPausedCondition(modifiedTopic.getStatus())) {
+                                            if (result.succeeded()) {
+                                                return Future.succeededFuture();
+                                            } else {
+                                                return Future.failedFuture(result.cause());
+                                            }
+                                        }
+
+                                        return reconcileOnResourceChange(this, logContext, mt != null ? mt : modifiedTopic, k8sTopic, action == Watcher.Action.MODIFIED);
+                                    } else {
+                                        LOGGER.debug("{}: Ignoring {} to {} {} because metadata.generation==status.observedGeneration", logContext, action, modifiedTopic.getKind(), modifiedTopic.getMetadata().getName());
+                                        return Future.succeededFuture();
+                                    }
+                                });
                     }
                 });
     }

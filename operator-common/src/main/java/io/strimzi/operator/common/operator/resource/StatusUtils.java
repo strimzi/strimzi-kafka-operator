@@ -118,4 +118,8 @@ public class StatusUtils {
                 .build();
         return pausedCondition;
     }
+
+    public static <S extends Status> boolean hasPausedCondition(S status) {
+        return status.getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent();
+    }
 }
