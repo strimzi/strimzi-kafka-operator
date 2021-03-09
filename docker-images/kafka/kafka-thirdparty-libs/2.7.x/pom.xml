@@ -26,10 +26,6 @@
             <id>jcenter</id>
             <url>https://jcenter.bintray.com/</url>
         </repository>
-        <repository>
-            <id>strimzi-oauth-0.7.1</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1092/</url>
-        </repository>
     </repositories>
 
     <dependencyManagement>
