@@ -76,8 +76,9 @@ public class OauthPlainST extends OauthAbstractST {
     @Test
     void testProducerConsumerAudienceTokenChecks() {
         LOGGER.info("Setting producer and consumer properties");
-        oauthInternalClientJob = oauthInternalClientJob.toBuilder().withBootstrapAddress(
-                KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort).build();
+        oauthInternalClientJob = oauthInternalClientJob.toBuilder()
+                .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
+                .build();
 
         LOGGER.info("Use clients without access token containing audience token");
         oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
@@ -98,17 +99,20 @@ public class OauthPlainST extends OauthAbstractST {
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_PRODUCER);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_CONSUMER);
 
-        oauthInternalClientJob = oauthInternalClientJob.toBuilder().withBootstrapAddress(
-                KafkaResources.plainBootstrapAddress(oauthClusterName)).build();
+        oauthInternalClientJob = oauthInternalClientJob.toBuilder()
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .build();
     }
 
     @Test
     void testAccessTokenClaimCheck() {
         LOGGER.info("Use clients with clientId not containing 'hello-world' in access token.");
-        oauthInternalClientProducerJob = oauthInternalClientProducerJob.toBuilder().withBootstrapAddress(
-                KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort).build();
-        oauthInternalClientConsumerJob = oauthInternalClientConsumerJob.toBuilder().withBootstrapAddress(
-                KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort).build();
+        oauthInternalClientProducerJob = oauthInternalClientProducerJob.toBuilder()
+                .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort)
+                .build();
+        oauthInternalClientConsumerJob = oauthInternalClientConsumerJob.toBuilder()
+                .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort)
+                .build();
 
         oauthInternalClientProducerJob.createAndWaitForReadiness(oauthInternalClientProducerJob.producerStrimziOauthPlain().build());
         ClientUtils.waitForClientTimeout(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT);
@@ -131,8 +135,9 @@ public class OauthPlainST extends OauthAbstractST {
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
 
-        oauthInternalClientJob = oauthInternalClientJob.toBuilder().withBootstrapAddress(
-                KafkaResources.plainBootstrapAddress(oauthClusterName)).build();
+        oauthInternalClientJob = oauthInternalClientJob.toBuilder()
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .build();
     }
 
     @Description("As an oauth KafkaConnect, I should be able to sink messages from kafka broker topic.")
