@@ -6,14 +6,16 @@
 
 = Using the Cluster Operator
 
+[role="_abstract"]
 The Cluster Operator is used to deploy a Kafka cluster and other Kafka components.
 
 The Cluster Operator is deployed using YAML installation files.
 
-For information on deploying the Cluster Operator, see link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^] in the _Deploying and Upgrading Strimzi_ guide.
-
-For information on the deployment options available for Kafka, see xref:assembly-config-kafka-str[Kafka Cluster configuration].
-
 NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image feature to provide a convenient way to add additional connectors.
+
+[role="_additional-resources"]
+.Additional resources
+* link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^] in the _Deploying and Upgrading Strimzi_ guide.
+* xref:assembly-config-kafka-str[Kafka Cluster configuration].
 
 include::../../modules/operators/ref-operator-cluster.adoc[leveloffset=+1]
