@@ -26,10 +26,10 @@ public class CrdUpgradeCommand extends AbstractCommand {
             "Kafka", "kafkas.kafka.strimzi.io",
             "KafkaConnect", "kafkaconnects.kafka.strimzi.io",
             "KafkaConnectS2I", "kafkaconnects2is.kafka.strimzi.io",
-            "KafkaMirrorMaker", "kafkatopics.kafka.strimzi.io",
+            "KafkaMirrorMaker", "kafkamirrormakers.kafka.strimzi.io",
             "KafkaBridge", "kafkabridges.kafka.strimzi.io",
             "KafkaMirrorMaker2", "kafkamirrormaker2s.kafka.strimzi.io",
-            "KafkaTopic", "kafkamirrormakers.kafka.strimzi.io",
+            "KafkaTopic", "kafkatopics.kafka.strimzi.io",
             "KafkaUser", "kafkausers.kafka.strimzi.io",
             "KafkaConnector", "kafkaconnectors.kafka.strimzi.io",
             "KafkaRebalance", "kafkarebalances.kafka.strimzi.io"
