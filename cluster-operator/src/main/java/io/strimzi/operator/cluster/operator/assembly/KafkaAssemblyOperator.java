@@ -230,7 +230,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (reconcileResult.succeeded())    {
                 condition = new ConditionBuilder()
-                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
+                        .withLastTransitionTime(StatusUtils.iso8601(dateSupplier()))
                         .withType("Ready")
                         .withStatus("True")
                         .build();
@@ -239,7 +239,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 createOrUpdatePromise.complete(status);
             } else {
                 condition = new ConditionBuilder()
-                        .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
+                        .withLastTransitionTime(StatusUtils.iso8601(dateSupplier()))
                         .withType("NotReady")
                         .withStatus("True")
                         .withReason(reconcileResult.cause().getClass().getSimpleName())
@@ -518,7 +518,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         log.debug("{}: Setting the initial status for a new resource", reconciliation);
 
                         Condition deployingCondition = new ConditionBuilder()
-                                .withLastTransitionTime(ModelUtils.formatTimestamp(dateSupplier()))
+                                .withLastTransitionTime(StatusUtils.iso8601(dateSupplier()))
                                 .withType("NotReady")
                                 .withStatus("True")
                                 .withReason("Creating")
