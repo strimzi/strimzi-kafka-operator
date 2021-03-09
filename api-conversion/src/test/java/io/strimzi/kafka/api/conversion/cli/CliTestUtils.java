@@ -19,6 +19,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.oneOf;
 
 public class CliTestUtils {
@@ -224,7 +225,8 @@ public class CliTestUtils {
     }
 
     /**
-     * Checks that the CRD now has only the v1beta2 version
+     * Checks that the CRD now has only the v1beta2 version apart from KafkaUser and KafkaTopic which have also v1beta1
+     * and v1alpha1.
      *
      * @param client    Kubernetes client
      */
@@ -233,8 +235,16 @@ public class CliTestUtils {
             String crdName = CrdUpgradeCommand.CRD_NAMES.get(kind);
             CustomResourceDefinition crd = client.apiextensions().v1beta1().customResourceDefinitions().withName(crdName).get();
 
-            assertThat(crd.getSpec().getVersions().size(), is(1));
-            assertThat(crd.getSpec().getVersions().stream().map(CustomResourceDefinitionVersion::getName).collect(toList()), contains("v1beta2"));
+            if (kind.equals("KafkaTopic") || kind.equals("KafkaUser"))  {
+                // KafkaTopic and KafkaUser resources have even in CRD v1 also the old versions v1alpha1 and v1beta1.
+                // This is in order to allow smooth migration for the Topic and User Operators without users or topics
+                // deleted when the CRDs are upgraded from apiextensions/v1beta1 to apiextensions/v1.
+                assertThat(crd.getSpec().getVersions().size(), is(3));
+                assertThat(crd.getSpec().getVersions().stream().map(CustomResourceDefinitionVersion::getName).collect(toList()), containsInAnyOrder("v1alpha1", "v1beta1", "v1beta2"));
+            } else {
+                assertThat(crd.getSpec().getVersions().size(), is(1));
+                assertThat(crd.getSpec().getVersions().stream().map(CustomResourceDefinitionVersion::getName).collect(toList()), contains("v1beta2"));
+            }
         }
     }
 }

@@ -183,6 +183,8 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <!-- This step generates all CRDs apiextensions/v1 which contain only the v1beta2 version. This
+                             should be all of them apart from KafkaUser and KafkaTopic. -->
                         <id>generate-crd-co-install-v1</id>
                         <phase>process-classes</phase>
                         <goals>
@@ -204,13 +206,40 @@
                                 <argument>io.strimzi.api.kafka.model.Kafka=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}040-Crd-kafka.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnect=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}041-Crd-kafkaconnect.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnectS2I=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}042-Crd-kafkaconnects2i.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaTopic=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}043-Crd-kafkatopic.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaUser=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}044-Crd-kafkauser.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaBridge=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}046-Crd-kafkabridge.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnector=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}047-Crd-kafkaconnector.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaRebalance=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}049-Crd-kafkarebalance.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- This step generates CRDs apiextensions/v1 for resources which keep v1alpha1 and v1beta1.
+                             These should be only KafkaUser and KafkaTopic CRDs which need to keep the older versions
+                             in order to allow smooth upgrade of Topic and User Operators without deleting the operands
+                             (topics and users inside Kafka) when the CRDs are upgraded from apiextensions/v1beta1
+                             to apiextensions/v1. -->
+                        <id>generate-crd-co-install-v1-eo</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--label</argument><argument>app:strimzi</argument>
+                                <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
+                                <argument>--target-kube</argument><argument>1.16+</argument>
+                                <argument>--crd-api-version</argument><argument>v1</argument>
+                                <argument>--api-versions</argument><argument>v1alpha1,v1beta1,v1beta2</argument>
+                                <argument>--storage-version</argument><argument>v1beta2</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaTopic=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}043-Crd-kafkatopic.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaUser=src${file.separator}test${file.separator}resources${file.separator}io${file.separator}strimzi${file.separator}api${file.separator}kafka${file.separator}model${file.separator}044-Crd-kafkauser.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
