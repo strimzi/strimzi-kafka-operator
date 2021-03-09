@@ -730,6 +730,10 @@ spec:
                           so the sooner the job completes. However, using more threads
                           places a heavier load on the authorization server. The default
                           value is 5.
+                      implementionClass:
+                        type: string
+                        description: Authorization Implemention class, must be available
+                          in classpath.
                       initialCacheCapacity:
                         type: integer
                         description: Initial capacity of the local cache used by the
@@ -772,12 +776,15 @@ spec:
                         - simple
                         - opa
                         - keycloak
+                        - custom
                         description: Authorization type. Currently, the supported
-                          types are `simple`, `keycloak`, and `opa`. `simple` authorization
-                          type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
+                          types are `simple`, `keycloak`, `opa` and `custom`. `simple`
+                          authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
                           class for authorization. `keycloak` authorization type uses
                           Keycloak Authorization Services for authorization. `opa`
-                          authorization type uses Open Policy Agent based authorization.
+                          authorization type uses Open Policy Agent based authorization.`custom`
+                          authorization type uses user defined implementation for
+                          authorization.
                       url:
                         type: string
                         example: http://opa:8181/v1/data/kafka/authz/allow
@@ -7524,6 +7531,10 @@ spec:
                           so the sooner the job completes. However, using more threads
                           places a heavier load on the authorization server. The default
                           value is 5.
+                      implementionClass:
+                        type: string
+                        description: Authorization Implemention class, must be available
+                          in classpath.
                       initialCacheCapacity:
                         type: integer
                         description: Initial capacity of the local cache used by the
@@ -7566,12 +7577,15 @@ spec:
                         - simple
                         - opa
                         - keycloak
+                        - custom
                         description: Authorization type. Currently, the supported
-                          types are `simple`, `keycloak`, and `opa`. `simple` authorization
-                          type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
+                          types are `simple`, `keycloak`, `opa` and `custom`. `simple`
+                          authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
                           class for authorization. `keycloak` authorization type uses
                           Keycloak Authorization Services for authorization. `opa`
-                          authorization type uses Open Policy Agent based authorization.
+                          authorization type uses Open Policy Agent based authorization.`custom`
+                          authorization type uses user defined implementation for
+                          authorization.
                       url:
                         type: string
                         example: http://opa:8181/v1/data/kafka/authz/allow
@@ -15899,6 +15913,10 @@ spec:
                           so the sooner the job completes. However, using more threads
                           places a heavier load on the authorization server. The default
                           value is 5.
+                      implementionClass:
+                        type: string
+                        description: Authorization Implemention class, must be available
+                          in classpath.
                       initialCacheCapacity:
                         type: integer
                         description: Initial capacity of the local cache used by the
@@ -15941,12 +15959,15 @@ spec:
                         - simple
                         - opa
                         - keycloak
+                        - custom
                         description: Authorization type. Currently, the supported
-                          types are `simple`, `keycloak`, and `opa`. `simple` authorization
-                          type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
+                          types are `simple`, `keycloak`, `opa` and `custom`. `simple`
+                          authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer`
                           class for authorization. `keycloak` authorization type uses
                           Keycloak Authorization Services for authorization. `opa`
-                          authorization type uses Open Policy Agent based authorization.
+                          authorization type uses Open Policy Agent based authorization.`custom`
+                          authorization type uses user defined implementation for
+                          authorization.
                       url:
                         type: string
                         example: http://opa:8181/v1/data/kafka/authz/allow

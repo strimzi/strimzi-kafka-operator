@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
+import io.strimzi.api.kafka.model.KafkaAuthorizationCustom;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
@@ -480,6 +481,14 @@ public class KafkaBrokerConfigurationBuilder {
             // User configured super users
             if (keycloakAuthz.getSuperUsers() != null && keycloakAuthz.getSuperUsers().size() > 0) {
                 superUsers.addAll(keycloakAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
+            }
+        } else if (KafkaAuthorizationCustom.TYPE_CUSTOM.equals(authorization.getType())) {
+            KafkaAuthorizationCustom customAuthz = (KafkaAuthorizationCustom) authorization;
+            writer.println("authorizer.class.name=" + customAuthz.getImplementionClass());
+
+            // User configured super users
+            if (customAuthz.getSuperUsers() != null && customAuthz.getSuperUsers().size() > 0) {
+                superUsers.addAll(customAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
             }
         }
     }
