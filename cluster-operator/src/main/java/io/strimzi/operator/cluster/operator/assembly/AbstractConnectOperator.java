@@ -758,14 +758,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Set<Condition> unknownAndDeprecatedConditions = validate(connector);
         unknownAndDeprecatedConditions.forEach(condition -> conditions.add(condition));
 
-        if (connector.getMetadata().getGeneration() != null)    {
-            status.setObservedGeneration(connector.getStatus() != null ? connector.getStatus().getObservedGeneration() : 0);
-        }
-
         if (!Annotations.isReconciliationPausedWithAnnotation(connector)) {
+            StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
             status.setConnectorStatus(statusResult);
             status.setTasksMax(getActualTaskCount(connector, statusResult));
             status.setTopics(topics);
+        } else {
+            status.setObservedGeneration(connector.getStatus() != null ? connector.getStatus().getObservedGeneration() : 0);
+            conditions.add(StatusUtils.getPausedCondition());
         }
         status.addConditions(conditions);
 

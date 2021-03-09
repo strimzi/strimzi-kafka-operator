@@ -833,7 +833,7 @@ public class KafkaRebalanceAssemblyOperator
                             KafkaRebalanceStatus kafkaRebalanceStatus = currentKafkaRebalance.getStatus();
                             KafkaRebalanceState currentState;
                             // cluster rebalance is new or it is in one of the others states
-                            if (kafkaRebalanceStatus == null) {
+                            if (kafkaRebalanceStatus == null || kafkaRebalanceStatus.getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent()) {
                                 currentState = KafkaRebalanceState.New;
                             } else {
                                 String rebalanceStateType = rebalanceStateConditionType(kafkaRebalanceStatus);

@@ -543,6 +543,12 @@ class TopicOperator {
             TopicName topicName = k8sTopic != null ? k8sTopic.getTopicName() : kafkaTopic != null ? kafkaTopic.getTopicName() : privateTopic != null ? privateTopic.getTopicName() : null;
             LOGGER.info("{}: Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", logContext, topicName, k8sTopic == null ? "null" : "nonnull", kafkaTopic == null ? "null" : "nonnull", privateTopic == null ? "null" : "nonnull");
         }
+        if (involvedObject != null && Annotations.isReconciliationPausedWithAnnotation(involvedObject.getMetadata())) {
+            LOGGER.debug("skipping reconciliation due pause annotation");
+            reconciliation.succeeded();
+            return Future.succeededFuture();
+        }
+
         if (privateTopic == null) {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
@@ -1125,11 +1131,7 @@ class TopicOperator {
                             "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
                             EventType.WARNING, result));
                 } else {
-                    if (topicResource != null && Annotations.isReconciliationPausedWithAnnotation(topicResource)) {
-                        result = Future.succeededFuture();
-                    } else {
-                        result = reconcile(reconciliation, logContext, topicResource, k8sTopic, kafkaTopic, privateTopic);
-                    }
+                    result = reconcile(reconciliation, logContext, topicResource, k8sTopic, kafkaTopic, privateTopic);
                 }
                 return result;
             });
@@ -1301,13 +1303,15 @@ class TopicOperator {
             pausedTopicCounter.set(0);
             topicCounter.set(reconcileState.ktList.size());
             for (KafkaTopic kt : reconcileState.ktList) {
-                if (Annotations.isReconciliationPausedWithAnnotation(kt)) {
-                    pausedTopicCounter.getAndIncrement();
-                }
+
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName()).withKubeTopic(kt);
                 Topic topic = TopicSerialization.fromTopicResource(kt);
                 TopicName topicName = topic.getTopicName();
-                if (reconcileState.failed.containsKey(topicName)) {
+
+                if (Annotations.isReconciliationPausedWithAnnotation(kt)) {
+                    reconcileState.succeeded.add(topicName);
+                    pausedTopicCounter.getAndIncrement();
+                } else if (reconcileState.failed.containsKey(topicName)) {
                     // we already failed to reconcile this topic in reconcileFromKafka(), /
                     // don't bother trying again
                     LOGGER.trace("{}: Already failed to reconcile {}", logContext, topicName);
