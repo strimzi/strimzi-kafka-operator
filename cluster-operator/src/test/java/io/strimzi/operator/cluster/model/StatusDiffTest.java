@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
@@ -48,13 +49,13 @@ public class StatusDiffTest {
                 .build();
 
         Condition condition1 = new ConditionBuilder()
-                .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
+                .withNewLastTransitionTime(StatusUtils.iso8601(new Date()))
                 .withNewType("Ready")
                 .withNewStatus("True")
                 .build();
 
         Condition condition2 = new ConditionBuilder()
-                .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
+                .withNewLastTransitionTime(StatusUtils.iso8601(new Date()))
                 .withNewType("Ready2")
                 .withNewStatus("True")
                 .build();
@@ -127,13 +128,13 @@ public class StatusDiffTest {
                 .build();
 
         Condition condition1 = new ConditionBuilder()
-                .withNewLastTransitionTime(ModelUtils.formatTimestamp(new Date()))
+                .withNewLastTransitionTime(StatusUtils.iso8601(new Date()))
                 .withNewType("Ready")
                 .withNewStatus("True")
                 .build();
 
         Condition condition2 = new ConditionBuilder()
-                .withNewLastTransitionTime(ModelUtils.formatTimestamp(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
+                .withNewLastTransitionTime(StatusUtils.iso8601(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
                 .withNewType("Ready")
                 .withNewStatus("True")
                 .build();

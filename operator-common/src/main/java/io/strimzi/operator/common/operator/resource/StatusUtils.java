@@ -16,16 +16,29 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Date;
 
 public class StatusUtils {
     private static final String V1ALPHA1 = Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1;
 
     /**
      * Returns the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
+     * 
      * @return the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
      */
     public static String iso8601Now() {
         return ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+    }
+
+    /**
+     * Returns the timestamp of the provided date in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
+     *
+     * @param date The date for which should the ISO 8601 timestamp be provided
+     *
+     * @return the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
+     */
+    public static String iso8601(Date date) {
+        return ZonedDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
     }
 
     public static Condition buildConditionFromException(String type, String status, Throwable error) {
