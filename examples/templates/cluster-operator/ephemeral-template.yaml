@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: strimzi-ephemeral
+  annotations:
+    openshift.io/display-name: "Apache Kafka (Ephemeral storage)"
+    description: >-
+      This template installs Apache Zookeeper and Apache Kafka clusters. For more information
+      about using this template see https://strimzi.io
+
+
+      WARNING: Any data stored will be lost upon pod destruction. Only use this
+      template for testing."
+    tags: "messaging,datastore"
+    iconClass: "fa fa-share-alt fa-flip-horizontal"
+    template.openshift.io/documentation-url: "https://strimzi.io"
+message: "Kafka cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}-kafka-bootstrap:9092' as bootstrap server in your application"
+parameters:
+- description: All Kubernetes resources will be named after the cluster name
+  displayName: Name of the cluster
+  name: CLUSTER_NAME
+  value: my-cluster
+- description: Number of Zookeeper cluster nodes which will be deployed (odd number of nodes is recommended)
+  displayName: Number of Zookeeper cluster nodes (odd number of nodes is recommended)
+  name: ZOOKEEPER_NODE_COUNT
+  required: true
+  value: "3"
+- description: Number of Kafka cluster nodes which will be deployed
+  displayName: Number of Kafka cluster nodes
+  name: KAFKA_NODE_COUNT
+  required: true
+  value: "3"
+- description: The Kafka version to use for this cluster.
+  displayName: The Kafka version to use
+  name: KAFKA_VERSION
+  required: true
+  value: "2.6.0"
+- description: Number of seconds after the container has started before healthcheck probes are initiated.
+  displayName: Zookeeper healthcheck initial delay
+  name: ZOOKEEPER_HEALTHCHECK_DELAY
+  value: "15"
+- description: Number of seconds after which the probe times out.
+  displayName: Zookeeper healthcheck timeout
+  name: ZOOKEEPER_HEALTHCHECK_TIMEOUT
+  value: "5"
+- description: Number of seconds after the container has started before healthcheck probes are initiated.
+  displayName: Kafka healthcheck initial delay
+  name: KAFKA_HEALTHCHECK_DELAY
+  value: "15"
+- description: Number of seconds after which the probe times out.
+  displayName: Kafka healthcheck timeout
+  name: KAFKA_HEALTHCHECK_TIMEOUT
+  value: "5"
+- description: Default replication factor for newly created topics
+  displayName: Default replication factor
+  name: KAFKA_DEFAULT_REPLICATION_FACTOR
+  value: "1"
+- description: Replication factor for offsets topic
+  displayName: Offsets replication factor
+  name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+  value: "3"
+- description: Replication factor for transactions state log topic
+  displayName: Transaction state replication factor
+  name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+  value: "3"
+objects:
+- apiVersion: kafka.strimzi.io/v1beta1
+  kind: Kafka
+  metadata:
+    name: ${CLUSTER_NAME}
+  spec:
+    kafka:
+      version: ${{KAFKA_VERSION}}
+      replicas: ${{KAFKA_NODE_COUNT}}
+      listeners:
+        - name: plain
+          port: 9092
+          type: internal
+          tls: false
+        - name: tls
+          port: 9093
+          type: internal
+          tls: true
+      livenessProbe:
+        initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
+        timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}
+      readinessProbe:
+        initialDelaySeconds: ${{KAFKA_HEALTHCHECK_DELAY}}
+        timeoutSeconds: ${{KAFKA_HEALTHCHECK_TIMEOUT}}
+      storage:
+        type: ephemeral
+      config:
+        default.replication.factor: ${KAFKA_DEFAULT_REPLICATION_FACTOR}
+        offsets.topic.replication.factor: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
+        transaction.state.log.replication.factor: ${KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR}
+        log.message.format.version: ${KAFKA_VERSION}
+    zookeeper:
+      replicas: ${{ZOOKEEPER_NODE_COUNT}}
+      livenessProbe:
+        initialDelaySeconds: ${{ZOOKEEPER_HEALTHCHECK_DELAY}}
+        timeoutSeconds: ${{ZOOKEEPER_HEALTHCHECK_TIMEOUT}}
+      readinessProbe:
+        initialDelaySeconds: ${{ZOOKEEPER_HEALTHCHECK_DELAY}}
+        timeoutSeconds: ${{ZOOKEEPER_HEALTHCHECK_TIMEOUT}}
+      storage:
+        type: ephemeral
+    entityOperator:
+      topicOperator: {}
+      userOperator: {}

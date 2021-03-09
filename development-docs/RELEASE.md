@@ -42,6 +42,7 @@ The release process should normally look like this:
 12. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operate Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
 13. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziUpgradeST.json` file for the upgrade tests
 14. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziDowngradeST.json` file and remove the old one for the downgrade tests
+15. _(only for GA, not for RCs)_ Update the `install`, `examples` and `helm-chart` directories in the `master` branch with the newly released files
 
 ## Updating Kafka Bridge version
 

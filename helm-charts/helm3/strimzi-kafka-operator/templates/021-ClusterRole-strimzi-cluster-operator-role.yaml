@@ -1,0 +1,44 @@
+{{- if .Values.createGlobalResources -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-cluster-operator-global
+  labels:
+    app: {{ template "strimzi.name" . }}
+    chart: {{ template "strimzi.chart" . }}
+    component: role
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+rules:
+- apiGroups:
+  - "rbac.authorization.k8s.io"
+  resources:
+    # The cluster operator needs to create and manage cluster role bindings in the case of an install where a user
+    # has specified they want their cluster role bindings generated
+  - clusterrolebindings
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - storage.k8s.io
+  resources:
+    # The cluster operator requires "get" permissions to view storage class details
+    # This is because only a persistent volume of a supported storage class type can be resized
+  - storageclasses
+  verbs:
+  - get
+- apiGroups:
+    - ""
+  resources:
+    # The cluster operator requires "list" permissions to view all nodes in a cluster
+    # The listing is used to determine the node addresses when NodePort access is configured
+    # These addresses are then exposed in the custom resource states
+  - nodes
+  verbs:
+  - list
+{{- end -}}

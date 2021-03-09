@@ -1,0 +1,143 @@
+# Default values for strimzi-kafka-operator.
+
+# If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`),
+# the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
+watchNamespaces: []
+watchAnyNamespace: false
+
+image:
+  registry: quay.io
+  repository: strimzi
+  name: operator
+  tag: 0.21.1
+logVolume: co-config-volume
+logConfigMap: strimzi-cluster-operator
+logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
+fullReconciliationIntervalMs: 120000
+operationTimeoutMs: 300000
+kubernetesServiceDnsDomain: cluster.local
+
+tolerations: []
+affinity: {}
+nodeSelector: {}
+
+# Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
+# repository name with your registry URL.
+# Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
+zookeeper:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+kafka:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+kafkaConnect:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+kafkaConnects2i:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+topicOperator:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: operator
+    tag: 0.21.1
+userOperator:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: operator
+    tag: 0.21.1
+kafkaInit:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: operator
+    tag: 0.21.1
+tlsSidecarEntityOperator:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+kafkaMirrorMaker:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+kafkaBridge:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka-bridge
+    tag: 0.19.0
+kafkaExporter:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+jmxTrans:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: jmxtrans
+    tag: 0.21.1
+kafkaMirrorMaker2:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+cruiseControl:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+tlsSidecarCruiseControl:
+  image:
+    registry: quay.io
+    repository: strimzi
+    name: kafka
+    tagPrefix: 0.21.1
+kanikoExecutor:
+  image:
+    registry: gcr.io
+    repository: kaniko-project
+    name: executor
+    tag: v1.3.0
+resources:
+  limits:
+    memory: 384Mi
+    cpu: 1000m
+  requests:
+    memory: 384Mi
+    cpu: 200m
+livenessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+# Override the docker registry used by all Strimzi images
+imageRegistryOverride: ""
+# Override the docker image repository used by all Strimzi images
+imageRepositoryOverride: ""
+# Override the docker image tag used by all Strimzi images
+imageTagOverride: ""
+createGlobalResources: true

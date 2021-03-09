@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-cluster-operator
+  labels:
+    app: {{ template "strimzi.name" . }}
+    chart: {{ template "strimzi.chart" . }}
+    component: deployment
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: strimzi-cluster-operator
+      strimzi.io/kind: cluster-operator
+  template:
+    metadata:
+      labels:
+        name: strimzi-cluster-operator
+        strimzi.io/kind: cluster-operator
+    spec:
+      serviceAccountName: strimzi-cluster-operator
+      {{- if .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.image.imagePullSecrets }}
+      {{- end }}
+      volumes:
+        - name: strimzi-tmp
+          emptyDir:
+            medium: Memory
+        - name: {{ .Values.logVolume }}
+          configMap:
+            name: {{ .Values.logConfigMap }}
+      containers:
+        - name: strimzi-cluster-operator
+          image: {{ default .Values.image.registry .Values.imageRegistryOverride }}/{{ default .Values.image.repository .Values.imageRepositoryOverride }}/{{ .Values.image.name }}:{{ default .Values.image.tag .Values.imageTagOverride }}
+          ports:
+            - containerPort: 8080
+              name: http
+          {{- if .Values.image.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy | quote }}
+          {{- end }}
+          args:
+            - /opt/strimzi/bin/cluster_operator_run.sh
+          volumeMounts:
+            - name: strimzi-tmp
+              mountPath: /tmp
+            - name: {{ .Values.logVolume }}
+              mountPath: /opt/strimzi/custom-config/
+          env:
+            - name: STRIMZI_NAMESPACE
+              {{- if .Values.watchAnyNamespace }}
+              value: "*"
+              {{- else }}
+              {{- if .Values.watchNamespaces -}}
+              {{- $ns := .Values.watchNamespaces -}}
+              {{- $ns := append $ns .Release.Namespace }}
+              value: "{{ join "," $ns }}"
+              {{- else }}
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+              {{- end }}
+              {{- end }}
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+              value: {{ .Values.fullReconciliationIntervalMs | quote }}
+            - name: STRIMZI_OPERATION_TIMEOUT_MS
+              value: {{ .Values.operationTimeoutMs | quote }}
+            {{- template "strimzi.kafka.image.map" . }}
+            - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
+              value: {{ default .Values.topicOperator.image.registry .Values.imageRegistryOverride }}/{{ default .Values.topicOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.topicOperator.image.name }}:{{ default .Values.topicOperator.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
+              value: {{ default .Values.userOperator.image.registry .Values.imageRegistryOverride }}/{{ default .Values.userOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.userOperator.image.name }}:{{ default .Values.userOperator.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
+              value: {{ default .Values.kafkaInit.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaInit.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.kafkaInit.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
+              value: {{ default .Values.kafkaBridge.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaBridge.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.kafkaBridge.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
+              value: {{ default .Values.jmxTrans.image.registry .Values.imageRegistryOverride }}/{{ default .Values.jmxTrans.image.repository .Values.imageRepositoryOverride }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.jmxTrans.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
+              value: {{ default .Values.kanikoExecutor.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kanikoExecutor.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kanikoExecutor.image.name }}:{{ default .Values.kanikoExecutor.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- if .Values.image.imagePullSecrets }}
+            - name: STRIMZI_IMAGE_PULL_SECRETS
+              value: {{ .Values.image.imagePullSecrets }}
+            {{- end }}
+            {{- if .Values.image.operatorNamespaceLabels }}
+            - name: STRIMZI_OPERATOR_NAMESPACE_LABELS
+              value: {{ .Values.image.operatorNamespaceLabels }}
+            {{- end }}
+            {{- if .Values.image.imagePullPolicy }}
+            - name: STRIMZI_IMAGE_PULL_POLICY
+              value: {{ .Values.image.imagePullPolicy }}
+            {{- end }}
+            {{ if ne .Values.kubernetesServiceDnsDomain "cluster.local" }}- name: KUBERNETES_SERVICE_DNS_DOMAIN
+              value: {{ .Values.kubernetesServiceDnsDomain | quote }}{{ end }}
+          livenessProbe:
+            httpGet:
+              path: /healthy
+              port: http
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+  strategy:
+    type: Recreate

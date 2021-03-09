@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: strimzi-cluster-operator-kafka-broker-delegation
+  labels:
+    app: strimzi
+# The Kafka broker cluster role must be bound to the cluster operator service account so that it can delegate the cluster role to the Kafka brokers.
+# This must be done to avoid escalating privileges which would be blocked by Kubernetes.
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-cluster-operator
+    namespace: myproject
+roleRef:
+  kind: ClusterRole
+  name: strimzi-kafka-broker
+  apiGroup: rbac.authorization.k8s.io

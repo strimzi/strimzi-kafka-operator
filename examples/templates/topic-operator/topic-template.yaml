@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: strimzi-topic
+  annotations:
+    openshift.io/display-name: "Apache Kafka Topic"
+    description: >-
+      This template creates a "Topic ConfigMap". Used in conjunction with
+      the Strimzi topic operator this will create a corresponding
+      topic in a Strimzi Kafka cluster.
+      For more information about using this template see https://strimzi.io
+    tags: "messaging"
+    iconClass: "fa fa-exchange"
+    template.openshift.io/documentation-url: "https://strimzi.io"
+parameters:
+- name: CLUSTER_NAME
+  displayName: Name of the Kafka cluster
+  description: Specifies the name of the Kafka cluster in which the topic should be created.
+  required: true
+  value: my-cluster
+- name: TOPIC_NAME
+  displayName: Name of the topic
+  description: Specifies the name of the topic in the Kafka cluster. This should be a valid Kubernetes resource name.
+  required: true
+  value: my-topic
+- name: TOPIC_PARTITIONS
+  displayName: Number of partitions
+  description: The number of partitions in the created topic.
+  required: true
+  value: "1"
+- name: TOPIC_REPLICAS
+  displayName: Number of replicas
+  description: The number of replicas in the created topic.
+  required: true
+  value: "1"
+- name: TOPIC_CONFIG
+  displayName: Topic config
+  description: >-
+    The topic config as a JSON map, for example: { "retention.ms":"345600000" }
+    See https://kafka.apache.org/10/documentation/#topicconfigs for config key names and
+    value syntax.
+  required: true
+  value: "{}"
+objects:
+- apiVersion: kafka.strimzi.io/v1beta1
+  kind: KafkaTopic
+  metadata:
+    name: ${TOPIC_NAME}
+    labels:
+      strimzi.io/cluster: "${CLUSTER_NAME}"
+  spec:
+    partitions: ${{TOPIC_PARTITIONS}}
+    replicas: ${{TOPIC_REPLICAS}}
+    config: ${{TOPIC_CONFIG}}

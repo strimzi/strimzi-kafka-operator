@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: strimzi-connect-s2i
+  annotations:
+    openshift.io/display-name: "Apache Kafka Connect S2I"
+    description: >-
+      This template installes Apache Kafka Connect in distributed mode together with build pipeline
+      for new Kafka Connect images with additional plugins. For more information about using this
+      template see https://strimzi.io
+    tags: "messaging"
+    iconClass: "fa fa-exchange"
+    template.openshift.io/documentation-url: "https://strimzi.io"
+message: "Kafka Connect S2I cluster ${CLUSTER_NAME} is being deployed. Use '${CLUSTER_NAME}-connect-api:8083' to access Kafka Connect REST API."
+parameters:
+- description: All Kubernetes resources will be named after the cluster name
+  displayName: Name of the cluster
+  name: CLUSTER_NAME
+  value: my-connect-cluster
+- description: Specifies the number of Kafka Connect instances to be started by default.
+  displayName: Number of Kafka Connect instances
+  name: INSTANCES
+  required: true
+  value: "1"
+- description: The Kafka version to use for this Kafka connect cluster.
+  displayName: The Kafka version to use
+  name: KAFKA_VERSION
+  required: true
+  value: "2.6.0"
+- description: A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
+  displayName: Kafka bootstrap servers
+  name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
+  required: true
+  value: my-cluster-kafka-bootstrap:9092
+- description: A unique string that identifies the Connect cluster group this worker belongs to. Note this must not conflict with any consumer group IDs.
+  displayName: Group ID
+  name: KAFKA_CONNECT_GROUP_ID
+  required: true
+  value: "connect-cluster"
+- description: Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka.
+  displayName: Key Converter
+  name: KAFKA_CONNECT_KEY_CONVERTER
+  required: true
+  value: org.apache.kafka.connect.json.JsonConverter
+- description: Set to false to use schemaless format
+  displayName: Enable schemas for key converters
+  name: KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE
+  value: "true"
+- description: Converter class used to convert between Kafka Connect format and the serialized form that is written to Kafka.
+  displayName: Value Converter
+  name: KAFKA_CONNECT_VALUE_CONVERTER
+  required: true
+  value: org.apache.kafka.connect.json.JsonConverter
+- description: Set to false to use schemaless format
+  displayName: Enable schemas for value converters
+  name: KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE
+  value: "true"
+- description: Replication factor for config storage topic
+  displayName: Config replication factor
+  name: KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+  value: "3"
+- description: Replication factor for offset storage topic
+  displayName: Offset replication factor
+  name: KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+  value: "3"
+- description: Replication factor for status storage topic
+  displayName: Status replication factor
+  name: KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+  value: "3"
+- description: Number of seconds after the container has started before healthcheck probes are initiated.
+  displayName: Kafka Connect healthcheck initial delay
+  name: HEALTHCHECK_DELAY
+  value: "60"
+- description: Number of seconds after which the probe times out.
+  displayName: Kafka Connect healthcheck timeout
+  name: HEALTHCHECK_TIMEOUT
+  value: "5"
+objects:
+- apiVersion: kafka.strimzi.io/v1beta1
+  kind: KafkaConnectS2I
+  metadata:
+    name: ${CLUSTER_NAME}
+  spec:
+    version: ${{KAFKA_VERSION}}
+    replicas: ${{INSTANCES}}
+    livenessProbe:
+      initialDelaySeconds: ${{HEALTHCHECK_DELAY}}
+      timeoutSeconds: ${{HEALTHCHECK_TIMEOUT}}
+    readinessProbe:
+      initialDelaySeconds: ${{HEALTHCHECK_DELAY}}
+      timeoutSeconds: ${{HEALTHCHECK_TIMEOUT}}
+    bootstrapServers: "${KAFKA_CONNECT_BOOTSTRAP_SERVERS}"
+    config:
+      group.id: "${KAFKA_CONNECT_GROUP_ID}"
+      offset.storage.topic: "${KAFKA_CONNECT_GROUP_ID}-offsets"
+      config.storage.topic: "${KAFKA_CONNECT_GROUP_ID}-configs"
+      status.storage.topic: "${KAFKA_CONNECT_GROUP_ID}-status"
+      key.converter: "${KAFKA_CONNECT_KEY_CONVERTER}"
+      value.converter: "${KAFKA_CONNECT_VALUE_CONVERTER}"
+      key.converter.schemas.enable: ${{KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE}}
+      value.converter.schemas.enable: ${{KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE}}
+      config.storage.replication.factor: ${{KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR}}
+      offset.storage.replication.factor: ${{KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR}}
+      status.storage.replication.factor: ${{KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR}}

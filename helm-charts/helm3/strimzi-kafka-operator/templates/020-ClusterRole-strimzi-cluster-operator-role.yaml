@@ -1,0 +1,234 @@
+{{- if .Values.createGlobalResources -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-cluster-operator-namespaced
+  labels:
+    app: {{ template "strimzi.name" . }}
+    chart: {{ template "strimzi.chart" . }}
+    component: role
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+rules:
+- apiGroups:
+  - "rbac.authorization.k8s.io"
+  resources:
+    # The cluster operator needs to access and manage rolebindings to grant Strimzi components cluster permissions
+  - rolebindings
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "rbac.authorization.k8s.io"
+  resources:
+    # The cluster operator needs to access and manage roles to grant the entity operator permissions
+  - roles
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+    # The cluster operator needs to access and delete pods, this is to allow it to monitor pod health and coordinate rolling updates
+  - pods
+    # The cluster operator needs to access and manage service accounts to grant Strimzi components cluster permissions
+  - serviceaccounts
+    # The cluster operator needs to access and manage config maps for Strimzi components configuration
+  - configmaps
+    # The cluster operator needs to access and manage services and endpoints to expose Strimzi components to network traffic
+  - services
+  - endpoints
+    # The cluster operator needs to access and manage secrets to handle credentials
+  - secrets
+    # The cluster operator needs to access and manage persistent volume claims to bind them to Strimzi components for persistent data
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "kafka.strimzi.io"
+  resources:
+    # The cluster operator runs the KafkaAssemblyOperator, which needs to access and manage Kafka resources
+  - kafkas
+  - kafkas/status
+    # The cluster operator runs the KafkaConnectAssemblyOperator, which needs to access and manage KafkaConnect resources
+  - kafkaconnects
+  - kafkaconnects/status
+    # The cluster operator runs the KafkaConnectS2IAssemblyOperator, which needs to access and manage KafkaConnectS2I resources
+  - kafkaconnects2is
+  - kafkaconnects2is/status
+    # The cluster operator runs the KafkaConnectorAssemblyOperator, which needs to access and manage KafkaConnector resources
+  - kafkaconnectors
+  - kafkaconnectors/status
+    # The cluster operator runs the KafkaMirrorMakerAssemblyOperator, which needs to access and manage KafkaMirrorMaker resources
+  - kafkamirrormakers
+  - kafkamirrormakers/status
+    # The cluster operator runs the KafkaBridgeAssemblyOperator, which needs to access and manage BridgeMaker resources
+  - kafkabridges
+  - kafkabridges/status
+    # The cluster operator runs the KafkaMirrorMaker2AssemblyOperator, which needs to access and manage KafkaMirrorMaker2 resources
+  - kafkamirrormaker2s
+  - kafkamirrormaker2s/status
+    # The cluster operator runs the KafkaRebalanceAssemblyOperator, which needs to access and manage KafkaRebalance resources
+  - kafkarebalances
+  - kafkarebalances/status
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+    # The cluster operator needs the extensions api as the operator supports Kubernetes version 1.11+
+    # apps/v1 was introduced in Kubernetes 1.14
+  - "extensions"
+  resources:
+    # The cluster operator needs to access and manage deployments to run deployment based Strimzi components
+  - deployments
+  - deployments/scale
+    # The cluster operator needs to access replica sets to manage Strimzi components and to determine error states
+  - replicasets
+    # The cluster operator needs to access and manage replication controllers to manage replicasets
+  - replicationcontrollers
+    # The cluster operator needs to access and manage network policies to lock down communication between Strimzi components
+  - networkpolicies
+    # The cluster operator needs to access and manage ingresses which allow external access to the services in a cluster
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - "apps"
+  resources:
+    # The cluster operator needs to access and manage deployments to run deployment based Strimzi components
+  - deployments
+  - deployments/scale
+  - deployments/status
+    # The cluster operator needs to access and manage stateful sets to run stateful sets based Strimzi components
+  - statefulsets
+    # The cluster operator needs to access replica-sets to manage Strimzi components and to determine error states
+  - replicasets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+    # The cluster operator needs to be able to create events and delegate permissions to do so
+  - events
+  verbs:
+  - create
+- apiGroups:
+    # OpenShift S2I requirements
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  - deploymentconfigs/scale
+  - deploymentconfigs/status
+  - deploymentconfigs/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+    # OpenShift S2I requirements
+  - build.openshift.io
+  resources:
+  - buildconfigs
+  - buildconfigs/instantiate
+  - builds
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+    # OpenShift S2I requirements
+  - image.openshift.io
+  resources:
+  - imagestreams
+  - imagestreams/status
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+    # The cluster operator needs to access and manage network policies to lock down communication between Strimzi components
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - route.openshift.io
+  resources:
+    # The cluster operator needs to access and manage routes to expose Strimzi components for external access
+  - routes
+  - routes/custom-host
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - policy
+  resources:
+    # The cluster operator needs to access and manage pod disruption budgets this limits the number of concurrent disruptions
+    # that a Strimzi component experiences, allowing for higher availability
+  - poddisruptionbudgets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update
+{{- end -}}
