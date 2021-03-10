@@ -49,9 +49,9 @@ public class KafkaRebalanceUtils {
         }
     }
 
-    public static void waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
+    public static boolean waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
         KafkaRebalance kafkaRebalance = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get();
-        ResourceManager.waitForResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient(), kafkaRebalance, state, ResourceOperation.getTimeoutForKafkaRebalanceState(state));
+        return ResourceManager.waitForResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient(), kafkaRebalance, state, ResourceOperation.getTimeoutForKafkaRebalanceState(state));
     }
 
     public static String annotateKafkaRebalanceResource(String resourceName, KafkaRebalanceAnnotation annotation) {

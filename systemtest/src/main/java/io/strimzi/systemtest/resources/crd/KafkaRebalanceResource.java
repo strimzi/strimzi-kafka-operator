@@ -10,8 +10,10 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.KafkaRebalance;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 
 import java.util.function.Consumer;
 
@@ -39,7 +41,7 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
     }
     @Override
     public boolean isReady(KafkaRebalance resource) {
-        return resource != null;
+        return KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(resource.getMetadata().getName(), KafkaRebalanceState.PendingProposal);
     }
     @Override
     public void refreshResource(KafkaRebalance existing, KafkaRebalance newResource) {

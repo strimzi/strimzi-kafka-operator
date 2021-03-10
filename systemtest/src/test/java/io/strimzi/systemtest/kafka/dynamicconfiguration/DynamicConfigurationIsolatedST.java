@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -63,7 +64,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     private Map<String, Object> kafkaConfig;
 
-    @ParallelTest
+    @IsolatedTest
     void testSimpleDynamicConfiguration(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
@@ -102,7 +103,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     @Tag(NODEPORT_SUPPORTED)
     @Tag(ROLLING_UPDATE)
-    @ParallelTest
+    @IsolatedTest
     void testUpdateToExternalListenerCausesRollingRestart(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
@@ -220,7 +221,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + false));
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
