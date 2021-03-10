@@ -1004,12 +1004,14 @@ The `type` property is a discriminator that distinguishes use of the `KafkaAutho
 It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 [options="header"]
 |====
-|Property                  |Description
-|type               1.2+<.<|Must be `custom`.
+|Property                |Description
+|type             1.2+<.<|Must be `custom`.
 |string
-|implementionClass  1.2+<.<|Authorization Implemention class, must be available in classpath.
+|authorizerClass  1.2+<.<|Authorization implementation class, which must be available in classpath.
 |string
-|superUsers         1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
+|config           1.2+<.<|Configuration properties for custom authorizer.
+|map
+|superUsers       1.2+<.<|List of super users. which are user principals with unlimited access rights.
 |string array
 |====
 

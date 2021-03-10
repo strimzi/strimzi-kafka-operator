@@ -5,7 +5,9 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -13,6 +15,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Configures the broker authorization
@@ -23,15 +26,16 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "implementionClass", "superUsers"})
+@JsonPropertyOrder({"type", "authorizerClass", "config", "superUsers"})
 @EqualsAndHashCode
 public class KafkaAuthorizationCustom extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
 
     public static final String TYPE_CUSTOM = "custom";
 
-    private String implementionClass; 
+    private String authorizerClass;
     private List<String> superUsers;
+    private Map<String, Object> configProperties;
 
     @Description("Must be `" + TYPE_CUSTOM + "`")
     @Override
@@ -39,7 +43,7 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
         return TYPE_CUSTOM;
     }
 
-    @Description("List of super users. Should contain list of user principals which should get unlimited access rights.")
+    @Description("List of super users. which are user principals with unlimited access rights.")
     @Example("- CN=my-user\n" +
              "- CN=my-other-user")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -51,12 +55,26 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
         this.superUsers = superUsers;
     }
 
-    @Description("Authorization Implemention class, must be available in classpath")
-    public String getImplementionClass() {
-        return implementionClass;
+    @Description("Authorization implementation class, which must be available in classpath")
+    public String getAuthorizerClass() {
+        return authorizerClass;
     }
 
-    public void setImplementionClass(String implementionClass) {
-        this.implementionClass = implementionClass;
+    public void setAuthorizerClass(String clazz) {
+        this.authorizerClass = clazz;
+    }
+
+    @Description("Configuration properties for custom authorizer")
+    @Example("config:\n" +
+             "  prop1: value1\n" +
+             "  prop2: value2")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(value = "config")
+    public Map<String, Object> getConfigProperties() {
+        return configProperties;
+    }
+
+    public void setConfigProperties(Map<String, Object> configProperties) {
+        this.configProperties = configProperties;
     }
 }

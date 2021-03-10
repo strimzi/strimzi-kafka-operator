@@ -1,4 +1,4 @@
-Custom authorization in Strimzi lets user configure their own `Authorizer` plugin to define the Access Control Lists (ACLs)
+To use custom authorization in Strimzi, you can configure your own `Authorizer` plugin to define Access Control Lists (ACLs).
 
 ACLs allow you to define which users have access to which resources at a granular level.
 
@@ -6,25 +6,122 @@ Configure the `Kafka` custom resource to use custom authorization.
 Set the `type` property in the `authorization` section to the value `custom`,
 and the set following properties.
 
-=== `implementionClass`
-Implementation class of the `org.apache.kafka.server.authorizer.Authorizer` interface to support the custom ACLs
-**Required.**
+IMPORTANT: The custom Authorizer must implement the org.apache.kafka.server.authorizer.Authorizer interface, and support configuration of super users using the super.users configuration property.
+
+
+=== `authorizerClass`
+(Required)Java class that implements the `org.apache.kafka.server.authorizer.Authorizer` interface to support the custom ACLs.
+
 
 [id='property-simple-authorization-superusers-{context}']
 === `superUsers`
 A list of user principals treated as super users, so that they are always allowed without querying ACL rules.
 For more information see xref:con-securing-kafka-authorization-str[Kafka authorization].
 
-.An example of simple authorization configuration
+.An example of custom authorization configuration
 [source,yaml,subs="attributes+"]
 ----
 authorization:
   type: custom
-  implementionClass: io.mycompany.CustomAuthorizer
+  authorizerClass: io.mycompany.CustomAuthorizer
+  config:
+    prop1: value1
+    prop2: value2
   superUsers:
     - CN=client_1
     - user_2
     - CN=client_3
+----
+
+A sample `org.apache.kafka.server.authorizer.Authorizer` implementation
+
+.An example of sample custom authorizer implementation in Java
+[source,java]
+----
+public class SampleAuthorizer implements org.apache.kafka.server.authorizer.Authorizer {
+    private List<UserSpec> superUsers = Collections.emptyList();
+
+    @Override
+    public void configure(Map<String, ?> configs) {
+        // configure super users
+        String users = (String) configs.get("super.users");
+        if (users != null) {
+            superUsers = Arrays.asList(users.split(";"))
+                    .stream()
+                    .map(s -> UserSpec.of(s))
+                    .collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    public List<AuthorizationResult> authorize(AuthorizableRequestContext requestContext, List<Action> actions) {
+
+        if (isSuperUser(requestContext.principal())) {
+            // allow all the operations to make sure Strimzi works correctly
+        }
+
+        // TODO: your custom implementation
+        return null;
+    }
+
+    private boolean isSuperUser(KafkaPrincipal principal) {
+        for (UserSpec u : superUsers) {
+            if (principal.getPrincipalType().equals(u.getType())
+                    && principal.getName().equals(u.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public List<? extends CompletionStage<AclCreateResult>> createAcls(AuthorizableRequestContext requestContext,
+            List<AclBinding> aclBindings) {
+        throw new RuntimeException("Simple ACL delegation not enabled");
+    }
+
+    @Override
+    public List<? extends CompletionStage<AclDeleteResult>> deleteAcls(AuthorizableRequestContext requestContext,
+            List<AclBindingFilter> aclBindingFilters) {
+        throw new RuntimeException("Simple ACL delegation not enabled");
+    }
+
+    @Override
+    public Iterable<AclBinding> acls(AclBindingFilter filter) {
+        throw new RuntimeException("Simple ACL delegation not enabled");
+    }
+
+    public static class UserSpec {
+        private final String type;
+        private final String name;
+
+        private UserSpec(String type, String name) {
+            this.type = type;
+            this.name = name;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public static UserSpec of(String principal) {
+            int pos = principal.indexOf(':');
+            if (pos <= 0) {
+                throw new IllegalArgumentException("Invalid user specification: " + principal);
+            }
+            return new UserSpec(principal.substring(0, pos), principal.substring(pos + 1));
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + " " + type + ":" + name;
+        }
+    }
+}
 ----
 
 NOTE: The `super.user` configuration option in the `config` property in `Kafka.spec.kafka` is ignored.

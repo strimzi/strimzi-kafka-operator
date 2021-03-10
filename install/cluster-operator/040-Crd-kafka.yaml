@@ -696,11 +696,22 @@ spec:
                           the Open Policy Agent, for example, when it is temporarily
                           unavailable). Defaults to `false` - all actions will be
                           denied.
+                      authorizerClass:
+                        type: string
+                        description: Authorization implementation class, which must
+                          be available in classpath.
                       clientId:
                         type: string
                         description: OAuth Client ID which the Kafka client can use
                           to authenticate against the OAuth server and use the token
                           endpoint URI.
+                      config:
+                        type: object
+                        example: |-
+                          config:
+                            prop1: value1
+                            prop2: value2
+                        description: Configuration properties for custom authorizer.
                       delegateToKafkaAcls:
                         type: boolean
                         description: Whether authorization decision should be delegated
@@ -730,10 +741,6 @@ spec:
                           so the sooner the job completes. However, using more threads
                           places a heavier load on the authorization server. The default
                           value is 5.
-                      implementionClass:
-                        type: string
-                        description: Authorization Implemention class, must be available
-                          in classpath.
                       initialCacheCapacity:
                         type: integer
                         description: Initial capacity of the local cache used by the
@@ -748,8 +755,8 @@ spec:
                         type: array
                         items:
                           type: string
-                        description: List of super users. Should contain list of user
-                          principals which should get unlimited access rights.
+                        description: List of super users. which are user principals
+                          with unlimited access rights.
                       tlsTrustedCertificates:
                         type: array
                         items:
@@ -783,7 +790,7 @@ spec:
                           class for authorization. `keycloak` authorization type uses
                           Keycloak Authorization Services for authorization. `opa`
                           authorization type uses Open Policy Agent based authorization.`custom`
-                          authorization type uses user defined implementation for
+                          authorization type uses user-provided implementation for
                           authorization.
                       url:
                         type: string
@@ -7497,11 +7504,22 @@ spec:
                           the Open Policy Agent, for example, when it is temporarily
                           unavailable). Defaults to `false` - all actions will be
                           denied.
+                      authorizerClass:
+                        type: string
+                        description: Authorization implementation class, which must
+                          be available in classpath.
                       clientId:
                         type: string
                         description: OAuth Client ID which the Kafka client can use
                           to authenticate against the OAuth server and use the token
                           endpoint URI.
+                      config:
+                        type: object
+                        example: |-
+                          config:
+                            prop1: value1
+                            prop2: value2
+                        description: Configuration properties for custom authorizer.
                       delegateToKafkaAcls:
                         type: boolean
                         description: Whether authorization decision should be delegated
@@ -7531,10 +7549,6 @@ spec:
                           so the sooner the job completes. However, using more threads
                           places a heavier load on the authorization server. The default
                           value is 5.
-                      implementionClass:
-                        type: string
-                        description: Authorization Implemention class, must be available
-                          in classpath.
                       initialCacheCapacity:
                         type: integer
                         description: Initial capacity of the local cache used by the
@@ -7549,8 +7563,8 @@ spec:
                         type: array
                         items:
                           type: string
-                        description: List of super users. Should contain list of user
-                          principals which should get unlimited access rights.
+                        description: List of super users. which are user principals
+                          with unlimited access rights.
                       tlsTrustedCertificates:
                         type: array
                         items:
@@ -7584,7 +7598,7 @@ spec:
                           class for authorization. `keycloak` authorization type uses
                           Keycloak Authorization Services for authorization. `opa`
                           authorization type uses Open Policy Agent based authorization.`custom`
-                          authorization type uses user defined implementation for
+                          authorization type uses user-provided implementation for
                           authorization.
                       url:
                         type: string
@@ -15879,11 +15893,22 @@ spec:
                           the Open Policy Agent, for example, when it is temporarily
                           unavailable). Defaults to `false` - all actions will be
                           denied.
+                      authorizerClass:
+                        type: string
+                        description: Authorization implementation class, which must
+                          be available in classpath.
                       clientId:
                         type: string
                         description: OAuth Client ID which the Kafka client can use
                           to authenticate against the OAuth server and use the token
                           endpoint URI.
+                      config:
+                        type: object
+                        example: |-
+                          config:
+                            prop1: value1
+                            prop2: value2
+                        description: Configuration properties for custom authorizer.
                       delegateToKafkaAcls:
                         type: boolean
                         description: Whether authorization decision should be delegated
@@ -15913,10 +15938,6 @@ spec:
                           so the sooner the job completes. However, using more threads
                           places a heavier load on the authorization server. The default
                           value is 5.
-                      implementionClass:
-                        type: string
-                        description: Authorization Implemention class, must be available
-                          in classpath.
                       initialCacheCapacity:
                         type: integer
                         description: Initial capacity of the local cache used by the
@@ -15931,8 +15952,8 @@ spec:
                         type: array
                         items:
                           type: string
-                        description: List of super users. Should contain list of user
-                          principals which should get unlimited access rights.
+                        description: List of super users. which are user principals
+                          with unlimited access rights.
                       tlsTrustedCertificates:
                         type: array
                         items:
@@ -15966,7 +15987,7 @@ spec:
                           class for authorization. `keycloak` authorization type uses
                           Keycloak Authorization Services for authorization. `opa`
                           authorization type uses Open Policy Agent based authorization.`custom`
-                          authorization type uses user defined implementation for
+                          authorization type uses user-provided implementation for
                           authorization.
                       url:
                         type: string

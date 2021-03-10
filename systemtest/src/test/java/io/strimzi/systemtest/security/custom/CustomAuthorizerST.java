@@ -12,10 +12,12 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import kafka.security.authorizer.AclAuthorizer;
 
@@ -28,17 +30,24 @@ import static org.hamcrest.Matchers.is;
 public class CustomAuthorizerST extends AbstractST {
     static final String NAMESPACE = "custom-authorizer-test";
     static final String CLUSTER_NAME = "custom-authorizer";
+    static final String ADMIN = "sre-admin";
 
     @BeforeAll
     public void setup() {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
+        Map<String, Object> config = new HashMap<>();
+        config.put("prop1", "value1");
+        config.put("prop2", "value2");
+
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationCustom()
-                      .withImplementionClass(AclAuthorizer.class.getName())
+                      .withAuthorizerClass(AclAuthorizer.class.getName())
+                      .withConfigProperties(config)
+                      .withSuperUsers(ADMIN)
                     .endKafkaAuthorizationCustom()
                 .endKafka()
             .endSpec()
@@ -58,6 +67,7 @@ public class CustomAuthorizerST extends AbstractST {
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(USER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();

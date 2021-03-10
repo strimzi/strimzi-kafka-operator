@@ -7,6 +7,7 @@
 * Remove support for Kafka 2.5.x
 * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
 * Migrate to CRD v1 (required by Kubernetes 1.22+)
+* Support for configuring custom Authorizer implementation 
 
 ### Changes, deprecations and removals
 
@@ -35,7 +36,6 @@
 * List topics used by a Kafka Connect connector in the `.status` section of the `KafkaConnector` custom resource
 * Bump Cruise Control to v2.5.37 for Kafka 2.7 support. Note this new version of Cruise Control uses `Log4j 2` and is supported by dynamic logging configuration (where logging properties are defined in a ConfigMap). However, existing `Log4j` configurations must be updated to `Log4j 2` configurations.
 * Support pausing reconciliation of CR with annotation `strimzi.io/pause-reconciliation`
-* Support for configuring custom Authorizer implementation 
 
 ### Changes, deprecations and removals
 

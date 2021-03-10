@@ -484,7 +484,14 @@ public class KafkaBrokerConfigurationBuilder {
             }
         } else if (KafkaAuthorizationCustom.TYPE_CUSTOM.equals(authorization.getType())) {
             KafkaAuthorizationCustom customAuthz = (KafkaAuthorizationCustom) authorization;
-            writer.println("authorizer.class.name=" + customAuthz.getImplementionClass());
+            writer.println("authorizer.class.name=" + customAuthz.getAuthorizerClass());
+
+            // add configuration properties
+            if (customAuthz.getConfigProperties() != null && !customAuthz.getConfigProperties().isEmpty()) {
+                customAuthz.getConfigProperties().forEach((k,v) -> {
+                    writer.println(k + "=" + v);
+                });
+            }
 
             // User configured super users
             if (customAuthz.getSuperUsers() != null && customAuthz.getSuperUsers().size() > 0) {
