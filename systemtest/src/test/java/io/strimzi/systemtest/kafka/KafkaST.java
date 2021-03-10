@@ -40,6 +40,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -111,7 +112,7 @@ class KafkaST extends AbstractST {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
 
-    @ParallelTest
+    @IsolatedTest
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate(ExtensionContext extensionContext) {
         cluster.createCustomResources(TEMPLATE_PATH);
@@ -142,7 +143,7 @@ class KafkaST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(OPENSHIFT_CLUSTER_NAME));
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testEODeletion(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -169,7 +170,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Entity operator was deleted");
     }
 
-    @ParallelTest
+    @IsolatedTest
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -452,7 +453,7 @@ class KafkaST extends AbstractST {
         checkSpecificVariablesInContainer(KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarUpdated);
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testJvmAndResources(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -585,7 +586,7 @@ class KafkaST extends AbstractST {
         DeploymentUtils.waitForNoRollingUpdate(eoDepName, eoPods);
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testForTopicOperator(ExtensionContext extensionContext) throws InterruptedException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -645,7 +646,7 @@ class KafkaST extends AbstractST {
         assertThat(topics, not(hasItems(cliTopicName)));
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testRemoveTopicOperatorFromEntityOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -687,7 +688,7 @@ class KafkaST extends AbstractST {
         });
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testRemoveUserOperatorFromEntityOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -735,7 +736,7 @@ class KafkaST extends AbstractST {
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testRemoveUserAndTopicOperatorsFromEntityOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -777,7 +778,7 @@ class KafkaST extends AbstractST {
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testEntityOperatorWithoutTopicOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -805,7 +806,7 @@ class KafkaST extends AbstractST {
         });
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testEntityOperatorWithoutUserOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -831,7 +832,7 @@ class KafkaST extends AbstractST {
         });
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testEntityOperatorWithoutUserAndTopicOperators(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -851,7 +852,7 @@ class KafkaST extends AbstractST {
         assertThat("EO should not be deployed", kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(clusterName)).size(), is(0));
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testTopicWithoutLabels(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -884,7 +885,7 @@ class KafkaST extends AbstractST {
         assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(REGRESSION)
     void testKafkaJBODDeleteClaimsTrueFalse(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -910,7 +911,7 @@ class KafkaST extends AbstractST {
         verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testKafkaJBODDeleteClaimsTrue(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -935,7 +936,7 @@ class KafkaST extends AbstractST {
         verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testKafkaJBODDeleteClaimsFalse(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -960,7 +961,7 @@ class KafkaST extends AbstractST {
         verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testPersistentStorageSize(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1014,7 +1015,7 @@ class KafkaST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(LOADBALANCER_SUPPORTED)
     void testRegenerateCertExternalAddressChange(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1057,7 +1058,7 @@ class KafkaST extends AbstractST {
         });
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelModificationDoesNotBreakCluster(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1207,7 +1208,7 @@ class KafkaST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAppDomainLabels(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1293,7 +1294,7 @@ class KafkaST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testUOListeningOnlyUsersInSameCluster(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
@@ -1320,7 +1321,7 @@ class KafkaST extends AbstractST {
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testMessagesAreStoredInDisk(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1389,7 +1390,7 @@ class KafkaST extends AbstractST {
         assertThat("Topic has no data", topicData, notNullValue());
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testConsumerOffsetFiles(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1453,7 +1454,7 @@ class KafkaST extends AbstractST {
     }
 
 
-    @ParallelTest
+    @IsolatedTest
     void testLabelsAndAnnotationForPVC(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -1561,7 +1562,7 @@ class KafkaST extends AbstractST {
         }
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testKafkaOffsetsReplicationFactorHigherThanReplicas(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -1578,7 +1579,7 @@ class KafkaST extends AbstractST {
             "Kafka configuration option .* should be set to " + 3 + " or less because 'spec.kafka.replicas' is " + 3);
     }
 
-    @ParallelTest
+    @IsolatedTest
     void testHostAliases(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -1618,7 +1619,7 @@ class KafkaST extends AbstractST {
         }
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testReadOnlyRootFileSystem(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
