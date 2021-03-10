@@ -26,7 +26,7 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class KafkaMirrorMakerResource {
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = TestUtils.USER_PATH + "/../examples/mirror-maker/kafka-mirror-maker.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/mirror-maker/kafka-mirror-maker.yaml";
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> kafkaMirrorMakerClient() {
         return Crds.mirrorMakerV1Beta2Operation(ResourceManager.kubeClient().getClient());

@@ -1,0 +1,56 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: my-bridge
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+    # Topics and groups used by the HTTP clients through the HTTP Bridge
+    # Change to match the topics used by your HTTP clients
+    - resource:
+        type: group
+        name: my-group
+      operation: Read
+    - resource:
+        type: topic
+        name: my-topic
+      operation: Read
+    - resource:
+        type: topic
+        name: my-topic
+      operation: Describe
+    - resource:
+        type: topic
+        name: my-topic
+      operation: Write
+    - resource:
+        type: topic
+        name: my-topic
+      operation: Create
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  replicas: 1
+  bootstrapServers: my-cluster-kafka-bootstrap:9093
+  tls:
+    trustedCertificates:
+    - secretName: my-cluster-cluster-ca-cert
+      certificate: ca.crt
+  authentication:
+    type: tls
+    certificateAndKey:
+      secretName: my-bridge
+      certificate: user.crt
+      key: user.key
+  http:
+    port: 8080
+ 
+

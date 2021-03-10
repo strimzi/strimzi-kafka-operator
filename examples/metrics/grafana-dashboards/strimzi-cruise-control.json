@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "7.3.7"
+      "version": "6.3.0"
     },
     {
       "type": "panel",
@@ -94,7 +94,7 @@
           "value": 2
         }
       ],
-      "maxDataPoints": 1,
+      "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
       "options": {},
@@ -122,7 +122,6 @@
         {
           "expr": "kafka_cruisecontrol_loadmonitor_total_monitored_windows_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
           "intervalFactor": 1,
           "legendFormat": "",
@@ -181,7 +180,7 @@
           "value": 2
         }
       ],
-      "maxDataPoints": 1,
+      "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
       "options": {},
@@ -207,7 +206,6 @@
         {
           "expr": "kafka_cruisecontrol_loadmonitor_valid_windows_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
           "intervalFactor": 1,
           "refId": "A"
@@ -265,7 +263,7 @@
           "value": 2
         }
       ],
-      "maxDataPoints": 1,
+      "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
       "options": {},
@@ -291,7 +289,6 @@
         {
           "expr": "kafka_cruisecontrol_executor_ongoing_execution_non_kafka_assigner_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
           "intervalFactor": 1,
           "refId": "A"
@@ -349,7 +346,7 @@
           "value": 2
         }
       ],
-      "maxDataPoints": 1,
+      "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
       "options": {},
@@ -375,7 +372,6 @@
         {
           "expr": "kafka_cruisecontrol_anomalydetector_balancedness_score_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
           "intervalFactor": 1,
           "refId": "A"
@@ -433,7 +429,7 @@
           "value": 2
         }
       ],
-      "maxDataPoints": 1,
+      "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
       "options": {},
@@ -459,7 +455,6 @@
         {
           "expr": "kafka_cruisecontrol_loadmonitor_monitored_partitions_percentage_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
           "intervalFactor": 1,
           "refId": "A"

@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-user-operator
+  labels:
+    app: strimzi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: strimzi-user-operator
+  template:
+    metadata:
+      labels:
+        name: strimzi-user-operator
+    spec:
+      serviceAccountName: strimzi-user-operator
+      containers:
+        - name: strimzi-user-operator
+          image: quay.io/strimzi/operator:latest
+          args:
+          - /opt/strimzi/bin/user_operator_run.sh
+          env:
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_LABELS
+              value: "strimzi.io/cluster=my-cluster"
+            - name: STRIMZI_CA_CERT_NAME
+              value: my-cluster-clients-ca-cert
+            - name: STRIMZI_CA_KEY_NAME
+              value: my-cluster-clients-ca
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+              value: "120000"
+            - name: STRIMZI_ZOOKEEPER_CONNECT
+              value: my-cluster-zookeeper-client:2181
+            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
+              value: "20000"
+            - name: STRIMZI_LOG_LEVEL
+              value: INFO
+            - name: STRIMZI_GC_LOG_ENABLED
+              value: "true"
+            - name: STRIMZI_CA_VALIDITY
+              value: "365"
+            - name: STRIMZI_CA_RENEWAL
+              value: "30"
+          livenessProbe:
+            httpGet:
+              path: /healthy
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 500m
+            requests:
+              memory: 256Mi
+              cpu: 100m
+  strategy:
+    type: Recreate

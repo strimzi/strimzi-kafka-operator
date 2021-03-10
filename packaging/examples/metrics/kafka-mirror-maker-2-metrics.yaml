@@ -1,0 +1,158 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mm2-cluster
+  labels:
+    app: my-mm2-cluster
+spec:
+  version: 2.7.0
+  replicas: 1
+  connectCluster: "my-cluster-target"
+  clusters:
+    - alias: "my-cluster-source"
+      bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+    - alias: "my-cluster-target"
+      bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+      config:
+        config.storage.replication.factor: 1
+        offset.storage.replication.factor: 1
+        status.storage.replication.factor: 1
+  mirrors:
+    - sourceCluster: "my-cluster-source"
+      targetCluster: "my-cluster-target"
+      sourceConnector:
+        config:
+          replication.factor: 1
+          offset-syncs.topic.replication.factor: 1
+          sync.topic.acls.enabled: "false"
+      heartbeatConnector:
+        config:
+          heartbeats.topic.replication.factor: 1
+      checkpointConnector:
+        config:
+          checkpoints.topic.replication.factor: 1
+      topicsPattern: ".*"
+      groupsPattern: ".*"
+  metricsConfig:
+    type: jmxPrometheusExporter
+    valueFrom:
+      configMapKeyRef:
+        name: mirror-maker-2-metrics
+        key: metrics-config.yml
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mirror-maker-2-metrics
+  labels:
+    app: strimzi
+data:
+  metrics-config.yml: |
+    # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    rules:
+    #kafka.connect:type=app-info,client-id="{clientid}"
+    #kafka.consumer:type=app-info,client-id="{clientid}"
+    #kafka.producer:type=app-info,client-id="{clientid}"
+    - pattern: 'kafka.(.+)<type=app-info, client-id=(.+)><>start-time-ms'
+      name: kafka_$1_start_time_seconds
+      labels:
+        clientId: "$2"
+      help: "Kafka $1 JMX metric start time seconds"
+      type: GAUGE
+      valueFactor: 0.001
+    - pattern: 'kafka.(.+)<type=app-info, client-id=(.+)><>(commit-id|version): (.+)'
+      name: kafka_$1_$3_info
+      value: 1
+      labels:
+        clientId: "$2"
+        $3: "$4"
+      help: "Kafka $1 JMX metric info version and commit-id"
+      type: GAUGE
+
+    #kafka.producer:type=producer-topic-metrics,client-id="{clientid}",topic="{topic}"", partition="{partition}"
+    #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}",topic="{topic}"", partition="{partition}"
+    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.+), topic=(.+), partition=(.+)><>(.+-total|compression-rate|.+-avg|.+-replica|.+-lag|.+-lead)
+      name: kafka_$2_$6
+      labels:
+        clientId: "$3"
+        topic: "$4"
+        partition: "$5"
+      help: "Kafka $1 JMX metric type $2"
+      type: GAUGE
+
+    #kafka.producer:type=producer-topic-metrics,client-id="{clientid}",topic="{topic}"
+    #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}",topic="{topic}"", partition="{partition}"
+    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.+), topic=(.+)><>(.+-total|compression-rate|.+-avg)
+      name: kafka_$2_$5
+      labels:
+        clientId: "$3"
+        topic: "$4"
+      help: "Kafka $1 JMX metric type $2"
+      type: GAUGE
+
+    #kafka.connect:type=connect-node-metrics,client-id="{clientid}",node-id="{nodeid}"
+    #kafka.consumer:type=consumer-node-metrics,client-id=consumer-1,node-id="{nodeid}"
+    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.+), node-id=(.+)><>(.+-total|.+-avg)
+      name: kafka_$2_$5
+      labels:
+        clientId: "$3"
+        nodeId: "$4"
+      help: "Kafka $1 JMX metric type $2"
+      type: UNTYPED
+
+    #kafka.connect:type=kafka-metrics-count,client-id="{clientid}"
+    #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}"
+    #kafka.consumer:type=consumer-coordinator-metrics,client-id="{clientid}"
+    #kafka.consumer:type=consumer-metrics,client-id="{clientid}"
+    - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.*)><>(.+-total|.+-avg|.+-bytes|.+-count|.+-ratio|.+-age|.+-flight|.+-threads|.+-connectors|.+-tasks|.+-ago)
+      name: kafka_$2_$4
+      labels:
+        clientId: "$3"
+      help: "Kafka $1 JMX metric type $2"
+      type: GAUGE
+
+    #kafka.connect:type=connector-task-metrics,connector="{connector}",task="{task}<> status"
+    - pattern: 'kafka.connect<type=connector-task-metrics, connector=(.+), task=(.+)><>status: ([a-z-]+)'
+      name: kafka_connect_connector_status
+      value: 1
+      labels:
+        connector: "$1"
+        task: "$2"
+        status: "$3"
+      help: "Kafka Connect JMX Connector status"
+      type: GAUGE
+
+    #kafka.connect:type=task-error-metrics,connector="{connector}",task="{task}"
+    #kafka.connect:type=source-task-metrics,connector="{connector}",task="{task}"
+    #kafka.connect:type=sink-task-metrics,connector="{connector}",task="{task}"
+    #kafka.connect:type=connector-task-metrics,connector="{connector}",task="{task}"
+    - pattern: kafka.connect<type=(.+)-metrics, connector=(.+), task=(.+)><>(.+-total|.+-count|.+-ms|.+-ratio|.+-avg|.+-failures|.+-requests|.+-timestamp|.+-logged|.+-errors|.+-retries|.+-skipped)
+      name: kafka_connect_$1_$4
+      labels:
+        connector: "$2"
+        task: "$3"
+      help: "Kafka Connect JMX metric type $1"
+      type: GAUGE
+
+    #kafka.connect:type=connector-metrics,connector="{connector}"
+    #kafka.connect:type=connect-worker-metrics,connector="{connector}"
+    - pattern: kafka.connect<type=connect-worker-metrics, connector=(.+)><>([a-z-]+)
+      name: kafka_connect_worker_$2
+      labels:
+        connector: "$1"
+      help: "Kafka Connect JMX metric $1"
+      type: GAUGE
+
+    #kafka.connect:type=connect-worker-metrics
+    - pattern: kafka.connect<type=connect-worker-metrics><>([a-z-]+)
+      name: kafka_connect_worker_$1
+      help: "Kafka Connect JMX metric worker"
+      type: GAUGE
+
+    #kafka.connect:type=connect-worker-rebalance-metrics
+    - pattern: kafka.connect<type=connect-worker-rebalance-metrics><>([a-z-]+)
+      name: kafka_connect_worker_rebalance_$1
+      help: "Kafka Connect JMX metric rebalance information"
+      type: GAUGE

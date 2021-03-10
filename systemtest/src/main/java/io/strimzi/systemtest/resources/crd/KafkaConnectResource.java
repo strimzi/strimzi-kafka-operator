@@ -30,7 +30,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaConnectResource {
-    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/kafka-connect.yaml";
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectClient() {
         return Crds.kafkaConnectV1Beta2Operation(ResourceManager.kubeClient().getClient());

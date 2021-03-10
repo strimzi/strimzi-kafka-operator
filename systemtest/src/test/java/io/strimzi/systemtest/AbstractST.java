@@ -98,7 +98,7 @@ public abstract class AbstractST implements TestSeparator {
     protected String testName;
 
     private Stack<String> clusterOperatorConfigs = new Stack<>();
-    public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../install/cluster-operator";
+    public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator";
 
     public static Random rng = new Random();
 
@@ -161,7 +161,7 @@ public abstract class AbstractST implements TestSeparator {
 
     /**
      * Perform application of ServiceAccount, Roles and CRDs needed for proper cluster operator deployment.
-     * Configuration files are loaded from install/cluster-operator directory.
+     * Configuration files are loaded from packaging/install/cluster-operator directory.
      */
     public void applyClusterOperatorInstallFiles(String namespace) {
         clusterOperatorConfigs.clear();
@@ -291,20 +291,20 @@ public abstract class AbstractST implements TestSeparator {
 
     private static void applyClusterRoleBindings(String namespace) {
         // 021-ClusterRoleBinding
-        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
+        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
         // 030-ClusterRoleBinding
-        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
+        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
         // 033-ClusterRoleBinding
-        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
+        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
     }
 
     private static void applyRoleBindings(String namespace, String bindingsNamespace) {
         // 020-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
         // 031-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
         // 032-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {

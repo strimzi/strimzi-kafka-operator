@@ -1,0 +1,37 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-admin
+  labels:
+    app: strimzi
+    # Add these permissions to the "admin" and "edit" default roles.
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+- apiGroups:
+  - "kafka.strimzi.io"
+  resources:
+  - kafkas
+  - kafkaconnects
+  - kafkaconnects/scale
+  - kafkaconnects2is
+  - kafkaconnects2is/scale
+  - kafkamirrormakers
+  - kafkamirrormakers/scale
+  - kafkausers
+  - kafkatopics
+  - kafkabridges
+  - kafkabridges/scale
+  - kafkaconnectors
+  - kafkaconnectors/scale
+  - kafkamirrormaker2s
+  - kafkamirrormaker2s/scale
+  - kafkarebalances
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update

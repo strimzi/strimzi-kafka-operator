@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-topic-operator
+  labels:
+    app: strimzi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: strimzi-topic-operator
+  template:
+    metadata:
+      labels:
+        name: strimzi-topic-operator
+    spec:
+      serviceAccountName: strimzi-topic-operator
+      containers:
+        - name: strimzi-topic-operator
+          image: quay.io/strimzi/operator:latest
+          args:
+          - /opt/strimzi/bin/topic_operator_run.sh
+          env:
+            - name: STRIMZI_RESOURCE_LABELS
+              value: "strimzi.io/cluster=my-cluster"
+            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
+              value: my-cluster-kafka-bootstrap:9092
+            - name: STRIMZI_ZOOKEEPER_CONNECT
+              value: my-cluster-zookeeper-client:2181
+            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
+              value: "20000"
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+              value: "900000"
+            - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS
+              value: "6"
+            - name: STRIMZI_LOG_LEVEL
+              value: INFO
+            - name: STRIMZI_TLS_ENABLED
+              value: "false"
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          livenessProbe:
+            httpGet:
+              path: /healthy
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            limits:
+              memory: 96Mi
+              cpu: 100m
+            requests:
+              memory: 96Mi
+              cpu: 100m
+  strategy:
+    type: Recreate

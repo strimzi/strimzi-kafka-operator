@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
+source $(dirname $(realpath $0))/../../tools/kafka-versions-tools.sh
+VERSIONS_FILE="$(dirname $(realpath $0))/../../kafka-versions.yaml"
 
 out="$1"
 

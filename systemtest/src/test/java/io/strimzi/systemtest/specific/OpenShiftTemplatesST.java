@@ -196,8 +196,8 @@ public class OpenShiftTemplatesST extends AbstractST {
     void setup() {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
-        cluster.createCustomResources(TestUtils.USER_PATH + "/../examples/templates/cluster-operator",
-                TestUtils.USER_PATH + "/../examples/templates/topic-operator",
+        cluster.createCustomResources(TestUtils.USER_PATH + "/../packaging/examples/templates/cluster-operator",
+                TestUtils.USER_PATH + "/../packaging/examples/templates/topic-operator",
                 TestUtils.CRD_KAFKA,
                 TestUtils.CRD_KAFKA_CONNECT,
                 TestUtils.CRD_KAFKA_CONNECT_S2I,

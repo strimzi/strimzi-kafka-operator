@@ -16,7 +16,7 @@ import io.strimzi.test.TestUtils;
 import java.util.List;
 
 public class BundleResource {
-    public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
+    public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
     public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout) {
         return defaultClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
