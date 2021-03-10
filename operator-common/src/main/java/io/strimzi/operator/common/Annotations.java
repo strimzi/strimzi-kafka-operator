@@ -180,4 +180,8 @@ public class Annotations {
         return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, false);
     }
 
+    public static boolean isReconciliationPausedWithAnnotation(ObjectMeta metadata) {
+        return Annotations.booleanAnnotation(metadata, ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, false);
+    }
+
 }

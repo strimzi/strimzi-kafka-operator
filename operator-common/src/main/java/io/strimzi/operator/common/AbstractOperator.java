@@ -215,6 +215,7 @@ public abstract class AbstractOperator<
                     Set<Condition> conditions = validate(cr);
                     conditions.add(StatusUtils.getPausedCondition());
                     status.setConditions(new ArrayList<>(conditions));
+                    status.setObservedGeneration(cr.getStatus() != null ? cr.getStatus().getObservedGeneration() : 0);
 
                     updateStatus(reconciliation, status).onComplete(statusResult -> {
                         if (statusResult.succeeded()) {
