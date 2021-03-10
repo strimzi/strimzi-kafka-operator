@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.operator.common.Annotations;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -47,26 +46,29 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             if (action.equals(Action.ERROR)) {
                 LOGGER.error("{}: Watch received action=ERROR for {} {} {}", logContext, kind, name, kafkaTopic);
             } else {
-                Handler<AsyncResult<Void>> resultHandler = ar -> {
-                    if (ar.succeeded()) {
-                        LOGGER.info("{}: Success processing event {} on resource {} with labels {}", logContext, action, name, labels);
-                    } else {
-                        String message;
-                        if (ar.cause() instanceof InvalidTopicException) {
-                            message = kind + " " + name + " has an invalid spec section: " + ar.cause().getMessage();
-                            LOGGER.error("{}", message);
-
+                if (action.equals(Action.DELETED) || shouldReconcile(kafkaTopic, metadata)) {
+                    LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,
+                            metadata.getGeneration(), labels);
+                    Handler<AsyncResult<Void>> resultHandler = ar -> {
+                        if (ar.succeeded()) {
+                            LOGGER.info("{}: Success processing event {} on resource {} with labels {}", logContext, action, name, labels);
                         } else {
-                            message = "Failure processing " + kind + " watch event " + action + " on resource " + name + " with labels " + labels + ": " + ar.cause().getMessage();
-                            LOGGER.error("{}: {}", logContext, message, ar.cause());
+                            String message;
+                            if (ar.cause() instanceof InvalidTopicException) {
+                                message = kind + " " + name + " has an invalid spec section: " + ar.cause().getMessage();
+                                LOGGER.error("{}", message);
+
+                            } else {
+                                message = "Failure processing " + kind + " watch event " + action + " on resource " + name + " with labels " + labels + ": " + ar.cause().getMessage();
+                                LOGGER.error("{}: {}", logContext, message, ar.cause());
+                            }
+                            topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> {
+                            }));
                         }
-                        topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> {
-                        }));
-                    }
-                };
-                if (Annotations.isReconciliationPausedWithAnnotation(kafkaTopic) && kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent()) {
-                } else {
+                    };
                     topicOperator.onResourceEvent(logContext, kafkaTopic, action).onComplete(resultHandler);
+                } else {
+                    LOGGER.debug("{}: Ignoring {} to {} {} because metadata.generation==status.observedGeneration", logContext, action, kind, name);
                 }
             }
         }
