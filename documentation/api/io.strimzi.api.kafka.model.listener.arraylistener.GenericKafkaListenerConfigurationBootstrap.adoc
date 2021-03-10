@@ -1,5 +1,3 @@
-Configures bootstrap service overrides for external listeners.
-
 Broker service equivalents of `nodePort`, `host`, `loadBalancerIP` and `annotations` properties are configured in the xref:type-GenericKafkaListenerConfigurationBroker-reference[`GenericKafkaListenerConfigurationBroker` schema].
 
 [id='property-listener-config-altnames-{context}']
@@ -7,7 +5,7 @@ Broker service equivalents of `nodePort`, `host`, `loadBalancerIP` and `annotati
 
 You can specify alternative names for the bootstrap service.
 The names are added to the broker certificates and can be used for TLS hostname verification.
-The `alternativeNames` property is applicable to all types of external listeners.
+The `alternativeNames` property is applicable to all types of listeners.
 
 .Example of an external `route` listener configured with an additional bootstrap address
 [source,yaml,subs="attributes+"]
@@ -161,8 +159,8 @@ listeners:
 [id='property-listener-config-annotations-{context}']
 === `annotations`
 
-Use the `annotations` property to add annotations to `loadbalancer`, `nodeport` or `ingress` listeners.
-You can use these annotations to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
+Use the `annotations` property to add annotations to Kubernetes resources related to the listeners.
+You can use these annotations for example to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
 
 .Example of an external listener of type `loadbalancer` using `annotations`
 [source,yaml,subs="attributes+"]

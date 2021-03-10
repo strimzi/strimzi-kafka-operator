@@ -1,7 +1,5 @@
-Configures broker service overrides for external listeners.
-
 You can see example configuration for the `nodePort`, `host`, `loadBalancerIP` and `annotations` properties in the xref:type-GenericKafkaListenerConfigurationBootstrap-reference[`GenericKafkaListenerConfigurationBootstrap` schema],
-which configures bootstrap service overrides for external listeners.
+which configures bootstrap service overrides.
 
 [id='property-listener-config-broker-{context}']
 .Advertised addresses for brokers
@@ -9,9 +7,9 @@ which configures bootstrap service overrides for external listeners.
 By default, Strimzi tries to automatically determine the hostnames and ports that your Kafka cluster advertises to its clients.
 This is not sufficient in all situations, because the infrastructure on which Strimzi is running might not provide the right hostname or port through which Kafka can be accessed.
 
-You can specify a broker ID and customize the advertised hostname and port in the `configuration` property of the external listener.
+You can specify a broker ID and customize the advertised hostname and port in the `configuration` property of the listener.
 Strimzi will then automatically configure the advertised address in the Kafka brokers and add it to the broker certificates so it can be used for TLS hostname verification.
-Overriding the advertised host and ports is available for all types of external listeners.
+Overriding the advertised host and ports is available for all types of listeners.
 
 .Example of an external `route` listener configured with overrides for advertised addresses
 [source,yaml,subs="attributes+"]
