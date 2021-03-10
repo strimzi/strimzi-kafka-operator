@@ -79,7 +79,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         cluster.setNamespace(DEFAULT_NAMESPACE);
 
         LOGGER.info("Deploying Kafka without CR selector");
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());
 
         // checking that no pods with prefix 'clusterName' will be created in some time
         PodUtils.waitUntilPodStabilityReplicasCount(clusterName, 0);
@@ -190,7 +190,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Creating {} in {} namespace", coName, coNamespace);
 
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(namespace, coNamespace, Constants.RECONCILIATION_INTERVAL)
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(coNamespace, namespace, Constants.RECONCILIATION_INTERVAL)
             .editOrNewMetadata()
                 .withName(coName)
             .endMetadata()
