@@ -125,7 +125,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         LOGGER.info("Use clients with clientId containing 'hello-world' in access token.");
         oauthInternalClientJob = oauthInternalClientJob.toBuilder().withBootstrapAddress(
-                KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort).build();
+                KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort).build();
 
         oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
@@ -537,6 +537,7 @@ public class OauthPlainST extends OauthAbstractST {
                                 .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .withEnablePlain(true)
                                 .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                                .withCustomClaimCheck("@.clientId && @.clientId =~ /.*hello-world.*/")
                             .endKafkaListenerAuthenticationOAuth()
                         .endGenericKafkaListener()
                         .addNewGenericKafkaListener()
@@ -552,6 +553,8 @@ public class OauthPlainST extends OauthAbstractST {
                                 .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                 .withEnablePlain(true)
                                 .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                                .withCheckAudience(true)
+                                .withClientId("kafka-component")
                             .endKafkaListenerAuthenticationOAuth()
                         .endGenericKafkaListener()
                     .endListeners()
