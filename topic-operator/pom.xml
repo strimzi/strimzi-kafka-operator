@@ -81,6 +81,12 @@
         <dependency>
             <groupId>io.apicurio</groupId>
             <artifactId>apicurio-registry-utils-streams</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>grpc-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.apicurio</groupId>
@@ -93,10 +99,6 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-streams</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>
