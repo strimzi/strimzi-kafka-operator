@@ -276,49 +276,31 @@ class SecurityST extends AbstractST {
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
-        Map<String, String> initialCaKeys = new HashMap<>();
+        Map<String, String> initialCaCerts = new HashMap<>();
         for (String secretName : secrets) {
             Secret secret = kubeClient().getSecret(secretName);
-            // TODO: java.lang.AssertionError: ca.key in my-cluster-2085887157-cluster-ca-cert should not be null
-            // TODO: testAutoRenewAllCaCertsTriggeredByAnno Null pointeer...
-            // TODO: testAutoRenewClientsCaCertsTriggeredByAnno java.lang.AssertionError: ca.key in my-cluster-2147249579-clients-ca-cert should not be null
-            // TODO: testAutoRenewClusterCaCertsTriggeredByAnno java.lang.AssertionError: ca.key in my-cluster-2085887157-cluster-ca-cert should not be null
             String value = secret.getData().get("ca.crt");
-            assertThat("ca.crt in " + secretName + " should not be null", value, is(Matchers.notNullValue()));
-            initialCaKeys.put(secretName, value);
+            assertThat("ca.crt in " + secretName + " should not be null", value, is(notNullValue()));
+            initialCaCerts.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                 .editMetadata()
-                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
                 .endMetadata()
                 .build();
-            LOGGER.info("Patching secret {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_REPLACE);
+            LOGGER.info("Patching secret {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW);
             kubeClient().patchSecret(secretName, annotated);
         }
 
         if (zkShouldRoll) {
-            LOGGER.info("Wait for zk to rolling restart (1)...");
-            zkPods = StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
+            LOGGER.info("Wait for zk to rolling restart ...");
+            StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
         }
         if (kafkaShouldRoll) {
-            LOGGER.info("Wait for kafka to rolling restart (1)...");
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), kafkaPods);
+            LOGGER.info("Wait for kafka to rolling restart ...");
+            StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), 3, kafkaPods);
         }
         if (eoShouldRoll) {
-            LOGGER.info("Wait for EO to rolling restart (1)...");
-            eoPod = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
-        }
-
-        if (zkShouldRoll) {
-            LOGGER.info("Wait for zk to rolling restart (2)...");
-            zkPods = StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
-        }
-        if (kafkaShouldRoll) {
-            LOGGER.info("Wait for kafka to rolling restart (2)...");
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), 3, kafkaPods);
-        }
-
-        if (eoShouldRoll) {
-            LOGGER.info("Wait for EO to rolling restart (2)...");
+            LOGGER.info("Wait for EO to rolling restart ...");
             eoPod = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
 
@@ -326,11 +308,10 @@ class SecurityST extends AbstractST {
         for (String secretName : secrets) {
             Secret secret = kubeClient().getSecret(secretName);
             assertThat("Secret " + secretName + " should exist", secret, is(notNullValue()));
-            assertThat("CA key in " + secretName + " should have non-null 'data'", secret.getData(), is(notNullValue()));
+            assertThat("CA cert in " + secretName + " should have non-null 'data'", is(notNullValue()));
             String value = secret.getData().get("ca.crt");
-            assertThat("CA key in " + secretName + " should exist", value, is(notNullValue()));
-            assertThat("CA key in " + secretName + " should have changed",
-                    value, is(not(initialCaKeys.get(secretName))));
+            assertThat("CA cert in " + secretName + " should have changed",
+                value, is(not(initialCaCerts.get(secretName))));
         }
 
         internalKafkaClient = internalKafkaClient.toBuilder()
