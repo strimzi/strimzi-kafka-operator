@@ -146,7 +146,7 @@ public class KafkaTopicUtils {
         String oldSpec = describeTopicViaKafkaPod(topicName, podName, bootstrapServer);
 
         TestUtils.waitFor("KafkaTopic's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            if (oldSpec == describeTopicViaKafkaPod(topicName, podName, bootstrapServer)) {
+            if (oldSpec.equals(describeTopicViaKafkaPod(topicName, podName, bootstrapServer))) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                     LOGGER.info("KafkaTopic's spec is stable for {} polls intervals", stableCounter[0]);
