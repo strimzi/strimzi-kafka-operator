@@ -153,7 +153,7 @@ First, a new interactive pod container is run using a Strimzi Kafka image to con
 
 [source,shell,subs="attributes"]
 ----
-kubectl run -ti --rm --restart=Never --image=quay.io/strimzi/kafka:latest-kafka-{DefaultKafkaVersion} kafka-cli -- /bin/sh
+kubectl run -ti --rm --restart=Never --image={DockerKafkaImageCurrent} kafka-cli -- /bin/sh
 ----
 
 NOTE: If `kubectl` times out waiting on the image download, subsequent attempts may result in an _AlreadyExists_ error.
