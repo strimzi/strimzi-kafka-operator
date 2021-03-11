@@ -130,6 +130,18 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
             "enabled": true,
             "email": "service-account-hello-world-streams@placeholder.org",
             "serviceAccountClientId": "hello-world-streams"
+        },
+        {
+            "username": "service-account-kafka-audience-producer",
+            "enabled": true,
+            "email": "service-account-kafka-audience-producer@placeholder.org",
+            "serviceAccountClientId": "kafka-audience-producer"
+        },
+        {
+            "username": "service-account-kafka-audience-consumer",
+            "enabled": true,
+            "email": "service-account-kafka-audience-consumer@placeholder.org",
+            "serviceAccountClientId": "kafka-audience-consumer"
         }
     ],
     "roles": {
@@ -221,9 +233,22 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
             "fullScopeAllowed": false,
             "attributes": {
                 "access.token.lifespan": "32140800"
-            }
-        },
-        {
+            },
+            "protocolMappers": [
+              {
+                "name": "audience for kafka-component",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-audience-mapper",
+                "consentRequired": false,
+                "config": {
+                    "included.client.audience": "kafka-component",
+                    "id.token.claim": "false",
+                    "access.token.claim": "true"
+                }
+              }
+            ]
+          },
+          {
             "clientId": "kafka-producer",
             "enabled": true,
             "clientAuthenticatorType": "client-secret",
@@ -256,6 +281,66 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
             "attributes": {
                 "access.token.lifespan": "32140800"
             }
+        },
+        {
+            "clientId": "kafka-audience-producer",
+            "enabled": true,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "kafka-audience-secret",
+            "publicClient": false,
+            "bearerOnly": false,
+            "standardFlowEnabled": false,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": true,
+            "consentRequired": false,
+            "fullScopeAllowed": false,
+            "attributes": {
+                "access.token.lifespan": "36000"
+            },
+            "protocolMappers": [
+              {
+                "name": "audience for kafka-component",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-audience-mapper",
+                "consentRequired": false,
+                "config": {
+                    "included.client.audience": "kafka-component",
+                    "id.token.claim": "false",
+                    "access.token.claim": "true"
+                }
+              }
+            ]
+        },
+        {
+            "clientId": "kafka-audience-consumer",
+            "enabled": true,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "kafka-audience-secret",
+            "publicClient": false,
+            "bearerOnly": false,
+            "standardFlowEnabled": false,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": true,
+            "consentRequired": false,
+            "fullScopeAllowed": false,
+            "attributes": {
+                "access.token.lifespan": "32140800"
+            },
+            "protocolMappers": [
+              {
+                "name": "audience for kafka-component",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-audience-mapper",
+                "consentRequired": false,
+                "config": {
+                    "included.client.audience": "kafka-component",
+                    "id.token.claim": "false",
+                    "access.token.claim": "true"
+                }
+              }
+            ]
         },
         {
             "clientId": "hello-world-producer",
