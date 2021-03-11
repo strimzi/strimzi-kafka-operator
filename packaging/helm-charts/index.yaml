@@ -3,9 +3,9 @@ entries:
   strimzi-kafka-operator:
   - apiVersion: v2
     appVersion: 0.22.0-rc1
-    created: "2021-03-11T11:07:05.911803+01:00"
+    created: "2021-03-11T11:22:21.051901+01:00"
     description: 'Strimzi: Apache Kafka running on Kubernetes'
-    digest: 29ec5123b44914d57576d266075c0e1c68ef248f8821883e9927a3effc1b308a
+    digest: c873404ee138bb94850908576495aa9641463739f931015a2b4949a66431a216
     home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
@@ -740,4 +740,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: "2021-03-11T11:07:05.899219+01:00"
+generated: "2021-03-11T11:22:21.038926+01:00"
