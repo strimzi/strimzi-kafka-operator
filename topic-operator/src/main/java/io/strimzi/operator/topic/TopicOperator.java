@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.cluster.model.StatusDiff;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
@@ -49,7 +48,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 class TopicOperator {
@@ -73,7 +71,6 @@ class TopicOperator {
     private Counter successfulReconciliationsCounter;
     private Counter lockedReconciliationsCounter;
     private AtomicInteger topicCounter;
-    private AtomicInteger pausedTopicCounter;
     protected Timer reconciliationsTimer;
 
     enum EventType {
@@ -414,10 +411,6 @@ class TopicOperator {
 
             topicCounter = metrics.gauge(METRICS_PREFIX + "resources",
                     "Number of topics the operator sees",
-                    metricTags);
-
-            pausedTopicCounter = metrics.gauge(METRICS_PREFIX + "resources.paused",
-                    "Number of topics the operator sees but does not reconcile due to paused reconciliations",
                     metricTags);
 
             reconciliationsTimer = metrics.timer(METRICS_PREFIX + "reconciliations.duration",
@@ -905,11 +898,7 @@ class TopicOperator {
                 return k8s.getFromName(resourceName).compose(topic -> {
                     reconciliation.observedTopicFuture(kafkaTopic != null ? topic : null);
                     Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
-                    if (topic != null && Annotations.isReconciliationPausedWithAnnotation(topic)) {
-                        return Future.succeededFuture();
-                    } else {
-                        return reconcile(reconciliation, logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic);
-                    }
+                    return reconcile(reconciliation, logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic);
                 });
             });
     }
@@ -1021,12 +1010,10 @@ class TopicOperator {
                     KafkaTopicStatus kts = new KafkaTopicStatus();
                     StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result);
 
-                    if (Annotations.isReconciliationPausedWithAnnotation(topic)) {
+                    StatusDiff ksDiff = new StatusDiff(topic.getStatus(), kts);
+                    if (!ksDiff.isEmpty()) {
                         Promise<Void> promise = Promise.promise();
                         statusFuture = promise.future();
-
-                        kts.setConditions(singletonList(StatusUtils.getPausedCondition()));
-
                         k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).onComplete(ar -> {
                             if (ar.succeeded() && ar.result() != null) {
                                 ObjectMeta metadata = ar.result().getMetadata();
@@ -1041,26 +1028,7 @@ class TopicOperator {
                             statusFuture.handle(ar.map((Void) null));
                         });
                     } else {
-                        StatusDiff ksDiff = new StatusDiff(topic.getStatus(), kts);
-                        if (!ksDiff.isEmpty()) {
-                            Promise<Void> promise = Promise.promise();
-                            statusFuture = promise.future();
-                            k8s.updateResourceStatus(new KafkaTopicBuilder(topic).withStatus(kts).build()).onComplete(ar -> {
-                                if (ar.succeeded() && ar.result() != null) {
-                                    ObjectMeta metadata = ar.result().getMetadata();
-                                    LOGGER.debug("{}: status was set rv={}, generation={}, observedGeneration={}",
-                                            logContext,
-                                            metadata.getResourceVersion(),
-                                            metadata.getGeneration(),
-                                            ar.result().getStatus().getObservedGeneration());
-                                } else {
-                                    LOGGER.error("{}: Error setting resource status", logContext, ar.cause());
-                                }
-                                statusFuture.handle(ar.map((Void) null));
-                            });
-                        } else {
-                            statusFuture = Future.succeededFuture();
-                        }
+                        statusFuture = Future.succeededFuture();
                     }
                 } else {
                     LOGGER.debug("{}: No KafkaTopic to set status", logContext);
@@ -1125,11 +1093,7 @@ class TopicOperator {
                             "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
                             EventType.WARNING, result));
                 } else {
-                    if (topicResource != null && Annotations.isReconciliationPausedWithAnnotation(topicResource)) {
-                        result = Future.succeededFuture();
-                    } else {
-                        result = reconcile(reconciliation, logContext, topicResource, k8sTopic, kafkaTopic, privateTopic);
-                    }
+                    result = reconcile(reconciliation, logContext, topicResource, k8sTopic, kafkaTopic, privateTopic);
                 }
                 return result;
             });
@@ -1298,12 +1262,8 @@ class TopicOperator {
             });
         }).compose(reconcileState -> {
             List<Future> futs = new ArrayList<>();
-            pausedTopicCounter.set(0);
             topicCounter.set(reconcileState.ktList.size());
             for (KafkaTopic kt : reconcileState.ktList) {
-                if (Annotations.isReconciliationPausedWithAnnotation(kt)) {
-                    pausedTopicCounter.getAndIncrement();
-                }
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName()).withKubeTopic(kt);
                 Topic topic = TopicSerialization.fromTopicResource(kt);
                 TopicName topicName = topic.getTopicName();
