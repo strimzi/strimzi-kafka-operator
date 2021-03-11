@@ -127,7 +127,10 @@ public class KafkaConnectorUtils {
         return getConnectorConfig(podName, connectorName, apiUrl);
     }
 
-    public static void waitForConnectorsSpecStability(String podName, String connectorName, String oldSpec) {
+    /**
+     * Checks stability of Connector's spec on Connect API, which should be same like before changes
+     */
+    public static void waitForConnectorSpecFromConnectAPIStability(String podName, String connectorName, String oldSpec) {
         int[] stableCounter = {0};
 
         TestUtils.waitFor("Connector's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {

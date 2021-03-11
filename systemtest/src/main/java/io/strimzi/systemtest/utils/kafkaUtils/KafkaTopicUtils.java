@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -130,12 +129,24 @@ public class KafkaTopicUtils {
         LOGGER.info("{} KafkaTopics were created", topicCount);
     }
 
-    public static void waitForKafkaTopicSpecStability(String topicName) {
+    public static String describeTopicViaKafkaPod(String topicName, String kafkaPodName, String bootstrapServer) {
+        return cmdKubeClient().execInPod(kafkaPodName, "/bin/bash -c",
+            ".bin/kafka-topics.sh",
+            "--topic",
+            topicName,
+            "--describe",
+            "--bootstrap-server",
+            bootstrapServer)
+            .out();
+    }
+
+    public static void waitForKafkaTopicSpecStability(String topicName, String podName, String bootstrapServer) {
         int[] stableCounter = {0};
 
-        KafkaTopicSpec oldSpec = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getSpec();
+        String oldSpec = describeTopicViaKafkaPod(topicName, podName, bootstrapServer);
+
         TestUtils.waitFor("KafkaTopic's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            if (oldSpec == KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getSpec()) {
+            if (oldSpec == describeTopicViaKafkaPod(topicName, podName, bootstrapServer)) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                     LOGGER.info("KafkaTopic's spec is stable for {} polls intervals", stableCounter[0]);

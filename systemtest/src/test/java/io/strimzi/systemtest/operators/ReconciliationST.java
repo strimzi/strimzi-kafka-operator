@@ -99,7 +99,7 @@ public class ReconciliationST extends AbstractST {
         });
 
         KafkaConnectorUtils.waitForConnectorStatus(clusterName, CustomResourceStatus.ReconciliationPaused);
-        KafkaConnectorUtils.waitForConnectorsSpecStability(connectPodName, clusterName, connectorSpec);
+        KafkaConnectorUtils.waitForConnectorSpecFromConnectAPIStability(connectPodName, clusterName, connectorSpec);
 
         LOGGER.info("Setting annotation to \"false\", taskMax should be increased to {}", SCALE_TO);
         KafkaConnectorResource.replaceKafkaConnectorResource(clusterName, connector ->
@@ -125,7 +125,7 @@ public class ReconciliationST extends AbstractST {
         });
 
         KafkaTopicUtils.waitForKafkaTopicStatus(TOPIC_NAME, CustomResourceStatus.ReconciliationPaused);
-        KafkaTopicUtils.waitForKafkaTopicSpecStability(TOPIC_NAME);
+        KafkaTopicUtils.waitForKafkaTopicSpecStability(TOPIC_NAME, KafkaResources.kafkaPodName(clusterName, 0), KafkaResources.plainBootstrapAddress(clusterName));
 
         LOGGER.info("Setting annotation to \"false\", partitions should be scaled to {}", SCALE_TO);
         KafkaTopicResource.replaceTopicResource(TOPIC_NAME,
@@ -139,20 +139,22 @@ public class ReconciliationST extends AbstractST {
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
 
-        KafkaRebalanceResource.replaceKafkaRebalanceResource(clusterName, rebalance -> {
-            rebalance.getMetadata().setAnnotations(PAUSE_ANNO);
-            rebalance.getSpec().setExcludedTopics(TOPIC_NAME);
-        });
+        KafkaRebalanceResource.replaceKafkaRebalanceResource(clusterName, rebalance -> rebalance.getMetadata().setAnnotations(PAUSE_ANNO));
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ReconciliationPaused);
 
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.approve);
 
-        // because we don't have any option to check if KR is rebalancing (other than status),
-        // we will check that spec is not changed because of excluded topic
-        KafkaRebalanceUtils.waitForRebalanceSpecStability(clusterName);
+        // unfortunately we don't have any option to check, if something is changed when reconciliations are paused
+        // so we will check stability of status
+        KafkaRebalanceUtils.waitForRebalanceStatusStability(clusterName);
 
         LOGGER.info("Setting annotation to \"false\" and waiting for KafkaRebalance to be in {} state", KafkaRebalanceState.Ready);
         KafkaRebalanceResource.replaceKafkaRebalanceResource(clusterName,
             rebalance -> rebalance.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"));
+
+        // because approve annotation wasn't reflected, approving again
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.approve);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Ready);
     }
 

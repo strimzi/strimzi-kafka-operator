@@ -5,10 +5,10 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -89,24 +89,24 @@ public class KafkaRebalanceUtils {
         waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.Ready);
     }
 
-    public static void waitForRebalanceSpecStability(String resourceName) {
+    public static void waitForRebalanceStatusStability(String resourceName) {
         int[] stableCounter = {0};
 
-        KafkaRebalanceSpec oldSpec = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get().getSpec();
+        KafkaRebalanceStatus oldStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get().getStatus();
 
-        TestUtils.waitFor("KafkaRebalance spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            if (KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get().getSpec().equals(oldSpec)) {
+        TestUtils.waitFor("KafkaRebalance status will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            if (KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get().getStatus().equals(oldStatus)) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
-                    LOGGER.info("KafkaRebalance spec is stable for {} polls intervals", stableCounter[0]);
+                    LOGGER.info("KafkaRebalance status is stable for {} polls intervals", stableCounter[0]);
                     return true;
                 }
             } else {
-                LOGGER.info("KafkaRebalance spec is not stable. Going to set the counter to zero.");
+                LOGGER.info("KafkaRebalance status is not stable. Going to set the counter to zero.");
                 stableCounter[0] = 0;
                 return false;
             }
-            LOGGER.info("KafkaRebalance spec gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            LOGGER.info("KafkaRebalance status gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
             return false;
         });
     }
