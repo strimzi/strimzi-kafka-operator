@@ -755,7 +755,7 @@ spec:
                         type: array
                         items:
                           type: string
-                        description: List of super users. which are user principals
+                        description: List of super users, which are user principals
                           with unlimited access rights.
                       tlsTrustedCertificates:
                         type: array
@@ -7563,7 +7563,7 @@ spec:
                         type: array
                         items:
                           type: string
-                        description: List of super users. which are user principals
+                        description: List of super users, which are user principals
                           with unlimited access rights.
                       tlsTrustedCertificates:
                         type: array
@@ -15952,7 +15952,7 @@ spec:
                         type: array
                         items:
                           type: string
-                        description: List of super users. which are user principals
+                        description: List of super users, which are user principals
                           with unlimited access rights.
                       tlsTrustedCertificates:
                         type: array

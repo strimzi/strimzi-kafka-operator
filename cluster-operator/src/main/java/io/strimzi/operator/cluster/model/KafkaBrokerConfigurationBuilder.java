@@ -487,8 +487,8 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("authorizer.class.name=" + customAuthz.getAuthorizerClass());
 
             // add configuration properties
-            if (customAuthz.getConfigProperties() != null && !customAuthz.getConfigProperties().isEmpty()) {
-                customAuthz.getConfigProperties().forEach((k,v) -> {
+            if (customAuthz.getConfig() != null && !customAuthz.getConfig().isEmpty()) {
+                customAuthz.getConfig().forEach((k, v) -> {
                     writer.println(k + "=" + v);
                 });
             }

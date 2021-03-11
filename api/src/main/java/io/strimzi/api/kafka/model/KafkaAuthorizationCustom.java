@@ -5,7 +5,6 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import io.strimzi.crdgenerator.annotations.Description;
@@ -35,7 +34,7 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
 
     private String authorizerClass;
     private List<String> superUsers;
-    private Map<String, Object> configProperties;
+    private Map<String, Object> config;
 
     @Description("Must be `" + TYPE_CUSTOM + "`")
     @Override
@@ -43,7 +42,7 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
         return TYPE_CUSTOM;
     }
 
-    @Description("List of super users. which are user principals with unlimited access rights.")
+    @Description("List of super users, which are user principals with unlimited access rights.")
     @Example("- CN=my-user\n" +
              "- CN=my-other-user")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -69,12 +68,11 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
              "  prop1: value1\n" +
              "  prop2: value2")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonProperty(value = "config")
-    public Map<String, Object> getConfigProperties() {
-        return configProperties;
+    public Map<String, Object> getConfig() {
+        return config;
     }
 
-    public void setConfigProperties(Map<String, Object> configProperties) {
-        this.configProperties = configProperties;
+    public void setConfig(Map<String, Object> configProperties) {
+        this.config = configProperties;
     }
 }
