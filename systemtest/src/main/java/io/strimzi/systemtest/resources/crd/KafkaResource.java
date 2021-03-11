@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.interfaces.TestSeparator.LOGGER;
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
@@ -242,6 +243,7 @@ public class KafkaResource {
                     if (e.getMessage().contains("object is being deleted")) {
                         return false;
                     } else {
+                        LOGGER.debug("Error found: " + e.getMessage());
                         throw e;
                     }
                 }
