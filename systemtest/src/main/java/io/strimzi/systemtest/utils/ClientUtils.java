@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.Random;
 
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * ClientUtils class, which provides static methods for the all type clients
@@ -51,20 +52,21 @@ public class ClientUtils {
     public static void waitTillContinuousClientsFinish(String producerName, String consumerName, String namespace, int messageCount) {
         LOGGER.info("Waiting till producer {} and consumer {} finish", producerName, consumerName);
         TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().getJobStatus(producerName) && kubeClient().getJobStatus(consumerName));
+            () -> kubeClient().checkSucceededJobStatus(producerName) && kubeClient().checkSucceededJobStatus(consumerName));
     }
 
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
         LOGGER.info("Waiting for producer/consumer:{} to finished", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().namespace(namespace).getJobStatus(jobName));
+            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
     }
 
     public static void waitForClientTimeout(String jobName, String namespace, int messageCount) {
         LOGGER.info("Waiting for producer/consumer:{} to finish with failure.", jobName);
         try {
             TestUtils.waitFor("Job did not finish within time limit (as expected).", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-                () -> kubeClient().namespace(namespace).getJobStatus(jobName));
+                () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
+            assertThat("Job did not finish with 1 failed pod (expected).", kubeClient().namespace(namespace).getJobStatus(jobName).getFailed().equals(1));
         } catch (WaitException e) {
             if (e.getMessage().contains("Timeout after ")) {
                 LOGGER.info("Client job '{}' finished with expected timeout.", jobName);

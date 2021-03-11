@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobList;
+import io.fabric8.kubernetes.api.model.batch.JobStatus;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -442,8 +443,17 @@ public class KubeClient {
         return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get();
     }
 
-    public Boolean getJobStatus(String jobName) {
-        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get().getStatus().getSucceeded().equals(1);
+    public Boolean checkSucceededJobStatus(String jobName) {
+        return checkSucceededJobStatus(jobName, 1);
+    }
+
+    public Boolean checkSucceededJobStatus(String jobName, int expectedSucceededPods) {
+        return getJobStatus(jobName).getSucceeded().equals(expectedSucceededPods);
+    }
+
+    // Pods Statuses:  0 Running / 0 Succeeded / 1 Failed
+    public JobStatus getJobStatus(String jobName) {
+        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get().getStatus();
     }
 
     public JobList getJobList() {
