@@ -225,6 +225,7 @@ class SecurityST extends AbstractST {
 
         createKafkaCluster(extensionContext);
 
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
@@ -248,10 +249,10 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext, user);
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName, user).build());
 
         String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
@@ -349,10 +350,10 @@ class SecurityST extends AbstractST {
         user = KafkaUserTemplates.tlsUser(clusterName, bobUserName).build();
 
         resourceManager.createResource(extensionContext, user);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-tls", user).build());
 
         defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-tls").get(0).getMetadata().getName();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
@@ -420,6 +421,7 @@ class SecurityST extends AbstractST {
 
 
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
         List<String> secrets = null;
 
         // to make it parallel we need decision maker...
@@ -436,6 +438,8 @@ class SecurityST extends AbstractST {
                 break;
         }
 
+        LOGGER.info("-----{} has {} secrets", extensionContext.getDisplayName(), secrets.toString());
+
         createKafkaCluster(extensionContext);
 
         KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build();
@@ -445,10 +449,10 @@ class SecurityST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName, user).build());
 
         String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
@@ -541,10 +545,10 @@ class SecurityST extends AbstractST {
         user = KafkaUserTemplates.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build();
 
         resourceManager.createResource(extensionContext, user);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-tls", user).build());
 
         defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-tls").get(0).getMetadata().getName();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withUsingPodName(defaultKafkaClientsPodName)
