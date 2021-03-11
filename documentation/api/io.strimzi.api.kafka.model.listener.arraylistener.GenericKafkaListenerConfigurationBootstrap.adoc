@@ -160,7 +160,7 @@ listeners:
 === `annotations`
 
 Use the `annotations` property to add annotations to Kubernetes resources related to the listeners.
-You can use these annotations for example to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
+You can use these annotations, for example, to instrument DNS tooling such as {KubernetesExternalDNS}, which automatically assigns DNS names to the loadbalancer services.
 
 .Example of an external listener of type `loadbalancer` using `annotations`
 [source,yaml,subs="attributes+"]
