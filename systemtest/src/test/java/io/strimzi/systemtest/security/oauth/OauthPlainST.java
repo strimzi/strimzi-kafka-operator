@@ -33,6 +33,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -71,6 +72,42 @@ public class OauthPlainST extends OauthAbstractST {
 
         oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+    }
+
+    @Disabled("Example Kafka Clients do not support this yet - https://github.com/strimzi/client-examples/pull/54")
+    @Test
+    void testSaslPlainProducerConsumer() {
+        String plainAdditionalConfig =
+                "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=%s password=%s;\n" +
+                        "sasl.mechanism=PLAIN";
+
+        KafkaOauthExampleClients plainSaslOauthConsumerClientsJob = new KafkaOauthExampleClients.Builder()
+                .withConsumerName(OAUTH_CLIENT_AUDIENCE_CONSUMER)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .withTopicName(TOPIC_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withOAuthClientId(OAUTH_CLIENT_NAME)
+                .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_CONSUMER, OAUTH_CLIENT_AUDIENCE_SECRET))
+                .build();
+
+        KafkaOauthExampleClients plainSaslOauthProducerClientsJob = new KafkaOauthExampleClients.Builder()
+                .withProducerName(OAUTH_CLIENT_AUDIENCE_PRODUCER)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .withTopicName(TOPIC_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withOAuthClientId(OAUTH_CLIENT_NAME)
+                .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_PRODUCER, OAUTH_CLIENT_AUDIENCE_SECRET))
+                .build();
+
+        plainSaslOauthProducerClientsJob.createAndWaitForReadiness(plainSaslOauthProducerClientsJob.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT);
+
+        plainSaslOauthConsumerClientsJob.createAndWaitForReadiness(plainSaslOauthConsumerClientsJob.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_CONSUMER, NAMESPACE, MESSAGE_COUNT);
     }
 
     @Test
