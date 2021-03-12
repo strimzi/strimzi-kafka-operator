@@ -571,7 +571,12 @@ public class KubeClient {
 
     public List<Event> listEvents(String resourceUid) {
         return listEvents().stream()
-                .filter(event -> event.getInvolvedObject().getUid().equals(resourceUid))
+                .filter(event -> {
+                    if (event.getInvolvedObject().getUid() == null) {
+                        return false;
+                    }
+                    return event.getInvolvedObject().getUid().equals(resourceUid);
+                })
                 .collect(Collectors.toList());
     }
 
