@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class KafkaRebalanceTemplates {
 
-    public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = TestUtils.USER_PATH + "/../examples/cruise-control/kafka-rebalance.yaml";
+    public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/cruise-control/kafka-rebalance.yaml";
 
     private KafkaRebalanceTemplates() {}
 

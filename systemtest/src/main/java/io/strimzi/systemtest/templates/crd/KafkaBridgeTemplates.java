@@ -22,7 +22,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 
 public class KafkaBridgeTemplates {
 
-    public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = TestUtils.USER_PATH + "/../examples/bridge/kafka-bridge.yaml";
+    public static final String PATH_TO_KAFKA_BRIDGE_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/bridge/kafka-bridge.yaml";
 
     private KafkaBridgeTemplates() {}
 

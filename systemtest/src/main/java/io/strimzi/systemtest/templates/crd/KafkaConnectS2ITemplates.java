@@ -24,7 +24,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 @SuppressWarnings("deprecation")
 public class KafkaConnectS2ITemplates {
 
-    public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect-s2i.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/kafka-connect-s2i.yaml";
 
     private KafkaConnectS2ITemplates() {}
 

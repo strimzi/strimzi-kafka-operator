@@ -18,7 +18,7 @@ public class KafkaTopicTemplates {
 
     private KafkaTopicTemplates() {}
 
-    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = TestUtils.USER_PATH + "/../examples/topic/kafka-topic.yaml";
+    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/topic/kafka-topic.yaml";
 
     public static KafkaTopicBuilder topic(String clusterName, String topicName) {
         return defaultTopic(clusterName, topicName, 1, 1, 1, ResourceManager.kubeClient().getNamespace());

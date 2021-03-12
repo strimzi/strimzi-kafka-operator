@@ -26,8 +26,8 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaConnectTemplates {
 
-    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = TestUtils.USER_PATH + "/../examples/connect/kafka-connect.yaml";
-    public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = TestUtils.USER_PATH + "/../examples/metrics/kafka-connect-metrics.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/kafka-connect.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-connect-metrics.yaml";
 
     private KafkaConnectTemplates() {}
 

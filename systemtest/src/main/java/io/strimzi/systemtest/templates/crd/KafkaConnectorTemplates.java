@@ -12,7 +12,7 @@ import io.strimzi.test.TestUtils;
 
 public class KafkaConnectorTemplates {
 
-    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../examples/connect/source-connector.yaml";
+    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/source-connector.yaml";
 
     private KafkaConnectorTemplates() {}
 

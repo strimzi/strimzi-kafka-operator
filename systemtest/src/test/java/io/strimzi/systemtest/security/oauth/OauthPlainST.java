@@ -97,30 +97,30 @@ public class OauthPlainST extends OauthAbstractST {
     @Test
     void testSaslPlainProducerConsumer() {
         String plainAdditionalConfig =
-                "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=%s password=%s;\n" +
-                        "sasl.mechanism=PLAIN";
+            "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=%s password=%s;\n" +
+                "sasl.mechanism=PLAIN";
 
         KafkaOauthExampleClients plainSaslOauthConsumerClientsJob = new KafkaOauthExampleClients.Builder()
-                .withConsumerName(OAUTH_CLIENT_AUDIENCE_CONSUMER)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
-                .withTopicName(TOPIC_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withOAuthClientId(OAUTH_CLIENT_NAME)
-                .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
-                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_CONSUMER, OAUTH_CLIENT_AUDIENCE_SECRET))
-                .build();
+            .withConsumerName(OAUTH_CLIENT_AUDIENCE_CONSUMER)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_CONSUMER, OAUTH_CLIENT_AUDIENCE_SECRET))
+            .build();
 
         KafkaOauthExampleClients plainSaslOauthProducerClientsJob = new KafkaOauthExampleClients.Builder()
-                .withProducerName(OAUTH_CLIENT_AUDIENCE_PRODUCER)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
-                .withTopicName(TOPIC_NAME)
-                .withMessageCount(MESSAGE_COUNT)
-                .withOAuthClientId(OAUTH_CLIENT_NAME)
-                .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
-                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_PRODUCER, OAUTH_CLIENT_AUDIENCE_SECRET))
-                .build();
+            .withProducerName(OAUTH_CLIENT_AUDIENCE_PRODUCER)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_PRODUCER, OAUTH_CLIENT_AUDIENCE_SECRET))
+            .build();
 
         plainSaslOauthProducerClientsJob.createAndWaitForReadiness(plainSaslOauthProducerClientsJob.producerStrimziOauthPlain().build());
         ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT);
@@ -129,64 +129,138 @@ public class OauthPlainST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_CONSUMER, NAMESPACE, MESSAGE_COUNT);
     }
 
-    @Test
-    void testProducerConsumerAudienceTokenChecks() {
+    @ParallelTest
+    void testProducerConsumerAudienceTokenChecks(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + clusterName;
+        String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+
         LOGGER.info("Setting producer and consumer properties");
-        oauthInternalClientJob = oauthInternalClientJob.toBuilder()
-                .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
-                .build();
+        KafkaOauthExampleClients oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
         LOGGER.info("Use clients without access token containing audience token");
-        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT));
-        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(producerName, NAMESPACE, MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(consumerName, NAMESPACE, MESSAGE_COUNT));
 
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
+        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
 
         LOGGER.info("Use clients with Access token containing audience token");
-        oauthInternalClientChecksJob.createAndWaitForReadiness(oauthInternalClientChecksJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT);
 
-        oauthInternalClientChecksJob.createAndWaitForReadiness(oauthInternalClientChecksJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_CONSUMER, NAMESPACE, MESSAGE_COUNT);
+        KafkaOauthExampleClients oauthInternalClientProducerJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(audienceProducerName)
+            .withConsumerName(audienceConsumerName)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort)
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_PRODUCER);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_CONSUMER);
+        KafkaOauthExampleClients oauthInternalClientConsumerJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(audienceProducerName)
+            .withConsumerName(audienceConsumerName)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort)
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
+
+        resourceManager.createResource(extensionContext, oauthInternalClientProducerJob.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(audienceProducerName, NAMESPACE, MESSAGE_COUNT);
+
+        resourceManager.createResource(extensionContext, oauthInternalClientConsumerJob.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(audienceConsumerName, NAMESPACE, MESSAGE_COUNT);
+
+        JobUtils.deleteJobWithWait(NAMESPACE, audienceProducerName);
+        JobUtils.deleteJobWithWait(NAMESPACE, audienceConsumerName);
 
         oauthInternalClientJob = oauthInternalClientJob.toBuilder()
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
                 .build();
     }
 
-    @Test
-    void testAccessTokenClaimCheck() {
+    @ParallelTest
+    void testAccessTokenClaimCheck(ExtensionContext extensionContext) {
+        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + clusterName;
+        String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
+        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+
         LOGGER.info("Use clients with clientId not containing 'hello-world' in access token.");
-        oauthInternalClientChecksJob = oauthInternalClientChecksJob.toBuilder()
-                .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort)
-                .build();
 
-        oauthInternalClientChecksJob.createAndWaitForReadiness(oauthInternalClientChecksJob.producerStrimziOauthPlain().build());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT));
+        KafkaOauthExampleClients oauthInternalClientProducerJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(audienceProducerName)
+            .withConsumerName(audienceConsumerName)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort)
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
-        oauthInternalClientChecksJob.createAndWaitForReadiness(oauthInternalClientChecksJob.consumerStrimziOauthPlain().build());
-        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(OAUTH_CLIENT_AUDIENCE_CONSUMER, NAMESPACE, MESSAGE_COUNT));
+        KafkaOauthExampleClients oauthInternalClientConsumerJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(audienceProducerName)
+            .withConsumerName(audienceConsumerName)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort)
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
 
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_PRODUCER);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_CONSUMER);
+        resourceManager.createResource(extensionContext, oauthInternalClientProducerJob.producerStrimziOauthPlain().build());
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(audienceProducerName, NAMESPACE, MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, oauthInternalClientConsumerJob.consumerStrimziOauthPlain().build());
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(audienceConsumerName, NAMESPACE, MESSAGE_COUNT));
+
+        JobUtils.deleteJobWithWait(NAMESPACE, audienceProducerName);
+        JobUtils.deleteJobWithWait(NAMESPACE, audienceConsumerName);
 
         LOGGER.info("Use clients with clientId containing 'hello-world' in access token.");
+
+        KafkaOauthExampleClients oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
+
         oauthInternalClientJob = oauthInternalClientJob.toBuilder().withBootstrapAddress(
                 KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + customClaimListenerPort).build();
 
-        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
-        oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
 
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
-        JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
+        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
 
         oauthInternalClientJob = oauthInternalClientJob.toBuilder()
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
@@ -594,7 +668,6 @@ public class OauthPlainST extends OauthAbstractST {
         final String customClaimListener = "cclistener";
         final String audienceListener = "audlistnr";
 
-        setupCoAndKeycloak(extensionContext);
         keycloakInstance.setRealm("internal", false);
 
         LOGGER.info("Setting producer and consumer properties");
