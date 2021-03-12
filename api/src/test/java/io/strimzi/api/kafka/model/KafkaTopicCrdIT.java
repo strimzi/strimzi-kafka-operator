@@ -10,6 +10,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -24,7 +26,6 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaTopicV1alpha1() {
-        assumeKube1_11Plus();
         createDelete(KafkaTopic.class, "KafkaTopicV1alpha1.yaml");
     }
 
@@ -45,16 +46,20 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaTopicWithExtraProperty() {
-        createDelete(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml");
+        Throwable exception = assertThrows(
+            KubeClusterException.class,
+            () -> createDelete(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"foo\""));
     }
 
     @Test
     void testKafkaTopicWithMissingProperty() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.partitions", "spec.replicas");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "partitions", "replicas");
     }
 
     @BeforeAll

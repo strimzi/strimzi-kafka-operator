@@ -24,16 +24,16 @@ import static org.hamcrest.Matchers.oneOf;
 
 public class CliTestUtils {
     public static final String USER_PATH = System.getProperty("user.dir");
-    public static final String CRD_V1_TOPIC = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/043-Crd-kafkatopic.yaml";
-    public static final String CRD_V1_KAFKA = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka.yaml";
-    public static final String CRD_V1_KAFKA_CONNECT = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/041-Crd-kafkaconnect.yaml";
-    public static final String CRD_V1_KAFKA_CONNECT_S2I = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/042-Crd-kafkaconnects2i.yaml";
-    public static final String CRD_V1_KAFKA_USER = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/044-Crd-kafkauser.yaml";
-    public static final String CRD_V1_KAFKA_MIRROR_MAKER = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/045-Crd-kafkamirrormaker.yaml";
-    public static final String CRD_V1_KAFKA_BRIDGE = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/046-Crd-kafkabridge.yaml";
-    public static final String CRD_V1_KAFKA_MIRROR_MAKER_2 = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/048-Crd-kafkamirrormaker2.yaml";
-    public static final String CRD_V1_KAFKA_CONNECTOR = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model//047-Crd-kafkaconnector.yaml";
-    public static final String CRD_V1_KAFKA_REBALANCE = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/049-Crd-kafkarebalance.yaml";
+    public static final String CRD_V1BETA1_TOPIC = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/043-Crd-kafkatopic.yaml";
+    public static final String CRD_V1BETA1_KAFKA = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/040-Crd-kafka.yaml";
+    public static final String CRD_V1BETA1_KAFKA_CONNECT = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/041-Crd-kafkaconnect.yaml";
+    public static final String CRD_V1BETA1_KAFKA_CONNECT_S2I = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/042-Crd-kafkaconnects2i.yaml";
+    public static final String CRD_V1BETA1_KAFKA_USER = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/044-Crd-kafkauser.yaml";
+    public static final String CRD_V1BETA1_KAFKA_MIRROR_MAKER = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/045-Crd-kafkamirrormaker.yaml";
+    public static final String CRD_V1BETA1_KAFKA_BRIDGE = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/046-Crd-kafkabridge.yaml";
+    public static final String CRD_V1BETA1_KAFKA_MIRROR_MAKER_2 = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/048-Crd-kafkamirrormaker2.yaml";
+    public static final String CRD_V1BETA1_KAFKA_CONNECTOR = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/047-Crd-kafkaconnector.yaml";
+    public static final String CRD_V1BETA1_KAFKA_REBALANCE = USER_PATH + "/../api/src/test/resources/io/strimzi/api/kafka/model/049-Crd-kafkarebalance.yaml";
 
     /**
      * Creates all CRDs of extensions/v1beta1 version containing all Strimzi API versions
@@ -41,16 +41,16 @@ public class CliTestUtils {
      * @param cluster   Kubernetes cluster
      */
     public static void setupAllCrds(KubeClusterResource cluster)  {
-        cluster.createCustomResources(TestUtils.CRD_KAFKA);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT_S2I);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
-        cluster.createCustomResources(TestUtils.CRD_TOPIC);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_USER);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECTOR);
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA_CONNECT);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA_CONNECT_S2I);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA_MIRROR_MAKER);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA_MIRROR_MAKER_2);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA_BRIDGE);
+        cluster.createCustomResources(CRD_V1BETA1_TOPIC);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA_USER);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA_CONNECTOR);
+        cluster.createCustomResources(CRD_V1BETA1_KAFKA_REBALANCE);
 
         waitForCrd(cluster, "kafkas.kafka.strimzi.io");
         waitForCrd(cluster, "kafkaconnects2is.kafka.strimzi.io");
@@ -89,16 +89,16 @@ public class CliTestUtils {
      * @param cluster   Kubernetes cluster
      */
     public static void deleteAllCrds(KubeClusterResource cluster) {
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA);
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECT);
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECT_S2I);
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
-        cluster.deleteCustomResources(TestUtils.CRD_TOPIC);
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_USER);
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECTOR);
-        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA_CONNECT);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA_CONNECT_S2I);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA_MIRROR_MAKER);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA_MIRROR_MAKER_2);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA_BRIDGE);
+        cluster.deleteCustomResources(CRD_V1BETA1_TOPIC);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA_USER);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA_CONNECTOR);
+        cluster.deleteCustomResources(CRD_V1BETA1_KAFKA_REBALANCE);
     }
 
     /**
@@ -183,16 +183,16 @@ public class CliTestUtils {
      * @param cluster   Kubernetes cluster
      */
     public static void setupV1Crds(KubeClusterResource cluster)  {
-        cluster.replaceCustomResources(CRD_V1_KAFKA);
-        cluster.replaceCustomResources(CRD_V1_KAFKA_CONNECT);
-        cluster.replaceCustomResources(CRD_V1_KAFKA_CONNECT_S2I);
-        cluster.replaceCustomResources(CRD_V1_KAFKA_MIRROR_MAKER);
-        cluster.replaceCustomResources(CRD_V1_KAFKA_MIRROR_MAKER_2);
-        cluster.replaceCustomResources(CRD_V1_KAFKA_BRIDGE);
-        cluster.replaceCustomResources(CRD_V1_TOPIC);
-        cluster.replaceCustomResources(CRD_V1_KAFKA_USER);
-        cluster.replaceCustomResources(CRD_V1_KAFKA_CONNECTOR);
-        cluster.replaceCustomResources(CRD_V1_KAFKA_REBALANCE);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA_CONNECT);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA_CONNECT_S2I);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
+        cluster.replaceCustomResources(TestUtils.CRD_TOPIC);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA_USER);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA_CONNECTOR);
+        cluster.replaceCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
 
         waitForCrd(cluster, "kafkas.kafka.strimzi.io");
         waitForCrd(cluster, "kafkaconnects2is.kafka.strimzi.io");
@@ -212,16 +212,16 @@ public class CliTestUtils {
      * @param cluster   Kubernetes cluster
      */
     public static void deleteV1Crds(KubeClusterResource cluster) {
-        cluster.deleteCustomResources(CRD_V1_KAFKA);
-        cluster.deleteCustomResources(CRD_V1_KAFKA_CONNECT);
-        cluster.deleteCustomResources(CRD_V1_KAFKA_CONNECT_S2I);
-        cluster.deleteCustomResources(CRD_V1_KAFKA_MIRROR_MAKER);
-        cluster.deleteCustomResources(CRD_V1_KAFKA_MIRROR_MAKER_2);
-        cluster.deleteCustomResources(CRD_V1_KAFKA_BRIDGE);
-        cluster.deleteCustomResources(CRD_V1_TOPIC);
-        cluster.deleteCustomResources(CRD_V1_KAFKA_USER);
-        cluster.deleteCustomResources(CRD_V1_KAFKA_CONNECTOR);
-        cluster.deleteCustomResources(CRD_V1_KAFKA_REBALANCE);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECT);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECT_S2I);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
+        cluster.deleteCustomResources(TestUtils.CRD_TOPIC);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_USER);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_CONNECTOR);
+        cluster.deleteCustomResources(TestUtils.CRD_KAFKA_REBALANCE);
     }
 
     /**

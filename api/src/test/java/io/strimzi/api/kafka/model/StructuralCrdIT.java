@@ -43,7 +43,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
             assertApiVersionsAreStructural(crd.getKey(),
                     ApiVersion.V1BETA1,
-                    "../packaging/install/cluster-operator/" + crd.getValue(),
+                    "./src/test/resources/io/strimzi/api/kafka/model/" + crd.getValue(),
                     ApiVersion.parseRange("v1beta2+"));
         }
     }
@@ -55,7 +55,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
             assertApiVersionsAreStructural(crd.getKey(),
                     ApiVersion.V1,
-                    "./src/test/resources/io/strimzi/api/kafka/model/" + crd.getValue(),
+                    "../packaging/install/cluster-operator/" + crd.getValue(),
                     ApiVersion.parseRange("v1beta2+"));
         }
     }

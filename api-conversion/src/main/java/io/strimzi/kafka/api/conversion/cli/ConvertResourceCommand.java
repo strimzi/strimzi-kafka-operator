@@ -58,7 +58,7 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     protected List<CustomResource> get(String kind, String namespace, boolean allNamespaces) {
-        MixedOperation<CustomResource, CustomResourceList, ?> op = DEFAULT_OPERATIONS.get(kind).apply(client);
+        MixedOperation<CustomResource, CustomResourceList, ?> op = VERSIONED_OPERATIONS.get(kind).apply(client, OLD_API_VERSIONS.get(kind));
 
         if (allNamespaces)   {
             return op.inAnyNamespace().list().getItems();
@@ -93,7 +93,7 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     private CustomResource getNamedResource(String kind, String name, String namespace)    {
-        MixedOperation<CustomResource, CustomResourceList, ?> op = DEFAULT_OPERATIONS.get(kind).apply(client);
+        MixedOperation<CustomResource, CustomResourceList, ?> op = VERSIONED_OPERATIONS.get(kind).apply(client, OLD_API_VERSIONS.get(kind));
 
         return op.inNamespace(namespace).withName(name).get();
     }

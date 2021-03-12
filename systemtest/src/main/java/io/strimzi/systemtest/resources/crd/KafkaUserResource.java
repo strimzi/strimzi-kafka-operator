@@ -23,7 +23,7 @@ public class KafkaUserResource {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserResource.class);
 
     public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserClient() {
-        return Crds.kafkaUserV1Beta2Operation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaUserBuilder tlsUser(String clusterName, String name) {

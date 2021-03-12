@@ -1,5 +1,5 @@
 ---
-apiVersion: "kafka.strimzi.io/v1alpha1"
+apiVersion: "kafka.strimzi.io/v1beta2"
 kind: "KafkaMirrorMaker2"
 metadata:
   name: "test-kafka-mirror-maker-2"
@@ -30,15 +30,17 @@ spec:
         checkpoints.topic.replication.factor: 1
     topicsPattern: "my-topic"
     groupsPattern: "my-group"
-  tolerations:
-  - effect: "NoSchedule"
-    key: "key1"
-    operator: "Equal"
-    value: "value1"
-  - effect: "NoSchedule"
-    key: "key2"
-    operator: "Equal"
-    value: "value2"
+  template:
+    pod:
+      tolerations:
+      - effect: "NoSchedule"
+        key: "key1"
+        operator: "Equal"
+        value: "value1"
+      - effect: "NoSchedule"
+        key: "key2"
+        operator: "Equal"
+        value: "value2"
   externalConfiguration:
     env:
     - name: "SOME_VARIABLE"

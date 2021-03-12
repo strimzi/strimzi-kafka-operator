@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -488,8 +489,9 @@ class RollingUpdateST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
 
+        // Changes to readiness probe should trigger a rolling update
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
-            kafka.getSpec().getKafka().setMetrics(singletonMap("kafka.config", "magic-config"));
+            kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
         });
 
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
@@ -512,63 +514,6 @@ class RollingUpdateST extends AbstractST {
 
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName)), is(zkPods));
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName)), is(kafkaPods));
-    }
-
-    @Test
-    @Deprecated
-    @Tag(ROLLING_UPDATE)
-    void testExternalLoggingChangeTriggerRollingUpdateDeprecated() {
-        // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
-
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
-
-        String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
-                "kafka.root.logger.level=INFO\n" +
-                "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
-                "log4j.logger.org.apache.zookeeper=INFO\n" +
-                "log4j.logger.kafka=INFO\n" +
-                "log4j.logger.org.apache.kafka=INFO\n" +
-                "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
-                "log4j.logger.kafka.network.Processor=INFO\n" +
-                "log4j.logger.kafka.server.KafkaApis=INFO\n" +
-                "log4j.logger.kafka.network.RequestChannel$=INFO\n" +
-                "log4j.logger.kafka.controller=INFO\n" +
-                "log4j.logger.kafka.log.LogCleaner=INFO\n" +
-                "log4j.logger.state.change.logger=TRACE\n" +
-                "log4j.logger.kafka.authorizer.logger=INFO";
-
-        String configMapLoggersName = "loggers-config-map";
-        ConfigMap configMapLoggers = new ConfigMapBuilder()
-            .withNewMetadata()
-                .withName(configMapLoggersName)
-            .endMetadata()
-            .addToData("log4j.properties", loggersConfig)
-            .build();
-
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
-
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
-            kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
-                .withName(configMapLoggersName)
-                .build());
-            kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
-                    .withName(configMapLoggersName)
-                    .build());
-        });
-
-        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
-
-        configMapLoggers.getData().put("log4j.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapLoggers);
-
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
     }
 
     @Test
@@ -644,10 +589,10 @@ class RollingUpdateST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
 
-        // Metrics enabling should trigger rolling update
+        // Changes to readiness probe should trigger a rolling update
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
-            kafka.getSpec().getKafka().setMetrics(singletonMap("something", "changed"));
-            kafka.getSpec().getZookeeper().setMetrics(singletonMap("something", "changed"));
+            kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
+            kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
         });
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
