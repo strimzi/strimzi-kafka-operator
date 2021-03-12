@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -71,7 +72,10 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling",
+    "checkstyle:ClassFanOutComplexity",
+    "checkstyle:ClassDataAbstractionCoupling"})
+@SuppressFBWarnings("MS_MUTABLE_COLLECTION_PKGPROTECT")
 public class ResourceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);

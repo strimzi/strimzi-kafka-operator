@@ -1738,7 +1738,7 @@ class KafkaST extends AbstractST {
     }
 
     void verifyPVCDeletion(String clusterName, int kafkaReplicas, JbodStorage jbodStorage) {
-            List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
+        List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
                 .map(pvc -> pvc.getMetadata().getName())
                 .collect(Collectors.toList());
 

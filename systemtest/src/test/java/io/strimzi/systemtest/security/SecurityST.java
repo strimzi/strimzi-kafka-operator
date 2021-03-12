@@ -1251,7 +1251,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster with the support {} TLS",  tlsVersion12);
 
-       resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withConfig(configWithNewestVersionOfTls)
