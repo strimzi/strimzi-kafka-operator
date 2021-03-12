@@ -1,6 +1,10 @@
 
 # CHANGELOG
 
+## 0.23.0
+
+* Remove support for Kafka 2.5.x
+
 ## 0.22.0
 
 * Add `v1beta2` version for all resources. `v1beta2` removes all deprecated fields.

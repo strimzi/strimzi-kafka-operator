@@ -56,36 +56,26 @@ spec:
               value: quay.io/strimzi/kafka:latest-kafka-2.7.0
             - name: STRIMZI_KAFKA_IMAGES
               value: |
-                2.5.0=quay.io/strimzi/kafka:latest-kafka-2.5.0
-                2.5.1=quay.io/strimzi/kafka:latest-kafka-2.5.1
                 2.6.0=quay.io/strimzi/kafka:latest-kafka-2.6.0
                 2.6.1=quay.io/strimzi/kafka:latest-kafka-2.6.1
                 2.7.0=quay.io/strimzi/kafka:latest-kafka-2.7.0
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
               value: |
-                2.5.0=quay.io/strimzi/kafka:latest-kafka-2.5.0
-                2.5.1=quay.io/strimzi/kafka:latest-kafka-2.5.1
                 2.6.0=quay.io/strimzi/kafka:latest-kafka-2.6.0
                 2.6.1=quay.io/strimzi/kafka:latest-kafka-2.6.1
                 2.7.0=quay.io/strimzi/kafka:latest-kafka-2.7.0
             - name: STRIMZI_KAFKA_CONNECT_S2I_IMAGES
               value: |
-                2.5.0=quay.io/strimzi/kafka:latest-kafka-2.5.0
-                2.5.1=quay.io/strimzi/kafka:latest-kafka-2.5.1
                 2.6.0=quay.io/strimzi/kafka:latest-kafka-2.6.0
                 2.6.1=quay.io/strimzi/kafka:latest-kafka-2.6.1
                 2.7.0=quay.io/strimzi/kafka:latest-kafka-2.7.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
               value: |
-                2.5.0=quay.io/strimzi/kafka:latest-kafka-2.5.0
-                2.5.1=quay.io/strimzi/kafka:latest-kafka-2.5.1
                 2.6.0=quay.io/strimzi/kafka:latest-kafka-2.6.0
                 2.6.1=quay.io/strimzi/kafka:latest-kafka-2.6.1
                 2.7.0=quay.io/strimzi/kafka:latest-kafka-2.7.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
               value: |
-                2.5.0=quay.io/strimzi/kafka:latest-kafka-2.5.0
-                2.5.1=quay.io/strimzi/kafka:latest-kafka-2.5.1
                 2.6.0=quay.io/strimzi/kafka:latest-kafka-2.6.0
                 2.6.1=quay.io/strimzi/kafka:latest-kafka-2.6.1
                 2.7.0=quay.io/strimzi/kafka:latest-kafka-2.7.0

@@ -73,7 +73,7 @@
   checksum: 447A7057BCD9FACA98B6F4807BD6019EF73EEE90EFDC1E7B10005F669E2537A8A190CB8B9C9F4C20DB1D95B13D0F0487E9CC560D0759532058439CE7F722C7CD
   zookeeper: 3.5.7
   third-party-libs: 2.5.x
-  supported: true
+  supported: false
   default: false
 - version: 2.5.1
   format: 2.5
@@ -82,7 +82,7 @@
   checksum: 91F96F28C016BDAA3FE025F87ACE188417A1E594C8E32B7D23A104AA390BC25F5DB5897E23CCCF00EA7EDE3AC20B3028C10363EBE99DCBD7DB2CF6237EE7553A
   zookeeper: 3.5.8
   third-party-libs: 2.5.x
-  supported: true
+  supported: false
   default: false
 - version: 2.6.0
   format: 2.6
