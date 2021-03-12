@@ -25,7 +25,7 @@ import java.util.List;
 public class BundleResource implements ResourceType<Deployment> {
     private static final Logger LOGGER = LogManager.getLogger(BundleResource.class);
 
-    public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
+    public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
     @Override
     public String getKind() {
