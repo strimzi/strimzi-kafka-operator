@@ -58,7 +58,7 @@ public class CruiseControlIsolatedST extends AbstractST {
     private static final String CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC = "strimzi.cruisecontrol.modeltrainingsamples"; // partitions 32 , rf - 2
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testAutoCreationOfCruiseControlTopics(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -97,7 +97,7 @@ public class CruiseControlIsolatedST extends AbstractST {
         assertThat(partitionMetricsTopic.getReplicas(), is(2));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
     void testCruiseControlWithRebalanceResource(ExtensionContext extensionContext) {
         String clusterName = "what-about-this";
@@ -108,7 +108,7 @@ public class CruiseControlIsolatedST extends AbstractST {
         KafkaRebalanceUtils.doRebalancingProcess(clusterName);
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCruiseControlWithSingleNodeKafka(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -133,7 +133,7 @@ public class CruiseControlIsolatedST extends AbstractST {
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is(not(errMessage)));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCruiseControlTopicExclusion(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -164,7 +164,7 @@ public class CruiseControlIsolatedST extends AbstractST {
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Ready);
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCruiseControlReplicaMovementStrategy(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
@@ -205,7 +205,7 @@ public class CruiseControlIsolatedST extends AbstractST {
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 

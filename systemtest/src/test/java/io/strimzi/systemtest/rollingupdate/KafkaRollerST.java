@@ -25,6 +25,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -68,7 +69,7 @@ public class KafkaRollerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaRollerST.class);
     static final String NAMESPACE = "kafka-roller-cluster-test";
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaRollsWhenTopicIsUnderReplicated(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
@@ -129,7 +130,7 @@ public class KafkaRollerST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaTopicRFLowerThanMinInSyncReplicas(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
@@ -158,7 +159,7 @@ public class KafkaRollerST extends AbstractST {
         assertThat(StatefulSetUtils.ssSnapshot(kafkaName), is(not(kafkaPods)));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaPodCrashLooping(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -186,7 +187,7 @@ public class KafkaRollerST extends AbstractST {
         KafkaUtils.waitForKafkaReady(clusterName);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaPodImagePullBackOff(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -209,7 +210,7 @@ public class KafkaRollerST extends AbstractST {
         KafkaUtils.waitForKafkaReady(clusterName);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     public void testKafkaPodPending(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -246,7 +247,7 @@ public class KafkaRollerST extends AbstractST {
         KafkaUtils.waitForKafkaReady(clusterName);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaPodPendingDueToRack(ExtensionContext extensionContext) {
         // Testing this scenario
         // 1. deploy Kafka with wrong pod template (looking for nonexistent node) kafka pods should not exist

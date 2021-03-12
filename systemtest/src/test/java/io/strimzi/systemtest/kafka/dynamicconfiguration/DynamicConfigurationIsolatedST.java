@@ -63,7 +63,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     private Map<String, Object> kafkaConfig;
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testSimpleDynamicConfiguration(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
@@ -102,7 +102,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     @Tag(NODEPORT_SUPPORTED)
     @Tag(ROLLING_UPDATE)
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testUpdateToExternalListenerCausesRollingRestart(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
@@ -220,7 +220,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + false));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)

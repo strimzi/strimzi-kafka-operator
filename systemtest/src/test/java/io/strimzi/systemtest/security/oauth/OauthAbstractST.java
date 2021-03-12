@@ -86,7 +86,6 @@ public class OauthAbstractST extends AbstractST {
 
     @AfterEach
     void tearDown(ExtensionContext extensionContext) {
-        // TODO: filter all jobs by containing cluster name..
         List<Job> clusterJobList = kubeClient().getJobList().getItems()
             .stream()
             .filter(

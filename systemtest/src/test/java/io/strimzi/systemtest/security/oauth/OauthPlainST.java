@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients;
@@ -255,7 +256,7 @@ public class OauthPlainST extends OauthAbstractST {
     }
 
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker(ExtensionContext extensionContext) {
@@ -384,7 +385,7 @@ public class OauthPlainST extends OauthAbstractST {
             });
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     @Tag(NODEPORT_SUPPORTED)

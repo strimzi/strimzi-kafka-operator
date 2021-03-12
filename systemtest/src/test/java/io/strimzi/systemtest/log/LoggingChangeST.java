@@ -72,7 +72,7 @@ class LoggingChangeST extends AbstractST {
 
     private static final String CONFIG_MAP_CO_NAME = "json-layout-cluster-operator";
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -395,7 +395,7 @@ class LoggingChangeST extends AbstractST {
         assertThat("EO pod should not roll", DeploymentUtils.depSnapshot(eoDeploymentName), equalTo(eoPods));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(BRIDGE)
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetBridgeLoggingLevels(ExtensionContext extensionContext) throws InterruptedException {
@@ -601,7 +601,7 @@ class LoggingChangeST extends AbstractST {
         assertThat(coLog.contains("INFO"), is(true));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetConnectLoggingLevels(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -682,7 +682,7 @@ class LoggingChangeST extends AbstractST {
         assertThat("Connect pod should not roll", DeploymentUtils.depSnapshot(KafkaConnectResources.deploymentName(clusterName)), equalTo(connectSnapshot));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDynamicallySetKafkaLoggingLevels(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -751,7 +751,7 @@ class LoggingChangeST extends AbstractST {
         assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDynamicallySetUnknownKafkaLogger(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -773,7 +773,7 @@ class LoggingChangeST extends AbstractST {
                         .contains("paprika=INFO"));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDynamicallySetUnknownKafkaLoggerValue(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -793,7 +793,7 @@ class LoggingChangeST extends AbstractST {
         assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDynamicallySetKafkaExternalLogging(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -906,7 +906,7 @@ class LoggingChangeST extends AbstractST {
                 .contains("kafka.authorizer.logger=DEBUG"));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetMM2LoggingLevels(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());

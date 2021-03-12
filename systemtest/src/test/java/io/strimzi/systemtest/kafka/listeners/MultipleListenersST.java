@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -54,7 +55,7 @@ public class MultipleListenersST extends AbstractST {
 
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleNodePorts(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -62,7 +63,7 @@ public class MultipleListenersST extends AbstractST {
     }
 
     @Tag(INTERNAL_CLIENTS_USED)
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleInternal(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -73,7 +74,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfInternalAndExternalListeners(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -91,7 +92,7 @@ public class MultipleListenersST extends AbstractST {
 
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleLoadBalancers(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -100,7 +101,7 @@ public class MultipleListenersST extends AbstractST {
 
     @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -111,7 +112,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -132,7 +133,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 

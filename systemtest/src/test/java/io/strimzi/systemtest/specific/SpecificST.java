@@ -82,7 +82,7 @@ public class SpecificST extends AbstractST {
     public static final String NAMESPACE = "specific-cluster-test";
     private ExtensionContext sharedExtensionContext;
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAware(ExtensionContext extensionContext) {
@@ -322,7 +322,7 @@ public class SpecificST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerIpOverride(ExtensionContext extensionContext) {
@@ -371,7 +371,7 @@ public class SpecificST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka(ExtensionContext extensionContext) {
         String nonExistingVersion = "6.6.6";
@@ -393,7 +393,7 @@ public class SpecificST extends AbstractST {
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerSourceRanges(ExtensionContext extensionContext) {

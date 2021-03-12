@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -246,7 +247,7 @@ public class OauthTlsST extends OauthAbstractST {
     }
 
     @Description("As a oauth mirror maker, I am able to replicate topic data using using encrypted communication")
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
     @SuppressWarnings({"checkstyle:MethodLength"})

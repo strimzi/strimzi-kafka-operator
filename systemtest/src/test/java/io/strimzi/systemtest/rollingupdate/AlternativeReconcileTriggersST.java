@@ -69,7 +69,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     static final String NAMESPACE = "alternative-reconcile-triggers-cluster-test";
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
@@ -212,7 +212,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     // This test is affected by https://github.com/strimzi/strimzi-kafka-operator/issues/3913 so it needs longer operation timeout set in CO
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
             " new bootstrap DNS is appended inside certificate in subject alternative names property.")
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testTriggerRollingUpdateAfterOverrideBootstrap(ExtensionContext extensionContext) throws CertificateException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -264,7 +264,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         }
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testManualRollingUpdateForSinglePod(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -330,7 +330,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      * Adding and removing JBOD volumes requires rolling updates in the sequential order. Otherwise the StatefulSet does
      * not like it. This tests tries to add and remove volume from JBOD to test both of these situations.
      */
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testAddingAndRemovingJbodVolumes(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());

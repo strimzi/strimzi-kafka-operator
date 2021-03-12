@@ -36,6 +36,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -111,7 +112,7 @@ class KafkaST extends AbstractST {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @OpenShiftOnly
     void testDeployKafkaClusterViaTemplate(ExtensionContext extensionContext) {
         cluster.createCustomResources(TEMPLATE_PATH);
@@ -142,7 +143,7 @@ class KafkaST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(OPENSHIFT_CLUSTER_NAME));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testEODeletion(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -169,7 +170,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Entity operator was deleted");
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -452,7 +453,7 @@ class KafkaST extends AbstractST {
         checkSpecificVariablesInContainer(KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarUpdated);
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testJvmAndResources(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -585,7 +586,7 @@ class KafkaST extends AbstractST {
         DeploymentUtils.waitForNoRollingUpdate(eoDepName, eoPods);
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testForTopicOperator(ExtensionContext extensionContext) throws InterruptedException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -645,7 +646,7 @@ class KafkaST extends AbstractST {
         assertThat(topics, not(hasItems(cliTopicName)));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testRemoveTopicOperatorFromEntityOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -687,7 +688,7 @@ class KafkaST extends AbstractST {
         });
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testRemoveUserOperatorFromEntityOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -735,7 +736,7 @@ class KafkaST extends AbstractST {
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testRemoveUserAndTopicOperatorsFromEntityOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -777,7 +778,7 @@ class KafkaST extends AbstractST {
         assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testEntityOperatorWithoutTopicOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -805,7 +806,7 @@ class KafkaST extends AbstractST {
         });
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testEntityOperatorWithoutUserOperator(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -831,7 +832,7 @@ class KafkaST extends AbstractST {
         });
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testEntityOperatorWithoutUserAndTopicOperators(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -851,7 +852,7 @@ class KafkaST extends AbstractST {
         assertThat("EO should not be deployed", kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(clusterName)).size(), is(0));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testTopicWithoutLabels(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -884,8 +885,7 @@ class KafkaST extends AbstractST {
         assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
-    @IsolatedTest
-    @Tag(REGRESSION)
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaJBODDeleteClaimsTrueFalse(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -910,7 +910,7 @@ class KafkaST extends AbstractST {
         verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaJBODDeleteClaimsTrue(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -935,7 +935,7 @@ class KafkaST extends AbstractST {
         verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaJBODDeleteClaimsFalse(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -960,7 +960,7 @@ class KafkaST extends AbstractST {
         verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testPersistentStorageSize(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1014,7 +1014,7 @@ class KafkaST extends AbstractST {
         );
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     void testRegenerateCertExternalAddressChange(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1057,7 +1057,7 @@ class KafkaST extends AbstractST {
         });
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelModificationDoesNotBreakCluster(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1207,7 +1207,7 @@ class KafkaST extends AbstractST {
         );
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testAppDomainLabels(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1293,7 +1293,7 @@ class KafkaST extends AbstractST {
         );
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testUOListeningOnlyUsersInSameCluster(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
@@ -1320,7 +1320,7 @@ class KafkaST extends AbstractST {
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testMessagesAreStoredInDisk(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1389,7 +1389,7 @@ class KafkaST extends AbstractST {
         assertThat("Topic has no data", topicData, notNullValue());
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testConsumerOffsetFiles(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1453,7 +1453,7 @@ class KafkaST extends AbstractST {
     }
 
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testLabelsAndAnnotationForPVC(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -1561,7 +1561,7 @@ class KafkaST extends AbstractST {
         }
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaOffsetsReplicationFactorHigherThanReplicas(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -1578,7 +1578,7 @@ class KafkaST extends AbstractST {
             "Kafka configuration option .* should be set to " + 3 + " or less because 'spec.kafka.replicas' is " + 3);
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -1618,7 +1618,7 @@ class KafkaST extends AbstractST {
         }
     }
 
-    @IsolatedTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testReadOnlyRootFileSystem(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1738,25 +1738,39 @@ class KafkaST extends AbstractST {
     }
 
     void verifyPVCDeletion(String clusterName, int kafkaReplicas, JbodStorage jbodStorage) {
-        List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
-            .map(pvc -> pvc.getMetadata().getName())
-            .collect(Collectors.toList());
+            List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
+                .map(pvc -> pvc.getMetadata().getName())
+                .collect(Collectors.toList());
 
         List<String> filteredPvcs = pvcs.stream()
             .filter(pvc -> pvc.startsWith(clusterName))
             .collect(Collectors.toList());
 
-        jbodStorage.getVolumes().forEach(singleVolumeStorage -> {
-            for (int i = 0; i < kafkaReplicas; i++) {
-                String volumeName = "data-" + singleVolumeStorage.getId() + "-" + clusterName + "-kafka-" + i;
-                LOGGER.info("Verifying volume: " + volumeName);
-                if (((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()) {
-                    assertThat(filteredPvcs, not(hasItem(volumeName)));
+        List<SingleVolumeStorage> singleVolumeStorages = jbodStorage.getVolumes();
+
+        List<PersistentVolumeClaim> pvcList = kubeClient().listPersistentVolumeClaims()
+            .stream()
+            .filter(
+                // data-1-my-cluster-498916651-kafka-0
+                pvc -> {
+                    String pvcName = pvc.getMetadata().getName();
+                    return pvcName.contains("-kafka-") && pvcName.contains(clusterName);
+                })
+            .collect(Collectors.toList());
+
+        for (int i = 0; i < singleVolumeStorages.size(); i++) {
+            for (int j = 0; j < kafkaReplicas; j++) {
+//                data-1-my-cluster-498916651-kafka-0 - should be number
+                String pvcId = pvcList.get(0).getMetadata().getName().split("-")[1];
+                String pvcName = "data-" + pvcId + "-" + clusterName + "-kafka-" + j;
+                LOGGER.info("Verifying volume: " + pvcName);
+                if (((PersistentClaimStorage) singleVolumeStorages.get(j)).isDeleteClaim()) {
+                    assertThat(filteredPvcs, not(hasItem(pvcName)));
                 } else {
-                    assertThat(filteredPvcs, hasItem(volumeName));
+                    assertThat(filteredPvcs, hasItem(pvcName));
                 }
             }
-        });
+        }
     }
 
     void verifyVolumeNamesAndLabels(String clusterName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {

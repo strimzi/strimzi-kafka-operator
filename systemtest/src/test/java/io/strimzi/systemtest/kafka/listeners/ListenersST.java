@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -113,7 +114,7 @@ public class ListenersST extends AbstractST {
     /**
      * Test sending messages over plain transport, without auth
      */
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainAnonymous(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -152,7 +153,7 @@ public class ListenersST extends AbstractST {
     /**
      * Test sending messages over tls transport using mutual tls auth
      */
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsAuthenticated(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -220,7 +221,7 @@ public class ListenersST extends AbstractST {
     /**
      * Test sending messages over plain transport using scram sha auth
      */
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainScramSha(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -296,7 +297,7 @@ public class ListenersST extends AbstractST {
     /**
      * Test sending messages over tls transport using scram sha auth
      */
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsScramSha(ExtensionContext extensionContext) {
@@ -356,7 +357,7 @@ public class ListenersST extends AbstractST {
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePort(ExtensionContext extensionContext) {
@@ -435,7 +436,7 @@ public class ListenersST extends AbstractST {
         assertThat(actualAnno, is(anno));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testOverrideNodePortConfiguration(ExtensionContext extensionContext) {
@@ -505,7 +506,7 @@ public class ListenersST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls(ExtensionContext extensionContext) {
@@ -549,7 +550,7 @@ public class ListenersST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancer(ExtensionContext extensionContext) {
@@ -588,7 +589,7 @@ public class ListenersST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
@@ -638,7 +639,7 @@ public class ListenersST extends AbstractST {
 //    #### Custom Certificates in Listeners ####
 //    ##########################################
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -727,7 +728,7 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(2 * MESSAGE_COUNT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -817,7 +818,7 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(2 * MESSAGE_COUNT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -907,7 +908,7 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(2 * MESSAGE_COUNT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -1003,7 +1004,7 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(2 * MESSAGE_COUNT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -1093,7 +1094,7 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(2 * MESSAGE_COUNT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
@@ -1185,7 +1186,7 @@ public class ListenersST extends AbstractST {
     }
 
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -1431,7 +1432,7 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(6 * MESSAGE_COUNT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -1666,7 +1667,7 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(5 * MESSAGE_COUNT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
@@ -1904,7 +1905,7 @@ public class ListenersST extends AbstractST {
         assertThat(received, is(5 * MESSAGE_COUNT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testNonExistingCustomCertificate(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String nonExistingCertName = "non-existing-certificate";
@@ -1938,7 +1939,7 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCertificateWithNonExistingDataCrt(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String nonExistingCertName = "non-existing-crt";
@@ -1976,7 +1977,7 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCertificateWithNonExistingDataKey(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String nonExistingCertKey = "non-existing-key";

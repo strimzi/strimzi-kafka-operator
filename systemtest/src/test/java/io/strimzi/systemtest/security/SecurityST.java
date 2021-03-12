@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -117,7 +118,7 @@ class SecurityST extends AbstractST {
     static final String STRIMZI_TEST_CLUSTER_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClusterCA";
     static final String STRIMZI_TEST_CLIENTS_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClientsCA";
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCertificates(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -176,7 +177,7 @@ class SecurityST extends AbstractST {
         assertThat(certificate, containsString(OPENSSL_RETURN_CODE));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
@@ -190,7 +191,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
@@ -204,7 +205,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
@@ -361,7 +362,7 @@ class SecurityST extends AbstractST {
         }
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
@@ -372,7 +373,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
@@ -596,7 +597,7 @@ class SecurityST extends AbstractST {
             .build());
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewCaCertsTriggerByExpiredCertificate(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -649,7 +650,7 @@ class SecurityST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceWindow(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -726,7 +727,7 @@ class SecurityST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRegeneratedAfterInternalCAisDeleted(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -796,7 +797,7 @@ class SecurityST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testTlsHostnameVerificationWithKafkaConnect(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -840,7 +841,7 @@ class SecurityST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(clusterName));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testTlsHostnameVerificationWithMirrorMaker(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String sourceKafkaCluster = clusterName + "-source";
@@ -906,7 +907,7 @@ class SecurityST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(clusterName));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
@@ -1007,7 +1008,7 @@ class SecurityST extends AbstractST {
         assertThrows(WaitException.class, newBasicExternalKafkaClient::sendMessagesTls);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclWithSuperUser(ExtensionContext extensionContext) {
@@ -1112,7 +1113,7 @@ class SecurityST extends AbstractST {
         assertThrows(WaitException.class, () -> newBasicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testCaRenewalBreakInMiddle(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -1236,7 +1237,7 @@ class SecurityST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaAndKafkaConnectTlsVersion(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
@@ -1250,8 +1251,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster with the support {} TLS",  tlsVersion12);
 
-        // TODO: io.strimzi.test.WaitException: Timeout after 840000 ms waiting for Wait for Kafka: my-cluster-1561447058 will have desired state: Ready
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+       resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withConfig(configWithNewestVersionOfTls)
@@ -1286,7 +1286,6 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different TLS version");
 
-        // TODO: ?? io.strimzi.test.WaitException: Timeout after 600000 ms waiting for Wait for KafkaConnect: my-cluster-1032091772 will have desired state: NotReady
         KafkaConnectUtils.waitForConnectStatus(clusterName, NotReady);
 
         LOGGER.info("Replacing Kafka Connect config to the newest(TLSv1.2) one same as the Kafka broker has.");
@@ -1314,7 +1313,7 @@ class SecurityST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(clusterName));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaAndKafkaConnectCipherSuites(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
@@ -1356,7 +1355,6 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different cipher suites complexity of algorithm");
 
-        // TODO: io.strimzi.test.WaitException: Timeout after 600000 ms waiting for Wait for KafkaConnect: my-cluster-331348972 will have desired state: NotReady
         KafkaConnectUtils.waitForConnectNotReady(clusterName);
 
         LOGGER.info("Replacing Kafka Connect config to the cipher suites same as the Kafka broker has.");
@@ -1380,7 +1378,7 @@ class SecurityST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(clusterName));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testOwnerReferenceOfCASecrets(ExtensionContext extensionContext) {
         /* Different name for Kafka cluster to make the test quicker -> KafkaRoller is waiting for pods of "my-cluster" to become ready
          for 5 minutes -> this will prevent the waiting. */
@@ -1417,7 +1415,6 @@ class SecurityST extends AbstractST {
         });
 
         LOGGER.info("Deploying Kafka with generateSecretOwnerReference set to true");
-        // TODO: io.strimzi.test.WaitException: Timeout after 840000 ms waiting for Wait for Kafka: my-second-cluster-my-cluster-2076107627 will have desired state: Ready
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(secondClusterName, 3)
             .editOrNewSpec()
                 .editOrNewClusterCa()
@@ -1444,12 +1441,12 @@ class SecurityST extends AbstractST {
         });
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testClusterCACertRenew(ExtensionContext extensionContext) {
         checkClusterCACertRenew(extensionContext, false);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCustomClusterCACertRenew(ExtensionContext extensionContext) {
         checkClusterCACertRenew(extensionContext, true);
     }
@@ -1554,12 +1551,12 @@ class SecurityST extends AbstractST {
                 initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testClientsCACertRenew(ExtensionContext extensionContext) {
         checkClientsCACertRenew(extensionContext, false);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCustomClientsCACertRenew(ExtensionContext extensionContext) {
         checkClientsCACertRenew(extensionContext, true);
     }
@@ -1646,7 +1643,7 @@ class SecurityST extends AbstractST {
                 initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCustomClusterCAClientsCA(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());

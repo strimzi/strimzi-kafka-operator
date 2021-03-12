@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -118,7 +119,7 @@ public class TopicST extends AbstractST {
         verifyTopicViaKafka(topicName, topicPartitions, TOPIC_CLUSTER_NAME);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     void testCreateTopicViaAdminClient(ExtensionContext extensionContext) throws ExecutionException, InterruptedException, TimeoutException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -176,7 +177,7 @@ public class TopicST extends AbstractST {
     }
 
     @Tag(NODEPORT_SUPPORTED)
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -337,7 +338,7 @@ public class TopicST extends AbstractST {
         LOGGER.info("Topic successfully created");
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testDeleteTopicEnableFalse(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());

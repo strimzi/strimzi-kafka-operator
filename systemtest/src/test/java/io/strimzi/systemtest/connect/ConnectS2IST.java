@@ -38,6 +38,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -222,7 +223,7 @@ class ConnectS2IST extends AbstractST {
         consumerTimerMessages(extensionContext, clusterName, timerTopicName2);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -308,7 +309,7 @@ class ConnectS2IST extends AbstractST {
                 containsString("99"));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
@@ -358,7 +359,7 @@ class ConnectS2IST extends AbstractST {
         checkSpecificVariablesInContainer(connectPodName, depConfName, envVarUpdated);
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testJvmAndResources(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
@@ -426,7 +427,7 @@ class ConnectS2IST extends AbstractST {
         DeploymentConfigUtils.waitForDeploymentConfigDeletion(KafkaConnectS2IResources.deploymentName(connectS2IClusterName));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(CONNECTOR_OPERATOR)
     @Tag(ACCEPTANCE)
     void testKafkaConnectorWithConnectS2IAndConnectWithSameName(ExtensionContext extensionContext) {
@@ -509,7 +510,7 @@ class ConnectS2IST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(connectClusterName));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
     void testMultiNodeKafkaConnectS2IWithConnectorCreation(ExtensionContext extensionContext) {
@@ -570,7 +571,7 @@ class ConnectS2IST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testChangeConnectS2IConfig(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String secondClusterName = "second-" + clusterName;
@@ -678,7 +679,7 @@ class ConnectS2IST extends AbstractST {
         assertThat(trustedCertificates.stream().anyMatch(cert -> cert.getSecretName().equals("my-secret")), is(true));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleConnectS2IWithoutConnectorToZero(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -704,7 +705,7 @@ class ConnectS2IST extends AbstractST {
         assertThat(connectS2IStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(CONNECTOR_OPERATOR)
     @Tag(SCALABILITY)
     void testScaleConnectS2IWithConnectorToZero(ExtensionContext extensionContext) {
@@ -748,7 +749,7 @@ class ConnectS2IST extends AbstractST {
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleConnectS2ISubresource(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -781,7 +782,7 @@ class ConnectS2IST extends AbstractST {
         }
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "connect-s2i";
@@ -810,7 +811,7 @@ class ConnectS2IST extends AbstractST {
         assertThat(output, containsString(etcHostsData));
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
@@ -966,7 +967,7 @@ class ConnectS2IST extends AbstractST {
         );
     }
 
-    @ParallelTest
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "connect-s2i";
