@@ -5,6 +5,14 @@
 
 * Remove support for Kafka 2.5.x
 
+### Changes, deprecations and removals
+
+* The following annotations have been removed and cannot be used anymore:
+  * `cluster.operator.strimzi.io/delete-claim` (used internally only - replaced by `strimzi.io/delete-claim`)
+  * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)
+  * `operator.strimzi.io/delete-pod-and-pvc` (use `strimzi.io/delete-pod-and-pvc` instead)
+  * `operator.strimzi.io/manual-rolling-update` (use `strimzi.io/manual-rolling-update` instead)
+
 ## 0.22.0
 
 * Add `v1beta2` version for all resources. `v1beta2` removes all deprecated fields.

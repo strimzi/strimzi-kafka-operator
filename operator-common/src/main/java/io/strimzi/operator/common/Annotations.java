@@ -41,8 +41,6 @@ public class Annotations {
     // This annotation with related possible values (approve, stop, refresh) is set by the user for interacting
     // with the rebalance operator in order to start, stop, or refresh rebalancing proposals and operations.
     public static final String ANNO_STRIMZI_IO_REBALANCE = STRIMZI_DOMAIN + "rebalance";
-    @Deprecated
-    public static final String ANNO_OP_STRIMZI_IO_MANUAL_ROLLING_UPDATE = "operator." + Annotations.STRIMZI_DOMAIN + "manual-rolling-update";
 
     /**
      * Annotations for restarting KafkaConnector and KafkaMirrorMaker2 connectors or tasks

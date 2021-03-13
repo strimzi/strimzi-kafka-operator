@@ -79,7 +79,6 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
@@ -152,9 +151,6 @@ public abstract class AbstractModel {
      */
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
-
-    @Deprecated
-    public static final String ANNO_CO_STRIMZI_IO_DELETE_CLAIM = ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
 
     private static final String ENV_VAR_HTTP_PROXY = "HTTP_PROXY";
     private static final String ENV_VAR_HTTPS_PROXY = "HTTPS_PROXY";
