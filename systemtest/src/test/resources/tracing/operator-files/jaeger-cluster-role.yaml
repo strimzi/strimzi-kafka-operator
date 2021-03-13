@@ -1,6 +1,10 @@
-## this is a set of basic permissions the Jaeger Operator needs when restricted to work in specific namespaces
+## When using the operator in cluster-wide mode, this ClusterRole has to be created and bound to the jaeger-operator service account,
+## so that the operator can watch and create resources in every namespace in the cluster.
+## An alternative to this cluster role is to create one role binding for each namespace that the operator should watch
+## in that case, don't forget to add a comma-separated list of namespaces as WATCH_NAMESPACE in the operator's deployment.
+## Further down in this file there's another set of rules, with extra optional permissions
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: jaeger-operator
 rules:
@@ -11,13 +15,12 @@ rules:
     resources:
       - '*'
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
 
   ## for the operator's own deployment
   - apiGroups:
@@ -41,13 +44,12 @@ rules:
       - services
       - services/finalizers
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - apps
     resources:
@@ -56,87 +58,69 @@ rules:
       - replicasets
       - statefulsets
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - extensions
     resources:
       - ingresses
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   # Ingress for kubernetes 1.14 or higher
   - apiGroups:
       - networking.k8s.io
     resources:
       - ingresses
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - batch
     resources:
       - jobs
       - cronjobs
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - route.openshift.io
     resources:
       - routes
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - image.openshift.io
-    resources:
-      - imagestreams
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - autoscaling
     resources:
       - horizontalpodautoscalers
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
 
   ## needed if you want the operator to create service monitors for the Jaeger instances
   - apiGroups:
@@ -144,13 +128,12 @@ rules:
     resources:
       - servicemonitors
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
 
   ## for the Elasticsearch auto-provisioning
   - apiGroups:
@@ -158,13 +141,12 @@ rules:
     resources:
       - elasticsearches
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
 
   ## for the Kafka auto-provisioning
   - apiGroups:
@@ -173,10 +155,47 @@ rules:
       - kafkas
       - kafkausers
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
+
+  ## Extra permissions
+  ## This is an extra set of permissions that the Jaeger Operator might make use of if granted
+
+  ## needed if support for injecting sidecars based on namespace annotation is required
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+
+  ## needed if support for injecting sidecars based on deployment annotation is required, across all namespaces
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'watch'
+
+  ## needed only when .Spec.Ingress.Openshift.DelegateUrls is used
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+    verbs:
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'

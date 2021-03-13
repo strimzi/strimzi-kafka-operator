@@ -15,12 +15,10 @@ spec:
       serviceAccountName: jaeger-operator
       containers:
         - name: jaeger-operator
-          image: jaegertracing/jaeger-operator:1.21.3
+          image: jaegertracing/jaeger-operator:1.18.1
           ports:
             - containerPort: 8383
-              name: http-metrics
-            - containerPort: 8686
-              name: cr-metrics
+              name: metrics
           args: ["start"]
           imagePullPolicy: Always
           env:
