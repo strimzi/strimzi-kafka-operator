@@ -67,5 +67,9 @@ public enum KafkaRebalanceState {
      * The resource is eligible for garbage collection after a configurable delay.
      * There is no transition from this state to a new one.
      */
-    Ready
+    Ready,
+    /**
+     * The user paused reconciliations by setting annotation strimzi.io/pause-reconciliation="true".
+     */
+    ReconciliationPaused
 }
