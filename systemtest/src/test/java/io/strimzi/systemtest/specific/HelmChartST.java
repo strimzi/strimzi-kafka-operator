@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.operator.HelmResource;
 import io.strimzi.systemtest.AbstractST;
@@ -39,13 +40,15 @@ class HelmChartST extends AbstractST {
         String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext,
+            KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
+
+        resourceManager.createResource(extensionContext,
             // Deploy Kafka and wait for readiness
             KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
             KafkaTopicTemplates.topic(clusterName, TOPIC_NAME).build(),
             // Deploy KafkaConnect and wait for readiness
-            KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build(),
             KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1).editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata().build(),
             KafkaConnectorTemplates.kafkaConnector(clusterName).build(),
             // Deploy KafkaBridge (different image than Kafka) and wait for readiness

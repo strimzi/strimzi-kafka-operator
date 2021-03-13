@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -620,7 +621,7 @@ class LoggingChangeST extends AbstractST {
                 .withInlineLogging(ilOff)
             .endSpec()
             .editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
 

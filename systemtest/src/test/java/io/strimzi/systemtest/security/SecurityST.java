@@ -800,6 +800,7 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testTlsHostnameVerificationWithKafkaConnect(ExtensionContext extensionContext) {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         LOGGER.info("Getting IP of the bootstrap service");
@@ -807,6 +808,9 @@ class SecurityST extends AbstractST {
         String ipOfBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(clusterName)).getSpec().getClusterIP();
 
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
+
+        resourceManager.createResource(extensionContext,
+                KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
 
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
             .editSpec()

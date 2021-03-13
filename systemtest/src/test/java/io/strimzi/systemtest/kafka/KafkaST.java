@@ -930,9 +930,6 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Waiting for PVC deletion");
         PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, clusterName);
-
-        LOGGER.info("Waiting for Kafka pods deletion");
-        verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
@@ -1458,9 +1455,11 @@ class KafkaST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
 
         final String labelAnnotationKey = "testKey";
+        final String firstValue = "testValue";
+        final String changedValue = "editedTestValue";
 
         Map<String, String> pvcLabel = new HashMap<>();
-        pvcLabel.put(labelAnnotationKey, "testValue");
+        pvcLabel.put(labelAnnotationKey, firstValue);
         Map<String, String> pvcAnnotation = pvcLabel;
 
         Map<String, String> statefulSetLabels = new HashMap<>();
@@ -1526,17 +1525,17 @@ class KafkaST extends AbstractST {
         assertThat(pvcs.size(), is(7));
 
         for (PersistentVolumeClaim pvc : pvcs) {
-            LOGGER.info("Verifying that PVC label {} - {} = {}", pvc.getMetadata().getName(), "testValue", pvc.getMetadata().getLabels().get("testKey"));
+            LOGGER.info("Verifying that PVC label {} - {} = {}", pvc.getMetadata().getName(), firstValue, pvc.getMetadata().getLabels().get(labelAnnotationKey));
 
-            assertThat("testValue", is(pvc.getMetadata().getLabels().get("testKey")));
-            assertThat("testValue", is(pvc.getMetadata().getAnnotations().get("testKey")));
+            assertThat(firstValue, is(pvc.getMetadata().getLabels().get(labelAnnotationKey)));
+            assertThat(firstValue, is(pvc.getMetadata().getAnnotations().get(labelAnnotationKey)));
         }
 
-        pvcLabel.put(labelAnnotationKey, "editedTestValue");
-        pvcAnnotation.put(labelAnnotationKey, "editedTestValue");
+        pvcLabel.put(labelAnnotationKey, changedValue);
+        pvcAnnotation.put(labelAnnotationKey, changedValue);
 
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
-            LOGGER.info("Replacing kafka && zookeeper labels and annotaions from {} to {}", "testKey", "editedTestValue");
+            LOGGER.info("Replacing kafka && zookeeper labels and annotations from {} to {}", labelAnnotationKey, changedValue);
             kafka.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(pvcLabel);
             kafka.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(pvcAnnotation);
 
@@ -1554,10 +1553,10 @@ class KafkaST extends AbstractST {
         assertThat(pvcs.size(), is(7));
 
         for (PersistentVolumeClaim pvc : pvcs) {
-            LOGGER.info("Verifying replaced PVC label {} - {} = {}", pvc.getMetadata().getName(), "testValue", pvc.getMetadata().getLabels().get("testKey"));
+            LOGGER.info("Verifying replaced PVC label {} - {} = {}", pvc.getMetadata().getName(), firstValue, pvc.getMetadata().getLabels().get(labelAnnotationKey));
 
-            assertThat("editedTestValue", is(pvc.getMetadata().getLabels().get("testKey")));
-            assertThat("editedTestValue", is(pvc.getMetadata().getAnnotations().get("testKey")));
+            assertThat(pvc.getMetadata().getLabels().get(labelAnnotationKey), is(changedValue));
+            assertThat(pvc.getMetadata().getAnnotations().get(labelAnnotationKey), is(changedValue));
         }
     }
 
@@ -1738,13 +1737,10 @@ class KafkaST extends AbstractST {
     }
 
     void verifyPVCDeletion(String clusterName, int kafkaReplicas, JbodStorage jbodStorage) {
-        List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
+        List<String> clusterPvcNames = kubeClient().listPersistentVolumeClaims().stream()
+                .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
                 .map(pvc -> pvc.getMetadata().getName())
                 .collect(Collectors.toList());
-
-        List<String> filteredPvcs = pvcs.stream()
-            .filter(pvc -> pvc.startsWith(clusterName))
-            .collect(Collectors.toList());
 
         List<SingleVolumeStorage> singleVolumeStorages = jbodStorage.getVolumes();
 
@@ -1765,9 +1761,9 @@ class KafkaST extends AbstractST {
                 String pvcName = "data-" + pvcId + "-" + clusterName + "-kafka-" + j;
                 LOGGER.info("Verifying volume: " + pvcName);
                 if (((PersistentClaimStorage) singleVolumeStorages.get(j)).isDeleteClaim()) {
-                    assertThat(filteredPvcs, not(hasItem(pvcName)));
+                    assertThat(clusterPvcNames, not(hasItem(pvcName)));
                 } else {
-                    assertThat(filteredPvcs, hasItem(pvcName));
+                    assertThat(clusterPvcNames, hasItem(pvcName));
                 }
             }
         }

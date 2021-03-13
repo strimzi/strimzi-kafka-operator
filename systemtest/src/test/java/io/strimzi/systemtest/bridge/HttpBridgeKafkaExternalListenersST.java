@@ -185,7 +185,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             .build();
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(clusterName + "-" + consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @BeforeAll

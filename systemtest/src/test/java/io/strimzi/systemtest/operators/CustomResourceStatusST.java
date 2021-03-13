@@ -292,7 +292,7 @@ class CustomResourceStatusST extends AbstractST {
         KafkaConnectorResource.replaceKafkaConnectorResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)));
         KafkaConnectorUtils.waitForConnectorReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-        assertKafkaConnectorStatus(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source", List.of("my-topic"));
+        assertKafkaConnectorStatus(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1, "RUNNING|UNASSIGNED", 0, "RUNNING", "source", List.of(EXAMPLE_TOPIC_NAME));
 
         String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getSpec().getClassName();
 

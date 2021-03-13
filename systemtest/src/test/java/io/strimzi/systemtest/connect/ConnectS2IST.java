@@ -576,20 +576,25 @@ class ConnectS2IST extends AbstractST {
         String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
         String secondClusterName = "second-" + clusterName;
         String connectS2IClusterName = clusterName + "-connect-s2i";
+        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(secondClusterName, 3, 1).build());
 
         String bootstrapAddress = KafkaResources.tlsBootstrapAddress(secondClusterName);
 
-        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, connectS2IClusterName, clusterName, 1)
-            .editMetadata()
-                .addToAnnotations("strimzi.io/use-connector-resources", "true")
-            .endMetadata()
-            .editSpec()
-                .withVersion(TestKafkaVersion.getKafkaVersions().get(0).version())
-            .endSpec()
-            .build());
+        resourceManager.createResource(extensionContext,
+                KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
+
+        resourceManager.createResource(extensionContext,
+            KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, connectS2IClusterName, clusterName, 1)
+                .editMetadata()
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .editSpec()
+                    .withVersion(TestKafkaVersion.getKafkaVersions().get(0).version())
+                .endSpec()
+                .build());
 
         String deploymentConfigName = KafkaConnectS2IResources.deploymentName(connectS2IClusterName);
 

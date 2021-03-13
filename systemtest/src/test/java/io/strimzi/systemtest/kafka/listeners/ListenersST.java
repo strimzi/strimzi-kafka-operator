@@ -648,7 +648,7 @@ public class ListenersST extends AbstractST {
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
 
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
@@ -827,7 +827,7 @@ public class ListenersST extends AbstractST {
         String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
 
-        SecretUtils.createCustomSecret(customCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
