@@ -4,13 +4,17 @@
  */
 package io.strimzi.operator.user.operator;
 
+import io.debezium.kafka.KafkaCluster;
+import io.debezium.util.Testing;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
-import io.strimzi.test.EmbeddedZooKeeper;
+import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
+import org.apache.kafka.common.quota.ClientQuotaAlteration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,18 +22,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.Matchers.hasSize;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaUserQuotasIT {
 
-    private static EmbeddedZooKeeper zkServer;
+    private static ZkClient zkClient;
 
     private static KafkaUserQuotasOperator kuq;
 
@@ -37,20 +45,38 @@ public class KafkaUserQuotasIT {
 
     private static Vertx vertx;
 
+    private static KafkaCluster kafkaCluster;
 
     @BeforeAll
-    public static void before() throws IOException, InterruptedException {
+    public static void beforeAll() {
         vertx = Vertx.vertx();
-        // Start ZookKeeper Server
-        zkServer = new EmbeddedZooKeeper();
-        kuq = new KafkaUserQuotasOperator(vertx, zkServer.getZkConnectString(), 6_000);
+
+        try {
+            kafkaCluster =
+                    new KafkaCluster()
+                            .usingDirectory(Testing.Files.createTestingDirectory("user-quotas-operator-integration-test"))
+                            .deleteDataPriorToStartup(true)
+                            .deleteDataUponShutdown(true)
+                            .addBrokers(1)
+                            .startup();
+        } catch (IOException e) {
+            assertThat(false, is(true));
+        }
+
+        zkClient = new ZkClient("localhost:" + kafkaCluster.zkPort(), 6000_0, 30_000, new BytesPushThroughSerializer());
+
+        kuq = new KafkaUserQuotasOperator(vertx,
+                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.brokerList(), null, null, null));
     }
 
     @AfterAll
-    public static void after() {
-        vertx.close();
-        // Teardown ZooKeeper Server
-        zkServer.close();
+    public static void afterAll() {
+        if (kafkaCluster != null) {
+            kafkaCluster.shutdown();
+        }
+        if (vertx != null) {
+            vertx.close();
+        }
     }
 
     @BeforeEach
@@ -61,275 +87,190 @@ public class KafkaUserQuotasIT {
     }
 
     @Test
-    public void testTlsUserExistsAfterCreate() {
+    public void testTlsUserExistsAfterCreate() throws Exception {
         testUserExistsAfterCreate("CN=userExists");
     }
 
     @Test
-    public void testRegularUserExistsAfterCreate() {
+    public void testRegularUserExistsAfterCreate() throws Exception {
         testUserExistsAfterCreate("userExists");
     }
 
-    public void testUserExistsAfterCreate(String username) {
+    public void testUserExistsAfterCreate(String username) throws Exception {
         assertThat(kuq.exists(username), is(false));
         kuq.createOrUpdate(username, defaultQuotas);
         assertThat(kuq.exists(username), is(true));
     }
 
     @Test
-    public void testTlsUserDoesNotExistPriorToCreate() {
+    public void testTlsUserDoesNotExistPriorToCreate() throws Exception {
         testUserDoesNotExistPriorToCreate("CN=userNotExists");
     }
 
     @Test
-    public void testRegularUserDoesNotExistPriorToCreate() {
+    public void testRegularUserDoesNotExistPriorToCreate() throws Exception {
         testUserDoesNotExistPriorToCreate("userNotExists");
     }
 
-    public void testUserDoesNotExistPriorToCreate(String username) {
+    public void testUserDoesNotExistPriorToCreate(String username) throws Exception {
         assertThat(kuq.exists(username), is(false));
     }
 
     @Test
-    public void testCreateOrUpdateTlsUser() {
+    public void testCreateOrUpdateTlsUser() throws Exception {
+        testUserQuotasNotExist("CN=tlsUser");
         testCreateOrUpdate("CN=tlsUser");
     }
 
     @Test
-    public void testCreateOrUpdateRegularUser() {
+    public void testCreateOrUpdateRegularUser() throws Exception {
+        testUserQuotasNotExist("user");
         testCreateOrUpdate("user");
     }
 
-    public void testCreateOrUpdate(String username) {
-        assertThat(kuq.exists(username), is(false));
-        assertThat(kuq.getQuotas(username), is(nullValue()));
-        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(false));
+    @Test
+    public void testCreateOrUpdateScramShaUser() throws Exception {
+        createScramShaUser("scramShaUser", "scramShaPassword");
+        testCreateOrUpdate("scramShaUser");
+    }
 
+    public void testCreateOrUpdate(String username) throws Exception {
         KafkaUserQuotas newQuotas = new KafkaUserQuotas();
         newQuotas.setConsumerByteRate(1000);
         newQuotas.setProducerByteRate(2000);
         kuq.createOrUpdate(username, newQuotas);
-        assertThat(kuq.exists(username), is(true));
-        assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("1000"));
-        assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("2000"));
-        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+        assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+        testDescribeUserQuotas(username, newQuotas);
     }
 
     @Test
-    public void testCreateOrUpdateTwiceTlsUser() {
+    public void testCreateOrUpdateTwiceTlsUser() throws Exception {
         testCreateOrUpdateTwice("CN=doubleCreate");
     }
 
     @Test
-    public void testCreateOrUpdateTwiceRegularUSer() {
+    public void testCreateOrUpdateTwiceRegularUSer() throws Exception {
         testCreateOrUpdateTwice("doubleCreate");
     }
 
-    public void testCreateOrUpdateTwice(String username) {
-        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(false));
-        assertThat(kuq.exists(username), is(false));
-        assertThat(kuq.getQuotas(username), is(nullValue()));
+    public void testCreateOrUpdateTwice(String username) throws Exception {
+        assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(false));
+        assertThat(kuq.describeUserQuotas(username), is(nullValue()));
 
         kuq.createOrUpdate(username, defaultQuotas);
         kuq.createOrUpdate(username, defaultQuotas);
-        assertThat(kuq.exists(username), is(true));
-        assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("1000"));
-        assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("2000"));
-        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+        assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+        testDescribeUserQuotas(username, defaultQuotas);
     }
 
     @Test
-    public void testDeleteTlsUser() {
+    public void testDeleteTlsUser() throws Exception {
         testDelete("CN=normalDelete");
     }
 
     @Test
-    public void testDeleteRegularUser() {
+    public void testDeleteRegularUser() throws Exception {
         testDelete("normalDelete");
     }
 
-    public void testDelete(String username) {
+    public void testDelete(String username) throws Exception {
         kuq.createOrUpdate(username, defaultQuotas);
-        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+        assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
         assertThat(kuq.exists(username), is(true));
 
         kuq.delete(username);
         assertThat(kuq.exists(username), is(false));
-        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(false));
     }
 
     @Test
-    public void testDeleteTwiceTlsUser() {
+    public void testDeleteTwiceTlsUser() throws Exception {
         testDeleteTwice("CN=doubleDelete");
     }
 
     @Test
-    public void testDeleteTwiceRegularUser() {
+    public void testDeleteTwiceRegularUser() throws Exception {
         testDeleteTwice("doubleDelete");
     }
 
-    public void testDeleteTwice(String username) {
+    public void testDeleteTwice(String username) throws Exception {
         kuq.createOrUpdate(username, defaultQuotas);
-        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+        assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
         assertThat(kuq.exists(username), is(true));
 
         kuq.delete(username);
         kuq.delete(username);
         assertThat(kuq.exists(username), is(false));
-        assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(false));
     }
 
     @Test
-    public void testUpdateConsumerByteRate() {
+    public void testUpdateConsumerByteRate() throws Exception {
         kuq.createOrUpdate("changeProducerByteRate", defaultQuotas);
         defaultQuotas.setConsumerByteRate(4000);
         kuq.createOrUpdate("changeProducerByteRate", defaultQuotas);
-        assertThat(kuq.getQuotas("changeProducerByteRate").getJsonObject("config").getString("consumer_byte_rate"),
-                is("4000"));
+        assertThat(kuq.describeUserQuotas("changeProducerByteRate").getConsumerByteRate(), is(4000));
     }
 
     @Test
-    public void testUpdateProducerByteRate() {
+    public void testUpdateProducerByteRate() throws Exception {
         kuq.createOrUpdate("changeProducerByteRate", defaultQuotas);
         defaultQuotas.setProducerByteRate(8000);
         kuq.createOrUpdate("changeProducerByteRate", defaultQuotas);
-        assertThat(kuq.getQuotas("changeProducerByteRate").getJsonObject("config").getString("producer_byte_rate"),
-                is("8000"));
-    }
-
-
-    @Test
-    public void testValidation()    {
-        JsonObject valid = new JsonObject().put("version", 1);
-        JsonObject invalidEmptyJsonObject = new JsonObject();
-        JsonObject invalidVersion = new JsonObject().put("version", 2);
-
-        kuq.validateJsonVersion(valid);
-
-        assertThrows(RuntimeException.class, () -> kuq.validateJsonVersion(invalidEmptyJsonObject),
-                "Empty JsonObject should cause validate to throw Exception");
-
-        assertThrows(RuntimeException.class, () -> kuq.validateJsonVersion(invalidVersion),
-                "Invalid version (!=1) should cause validate to throw Exception");
+        assertThat(kuq.describeUserQuotas("changeProducerByteRate").getProducerByteRate(), is(8000));
     }
 
     @Test
-    public void testRemoveQuotasFromJsonUserWorksForVariousJonObjectInitialisations()  {
-        JsonObject original = new JsonObject(new String(kuq.createUserJson(defaultQuotas), StandardCharsets.UTF_8));
-        JsonObject updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
-
-        original = new JsonObject().put("version", 1).put("config", new JsonObject().put("producer_byte_rate", "1000").put("consumer_byte_rate", "2000"));
-        updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
-
-        original = new JsonObject().put("version", 1).put("config", new JsonObject());
-        updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
-
-        original = new JsonObject().put("version", 1).put("config", new JsonObject().put("consumer_byte_rate", "1000"));
-        updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
-    }
-
-    @Test
-    public void testRemoveQuotasFromJsonUserPersistsNonQuotaKeys()  {
-        JsonObject original = new JsonObject(new String(kuq.createUserJson(defaultQuotas), StandardCharsets.UTF_8));
-        String keyThatShouldPersist = "persist";
-        int valueThatShouldPersist = 42;
-        original.getJsonObject("config").put(keyThatShouldPersist, valueThatShouldPersist);
-
-        JsonObject updated = kuq.removeQuotasFromJsonUser(original.encode().getBytes(StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getInteger(keyThatShouldPersist), is(valueThatShouldPersist));
-    }
-
-    @Test
-    public void testCreateOrUpdateUserJsonByUpdatingAndRemovingFields()  {
-        // test creation
+    public void testUserQuotasToClientQuotaAlterationOps() {
         KafkaUserQuotas quotas = new KafkaUserQuotas();
         quotas.setConsumerByteRate(2000);
         quotas.setProducerByteRate(4000);
         quotas.setRequestPercentage(40);
+        Set<ClientQuotaAlteration.Op> ops = kuq.toClientQuotaAlterationOps(quotas);
+        assertThat(ops, hasSize(3));
+        assertThat(ops.contains(new ClientQuotaAlteration.Op("consumer_byte_rate", 2000d)), is(true));
+        assertThat(ops.contains(new ClientQuotaAlteration.Op("producer_byte_rate", 4000d)), is(true));
+        assertThat(ops.contains(new ClientQuotaAlteration.Op("request_percentage", 40d)), is(true));
 
-        JsonObject createdUserJson = new JsonObject(new String(kuq.createUserJson(quotas), StandardCharsets.UTF_8));
-        assertThat(createdUserJson.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
-        assertThat(createdUserJson.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
-        assertThat(createdUserJson.getJsonObject("config").getString("request_percentage"), is(notNullValue()));
-        assertThat(createdUserJson.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
-        assertThat(createdUserJson.getJsonObject("config").getString("producer_byte_rate"), is("4000"));
-        assertThat(createdUserJson.getJsonObject("config").getString("request_percentage"), is("40"));
-
-
-        byte[] createdUserJsonInBytes = createdUserJson.encode().getBytes(StandardCharsets.UTF_8);
-
-        // test update by removing request_percentage field
-        KafkaUserQuotas quotas2 = new KafkaUserQuotas();
-        quotas2.setConsumerByteRate(2000);
-        quotas2.setProducerByteRate(4000);
-
-        JsonObject updated = new JsonObject(new String(kuq.createOrUpdateUserJson(createdUserJsonInBytes, quotas2), StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("request_percentage"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is("4000"));
-
-        // test update by removing producer_byte_rate field
-        KafkaUserQuotas quotas3 = new KafkaUserQuotas();
-        quotas3.setConsumerByteRate(2000);
-        quotas3.setRequestPercentage(40);
-
-        updated = new JsonObject(new String(kuq.createOrUpdateUserJson(createdUserJsonInBytes, quotas3), StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getString("request_percentage"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("2000"));
-        assertThat(updated.getJsonObject("config").getString("request_percentage"), is("40"));
-
-        // test update by removing consumer_byte_rate field
-        KafkaUserQuotas quotas4 = new KafkaUserQuotas();
-        quotas4.setProducerByteRate(4000);
-        quotas4.setRequestPercentage(40);
-
-        updated = new JsonObject(new String(kuq.createOrUpdateUserJson(createdUserJsonInBytes, quotas4), StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(nullValue()));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("request_percentage"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is("4000"));
-        assertThat(updated.getJsonObject("config").getString("request_percentage"), is("40"));
-
-        // test update by modifying all fields
-        KafkaUserQuotas quotas5 = new KafkaUserQuotas();
-        quotas5.setConsumerByteRate(20000);
-        quotas5.setProducerByteRate(40000);
-        quotas5.setRequestPercentage(50);
-
-        updated = new JsonObject(new String(kuq.createOrUpdateUserJson(createdUserJsonInBytes, quotas5), StandardCharsets.UTF_8));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("request_percentage"), is(notNullValue()));
-        assertThat(updated.getJsonObject("config").getString("consumer_byte_rate"), is("20000"));
-        assertThat(updated.getJsonObject("config").getString("producer_byte_rate"), is("40000"));
-        assertThat(updated.getJsonObject("config").getString("request_percentage"), is("50"));
+        quotas.setConsumerByteRate(null);
+        quotas.setProducerByteRate(null);
+        quotas.setRequestPercentage(null);
+        ops = kuq.toClientQuotaAlterationOps(quotas);
+        assertThat(ops, hasSize(3));
+        assertThat(ops.contains(new ClientQuotaAlteration.Op("consumer_byte_rate", null)), is(true));
+        assertThat(ops.contains(new ClientQuotaAlteration.Op("producer_byte_rate", null)), is(true));
+        assertThat(ops.contains(new ClientQuotaAlteration.Op("request_percentage", null)), is(true));
     }
 
     @Test
-    public void testReconcileCreatesTlsUserWithQuotas(VertxTestContext testContext)  {
+    public void testClientQuotaAlterationOpsToUserQuotas() {
+        Map<String, Double> map = new HashMap<>(3);
+        map.put("consumer_byte_rate", 2000d);
+        map.put("producer_byte_rate", 4000d);
+        map.put("request_percentage", 40d);
+        KafkaUserQuotas quotas = kuq.fromClientQuota(map);
+        assertThat(quotas.getConsumerByteRate(), is(2000));
+        assertThat(quotas.getProducerByteRate(), is(4000));
+        assertThat(quotas.getRequestPercentage(), is(40));
+
+        map.remove("consumer_byte_rate");
+        map.remove("producer_byte_rate");
+        map.remove("request_percentage");
+        quotas = kuq.fromClientQuota(map);
+        assertThat(quotas.getConsumerByteRate(), is(nullValue()));
+        assertThat(quotas.getProducerByteRate(), is(nullValue()));
+        assertThat(quotas.getRequestPercentage(), is(nullValue()));
+    }
+
+    @Test
+    public void testReconcileCreatesTlsUserWithQuotas(VertxTestContext testContext) throws Exception  {
         testReconcileCreatesUserWithQuotas("CN=createTestUser", testContext);
     }
 
     @Test
-    public void testReconcileCreatesRegularUserWithQuotas(VertxTestContext testContext)  {
+    public void testReconcileCreatesRegularUserWithQuotas(VertxTestContext testContext) throws Exception  {
         testReconcileCreatesUserWithQuotas("createTestUser", testContext);
     }
 
-    public void testReconcileCreatesUserWithQuotas(String username, VertxTestContext testContext)  {
+    public void testReconcileCreatesUserWithQuotas(String username, VertxTestContext testContext) throws Exception  {
         KafkaUserQuotas quotas = new KafkaUserQuotas();
         quotas.setConsumerByteRate(2_000_000);
         quotas.setProducerByteRate(1_000_000);
@@ -341,25 +282,23 @@ public class KafkaUserQuotasIT {
         kuq.reconcile(username, quotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("2000000"));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("1000000"));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("request_percentage"), is("50"));
-                assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+                assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+                testDescribeUserQuotas(username, quotas);
                 async.flag();
             })));
     }
 
     @Test
-    public void testReconcileUpdatesTlsUserQuotaValues(VertxTestContext testContext)  {
+    public void testReconcileUpdatesTlsUserQuotaValues(VertxTestContext testContext) throws Exception {
         testReconcileUpdatesUserQuotaValues("CN=updateTestUser", testContext);
     }
 
     @Test
-    public void testReconcileUpdatesRegularUserQuotaValues(VertxTestContext testContext)  {
+    public void testReconcileUpdatesRegularUserQuotaValues(VertxTestContext testContext) throws Exception {
         testReconcileUpdatesUserQuotaValues("updateTestUser", testContext);
     }
 
-    public void testReconcileUpdatesUserQuotaValues(String username, VertxTestContext testContext)  {
+    public void testReconcileUpdatesUserQuotaValues(String username, VertxTestContext testContext) throws Exception {
         KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
@@ -367,6 +306,7 @@ public class KafkaUserQuotasIT {
 
         kuq.createOrUpdate(username, initialQuotas);
         assertThat(kuq.exists(username), is(true));
+        testDescribeUserQuotas(username, initialQuotas);
 
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
         updatedQuotas.setConsumerByteRate(4_000_000);
@@ -377,25 +317,23 @@ public class KafkaUserQuotasIT {
         kuq.reconcile(username, updatedQuotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("request_percentage"), is("75"));
-                assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+                assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+                testDescribeUserQuotas(username, updatedQuotas);
                 async.flag();
             })));
     }
 
     @Test
-    public void testReconcileUpdatesTlsUserQuotasWithFieldRemovals(VertxTestContext testContext)  {
+    public void testReconcileUpdatesTlsUserQuotasWithFieldRemovals(VertxTestContext testContext) throws Exception {
         testReconcileUpdatesUserQuotasWithFieldRemovals("CN=updateTestUser", testContext);
     }
 
     @Test
-    public void testReconcileUpdatesRegularUserQuotasWithFieldRemovals(VertxTestContext testContext)  {
+    public void testReconcileUpdatesRegularUserQuotasWithFieldRemovals(VertxTestContext testContext) throws Exception {
         testReconcileUpdatesUserQuotasWithFieldRemovals("updateTestUser", testContext);
     }
 
-    public void testReconcileUpdatesUserQuotasWithFieldRemovals(String username, VertxTestContext testContext)  {
+    public void testReconcileUpdatesUserQuotasWithFieldRemovals(String username, VertxTestContext testContext) throws Exception {
         KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
@@ -403,6 +341,7 @@ public class KafkaUserQuotasIT {
 
         kuq.createOrUpdate(username, initialQuotas);
         assertThat(kuq.exists(username), is(true));
+        testDescribeUserQuotas(username, initialQuotas);
 
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
         updatedQuotas.setConsumerByteRate(4_000_000);
@@ -412,26 +351,24 @@ public class KafkaUserQuotasIT {
         kuq.reconcile(username, updatedQuotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(username), is(true));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("consumer_byte_rate"), is("4000000"));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("producer_byte_rate"), is("3000000"));
-                assertThat(kuq.getQuotas(username).getJsonObject("config").getString("request_percentage"), is(nullValue()));
-                assertThat(kuq.isPathExist("/config/users/" + kuq.encodeUsername(username)), is(true));
+                assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
+                testDescribeUserQuotas(username, updatedQuotas);
                 async.flag();
             })));
 
     }
 
     @Test
-    public void testReconcileDeletesTlsUserForNullQuota(VertxTestContext testContext)  {
+    public void testReconcileDeletesTlsUserForNullQuota(VertxTestContext testContext) throws Exception {
         testReconcileDeletesUserForNullQuota("CN=deleteTestUser", testContext);
     }
 
     @Test
-    public void testReconcileDeletesRegularUserForNullQuota(VertxTestContext testContext)  {
+    public void testReconcileDeletesRegularUserForNullQuota(VertxTestContext testContext) throws Exception {
         testReconcileDeletesUserForNullQuota("deleteTestUser", testContext);
     }
 
-    public void testReconcileDeletesUserForNullQuota(String username, VertxTestContext testContext)  {
+    public void testReconcileDeletesUserForNullQuota(String username, VertxTestContext testContext) throws Exception {
         KafkaUserQuotas initialQuotas = new KafkaUserQuotas();
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
@@ -439,6 +376,7 @@ public class KafkaUserQuotasIT {
 
         kuq.createOrUpdate(username, initialQuotas);
         assertThat(kuq.exists(username), is(true));
+        testDescribeUserQuotas(username, initialQuotas);
 
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(username, null)
@@ -448,9 +386,35 @@ public class KafkaUserQuotasIT {
             })));
     }
 
-    @Test
-    public void testEncodeUser()    {
-        assertThat(KafkaUserQuotasOperator.encodeUsername("jack"), is("jack"));
-        assertThat(KafkaUserQuotasOperator.encodeUsername("CN=grealish"), is("CN%3Dgrealish"));
+    private boolean isPathExist(String path) {
+        return zkClient.exists(path);
+    }
+
+    private String encodeUsername(String username) {
+        try {
+            return URLEncoder.encode(username, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Failed to encode username", e);
+        }
+    }
+
+    private void createScramShaUser(String username, String password) {
+        // creating SCRAM-SHA user upfront to check it works because it shares same path in ZK as quotas
+        ScramShaCredentials scramShaCred = new ScramShaCredentials("localhost:" + kafkaCluster.zkPort(), 6_000);
+        scramShaCred.createOrUpdate(username, password);
+        assertThat(scramShaCred.exists(username), is(true));
+        assertThat(scramShaCred.isPathExist("/config/users/" + username), is(true));
+    }
+
+    private void testUserQuotasNotExist(String username) throws Exception {
+        assertThat(kuq.describeUserQuotas(username), is(nullValue()));
+        assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(false));
+    }
+
+    private void testDescribeUserQuotas(String username, KafkaUserQuotas quotas) throws Exception {
+        assertThat(kuq.describeUserQuotas(username), is(notNullValue()));
+        assertThat(kuq.describeUserQuotas(username).getConsumerByteRate(), is(quotas.getConsumerByteRate()));
+        assertThat(kuq.describeUserQuotas(username).getProducerByteRate(), is(quotas.getProducerByteRate()));
+        assertThat(kuq.describeUserQuotas(username).getRequestPercentage(), is(quotas.getRequestPercentage()));
     }
 }

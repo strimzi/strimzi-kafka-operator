@@ -84,7 +84,7 @@ public class Main {
                     SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, adminClient);
                     ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
                     ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);
-                    KafkaUserQuotasOperator quotasOperator = new KafkaUserQuotasOperator(vertx, config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
+                    KafkaUserQuotasOperator quotasOperator = new KafkaUserQuotasOperator(vertx, adminClient);
 
                     KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
                             certManager, crdOperations,

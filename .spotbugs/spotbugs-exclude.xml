@@ -12,6 +12,11 @@
     <Package name="io.strimzi.certs"/>
   </Match>
   <Match>
+    <Bug pattern="REC_CATCH_EXCEPTION"/>
+    <Class name="io.strimzi.operator.user.operator.KafkaUserQuotasOperator"/>
+    <Method name="describeUserQuotas"/>
+  </Match>
+  <Match>
     <Class name="~io\.strimzi\.api\.kafka\.model\..+(Builder|FluentImpl)(\$.*)?" />
   </Match>
   <Match>

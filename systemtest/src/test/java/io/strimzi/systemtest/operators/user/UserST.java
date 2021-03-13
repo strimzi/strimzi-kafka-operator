@@ -216,10 +216,11 @@ class UserST extends AbstractST {
         ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
         assertThat(resultAfterDelete.out(), not(containsString(userName)));
 
-        TestUtils.waitFor("user " + userName + " will be deleted from Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(userClusterName, 0), "/bin/bash", "-c", zkListCommand);
+        TestUtils.waitFor("quotas for user " + userName + " will be deleted from Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
             try {
-                return !zkResult.out().contains(URLEncoder.encode(userName, "UTF-8"));
+                String zkGetCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:12181 <<< 'get /config/users/" + URLEncoder.encode(userName, "UTF-8") + "'";
+                ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(userClusterName, 0), "/bin/bash", "-c", zkGetCommand);
+                return !zkResult.out().contains("request_percentage") && !zkResult.out().contains("producer_byte_rate") && !zkResult.out().contains("consumer_byte_rate");
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException("Failed to encode username", e);
             }
