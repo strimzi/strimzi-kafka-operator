@@ -61,7 +61,7 @@ public class NetworkPoliciesST extends AbstractST {
     @IsolatedTest("Specific cluster operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
     void testNetworkPoliciesWithPlainListener(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         installClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
         String allowedKafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS + "-allow";
@@ -158,7 +158,7 @@ public class NetworkPoliciesST extends AbstractST {
     @IsolatedTest("Specific cluster operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
     void testNetworkPoliciesWithTlsListener(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         installClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
@@ -245,7 +245,7 @@ public class NetworkPoliciesST extends AbstractST {
     void testNPWhenOperatorIsInSameNamespaceAsOperand(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         installClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
 
@@ -259,7 +259,7 @@ public class NetworkPoliciesST extends AbstractST {
     void testNPWhenOperatorIsInDifferentNamespaceThanOperand(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String secondNamespace = "second-" + NAMESPACE;
 
         Map<String, String> labels = new HashMap<>();

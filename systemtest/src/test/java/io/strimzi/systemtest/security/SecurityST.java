@@ -120,7 +120,7 @@ class SecurityST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCertificates(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Running testCertificates {}", clusterName);
 
@@ -226,10 +226,10 @@ class SecurityST extends AbstractST {
 
         createKafkaCluster(extensionContext);
 
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         List<String> secrets = null;
 
         // to make it parallel we need decision maker...
@@ -402,8 +402,8 @@ class SecurityST extends AbstractST {
                                             boolean eoShouldRoll) {
 
 
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         List<String> secrets = null;
 
         // to make it parallel we need decision maker...
@@ -419,8 +419,6 @@ class SecurityST extends AbstractST {
                     clientsCaKeySecretName(clusterName));
                 break;
         }
-
-        LOGGER.info("-----{} has {} secrets", extensionContext.getDisplayName(), secrets.toString());
 
         createKafkaCluster(extensionContext);
 
@@ -560,7 +558,7 @@ class SecurityST extends AbstractST {
 
     private void createKafkaCluster(ExtensionContext extensionContext) {
         LOGGER.info("Creating a cluster");
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
@@ -600,9 +598,9 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewCaCertsTriggerByExpiredCertificate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         // 1. Create the Secrets already, and a certificate that's already expired
         InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/expired-cluster-ca.crt");
@@ -653,9 +651,9 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceWindow(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String secretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
 
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
@@ -730,9 +728,9 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRegeneratedAfterInternalCAisDeleted(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
 
@@ -799,8 +797,8 @@ class SecurityST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testTlsHostnameVerificationWithKafkaConnect(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         LOGGER.info("Getting IP of the bootstrap service");
@@ -847,7 +845,7 @@ class SecurityST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testTlsHostnameVerificationWithMirrorMaker(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String sourceKafkaCluster = clusterName + "-source";
         String targetKafkaCluster = clusterName + "-target";
 
@@ -915,8 +913,8 @@ class SecurityST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
         final int numberOfMessages = 500;
@@ -1016,9 +1014,9 @@ class SecurityST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclWithSuperUser(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -1120,9 +1118,9 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testCaRenewalBreakInMiddle(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
@@ -1243,8 +1241,8 @@ class SecurityST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaAndKafkaConnectTlsVersion(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         Map<String, Object> configWithNewestVersionOfTls = new HashMap<>();
 
         final String tlsVersion12 = "TLSv1.2";
@@ -1319,8 +1317,8 @@ class SecurityST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaAndKafkaConnectCipherSuites(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         Map<String, Object> configWithCipherSuitesSha384 = new HashMap<>();
 
         final String cipherSuitesSha384 = "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384";
@@ -1386,7 +1384,7 @@ class SecurityST extends AbstractST {
     void testOwnerReferenceOfCASecrets(ExtensionContext extensionContext) {
         /* Different name for Kafka cluster to make the test quicker -> KafkaRoller is waiting for pods of "my-cluster" to become ready
          for 5 minutes -> this will prevent the waiting. */
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String secondClusterName = "my-second-cluster-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
@@ -1456,7 +1454,7 @@ class SecurityST extends AbstractST {
     }
 
     void checkClusterCACertRenew(ExtensionContext extensionContext, boolean customCA) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         if (customCA) {
             generateAndDeployCustomStrimziCA(clusterName);
@@ -1566,7 +1564,7 @@ class SecurityST extends AbstractST {
     }
 
     void checkClientsCACertRenew(ExtensionContext extensionContext, boolean customCA) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         if (customCA) {
             generateAndDeployCustomStrimziCA(clusterName);
@@ -1649,9 +1647,9 @@ class SecurityST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCustomClusterCAClientsCA(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         generateAndDeployCustomStrimziCA(clusterName);
         checkCustomCAsCorrectness(clusterName);

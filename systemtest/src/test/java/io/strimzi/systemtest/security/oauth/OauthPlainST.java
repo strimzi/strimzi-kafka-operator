@@ -69,10 +69,10 @@ public class OauthPlainST extends OauthAbstractST {
             "As an oauth consumer, I should be able to consumer messages from the kafka broker.")
     @ParallelTest
     void testProducerConsumer(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
 
@@ -131,12 +131,12 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testProducerConsumerAudienceTokenChecks(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + clusterName;
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         LOGGER.info("Setting producer and consumer properties");
         KafkaOauthExampleClients oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
@@ -199,12 +199,12 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testAccessTokenClaimCheck(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + clusterName;
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         LOGGER.info("Use clients with clientId not containing 'hello-world' in access token.");
 
@@ -272,11 +272,11 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerConnect(ExtensionContext extensionContext) {
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
             .withProducerName(producerName)
@@ -334,10 +334,10 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
             .withProducerName(producerName)
@@ -464,10 +464,10 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT_COMPONENTS)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker2(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
             .withProducerName(producerName)
@@ -602,11 +602,11 @@ public class OauthPlainST extends OauthAbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testProducerConsumerBridge(ExtensionContext extensionContext) {
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
             .withProducerName(producerName)

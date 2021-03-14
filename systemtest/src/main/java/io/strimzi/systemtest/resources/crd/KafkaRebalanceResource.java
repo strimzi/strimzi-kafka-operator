@@ -44,7 +44,7 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
         return KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(resource.getMetadata().getName(), KafkaRebalanceState.PendingProposal);
     }
     @Override
-    public void refreshResource(KafkaRebalance existing, KafkaRebalance newResource) {
+    public void replaceResource(KafkaRebalance existing, KafkaRebalance newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

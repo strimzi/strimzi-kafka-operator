@@ -75,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling",
     "checkstyle:ClassFanOutComplexity",
     "checkstyle:ClassDataAbstractionCoupling"})
-@SuppressFBWarnings("MS_MUTABLE_COLLECTION_PKGPROTECT")
+@SuppressFBWarnings({"MS_MUTABLE_COLLECTION_PKGPROTECT", "MS_MUTABLE_COLLECTION"})
 public class ResourceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
@@ -139,11 +139,6 @@ public class ResourceManager {
     public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
-            if (type == null) {
-                LOGGER.warn("Can't find resource in list, please create it manually");
-                continue;
-            }
-
             // Convenience for tests that create resources in non-existing namespaces. This will create and clean them up.
             synchronized (this) {
                 if (resource.getMetadata().getNamespace() != null && !kubeClient().namespaceExists(resource.getMetadata().getNamespace())) {
@@ -165,11 +160,6 @@ public class ResourceManager {
         if (waitReady) {
             for (T resource : resources) {
                 ResourceType<T> type = findResourceType(resource);
-                if (type == null) {
-                    LOGGER.warn("Can't find resource in list, please create it manually");
-                    continue;
-                }
-
                 assertTrue(waitResourceCondition(resource, type::isReady),
                     String.format("Timed out waiting for %s %s in namespace %s to be ready", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
 
@@ -177,7 +167,7 @@ public class ResourceManager {
                 // type.refreshResource()...
                 synchronized (this) {
                     T updated = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-                    type.refreshResource(resource, updated);
+                    type.replaceResource(resource, updated);
                 }
             }
         }
@@ -215,14 +205,12 @@ public class ResourceManager {
         while (!timeout.timeoutExpired()) {
             T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             if (condition.test(res)) {
-                // TODO create toString for conditions and print there Readyu or NotReady
                 LOGGER.info("Resource {} in namespace {} is {}}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
                 return true;
             }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                // TODO create toString for conditions and print there Readyu or NotReady
                 LOGGER.info("Resource {} in namespace {} is not {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
                 Thread.currentThread().interrupt();
                 return false;
@@ -231,7 +219,7 @@ public class ResourceManager {
         T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
         boolean pass = condition.test(res);
         if (!pass) {
-            LOGGER.info("Resource failed condition check: {}", resourceToString(res));
+            LOGGER.info("Resource {} with with type {} failed condition check: {}", resource.getMetadata().getName(), type, resourceToString(res));
         }
         return pass;
     }
@@ -245,7 +233,7 @@ public class ResourceManager {
         try {
             return MAPPER.writeValueAsString(resource);
         } catch (JsonProcessingException e) {
-            LOGGER.info("Failed converting resource to YAML: {}", e.getMessage());
+            LOGGER.error("Resource {} failed converting resource to YAML: {}", resource.getMetadata().getName(), e.getMessage());
             return "unknown";
         }
     }
@@ -262,13 +250,12 @@ public class ResourceManager {
         LOGGER.info("Going to clear all resources for {}", testContext.getDisplayName());
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         if (!STORED_RESOURCES.containsKey(testContext.getDisplayName()) || STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
-            LOGGER.info("Nothing to delete");
+            LOGGER.info("In context {} is everything deleted.", testContext.getDisplayName());
         }
         while (STORED_RESOURCES.containsKey(testContext.getDisplayName()) && !STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
             STORED_RESOURCES.get(testContext.getDisplayName()).pop().run();
         }
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
-        LOGGER.info("");
         STORED_RESOURCES.remove(testContext.getDisplayName());
     }
 
@@ -324,7 +311,6 @@ public class ResourceManager {
      * @param status - desired status
      * @return returns CR
      */
-
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> status, long resourceTimeout) {
         waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), status, resourceTimeout);
         return true;
@@ -377,8 +363,8 @@ public class ResourceManager {
     private <T extends HasMetadata> ResourceType<T> findResourceType(T resource) {
 
         // for conflicting deployment types
-        if (resource.getKind().equals("Deployment")) {
-            String deploymentType = resource.getMetadata().getLabels().get("deployment-type");
+        if (resource.getKind().equals(Constants.DEPLOYMENT)) {
+            String deploymentType = resource.getMetadata().getLabels().get(Constants.DEPLOYMENT_TYPE);
             DeploymentTypes deploymentTypes = DeploymentTypes.valueOf(deploymentType);
 
             switch (deploymentTypes) {

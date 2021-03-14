@@ -70,8 +70,8 @@ public class KafkaRollerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaRollsWhenTopicIsUnderReplicated(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -131,8 +131,8 @@ public class KafkaRollerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaTopicRFLowerThanMinInSyncReplicas(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1).build());
@@ -160,7 +160,7 @@ public class KafkaRollerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaPodCrashLooping(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
@@ -188,7 +188,7 @@ public class KafkaRollerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaPodImagePullBackOff(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
@@ -211,7 +211,7 @@ public class KafkaRollerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     public void testKafkaPodPending(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         ResourceRequirements rr = new ResourceRequirementsBuilder()
             .withRequests(Collections.emptyMap())
@@ -254,7 +254,7 @@ public class KafkaRollerST extends AbstractST {
         // 3. fix the Kafka CR, kafka pods should be in the pending state
         // 4. wait for Kafka ready, kafka pods should NOT be in the pending state
 
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
                 .withKey("dedicated_test")

@@ -94,11 +94,11 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMirrorMaker2(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
-        String sourceTopicName = "availability-topic-source-" + mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String targetTopicName = "availability-topic-target-" + mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String sourceTopicName = "availability-topic-source-" + mapWithTestTopics.get(extensionContext.getDisplayName());
+        String targetTopicName = "availability-topic-target-" + mapWithTestTopics.get(extensionContext.getDisplayName());
 
         Map<String, Object> expectedConfig = StUtils.loadProperties("group.id=mirrormaker2-cluster\n" +
                 "key.converter=org.apache.kafka.connect.converters.ByteArrayConverter\n" +
@@ -247,10 +247,10 @@ class MirrorMaker2ST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
-        String topicName = "availability-topic-source-" + mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = "availability-topic-source-" + mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + topicName;
         String topicSourceName = MIRRORMAKER2_TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
@@ -307,7 +307,7 @@ class MirrorMaker2ST extends AbstractST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        String baseTopic = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String baseTopic = mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicTestName1 = baseTopic + "-test-1";
         String topicTestName2 = baseTopic + "-test-2";
 
@@ -448,11 +448,11 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMirrorMaker2TlsAndScramSha512Auth(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
-        String sourceTopicName = "availability-topic-source-" + mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String targetTopicName = "availability-topic-target-" + mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String sourceTopicName = "availability-topic-source-" + mapWithTestTopics.get(extensionContext.getDisplayName());
+        String targetTopicName = "availability-topic-target-" + mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + sourceTopicName;
         String topicSourceName = MIRRORMAKER2_TOPIC_NAME + "-" + rng.nextInt(Integer.MAX_VALUE);
         String topicTargetName = kafkaClusterSourceName + "." + topicSourceName;
@@ -660,7 +660,7 @@ class MirrorMaker2ST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleMirrorMaker2Subresource(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -701,7 +701,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMirrorMaker2CorrectlyMirrorsHeaders(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
         String sourceProducerName = clusterName + "-source-producer";
@@ -766,7 +766,7 @@ class MirrorMaker2ST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleMirrorMaker2ToZero(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -803,11 +803,11 @@ class MirrorMaker2ST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testIdentityReplicationPolicy(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
-        String originalTopicName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String originalTopicName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         // Deploy source kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
@@ -865,7 +865,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -898,7 +898,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -950,7 +950,7 @@ class MirrorMaker2ST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testRestoreOffsetsInConsumerGroup(ExtensionContext extensionContext) {
-        final String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClusterSourceName = clusterName + "-source";
         final String kafkaClusterTargetName = clusterName + "-target";
         final String syncGroupOffsetsIntervalSeconds = "1";

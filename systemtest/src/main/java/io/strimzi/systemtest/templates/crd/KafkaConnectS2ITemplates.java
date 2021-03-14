@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 @SuppressWarnings("deprecation")
 public class KafkaConnectS2ITemplates {
 
-    public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/kafka-connect-s2i.yaml";
+    public static final String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/connect/kafka-connect-s2i.yaml";
 
     private KafkaConnectS2ITemplates() {}
 

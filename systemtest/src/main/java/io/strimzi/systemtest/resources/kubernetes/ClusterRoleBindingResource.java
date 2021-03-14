@@ -42,7 +42,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         return resource != null;
     }
     @Override
-    public void refreshResource(ClusterRoleBinding existing, ClusterRoleBinding newResource) {
+    public void replaceResource(ClusterRoleBinding existing, ClusterRoleBinding newResource) {
         existing.setMetadata(newResource.getMetadata());
     }
 
@@ -59,12 +59,12 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         kCRBList.add(
             new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName(coName + "-namespaced")
+                    .withName(coName + "-namespaced")
                 .endMetadata()
                 .withNewRoleRef()
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .withName("strimzi-cluster-operator-namespaced")
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-cluster-operator-namespaced")
                 .endRoleRef()
                 .withSubjects(new SubjectBuilder()
                     .withKind("ServiceAccount")
@@ -78,12 +78,12 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         kCRBList.add(
             new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName(coName + "-entity-operator")
+                    .withName(coName + "-entity-operator")
                 .endMetadata()
                 .withNewRoleRef()
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .withName("strimzi-entity-operator")
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-entity-operator")
                 .endRoleRef()
                 .withSubjects(new SubjectBuilder()
                     .withKind("ServiceAccount")
@@ -97,12 +97,12 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         kCRBList.add(
             new ClusterRoleBindingBuilder()
                 .withNewMetadata()
-                .withName(coName + "-topic-operator")
+                    .withName(coName + "-topic-operator")
                 .endMetadata()
                 .withNewRoleRef()
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .withName("strimzi-topic-operator")
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .withName("strimzi-topic-operator")
                 .endRoleRef()
                 .withSubjects(new SubjectBuilder()
                     .withKind("ServiceAccount")
@@ -116,11 +116,12 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
     }
 
     public static ClusterRoleBinding clusterRoleBinding(ExtensionContext extensionContext, String yamlPath, String namespace) {
-        LOGGER.info("Creating ClusterRoleBinding from {} in namespace {}", yamlPath, namespace);
+        LOGGER.info("Creating ClusterRoleBinding in test case {} from {} in namespace {}",
+            extensionContext.getDisplayName(), yamlPath, namespace);
         ClusterRoleBinding clusterRoleBinding = getClusterRoleBindingFromYaml(yamlPath);
         clusterRoleBinding = new ClusterRoleBindingBuilder(clusterRoleBinding)
             .editFirstSubject()
-            .withNamespace(namespace)
+                .withNamespace(namespace)
             .endSubject().build();
 
         ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding);

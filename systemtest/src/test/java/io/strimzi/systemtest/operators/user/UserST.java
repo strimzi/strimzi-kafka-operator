@@ -93,7 +93,7 @@ class UserST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testUpdateUser(ExtensionContext extensionContext) {
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userName).build());
 
@@ -137,7 +137,7 @@ class UserST extends AbstractST {
     @Tag(SCALABILITY)
     @ParallelTest
     void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         createBigAmountOfUsers(extensionContext, clusterName, "SCRAM_SHA");
     }
@@ -145,7 +145,7 @@ class UserST extends AbstractST {
     @Tag(SCALABILITY)
     @ParallelTest
     void testBigAmountOfTlsUsers(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         createBigAmountOfUsers(extensionContext, clusterName, "TLS");
     }
@@ -170,7 +170,7 @@ class UserST extends AbstractST {
 
     @ParallelTest
     void testUserTemplate(ExtensionContext extensionContext) {
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         String labelKey = "test-label-key";
         String labelValue = "test-label-value";
@@ -203,7 +203,7 @@ class UserST extends AbstractST {
         Integer reqPerc = 42;
 
         // Create user with correct name
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.userWithQuota(user, prodRate, consRate, reqPerc).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.userWithQuotas(user, prodRate, consRate, reqPerc).build());
 
         String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type users";
         LOGGER.debug("Command for kafka-configs.sh {}", command);
@@ -227,8 +227,8 @@ class UserST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCreatingUsersWithSecretPrefix(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         String secretPrefix = "top-secret-";
         String tlsUserName = "encrypted-leopold";

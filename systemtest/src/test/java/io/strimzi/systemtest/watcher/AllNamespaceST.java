@@ -69,7 +69,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
@@ -115,8 +115,8 @@ class AllNamespaceST extends AbstractNamespaceST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String kafkaConnectName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String kafkaConnectName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
@@ -141,9 +141,9 @@ class AllNamespaceST extends AbstractNamespaceST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String kafkaConnectS2IName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect-s2i";
+        String kafkaConnectS2IName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect-s2i";
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         // Deploy Kafka Connect in other namespace than CO

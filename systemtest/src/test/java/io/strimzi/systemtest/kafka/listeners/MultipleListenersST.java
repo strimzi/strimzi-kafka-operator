@@ -56,7 +56,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleNodePorts(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.NODEPORT), clusterName);
     }
@@ -64,7 +64,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleInternal(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.INTERNAL), clusterName);
     }
@@ -75,7 +75,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfInternalAndExternalListeners(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -93,7 +93,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleLoadBalancers(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.LOADBALANCER), clusterName);
     }
@@ -102,7 +102,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), clusterName);
     }
@@ -113,7 +113,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -134,7 +134,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -168,7 +168,6 @@ public class MultipleListenersST extends AbstractST {
             .build());
 
         // only on thread can access to verification phase (here is a lot of variables which can be modified in run-time (data-race))
-        // TODO: move local variables to the test methods and make it more parallel (currently only kafka clusters will spin up in parallel)
         synchronized (lock) {
             String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
             KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(clusterName, kafkaUsername).build();
@@ -221,7 +220,7 @@ public class MultipleListenersST extends AbstractST {
                         );
                     }
                 } else {
-                    String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+                    String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
                     // using internal clients
                     if (isTlsEnabled) {
                         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-tls",

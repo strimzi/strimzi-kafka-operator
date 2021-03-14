@@ -149,7 +149,7 @@ public class AbstractUpgradeST extends AbstractST {
         String toUrl = testParameters.getString("urlTo");
         String examplesPath = "";
         if (toUrl.equals("HEAD")) {
-            examplesPath = TestUtils.USER_PATH + "/../packaging/examples";
+            examplesPath = io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES + "";
         } else {
             File dir = FileUtils.downloadAndUnzip(toUrl);
             examplesPath = dir.getAbsolutePath() + "/" + testParameters.getString("toExamples") + "/examples";
@@ -335,9 +335,9 @@ public class AbstractUpgradeST extends AbstractST {
     protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, JsonObject testParameters, String producerName, String consumerName,
                                                    String continuousTopicName, String continuousConsumerGroup,
                                                    String kafkaVersion, String namespace) throws IOException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         int continuousClientsMessageCount = testParameters.getJsonObject("client").getInteger("continuousClientsMessages");
 

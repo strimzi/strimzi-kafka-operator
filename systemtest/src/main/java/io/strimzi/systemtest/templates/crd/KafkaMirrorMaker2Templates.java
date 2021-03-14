@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
@@ -25,8 +26,8 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaMirrorMaker2Templates {
 
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/mirror-maker/kafka-mirror-maker-2.yaml";
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-mirror-maker-2-metrics.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/mirror-maker/kafka-mirror-maker-2.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     private KafkaMirrorMaker2Templates() {}
 

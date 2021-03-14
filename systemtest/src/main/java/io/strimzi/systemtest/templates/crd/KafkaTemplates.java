@@ -33,11 +33,11 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaTemplates {
 
-    private static final String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-metrics.yaml";
-    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/cruise-control/kafka-cruise-control.yaml";
-    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-cruise-control-metrics.yaml";
-    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/kafka/kafka-ephemeral.yaml";
-    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/kafka/kafka-persistent.yaml";
+    private static final String PATH_TO_KAFKA_METRICS_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-metrics.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-cruise-control.yaml";
+    private static final String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-cruise-control-metrics.yaml";
+    private static final String PATH_TO_KAFKA_EPHEMERAL_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/kafka/kafka-ephemeral.yaml";
+    private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/kafka/kafka-persistent.yaml";
 
     private KafkaTemplates() {};
 

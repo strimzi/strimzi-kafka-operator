@@ -87,7 +87,7 @@ public class SpecificST extends AbstractST {
     void testRackAware(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String rackKey = "rack-key";
@@ -145,8 +145,8 @@ public class SpecificST extends AbstractST {
     void testRackAwareConnectWrongDeployment(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         Map<String, String> label = Collections.singletonMap("my-label", "value");
         Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
@@ -154,11 +154,7 @@ public class SpecificST extends AbstractST {
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
 
-        // TODO: how to solve this SHIT???
-//        ResourceManager.setClassResources();
         resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
-        // Now we set pointer stack to method again
-//        ResourceManager.setMethodResources();
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String wrongRackKey = "wrong-key";
@@ -247,17 +243,14 @@ public class SpecificST extends AbstractST {
     public void testRackAwareConnectCorrectDeployment(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
-        // TODO: how to solve this...???
-//        ResourceManager.setClassResources();
         resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
-        // Now we set pointer stack to method again
-//        ResourceManager.setMethodResources();
+
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String rackKey = "rack-key";
@@ -314,10 +307,7 @@ public class SpecificST extends AbstractST {
         }
 
         // Revert changes for CO deployment
-        // TODO: how???
-//        ResourceManager.setClassResources();
         resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
-//        ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 
@@ -327,7 +317,7 @@ public class SpecificST extends AbstractST {
     void testLoadBalancerIpOverride(ExtensionContext extensionContext) {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -375,7 +365,7 @@ public class SpecificST extends AbstractST {
     void testDeployUnsupportedKafka(ExtensionContext extensionContext) {
         String nonExistingVersion = "6.6.6";
         String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported. Supported versions are.*";
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
@@ -399,7 +389,7 @@ public class SpecificST extends AbstractST {
         String networkInterfaces = Exec.exec("ip", "route").out();
         Pattern ipv4InterfacesPattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");
         Matcher ipv4InterfacesMatcher = ipv4InterfacesPattern.matcher(networkInterfaces);
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         ipv4InterfacesMatcher.find();
         LOGGER.info(ipv4InterfacesMatcher.group(0));

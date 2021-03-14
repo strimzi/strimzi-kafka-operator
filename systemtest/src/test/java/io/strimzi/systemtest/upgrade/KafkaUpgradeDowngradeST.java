@@ -148,7 +148,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
     @SuppressWarnings({"checkstyle:MethodLength"})
     void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
-        String clusterName = mapTestWithClusterNames.get(testContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
         boolean isUpgrade = initialVersion.isUpgrade(newVersion);
         Map<String, String> kafkaPods;
 

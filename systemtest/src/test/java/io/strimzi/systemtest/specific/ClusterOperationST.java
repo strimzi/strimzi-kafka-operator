@@ -39,7 +39,7 @@ public class ClusterOperationST extends AbstractST {
     @MultiNodeClusterOnly
     @RequiredMinKubeApiVersion(version = 1.15)
     void testAvailabilityDuringNodeDrain(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         int size = 5;
         List<String> topicNames = IntStream.range(0, size).boxed().map(i -> "test-topic-" + i).collect(Collectors.toList());

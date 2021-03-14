@@ -95,7 +95,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // 2. Approve installation
         //   a) get name of install-plan
         //   b) approve installation
-        OlmResource.clusterOperator(namespace, OlmInstallationStrategy.Manual, fromVersion);
+        OlmResource.clusterOperator(extensionContext, namespace, OlmInstallationStrategy.Manual, fromVersion);
 
         String url = testParameters.getString("urlFrom");
         File dir = FileUtils.downloadAndUnzip(url);

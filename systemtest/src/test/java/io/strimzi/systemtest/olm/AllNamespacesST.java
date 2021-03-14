@@ -78,7 +78,7 @@ public class AllNamespacesST extends OlmAbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         cluster.setNamespace(cluster.getDefaultOlmNamespace());
-        resourceManager.createResource(extensionContext, OlmResource.clusterOperator(cluster.getDefaultOlmNamespace()));
+        resourceManager.createResource(extensionContext, OlmResource.clusterOperator(extensionContext, cluster.getDefaultOlmNamespace()));
 
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);

@@ -145,7 +145,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testEODeletion(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
@@ -173,7 +173,7 @@ class KafkaST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
@@ -455,7 +455,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testJvmAndResources(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         ArrayList<SystemProperty> javaSystemProps = new ArrayList<>();
         javaSystemProps.add(new SystemPropertyBuilder().withName("javax.net.debug")
@@ -588,7 +588,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testForTopicOperator(ExtensionContext extensionContext) throws InterruptedException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -648,7 +648,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testRemoveTopicOperatorFromEntityOperator(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -690,7 +690,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testRemoveUserOperatorFromEntityOperator(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
 
@@ -738,7 +738,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testRemoveUserAndTopicOperatorsFromEntityOperator(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -780,7 +780,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testEntityOperatorWithoutTopicOperator(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying Kafka cluster without TO in EO");
 
@@ -808,7 +808,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testEntityOperatorWithoutUserOperator(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying Kafka cluster without UO in EO");
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
@@ -834,7 +834,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testEntityOperatorWithoutUserAndTopicOperators(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying Kafka cluster without UO and TO in EO");
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
@@ -854,7 +854,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testTopicWithoutLabels(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -887,7 +887,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaJBODDeleteClaimsTrueFalse(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         int kafkaReplicas = 2;
         String diskSizeGi = "10";
@@ -912,7 +912,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaJBODDeleteClaimsTrue(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         int kafkaReplicas = 2;
         String diskSizeGi = "10";
@@ -934,7 +934,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaJBODDeleteClaimsFalse(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         int kafkaReplicas = 2;
         String diskSizeGi = "10";
@@ -960,8 +960,8 @@ class KafkaST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testPersistentStorageSize(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         String[] diskSizes = {"70Gi", "20Gi"};
         int kafkaRepl = 2;
@@ -1014,7 +1014,7 @@ class KafkaST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     void testRegenerateCertExternalAddressChange(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Creating kafka without external listener");
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
@@ -1057,8 +1057,8 @@ class KafkaST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelModificationDoesNotBreakCluster(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         Map<String, String> labels = new HashMap<>();
         String[] labelKeys = {"label-name-1", "label-name-2", ""};
@@ -1207,8 +1207,8 @@ class KafkaST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testAppDomainLabels(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
@@ -1292,8 +1292,8 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testUOListeningOnlyUsersInSameCluster(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         final String firstClusterName = "my-cluster-1";
         final String secondClusterName = "my-cluster-2";
@@ -1320,7 +1320,7 @@ class KafkaST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testMessagesAreStoredInDisk(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1).build());
@@ -1389,8 +1389,8 @@ class KafkaST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testConsumerOffsetFiles(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
@@ -1452,7 +1452,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testLabelsAndAnnotationForPVC(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         final String labelAnnotationKey = "testKey";
         final String firstValue = "testValue";
@@ -1562,7 +1562,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testKafkaOffsetsReplicationFactorHigherThanReplicas(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -1579,7 +1579,7 @@ class KafkaST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp(aliasIp)
@@ -1620,8 +1620,8 @@ class KafkaST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testReadOnlyRootFileSystem(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
                 .editSpec()

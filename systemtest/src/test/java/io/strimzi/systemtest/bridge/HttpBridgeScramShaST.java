@@ -103,19 +103,19 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
-                .editSpec()
-                .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewKafkaListenerAuthenticationScramSha512Auth()
-                            .endKafkaListenerAuthenticationScramSha512Auth()
-                        .endGenericKafkaListener()
-                    .endListeners()
-                .endKafka()
+            .editSpec()
+            .editKafka()
+                .withNewListeners()
+                    .addNewGenericKafkaListener()
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                        .withPort(9093)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationScramSha512Auth()
+                        .endKafkaListenerAuthenticationScramSha512Auth()
+                    .endGenericKafkaListener()
+                .endListeners()
+            .endKafka()
             .endSpec().build());
 
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;

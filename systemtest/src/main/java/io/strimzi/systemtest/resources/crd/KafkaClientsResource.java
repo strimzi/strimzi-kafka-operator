@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -20,38 +21,12 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
 
     @Override
     public String getKind() {
-        return "Deployment";
+        return Constants.DEPLOYMENT;
     }
     @Override
     public Deployment get(String namespace, String name) {
         String deploymentName = ResourceManager.kubeClient().namespace(namespace).getDeploymentNameByPrefix(name);
         return deploymentName != null ?  ResourceManager.kubeClient().getDeployment(deploymentName) : null;
-//        Deployment[] deployment = new Deployment[1];
-
-//        switch (phase) {
-//            case CREATE_PHASE:
-//                TestUtils.waitFor(" until deployment is present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-//                    () -> {
-//                        deployment[0] = ResourceManager.kubeClient().namespace(namespace).getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name));
-//                        return deployment[0] != null;
-//                    });
-//                return ResourceManager.kubeClient().namespace(namespace).getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name));
-//            case DELETE_PHASE:
-//                TestUtils.waitFor(" until deployment is null", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-//                    () -> {
-//                        try {
-//                            deployment[0] = ResourceManager.kubeClient().namespace(namespace).getDeployment(ResourceManager.kubeClient().getDeploymentNameByPrefix(name));
-//                            return deployment[0] == null;
-//                        } catch (IndexOutOfBoundsException | NullPointerException exception) {
-//                            // object is null so we can return true
-//                            return true;
-//                        }
-//                    });
-//                // after successful dynamic wait  we can return null
-//                return null;
-//            default:
-//                return null;
-//        }
     }
 
     @Override
@@ -71,7 +46,7 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
     }
 
     @Override
-    public void refreshResource(Deployment existing, Deployment newResource) {
+    public void replaceResource(Deployment existing, Deployment newResource) {
         existing = ClientUtils.waitUntilClientsArePresent(existing);
 
         existing.setMetadata(newResource.getMetadata());

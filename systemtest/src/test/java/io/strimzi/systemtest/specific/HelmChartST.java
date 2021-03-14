@@ -35,9 +35,9 @@ class HelmChartST extends AbstractST {
 
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext,
             KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());

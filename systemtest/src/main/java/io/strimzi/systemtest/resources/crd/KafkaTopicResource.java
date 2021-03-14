@@ -42,7 +42,7 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
         return ResourceManager.waitForResourceStatus(kafkaTopicClient(), resource, CustomResourceStatus.Ready);
     }
     @Override
-    public void refreshResource(KafkaTopic existing, KafkaTopic newResource) {
+    public void replaceResource(KafkaTopic existing, KafkaTopic newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

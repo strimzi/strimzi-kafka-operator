@@ -80,9 +80,9 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testRecoveryDuringZookeeperRollingUpdate(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 2, 2).build());
@@ -163,9 +163,9 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testRecoveryDuringKafkaRollingUpdate(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 2, 3).build());
@@ -255,9 +255,9 @@ class RollingUpdateST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(SCALABILITY)
     void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -382,9 +382,9 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -501,7 +501,7 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testBrokerConfigurationChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
@@ -520,7 +520,7 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testManualKafkaConfigMapChangeDontTriggerRollingUpdate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
@@ -540,7 +540,7 @@ class RollingUpdateST extends AbstractST {
     @Test
     @Tag(ROLLING_UPDATE)
     void testExternalLoggingChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());
@@ -607,7 +607,7 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testClusterOperatorFinishAllRollingUpdates(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
@@ -645,8 +645,8 @@ class RollingUpdateST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @SuppressWarnings("checkstyle:MethodLength")
     void testMetricsChange(ExtensionContext extensionContext) throws JsonProcessingException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         //Kafka
         Map<String, Object> kafkaRule = new HashMap<>();

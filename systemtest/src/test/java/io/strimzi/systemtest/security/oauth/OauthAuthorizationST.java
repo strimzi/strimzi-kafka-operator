@@ -84,10 +84,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(1)
     void smokeTestForClients(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + clusterName;
-        String topicName = TOPIC_A + "-" + mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = TOPIC_A + "-" + mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "a-consumer_group-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
@@ -115,10 +115,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(2)
     void testTeamAWriteToTopic(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "a-consumer_group-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
@@ -177,10 +177,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(3)
     void testTeamAReadFromTopic(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + clusterName;
-        String topicAName = TOPIC_A + "-" + mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicAName = TOPIC_A + "-" + mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "a-consumer_group-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicAName).build());
@@ -228,10 +228,10 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(4)
     void testTeamBWriteToTopic(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + clusterName;
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "x-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
@@ -271,13 +271,13 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(5)
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + clusterName;
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + clusterName;
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + clusterName;
         // only write means that Team A can not create new topic 'x-.*'
-        String topicXName = TOPIC_X + mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicXName = TOPIC_X + mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "x-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName).build());
@@ -322,14 +322,14 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @ParallelTest
     @Order(6)
     void testSuperUserWithOauthAuthorization(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + clusterName;
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + clusterName;
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + clusterName;
         // only write means that Team A can not create new topic 'x-.*'
-        String topicXName = TOPIC_X + mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicXName = TOPIC_X + mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "x-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName).build());

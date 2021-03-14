@@ -34,8 +34,8 @@ public class HttpBridgeAbstractST extends AbstractST {
 
     @BeforeAll
     void createBridgeClient() {
-        LOGGER.info("===============================================================");
-        LOGGER.info("{} - [BEFORE ALL] has been called", this.getClass().getName());
+        LOGGER.debug("===============================================================");
+        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
 
         kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)

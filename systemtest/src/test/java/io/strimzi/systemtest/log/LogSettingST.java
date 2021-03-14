@@ -202,8 +202,8 @@ class LogSettingST extends AbstractST {
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaSsName);
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkSsName);
 
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(LOG_SETTING_CLUSTER_NAME, topicName).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(LOG_SETTING_CLUSTER_NAME, userName).build());
@@ -253,7 +253,7 @@ class LogSettingST extends AbstractST {
 
     @ParallelTest
     void testConnectLogSetting(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectClusterName = clusterName + "-connect";
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, LOG_SETTING_CLUSTER_NAME, 1)
@@ -286,7 +286,7 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     @OpenShiftOnly
     void testConnectS2ILogSetting(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, connectS2IClusterName, LOG_SETTING_CLUSTER_NAME, 1)
@@ -318,7 +318,7 @@ class LogSettingST extends AbstractST {
 
     @ParallelTest
     void testMirrorMakerLogSetting(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMakerName = clusterName + "-mirror-maker";
 
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
@@ -350,7 +350,7 @@ class LogSettingST extends AbstractST {
 
     @ParallelTest
     void testMirrorMaker2LogSetting(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMaker2Name = clusterName + "-mirror-maker-2";
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMaker2Name, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
@@ -382,7 +382,7 @@ class LogSettingST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testBridgeLogSetting(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String bridgeName = clusterName + "-bridge";
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)

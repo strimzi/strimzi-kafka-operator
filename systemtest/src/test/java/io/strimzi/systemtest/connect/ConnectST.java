@@ -112,7 +112,7 @@ class ConnectST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDeployUndeploy(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         Map<String, Object> exceptedConfig = StUtils.loadProperties("group.id=" + KafkaConnectResources.deploymentName(clusterName) + "\n" +
                 "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
@@ -160,8 +160,8 @@ class ConnectST extends AbstractST {
     @Tag(SMOKE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectWithFileSinkPlugin(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
@@ -201,10 +201,10 @@ class ConnectST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectWithPlainAndScramShaAuthentication(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         // Use a Kafka with plain listener disabled
 
@@ -285,8 +285,8 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectAndConnectorFileSinkPlugin(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
@@ -330,7 +330,7 @@ class ConnectST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testJvmAndResources(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
@@ -363,7 +363,7 @@ class ConnectST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testKafkaConnectScaleUpScaleDown(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
@@ -397,10 +397,10 @@ class ConnectST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -482,10 +482,10 @@ class ConnectST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -564,7 +564,7 @@ class ConnectST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         String usedVariable = "KAFKA_CONNECT_CONFIGURATION";
 
@@ -660,8 +660,8 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @OpenShiftOnly
     void testKafkaConnectorWithConnectAndConnectS2IWithSameName(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         String connectClusterName = "connect-cluster-1";
         String connectS2IClusterName = "connect-s2i-cluster-1";
@@ -746,8 +746,8 @@ class ConnectST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testMultiNodeKafkaConnectWithConnectorCreation(ExtensionContext extensionContext) {
         String connectClusterName = "connect-cluster-2";
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         // Crate connect cluster with default connect image
@@ -804,8 +804,8 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testConnectTlsAuthWithWeirdUserName(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
@@ -869,8 +869,8 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testConnectScramShaAuthWithWeirdUserName(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasdsadasdasdasdasdgasgadfasdad";
@@ -958,7 +958,7 @@ class ConnectST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleConnectWithoutConnectorToZero(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 2).build());
@@ -985,8 +985,8 @@ class ConnectST extends AbstractST {
     @Tag(SCALABILITY)
     @Tag(CONNECTOR_OPERATOR)
     void testScaleConnectWithConnectorToZero(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 2)
@@ -1030,8 +1030,8 @@ class ConnectST extends AbstractST {
     @Tag(SCALABILITY)
     @Tag(CONNECTOR_OPERATOR)
     void testScaleConnectAndConnectorSubresource(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
@@ -1092,7 +1092,7 @@ class ConnectST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         String secretPassword = "password";
         String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
@@ -1250,7 +1250,7 @@ class ConnectST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
@@ -1278,7 +1278,7 @@ class ConnectST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)

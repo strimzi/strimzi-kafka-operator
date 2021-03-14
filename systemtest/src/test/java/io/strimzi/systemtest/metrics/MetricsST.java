@@ -203,7 +203,7 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, topicName).build());
 

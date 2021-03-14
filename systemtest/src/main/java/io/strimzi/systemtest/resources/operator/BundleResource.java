@@ -29,7 +29,7 @@ public class BundleResource implements ResourceType<Deployment> {
 
     @Override
     public String getKind() {
-        return "Deployment";
+        return Constants.DEPLOYMENT;
     }
     @Override
     public Deployment get(String namespace, String name) {
@@ -48,9 +48,6 @@ public class BundleResource implements ResourceType<Deployment> {
     @Override
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public boolean isReady(Deployment resource) {
-        LOGGER.info("==========================================================");
-        LOGGER.info("Resource -_>" + resource);
-
         return resource != null
             && resource.getMetadata() != null
             && resource.getMetadata().getName() != null
@@ -58,7 +55,7 @@ public class BundleResource implements ResourceType<Deployment> {
             && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
     @Override
-    public void refreshResource(Deployment existing, Deployment newResource) {
+    public void replaceResource(Deployment existing, Deployment newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());
@@ -130,7 +127,7 @@ public class BundleResource implements ResourceType<Deployment> {
             .editMetadata()
                 .withName(name)
                 .withNamespace(namespace)
-                .addToLabels("deployment-type", DeploymentTypes.BundleClusterOperator.name())
+                .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.BundleClusterOperator.name())
             .endMetadata()
             .editSpec()
                 .withNewSelector()

@@ -50,7 +50,6 @@ public class TimeMeasuringSystem {
 
     public static synchronized TimeMeasuringSystem getInstance() {
         if (instance == null) {
-            LOGGER.info("====================Hello from singleton");
             instance = new TimeMeasuringSystem();
             measuringMap = new LinkedHashMap<>();
         }
@@ -71,14 +70,14 @@ public class TimeMeasuringSystem {
         LOGGER.info("============ ADDING RECORD ========");
         if (measuringMap.get(testClass) == null) {
             // new test suite
-            LOGGER.info("Hello testClass {} is new....", testClass);
+            LOGGER.debug("New TestClass {}", testClass);
             Map<String, Map<String, MeasureRecord>> newData = new LinkedHashMap<>();
             Map<String, MeasureRecord> newRecord = new LinkedHashMap<>();
             newData.put(testName, newRecord);
             newRecord.put(operationID, record);
             measuringMap.put(testClass, newData);
         } else if (measuringMap.get(testClass).get(testName) == null) {
-            LOGGER.info("Hello testMethod:{} is new but we know testClass:{}....", testName, testClass);
+            LOGGER.debug("New testMethod:{}", testName, testClass);
             // new test case
             Map<String, MeasureRecord> newRecord = new LinkedHashMap<>();
             newRecord.put(operationID, record);
@@ -114,9 +113,9 @@ public class TimeMeasuringSystem {
             id = createOperationsID(Operation.CO_DELETION);
         }
         try {
-            LOGGER.info(testClass);
-            LOGGER.info(testName);
-            LOGGER.info(measuringMap.toString());
+            LOGGER.debug(testClass);
+            LOGGER.debug(testName);
+            LOGGER.debug(measuringMap.toString());
 
             synchronized (this) {
                 measuringMap.get(testClass).get(testName).get(id).setEndTime(System.currentTimeMillis());

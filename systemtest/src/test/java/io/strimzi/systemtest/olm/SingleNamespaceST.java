@@ -83,6 +83,6 @@ public class SingleNamespaceST extends OlmAbstractST {
     void setup(ExtensionContext extensionContext) {
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
-        resourceManager.createResource(extensionContext, OlmResource.clusterOperator(NAMESPACE));
+        resourceManager.createResource(extensionContext, OlmResource.clusterOperator(extensionContext, NAMESPACE));
     }
 }

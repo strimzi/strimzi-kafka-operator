@@ -39,7 +39,7 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
         return resource != null;
     }
     @Override
-    public void refreshResource(RoleBinding existing, RoleBinding newResource) {
+    public void replaceResource(RoleBinding existing, RoleBinding newResource) {
         existing.setMetadata(newResource.getMetadata());
     }
 

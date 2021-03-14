@@ -56,7 +56,7 @@ public class ReconciliationST extends AbstractST {
 
     @IsolatedTest
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
@@ -121,7 +121,7 @@ public class ReconciliationST extends AbstractST {
 
     @IsolatedTest
     void testPauseReconciliationInKafkaRebalanceAndTopic(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 

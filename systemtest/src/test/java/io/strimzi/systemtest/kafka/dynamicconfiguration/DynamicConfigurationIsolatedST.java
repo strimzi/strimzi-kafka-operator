@@ -65,7 +65,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testSimpleDynamicConfiguration(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
@@ -104,7 +104,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testUpdateToExternalListenerCausesRollingRestart(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
@@ -225,9 +225,9 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 

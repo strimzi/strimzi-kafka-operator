@@ -32,7 +32,6 @@ public class KafkaConnectS2IResource implements ResourceType<KafkaConnectS2I> {
     }
     @Override
     public void create(KafkaConnectS2I resource) {
-        // TODO: same as KafkaBridge and KafkaConnect
         kafkaConnectS2IClient().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).createOrReplace(resource);
     }
     @Override
@@ -46,7 +45,7 @@ public class KafkaConnectS2IResource implements ResourceType<KafkaConnectS2I> {
         return ResourceManager.waitForResourceStatus(kafkaConnectS2IClient(), resource, CustomResourceStatus.Ready);
     }
     @Override
-    public void refreshResource(KafkaConnectS2I existing, KafkaConnectS2I newResource) {
+    public void replaceResource(KafkaConnectS2I existing, KafkaConnectS2I newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

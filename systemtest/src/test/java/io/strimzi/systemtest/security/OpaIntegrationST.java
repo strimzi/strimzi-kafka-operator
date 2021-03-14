@@ -47,8 +47,8 @@ public class OpaIntegrationST extends AbstractST {
 
     @ParallelTest
     void testOpaAuthorization(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String consumerGroupName = "consumer-group-name-1";
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
@@ -94,8 +94,8 @@ public class OpaIntegrationST extends AbstractST {
 
     @ParallelTest
     void testOpaAuthorizationSuperUser(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String consumerGroupName = "consumer-group-name-2";
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
 

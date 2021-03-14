@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
@@ -20,7 +21,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 
 public class KafkaMirrorMakerTemplates {
 
-    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/mirror-maker/kafka-mirror-maker.yaml";
+    public static final String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/mirror-maker/kafka-mirror-maker.yaml";
 
     private KafkaMirrorMakerTemplates() {}
 

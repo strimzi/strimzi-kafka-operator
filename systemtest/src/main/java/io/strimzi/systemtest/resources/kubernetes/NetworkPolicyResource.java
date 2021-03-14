@@ -54,7 +54,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         return resource != null;
     }
     @Override
-    public void refreshResource(NetworkPolicy existing, NetworkPolicy newResource) {
+    public void replaceResource(NetworkPolicy existing, NetworkPolicy newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
     }
@@ -255,21 +255,21 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .withNewApiVersion("networking.k8s.io/v1")
             .withNewKind("NetworkPolicy")
             .withNewMetadata()
-            .withName("global-network-policy")
-            .withNamespace(namespace)
+                .withName("global-network-policy")
+                .withNamespace(namespace)
             .endMetadata()
             .withNewSpec()
-            .withNewPodSelector()
-            .endPodSelector()
-            .withPolicyTypes("Ingress")
+                .withNewPodSelector()
+                .endPodSelector()
+                .withPolicyTypes("Ingress")
             .endSpec()
             .build();
 
         if (policy.equals(DefaultNetworkPolicy.DEFAULT_TO_ALLOW)) {
             networkPolicy = new NetworkPolicyBuilder(networkPolicy)
                 .editSpec()
-                .addNewIngress()
-                .endIngress()
+                    .addNewIngress()
+                    .endIngress()
                 .endSpec()
                 .build();
         }

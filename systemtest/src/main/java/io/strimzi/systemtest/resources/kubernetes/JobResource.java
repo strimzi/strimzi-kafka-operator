@@ -36,7 +36,7 @@ public class JobResource implements ResourceType<Job> {
         return resource != null;
     }
     @Override
-    public void refreshResource(Job existing, Job newResource) {
+    public void replaceResource(Job existing, Job newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

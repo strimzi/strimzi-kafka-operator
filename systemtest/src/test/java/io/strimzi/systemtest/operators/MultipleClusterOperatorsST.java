@@ -67,8 +67,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
     @IsolatedTest
     void testMultipleCOsInDifferentNamespaces(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
@@ -129,7 +129,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
     @IsolatedTest
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         int scaleTo = 4;
 
         deployCOInNamespace(extensionContext, FIRST_CO_NAME, DEFAULT_NAMESPACE, FIRST_CO_SELECTOR_ENV, false);

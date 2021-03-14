@@ -40,7 +40,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
     static final String MAIN_NAMESPACE_CLUSTER_NAME = "my-cluster";
-    private static final String TOPIC_EXAMPLES_DIR = TestUtils.USER_PATH + "/../packaging/examples/topic/kafka-topic.yaml";
+    private static final String TOPIC_EXAMPLES_DIR = Constants.PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml";
 
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
         String previousNamespace = cluster.setNamespace(namespace);
@@ -97,7 +97,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editSpec()

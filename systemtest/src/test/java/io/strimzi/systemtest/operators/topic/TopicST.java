@@ -65,7 +65,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testMoreReplicasThanAvailableBrokers(ExtensionContext extensionContext) {
-        final String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
@@ -99,7 +99,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testCreateTopicViaKafka(ExtensionContext extensionContext) {
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         int topicPartitions = 3;
 
         LOGGER.debug("Creating topic {} with {} replicas and {} partitions", topicName, 3, topicPartitions);
@@ -122,8 +122,8 @@ public class TopicST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(NODEPORT_SUPPORTED)
     void testCreateTopicViaAdminClient(ExtensionContext extensionContext) throws ExecutionException, InterruptedException, TimeoutException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
@@ -179,7 +179,7 @@ public class TopicST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
                 .editSpec()
@@ -260,7 +260,7 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testTopicModificationOfReplicationFactor(ExtensionContext extensionContext) {
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(TOPIC_CLUSTER_NAME, topicName)
             .editSpec()
@@ -285,7 +285,7 @@ public class TopicST extends AbstractST {
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendingMessagesToNonExistingTopic(ExtensionContext extensionContext) {
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         int sent = 0;
 
@@ -341,8 +341,8 @@ public class TopicST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testDeleteTopicEnableFalse(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String isolatedKafkaCluster = clusterName + "-isolated";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(isolatedKafkaCluster, 1, 1)

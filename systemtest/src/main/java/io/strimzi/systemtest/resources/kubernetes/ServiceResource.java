@@ -39,7 +39,7 @@ public class ServiceResource implements ResourceType<Service> {
         return resource != null;
     }
     @Override
-    public void refreshResource(Service existing, Service newResource) {
+    public void replaceResource(Service existing, Service newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

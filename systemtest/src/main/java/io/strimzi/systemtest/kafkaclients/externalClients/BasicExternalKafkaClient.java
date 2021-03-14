@@ -116,7 +116,7 @@ public class BasicExternalKafkaClient extends AbstractKafkaClient<BasicExternalK
 
         ProducerProperties properties = this.producerProperties;
 
-        LOGGER.info("==============This bootstrap {}", getBootstrapServerFromStatus());
+        LOGGER.info("Producer is going to use bootstrap:{}", getBootstrapServerFromStatus());
 
         if (properties == null || properties.getProperties().isEmpty()) {
             properties = new ProducerProperties.ProducerPropertiesBuilder()

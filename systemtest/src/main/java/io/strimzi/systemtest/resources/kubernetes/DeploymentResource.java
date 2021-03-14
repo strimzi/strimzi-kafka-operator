@@ -23,7 +23,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
 
     @Override
     public String getKind() {
-        return "Deployment";
+        return Constants.DEPLOYMENT;
     }
     @Override
     public Deployment get(String namespace, String name) {
@@ -44,7 +44,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
 
     }
     @Override
-    public void refreshResource(Deployment existing, Deployment newResource) {
+    public void replaceResource(Deployment existing, Deployment newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

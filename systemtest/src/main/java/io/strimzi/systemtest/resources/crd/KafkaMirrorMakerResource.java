@@ -40,7 +40,7 @@ public class KafkaMirrorMakerResource implements ResourceType<KafkaMirrorMaker> 
         return ResourceManager.waitForResourceStatus(kafkaMirrorMakerClient(), resource, CustomResourceStatus.Ready);
     }
     @Override
-    public void refreshResource(KafkaMirrorMaker existing, KafkaMirrorMaker newResource) {
+    public void replaceResource(KafkaMirrorMaker existing, KafkaMirrorMaker newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

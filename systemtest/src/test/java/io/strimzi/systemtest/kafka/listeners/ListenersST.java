@@ -116,9 +116,9 @@ public class ListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainAnonymous(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String clientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String clientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
@@ -155,9 +155,9 @@ public class ListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsAuthenticated(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaUser = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUser = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         // Use a Kafka with plain listener disabled
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
@@ -223,9 +223,9 @@ public class ListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainScramSha(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaUsername = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUsername = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         // Use a Kafka with plain listener disabled
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
@@ -300,9 +300,9 @@ public class ListenersST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsScramSha(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaUsername = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaUsername = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         // Use a Kafka with plain listener disabled
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
@@ -360,8 +360,8 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePort(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         Map<String, String> label = Collections.singletonMap("my-label", "value");
         Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
@@ -439,8 +439,8 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testOverrideNodePortConfiguration(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         int brokerNodePort = 32000;
         int brokerId = 0;
@@ -509,9 +509,9 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -553,8 +553,8 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancer(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -593,9 +593,9 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerTls(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -643,9 +643,9 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     void testCustomSoloCertificatesForNodePort(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
@@ -732,9 +732,9 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     void testCustomChainCertificatesForNodePort(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertChain1 = clusterName + "-" + customCertChain1;
         String clusterCustomRootCA1 = clusterName + "-" + customRootCA1;
 
@@ -822,9 +822,9 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     void testCustomSoloCertificatesForLoadBalancer(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
@@ -912,9 +912,9 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     void testCustomChainCertificatesForLoadBalancer(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertChain1 = clusterName + "-" + customCertChain1;
         String clusterCustomRootCA1 = clusterName + "-" + customRootCA1;
 
@@ -1009,9 +1009,9 @@ public class ListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
     void testCustomSoloCertificatesForRoute(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, NAMESPACE, STRIMZI_CERT_AND_KEY_1);
@@ -1098,9 +1098,9 @@ public class ListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
     void testCustomChainCertificatesForRoute(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertChain1 = clusterName + "-" + customCertChain1;
         String clusterCustomRootCA1 = clusterName + "-" + customRootCA1;
 
@@ -1191,9 +1191,9 @@ public class ListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertLoadBalancerAndTlsRollingUpdate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
         String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
 
@@ -1437,9 +1437,9 @@ public class ListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertNodePortAndTlsRollingUpdate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
         String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
 
@@ -1672,9 +1672,9 @@ public class ListenersST extends AbstractST {
     @OpenShiftOnly
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertRouteAndTlsRollingUpdate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
         String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
 
@@ -1906,7 +1906,7 @@ public class ListenersST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testNonExistingCustomCertificate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String nonExistingCertName = "non-existing-certificate";
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
@@ -1940,7 +1940,7 @@ public class ListenersST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCertificateWithNonExistingDataCrt(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String nonExistingCertName = "non-existing-crt";
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
 
@@ -1978,7 +1978,7 @@ public class ListenersST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCertificateWithNonExistingDataKey(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String nonExistingCertKey = "non-existing-key";
         String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
 

@@ -44,7 +44,7 @@ public class ClusterOperatorRbacST extends AbstractST {
     void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         applyRoleBindingsWithoutCRBs(extensionContext);
         // 060-Deployment
@@ -72,8 +72,8 @@ public class ClusterOperatorRbacST extends AbstractST {
     void testCRBDeletionErrorsWhenRackAwarenessIsEnabled(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         applyRoleBindingsWithoutCRBs(extensionContext);
         // 060-Deployment

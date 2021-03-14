@@ -186,7 +186,7 @@ public class DeploymentUtils {
                     return true;
                 } else {
                     LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
-                    cmdKubeClient().deleteByName("deployment", name);
+                    cmdKubeClient().deleteByName(Constants.DEPLOYMENT, name);
                     return false;
                 }
             });

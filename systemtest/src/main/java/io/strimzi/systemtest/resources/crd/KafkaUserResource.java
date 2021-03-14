@@ -48,7 +48,7 @@ public class KafkaUserResource implements ResourceType<KafkaUser> {
     }
 
     @Override
-    public void refreshResource(KafkaUser existing, KafkaUser newResource) {
+    public void replaceResource(KafkaUser existing, KafkaUser newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

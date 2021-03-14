@@ -9,10 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
@@ -65,10 +61,6 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {
-        return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
-    }
-
     public static boolean waitForKafkaReady(String clusterName) {
         return waitForKafkaStatus(clusterName, Ready);
     }
@@ -103,7 +95,6 @@ public class KafkaUtils {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     String conditionMessage = condition.getMessage();
-                    LOGGER.debug(conditionMessage);
                     if (conditionMessage.matches(message)) {
                         return true;
                     }
@@ -392,7 +383,7 @@ public class KafkaUtils {
     }
 
     public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName, String listenerName) {
-        List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
+        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
 
         GenericKafkaListener tlsListener = listenerName == null || listenerName.isEmpty() ?
             listeners.stream().filter(listener -> Constants.TLS_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
@@ -402,7 +393,7 @@ public class KafkaUtils {
     }
 
     public static String getKafkaExternalListenerCaCertName(String namespace, String clusterName, String listenerName) {
-        List<GenericKafkaListener> listeners = kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
+        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
 
         GenericKafkaListener external = listenerName == null || listenerName.isEmpty() ?
             listeners.stream().filter(listener -> Constants.EXTERNAL_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
@@ -412,7 +403,7 @@ public class KafkaUtils {
     }
 
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {
-        return kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus();
+        return KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus();
     }
 
     public static String changeOrRemoveKafkaVersion(File file, String version) {

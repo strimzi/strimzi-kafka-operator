@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 
@@ -19,7 +20,7 @@ import java.util.Map;
 
 public class KafkaRebalanceTemplates {
 
-    public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/cruise-control/kafka-rebalance.yaml";
+    public static final String PATH_TO_KAFKA_REBALANCE_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-rebalance.yaml";
 
     private KafkaRebalanceTemplates() {}
 

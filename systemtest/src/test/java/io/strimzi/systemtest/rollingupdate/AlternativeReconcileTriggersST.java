@@ -70,8 +70,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String continuousTopicName = "continuous-topic";
         // 500 messages will take 500 seconds in that case
         int continuousClientsMessageCount = 500;
@@ -214,7 +214,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testTriggerRollingUpdateAfterOverrideBootstrap(ExtensionContext extensionContext) throws CertificateException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
@@ -265,7 +265,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testManualRollingUpdateForSinglePod(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
@@ -331,8 +331,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
      */
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testAddingAndRemovingJbodVolumes(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String continuousTopicName = "continuous-topic";
         // 500 messages will take 500 seconds in that case
         int continuousClientsMessageCount = 500;

@@ -201,7 +201,7 @@ public class KafkaBasicExampleClients {
                         .withLabels(producerLabels)
                     .endMetadata()
                     .withNewSpec()
-                        .withRestartPolicy("OnFailure")
+                        .withRestartPolicy("Never")
                         .withContainers()
                             .addNewContainer()
                                 .withName(producerName)

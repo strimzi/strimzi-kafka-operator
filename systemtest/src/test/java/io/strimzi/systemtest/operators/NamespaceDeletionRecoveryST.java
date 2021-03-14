@@ -61,8 +61,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicAvailable(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         prepareEnvironmentForRecovery(extensionContext, topicName, MESSAGE_COUNT);
 
@@ -131,8 +131,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicNotAvailable(ExtensionContext extensionContext) throws InterruptedException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         prepareEnvironmentForRecovery(extensionContext, topicName, MESSAGE_COUNT);
 
@@ -206,7 +206,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     }
 
     private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, String topicName, int messageCount) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // Setup Test environment with Kafka and store some messages
         prepareEnvForOperator(extensionContext, NAMESPACE);

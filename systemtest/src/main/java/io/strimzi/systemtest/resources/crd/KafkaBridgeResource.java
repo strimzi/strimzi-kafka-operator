@@ -42,7 +42,7 @@ public class KafkaBridgeResource implements ResourceType<KafkaBridge> {
         return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), resource, CustomResourceStatus.Ready);
     }
     @Override
-    public void refreshResource(KafkaBridge existing, KafkaBridge newResource) {
+    public void replaceResource(KafkaBridge existing, KafkaBridge newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

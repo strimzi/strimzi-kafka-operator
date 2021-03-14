@@ -43,7 +43,7 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
         return KafkaConnectorUtils.waitForConnectorReady(resource.getMetadata().getName());
     }
     @Override
-    public void refreshResource(KafkaConnector existing, KafkaConnector newResource) {
+    public void replaceResource(KafkaConnector existing, KafkaConnector newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

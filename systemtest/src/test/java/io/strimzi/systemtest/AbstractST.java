@@ -86,10 +86,10 @@ public abstract class AbstractST implements TestSeparator {
     private final Object lockForTimeMeasuringSystem = new Object();
 
     // maps for local variables {thread safe}
-    protected static Map<String, String> mapTestWithClusterNames = new HashMap<>();
-    protected static Map<String, String> mapTestWithTestTopics = new HashMap<>();
-    protected static Map<String, String> mapTestWithTestUsers = new HashMap<>();
-    protected static Map<String, String> mapTestWithKafkaClientNames = new HashMap<>();
+    protected static Map<String, String> mapWithClusterNames = new HashMap<>();
+    protected static Map<String, String> mapWithTestTopics = new HashMap<>();
+    protected static Map<String, String> mapWithTestUsers = new HashMap<>();
+    protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
 
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
@@ -126,7 +126,7 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.info("Going to install ClusterOperator via OLM");
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
-            ResourceManager.getInstance().createResource(extensionContext, OlmResource.clusterOperator(namespace, operationTimeout, reconciliationInterval));
+            ResourceManager.getInstance().createResource(extensionContext, OlmResource.clusterOperator(extensionContext, namespace, operationTimeout, reconciliationInterval));
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             cluster.setNamespace(namespace);
@@ -705,24 +705,6 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Docker images verified");
     }
     protected void afterEachMayOverride(ExtensionContext testContext) throws Exception {
-//        AssertionError assertionError = null;
-//        // this is because more threads can access 'testDuration' variable and modify it...
-//        synchronized (lockForTimeMeasuringSystem) {
-//            try {
-//                long testDuration = TimeMeasuringSystem.getInstance().getDurationInSeconds(
-//                    testContext.getRequiredTestClass().getName(),
-//                    testContext.getRequiredTestMethod().getName(),
-//                    Operation.TEST_EXECUTION.name());
-//                assertNoCoErrorsLogged(testDuration);
-//            } catch (AssertionError e) {
-//                LOGGER.error("Cluster Operator contains unexpected errors!");
-//                assertionError = new AssertionError(e);
-//            }
-//        }
-//
-//        if (assertionError != null) {
-//            throw assertionError;
-//        }
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(testContext);
         }
@@ -754,15 +736,15 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.info("Not first test we are gonna generate cluster name");
             String clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
 
-            mapTestWithClusterNames.put(testName, clusterName);
-            mapTestWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
-            mapTestWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
-            mapTestWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
+            mapWithClusterNames.put(testName, clusterName);
+            mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
+            mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
+            mapWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
 
-            LOGGER.info("CLUSTER_NAMES_MAP: \n{}", mapTestWithClusterNames);
-            LOGGER.info("USERS_NAME_MAP: \n{}", mapTestWithTestUsers);
-            LOGGER.info("TOPIC_NAMES_MAP: \n{}", mapTestWithTestTopics);
-            LOGGER.info("============THIS IS CLIENTS MAP:\n{}", mapTestWithKafkaClientNames);
+            LOGGER.debug("CLUSTER_NAMES_MAP: \n{}", mapWithClusterNames);
+            LOGGER.debug("USERS_NAME_MAP: \n{}", mapWithTestUsers);
+            LOGGER.debug("TOPIC_NAMES_MAP: \n{}", mapWithTestTopics);
+            LOGGER.debug("============THIS IS CLIENTS MAP:\n{}", mapWithKafkaClientNames);
         }
     }
 
@@ -783,29 +765,29 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeEach
     void setUpTestCase(ExtensionContext testContext) {
-        LOGGER.info("===============================================================");
-        LOGGER.info("{} - [BEFORE EACH] has been called", this.getClass().getName());
+        LOGGER.debug("===============================================================");
+        LOGGER.debug("{} - [BEFORE EACH] has been called", this.getClass().getName());
         beforeEachMayOverride(testContext);
     }
 
     @BeforeAll
     void setUpTestSuite(ExtensionContext testContext) {
-        LOGGER.info("===============================================================");
-        LOGGER.info("{} - [BEFORE ALL] has been called", this.getClass().getName());
+        LOGGER.debug("===============================================================");
+        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
         beforeAllMayOverride(testContext);
     }
 
     @AfterEach
     void tearDownTestCase(ExtensionContext testContext) throws Exception {
-        LOGGER.info("===============================================================");
-        LOGGER.info("{} - [AFTER EACH] has been called", this.getClass().getName());
+        LOGGER.debug("===============================================================");
+        LOGGER.debug("{} - [AFTER EACH] has been called", this.getClass().getName());
         afterEachMayOverride(testContext);
     }
 
     @AfterAll
     void tearDownTestSuite(ExtensionContext testContext) throws Exception {
-        LOGGER.info("===============================================================");
-        LOGGER.info("{} - [AFTER ALL] has been called", this.getClass().getName());
+        LOGGER.debug("===============================================================");
+        LOGGER.debug("{} - [AFTER ALL] has been called", this.getClass().getName());
         afterAllMayOverride(testContext);
     }
 }

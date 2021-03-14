@@ -36,7 +36,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
     void testNamespacedRbacScopeDeploysRoles(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         assumeTrue(Environment.isNamespaceRbacScope());
         prepareEnvironment(extensionContext);

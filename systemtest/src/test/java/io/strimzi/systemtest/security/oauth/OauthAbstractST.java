@@ -75,7 +75,7 @@ public class OauthAbstractST extends AbstractST {
 
         LOGGER.info("Deploying keycloak...");
 
-        KeycloakUtils.deployKeycloak(namespace);
+        KeycloakUtils.deployKeycloak(extensionContext, namespace);
 
         String passwordEncoded = kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_PASSWORD");
         String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
@@ -89,7 +89,7 @@ public class OauthAbstractST extends AbstractST {
         List<Job> clusterJobList = kubeClient().getJobList().getItems()
             .stream()
             .filter(
-                job -> job.getMetadata().getName().contains(mapTestWithClusterNames.get(extensionContext.getDisplayName())))
+                job -> job.getMetadata().getName().contains(mapWithClusterNames.get(extensionContext.getDisplayName())))
             .collect(Collectors.toList());
 
         for (Job job : clusterJobList) {

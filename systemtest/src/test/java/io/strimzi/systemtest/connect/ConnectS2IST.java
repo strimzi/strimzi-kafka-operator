@@ -122,7 +122,7 @@ class ConnectS2IST extends AbstractST {
 
     @ParallelTest
     void testDeployS2IWithCamelTimerPlugin(ExtensionContext extensionContext) throws InterruptedException, IOException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
         String timerTopicName = "timer-topic";
         // Calls to Connect API are executed from kafka-0 pod
@@ -169,7 +169,7 @@ class ConnectS2IST extends AbstractST {
     @ParallelTest
     @Tag(CONNECTOR_OPERATOR)
     void testDeployS2IAndKafkaConnectorWithCamelTimerPlugin(ExtensionContext extensionContext) throws IOException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         String timerTopicName1 = "timer-topic";
@@ -226,9 +226,9 @@ class ConnectS2IST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectS2IWithTlsAndScramShaAuthentication(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
@@ -311,7 +311,7 @@ class ConnectS2IST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
@@ -361,7 +361,7 @@ class ConnectS2IST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testJvmAndResources(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -431,8 +431,8 @@ class ConnectS2IST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(ACCEPTANCE)
     void testKafkaConnectorWithConnectS2IAndConnectWithSameName(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String connectClusterName = clusterName + "-connect";
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
@@ -514,8 +514,8 @@ class ConnectS2IST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
     void testMultiNodeKafkaConnectS2IWithConnectorCreation(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -573,10 +573,10 @@ class ConnectS2IST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testChangeConnectS2IConfig(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String secondClusterName = "second-" + clusterName;
         String connectS2IClusterName = clusterName + "-connect-s2i";
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(secondClusterName, 3, 1).build());
@@ -599,8 +599,6 @@ class ConnectS2IST extends AbstractST {
         String deploymentConfigName = KafkaConnectS2IResources.deploymentName(connectS2IClusterName);
 
         List<Pod> connectPods = kubeClient().listKafkaConnectS2IPods(connectS2IClusterName);
-
-        LOGGER.debug("=== {}", connectPods);
 
         LOGGER.info("===== SCALING UP AND DOWN =====");
 
@@ -687,7 +685,7 @@ class ConnectS2IST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleConnectS2IWithoutConnectorToZero(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -714,7 +712,7 @@ class ConnectS2IST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(SCALABILITY)
     void testScaleConnectS2IWithConnectorToZero(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -757,7 +755,7 @@ class ConnectS2IST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleConnectS2ISubresource(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "-connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -789,7 +787,7 @@ class ConnectS2IST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -819,7 +817,7 @@ class ConnectS2IST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "connect-s2i";
 
         String secretPassword = "password";
@@ -974,7 +972,7 @@ class ConnectS2IST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectS2IClusterName = clusterName + "connect-s2i";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());

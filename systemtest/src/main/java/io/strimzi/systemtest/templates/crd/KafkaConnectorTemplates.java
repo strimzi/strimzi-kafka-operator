@@ -7,12 +7,13 @@ package io.strimzi.systemtest.templates.crd;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 
 public class KafkaConnectorTemplates {
 
-    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/source-connector.yaml";
+    public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/connect/source-connector.yaml";
 
     private KafkaConnectorTemplates() {}
 

@@ -7,6 +7,7 @@ package io.strimzi.systemtest.templates.crd;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +19,7 @@ public class KafkaTopicTemplates {
 
     private KafkaTopicTemplates() {}
 
-    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/topic/kafka-topic.yaml";
+    public static final String PATH_TO_KAFKA_TOPIC_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml";
 
     public static KafkaTopicBuilder topic(String clusterName, String topicName) {
         return defaultTopic(clusterName, topicName, 1, 1, 1, ResourceManager.kubeClient().getNamespace());

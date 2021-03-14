@@ -155,7 +155,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     void testKafkaUserStatus(ExtensionContext extensionContext) {
-        String userName = mapTestWithTestUsers.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName).build());
 
@@ -192,7 +192,7 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatus(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMakerName = clusterName + "-mirror-maker";
 
         // Deploy Mirror Maker
@@ -215,8 +215,8 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatusWrongBootstrap(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String mirrorMakerName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String mirrorMakerName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).build());
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(mirrorMakerName);
@@ -359,7 +359,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     void testKafkaTopicStatus(ExtensionContext extensionContext) {
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, topicName).build());
 
@@ -369,7 +369,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     void testKafkaTopicStatusNotReady(ExtensionContext extensionContext) {
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, topicName, 1, 10, 10).build());
         KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
@@ -392,7 +392,7 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaMirrorMaker2Status(ExtensionContext extensionContext) {
-        String targetClusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String targetClusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMaker2Name = targetClusterName + "-mirror-maker-2";
         String mm2Url = KafkaMirrorMaker2Resources.url(mirrorMaker2Name, NAMESPACE, 8083);
 
@@ -417,7 +417,7 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     void testKafkaMirrorMaker2WrongBootstrap(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMaker2Name = clusterName + "-mirror-maker-2";
 
         KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMaker2Name,
@@ -435,7 +435,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     void testKafkaTopicDecreaseStatus(ExtensionContext extensionContext) throws InterruptedException {
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, topicName, 5).build());
         int decreaseTo = 1;
@@ -455,7 +455,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     void testKafkaTopicChangingInSyncReplicasStatus(ExtensionContext extensionContext) throws InterruptedException {
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, topicName, 5).build());
         String invalidValue = "x";

@@ -30,7 +30,6 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
     }
     @Override
     public void create(KafkaConnect resource) {
-        // TODO: same as KafkaBridge
         kafkaConnectClient().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).createOrReplace(resource);
     }
     @Override
@@ -43,7 +42,7 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
         return KafkaConnectUtils.waitForConnectReady(resource.getMetadata().getName());
     }
     @Override
-    public void refreshResource(KafkaConnect existing, KafkaConnect newResource) {
+    public void replaceResource(KafkaConnect existing, KafkaConnect newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());

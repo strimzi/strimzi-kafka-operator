@@ -22,8 +22,6 @@ public interface TestSeparator {
 
     @BeforeEach
     default void beforeEachTest(ExtensionContext testContext) {
-        LOGGER.info("HELLO FROM:\nCLASS:{}\nMETHOD:{}", testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName());
-
         TimeMeasuringSystem.getInstance().startTimeMeasuringConcurrent(
             testContext.getRequiredTestClass().getName(),
             testContext.getRequiredTestMethod().getName(),

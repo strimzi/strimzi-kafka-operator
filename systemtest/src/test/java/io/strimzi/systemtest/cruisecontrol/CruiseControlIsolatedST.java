@@ -60,9 +60,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testAutoCreationOfCruiseControlTopics(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-
-        LOGGER.info("testAutoCreationOfCruiseControlTopics kafka cruise control....with cluster {}", clusterName);
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .editOrNewSpec()
@@ -110,7 +108,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCruiseControlWithSingleNodeKafka(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         String errMessage =  "Kafka " + NAMESPACE + "/" + clusterName + " has invalid configuration." +
             " Cruise Control cannot be deployed with a single-node Kafka cluster. It requires " +
@@ -135,7 +133,7 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCruiseControlTopicExclusion(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         String excludedTopic1 = "excluded-topic-1";
         String excludedTopic2 = "excluded-topic-2";
@@ -166,8 +164,8 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCruiseControlReplicaMovementStrategy(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         final String replicaMovementStrategies = "default.replica.movement.strategies";
         String newReplicaMovementStrategies = "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeSmallReplicaMovementStrategy," +
@@ -207,14 +205,12 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         HostAlias hostAlias = new HostAliasBuilder()
             .withIp(aliasIp)
             .withHostnames(aliasHostname)
             .build();
-
-        LOGGER.info("======= testHostAliases{}", clusterName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .editSpec()

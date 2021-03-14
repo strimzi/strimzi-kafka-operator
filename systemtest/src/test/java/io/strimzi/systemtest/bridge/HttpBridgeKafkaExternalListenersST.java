@@ -52,7 +52,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @IsolatedTest
     void testScramShaAuthWithWeirdUsername(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
@@ -82,7 +82,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @IsolatedTest
     void testTlsAuthWithWeirdUsername(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // Create weird named user with . and maximum of 64 chars -> TLS
         String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd";
@@ -109,9 +109,9 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     }
 
     private void testWeirdUsername(ExtensionContext extensionContext, String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) {
-        String aliceUser = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String aliceUser = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -154,7 +154,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, aliceUser).build());
         }
 
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
 
@@ -190,8 +190,8 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
-        LOGGER.info("===============================================================");
-        LOGGER.info("{} - [BEFORE ALL] has been called", this.getClass().getName());
+        LOGGER.debug("===============================================================");
+        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
         installClusterOperator(extensionContext, NAMESPACE);
     }
 }

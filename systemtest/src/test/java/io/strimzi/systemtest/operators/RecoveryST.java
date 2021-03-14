@@ -71,7 +71,6 @@ class RecoveryST extends AbstractST {
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
         // kafka cluster already deployed
-        LOGGER.info("Running deleteKafkaStatefulSet with cluster {}", sharedClusterName);
         String kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
         String kafkaStatefulSetUid = kubeClient().getStatefulSetUid(kafkaStatefulSetName);
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
@@ -259,7 +258,7 @@ class RecoveryST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromImpossibleMemoryRequest(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
 
         Map<String, Quantity> requests = new HashMap<>(2);
@@ -298,7 +297,7 @@ class RecoveryST extends AbstractST {
 
     @BeforeEach
     void setup(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String clusterOperatorName = clusterName + "-" + Constants.STRIMZI_DEPLOYMENT_NAME;
 
         installClusterOperator(extensionContext, clusterOperatorName, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);

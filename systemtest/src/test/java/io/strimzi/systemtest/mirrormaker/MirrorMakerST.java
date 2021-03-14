@@ -76,7 +76,7 @@ public class MirrorMakerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMirrorMaker(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -188,7 +188,7 @@ public class MirrorMakerST extends AbstractST {
     @Tag(ACCEPTANCE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMakerTlsAuthenticated(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
@@ -253,7 +253,7 @@ public class MirrorMakerST extends AbstractST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        String baseTopic = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String baseTopic = mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicTestName1 = baseTopic + "-test-1";
         String topicTestName2 = baseTopic + "-test-2";
 
@@ -345,8 +345,8 @@ public class MirrorMakerST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings("checkstyle:methodlength")
     void testMirrorMakerTlsScramSha(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
         String kafkaUserSource = clusterName + "-my-user-source";
@@ -422,7 +422,7 @@ public class MirrorMakerST extends AbstractST {
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        String baseTopic = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String baseTopic = mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicTestName1 = baseTopic + "-test-1";
         String topicTestName2 = baseTopic + "-test-2";
 
@@ -519,7 +519,7 @@ public class MirrorMakerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testWhiteList(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -613,7 +613,7 @@ public class MirrorMakerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
@@ -730,7 +730,7 @@ public class MirrorMakerST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleMirrorMakerSubresource(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -768,7 +768,7 @@ public class MirrorMakerST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(SCALABILITY)
     void testScaleMirrorMakerToZero(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -800,7 +800,7 @@ public class MirrorMakerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testHostAliases(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
@@ -833,7 +833,7 @@ public class MirrorMakerST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 

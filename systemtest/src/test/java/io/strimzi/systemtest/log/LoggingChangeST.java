@@ -75,7 +75,7 @@ class LoggingChangeST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
@@ -231,7 +231,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicallySetEOloggingLevels(ExtensionContext extensionContext) throws InterruptedException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         InlineLogging ilOff = new InlineLogging();
         ilOff.setLoggers(Collections.singletonMap("rootLogger.level", "OFF"));
@@ -399,8 +399,8 @@ class LoggingChangeST extends AbstractST {
     @Tag(BRIDGE)
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetBridgeLoggingLevels(ExtensionContext extensionContext) throws InterruptedException {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -604,8 +604,8 @@ class LoggingChangeST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetConnectLoggingLevels(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -684,7 +684,7 @@ class LoggingChangeST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDynamicallySetKafkaLoggingLevels(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
@@ -753,7 +753,7 @@ class LoggingChangeST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDynamicallySetUnknownKafkaLogger(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
@@ -775,7 +775,7 @@ class LoggingChangeST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDynamicallySetUnknownKafkaLoggerValue(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
 
@@ -795,7 +795,7 @@ class LoggingChangeST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testDynamicallySetKafkaExternalLogging(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // this test changes dynamically unchangeable logging config and thus RU is expected
         ConfigMap configMap = new ConfigMapBuilder()
@@ -909,8 +909,8 @@ class LoggingChangeST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetMM2LoggingLevels(ExtensionContext extensionContext) {
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -983,7 +983,7 @@ class LoggingChangeST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testNotExistingCMSetsDefaultLogging(ExtensionContext extensionContext) {
         String defaultProps = TestUtils.getFileAsString(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/kafkaDefaultLoggingProperties");
-        String clusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         String cmData = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
             "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +

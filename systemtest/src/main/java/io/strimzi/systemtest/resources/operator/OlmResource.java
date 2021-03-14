@@ -21,6 +21,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -31,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
@@ -47,7 +49,7 @@ public class OlmResource implements ResourceType<Deployment> {
 
     @Override
     public String getKind() {
-        return "Deployment";
+        return Constants.DEPLOYMENT;
     }
     @Override
     public Deployment get(String namespace, String name) {
@@ -71,7 +73,7 @@ public class OlmResource implements ResourceType<Deployment> {
             && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
     @Override
-    public void refreshResource(Deployment existing, Deployment newResource) {
+    public void replaceResource(Deployment existing, Deployment newResource) {
         existing.setMetadata(newResource.getMetadata());
         existing.setSpec(newResource.getSpec());
         existing.setStatus(newResource.getStatus());
@@ -79,20 +81,20 @@ public class OlmResource implements ResourceType<Deployment> {
 
     private static Map<String, JsonObject> exampleResources = new HashMap<>();
 
-    public static Deployment clusterOperator(String namespace) {
-        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, null);
+    public static Deployment clusterOperator(ExtensionContext extensionContext, String namespace) {
+        return clusterOperator(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, null);
     }
 
-    public static Deployment clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
-        return clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
+    public static Deployment clusterOperator(ExtensionContext extensionContext, String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+        return clusterOperator(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
             olmInstallationStrategy, fromVersion);
     }
 
-    public static Deployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        return clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null);
+    public static Deployment clusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
+        return clusterOperator(extensionContext, namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null);
     }
 
-    public static Deployment clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
+    public static Deployment clusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval,
                                              OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
 
         // if on cluster is not defaultOlmNamespace apply 'operator group' in current namespace
@@ -125,15 +127,15 @@ public class OlmResource implements ResourceType<Deployment> {
         String deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);
 
-        // TODO: how??
-//        ResourceManager.getPointerResources().push(() -> deleteOlm(deploymentName, namespace, csvName));
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(() -> deleteOlm(deploymentName, namespace, csvName));
         // Wait for operator creation
 
         exampleResources = parseExamplesFromCsv(csvName, namespace);
 
         Deployment olmClusterOperatorDeployment = new DeploymentBuilder(kubeClient().namespace(namespace).getDeployment(deploymentName))
             .editMetadata()
-                .addToLabels("deployment-type", DeploymentTypes.OlmClusterOperator.name())
+                .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.OlmClusterOperator.name())
             .endMetadata()
             .build();
 

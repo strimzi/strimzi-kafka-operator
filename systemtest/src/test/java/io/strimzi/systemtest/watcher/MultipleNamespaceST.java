@@ -43,7 +43,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         cluster.setNamespace(SECOND_NAMESPACE);

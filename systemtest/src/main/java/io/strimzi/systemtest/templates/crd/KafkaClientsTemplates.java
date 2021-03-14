@@ -64,7 +64,7 @@ public class KafkaClientsTemplates {
         Map<String, String> label = new HashMap<>();
 
         label.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
-        label.put("deployment-type", DeploymentTypes.KafkaClients.name());
+        label.put(Constants.DEPLOYMENT_TYPE, DeploymentTypes.KafkaClients.name());
 
         DeploymentBuilder kafkaClient = new DeploymentBuilder()
             .withNewMetadata()

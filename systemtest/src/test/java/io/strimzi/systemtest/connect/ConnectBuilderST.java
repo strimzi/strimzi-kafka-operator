@@ -110,8 +110,8 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testBuildFailsWithWrongChecksumOfArtifact(ExtensionContext extensionContext) {
-        String connectClusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "-connect";
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String connectClusterName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "-connect";
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         Plugin pluginWithWrongChecksum = new PluginBuilder()
             .withName("connector-with-wrong-checksum")
@@ -181,9 +181,9 @@ class ConnectBuilderST extends AbstractST {
     @ParallelTest
     void testBuildWithJarTgzAndZip(ExtensionContext extensionContext) {
         // this test also testing push into Docker output
-        String connectClusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "-connect";
-        String topicName = mapTestWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String connectClusterName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "-connect";
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(SHARED_KAFKA_CLUSTER_NAME, topicName).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, SHARED_KAFKA_CLUSTER_NAME, 1, false)
@@ -245,7 +245,7 @@ class ConnectBuilderST extends AbstractST {
     @OpenShiftOnly
     @ParallelTest
     void testPushIntoImageStream(ExtensionContext extensionContext) {
-        String connectClusterTest = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "-connect";
+        String connectClusterTest = mapWithClusterNames.get(extensionContext.getDisplayName()) + "-connect";
 
         String imageStreamName = "custom-image-stream";
         ImageStream imageStream = new ImageStreamBuilder()
@@ -285,8 +285,8 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testUpdateConnectWithAnotherPlugin(ExtensionContext extensionContext) {
-        String connectClusterName = mapTestWithClusterNames.get(extensionContext.getDisplayName()) + "-connect";
-        String kafkaClientsName = mapTestWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String connectClusterName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "-connect";
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String echoConnector = "echo-sink-connector";
         String camelConnector = "camel-http-connector";
 
@@ -368,7 +368,7 @@ class ConnectBuilderST extends AbstractST {
 
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(connectClusterName).get();
 
-        LOGGER.info("Checking if Connect contains both plugins");
+        LOGGER.info("Checking if both Connectors were created and Connect contains both plugins");
         assertThat(kafkaConnect.getSpec().getBuild().getPlugins().size(), is(2));
 
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(ECHO_SINK_CLASS_NAME)));

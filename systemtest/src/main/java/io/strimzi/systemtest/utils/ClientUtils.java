@@ -100,7 +100,6 @@ public class ClientUtils {
 
         TestUtils.waitFor(" for resource: " + resource + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentBySubstring(resource.getMetadata().getName()));
-            LOGGER.info("Resource is present: {}", deployment[0] != null);
             return deployment[0] != null;
         });
 
