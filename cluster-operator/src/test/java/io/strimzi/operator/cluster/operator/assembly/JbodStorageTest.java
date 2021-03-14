@@ -159,7 +159,7 @@ public class JbodStorageTest {
                             boolean isDeleteClaim = ((PersistentClaimStorage) volume).isDeleteClaim();
                             assertThat("deleteClaim value did not match for volume : " + volume.toString(),
                                     Annotations.booleanAnnotation(pvc, AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM,
-                                            false, AbstractModel.ANNO_CO_STRIMZI_IO_DELETE_CLAIM),
+                                            false),
                                     is(isDeleteClaim));
 
                         }
