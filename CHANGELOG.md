@@ -4,6 +4,7 @@
 ## 0.23.0
 
 * Remove support for Kafka 2.5.x
+* Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
 
 ## 0.22.0
 
