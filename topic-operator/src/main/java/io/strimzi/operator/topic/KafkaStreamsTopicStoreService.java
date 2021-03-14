@@ -85,12 +85,7 @@ public class KafkaStreamsTopicStoreService {
         );
         closeables.add(producer);
 
-        StoreAndServiceFactory factory;
-        if (config.get(Config.DISTRIBUTED_STORE)) {
-            factory = new DistributedStoreAndServiceFactory();
-        } else {
-            factory = new LocalStoreAndServiceFactory();
-        }
+        StoreAndServiceFactory factory = new LocalStoreAndServiceFactory();
         StoreAndServiceFactory.StoreContext sc = factory.create(config, kafkaProperties, streams, serviceImpl, closeables);
 
         this.store = new KafkaStreamsTopicStore(sc.getStore(), storeTopic, producer, sc.getService());

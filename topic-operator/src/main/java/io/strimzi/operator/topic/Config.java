@@ -123,7 +123,6 @@ public class Config {
     public static final String TC_APPLICATION_ID = "STRIMZI_APPLICATION_ID";
     public static final String TC_APPLICATION_SERVER = "STRIMZI_APPLICATION_SERVER";
     public static final String TC_STALE_RESULT_TIMEOUT_MS = "STRIMZI_STALE_RESULT_TIMEOUT_MS";
-    public static final String TC_DISTRIBUTED_STORE = "STRIMZI_DISTRIBUTED_STORE";
 
     public static final String TC_USE_ZOOKEEPER_TOPIC_STORE = "STRIMZI_USE_ZOOKEEPER_TOPIC_STORE";
 
@@ -193,8 +192,6 @@ public class Config {
     public static final Value<String> APPLICATION_SERVER = new Value<>(TC_APPLICATION_SERVER, STRING, "localhost:9000");
     /** The stale timeout for the Kafka Streams based TopicStore */
     public static final Value<Long> STALE_RESULT_TIMEOUT_MS = new Value<>(TC_STALE_RESULT_TIMEOUT_MS, DURATION, "5000");
-    /** Is distributed KeyValue store used for the Kafka Streams based TopicStore */
-    public static final Value<Boolean> DISTRIBUTED_STORE = new Value<>(TC_DISTRIBUTED_STORE, BOOLEAN, "false");
 
     /** Do we use old ZooKeeper based TopicStore */
     public static final Value<Boolean> USE_ZOOKEEPER_TOPIC_STORE = new Value<>(TC_USE_ZOOKEEPER_TOPIC_STORE, BOOLEAN, "false");
@@ -224,7 +221,6 @@ public class Config {
         addConfigValue(configValues, APPLICATION_ID);
         addConfigValue(configValues, APPLICATION_SERVER);
         addConfigValue(configValues, STALE_RESULT_TIMEOUT_MS);
-        addConfigValue(configValues, DISTRIBUTED_STORE);
         addConfigValue(configValues, USE_ZOOKEEPER_TOPIC_STORE);
     }
 

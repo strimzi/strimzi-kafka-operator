@@ -119,7 +119,6 @@
         <commons-codec.version>1.13</commons-codec.version>
         <registry.version>1.3.0.Final</registry.version>
         <kafka.streams.version>2.6.0</kafka.streams.version>
-        <grpc.version>1.30.2</grpc.version>
 
         <test-containers.version>1.15.2</test-containers.version>
         <docker-java.version>3.2.7</docker-java.version>
@@ -603,11 +602,6 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-streams</artifactId>
                 <version>${kafka.streams.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-api</artifactId>
-                <version>${grpc.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.debezium</groupId>
