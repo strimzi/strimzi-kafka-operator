@@ -44,6 +44,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -748,11 +749,11 @@ public class TracingST extends AbstractST {
         }
     }
 
-    private void deployJaegerContent() {
+    private void deployJaegerContent() throws FileNotFoundException {
         File folder = new File(JAEGER_OPERATOR_FILES_PATH);
         File[] files = folder.listFiles();
 
-        if (files != null) {
+        if (files != null && files.length > 0) {
             for (File file : files) {
                 String yamlContent = TestUtils.setMetadataNamespace(file, NAMESPACE)
                     .replace("namespace: \"observability\"", "namespace: \"" + NAMESPACE + "\"");
@@ -760,10 +761,12 @@ public class TracingST extends AbstractST {
                 LOGGER.info("Creating {} from {}", file.getName(), file.getAbsolutePath());
                 cmdKubeClient().applyContent(yamlContent);
             }
+        } else {
+            throw new FileNotFoundException("Folder with Jaeger files is empty or doesn't exist");
         }
     }
 
-    private void deployJaegerOperator() {
+    private void deployJaegerOperator() throws FileNotFoundException {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
         deployJaegerContent();
@@ -828,7 +831,7 @@ public class TracingST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws FileNotFoundException {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
         // deployment of the jaeger
