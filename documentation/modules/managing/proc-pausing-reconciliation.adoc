@@ -8,13 +8,13 @@
 
 Sometimes it is useful to pause the reconciliation of custom resources managed by Strimzi Operators,
 so that you can perform fixes or make updates.
-If reconciliations are paused, any changes to custom resources are ignored by Strimzi Operators until the pause ends.
+If reconciliations are paused, any changes made to custom resources are ignored by the Operators until the pause ends.
 
 If you want to pause reconciliation of a custom resource, set the `strimzi.io/pause-reconciliation` annotation to `true` in its configuration.
 This instructs the appropriate Operator to pause reconciliation of the custom resource.
 For example, you can apply the annotation to the `KafkaConnect` resource so that reconciliation by the Cluster Operator is paused.
 
-You can also _create_ a custom resource with the pause annotation enabled.
+You can also create a custom resource with the pause annotation enabled.
 The custom resource is created, but it is ignored.
 
 IMPORTANT: It is not currently possible to pause reconciliation of `KafkaTopic` resources.
@@ -39,7 +39,7 @@ For example, for the `KafkaConnect` custom resource:
 kubectl annotate KafkaConnect my-connect strimzi.io/pause-reconciliation="true"
 ----
 
-. Check that the status conditions of the custom resource shows a change to `ReconciliationPaused`:
+. Check that the status conditions of the custom resource show a change to `ReconciliationPaused`:
 +
 [source,shell,subs="+quotes"]
 ----
@@ -51,7 +51,7 @@ The `type` condition changes to `ReconciliationPaused` at the `lastTransitionTim
 .Example custom resource with a paused reconciliation condition type
 [source,shell,subs="+quotes"]
 ----
-apiVersion: {KafkaApiVersion}
+apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 metadata:
   annotations:
