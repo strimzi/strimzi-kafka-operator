@@ -23,7 +23,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
-import java.security.cert.PKIXCertPathValidatorResult;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -242,11 +241,9 @@ public class OpenSslCertManagerTest {
 
         PKIXParameters pkixp = new PKIXParameters(trustAnchors);
         pkixp.setRevocationEnabled(false);
-        pkixp.setDate(new Date(now.plus(90, ChronoUnit.MINUTES).getEpochSecond()*1000));
+        pkixp.setDate(new Date(now.plus(90, ChronoUnit.MINUTES).getEpochSecond() * 1000));
 
-        CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
-        PKIXCertPathValidatorResult pcpvr =
-                (PKIXCertPathValidatorResult)cpv.validate(cp, pkixp);
+        CertPathValidator.getInstance("PKIX").validate(cp, pkixp);
 
         leafKey.delete();
         csr.delete();
