@@ -4,20 +4,36 @@
  */
 package io.strimzi.certs;
 
+import javax.security.auth.x500.X500Principal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Represents the subject for a certificate
+ * Represents the subject for a certificate.
+ * Can be serialized as JSON.
  */
 public class Subject {
 
-    static class Builder {
+    public static class Builder {
+        private static final Pattern IPV4_ADDRESS = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
+        private static final Pattern DNS_NAME = Pattern.compile("^(" +
+                // a single char dns name
+                "[a-zA-Z0-9]|" +
+                // can't begin or end with -                followed by more labels of same
+                "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$");
         private String organizationName;
         private String commonName;
-        private Map<String, Set<String>> subjectAltNames;
+        private Set<String> dnsNames = null;
+        private Set<String> ipAddresses = null;
+
         public Builder withCommonName(String commonName) {
             this.commonName = commonName;
             return this;
@@ -26,73 +42,150 @@ public class Subject {
             this.organizationName = organizationName;
             return this;
         }
-        public Builder withSubjectAlternativeName(String type, String san) {
-            if (subjectAltNames == null) {
-                subjectAltNames = new HashMap<>();
+        public Builder addDnsName(String dnsName) {
+            if (!isValidDnsName(dnsName)) {
+                throw new IllegalArgumentException("Invalid DNS name: " + dnsName);
             }
-            subjectAltNames.computeIfAbsent(type, k -> new HashSet<>()).add(san);
+            if (dnsNames == null) {
+                dnsNames = new HashSet<>();
+            }
+            dnsNames.add(dnsName);
             return this;
         }
-        public Builder addDnsName(String dnsName) {
-            return withSubjectAlternativeName("DNS", dnsName);
+
+        public boolean isValidDnsName(String dnsName) {
+            return dnsName.length() <= 255
+                    && (DNS_NAME.matcher(dnsName).matches()
+                    || (dnsName.startsWith("*.") && DNS_NAME.matcher(dnsName.substring(2)).matches()));
         }
-        public Builder withIpName(String ip) {
-            return withSubjectAlternativeName("IP", ip);
+
+        public Builder addIpAddress(String ip) {
+            if (!isValidIpv4Address(ip)) {
+                throw new IllegalArgumentException("Invalid IPv4 address");
+            }
+            if (ipAddresses == null) {
+                ipAddresses = new HashSet<>();
+            }
+            ipAddresses.add(ip);
+            return this;
         }
-        public Subject build() {
-            Map<String, String> san = new HashMap<>();
-            if (subjectAltNames != null) {
-                for (Map.Entry<String, Set<String>> entry : subjectAltNames.entrySet()) {
-                    int i = 0;
-                    for (String n : entry.getValue()) {
-                        san.put(entry.getKey() + "." + (i++), n);
+
+        public boolean isValidIpv4Address(String ip) {
+            boolean matches = IPV4_ADDRESS.matcher(ip).matches();
+            if (matches) {
+                String[] split = ip.split("\\.");
+                for (String num : split) {
+                    int i = Integer.parseInt(num);
+                    if (i > 255) {
+                        return false;
                     }
                 }
             }
-            return new Subject(commonName, organizationName, san);
+            return matches;
+        }
+
+        public Subject build() {
+            return new Subject(commonName, organizationName, dnsNames, ipAddresses);
         }
 
     }
 
-    private String organizationName;
-    private String commonName;
-    private Map<String, String> subjectAltNames;
+    private final String organizationName;
+    private final String commonName;
+    private final Set<String> dnsNames;
+    private final Set<String> ipAddresses;
 
-    public Subject() {
-    }
-
-    private Subject(String commonName, String organizationName, Map<String, String> subjectAltNames) {
+    @JsonCreator
+    private Subject(
+            @JsonProperty("commonName") String commonName,
+            @JsonProperty("organizationName") String organizationName,
+            @JsonProperty("dnsNames") Set<String> dnsNames,
+            @JsonProperty("ipAddresses") Set<String> ipAddresses) {
         this.organizationName = organizationName;
         this.commonName = commonName;
-        this.subjectAltNames = subjectAltNames;
+        this.dnsNames = dnsNames == null ? Set.of() : Collections.unmodifiableSet(dnsNames);
+        this.ipAddresses = ipAddresses == null ? Set.of() : Collections.unmodifiableSet(ipAddresses);
     }
 
+    @JsonProperty
     public String organizationName() {
         return organizationName;
     }
 
-    public void setOrganizationName(String organizationName) {
-        this.organizationName = organizationName;
-    }
-
+    @JsonProperty
     public String commonName() {
         return commonName;
     }
 
-    public void setCommonName(String commonName) {
-        this.commonName = commonName;
+    public X500Principal principal() {
+        if (commonName != null) {
+            if (organizationName != null) {
+                return new X500Principal("CN=" + commonName() + ", O=" + organizationName());
+            } else {
+                return new X500Principal("CN=" + commonName());
+            }
+        } else {
+            if (organizationName != null) {
+                return new X500Principal("O=" + organizationName());
+            } else {
+                return null;
+            }
+        }
     }
 
-    public Map<String, String> subjectAltNames() {
-        return subjectAltNames;
+    @JsonProperty
+    public Set<String> dnsNames() {
+        return dnsNames;
     }
 
-    public void setSubjectAltNames(Map<String, String> subjectAltNames) {
-        this.subjectAltNames = subjectAltNames;
+    @JsonProperty
+    public Set<String> ipAddresses() {
+        return ipAddresses;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Subject subject = (Subject) o;
+        return Objects.equals(organizationName, subject.organizationName) &&
+                Objects.equals(commonName, subject.commonName) &&
+                Objects.equals(dnsNames, subject.dnsNames) &&
+                Objects.equals(ipAddresses, subject.ipAddresses);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(organizationName, commonName, dnsNames, ipAddresses);
     }
 
     @Override
     public String toString() {
+        return "Subject(" +
+                "organizationName='" + organizationName + '\'' +
+                ", commonName='" + commonName + '\'' +
+                ", dnsNames=" + dnsNames +
+                ", ipAddresses=" + ipAddresses +
+                ')';
+    }
+
+    public Map<String, String> subjectAltNames() {
+        Map<String, String> san = new HashMap<>();
+        int i = 0;
+        for (String name : dnsNames()) {
+            san.put("DNS." + (i++), name);
+        }
+        i = 0;
+        for (String ip : ipAddresses()) {
+            san.put("IP." + (i++), ip);
+        }
+        return san;
+    }
+
+    /**
+     * @return The DN in the format understood by {@code openssl}.
+     */
+    public String opensslDn() {
         StringBuilder bldr = new StringBuilder();
 
         if (organizationName != null)   {

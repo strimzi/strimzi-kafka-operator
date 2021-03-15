@@ -321,15 +321,15 @@ public abstract class Ca {
         File certFile = File.createTempFile("tls", "cert");
         File keyStoreFile = File.createTempFile("tls", "p12");
 
-        Subject subject = new Subject();
+        Subject.Builder subject = new Subject.Builder();
 
         if (organization != null) {
-            subject.setOrganizationName(organization);
+            subject.withOrganizationName(organization);
         }
 
-        subject.setCommonName(commonName);
+        subject.withCommonName(commonName);
 
-        CertAndKey result = generateSignedCert(subject,
+        CertAndKey result = generateSignedCert(subject.build(),
                 csrFile, keyFile, certFile, keyStoreFile);
 
         delete(reconciliation, csrFile);
@@ -592,11 +592,11 @@ public abstract class Ca {
     }
 
     private Subject nextCaSubject(int version) {
-        Subject result = new Subject();
+        Subject result = new Subject.Builder()
         // Key replacements does not work if both old and new CA certs have the same subject DN, so include the
         // key generation in the DN so the certificates appear distinct during CA key replacement.
-        result.setCommonName(commonName + " v" + version);
-        result.setOrganizationName(IO_STRIMZI);
+            .withCommonName(commonName + " v" + version)
+            .withOrganizationName(IO_STRIMZI).build();
         return result;
     }
 
