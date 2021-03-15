@@ -7,6 +7,7 @@ package io.strimzi.certs;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
@@ -21,6 +22,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class OpenSslCertManagerTest {
 
     private static CertificateFactory certFactory;
-    private static CertManager ssl;
+    private static OpenSslCertManager ssl;
 
     @BeforeAll
     public static void before() throws CertificateException {
@@ -50,63 +54,60 @@ public class OpenSslCertManagerTest {
         ssl = new OpenSslCertManager();
     }
 
+    interface Cmd {
+        void exec() throws IOException;
+    }
+
     @Test
-    public void testGenerateSelfSignedCert() throws Exception {
+    public void testGenerateRootCaCertWithDays() throws Exception {
+
         File key = File.createTempFile("key-", ".key");
         File cert = File.createTempFile("crt-", ".crt");
         File store = File.createTempFile("crt-", ".p12");
+        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
-        doGenerateSelfSignedCert(key, cert, store, "123456", null);
-
+        X509Certificate x509Certificate = doGenerateSelfSignedCert(() -> ssl.generateSelfSignedCert(key, cert, sbj, 365),
+                key, cert, store, "123456", sbj);
+        assertEquals(0, x509Certificate.getBasicConstraints(),
+                "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
         key.delete();
         cert.delete();
         store.delete();
     }
 
     @Test
-    public void testGenerateSelfSignedCertWithSubject() throws Exception {
+    public void testGenerateRootCaCertWithDates() throws Exception {
 
         File key = File.createTempFile("key-", ".key");
         File cert = File.createTempFile("crt-", ".crt");
         File store = File.createTempFile("crt-", ".p12");
-        Subject sbj = new Subject();
-        sbj.setCommonName("MyCommonName");
-        sbj.setOrganizationName("MyOrganization");
+        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
-        doGenerateSelfSignedCert(key, cert, store, "123456", sbj);
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
+        ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
+        X509Certificate x509Certificate = doGenerateSelfSignedCert(
+            () -> ssl.generateRootCaCert(key, cert, sbj, notBefore, notAfter, 1),
+            key, cert, store, "123456", sbj);
+        assertEquals(1, x509Certificate.getBasicConstraints(),
+            "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
+        assertEquals(notBefore.toInstant(), x509Certificate.getNotBefore().toInstant());
+        assertEquals(notAfter.toInstant(), x509Certificate.getNotAfter().toInstant());
 
         key.delete();
-        cert.delete();
+        //cert.delete();
         store.delete();
     }
 
-    @Test
-    public void testGenerateSelfSignedCertWithSubjectAndAltNames() throws Exception {
-
-        File key = File.createTempFile("key-", ".key");
-        File cert = File.createTempFile("crt-", ".crt");
-        File store = File.createTempFile("crt-", ".p12");
-        Subject sbj = new Subject();
-        sbj.setCommonName("MyCommonName");
-        sbj.setOrganizationName("MyOrganization");
-        Map<String, String> subjectAltNames = new HashMap<>();
-        subjectAltNames.put("DNS.1", "example1.com");
-        subjectAltNames.put("DNS.2", "example2.com");
-        sbj.setSubjectAltNames(subjectAltNames);
-
-        doGenerateSelfSignedCert(key, cert, store, "123456", sbj);
-
-        key.delete();
-        cert.delete();
-        store.delete();
-    }
-
-    private void doGenerateSelfSignedCert(File key, File cert, File trustStore, String trustStorePassword, Subject sbj) throws Exception {
-        ssl.generateSelfSignedCert(key, cert, sbj, 365);
+    private X509Certificate doGenerateSelfSignedCert(Cmd cmd, File key, File cert, File trustStore, String trustStorePassword, Subject sbj) throws Exception {
+        cmd.exec();
         ssl.addCertToTrustStore(cert, "ca", trustStore, trustStorePassword);
 
         X509Certificate x509Certificate = loadCertificate(cert);
-        assertCaCertificate(x509Certificate, true);
+        assertTrue(selfVerifies(x509Certificate),
+                "Unexpected self-verification");
+        assertTrue(isSelfSigned(x509Certificate),
+                "Unexpected self-signedness");
         // subject verification if provided
         if (sbj != null) {
             assertSubject(sbj, x509Certificate);
@@ -119,6 +120,12 @@ public class OpenSslCertManagerTest {
             X509Certificate storeCert = (X509Certificate) store.getCertificate("ca");
             storeCert.verify(storeCert.getPublicKey());
         }
+
+        return x509Certificate;
+    }
+
+    private boolean isSelfSigned(X509Certificate x509Certificate) {
+        return x509Certificate.getIssuerDN().equals(x509Certificate.getSubjectDN());
     }
 
     private X509Certificate loadCertificate(File cert) throws CertificateException, FileNotFoundException {
@@ -129,18 +136,23 @@ public class OpenSslCertManagerTest {
     }
 
     private void assertCaCertificate(X509Certificate x509Certificate, boolean expectCa) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
-        try {
-            x509Certificate.verify(x509Certificate.getPublicKey());
-            if (!expectCa) {
-                fail("A non-CA cert should not be self signed");
-            }
-        } catch (Exception e) {
-            if (expectCa) {
-                fail("Expected a self signed cert", e);
-            }
-        }
+        assertEquals(expectCa, selfVerifies(x509Certificate),
+                "Unexpected self-verification");
+        assertEquals(expectCa, isSelfSigned(x509Certificate),
+                "Unexpected self-signedness");
         assertEquals(expectCa, x509Certificate.getBasicConstraints() >= 0,
                 "Expected a certificate with CA:" + expectCa + ", but basic constraints = " + x509Certificate.getBasicConstraints());
+    }
+
+    private boolean selfVerifies(X509Certificate x509Certificate) throws CertificateException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
+        boolean isSelfSigned;
+        try {
+            x509Certificate.verify(x509Certificate.getPublicKey());
+            isSelfSigned = true;
+        } catch (SignatureException | InvalidKeyException e) {
+            isSelfSigned = false;
+        }
+        return isSelfSigned;
     }
 
     private void assertSubject(Subject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
@@ -159,7 +171,7 @@ public class OpenSslCertManagerTest {
     }
 
     @Test
-    public void testGenerateSignedCert() throws Exception {
+    public void testGenerateClientCert() throws Exception {
 
         Path path = Files.createTempDirectory(OpenSslCertManagerTest.class.getSimpleName());
         path.toFile().deleteOnExit();
@@ -168,15 +180,11 @@ public class OpenSslCertManagerTest {
         File caCert = File.createTempFile("ca-crt-", ".crt");
         File store = File.createTempFile("store-", ".p12");
 
-        Subject caSbj = new Subject();
-        caSbj.setCommonName("CACommonName");
-        caSbj.setOrganizationName("CAOrganizationName");
+        Subject caSbj = new Subject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
 
         File key = File.createTempFile("key-", ".key");
         File csr = File.createTempFile("csr-", ".csr");
-        Subject sbj = new Subject();
-        sbj.setCommonName("MyCommonName");
-        sbj.setOrganizationName("MyOrganization");
+        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         File cert = File.createTempFile("crt-", ".crt");
 
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
@@ -192,21 +200,17 @@ public class OpenSslCertManagerTest {
     }
 
     @Test
-    public void testGenerateSignedCertWithSubjectAndAltNames() throws Exception {
+    public void testGenerateClientCertWithSubjectAndAltNames() throws Exception {
 
         File caKey = File.createTempFile("ca-key-", ".key");
         File caCert = File.createTempFile("ca-crt-", ".crt");
         File store = File.createTempFile("store-", ".p12");
 
-        Subject caSbj = new Subject();
-        caSbj.setCommonName("CACommonName");
-        caSbj.setOrganizationName("CAOrganizationName");
+        Subject caSbj = new Subject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
 
         File key = File.createTempFile("key-", ".key");
         File csr = File.createTempFile("csr-", ".csr");
-        Subject sbj = new Subject();
-        sbj.setCommonName("MyCommonName");
-        sbj.setOrganizationName("MyOrganization");
+        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         Map<String, String> subjectAltNames = new HashMap<>();
         subjectAltNames.put("DNS.1", "example1.com");
         subjectAltNames.put("DNS.2", "example2.com");
@@ -252,7 +256,7 @@ public class OpenSslCertManagerTest {
                     assertThat(sbj.subjectAltNames().containsValue(sanItem.get(1)), is(true));
                 }
             } else {
-                fail();
+                fail("Missing expected SAN");
             }
         }
 
@@ -276,23 +280,7 @@ public class OpenSslCertManagerTest {
 
     @Test
     public void testRenewSelfSignedCertWithSubject() throws Exception {
-        Subject caSubject = new Subject();
-        caSubject.setCommonName("MyCommonName");
-        caSubject.setOrganizationName("MyOrganization");
-
-        doRenewSelfSignedCertWithSubject(caSubject);
-    }
-
-    @Test
-    public void testRenewSelfSignedCertWithSubjectAndAltNames() throws Exception {
-        Subject caSubject = new Subject();
-        caSubject.setCommonName("MyCommonName");
-        caSubject.setOrganizationName("MyOrganization");
-        Map<String, String> subjectAltNames = new HashMap<>();
-        subjectAltNames.put("DNS.1", "example1.com");
-        subjectAltNames.put("DNS.2", "example2.com");
-        caSubject.setSubjectAltNames(subjectAltNames);
-
+        Subject caSubject = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         doRenewSelfSignedCertWithSubject(caSubject);
     }
 
@@ -302,15 +290,14 @@ public class OpenSslCertManagerTest {
         File originalCert = File.createTempFile("crt-", ".crt");
         File originalStore = File.createTempFile("crt-", ".p12");
 
-        doGenerateSelfSignedCert(caKey, originalCert, originalStore, "123456", caSubject);
+        doGenerateSelfSignedCert(() -> ssl.generateSelfSignedCert(caKey, originalCert, caSubject, 365),
+                caKey, originalCert, originalStore, "123456", caSubject);
 
         // generate a client cert
         File clientKey = File.createTempFile("client-", ".key");
         File csr = File.createTempFile("client-", ".csr");
         File clientCert = File.createTempFile("client-", ".crt");
-        Subject clientSubject = new Subject();
-        clientSubject.setCommonName("MyCommonName");
-        clientSubject.setOrganizationName("MyOrganization");
+        Subject clientSubject = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         ssl.generateCsr(clientKey, csr, clientSubject);
 
         ssl.generateCert(csr, caKey, originalCert, clientCert, clientSubject, 365);
