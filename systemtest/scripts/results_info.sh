@@ -48,7 +48,7 @@ FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs 
 echo ${FAILED_TESTS}
 echo "Creating body ..."
 
-TMP_FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 sed -n "s#\(<testcase.*time=\"[0-9]*,\{0,1\}[0-9]\{1,3\}\..*[^\/]>\)#\1#p" | awk -F '"' '{print "" $4 "#" $2}')
+TMP_FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 sed -n "s#\(<testcase.*time=\"[0-9]*,\{0,1\}[0-9]\{1,3\}\..*[^\/]>\)#\1#p" | awk -F '"' '{ if($2 != "") {print $4 "#" $2} else { print $4 }}')
 COMMAND="@strimzi-ci run tests ${TEST_ONLY} profile=${TEST_PROFILE} testcase="
 
 for line in ${TMP_FAILED_TESTS}
