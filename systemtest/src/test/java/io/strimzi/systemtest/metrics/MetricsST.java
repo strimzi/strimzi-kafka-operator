@@ -259,23 +259,24 @@ public class MetricsST extends AbstractST {
         }
 
         assertCoMetricResources(Kafka.RESOURCE_KIND, 2);
-        assertCoMetricResourceState(Kafka.RESOURCE_KIND, metricsClusterName, 1);
-        assertCoMetricResourceState(Kafka.RESOURCE_KIND, SECOND_CLUSTER, 1);
+        assertCoMetricResourceState(Kafka.RESOURCE_KIND, metricsClusterName, 1, "none");
+        assertCoMetricResourceState(Kafka.RESOURCE_KIND, SECOND_CLUSTER, 1, "none");
 
         assertCoMetricResources(KafkaBridge.RESOURCE_KIND, 1);
-        assertCoMetricResourceState(KafkaBridge.RESOURCE_KIND, BRIDGE_CLUSTER, 1);
+        assertCoMetricResourceState(KafkaBridge.RESOURCE_KIND, BRIDGE_CLUSTER, 1, "none");
 
         assertCoMetricResources(KafkaConnect.RESOURCE_KIND, 1);
-        assertCoMetricResourceState(KafkaConnect.RESOURCE_KIND, metricsClusterName, 1);
+        assertCoMetricResourceState(KafkaConnect.RESOURCE_KIND, metricsClusterName, 1, "none");
 
         assertCoMetricResources(KafkaConnectS2I.RESOURCE_KIND, 0);
-        assertCoMetricResourceState(KafkaConnectS2I.RESOURCE_KIND, metricsClusterName, 0);
+        assertCoMetricResourceState(KafkaConnectS2I.RESOURCE_KIND, metricsClusterName, 0, "Both KafkaConnect and KafkaConnectS2I exist with the same name. " +
+                "KafkaConnect is older and will be used while this custom resource will be ignored.");
 
         assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, 0);
         assertCoMetricResourceStateNotExists(KafkaMirrorMaker.RESOURCE_KIND, metricsClusterName);
 
         assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, 1);
-        assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, MIRROR_MAKER_CLUSTER, 1);
+        assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, MIRROR_MAKER_CLUSTER, 1, "none");
 
         assertCoMetricResources(KafkaConnector.RESOURCE_KIND, 0);
         assertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, metricsClusterName);
@@ -652,8 +653,8 @@ public class MetricsST extends AbstractST {
         assertThat(values.isEmpty(), is(true));
     }
 
-    private void assertCoMetricResourceState(String kind, String name, int value) {
-        Pattern pattern = Pattern.compile("strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + NAMESPACE + "\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
+    private void assertCoMetricResourceState(String kind, String name, int value, String reason) {
+        Pattern pattern = Pattern.compile("strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + "\",resource_namespace=\"" + NAMESPACE + "\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsUtils.collectSpecificMetric(pattern, clusterOperatorMetricsData);
         assertThat("strimzi_resource_state for " + kind + " is not " + value, values.stream().mapToDouble(i -> i).sum(), is((double) value));
     }
