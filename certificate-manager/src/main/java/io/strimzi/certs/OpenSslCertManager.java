@@ -59,6 +59,73 @@ public class OpenSslCertManager implements CertManager {
 
     public OpenSslCertManager() {}
 
+    void checkValidity(ZonedDateTime notBefore, ZonedDateTime notAfter) {
+        Objects.requireNonNull(notBefore);
+        Objects.requireNonNull(notAfter);
+        if (!notBefore.isBefore(notAfter)) {
+            throw new IllegalArgumentException("Invalid notBefore and notAfter: " + notBefore + " must be before " + notAfter);
+        }
+    }
+
+    static void delete(Path fileOrDir) throws IOException {
+        if (fileOrDir != null)
+            if (Files.isDirectory(fileOrDir)) {
+                Files.walk(fileOrDir)
+                        .sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.delete(path);
+                            } catch (IOException e) {
+                                log.debug("File could not be deleted: {}", fileOrDir);
+                            }
+                        });
+            } else {
+                if (!Files.deleteIfExists(fileOrDir)) {
+                    log.debug("File not deleted, because it did not exist: {}", fileOrDir);
+                }
+            }
+    }
+
+    private Path createDefaultConfig() throws IOException {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf")) {
+            Path openSslConf = Files.createTempFile(null, null);
+            Files.copy(is, openSslConf, StandardCopyOption.REPLACE_EXISTING);
+            return openSslConf;
+        }
+    }
+
+    /**
+     * Add basic constraints and subject alt names section to the provided openssl configuration file
+     *
+     * @param sbj subject information
+     * @return openssl configuration file with subject alt names added
+     * @throws IOException
+     */
+    private Path buildConfigFile(Subject sbj, boolean isCa) throws IOException {
+        Path sna = createDefaultConfig();
+        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna.toFile(), true), StandardCharsets.UTF_8))) {
+            if (isCa) {
+                out.append("basicConstraints = critical,CA:true,pathlen:0\n");
+            }
+            if (sbj != null) {
+                if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+                    out.append("subjectAltName = @alt_names\n" +
+                            "\n" +
+                            "[alt_names]\n");
+                    boolean newline = false;
+                    for (Map.Entry<String, String> entry : sbj.subjectAltNames().entrySet()) {
+                        if (newline) {
+                            out.append("\n");
+                        }
+                        out.append(entry.getKey()).append(" = ").append(entry.getValue());
+                        newline = true;
+                    }
+                }
+            }
+        }
+        return sna;
+    }
+
     @Override
     public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
         Instant now = Instant.now();
@@ -139,31 +206,83 @@ public class OpenSslCertManager implements CertManager {
         }
     }
 
-    void checkValidity(ZonedDateTime notBefore, ZonedDateTime notAfter) {
-        Objects.requireNonNull(notBefore);
-        Objects.requireNonNull(notAfter);
-        if (!notBefore.isBefore(notAfter)) {
-            throw new IllegalArgumentException("Invalid notBefore and notAfter: " + notBefore + " must be before " + notAfter);
-        }
-    }
+    public void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
+                                           Subject subject,
+                                           File subjectKeyFile, File subjectCertFile,
+                                           ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+        Objects.requireNonNull(issuerCaKeyFile);
+        Objects.requireNonNull(issuerCaCertFile);
+        Objects.requireNonNull(subject);
+        Objects.requireNonNull(subjectKeyFile);
+        Objects.requireNonNull(subjectCertFile);
 
-    static void delete(Path fileOrDir) throws IOException {
-        if (fileOrDir != null)
-            if (Files.isDirectory(fileOrDir)) {
-                Files.walk(fileOrDir)
-                        .sorted(Comparator.reverseOrder())
-                        .forEach(path -> {
-                            try {
-                                Files.delete(path);
-                            } catch (IOException e) {
-                                log.debug("File could not be deleted: {}", fileOrDir);
-                            }
-                        });
-            } else {
-                if (!Files.deleteIfExists(fileOrDir)) {
-                    log.debug("File not deleted, because it did not exist: {}", fileOrDir);
-                }
-            }
+        checkValidity(notBefore, notAfter);
+        if (pathLength < 0) {
+            throw new IllegalArgumentException("pathLength cannot be negative: " + pathLength);
+        }
+        if (subject.subjectAltNames() != null && !subject.subjectAltNames().isEmpty()) {
+            throw new IllegalArgumentException("CA certificates should not have Subject Alternative Names");
+        }
+
+        // Generate a CSR for the key
+        Path tmpKey = null;
+        Path defaultConfig = null;
+        Path csrFile = null;
+        Path newCertsDir = null;
+        Path database = null;
+
+        try {
+            tmpKey = Files.createTempFile(null, null);
+            // Generate a key pair
+            new OpensslArgs("openssl", "genrsa")
+                    .optArg("-out", tmpKey)
+                    .opt("4096")
+                    .exec();
+
+            csrFile = Files.createTempFile(null, null);
+            defaultConfig = buildConfigFile(subject, true);
+            new OpensslArgs("openssl", "req")
+                    .opt("-new")
+                    .optArg("-config", defaultConfig, true)
+                    .optArg("-key", tmpKey)
+                    .optArg("-out", csrFile)
+                    .optArg("-subj", subject)
+                    .exec();
+
+            // Generate a self signed cert for the CA
+            database = Files.createTempFile(null, null);
+            newCertsDir = Files.createTempDirectory(null);
+            defaultConfig = createDefaultConfig();
+            new OpensslArgs("openssl", "ca")
+                    .opt("-utf8").opt("-batch").opt("-notext")
+                    .optArg("-in", csrFile)
+                    .optArg("-out", subjectCertFile)
+                    .optArg("-startdate", notBefore)
+                    .optArg("-enddate", notAfter)
+                    .optArg("-subj", subject)
+                    .optArg("-config", defaultConfig)
+                    .optArg("-cert", issuerCaCertFile)
+                    .optArg("-keyfile", issuerCaKeyFile)
+                    .database(database)
+                    .newCertsDir(newCertsDir)
+                    .basicConstraints("critical,CA:true,pathlen:" + pathLength)
+                    .keyUsage("critical,keyCertSign,cRLSign")
+                    .exec();
+
+            // The key will be in pkcs#1 format (bracketed by BEGIN/END RSA PRIVATE KEY)
+            // Convert it to pkcs#8 format (bracketed by BEGIN/END PRIVATE KEY)
+            new OpensslArgs("openssl", "pkcs8")
+                    .opt("-topk8").opt("-nocrypt")
+                    .optArg("-in", tmpKey)
+                    .optArg("-out", subjectKeyFile)
+                    .exec();
+        } finally {
+            delete(tmpKey);
+            delete(database);
+            delete(newCertsDir);
+            delete(csrFile);
+            delete(defaultConfig);
+        }
     }
 
     @Override
@@ -270,39 +389,6 @@ public class OpenSslCertManager implements CertManager {
         }
     }
 
-    /**
-     * Add basic constraints and subject alt names section to the provided openssl configuration file
-     *
-     * @param sbj subject information
-     * @return openssl configuration file with subject alt names added
-     * @throws IOException
-     */
-    private Path buildConfigFile(Subject sbj, boolean isCa) throws IOException {
-        Path sna = createDefaultConfig();
-        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(sna.toFile(), true), StandardCharsets.UTF_8))) {
-            if (isCa) {
-                out.append("basicConstraints = critical,CA:true,pathlen:0\n");
-            }
-            if (sbj != null) {
-                if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
-                    out.append("subjectAltName = @alt_names\n" +
-                            "\n" +
-                            "[alt_names]\n");
-                    boolean newline = false;
-                    for (Map.Entry<String, String> entry : sbj.subjectAltNames().entrySet()) {
-                        if (newline) {
-                            out.append("\n");
-                        }
-                        out.append(entry.getKey()).append(" = ").append(entry.getValue());
-                        newline = true;
-                    }
-                }
-            }
-        }
-
-        return sna;
-    }
-
     @Override
     public void generateCsr(File keyFile, File csrFile, Subject sbj) throws IOException {
 
@@ -385,13 +471,6 @@ public class OpenSslCertManager implements CertManager {
         delete(path);
     }
 
-    private Path createDefaultConfig() throws IOException {
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("openssl.conf")) {
-            Path openSslConf = Files.createTempFile(null, null);
-            Files.copy(is, openSslConf, StandardCopyOption.REPLACE_EXISTING);
-            return openSslConf;
-        }
-    }
 
     @Override
     public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException {

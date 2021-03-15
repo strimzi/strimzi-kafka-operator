@@ -17,19 +17,26 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Principal;
 import java.security.SignatureException;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
+import java.security.cert.PKIXCertPathValidatorResult;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -66,10 +73,24 @@ public class OpenSslCertManagerTest {
         File store = File.createTempFile("crt-", ".p12");
         Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
-        X509Certificate x509Certificate = doGenerateSelfSignedCert(() -> ssl.generateSelfSignedCert(key, cert, sbj, 365),
-                key, cert, store, "123456", sbj);
+        ((Cmd) () -> ssl.generateSelfSignedCert(key, cert, sbj, 365)).exec();
+        ssl.addCertToTrustStore(cert, "ca", store, "123456");
+
+        X509Certificate x509Certificate1 = loadCertificate(cert);
+        assertTrue(selfVerifies(x509Certificate1),
+                "Unexpected self-verification");
+        assertEquals(x509Certificate1.getSubjectDN(), x509Certificate1.getIssuerDN(), "Unexpected self-signedness");
+        assertSubject(sbj, x509Certificate1);
+        X509Certificate x509Certificate = x509Certificate1;
         assertEquals(0, x509Certificate.getBasicConstraints(),
                 "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
+
+        // truststore verification
+        KeyStore store1 = KeyStore.getInstance("PKCS12");
+        store1.load(new FileInputStream(store), "123456".toCharArray());
+        X509Certificate storeCert = (X509Certificate) store1.getCertificate("ca");
+        storeCert.verify(storeCert.getPublicKey());
+
         key.delete();
         cert.delete();
         store.delete();
@@ -77,7 +98,6 @@ public class OpenSslCertManagerTest {
 
     @Test
     public void testGenerateRootCaCertWithDates() throws Exception {
-
         File key = File.createTempFile("key-", ".key");
         File cert = File.createTempFile("crt-", ".crt");
         File store = File.createTempFile("crt-", ".p12");
@@ -86,46 +106,29 @@ public class OpenSslCertManagerTest {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
-        X509Certificate x509Certificate = doGenerateSelfSignedCert(
-            () -> ssl.generateRootCaCert(key, cert, sbj, notBefore, notAfter, 1),
-            key, cert, store, "123456", sbj);
-        assertEquals(1, x509Certificate.getBasicConstraints(),
-            "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
-        assertEquals(notBefore.toInstant(), x509Certificate.getNotBefore().toInstant());
-        assertEquals(notAfter.toInstant(), x509Certificate.getNotAfter().toInstant());
+        ssl.generateRootCaCert(key, cert, sbj, notBefore, notAfter, 0);
+        ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
-        key.delete();
-        //cert.delete();
-        store.delete();
-    }
-
-    private X509Certificate doGenerateSelfSignedCert(Cmd cmd, File key, File cert, File trustStore, String trustStorePassword, Subject sbj) throws Exception {
-        cmd.exec();
-        ssl.addCertToTrustStore(cert, "ca", trustStore, trustStorePassword);
-
+        // cert verification
         X509Certificate x509Certificate = loadCertificate(cert);
         assertTrue(selfVerifies(x509Certificate),
                 "Unexpected self-verification");
-        assertTrue(isSelfSigned(x509Certificate),
-                "Unexpected self-signedness");
-        // subject verification if provided
-        if (sbj != null) {
-            assertSubject(sbj, x509Certificate);
-        }
+        assertEquals(x509Certificate.getSubjectDN(), x509Certificate.getIssuerDN(), "Expected self-signed certificate");
+        assertSubject(sbj, x509Certificate);
+        assertEquals(0, x509Certificate.getBasicConstraints(),
+                "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
+        assertEquals(notBefore.toInstant(), x509Certificate.getNotBefore().toInstant());
+        assertEquals(notAfter.toInstant(), x509Certificate.getNotAfter().toInstant());
 
-        // truststore verification if provided
-        if (trustStore != null) {
-            KeyStore store = KeyStore.getInstance("PKCS12");
-            store.load(new FileInputStream(trustStore), trustStorePassword.toCharArray());
-            X509Certificate storeCert = (X509Certificate) store.getCertificate("ca");
-            storeCert.verify(storeCert.getPublicKey());
-        }
+        // truststore verification
+        KeyStore store1 = KeyStore.getInstance("PKCS12");
+        store1.load(new FileInputStream(store), "123456".toCharArray());
+        X509Certificate storeCert = (X509Certificate) store1.getCertificate("ca");
+        storeCert.verify(storeCert.getPublicKey());
 
-        return x509Certificate;
-    }
-
-    private boolean isSelfSigned(X509Certificate x509Certificate) {
-        return x509Certificate.getIssuerDN().equals(x509Certificate.getSubjectDN());
+        key.delete();
+        cert.delete();
+        store.delete();
     }
 
     private X509Certificate loadCertificate(File cert) throws CertificateException, FileNotFoundException {
@@ -138,7 +141,7 @@ public class OpenSslCertManagerTest {
     private void assertCaCertificate(X509Certificate x509Certificate, boolean expectCa) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
         assertEquals(expectCa, selfVerifies(x509Certificate),
                 "Unexpected self-verification");
-        assertEquals(expectCa, isSelfSigned(x509Certificate),
+        assertEquals(expectCa, x509Certificate.getIssuerDN().equals(x509Certificate.getSubjectDN()),
                 "Unexpected self-signedness");
         assertEquals(expectCa, x509Certificate.getBasicConstraints() >= 0,
                 "Expected a certificate with CA:" + expectCa + ", but basic constraints = " + x509Certificate.getBasicConstraints());
@@ -157,9 +160,12 @@ public class OpenSslCertManagerTest {
 
     private void assertSubject(Subject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
         Principal p = x509Certificate.getSubjectDN();
-
         assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
 
+        assertSubjectAlternativeNames(sbj, x509Certificate);
+    }
+
+    private void assertSubjectAlternativeNames(Subject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
         if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
             final Collection<List<?>> sans = x509Certificate.getSubjectAlternativeNames();
             assertThat(sans, is(notNullValue()));
@@ -168,6 +174,88 @@ public class OpenSslCertManagerTest {
                 assertThat(sbj.subjectAltNames().containsValue(sanItem.get(1)), is(true));
             }
         }
+    }
+
+    private void assertIssuer(Subject sbj, X509Certificate x509Certificate) {
+        Principal p = x509Certificate.getIssuerDN();
+        assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
+    }
+
+    @Test
+    public void testGenerateIntermediateCaCertWithDates() throws Exception {
+
+        File rootKey = File.createTempFile("key-", ".key");
+        File rootCert = File.createTempFile("crt-", ".crt");
+        File intermediateKey = File.createTempFile("key-", ".key");
+        File intermediateCert = File.createTempFile("crt-", ".crt");
+        Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
+
+        // Generate a root cert
+        Instant now = Instant.now();
+        ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
+        ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
+        int rootPathLen = 1;
+        ssl.generateRootCaCert(rootKey, rootCert, rootSubject, notBefore, notAfter, rootPathLen);
+
+        X509Certificate rootX509 = loadCertificate(rootCert);
+        assertTrue(selfVerifies(rootX509),
+                "Unexpected self-verification");
+        assertTrue(rootX509.getIssuerDN().equals(rootX509.getSubjectDN()),
+                "Unexpected self-signed cert");
+        assertSubject(rootSubject, rootX509);
+        assertEquals(rootPathLen, rootX509.getBasicConstraints(),
+                "Expected a certificate with CA:" + true + ", but basic constraints = " + rootX509.getBasicConstraints());
+        assertEquals(notBefore.toInstant(), rootX509.getNotBefore().toInstant());
+        assertEquals(notAfter.toInstant(), rootX509.getNotAfter().toInstant());
+
+        // Generate an intermediate cert
+        Subject intermediateSubject = new Subject.Builder().withCommonName("IntermediateCn").withOrganizationName("MyOrganization").build();
+        int intermediatePathLen = 1;
+        ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, notBefore, notAfter, intermediatePathLen);
+
+        X509Certificate intermediateX509 = loadCertificate(intermediateCert);
+        assertTrue(intermediateX509.getIssuerDN().equals(rootX509.getSubjectDN()),
+                "Unexpected intermediate's issued to be root");
+        assertSubject(intermediateSubject, intermediateX509);
+        assertEquals(intermediatePathLen, intermediateX509.getBasicConstraints(),
+                "Expected a certificate with CA:" + true + ", but basic constraints = " + intermediateX509.getBasicConstraints());
+        assertEquals(notBefore.toInstant(), intermediateX509.getNotBefore().toInstant());
+        assertEquals(notAfter.toInstant(), intermediateX509.getNotAfter().toInstant());
+
+        File leafKey = File.createTempFile("key-", ".key");
+        File csr = File.createTempFile("csr-", ".csr");
+        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
+        Map<String, String> subjectAltNames = new HashMap<>();
+        subjectAltNames.put("DNS.1", "example1.com");
+        subjectAltNames.put("DNS.2", "example2.com");
+        sbj.setSubjectAltNames(subjectAltNames);
+
+        File leafCert = File.createTempFile("crt-", ".crt");
+
+        doGenerateSignedCert(intermediateKey, intermediateCert, intermediateSubject, leafKey, csr, leafCert, null, "123456", sbj);
+
+        // Validate that when the root cert is trusted and the cert chain includes the leaf+intermediate,
+        // that the leaf is considered valid by PKIX validation
+        X509Certificate leafX509 = loadCertificate(leafCert);
+        Set<TrustAnchor> trustAnchors = Set.of(new TrustAnchor(rootX509, null));
+        CertPath cp = CertificateFactory.getInstance("X.509").generateCertPath(List.of(leafX509, intermediateX509));
+
+        PKIXParameters pkixp = new PKIXParameters(trustAnchors);
+        pkixp.setRevocationEnabled(false);
+        pkixp.setDate(new Date(now.plus(90, ChronoUnit.MINUTES).getEpochSecond()*1000));
+
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX");
+        PKIXCertPathValidatorResult pcpvr =
+                (PKIXCertPathValidatorResult)cpv.validate(cp, pkixp);
+
+        leafKey.delete();
+        csr.delete();
+        leafCert.delete();
+
+        rootKey.delete();
+        rootCert.delete();
+        intermediateKey.delete();
+        intermediateCert.delete();
     }
 
     @Test
@@ -187,6 +275,7 @@ public class OpenSslCertManagerTest {
         Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         File cert = File.createTempFile("crt-", ".crt");
 
+        ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
 
         caKey.delete();
@@ -218,6 +307,7 @@ public class OpenSslCertManagerTest {
 
         File cert = File.createTempFile("crt-", ".crt");
 
+        ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
 
         caKey.delete();
@@ -230,14 +320,13 @@ public class OpenSslCertManagerTest {
 
     private void doGenerateSignedCert(File caKey, File caCert, Subject caSbj, File key, File csr, File cert,
                                       File keyStore, String keyStorePassword, Subject sbj) throws Exception {
-
-        ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
-
         ssl.generateCsr(key, csr, sbj);
 
         ssl.generateCert(csr, caKey, caCert, cert, sbj, 365);
 
-        ssl.addKeyAndCertToKeyStore(caKey, caCert, "ca", keyStore, keyStorePassword);
+        if (keyStore != null) {
+            ssl.addKeyAndCertToKeyStore(caKey, caCert, "ca", keyStore, keyStorePassword);
+        }
 
         X509Certificate c = loadCertificate(cert);
         assertCaCertificate(c, false);
@@ -290,8 +379,26 @@ public class OpenSslCertManagerTest {
         File originalCert = File.createTempFile("crt-", ".crt");
         File originalStore = File.createTempFile("crt-", ".p12");
 
-        doGenerateSelfSignedCert(() -> ssl.generateSelfSignedCert(caKey, originalCert, caSubject, 365),
-                caKey, originalCert, originalStore, "123456", caSubject);
+        ((Cmd) () -> ssl.generateSelfSignedCert(caKey, originalCert, caSubject, 365)).exec();
+        ssl.addCertToTrustStore(originalCert, "ca", originalStore, "123456");
+
+        X509Certificate x509Certificate1 = loadCertificate(originalCert);
+        assertTrue(selfVerifies(x509Certificate1),
+                "Unexpected self-verification");
+        assertTrue(x509Certificate1.getIssuerDN().equals(x509Certificate1.getSubjectDN()),
+                "Unexpected self-signedness");
+        // subject verification if provided
+        if (caSubject != null) {
+            assertSubject(caSubject, x509Certificate1);
+        }
+
+        // truststore verification if provided
+        if (originalStore != null) {
+            KeyStore store = KeyStore.getInstance("PKCS12");
+            store.load(new FileInputStream(originalStore), "123456".toCharArray());
+            X509Certificate storeCert = (X509Certificate) store.getCertificate("ca");
+            storeCert.verify(storeCert.getPublicKey());
+        }
 
         // generate a client cert
         File clientKey = File.createTempFile("client-", ".key");
