@@ -31,7 +31,6 @@ pipeline {
         TEST_HELM2_VERSION = "v2.17.0"
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
-        KUBE_VERSION = "stable"
     }
     stages {
         stage('Clean WS') {
@@ -92,7 +91,7 @@ pipeline {
                         env.KUBE_VERSION = env.ghprbCommentBody.split('kube_version=')[1].split(/\s/)[0]
                     } else {
                         // Default version (the oldest supported by Strimzi)
-                        env.KUBE_VERSION = "1.16.0"
+                        env.KUBE_VERSION = "stable"
                     }
                     println("ENV_VARS: ${env.ENV_VARS}")
                     env.BUILD_PROJECT_STATUS = false
