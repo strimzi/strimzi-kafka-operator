@@ -28,9 +28,9 @@ include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]
 [id='api_reference-{context}']
 :parent-context: {context}
 :context: reference
-//schema part
-== Custom resource API reference
 
+== Custom resource API reference
 include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
-include::modules/appendix_crds.adoc[]
+=== Schema properties
+include::modules/appendix_crds.adoc[leveloffset=+1]
 :context: {parent-context}
