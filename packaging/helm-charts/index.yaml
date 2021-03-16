@@ -2,10 +2,10 @@ apiVersion: v1
 entries:
   strimzi-kafka-operator:
   - apiVersion: v2
-    appVersion: 0.22.0-rc1
-    created: "2021-03-11T11:22:21.051901+01:00"
+    appVersion: 0.22.0
+    created: "2021-03-16T13:44:57.22772+01:00"
     description: 'Strimzi: Apache Kafka running on Kubernetes'
-    digest: c873404ee138bb94850908576495aa9641463739f931015a2b4949a66431a216
+    digest: fce438f55a5275d0e3303d34c2ad0be9032f18679c109d6712ee26f06419cb55
     home: https://strimzi.io/
     icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
     keywords:
@@ -22,12 +22,13 @@ entries:
     - name: samuel-hawker
     - name: scholzj
     - name: tombentley
+    - name: sknot-rh
     name: strimzi-kafka-operator
     sources:
     - https://github.com/strimzi/strimzi-kafka-operator
     urls:
-    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0-rc1/strimzi-kafka-operator-helm-3-chart-0.22.0-rc1.tgz
-    version: 0.22.0-rc1
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/strimzi-kafka-operator-helm-3-chart-0.22.0.tgz
+    version: 0.22.0
   - apiVersion: v2
     appVersion: 0.21.1
     created: "2021-01-18T23:29:22.410463+01:00"
@@ -740,4 +741,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: "2021-03-11T11:22:21.038926+01:00"
+generated: "2021-03-16T13:44:57.214726+01:00"
