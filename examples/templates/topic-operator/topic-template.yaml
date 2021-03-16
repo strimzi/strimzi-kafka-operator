@@ -42,7 +42,7 @@ parameters:
   required: true
   value: "{}"
 objects:
-- apiVersion: kafka.strimzi.io/v1beta1
+- apiVersion: kafka.strimzi.io/v1beta2
   kind: KafkaTopic
   metadata:
     name: ${TOPIC_NAME}

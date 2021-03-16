@@ -34,9 +34,9 @@ The release process should normally look like this:
     * Copy files from the operators repository `documentation/html` to `docs/operators/latest/full` in the website repository
   * Update the Helm Chart repository file by copying `helm-charts/helm3/index.yaml` in the operators GitHub repository to `charts/index.yaml` in the website GitHub repsoitory.
 
-10. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from TravisCI during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
+10. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
 11. _(only for GA, not for RCs)_ On the `master` git branch of the operators repository:
-  * Copy the `helm-charts/index.yaml` from the `release` branch to `master`.
+  * Copy the `packaging/helm-charts/index.yaml` from the `release` branch to `master`.
   * Update the `ProductVersion` variable in `documentation/using/shared/attributes.doc`.
 
 12. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operate Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
