@@ -147,6 +147,10 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         super.updateBuilder(builder);
         return builder
             .withOAuthClientId(getOauthClientId())
+            .withOAuthProducerClientId(getOauthProducerClientId())
+            .withOAuthProducerSecret(getOauthProducerSecret())
+            .withOAuthConsumerClientId(getOauthConsumerClientId())
+            .withOAuthConsumerSecret(getOauthConsumerSecret())
             .withOAuthClientSecret(getOauthClientSecret())
             .withOAuthTokenEndpointUri(getOauthTokenEndpointUri())
             .withUserName(getClientUserName());
@@ -159,6 +163,22 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
 
     public String getOauthClientId() {
         return oauthClientId;
+    }
+
+    public String getOauthProducerClientId() {
+        return oauthProducerClientId;
+    }
+
+    public String getOauthConsumerClientId() {
+        return oauthConsumerClientId;
+    }
+
+    public String getOauthProducerSecret() {
+        return oauthProducerSecret;
+    }
+
+    public String getOauthConsumerSecret() {
+        return oauthConsumerSecret;
     }
 
     public String getOauthClientSecret() {
