@@ -384,12 +384,15 @@ public class EntityOperator extends AbstractModel {
     /**
      * Read the entity operator ClusterRole, and use the rules to create a new Role.
      * This is done to avoid duplication of the rules set defined in source code.
+     * If the namespace of the role is not the same as the namespace of the parent resource (Kafka CR), we do not set
+     * the owner reference.
      *
-     * @param namespace the namespace this role will be located
+     * @param ownerNamespace        The namespace of the parent resource (the Kafka CR)
+     * @param namespace             The namespace this role will be located
      *
      * @return role for the entity operator
      */
-    public Role generateRole(String namespace) {
+    public Role generateRole(String ownerNamespace, String namespace) {
         List<PolicyRule> rules;
 
         try (BufferedReader br = new BufferedReader(
@@ -407,7 +410,14 @@ public class EntityOperator extends AbstractModel {
             throw new RuntimeException(e);
         }
 
-        return super.generateRole(namespace, rules);
+        Role role = super.generateRole(namespace, rules);
+
+        // We set OwnerReference only within the same namespace since it does not work cross-namespace
+        if (!namespace.equals(ownerNamespace)) {
+            role.getMetadata().setOwnerReferences(Collections.emptyList());
+        }
+
+        return role;
     }
 
     protected static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions, List<SystemProperty> javaSystemProperties) {

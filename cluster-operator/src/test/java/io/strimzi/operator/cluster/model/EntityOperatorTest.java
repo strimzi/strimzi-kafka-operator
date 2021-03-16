@@ -895,7 +895,6 @@ public class EntityOperatorTest {
 
     @Test
     public void testRole() {
-
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editOrNewEntityOperator()
@@ -904,7 +903,7 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
-        Role role = eo.generateRole(namespace);
+        Role role = eo.generateRole(namespace, namespace);
 
         assertThat(role.getMetadata().getName(), is("foo-entity-operator"));
         assertThat(role.getMetadata().getNamespace(), is(namespace));
@@ -926,5 +925,23 @@ public class EntityOperatorTest {
                 .addToApiGroups("")
                 .build());
         assertThat(role.getRules(), is(rules));
+    }
+
+    @Test
+    public void testRoleInDifferentNamespace() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                .editOrNewEntityOperator()
+                .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(resource, VERSIONS);
+        Role role = eo.generateRole(namespace, namespace);
+
+        assertThat(role.getMetadata().getOwnerReferences().get(0), is(entityOperator.createOwnerReference()));
+
+        role = eo.generateRole(namespace, "some-other-namespace");
+        assertThat(role.getMetadata().getOwnerReferences().size(), is(0));
     }
 }
