@@ -30,9 +30,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
@@ -198,33 +195,15 @@ class UserST extends AbstractST {
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
 
-        String zkListCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:12181 <<< 'ls /config/users'";
-
-        TestUtils.waitFor("user " + userName + " will be available in Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(userClusterName, 0), "/bin/bash", "-c", zkListCommand);
-            try {
-                return zkResult.out().contains(URLEncoder.encode(userName, "UTF-8"));
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("Failed to encode username", e);
-            }
-        });
-
         // delete user
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(user.getMetadata().getName());
 
         ExecResult resultAfterDelete = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
         assertThat(resultAfterDelete.out(), not(containsString(userName)));
-
-        TestUtils.waitFor("quotas for user " + userName + " will be deleted from Zookeeper", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            try {
-                String zkGetCommand = "sh /opt/kafka/bin/zookeeper-shell.sh localhost:12181 <<< 'get /config/users/" + URLEncoder.encode(userName, "UTF-8") + "'";
-                ExecResult zkResult = cmdKubeClient().execInPod(KafkaResources.zookeeperPodName(userClusterName, 0), "/bin/bash", "-c", zkGetCommand);
-                return !zkResult.out().contains("request_percentage") && !zkResult.out().contains("producer_byte_rate") && !zkResult.out().contains("consumer_byte_rate");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("Failed to encode username", e);
-            }
-        });
+        assertThat(resultAfterDelete.out(), not(containsString("request_percentage")));
+        assertThat(resultAfterDelete.out(), not(containsString("producer_byte_rate")));
+        assertThat(resultAfterDelete.out(), not(containsString("consumer_byte_rate")));
     }
 
     @Test
