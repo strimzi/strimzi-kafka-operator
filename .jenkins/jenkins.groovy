@@ -21,7 +21,7 @@ def installYq(String workspace) {
 
 def installKubectl(String kubeVersion) {
     sh(script: """
-        curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${kubeVersion}/bin/linux/amd64/kubectl && chmod +x kubectl
+        curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${kubeVersion}/bin/linux/amd64/kubectl && chmod +x kubectl
         sudo cp kubectl /usr/bin
     """)
 }
