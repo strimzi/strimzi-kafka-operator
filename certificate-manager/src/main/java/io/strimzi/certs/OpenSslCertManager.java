@@ -41,7 +41,10 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * An OpenSSL based certificate manager.
- * @see "Chapter 11 of 'Bulletproof SSL and TLS' by Ivan Ristic"
+ * @see "Chapter 11 of 'Bulletproof SSL and TLS' by Ivan Ristic."
+ * @see "The man page for <code>config(5)</code>."
+ * @see "The man page for <code>openssl-ca(1)</code>."
+ * @see "The man page for <code>openssl-req(1)</code>."
  */
 public class OpenSslCertManager implements CertManager {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
@@ -136,6 +139,7 @@ public class OpenSslCertManager implements CertManager {
 
     public void generateRootCaCert(File keyFile, File certFile, Subject subject,
                                    ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+        // Preconditions
         Objects.requireNonNull(keyFile);
         Objects.requireNonNull(certFile);
         Objects.requireNonNull(subject);
@@ -210,12 +214,12 @@ public class OpenSslCertManager implements CertManager {
                                            Subject subject,
                                            File subjectKeyFile, File subjectCertFile,
                                            ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+        // Preconditions
         Objects.requireNonNull(issuerCaKeyFile);
         Objects.requireNonNull(issuerCaCertFile);
         Objects.requireNonNull(subject);
         Objects.requireNonNull(subjectKeyFile);
         Objects.requireNonNull(subjectCertFile);
-
         checkValidity(notBefore, notAfter);
         if (pathLength < 0) {
             throw new IllegalArgumentException("pathLength cannot be negative: " + pathLength);
@@ -288,6 +292,12 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void addCertToTrustStore(File certFile, String certAlias, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        // Preconditions
+        Objects.requireNonNull(certFile);
+        Objects.requireNonNull(certAlias);
+        Objects.requireNonNull(trustStoreFile);
+        Objects.requireNonNull(trustStorePassword);
+
         FileInputStream isTrustStore = null;
         try {
             // check if the truststore file is empty or not, for loading its content eventually
@@ -331,6 +341,11 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void deleteFromTrustStore(List<String> aliases, File trustStoreFile, String trustStorePassword)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        // Preconditions
+        Objects.requireNonNull(aliases);
+        Objects.requireNonNull(trustStoreFile);
+        Objects.requireNonNull(trustStorePassword);
+
         try (FileInputStream isTrustStore = new FileInputStream(trustStoreFile)) {
             KeyStore trustStore = KeyStore.getInstance("PKCS12");
             trustStore.load(isTrustStore, trustStorePassword.toCharArray());
@@ -344,13 +359,16 @@ public class OpenSslCertManager implements CertManager {
     }
 
     @Override
-    public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
+    public void renewSelfSignedCert(File keyFile, File certFile, Subject subject, int days) throws IOException {
+        // Preconditions
+        Objects.requireNonNull(keyFile);
+        Objects.requireNonNull(certFile);
+        Objects.requireNonNull(subject);
         if (days <= 0) {
             throw new IllegalArgumentException("Invalid validityDays " + days);
         }
 
         // See https://serverfault.com/a/501513
-
         Path sna = null;
         Path csrFile = null;
         try {
@@ -361,19 +379,19 @@ public class OpenSslCertManager implements CertManager {
                     .opt("-batch")
                     .optArg("-out", csrFile)
                     .optArg("-key", keyFile);
-            if (sbj != null) {
-                if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
-                    sna = buildConfigFile(sbj, true);
+            if (subject != null) {
+                if (subject.subjectAltNames() != null && subject.subjectAltNames().size() > 0) {
+                    sna = buildConfigFile(subject, true);
                     args.optArg("-config", sna, true).optArg("-extensions", "v3_req");
                 }
-                args.optArg("-subj", sbj);
+                args.optArg("-subj", subject);
             }
 
             args.exec();
             delete(sna);
 
             // subject alt names need to be in an openssl configuration file
-            sna = buildConfigFile(sbj, true);
+            sna = buildConfigFile(subject, true);
             new OpensslArgs("openssl", "x509")
                     .opt("-req")
                     .optArg("-days", String.valueOf(days))
@@ -390,7 +408,10 @@ public class OpenSslCertManager implements CertManager {
     }
 
     @Override
-    public void generateCsr(File keyFile, File csrFile, Subject sbj) throws IOException {
+    public void generateCsr(File keyFile, File csrFile, Subject subject) throws IOException {
+        Objects.requireNonNull(keyFile);
+        Objects.requireNonNull(csrFile);
+        Objects.requireNonNull(subject);
 
         OpensslArgs cmd = new OpensslArgs("openssl", "req")
                 .opt("-new").opt("-batch").opt("-nodes")
@@ -399,16 +420,16 @@ public class OpenSslCertManager implements CertManager {
 
         Path sna = null;
         try {
-            if (sbj != null) {
+            if (subject != null) {
 
-                if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+                if (subject.subjectAltNames() != null && subject.subjectAltNames().size() > 0) {
 
                     // subject alt names need to be in an openssl configuration file
-                    sna = buildConfigFile(sbj, false);
+                    sna = buildConfigFile(subject, false);
                     cmd.optArg("-config", sna, true).optArg("-extensions", "v3_req");
                 }
 
-                cmd.optArg("-subj", sbj);
+                cmd.optArg("-subj", subject);
             }
 
             cmd.exec();
@@ -426,7 +447,12 @@ public class OpenSslCertManager implements CertManager {
     }
 
     public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, ZonedDateTime notBefore, ZonedDateTime notAfter) throws IOException {
-
+        // Preconditions
+        Objects.requireNonNull(csrFile);
+        Objects.requireNonNull(caKey);
+        Objects.requireNonNull(caCert);
+        Objects.requireNonNull(crtFile);
+        Objects.requireNonNull(sbj);
         checkValidity(notBefore, notAfter);
 
         Path defaultConfig = null;
@@ -486,7 +512,12 @@ public class OpenSslCertManager implements CertManager {
         }
     }
 
-    /** Helper for building arg lists */
+    /**
+     * Helper for building arg lists and environments.
+     * The environment is used so that the config file can be parameterised for things like basic constraints.
+     * But it's still necessary to use dynamically generated configs for specifying SANs
+     * (see {@link OpenSslCertManager#buildConfigFile(Subject, boolean)}).
+     */
     private static class OpensslArgs {
         ProcessBuilder pb = new ProcessBuilder();
         public OpensslArgs(String binary, String command) {
