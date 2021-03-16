@@ -146,7 +146,7 @@ pipeline {
         }
         stage('Build images') {
             when {
-                environment name: 'TEST_ONLY', value: 'false'
+                environment name: 'TEST_ONLY', value: false
             }
             steps {
                 script {
