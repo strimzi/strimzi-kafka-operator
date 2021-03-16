@@ -112,6 +112,10 @@ pipeline {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
                         lib.setupKubernetes()
+                        if (!env.TEST_ONLY) {
+                            env.DOCKER_REGISTRY = sh(script: "kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'", returnStdout: true).trim() + ":80"
+                        }
+                        println("DOCKER_REGISTRY: ${env.DOCKER_REGISTRY}")
                     }
                 }
             }

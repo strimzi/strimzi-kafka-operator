@@ -19,13 +19,6 @@ def installYq(String workspace) {
     sh(script: "${workspace}/.azure/scripts/install_yq.sh")
 }
 
-def installKubectl(String kubeVersion) {
-    sh(script: """
-        curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${kubeVersion}/bin/linux/amd64/kubectl && chmod +x kubectl
-        sudo cp kubectl /usr/bin
-    """)
-}
-
 def buildStrimziImages() {
     sh(script: """
         MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make docker_build
