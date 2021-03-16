@@ -1,0 +1,158 @@
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: my-source
+spec:
+  kafka:
+    version: 2.7.0
+    replicas: 3
+    listeners:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+#    authorization:
+#      type: simple
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      log.message.format.version: "2.7"
+      inter.broker.protocol.version: "2.7"
+    storage:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: true
+  zookeeper:
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: true
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+---
+
+apiVersion: kafka.strimzi.io/v1beta1
+kind: Kafka
+metadata:
+  name: my-target
+spec:
+  kafka:
+    version: 2.7.0
+    replicas: 3
+    listeners:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+#    authorization:
+#      type: simple
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      log.message.format.version: "2.7"
+      inter.broker.protocol.version: "2.7"
+    storage:
+      type: jbod
+      volumes:
+        - id: 0
+          type: persistent-claim
+          size: 100Gi
+          deleteClaim: true
+  zookeeper:
+    replicas: 3
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: true
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+---
+
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaUser
+metadata:
+  name: my-source-mirror-maker
+  labels:
+    strimzi.io/cluster: my-source
+spec:
+  authentication:
+    type: tls
+---
+
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaUser
+metadata:
+  name: my-target-mirror-maker
+  labels:
+    strimzi.io/cluster: my-target
+spec:
+  authentication:
+    type: tls
+---
+
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker-2
+spec:
+  version: 2.7.0
+  replicas: 1
+  connectCluster: "my-target"
+  clusters:
+    - alias: "my-source"
+      bootstrapServers: my-source-kafka-bootstrap:9093
+      tls:
+        trustedCertificates:
+          - secretName: my-source-cluster-ca-cert
+            certificate: ca.crt
+      authentication:
+        certificateAndKey:
+          certificate: user.crt
+          key: user.key
+          secretName: my-source-mirror-maker
+        type: tls
+    - alias: "my-target"
+      bootstrapServers: my-target-kafka-bootstrap:9093
+      tls:
+        trustedCertificates:
+          - secretName: my-target-cluster-ca-cert
+            certificate: ca.crt
+      authentication:
+        certificateAndKey:
+          certificate: user.crt
+          key: user.key
+          secretName: my-target-mirror-maker
+        type: tls
+      config:
+        config.storage.replication.factor: 1
+        offset.storage.replication.factor: 1
+        status.storage.replication.factor: 1
+  mirrors:
+    - sourceCluster: "my-source"
+      targetCluster: "my-target"
+      sourceConnector:
+        config:
+          replication.factor: 1
+          offset-syncs.topic.replication.factor: 1
+          sync.topic.acls.enabled: "false"
+      heartbeatConnector:
+        config:
+          heartbeats.topic.replication.factor: 1
+      checkpointConnector:
+        config:
+          checkpoints.topic.replication.factor: 1
+      topicsPattern: ".*"
+      groupsPattern: ".*"
+

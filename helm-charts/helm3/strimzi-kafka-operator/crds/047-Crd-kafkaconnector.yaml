@@ -43,12 +43,15 @@ spec:
   conversion:
     strategy: None
   versions:
+    - name: v1beta2
+      served: true
+      storage: false
     - name: v1alpha1
       served: true
       storage: true
-  version: v1alpha1
   validation:
     openAPIV3Schema:
+      type: object
       properties:
         spec:
           type: object
@@ -100,4 +103,9 @@ spec:
             tasksMax:
               type: integer
               description: The maximum number of tasks for the Kafka Connector.
+            topics:
+              type: array
+              items:
+                type: string
+              description: The list of topics used by the Kafka Connector.
           description: The status of the Kafka Connector.

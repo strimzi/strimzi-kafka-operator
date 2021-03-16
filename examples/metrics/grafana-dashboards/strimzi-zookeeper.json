@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "5.2.4"
+      "version": "7.3.7"
     },
     {
       "type": "panel",
@@ -1165,7 +1165,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Amount of time it takes for the server to respond to a client request",
+      "description": "Amount of time (in ms) it takes for the server to respond to a client request",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1223,8 +1223,8 @@
       },
       "yaxes": [
         {
-          "format": "short",
-          "label": null,
+          "format": "ms",
+          "label": "Request Latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1250,7 +1250,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Amount of time it takes for the server to respond to a client request",
+      "description": "Amount of time (in ms) it takes for the server to respond to a client request",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1308,8 +1308,8 @@
       },
       "yaxes": [
         {
-          "format": "short",
-          "label": null,
+          "format": "ms",
+          "label": "Request Latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -1335,7 +1335,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Amount of time it takes for the server to respond to a client request",
+      "description": "Amount of time (in ms) it takes for the server to respond to a client request",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1393,8 +1393,8 @@
       },
       "yaxes": [
         {
-          "format": "short",
-          "label": null,
+          "format": "ms",
+          "label": "Request Latency (ms)",
           "logBase": 1,
           "max": null,
           "min": null,
