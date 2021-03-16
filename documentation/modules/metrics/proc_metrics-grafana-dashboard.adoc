@@ -163,25 +163,9 @@ Strimzi Kafka MirrorMaker 2:: Shows metrics for:
 * JVM memory used
 * JVM garbage collection time
 
-Strimzi Kafka Bridge:: Shows metrics for:
-+
-* ???
-* ???
-* ???
-* ???
+Strimzi Kafka Bridge:: See xref:assembly-kafka-bridge-{context}[].
 
-Strimzi Cruise Control:: Shows metrics for:
-+
-* ???
-* ???
-* ???
-* ???
+Strimzi Cruise Control:: See xref:assembly-cruise-control-{context}[].
 
-Strimzi Kafka Exporter:: Shows metrics for:
-+
-* Number of Kafka brokers
-* Topics and replicas
-* Consumer groups
-
-For the full list of Kafka Exporter metrics, see xref:ref-metrics-kafka-exporter--{context}[].
+Strimzi Kafka Exporter:: See xref:proc-kafka-exporter-enabling-{context}[]. 
  
