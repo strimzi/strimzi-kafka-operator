@@ -1,0 +1,78 @@
+// Module included in the following assemblies:
+//
+// assembly-management-tasks.adoc
+
+[id='proc-pausing-reconciliation-{context}']
+
+= Pausing reconciliation of custom resources
+
+Sometimes it is useful to pause the reconciliation of custom resources managed by Strimzi Operators,
+so that you can perform fixes or make updates.
+If reconciliations are paused, any changes made to custom resources are ignored by the Operators until the pause ends.
+
+If you want to pause reconciliation of a custom resource, set the `strimzi.io/pause-reconciliation` annotation to `true` in its configuration.
+This instructs the appropriate Operator to pause reconciliation of the custom resource.
+For example, you can apply the annotation to the `KafkaConnect` resource so that reconciliation by the Cluster Operator is paused.
+
+You can also create a custom resource with the pause annotation enabled.
+The custom resource is created, but it is ignored.
+
+IMPORTANT: It is not currently possible to pause reconciliation of `KafkaTopic` resources.
+
+.Prerequisites
+
+* The Strimzi Operator that manages the custom resource is running.
+
+.Procedure
+
+. Annotate the custom resource in Kubernetes, setting `pause-reconciliation` to `true`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate _KIND-OF-CUSTOM-RESOURCE_ _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation="true"
+----
++
+For example, for the `KafkaConnect` custom resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate KafkaConnect my-connect strimzi.io/pause-reconciliation="true"
+----
+
+. Check that the status conditions of the custom resource show a change to `ReconciliationPaused`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe _KIND-OF-CUSTOM-RESOURCE_ _NAME-OF-CUSTOM-RESOURCE_
+----
++
+The `type` condition changes to `ReconciliationPaused` at the `lastTransitionTime`.
++
+.Example custom resource with a paused reconciliation condition type
+[source,shell,subs="+quotes"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  annotations:
+    strimzi.io/pause-reconciliation: "true"
+    strimzi.io/use-connector-resources: "true"
+  creationTimestamp: 2021-03-12T10:47:11Z
+  #...
+spec:
+  # ...
+status:
+  conditions:
+  - lastTransitionTime: 2021-03-12T10:47:41.689249Z
+    status: "True"
+    type: ReconciliationPaused
+----
+
+.Resuming from pause
+
+* To resume reconciliation, you can set the annotation to `false`, or remove the annotation.
+
+.Additional resources
+
+* xref:assembly-customizing-kubernetes-resources-str[Customizing Kubernetes resources]
+* xref:con-custom-resources-status-str[Finding the status of a custom resource]
