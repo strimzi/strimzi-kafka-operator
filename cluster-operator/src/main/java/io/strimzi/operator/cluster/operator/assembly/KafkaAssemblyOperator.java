@@ -162,8 +162,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
 
-    private final ClusterOperatorConfig.RbacScope rbacScope;
-
     private final ZookeeperSetOperator zkSetOperations;
     private final KafkaSetOperator kafkaSetOperations;
     private final RouteOperator routeOperations;
@@ -197,7 +195,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
-        this.rbacScope = config.getRbacScope();
         this.routeOperations = supplier.routeOperations;
         this.zkSetOperations = supplier.zkSetOperations;
         this.kafkaSetOperations = supplier.kafkaSetOperations;
@@ -3057,7 +3054,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorRole() {
             final Role role;
             if (isEntityOperatorDeployed()) {
-                role = entityOperator.generateRole(namespace);
+                role = entityOperator.generateRole(namespace, namespace);
             } else {
                 role = null;
             }
@@ -3085,7 +3082,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 topicWatchedNamespaceFuture = roleOperations.reconcile(
                         topicWatchedNamespace,
                         EntityOperator.getRoleName(name),
-                        entityOperator.generateRole(topicWatchedNamespace));
+                        entityOperator.generateRole(namespace, topicWatchedNamespace));
             } else {
                 topicWatchedNamespaceFuture = Future.succeededFuture();
             }
@@ -3110,7 +3107,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 userWatchedNamespaceFuture = roleOperations.reconcile(
                         userWatchedNamespace,
                         EntityOperator.getRoleName(name),
-                        entityOperator.generateRole(userWatchedNamespace));
+                        entityOperator.generateRole(namespace, userWatchedNamespace));
             } else {
                 userWatchedNamespaceFuture = Future.succeededFuture();
             }
