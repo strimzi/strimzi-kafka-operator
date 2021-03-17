@@ -1,5 +1,5 @@
 ---
-apiVersion: "kafka.strimzi.io/v1beta1"
+apiVersion: "kafka.strimzi.io/v1beta2"
 kind: "KafkaConnect"
 metadata:
   name: "test-kafka-connect"
@@ -9,15 +9,17 @@ spec:
   bootstrapServers: "kafka:9092"
   config:
     name: "bar"
-  tolerations:
-  - effect: "NoSchedule"
-    key: "key1"
-    operator: "Equal"
-    value: "value1"
-  - effect: "NoSchedule"
-    key: "key2"
-    operator: "Equal"
-    value: "value2"
+  template:
+    pod:
+      tolerations:
+      - effect: "NoSchedule"
+        key: "key1"
+        operator: "Equal"
+        value: "value1"
+      - effect: "NoSchedule"
+        key: "key2"
+        operator: "Equal"
+        value: "value2"
   externalConfiguration:
     env:
     - name: "SOME_VARIABLE"

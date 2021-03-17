@@ -5,9 +5,11 @@
 
 * Remove support for Kafka 2.5.x
 * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
+* Migrate to CRD v1 (required by Kubernetes 1.22+)
 
 ### Changes, deprecations and removals
 
+* Strimzi API versions `v1alpha1` and `v1beta1` were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser` (use `v1beta2` versions instead)
 * The following annotations have been removed and cannot be used anymore:
   * `cluster.operator.strimzi.io/delete-claim` (used internally only - replaced by `strimzi.io/delete-claim`)
   * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)

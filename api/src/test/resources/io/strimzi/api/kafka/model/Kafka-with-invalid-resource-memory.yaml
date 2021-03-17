@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: strimzi-ephemeral
@@ -10,8 +10,14 @@ spec:
       limits:
         memory: "5GiFooBar"
     listeners:
-      plain: {}
-      tls: {}
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092
+      - name: tls
+        type: internal
+        tls: true
+        port: 9093
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1

@@ -30,7 +30,7 @@ public class KafkaBridgeResource {
     public static final String PATH_TO_KAFKA_BRIDGE_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-bridge-metrics.yaml";
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeClient() {
-        return Crds.kafkaBridgeV1Beta2Operation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaBridgeBuilder kafkaBridge(String name, String bootstrap, int kafkaBridgeReplicas) {

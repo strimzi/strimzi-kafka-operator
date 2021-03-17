@@ -46,7 +46,7 @@ public class KafkaResource {
     private static final String PATH_TO_KAFKA_PERSISTENT_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/kafka/kafka-persistent.yaml";
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {
-        return Crds.kafkaV1Beta2Operation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaBuilder kafkaEphemeral(String clusterName, int kafkaReplicas) {

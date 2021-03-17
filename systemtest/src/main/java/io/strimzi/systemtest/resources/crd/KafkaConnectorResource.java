@@ -26,7 +26,7 @@ public class KafkaConnectorResource {
     public static final String PATH_TO_KAFKA_CONNECTOR_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/source-connector.yaml";
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {
-        return Crds.kafkaConnectorV1Beta2Operation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
     }
 
     public static KafkaConnectorBuilder kafkaConnector(String name) {

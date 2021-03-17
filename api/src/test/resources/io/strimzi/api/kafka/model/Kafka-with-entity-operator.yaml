@@ -1,4 +1,4 @@
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: strimzi-ephemeral
@@ -9,17 +9,23 @@ spec:
       type: persistent-claim
       size: 500Gi
     listeners:
-      plain: {}
-      tls: {}
+      - name: plain
+        type: internal
+        tls: false
+        port: 9092
+      - name: tls
+        type: internal
+        tls: true
+        port: 9093
   zookeeper:
     replicas: 3
     storage:
       type: ephemeral
   entityOperator:
     topicOperator:
-      watchedNamespaces: my-ns
+      watchedNamespace: my-ns
       reconciliationIntervalSeconds: 60
     userOperator:
-      watchedNamespaces: my-other-ns
+      watchedNamespace: my-other-ns
       reconciliationIntervalSeconds: 60
 
