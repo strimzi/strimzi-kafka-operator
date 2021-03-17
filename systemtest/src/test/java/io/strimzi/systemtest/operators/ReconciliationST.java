@@ -57,6 +57,7 @@ public class ReconciliationST extends AbstractST {
     @IsolatedTest
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
@@ -77,7 +78,7 @@ public class ReconciliationST extends AbstractST {
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaSsName, SCALE_TO);
 
         LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no pods should appear");
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
             .editOrNewMetadata()
                 .addToAnnotations(PAUSE_ANNO)

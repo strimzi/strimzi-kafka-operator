@@ -180,6 +180,7 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag("ClusterCaCerts")
     void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
                 extensionContext,
@@ -194,6 +195,7 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag("ClientsCaCerts")
     void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
@@ -209,6 +211,7 @@ class SecurityST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag("AllCaCerts")
     void testAutoRenewAllCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
@@ -233,17 +236,14 @@ class SecurityST extends AbstractST {
         List<String> secrets = null;
 
         // to make it parallel we need decision maker...
-        switch (extensionContext.getDisplayName()) {
-            case "testAutoRenewClusterCaCertsTriggeredByAnno":
-                secrets = Arrays.asList(clusterCaCertificateSecretName(clusterName));
-                break;
-            case "testAutoRenewClientsCaCertsTriggeredByAnno":
-                secrets = Arrays.asList(clientsCaCertificateSecretName(clusterName));
-                break;
-            case "testAutoRenewAllCaCertsTriggeredByAnno":
-                secrets = Arrays.asList(clusterCaCertificateSecretName(clusterName),
-                    clientsCaCertificateSecretName(clusterName));
-                break;
+        if (extensionContext.getTags().contains("ClusterCaCerts")) {
+            secrets = Arrays.asList(clusterCaCertificateSecretName(clusterName));
+        } else if (extensionContext.getTags().contains("ClientsCaCerts")) {
+            secrets = Arrays.asList(clientsCaCertificateSecretName(clusterName));
+        } else {
+            // AllCaKeys
+            secrets = Arrays.asList(clusterCaCertificateSecretName(clusterName),
+                clientsCaCertificateSecretName(clusterName));
         }
 
         KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
@@ -365,6 +365,7 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag("ClusterCaKeys")
     void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -376,6 +377,7 @@ class SecurityST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag("ClientsCaKeys")
     void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -387,6 +389,7 @@ class SecurityST extends AbstractST {
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag("AllCaKeys")
     void testAutoReplaceAllCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -407,17 +410,14 @@ class SecurityST extends AbstractST {
         List<String> secrets = null;
 
         // to make it parallel we need decision maker...
-        switch (extensionContext.getDisplayName()) {
-            case "testAutoReplaceClusterCaKeysTriggeredByAnno":
-                secrets = Arrays.asList(clusterCaKeySecretName(clusterName));
-                break;
-            case "testAutoReplaceClientsCaKeysTriggeredByAnno":
-                secrets = Arrays.asList(clientsCaKeySecretName(clusterName));
-                break;
-            case "testAutoReplaceAllCaKeysTriggeredByAnno":
-                secrets = Arrays.asList(clusterCaKeySecretName(clusterName),
-                    clientsCaKeySecretName(clusterName));
-                break;
+        if (extensionContext.getTags().contains("ClusterCaKeys")) {
+            secrets = Arrays.asList(clusterCaKeySecretName(clusterName));
+        } else if (extensionContext.getTags().contains("ClientsCaKeys")) {
+            secrets = Arrays.asList(clientsCaKeySecretName(clusterName));
+        } else {
+            // AllCaKeys
+            secrets = Arrays.asList(clusterCaKeySecretName(clusterName),
+                clientsCaKeySecretName(clusterName));
         }
 
         createKafkaCluster(extensionContext);

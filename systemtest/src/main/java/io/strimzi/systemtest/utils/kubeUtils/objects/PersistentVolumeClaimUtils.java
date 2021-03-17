@@ -7,7 +7,6 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
@@ -32,15 +31,18 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("Wait until PVC labels will change {}", newLabels.toString());
         TestUtils.waitFor("PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims().stream().filter(
-                    persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
+                List<Boolean> allPvcsHasLabelsChanged =
+                    kubeClient().listPersistentVolumeClaims().stream()
+                        // filter specific pvc which belongs to cluster-name
+                        .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
+                        // map each value if it is changed [False, True, True] etc.
+                        .map(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getLabels().get(labelKey).equals(newLabels.get(labelKey)))
+                        .collect(Collectors.toList());
 
-                for (PersistentVolumeClaim pvc : pvcs) {
-                    if (!pvc.getMetadata().getLabels().get(labelKey).equals(newLabels.get(labelKey))) {
-                        return false;
-                    }
-                }
-                return true;
+                LOGGER.debug("Labels are changed:{}", allPvcsHasLabelsChanged.toString());
+
+                // all must be TRUE...
+                return allPvcsHasLabelsChanged.size() > 0 && !allPvcsHasLabelsChanged.contains(Boolean.FALSE);
             });
         LOGGER.info("PVC labels has changed {}", newLabels.toString());
     }
@@ -49,15 +51,18 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("Wait until PVC annotation will change {}", newAnnotation.toString());
         TestUtils.waitFor("PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims().stream().filter(
-                    persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
+                List<Boolean> allPvcsHasLabelsChanged =
+                    kubeClient().listPersistentVolumeClaims().stream()
+                        // filter specific pvc which belongs to cluster-name
+                        .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
+                        // map each value if it is changed [False, True, True] etc.
+                        .map(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getAnnotations().get(annotationKey).equals(newAnnotation.get(annotationKey)))
+                        .collect(Collectors.toList());
 
-                for (PersistentVolumeClaim pvc : pvcs) {
-                    if (!pvc.getMetadata().getLabels().get(annotationKey).equals(newAnnotation.get(annotationKey))) {
-                        return false;
-                    }
-                }
-                return true;
+                LOGGER.debug("Annotations are changed:{}", allPvcsHasLabelsChanged.toString());
+
+                // all must be TRUE...
+                return allPvcsHasLabelsChanged.size() > 0 && !allPvcsHasLabelsChanged.contains(Boolean.FALSE);
             });
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
     }
@@ -80,30 +85,19 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("PVC for cluster {} was deleted", clusterName);
     }
 
-    public static void waitForPVCDeletion(int kafkaReplicas, JbodStorage jbodStorage, String clusterName) {
+    public static void waitForPVCDeletion(int volumesCount, JbodStorage jbodStorage, String clusterName) {
+        int numberOfPVCWhichShouldBeDeleted = jbodStorage.getVolumes().stream().filter(
+            singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
+        ).collect(Collectors.toList()).size();
+
         TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT, () -> {
             List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
-                    .map(pvc -> pvc.getMetadata().getName())
-                    .collect(Collectors.toList());
-            boolean isCorrect = false;
+                .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
+                .map(pvc -> pvc.getMetadata().getName())
+                .collect(Collectors.toList());
 
-            for (SingleVolumeStorage singleVolumeStorage : jbodStorage.getVolumes()) {
-                for (int i = 0; i < kafkaReplicas; i++) {
-                    String jbodPVCName = "data-" + singleVolumeStorage.getId() + "-" + clusterName + "-kafka-" + i;
-                    boolean deleteClaim = ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim();
-
-                    if ((deleteClaim && !pvcs.contains(jbodPVCName)) || (!deleteClaim && pvcs.contains(jbodPVCName))) {
-                        isCorrect = true;
-                    } else {
-                        isCorrect = false;
-                        break;
-                    }
-                }
-                if (!isCorrect)
-                    break;
-            }
-
-            return isCorrect;
+            // pvcs must be deleted
+            return volumesCount - numberOfPVCWhichShouldBeDeleted == pvcs.size();
         });
     }
 }

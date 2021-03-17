@@ -2,16 +2,12 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.operator;
+package io.strimzi.systemtest.resources.specific;
 
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.TestUtils;
@@ -21,7 +17,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -32,14 +27,13 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class OlmResource implements ResourceType<Deployment> {
+public class OlmResource implements SpecificResourceType {
     private static final Logger LOGGER = LogManager.getLogger(OlmResource.class);
 
     public static final String NO_MORE_NON_USED_INSTALL_PLANS = "NoMoreNonUsedInstallPlans";
@@ -47,54 +41,50 @@ public class OlmResource implements ResourceType<Deployment> {
     // only three versions
     private static final Map<String, Boolean> CLOSED_MAP_INSTALL_PLAN = new HashMap<>(3);
 
-    @Override
-    public String getKind() {
-        return Constants.DEPLOYMENT;
-    }
-    @Override
-    public Deployment get(String namespace, String name) {
-        String deploymentName = ResourceManager.kubeClient().namespace(namespace).getDeploymentNameByPrefix(name);
-        return deploymentName != null ?  ResourceManager.kubeClient().getDeployment(deploymentName) : null;
-    }
-    @Override
-    public void create(Deployment resource) {
-        ResourceManager.kubeClient().createOrReplaceDeployment(resource);
-    }
-    @Override
-    public void delete(Deployment resource) throws Exception {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getName());
-    }
-    @Override
-    public boolean isReady(Deployment resource) {
-        return resource != null
-            && resource.getMetadata() != null
-            && resource.getMetadata().getName() != null
-            && resource.getStatus() != null
-            && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
-    }
-    @Override
-    public void replaceResource(Deployment existing, Deployment newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
-    }
-
     private static Map<String, JsonObject> exampleResources = new HashMap<>();
 
-    public static Deployment clusterOperator(ExtensionContext extensionContext, String namespace) {
-        return clusterOperator(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, null);
+    private String deploymentName;
+    private String namespace;
+    private String csvName;
+
+    @Override
+    public void create() {
+        this.clusterOperator(namespace);
     }
 
-    public static Deployment clusterOperator(ExtensionContext extensionContext, String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
-        return clusterOperator(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
+    public void create(String namespace, long operationTimeout, long reconciliationInterval) {
+        this.clusterOperator(namespace, operationTimeout, reconciliationInterval);
+    }
+
+    public void create(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+        this.clusterOperator(namespace, olmInstallationStrategy, fromVersion);
+    }
+
+    @Override
+    public void delete() {
+        this.deleteOlm(deploymentName, namespace, csvName);
+    }
+
+    public OlmResource() { }
+
+    public OlmResource(String namespace) {
+        this.namespace = namespace;
+    }
+
+    private void clusterOperator(String namespace) {
+        clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, null);
+    }
+
+    private void clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+        clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
             olmInstallationStrategy, fromVersion);
     }
 
-    public static Deployment clusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
-        return clusterOperator(extensionContext, namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null);
+    private void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+        clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null);
     }
 
-    public static Deployment clusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval,
+    private void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
                                              OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
 
         // if on cluster is not defaultOlmNamespace apply 'operator group' in current namespace
@@ -127,19 +117,10 @@ public class OlmResource implements ResourceType<Deployment> {
         String deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);
 
-        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(() -> deleteOlm(deploymentName, namespace, csvName));
         // Wait for operator creation
+        waitFor(deploymentName, namespace, 1);
 
         exampleResources = parseExamplesFromCsv(csvName, namespace);
-
-        Deployment olmClusterOperatorDeployment = new DeploymentBuilder(kubeClient().namespace(namespace).getDeployment(deploymentName))
-            .editMetadata()
-                .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.OlmClusterOperator.name())
-            .endMetadata()
-            .build();
-
-        return olmClusterOperatorDeployment;
     }
 
     /**
@@ -297,7 +278,7 @@ public class OlmResource implements ResourceType<Deployment> {
             Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION);
     }
 
-    public static void deleteOlm(String deploymentName, String namespace, String csvName) {
+    private static void deleteOlm(String deploymentName, String namespace, String csvName) {
         ResourceManager.cmdKubeClient().exec("delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
         ResourceManager.cmdKubeClient().exec("delete", "operatorgroups", "-l", "app=strimzi", "-n", namespace);
         ResourceManager.cmdKubeClient().exec(false, "delete", "csv", csvName, "-n", namespace);

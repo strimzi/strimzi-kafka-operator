@@ -237,7 +237,7 @@ class RollingUpdateST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, newTopicName, 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, newTopicName).build());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(newTopicName)
@@ -248,7 +248,6 @@ class RollingUpdateST extends AbstractST {
         assertThat(sent, is(MESSAGE_COUNT));
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
-
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")

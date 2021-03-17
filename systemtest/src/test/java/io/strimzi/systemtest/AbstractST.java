@@ -19,8 +19,8 @@ import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.resources.operator.HelmResource;
-import io.strimzi.systemtest.resources.operator.OlmResource;
+import io.strimzi.systemtest.resources.specific.HelmResource;
+import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -79,6 +79,8 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
+    protected final HelmResource helmResource = new HelmResource();
+    protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
@@ -126,12 +128,13 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.info("Going to install ClusterOperator via OLM");
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
-            ResourceManager.getInstance().createResource(extensionContext, OlmResource.clusterOperator(extensionContext, namespace, operationTimeout, reconciliationInterval));
+            olmResource = new OlmResource(namespace);
+            olmResource.create(namespace, operationTimeout, reconciliationInterval);
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
-            ResourceManager.getInstance().createResource(extensionContext, HelmResource.clusterOperator(operationTimeout, reconciliationInterval));
+            helmResource.create(operationTimeout, reconciliationInterval);
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
             prepareEnvForOperator(extensionContext,  namespace, bindingsNamespaces);

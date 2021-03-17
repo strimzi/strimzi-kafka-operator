@@ -107,30 +107,26 @@ public class ClientUtils {
     }
 
     public static void waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(ExtensionContext extensionContext,
-                                                                                     InternalKafkaClient internalKafkaClient) {
-        // loop client...
-        InternalKafkaClient client = internalKafkaClient.toBuilder().build();
+                                                                                     InternalKafkaClient internalKafkaClient) throws Exception {
+        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        ResourceManager.getInstance().createResource(extensionContext, KafkaTopicTemplates.topic(internalKafkaClient.getClusterName(), topicName).build());
+
+        InternalKafkaClient client = internalKafkaClient.toBuilder()
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .withTopicName(topicName)
+            .build();
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             internalKafkaClient.getTopicName(), internalKafkaClient.getClusterName(), internalKafkaClient.getMessageCount());
 
-        TestUtils.waitFor("Until producer and consumer successfully send and receive messages", Constants.GLOBAL_CLIENTS_POLL, Constants.GLOBAL_CLIENTS_TIMEOUT,
-            () -> {
-                String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                ResourceManager.getInstance().createResource(extensionContext, KafkaTopicTemplates.topic(client.getClusterName(), topicName).build());
+        int sent = client.sendMessagesTls();
+        int received = client.receiveMessagesTls();
 
-                InternalKafkaClient loopClient = client.toBuilder()
-                    .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
-                    .withTopicName(topicName)
-                    .build();
+        LOGGER.info("Sent {} and received {}", sent, received);
 
-                int sent = loopClient.sendMessagesTls();
-                int received = loopClient.receiveMessagesTls();
-
-                LOGGER.info("Sent {} and received {}", sent, received);
-
-                return sent == received;
-            });
+        if (sent != received) {
+            throw new Exception("Client sent " + sent + " and received " + received + " ,which does not match!");
+        }
     }
 
     /**

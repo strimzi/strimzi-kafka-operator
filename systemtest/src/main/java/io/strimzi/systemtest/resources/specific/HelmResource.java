@@ -2,15 +2,11 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.operator;
+package io.strimzi.systemtest.resources.specific;
 
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
@@ -27,9 +23,8 @@ import java.util.stream.Stream;
 
 import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class HelmResource implements ResourceType<Deployment> {
+public class HelmResource implements SpecificResourceType {
     private static final Logger LOGGER = LogManager.getLogger(HelmResource.class);
 
     public static final String HELM_CHART = TestUtils.USER_PATH + "/../packaging/helm-charts/helm3/strimzi-kafka-operator/";
@@ -40,48 +35,27 @@ public class HelmResource implements ResourceType<Deployment> {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    @Override
-    public String getKind() {
-        return Constants.DEPLOYMENT;
-    }
-    @Override
-    public Deployment get(String namespace, String name) {
-        String deploymentName = ResourceManager.kubeClient().namespace(namespace).getDeploymentNameByPrefix(name);
-        return deploymentName != null ?  ResourceManager.kubeClient().getDeployment(deploymentName) : null;
-    }
-    @Override
-    public void create(Deployment resource) {
-        ResourceManager.kubeClient().createOrReplaceDeployment(resource);
-    }
-    @Override
-    public void delete(Deployment resource) throws Exception {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getName());
-    }
-    @Override
-    public boolean isReady(Deployment resource) {
-        return resource != null
-            && resource.getMetadata() != null
-            && resource.getMetadata().getName() != null
-            && resource.getStatus() != null
-            && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
+    public void create() {
+        this.clusterOperator();
     }
 
-    @Override
-    public void replaceResource(Deployment existing, Deployment newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
+    public void create(long operationTimeout, long reconciliationInterval) {
+        this.clusterOperator(operationTimeout, reconciliationInterval);
     }
 
-    public static Deployment clusterOperator() {
-        return clusterOperator(Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    public void delete() {
+        this.deleteClusterOperator();
     }
 
-    public static Deployment clusterOperator(long operationTimeout) {
-        return clusterOperator(operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    private void clusterOperator() {
+        clusterOperator(Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
-    public static Deployment clusterOperator(long operationTimeout, long reconciliationInterval) {
+    private void clusterOperator(long operationTimeout) {
+        clusterOperator(operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    }
+
+    private void clusterOperator(long operationTimeout, long reconciliationInterval) {
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
                 // image registry config
                 entry("image.registry", Environment.STRIMZI_REGISTRY),
@@ -123,20 +97,12 @@ public class HelmResource implements ResourceType<Deployment> {
         KubeClusterResource.getInstance().setNamespace(oldNamespace);
         ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
         DeploymentUtils.waitForDeploymentReady(ResourceManager.getCoDeploymentName());
-
-        Deployment helmClusterOperatorDeployment = new DeploymentBuilder(kubeClient().getDeployment(ResourceManager.getCoDeploymentName()))
-            .editMetadata()
-                .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.HelmClusterOperator.name())
-            .endMetadata()
-            .build();
-
-        return helmClusterOperatorDeployment;
     }
 
     /**
      * Delete CO deployed via helm chart.
      */
-    public static void deleteClusterOperator() {
+    private void deleteClusterOperator() {
         ResourceManager.helmClient().delete(HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
         cmdKubeClient().delete(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");

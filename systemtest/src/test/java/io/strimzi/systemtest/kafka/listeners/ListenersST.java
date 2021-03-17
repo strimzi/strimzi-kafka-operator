@@ -739,8 +739,9 @@ public class ListenersST extends AbstractST {
         String clusterCustomRootCA1 = clusterName + "-" + customRootCA1;
 
         SecretUtils.createCustomSecret(clusterCustomCertChain1, clusterName, NAMESPACE, CHAIN_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomRootCA1, clusterName, NAMESPACE, ROOT_CA_CERT_AND_KEY_1);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()

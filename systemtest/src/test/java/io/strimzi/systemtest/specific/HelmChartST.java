@@ -7,7 +7,6 @@ package io.strimzi.systemtest.specific;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.resources.operator.HelmResource;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -30,7 +29,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
-
     static final String NAMESPACE = "helm-chart-cluster-test";
 
     @IsolatedTest
@@ -59,11 +57,12 @@ class HelmChartST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
-        resourceManager.createResource(extensionContext, HelmResource.clusterOperator());
+        helmResource.create();
     }
 
     @AfterAll
     protected void tearDownEnvironmentAfterAll() {
+        helmResource.delete();
         cluster.deleteNamespaces();
     }
 }

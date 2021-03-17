@@ -246,7 +246,7 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
-    void testMirrorMaker2TlsAndTlsClientAuth(ExtensionContext extensionContext) {
+    void testMirrorMaker2TlsAndTlsClientAuth(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -325,7 +325,6 @@ class MirrorMaker2ST extends AbstractST {
             .build();
 
         // Check brokers availability
-        // TODO check...
         ClientUtils.waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(extensionContext, internalKafkaClient);
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",

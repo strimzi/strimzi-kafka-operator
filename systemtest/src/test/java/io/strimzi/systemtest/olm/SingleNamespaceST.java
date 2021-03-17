@@ -4,9 +4,10 @@
  */
 package io.strimzi.systemtest.olm;
 
-import io.strimzi.systemtest.resources.operator.OlmResource;
+import io.strimzi.systemtest.resources.specific.OlmResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -27,7 +28,7 @@ public class SingleNamespaceST extends OlmAbstractST {
 
     @Test
     @Order(1)
-    void testDeployExampleKafka(ExtensionContext extensionContext) {
+    void testDeployExampleKafka() {
         doTestDeployExampleKafka();
     }
 
@@ -39,37 +40,37 @@ public class SingleNamespaceST extends OlmAbstractST {
 
     @Test
     @Order(3)
-    void testDeployExampleKafkaTopic(ExtensionContext extensionContext) {
+    void testDeployExampleKafkaTopic() {
         doTestDeployExampleKafkaTopic();
     }
 
     @Test
     @Order(4)
-    void testDeployExampleKafkaConnect(ExtensionContext extensionContext) {
+    void testDeployExampleKafkaConnect() {
         doTestDeployExampleKafkaConnect();
     }
 
     @Test
     @Order(5)
-    void testDeployExampleKafkaConnectS2I(ExtensionContext extensionContext) {
+    void testDeployExampleKafkaConnectS2I() {
         doTestDeployExampleKafkaConnectS2I();
     }
 
     @Test
     @Order(6)
-    void testDeployExampleKafkaBridge(ExtensionContext extensionContext) {
+    void testDeployExampleKafkaBridge() {
         doTestDeployExampleKafkaBridge();
     }
 
     @Test
     @Order(7)
-    void testDeployExampleKafkaMirrorMaker(ExtensionContext extensionContext) {
+    void testDeployExampleKafkaMirrorMaker() {
         doTestDeployExampleKafkaMirrorMaker();
     }
 
     @Test
     @Order(8)
-    void testDeployExampleKafkaMirrorMaker2(ExtensionContext extensionContext) {
+    void testDeployExampleKafkaMirrorMaker2() {
         doTestDeployExampleKafkaMirrorMaker2();
     }
 
@@ -80,9 +81,16 @@ public class SingleNamespaceST extends OlmAbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
-        resourceManager.createResource(extensionContext, OlmResource.clusterOperator(extensionContext, NAMESPACE));
+
+        olmResource = new OlmResource(NAMESPACE);
+        olmResource.create();
+    }
+
+    @AfterAll
+    void tearDown() {
+        olmResource.delete();
     }
 }

@@ -187,7 +187,7 @@ public class MirrorMakerST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testMirrorMakerTlsAuthenticated(ExtensionContext extensionContext) {
+    void testMirrorMakerTlsAuthenticated(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";

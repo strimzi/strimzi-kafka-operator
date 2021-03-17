@@ -44,8 +44,6 @@ import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.resources.operator.HelmResource;
-import io.strimzi.systemtest.resources.operator.OlmResource;
 import io.strimzi.systemtest.time.TimeoutBudget;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
@@ -120,8 +118,6 @@ public class ResourceManager {
         new KafkaTopicResource(),
         new KafkaUserResource(),
         new BundleResource(),
-        new HelmResource(),
-        new OlmResource(),
         new ClusterRoleBindingResource(),
         new DeploymentResource(),
         new JobResource(),

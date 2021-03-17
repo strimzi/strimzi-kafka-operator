@@ -900,11 +900,13 @@ class KafkaST extends AbstractST {
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(clusterName, kafkaReplicas, 2, diskSizeGi);
 
+        int volumesCount = kubeClient().listPersistentVolumeClaims().size();
+
         LOGGER.info("Deleting cluster");
         cmdKubeClient().deleteByName("kafka", clusterName);
 
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForPVCDeletion(volumesCount, jbodStorage, clusterName);
 
         LOGGER.info("Waiting for Kafka pods deletion");
         verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
@@ -925,11 +927,13 @@ class KafkaST extends AbstractST {
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(clusterName, kafkaReplicas, 2, diskSizeGi);
 
+        int volumesCount = kubeClient().listPersistentVolumeClaims().size();
+
         LOGGER.info("Deleting cluster");
         cmdKubeClient().deleteByName("kafka", clusterName);
 
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForPVCDeletion(volumesCount, jbodStorage, clusterName);
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
@@ -950,8 +954,10 @@ class KafkaST extends AbstractST {
         LOGGER.info("Deleting cluster");
         cmdKubeClient().deleteByName("kafka", clusterName);
 
+        int volumesCount = kubeClient().listPersistentVolumeClaims().size();
+
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForPVCDeletion(kafkaReplicas, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForPVCDeletion(volumesCount, jbodStorage, clusterName);
 
         LOGGER.info("Waiting for Kafka pods deletion");
         verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
@@ -1538,7 +1544,6 @@ class KafkaST extends AbstractST {
             LOGGER.info("Replacing kafka && zookeeper labels and annotations from {} to {}", labelAnnotationKey, changedValue);
             kafka.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(pvcLabel);
             kafka.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(pvcAnnotation);
-
             kafka.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(pvcLabel);
             kafka.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(pvcAnnotation);
         });
@@ -1549,6 +1554,8 @@ class KafkaST extends AbstractST {
 
         pvcs = kubeClient().listPersistentVolumeClaims().stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
+
+        LOGGER.info(pvcs.toString());
 
         assertThat(pvcs.size(), is(7));
 

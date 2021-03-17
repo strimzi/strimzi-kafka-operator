@@ -55,7 +55,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMultipleNodePorts(ExtensionContext extensionContext) {
+    void testMultipleNodePorts(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.NODEPORT), clusterName);
@@ -63,7 +63,7 @@ public class MultipleListenersST extends AbstractST {
 
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMultipleInternal(ExtensionContext extensionContext) {
+    void testMultipleInternal(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.INTERNAL), clusterName);
@@ -74,7 +74,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testCombinationOfInternalAndExternalListeners(ExtensionContext extensionContext) {
+    void testCombinationOfInternalAndExternalListeners(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
@@ -92,7 +92,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMultipleLoadBalancers(ExtensionContext extensionContext) {
+    void testMultipleLoadBalancers(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.LOADBALANCER), clusterName);
@@ -101,7 +101,7 @@ public class MultipleListenersST extends AbstractST {
     @OpenShiftOnly
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMultipleRoutes(ExtensionContext extensionContext) {
+    void testMultipleRoutes(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), clusterName);
@@ -112,7 +112,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testMixtureOfExternalListeners(ExtensionContext extensionContext) {
+    void testMixtureOfExternalListeners(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
@@ -133,7 +133,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) {
+    void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) throws Exception {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
@@ -152,7 +152,7 @@ public class MultipleListenersST extends AbstractST {
         runListenersTest(extensionContext, multipleDifferentListeners, clusterName);
     }
 
-    private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) {
+    private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) throws Exception {
 
         LOGGER.info("This is listeners {}, which will verified.", listeners);
 
