@@ -46,6 +46,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -770,7 +771,7 @@ public class TracingST extends AbstractST {
         }
     }
 
-    private void deployJaegerOperator(ExtensionContext extensionContext) throws IOException {
+    private void deployJaegerOperator(ExtensionContext extensionContext) throws IOException, FileNotFoundException {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
         deployJaegerContent();

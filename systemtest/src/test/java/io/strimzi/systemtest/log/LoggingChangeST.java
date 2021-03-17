@@ -227,7 +227,7 @@ class LoggingChangeST extends AbstractST {
         StUtils.checkLogForJSONFormat(eoPods, "user-operator");
     }
 
-    @Test
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicallySetEOloggingLevels(ExtensionContext extensionContext) throws InterruptedException {
