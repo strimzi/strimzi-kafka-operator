@@ -91,7 +91,7 @@ pipeline {
                         env.KUBE_VERSION = env.ghprbCommentBody.split('kube_version=')[1].split(/\s/)[0]
                     } else {
                         // Default version (the oldest supported by Strimzi)
-                        env.KUBE_VERSION = "1.16.0"
+                        env.KUBE_VERSION = "stable"
                     }
                     println("ENV_VARS: ${env.ENV_VARS}")
                     env.BUILD_PROJECT_STATUS = false
