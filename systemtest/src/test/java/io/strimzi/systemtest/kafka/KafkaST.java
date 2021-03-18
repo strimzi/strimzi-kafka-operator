@@ -34,9 +34,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -893,8 +891,8 @@ class KafkaST extends AbstractST {
         String diskSizeGi = "10";
 
         JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
-            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
+            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
+            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
         // kafka cluster already deployed
@@ -907,9 +905,6 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Waiting for PVC deletion");
         PersistentVolumeClaimUtils.waitForPVCDeletion(volumesCount, jbodStorage, clusterName);
-
-        LOGGER.info("Waiting for Kafka pods deletion");
-        verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
@@ -951,16 +946,13 @@ class KafkaST extends AbstractST {
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(clusterName, kafkaReplicas, 2, diskSizeGi);
 
+        int volumesCount = kubeClient().listPersistentVolumeClaims().size();
+
         LOGGER.info("Deleting cluster");
         cmdKubeClient().deleteByName("kafka", clusterName);
 
-        int volumesCount = kubeClient().listPersistentVolumeClaims().size();
-
         LOGGER.info("Waiting for PVC deletion");
         PersistentVolumeClaimUtils.waitForPVCDeletion(volumesCount, jbodStorage, clusterName);
-
-        LOGGER.info("Waiting for Kafka pods deletion");
-        verifyPVCDeletion(clusterName, kafkaReplicas, jbodStorage);
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
@@ -1743,43 +1735,8 @@ class KafkaST extends AbstractST {
         }
     }
 
-    void verifyPVCDeletion(String clusterName, int kafkaReplicas, JbodStorage jbodStorage) {
-        List<String> clusterPvcNames = kubeClient().listPersistentVolumeClaims().stream()
-                .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
-                .map(pvc -> pvc.getMetadata().getName())
-                .collect(Collectors.toList());
-
-        List<SingleVolumeStorage> singleVolumeStorages = jbodStorage.getVolumes();
-
-        List<PersistentVolumeClaim> pvcList = kubeClient().listPersistentVolumeClaims()
-            .stream()
-            .filter(
-                // data-1-my-cluster-498916651-kafka-0
-                pvc -> {
-                    String pvcName = pvc.getMetadata().getName();
-                    return pvcName.contains("-kafka-") && pvcName.contains(clusterName);
-                })
-            .collect(Collectors.toList());
-
-        for (int i = 0; i < singleVolumeStorages.size(); i++) {
-            for (int j = 0; j < kafkaReplicas; j++) {
-//                data-1-my-cluster-498916651-kafka-0 - should be number
-                String pvcId = pvcList.get(0).getMetadata().getName().split("-")[1];
-                String pvcName = "data-" + pvcId + "-" + clusterName + "-kafka-" + j;
-                LOGGER.info("Verifying volume: " + pvcName);
-                if (((PersistentClaimStorage) singleVolumeStorages.get(j)).isDeleteClaim()) {
-                    assertThat(clusterPvcNames, not(hasItem(pvcName)));
-                } else {
-                    assertThat(clusterPvcNames, hasItem(pvcName));
-                }
-            }
-        }
-    }
-
     void verifyVolumeNamesAndLabels(String clusterName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {
         ArrayList<String> pvcs = new ArrayList<>();
-
-        // TODO: filter cluster-name-kafka...something like that
 
         kubeClient().listPersistentVolumeClaims().stream()
             .filter(pvc -> pvc.getMetadata().getName().contains(clusterName + "-kafka"))

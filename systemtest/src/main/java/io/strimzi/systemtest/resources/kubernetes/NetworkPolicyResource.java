@@ -42,7 +42,6 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     }
     @Override
     public void create(NetworkPolicy resource) {
-        LOGGER.info("Namespace.... " + resource.getMetadata().getNamespace());
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createNetworkPolicy(resource);
     }
     @Override
@@ -74,6 +73,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                 .withNewKind("NetworkPolicy")
                     .withNewMetadata()
                         .withName(name + "-allow")
+                        .withNamespace(kubeClient().getNamespace())
                     .endMetadata()
                     .withNewSpec()
                         .addNewIngress()

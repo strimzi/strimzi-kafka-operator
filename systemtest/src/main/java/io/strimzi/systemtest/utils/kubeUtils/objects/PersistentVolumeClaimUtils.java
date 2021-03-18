@@ -97,8 +97,8 @@ public class PersistentVolumeClaimUtils {
                 .map(pvc -> pvc.getMetadata().getName())
                 .collect(Collectors.toList());
 
-            // pvcs must be deleted
-            return volumesCount - numberOfPVCWhichShouldBeDeleted == pvcs.size();
+            // pvcs must be deleted (1 storage -> 2 pvcs)
+            return volumesCount - (numberOfPVCWhichShouldBeDeleted * 2) == pvcs.size();
         });
     }
 }
