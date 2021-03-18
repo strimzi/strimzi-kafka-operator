@@ -8,6 +8,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
@@ -35,6 +36,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    @Disabled
     void testKafkaConnectWithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,

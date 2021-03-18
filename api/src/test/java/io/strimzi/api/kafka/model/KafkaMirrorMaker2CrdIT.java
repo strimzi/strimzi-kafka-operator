@@ -9,6 +9,7 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
@@ -36,6 +37,7 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     }
 
     @Test
+    @Disabled
     void testKafkaMirrorMaker2WithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,

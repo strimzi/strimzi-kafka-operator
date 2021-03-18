@@ -8,6 +8,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,6 +46,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    @Disabled
     void testKafkaTopicWithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
