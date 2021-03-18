@@ -124,7 +124,7 @@ class LoggingChangeST extends AbstractST {
         String configMapOpName = "json-layout-operators";
         String configMapZookeeperName = "json-layout-zookeeper";
         String configMapKafkaName = "json-layout-kafka";
-        String configMapCOName = "strimzi-cluster-operator";
+        String configMapCOName = Constants.STRIMZI_DEPLOYMENT_NAME;
 
         ConfigMap configMapKafka = new ConfigMapBuilder()
             .withNewMetadata()
@@ -709,8 +709,8 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Setting external logging INFO");
         ConfigMap configMap = new ConfigMapBuilder()
             .withNewMetadata()
-            .withName("external-configmap")
-            .withNamespace(NAMESPACE)
+              .withName("external-configmap")
+              .withNamespace(NAMESPACE)
             .endMetadata()
             .withData(Collections.singletonMap("log4j.properties", "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
