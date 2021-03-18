@@ -14,6 +14,8 @@ Lag data is exposed as Prometheus metrics, which can then be presented in Grafan
 
 If you are already using Prometheus and Grafana for monitoring of built-in Kafka metrics, you can configure Prometheus to also scrape the Kafka Exporter Prometheus endpoint.
 
+Strimzi includes an example Kafka Exporter dashboard in `examples/metrics/grafana-dashboards/strimzi-kafka-exporter.json`.
+
 include::modules/kafka-exporter/con_kafka-exporter-lag.adoc[leveloffset=+1]
 include::modules/kafka-exporter/con_kafka-exporter-alerts.adoc[leveloffset=+1]
 include::modules/kafka-exporter/ref_kafka-exporter-metrics.adoc[leveloffset=+1]

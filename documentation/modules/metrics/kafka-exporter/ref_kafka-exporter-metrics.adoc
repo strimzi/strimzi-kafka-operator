@@ -6,9 +6,10 @@
 
 = Exposing Kafka Exporter metrics
 
-Lag information is exposed by Kafka Exporter as Prometheus metrics for presentation in Grafana.
+Lag information is exposed by Kafka Exporter as Prometheus metrics for presentation in Grafana. 
 
-Kafka Exporter exposes metrics data for brokers, topics and consumer groups.
+Kafka Exporter exposes metrics data for brokers, topics and consumer groups. 
+These metrics are displayed on the example `strimzi-kafka-exporter` dashboard.
 
 The data extracted is described here.
 
@@ -57,3 +58,5 @@ The data extracted is described here.
 |`kafka_consumergroup_lag`
 |Current approximate lag for a consumer group at a topic partition
 |===
+
+Consumer group metrics are only displayed on the Kafka Exporter dashboard if at least one consumer group has a lag greater than zero.
