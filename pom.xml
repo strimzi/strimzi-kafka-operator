@@ -109,7 +109,6 @@
         <snakeyaml.version>1.26</snakeyaml.version>
         <picocli.version>4.5.2</picocli.version>
         <json-path.version>4.1.1</json-path.version>
-        <kafka.version>2.7.0</kafka.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.12</scala-library.version>
         <zookeeper.version>3.5.8</zookeeper.version>
