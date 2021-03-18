@@ -106,7 +106,7 @@ public class CrdUpgradeCommandIT {
                             .withNewJmxPrometheusExporterMetricsConfig()
                                 .withNewValueFrom()
                                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
-                                            .withKey("zoo-metrics")
+                                            .withKey("kafka-metrics")
                                             .withName("metrics-cm")
                                             .withOptional(false)
                                             .build())
