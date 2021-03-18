@@ -27,10 +27,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
-
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -218,16 +214,11 @@ public class CustomAuthorizerST extends AbstractST {
         ResourceManager.setClassResources();
         installClusterOperator(NAMESPACE);
 
-        Map<String, Object> config = new HashMap<>();
-        config.put("prop1", "value1");
-        config.put("prop2", "value2");
-
         KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(CLUSTER_NAME,  1, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationCustom()
                         .withAuthorizerClass(KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME)
-                        .withConfig(config)
                         .withSuperUsers("CN=" + ADMIN)
                     .endKafkaAuthorizationCustom()
                     .withNewListeners()

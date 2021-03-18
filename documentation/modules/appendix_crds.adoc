@@ -1009,8 +1009,6 @@ It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 |string
 |authorizerClass  1.2+<.<|Authorization implementation class, which must be available in classpath.
 |string
-|config           1.2+<.<|Configuration properties for custom authorizer.
-|map
 |superUsers       1.2+<.<|List of super users, which are user principals with unlimited access rights.
 |string array
 |====

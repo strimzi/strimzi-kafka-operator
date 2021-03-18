@@ -486,13 +486,6 @@ public class KafkaBrokerConfigurationBuilder {
             KafkaAuthorizationCustom customAuthz = (KafkaAuthorizationCustom) authorization;
             writer.println("authorizer.class.name=" + customAuthz.getAuthorizerClass());
 
-            // add configuration properties
-            if (customAuthz.getConfig() != null && !customAuthz.getConfig().isEmpty()) {
-                customAuthz.getConfig().forEach((k, v) -> {
-                    writer.println(k + "=" + v);
-                });
-            }
-
             // User configured super users
             if (customAuthz.getSuperUsers() != null && customAuthz.getSuperUsers().size() > 0) {
                 superUsers.addAll(customAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));

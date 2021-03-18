@@ -14,10 +14,9 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * Configures the broker authorization
+ * Configures the broker for custom authorization module
  */
 @DescriptionFile
 @Buildable(
@@ -25,7 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "authorizerClass", "config", "superUsers"})
+@JsonPropertyOrder({"type", "authorizerClass", "superUsers"})
 @EqualsAndHashCode
 public class KafkaAuthorizationCustom extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -34,7 +33,6 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
 
     private String authorizerClass;
     private List<String> superUsers;
-    private Map<String, Object> config;
 
     @Description("Must be `" + TYPE_CUSTOM + "`")
     @Override
@@ -61,18 +59,5 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
 
     public void setAuthorizerClass(String clazz) {
         this.authorizerClass = clazz;
-    }
-
-    @Description("Configuration properties for custom authorizer")
-    @Example("config:\n" +
-             "  prop1: value1\n" +
-             "  prop2: value2")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Map<String, Object> getConfig() {
-        return config;
-    }
-
-    public void setConfig(Map<String, Object> configProperties) {
-        this.config = configProperties;
     }
 }

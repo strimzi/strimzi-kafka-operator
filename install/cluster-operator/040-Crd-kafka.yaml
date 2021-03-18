@@ -705,13 +705,6 @@ spec:
                         description: OAuth Client ID which the Kafka client can use
                           to authenticate against the OAuth server and use the token
                           endpoint URI.
-                      config:
-                        type: object
-                        example: |-
-                          config:
-                            prop1: value1
-                            prop2: value2
-                        description: Configuration properties for custom authorizer.
                       delegateToKafkaAcls:
                         type: boolean
                         description: Whether authorization decision should be delegated
@@ -7513,13 +7506,6 @@ spec:
                         description: OAuth Client ID which the Kafka client can use
                           to authenticate against the OAuth server and use the token
                           endpoint URI.
-                      config:
-                        type: object
-                        example: |-
-                          config:
-                            prop1: value1
-                            prop2: value2
-                        description: Configuration properties for custom authorizer.
                       delegateToKafkaAcls:
                         type: boolean
                         description: Whether authorization decision should be delegated
@@ -15902,13 +15888,6 @@ spec:
                         description: OAuth Client ID which the Kafka client can use
                           to authenticate against the OAuth server and use the token
                           endpoint URI.
-                      config:
-                        type: object
-                        example: |-
-                          config:
-                            prop1: value1
-                            prop2: value2
-                        description: Configuration properties for custom authorizer.
                       delegateToKafkaAcls:
                         type: boolean
                         description: Whether authorization decision should be delegated

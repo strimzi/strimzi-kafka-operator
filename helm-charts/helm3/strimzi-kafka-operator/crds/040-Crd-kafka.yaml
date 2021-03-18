@@ -475,13 +475,6 @@ spec:
                         clientId:
                           type: string
                           description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                        config:
-                          type: object
-                          example: |-
-                            config:
-                              prop1: value1
-                              prop2: value2
-                          description: Configuration properties for custom authorizer.
                         delegateToKafkaAcls:
                           type: boolean
                           description: Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
@@ -509,7 +502,7 @@ spec:
                           type: array
                           items:
                             type: string
-                          description: List of super users. which are user principals with unlimited access rights.
+                          description: List of super users, which are user principals with unlimited access rights.
                         tlsTrustedCertificates:
                           type: array
                           items:
@@ -6119,13 +6112,6 @@ spec:
                         clientId:
                           type: string
                           description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                        config:
-                          type: object
-                          example: |-
-                            config:
-                              prop1: value1
-                              prop2: value2
-                          description: Configuration properties for custom authorizer.
                         delegateToKafkaAcls:
                           type: boolean
                           description: Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
@@ -6153,7 +6139,7 @@ spec:
                           type: array
                           items:
                             type: string
-                          description: List of super users. which are user principals with unlimited access rights.
+                          description: List of super users, which are user principals with unlimited access rights.
                         tlsTrustedCertificates:
                           type: array
                           items:
@@ -13226,13 +13212,6 @@ spec:
                         clientId:
                           type: string
                           description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
-                        config:
-                          type: object
-                          example: |-
-                            config:
-                              prop1: value1
-                              prop2: value2
-                          description: Configuration properties for custom authorizer.
                         delegateToKafkaAcls:
                           type: boolean
                           description: Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
@@ -13260,7 +13239,7 @@ spec:
                           type: array
                           items:
                             type: string
-                          description: List of super users. which are user principals with unlimited access rights.
+                          description: List of super users, which are user principals with unlimited access rights.
                         tlsTrustedCertificates:
                           type: array
                           items:
