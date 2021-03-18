@@ -85,7 +85,7 @@ public class OauthAbstractST extends AbstractST {
     }
 
     @AfterEach
-    void tearDown(ExtensionContext extensionContext) {
+    void tearDownEach(ExtensionContext extensionContext) throws Exception {
         List<Job> clusterJobList = kubeClient().getJobList().getItems()
             .stream()
             .filter(

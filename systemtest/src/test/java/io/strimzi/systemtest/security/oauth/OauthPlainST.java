@@ -27,6 +27,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
+import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.cli.annotations.Description;
@@ -34,6 +35,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -751,5 +753,13 @@ public class OauthPlainST extends OauthAbstractST {
                 .endKafka()
             .endSpec()
             .build());
+    }
+
+    @AfterAll
+    void tearDown(ExtensionContext extensionContext) throws Exception {
+        // delete keycloak before namespace
+        KeycloakUtils.deleteKeycloak(NAMESPACE);
+        // delete namespace etc.
+        super.afterAllMayOverride(extensionContext);
     }
 }

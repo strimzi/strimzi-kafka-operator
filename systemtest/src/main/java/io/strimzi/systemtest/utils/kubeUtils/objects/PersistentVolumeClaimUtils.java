@@ -13,6 +13,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -90,7 +91,7 @@ public class PersistentVolumeClaimUtils {
             singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
         ).collect(Collectors.toList()).size();
 
-        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT, () -> {
+        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
             List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
                 .map(pvc -> pvc.getMetadata().getName())
