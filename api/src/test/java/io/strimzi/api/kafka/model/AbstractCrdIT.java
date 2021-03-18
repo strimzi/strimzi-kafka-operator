@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 
@@ -24,6 +26,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractCrdIT {
 
+    private static final Logger LOGGER = LogManager.getLogger(AbstractCrdIT.class);
+
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
 
     protected void assumeKube1_16Plus() {
@@ -35,7 +39,6 @@ public abstract class AbstractCrdIT {
     private <T extends CustomResource> T loadResource(Class<T> resourceClass, String resource) {
         String ssStr = TestUtils.readResource(resourceClass, resource);
         assertThat("Class path resource " + resource + " was missing", ssStr, is(notNullValue()));
-        createDelete(ssStr);
         return TestUtils.fromYaml(resource, resourceClass, false);
     }
 

@@ -165,15 +165,18 @@ public class Exec {
             synchronized (LOCK) {
                 if (logToOutput) {
                     LOGGER.info("Command: {}", String.join(" ", command));
+                    if (input != null) {
+                        LOGGER.info("Input: {}", input.trim());
+                    }
                     LOGGER.info("RETURN code: {}", ret);
                     if (!executor.out().isEmpty()) {
                         LOGGER.info("======STDOUT START=======");
-                        LOGGER.info("{}", cutExecutorLog(executor.out()));
+                        LOGGER.info("{}", cutExecutorLog(executor.out().trim()));
                         LOGGER.info("======STDOUT END======");
                     }
                     if (!executor.err().isEmpty()) {
                         LOGGER.info("======STDERR START=======");
-                        LOGGER.info("{}", cutExecutorLog(executor.err()));
+                        LOGGER.info("{}", cutExecutorLog(executor.err().trim()));
                         LOGGER.info("======STDERR END======");
                     }
                 }

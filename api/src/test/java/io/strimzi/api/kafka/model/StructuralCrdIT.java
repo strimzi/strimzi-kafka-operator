@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefin
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionVersion;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.VersionRange;
+import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,7 +44,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
             assertApiVersionsAreStructural(crd.getKey(),
                     ApiVersion.V1BETA1,
-                    "./src/test/resources/io/strimzi/api/kafka/model/" + crd.getValue(),
+                    TestUtils.USER_PATH + "/./src/test/resources/io/strimzi/api/kafka/model/" + crd.getValue(),
                     ApiVersion.parseRange("v1beta2+"));
         }
     }
@@ -55,7 +56,7 @@ public class StructuralCrdIT extends AbstractCrdIT {
         for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
             assertApiVersionsAreStructural(crd.getKey(),
                     ApiVersion.V1,
-                    "../packaging/install/cluster-operator/" + crd.getValue(),
+                    TestUtils.USER_PATH + "/../packaging/install/cluster-operator/" + crd.getValue(),
                     ApiVersion.parseRange("v1beta2+"));
         }
     }

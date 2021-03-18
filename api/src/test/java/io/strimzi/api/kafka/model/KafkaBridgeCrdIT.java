@@ -6,6 +6,8 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * validation done by K8S.
  */
 public class KafkaBridgeCrdIT extends AbstractCrdIT {
+
+    private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeCrdIT.class);
 
     public static final String NAMESPACE = "kafkabridge-crd-it";
 
@@ -115,7 +119,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     }
 
     @BeforeAll
-    void setupEnvironment() {
+    void setupEnvironment() throws InterruptedException {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
         waitForCrd("crd", "kafkabridges.kafka.strimzi.io");

@@ -146,7 +146,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         for (File f : files) {
             if (f.isFile()) {
                 if (f.getName().endsWith(".yaml")) {
-                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, false, false));
+                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, true, false));
                 }
             } else if (f.isDirectory()) {
                 File[] children = f.listFiles();
@@ -180,7 +180,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K applyContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"));
+            Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"), 0 , true);
             return (K) this;
         }
     }
@@ -189,7 +189,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K createContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"));
+            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"), 0 , true);
             return (K) this;
         }
     }
@@ -201,7 +201,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             try {
                 createContent(yamlContent);
             } catch (KubeClusterException.AlreadyExists e) {
-                Exec.exec(yamlContent, namespacedCommand(REPLACE, "-f", "-"));
+                Exec.exec(yamlContent, namespacedCommand(REPLACE, "-f", "-"), 0 , true);
             }
 
             return (K) this;
@@ -221,7 +221,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K createNamespace(String name) {
         try (Context context = adminContext()) {
-            Exec.exec(namespacedCommand(CREATE, "namespace", name));
+            Exec.exec(null, namespacedCommand(CREATE, "namespace", name), 0 , true);
         }
         return (K) this;
     }
