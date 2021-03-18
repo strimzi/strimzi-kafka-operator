@@ -30,14 +30,9 @@ public interface ResourceType<T extends HasMetadata> {
     void delete(T resource) throws Exception;
 
     /**
-     * Check if this resource is marked as ready or not.
+     * Check if this resource is marked as ready or not with wait.
      *
      * @return true if ready.
      */
-    boolean isReady(T resource);
-
-    /**
-     * Update the resource with the latest state on the Kubernetes API.
-     */
-    void replaceResource(T existing, T newResource);
+    boolean waitForReadiness(T resource);
 }

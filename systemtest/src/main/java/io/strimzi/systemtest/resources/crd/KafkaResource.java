@@ -48,7 +48,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     @Override
-    public boolean isReady(Kafka resource) {
+    public boolean waitForReadiness(Kafka resource) {
         long timeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
 
         // Kafka Exporter is not setup every time
@@ -60,13 +60,6 @@ public class KafkaResource implements ResourceType<Kafka> {
             timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT);
         }
         return ResourceManager.waitForResourceStatus(kafkaClient(), resource, Ready, timeout);
-    }
-
-    @Override
-    public void replaceResource(Kafka existing, Kafka newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {

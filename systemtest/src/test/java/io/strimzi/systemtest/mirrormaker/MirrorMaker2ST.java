@@ -682,9 +682,6 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         List<String> mm2Pods = kubeClient().listPodNames(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
 
-        LOGGER.info("================== THIS IS MM2 PODS\n{}", mm2Pods);
-        // TODO: MAKE TESTUTILS...Expected :is <true>
-        // Actual   :<false>
         assertThat(mm2Pods.size(), is(4));
         assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getReplicas(), is(4));
@@ -1115,16 +1112,4 @@ class MirrorMaker2ST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         installClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT);
     }
-
-//    @AfterEach
-//    void removeResourcesAndTopics(ExtensionContext extensionContext) throws Exception {
-//        // force deletion of MM2 (all) components, after that remove other KafkaTopics
-//        // else they will/might be incorrectly recreated by MM2 component (TopicOperator)
-//        KafkaTopicList kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list();
-//        kafkaTopicList.getItems().forEach(kafkaTopic -> {
-//            KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).delete(kafkaTopic);
-//            LOGGER.info("Topic {} deleted", kafkaTopic.getMetadata().getName());
-//            KafkaTopicUtils.waitForKafkaTopicDeletion(kafkaTopic.getMetadata().getName());
-//        });
-//    }
 }

@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
+import io.strimzi.systemtest.templates.kubernetes.ServiceTemplates;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.strimzi.operator.common.model.Labels;
@@ -47,7 +47,7 @@ public class KafkaBridgeUtils {
         map.put(Labels.STRIMZI_NAME_LABEL, clusterName + "-bridge");
 
         // Create node port service for expose bridge outside Kubernetes
-        return ServiceResource.getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")
+        return ServiceTemplates.getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")
                     .editSpec()
                         .withType("NodePort")
                         .withSelector(map)

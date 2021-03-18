@@ -20,6 +20,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -49,40 +50,8 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteNetworkPolicy(resource.getMetadata().getName());
     }
     @Override
-    public boolean isReady(NetworkPolicy resource) {
+    public boolean waitForReadiness(NetworkPolicy resource) {
         return resource != null;
-    }
-    @Override
-    public void replaceResource(NetworkPolicy existing, NetworkPolicy newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-    }
-
-    public static NetworkPolicyBuilder networkPolicyBuilder(String name) {
-        return networkPolicyBuilder(name, null)
-            .withNewSpec()
-                .withNewPodSelector()
-                .endPodSelector()
-                .withPolicyTypes("Ingress")
-            .endSpec();
-    }
-
-    public static NetworkPolicyBuilder networkPolicyBuilder(String name, LabelSelector labelSelector) {
-        return new NetworkPolicyBuilder()
-            .withNewApiVersion("networking.k8s.io/v1")
-                .withNewKind("NetworkPolicy")
-                    .withNewMetadata()
-                        .withName(name + "-allow")
-                        .withNamespace(kubeClient().getNamespace())
-                    .endMetadata()
-                    .withNewSpec()
-                        .addNewIngress()
-                            .addNewFrom()
-                                .withPodSelector(labelSelector)
-                            .endFrom()
-                        .endIngress()
-                        .withPolicyTypes("Ingress")
-                    .endSpec();
     }
 
     /**
@@ -96,7 +65,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", clusterOperatorKind, labelSelector);
 
-        NetworkPolicy networkPolicy = networkPolicyBuilder(clusterOperatorKind, labelSelector)
+        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(clusterOperatorKind, labelSelector)
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
@@ -124,7 +93,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", eoDeploymentName, labelSelector);
 
-        NetworkPolicy networkPolicy = networkPolicyBuilder(eoDeploymentName, labelSelector)
+        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(eoDeploymentName, labelSelector)
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
@@ -157,7 +126,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", kafkaExporterDeploymentName, labelSelector);
 
-        NetworkPolicy networkPolicy = networkPolicyBuilder(kafkaExporterDeploymentName, labelSelector)
+        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(kafkaExporterDeploymentName, labelSelector)
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
@@ -236,9 +205,9 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     public static void applyDefaultNetworkPolicySettings(ExtensionContext extensionContext, List<String> namespaces) {
         for (String namespace : namespaces) {
             if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
-                applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
+                NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_DENY);
             } else {
-                applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+                NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
             }
             LOGGER.info("NetworkPolicy successfully set to: {} for namespace: {}", Environment.DEFAULT_TO_DENY_NETWORK_POLICIES, namespace);
         }
@@ -248,34 +217,5 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
             allowNetworkPolicySettingsForResource(extensionContext, resource, deploymentName);
         }
-    }
-
-    public static NetworkPolicy applyDefaultNetworkPolicy(ExtensionContext extensionContext, String namespace, DefaultNetworkPolicy policy) {
-        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-            .withNewApiVersion("networking.k8s.io/v1")
-            .withNewKind("NetworkPolicy")
-            .withNewMetadata()
-                .withName("global-network-policy")
-                .withNamespace(namespace)
-            .endMetadata()
-            .withNewSpec()
-                .withNewPodSelector()
-                .endPodSelector()
-                .withPolicyTypes("Ingress")
-            .endSpec()
-            .build();
-
-        if (policy.equals(DefaultNetworkPolicy.DEFAULT_TO_ALLOW)) {
-            networkPolicy = new NetworkPolicyBuilder(networkPolicy)
-                .editSpec()
-                    .addNewIngress()
-                    .endIngress()
-                .endSpec()
-                .build();
-        }
-
-        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
-
-        return networkPolicy;
     }
 }

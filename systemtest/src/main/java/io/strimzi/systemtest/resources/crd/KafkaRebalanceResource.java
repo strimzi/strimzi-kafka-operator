@@ -40,14 +40,8 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
     @Override
-    public boolean isReady(KafkaRebalance resource) {
+    public boolean waitForReadiness(KafkaRebalance resource) {
         return KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(resource.getMetadata().getName(), KafkaRebalanceState.PendingProposal);
-    }
-    @Override
-    public void replaceResource(KafkaRebalance existing, KafkaRebalance newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
     }
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {

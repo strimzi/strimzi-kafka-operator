@@ -41,14 +41,8 @@ public class KafkaConnectS2IResource implements ResourceType<KafkaConnectS2I> {
     }
 
     @Override
-    public boolean isReady(KafkaConnectS2I resource) {
+    public boolean waitForReadiness(KafkaConnectS2I resource) {
         return ResourceManager.waitForResourceStatus(kafkaConnectS2IClient(), resource, CustomResourceStatus.Ready);
-    }
-    @Override
-    public void replaceResource(KafkaConnectS2I existing, KafkaConnectS2I newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
     }
 
     public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2IClient() {

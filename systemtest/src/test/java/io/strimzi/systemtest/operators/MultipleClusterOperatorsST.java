@@ -24,6 +24,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
@@ -183,7 +184,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
             applyBindings(extensionContext, coNamespace);
 
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-            List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingResource.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
+            List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
             clusterRoleBindingList.forEach(
                 clusterRoleBinding -> ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
         }

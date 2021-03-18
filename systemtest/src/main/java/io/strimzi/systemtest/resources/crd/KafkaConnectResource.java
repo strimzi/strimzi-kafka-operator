@@ -38,14 +38,8 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
     @Override
-    public boolean isReady(KafkaConnect resource) {
+    public boolean waitForReadiness(KafkaConnect resource) {
         return KafkaConnectUtils.waitForConnectReady(resource.getMetadata().getName());
-    }
-    @Override
-    public void replaceResource(KafkaConnect existing, KafkaConnect newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
     }
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectClient() {

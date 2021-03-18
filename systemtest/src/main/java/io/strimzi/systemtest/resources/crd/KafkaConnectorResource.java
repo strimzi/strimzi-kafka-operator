@@ -39,14 +39,8 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
     @Override
-    public boolean isReady(KafkaConnector resource) {
+    public boolean waitForReadiness(KafkaConnector resource) {
         return KafkaConnectorUtils.waitForConnectorReady(resource.getMetadata().getName());
-    }
-    @Override
-    public void replaceResource(KafkaConnector existing, KafkaConnector newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
     }
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {

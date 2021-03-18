@@ -36,15 +36,10 @@ public class KafkaMirrorMaker2Resource implements ResourceType<KafkaMirrorMaker2
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
     @Override
-    public boolean isReady(KafkaMirrorMaker2 resource) {
+    public boolean waitForReadiness(KafkaMirrorMaker2 resource) {
         return KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(resource.getMetadata().getName());
     }
-    @Override
-    public void replaceResource(KafkaMirrorMaker2 existing, KafkaMirrorMaker2 newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
-    }
+
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
         return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
     }

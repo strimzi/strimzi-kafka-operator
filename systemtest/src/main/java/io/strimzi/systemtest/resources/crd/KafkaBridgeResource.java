@@ -38,14 +38,8 @@ public class KafkaBridgeResource implements ResourceType<KafkaBridge> {
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
     @Override
-    public boolean isReady(KafkaBridge resource) {
+    public boolean waitForReadiness(KafkaBridge resource) {
         return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), resource, CustomResourceStatus.Ready);
-    }
-    @Override
-    public void replaceResource(KafkaBridge existing, KafkaBridge newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
     }
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeClient() {

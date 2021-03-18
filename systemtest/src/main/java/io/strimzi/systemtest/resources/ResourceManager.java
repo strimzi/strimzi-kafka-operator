@@ -156,15 +156,8 @@ public class ResourceManager {
         if (waitReady) {
             for (T resource : resources) {
                 ResourceType<T> type = findResourceType(resource);
-                assertTrue(waitResourceCondition(resource, type::isReady),
+                assertTrue(waitResourceCondition(resource, type::waitForReadiness),
                     String.format("Timed out waiting for %s %s in namespace %s to be ready", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
-
-                // sync because without this block more threads can access updated variable and re-write before we invoke
-                // type.refreshResource()...
-                synchronized (this) {
-                    T updated = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-                    type.replaceResource(resource, updated);
-                }
             }
         }
     }
@@ -370,15 +363,9 @@ public class ResourceManager {
                 case KafkaClients:
                    // new KafkaClientsResource(),
                     return (ResourceType<T>) resourceTypes[1];
-                case HelmClusterOperator:
-                    // new HelmResource
-                    return (ResourceType<T>) resourceTypes[12];
-                case OlmClusterOperator:
-                    // new OlmResource(),
-                    return (ResourceType<T>) resourceTypes[13];
                 default:
                     // new DeploymentResource()
-                    return (ResourceType<T>) resourceTypes[15];
+                    return (ResourceType<T>) resourceTypes[13];
             }
         }
 

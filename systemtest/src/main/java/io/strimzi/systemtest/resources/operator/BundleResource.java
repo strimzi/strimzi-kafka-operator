@@ -47,19 +47,14 @@ public class BundleResource implements ResourceType<Deployment> {
 
     @Override
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
-    public boolean isReady(Deployment resource) {
+    public boolean waitForReadiness(Deployment resource) {
         return resource != null
             && resource.getMetadata() != null
             && resource.getMetadata().getName() != null
             && resource.getStatus() != null
             && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
-    @Override
-    public void replaceResource(Deployment existing, Deployment newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
-    }
+
     public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout) {
         return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
     }

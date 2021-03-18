@@ -39,18 +39,9 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
     }
 
     @Override
-    public boolean isReady(Deployment resource) {
+    public boolean waitForReadiness(Deployment resource) {
         resource = ClientUtils.waitUntilClientsArePresent(resource);
 
         return DeploymentUtils.waitForDeploymentReady(resource.getMetadata().getName());
-    }
-
-    @Override
-    public void replaceResource(Deployment existing, Deployment newResource) {
-        existing = ClientUtils.waitUntilClientsArePresent(existing);
-
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
     }
 }

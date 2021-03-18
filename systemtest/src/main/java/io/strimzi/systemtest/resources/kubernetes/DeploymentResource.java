@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -14,7 +13,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class DeploymentResource implements ResourceType<Deployment> {
 
@@ -39,32 +37,8 @@ public class DeploymentResource implements ResourceType<Deployment> {
     }
 
     @Override
-    public boolean isReady(Deployment resource) {
+    public boolean waitForReadiness(Deployment resource) {
         return DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
-
-    }
-    @Override
-    public void replaceResource(Deployment existing, Deployment newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
-    }
-
-    public static Deployment deployNewDeployment(Deployment deployment) {
-        TestUtils.waitFor("Deployment creation", Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-            () -> {
-                try {
-                    ResourceManager.kubeClient().createOrReplaceDeployment(deployment);
-                    return true;
-                } catch (KubernetesClientException e) {
-                    if (e.getMessage().contains("object is being deleted")) {
-                        return false;
-                    } else {
-                        throw e;
-                    }
-                }
-            });
-        return deployment;
     }
 
     public static Deployment getDeploymentFromYaml(String yamlPath) {

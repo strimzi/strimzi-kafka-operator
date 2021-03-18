@@ -43,15 +43,8 @@ public class KafkaUserResource implements ResourceType<KafkaUser> {
     }
 
     @Override
-    public boolean isReady(KafkaUser resource) {
+    public boolean waitForReadiness(KafkaUser resource) {
         return ResourceManager.waitForResourceStatus(kafkaUserClient(), resource, Ready);
-    }
-
-    @Override
-    public void replaceResource(KafkaUser existing, KafkaUser newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
     }
 
     public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserClient() {

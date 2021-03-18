@@ -38,15 +38,10 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
     @Override
-    public boolean isReady(KafkaTopic resource) {
+    public boolean waitForReadiness(KafkaTopic resource) {
         return ResourceManager.waitForResourceStatus(kafkaTopicClient(), resource, CustomResourceStatus.Ready);
     }
-    @Override
-    public void replaceResource(KafkaTopic existing, KafkaTopic newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
-    }
+
     public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> kafkaTopicClient() {
         return Crds.topicOperation(ResourceManager.kubeClient().getClient());
     }

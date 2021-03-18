@@ -5,13 +5,9 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.batch.Job;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.test.TestUtils;
 
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
 
 public class JobResource implements ResourceType<Job> {
 
@@ -32,30 +28,7 @@ public class JobResource implements ResourceType<Job> {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteJob(resource.getMetadata().getName());
     }
     @Override
-    public boolean isReady(Job resource) {
+    public boolean waitForReadiness(Job resource) {
         return resource != null;
-    }
-    @Override
-    public void replaceResource(Job existing, Job newResource) {
-        existing.setMetadata(newResource.getMetadata());
-        existing.setSpec(newResource.getSpec());
-        existing.setStatus(newResource.getStatus());
-    }
-
-    public static Job deployNewJob(Job job) {
-        TestUtils.waitFor("Job creation " + job.getMetadata().getName(), Constants.POLL_INTERVAL_FOR_RESOURCE_CREATION, CR_CREATION_TIMEOUT,
-            () -> {
-                try {
-                    ResourceManager.kubeClient().createJob(job);
-                    return true;
-                } catch (KubernetesClientException e) {
-                    if (e.getMessage().contains("object is being deleted")) {
-                        return false;
-                    } else {
-                        throw e;
-                    }
-                }
-            });
-        return job;
     }
 }

@@ -768,28 +768,28 @@ public abstract class AbstractST implements TestSeparator {
 
     @BeforeEach
     void setUpTestCase(ExtensionContext testContext) {
-        LOGGER.debug("===============================================================");
+        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [BEFORE EACH] has been called", this.getClass().getName());
         beforeEachMayOverride(testContext);
     }
 
     @BeforeAll
     void setUpTestSuite(ExtensionContext testContext) {
-        LOGGER.debug("===============================================================");
+        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
         beforeAllMayOverride(testContext);
     }
 
     @AfterEach
     void tearDownTestCase(ExtensionContext testContext) throws Exception {
-        LOGGER.debug("===============================================================");
+        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER EACH] has been called", this.getClass().getName());
         afterEachMayOverride(testContext);
     }
 
     @AfterAll
     void tearDownTestSuite(ExtensionContext testContext) throws Exception {
-        LOGGER.debug("===============================================================");
+        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER ALL] has been called", this.getClass().getName());
         afterAllMayOverride(testContext);
     }

@@ -113,7 +113,8 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
                         .endGenericKafkaListener()
                     .endListeners()
                 .endKafka()
-            .endSpec().build());
+            .endSpec()
+            .build());
 
         // Create Kafka user
         KafkaUser tlsUser = KafkaUserTemplates.tlsUser(httpBridgeTlsClusterName, USER_NAME).build();
