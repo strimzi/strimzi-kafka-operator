@@ -24,7 +24,7 @@ MirrorMaker 2.0 can be used with more than one source cluster.
 image::mirrormaker.png[MirrorMaker 2.0 replication]
 
 By default, a check for new topics in the source cluster is made every 10 minutes.
-You can change the frequency by adding `refresh.topics.interval.seconds` to the source connector configuration of the `KafkaMirrorMaker2` resource.
+You can change the frequency by adding `refresh.topics.interval.seconds` to the source connector configuration.
 However, increasing the frequency of the operation might affect overall performance.
 
 = Cluster configuration
@@ -61,7 +61,7 @@ The MirrorMaker 2.0 architecture supports unidirectional replication in an _acti
 You can use an _active/passive_ cluster configuration to make backups or migrate data to another cluster.
 In this situation, you might not want automatic renaming of remote topics.
 
-You can override automatic renaming by adding `IdentityReplicationPolicy` to the source connector configuration of the `KafkaMirrorMaker2` resource.
+You can override automatic renaming by adding `IdentityReplicationPolicy` to the source connector configuration.
 With this configuration applied, topics retain their original names.
 
 == Topic configuration synchronization
@@ -95,7 +95,7 @@ If the active cluster goes down, consumer applications can switch to the passive
 
 To use topic offset synchronization:
 
-* Enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration of the `KafkaMirrorMaker2` resource,
+* Enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration,
 and setting the property to `true`. Synchronization is disabled by default.
 * Add the `IdentityReplicationPolicy` to the source and checkpoint connector configuration so that topics in the target cluster retain their original names.
 
