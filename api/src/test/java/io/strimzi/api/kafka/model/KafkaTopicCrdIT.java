@@ -54,15 +54,6 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testLoadKafkaTopicWithExtraProperty() {
-        Throwable exception = assertThrows(
-            RuntimeException.class,
-            () -> loadCustomResourceToYaml(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"foo\""));
-    }
-
-    @Test
     void testKafkaTopicWithMissingProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,

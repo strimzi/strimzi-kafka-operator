@@ -8,6 +8,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
@@ -44,15 +45,6 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testLoadKafkaConnectWithExtraProperty() {
-        Throwable exception = assertThrows(
-            RuntimeException.class,
-            () -> loadCustomResourceToYaml(KafkaConnect.class, "KafkaConnect-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
-    }
-
-    @Test
     void testKafkaConnectWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
@@ -82,6 +74,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    @Disabled
     void testLoadKafkaConnectWithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
             RuntimeException.class,

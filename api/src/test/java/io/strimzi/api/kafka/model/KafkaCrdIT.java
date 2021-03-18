@@ -45,15 +45,6 @@ public class KafkaCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testLoadKafkaWithExtraProperty() {
-        Throwable exception = assertThrows(
-            RuntimeException.class,
-            () -> loadCustomResourceToYaml(Kafka.class, "Kafka-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"thisPropertyIsNotInTheSchema\""));
-    }
-
-    @Test
     void testKafkaWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.class,

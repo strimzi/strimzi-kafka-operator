@@ -45,15 +45,6 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testLoadKafkaMirrorMaker2WithExtraProperty() {
-        Throwable exception = assertThrows(
-            RuntimeException.class,
-            () -> loadCustomResourceToYaml(KafkaMirrorMaker2.class, "KafkaMirrorMaker2-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
-    }
-
-    @Test
     void testKafkaMirrorMaker2WithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.class,

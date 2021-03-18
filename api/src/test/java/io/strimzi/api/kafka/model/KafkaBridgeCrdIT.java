@@ -16,7 +16,6 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -39,24 +38,6 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaBridgeMinimal() {
         createDeleteCustomResource("KafkaBridge-minimal.yaml");
-    }
-
-    @Test
-    void testCreateKafkaBridgeWithExtraProperty() {
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaBridge-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
-    }
-
-    @Test
-    void testLoadKafkaBridgeWithExtraProperty() {
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> loadCustomResourceToYaml(KafkaBridge.class, "KafkaBridge-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
     }
 
     @Test

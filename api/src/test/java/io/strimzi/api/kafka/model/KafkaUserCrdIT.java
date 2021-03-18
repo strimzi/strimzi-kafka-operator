@@ -52,15 +52,6 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), containsString("unknown field \"thisPropertyIsNotInTheSchema\""));
     }
 
-    @Test
-    void testLoadKafkaUserWithExtraProperty() {
-        Throwable exception = assertThrows(
-            RuntimeException.class,
-            () -> loadCustomResourceToYaml(KafkaUser.class, "KafkaUser-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"thisPropertyIsNotInTheSchema\""));
-    }
-
     @BeforeAll
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
