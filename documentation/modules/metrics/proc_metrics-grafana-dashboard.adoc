@@ -7,15 +7,16 @@
 = Enabling the example Grafana dashboards
 
 Strimzi provides xref:ref-metrics-config-files-{context}[example dashboard configuration files for Grafana].
-Example dashboards are provided in the `examples/metrics` directory as JSON files:
+Example dashboards are provided in the `examples/metrics/grafana-dashboards` directory as JSON files:
 
 * `strimzi-kafka.json`
 * `strimzi-zookeeper.json`
+* `strimzi-operators.json`
 * `strimzi-kafka-connect.json`
 * `strimzi-kafka-mirror-maker-2.json`
-* `strimzi-operators.json`
 * `strimzi-kafka-bridge.json`
 * `strimzi-cruise-control.json`
+* `strimzi-kafka-exporter.json`
 
 The example dashboards are a good starting point for monitoring key metrics, but they do not represent all available metrics.
 You can modify the example dashboards or add other metrics, depending on your infrastructure.
@@ -36,7 +37,6 @@ NOTE: The name of the Grafana pod is different for each user.
 ----
 kubectl get service grafana
 ----
-
 +
 For example:
 +
@@ -131,6 +131,20 @@ Strimzi ZooKeeper:: Shows metrics for:
 * JVM garbage collection count
 * Amount of time it takes for the server to respond to a client request (maximum, minimum and average)
 
+Strimzi Operators:: Shows metrics for:
++
+* Custom resources
+* Successful custom resource reconciliations per hour
+* Failed custom resource reconciliations per hour
+* Reconciliations without locks per hour
+* Reconciliations started hour
+* Periodical reconciliations per hour
+* Maximum reconciliation time
+* Average reconciliation time
+* JVM memory used
+* JVM garbage collection time
+* JVM garbage collection count
+
 Strimzi Kafka Connect:: Shows metrics for:
 +
 * Total incoming byte rate
@@ -149,16 +163,9 @@ Strimzi Kafka MirrorMaker 2:: Shows metrics for:
 * JVM memory used
 * JVM garbage collection time
 
-Strimzi Operators:: Shows metrics for:
-+
-* Custom resources
-* Successful custom resource reconciliations per hour
-* Failed custom resource reconciliations per hour
-* Reconciliations without locks per hour
-* Reconciliations started hour
-* Periodical reconciliations per hour
-* Maximum reconciliation time
-* Average reconciliation time
-* JVM memory used
-* JVM garbage collection time
-* JVM garbage collection count
+Strimzi Kafka Bridge:: See xref:assembly-kafka-bridge-{context}[].
+
+Strimzi Cruise Control:: See xref:assembly-cruise-control-{context}[].
+
+Strimzi Kafka Exporter:: See xref:proc-kafka-exporter-enabling-{context}[]. 
+ 

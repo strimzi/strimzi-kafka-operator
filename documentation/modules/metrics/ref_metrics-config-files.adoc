@@ -7,7 +7,7 @@
 
 = Example metrics files
 
-You can find example Grafana dashboards and other metrics configuration files in the {ExampleMetrics}[`examples/metrics` directory^].
+You can find example Grafana dashboards and other metrics configuration files in the `examples/metrics` directory.
 
 .Example metrics files provided with Strimzi
 [source]
@@ -39,7 +39,7 @@ metrics
 ├── kafka-metrics.yaml <12>
 └── kafka-mirror-maker-2-metrics.yaml <13>
 --
-<1> Grafana dashboards.
+<1> Example Grafana dashboards for the different Strimzi components.
 <2> Installation file for the Grafana image.
 <3> Additional configuration to scrape metrics for CPU, memory and disk volume usage, which comes directly from the Kubernetes cAdvisor agent and kubelet on the nodes.
 <4> Hook definitions for sending notifications through Alertmanager.
@@ -64,6 +64,7 @@ Example Grafana dashboards are provided for monitoring:
 * Kafka MirrorMaker 2.0
 * xref:assembly-kafka-bridge-{context}[Kafka Bridge]
 * xref:assembly-cruise-control-{context}[Cruise Control]
+* xref:assembly-kafka-exporter-{context}[Kafka Exporter]
 
 All dashboards provide JVM metrics, as well as metrics specific to the component.
 For example, the Grafana dashboard for Strimzi Operators provides information on the number of reconciliations or custom resources they are processing.
@@ -71,11 +72,9 @@ For example, the Grafana dashboard for Strimzi Operators provides information on
 [id='ref-metrics-yaml-files-{context}']
 == Example Prometheus metrics configuration
 
-Strimzi uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics using an HTTP endpoint,
-which is then scraped by the Prometheus server.
+Strimzi uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics using an HTTP endpoint, which is then scraped by the Prometheus server.
 
-Grafana dashboards are dependent on Prometheus JMX Exporter relabeling rules,
-which are defined for Strimzi components as custom resource configuration.
+Grafana dashboards are dependent on Prometheus JMX Exporter relabeling rules, which are defined for Strimzi components as custom resource configuration.
 
 A label is a name-value pair.
 Relabeling is the process of writing a label dynamically.
