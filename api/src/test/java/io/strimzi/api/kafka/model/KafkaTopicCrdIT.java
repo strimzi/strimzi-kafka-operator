@@ -8,7 +8,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,7 +26,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaTopicV1alpha1() {
-        createDelete(KafkaTopic.class, "KafkaTopicV1alpha1.yaml");
+        createDeleteCustomResource("KafkaTopicV1alpha1.yaml");
     }
 
     @Test
@@ -37,20 +36,28 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaTopicV1beta1() {
-        createDelete(KafkaTopic.class, "KafkaTopicV1beta1.yaml");
+        createDeleteCustomResource("KafkaTopicV1beta1.yaml");
     }
 
     @Test
     void testKafkaTopicMinimal() {
-        createDelete(KafkaTopic.class, "KafkaTopic-minimal.yaml");
+        createDeleteCustomResource("KafkaTopic-minimal.yaml");
     }
 
     @Test
-    @Disabled
-    void testKafkaTopicWithExtraProperty() {
+    void testCreateKafkaTopicWithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
-            () -> createDelete(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml"));
+            () -> createDeleteCustomResource("KafkaTopic-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"foo\""));
+    }
+
+    @Test
+    void testLoadKafkaTopicWithExtraProperty() {
+        Throwable exception = assertThrows(
+            RuntimeException.class,
+            () -> loadCustomResourceToYaml(KafkaTopic.class, "KafkaTopic-with-extra-property.yaml"));
 
         assertThat(exception.getMessage(), containsString("unknown field \"foo\""));
     }
@@ -59,7 +66,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     void testKafkaTopicWithMissingProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
-            () -> createDelete(KafkaTopic.class, "KafkaTopic-with-missing-required-property.yaml"));
+            () -> createDeleteCustomResource("KafkaTopic-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "partitions", "replicas");
     }

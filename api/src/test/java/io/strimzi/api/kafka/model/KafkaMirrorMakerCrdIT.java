@@ -8,7 +8,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,15 +31,23 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerMinimal() {
-        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-minimal.yaml");
+        createDeleteCustomResource("KafkaMirrorMaker-minimal.yaml");
     }
 
     @Test
-    @Disabled
-    void testKafkaMirrorMakerWithExtraProperty() {
+    void testCreateKafkaMirrorMakerWithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
-            () -> createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-extra-property.yaml"));
+            () -> createDeleteCustomResource("KafkaMirrorMaker-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
+    }
+
+    @Test
+    void testLoadKafkaMirrorMakerWithExtraProperty() {
+        Throwable exception = assertThrows(
+            RuntimeException.class,
+            () -> loadCustomResourceToYaml(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-extra-property.yaml"));
 
         assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
     }
@@ -50,7 +57,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
         Throwable exception = assertThrows(
             KubeClusterException.class,
             () -> {
-                createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-missing-required-property.yaml");
+                createDeleteCustomResource("KafkaMirrorMaker-with-missing-required-property.yaml");
             });
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(),
@@ -61,19 +68,19 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerWithTls() {
-        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls.yaml");
+        createDeleteCustomResource("KafkaMirrorMaker-with-tls.yaml");
     }
 
     @Test
     void testKafkaMirrorMakerWithTlsAuth() {
-        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth.yaml");
+        createDeleteCustomResource("KafkaMirrorMaker-with-tls-auth.yaml");
     }
 
     @Test
     void testKafkaMirrorMakerWithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml"));
+            () -> createDeleteCustomResource("KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(),
                 "spec.producer.authentication.certificateAndKey.certificate",
@@ -83,17 +90,17 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerWithScramSha512Auth() {
-        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-scram-sha-512-auth.yaml");
+        createDeleteCustomResource("KafkaMirrorMaker-with-scram-sha-512-auth.yaml");
     }
 
     @Test
     void testKafkaMirrorMakerWithTemplate() {
-        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-template.yaml");
+        createDeleteCustomResource("KafkaMirrorMaker-with-template.yaml");
     }
 
     @Test
     void testKafkaMirrorMakerWithCommitAndAbort() {
-        createDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker-with-commit-and-abort.yaml");
+        createDeleteCustomResource("KafkaMirrorMaker-with-commit-and-abort.yaml");
     }
 
     @BeforeAll

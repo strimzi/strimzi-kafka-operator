@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
+
+import java.io.File;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.anyOf;
@@ -25,8 +25,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractCrdIT {
-
-    private static final Logger LOGGER = LogManager.getLogger(AbstractCrdIT.class);
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
 
@@ -42,24 +40,28 @@ public abstract class AbstractCrdIT {
         return TestUtils.fromYaml(resource, resourceClass, false);
     }
 
-    protected <T extends CustomResource> void createDelete(Class<T> resourceClass, String resource) {
+    protected <T extends CustomResource> void loadCustomResourceToYaml(Class<T> resourceClass, String resource) {
         T model = loadResource(resourceClass, resource);
-        String modelStr = TestUtils.toYamlString(model);
-        createDelete(modelStr);
+        TestUtils.toYamlString(model);
     }
 
-    private void createDelete(String ssStr) {
+    protected <T extends CustomResource> void createDeleteCustomResource(String resourceName) {
+        File resourceFile = new File(this.getClass().getResource(resourceName).getPath());
+        createDelete(resourceFile);
+    }
+
+    private void createDelete(File resourceFile) {
         RuntimeException creationException = null;
         RuntimeException deletionException = null;
         try {
             try {
-                cmdKubeClient().applyContent(ssStr);
+                cmdKubeClient().create(resourceFile);
             } catch (RuntimeException t) {
                 creationException = t;
             }
         } finally {
             try {
-                cmdKubeClient().deleteContent(ssStr);
+                cmdKubeClient().delete(resourceFile);
             } catch (RuntimeException t) {
                 deletionException = t;
             }

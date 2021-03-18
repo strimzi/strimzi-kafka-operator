@@ -29,27 +29,27 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaRebalanceMinimal() {
-        createDelete(KafkaRebalance.class, "KafkaRebalance-minimal.yaml");
+        createDeleteCustomResource("KafkaRebalance-minimal.yaml");
     }
 
     @Test
     void testKafkaRebalanceWithGoals() {
-        createDelete(KafkaRebalance.class, "KafkaRebalance-with-goals.yaml");
+        createDeleteCustomResource("KafkaRebalance-with-goals.yaml");
     }
 
     @Test
     void testKafkaRebalanceWithGoalsSkipHardGoalCheck() {
-        createDelete(KafkaRebalance.class, "KafkaRebalance-with-goals-skip-hard-goal-check.yaml");
+        createDeleteCustomResource("KafkaRebalance-with-goals-skip-hard-goal-check.yaml");
     }
 
     @Test
     void testKafkaRebalanceWithPerformanceTuning() {
-        createDelete(KafkaRebalance.class, "KafkaRebalance-performance-tuning.yaml");
+        createDeleteCustomResource("KafkaRebalance-performance-tuning.yaml");
     }
 
     @Test
     void testKafkaRebalanceWithExcludedTopics() {
-        createDelete(KafkaRebalance.class, "KafkaRebalance-excluded-topics.yaml");
+        createDeleteCustomResource("KafkaRebalance-excluded-topics.yaml");
     }
 
     @BeforeAll

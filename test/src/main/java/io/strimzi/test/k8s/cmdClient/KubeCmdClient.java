@@ -38,6 +38,8 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     /** Creates the resources in the given files. */
     K create(File... files);
 
+    K create(File file);
+
     /** Creates the resources in the given files. */
     K apply(File... files);
 

@@ -98,6 +98,14 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     @SuppressWarnings("unchecked")
+    public K create(File file) {
+        Exec.exec(null, namespacedCommand(CREATE, "-f", file.getAbsolutePath()), 0, true, true);
+
+        return (K) this;
+    }
+    
+    @Override
+    @SuppressWarnings("unchecked")
     public K create(File... files) {
         try (Context context = defaultContext()) {
             Map<File, ExecResult> execResults = execRecursive(CREATE, files, Comparator.comparing(File::getName).reversed());
