@@ -11,11 +11,11 @@ import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.rmi.UnexpectedException;
 import java.time.Duration;
 import java.util.Random;
 
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * ClientUtils class, which provides static methods for the all type clients
@@ -61,12 +61,16 @@ public class ClientUtils {
             () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
     }
 
-    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) {
+    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) throws UnexpectedException {
         LOGGER.info("Waiting for producer/consumer:{} to finish with failure.", jobName);
         try {
             TestUtils.waitFor("Job did not finish within time limit (as expected).", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
                 () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
-            assertThat("Job did not finish with 1 failed pod (expected).", kubeClient().namespace(namespace).getJobStatus(jobName).getFailed().equals(1));
+            if (kubeClient().namespace(namespace).getJobStatus(jobName).getFailed().equals(1)) {
+                LOGGER.debug("Job finished with 1 failed pod (expected - timeout).");
+            } else {
+                throw new UnexpectedException("Job did not finish with 1 failed pod (not expected).");
+            }
         } catch (WaitException e) {
             if (e.getMessage().contains("Timeout after ")) {
                 LOGGER.info("Client job '{}' finished with expected timeout.", jobName);

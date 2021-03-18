@@ -48,6 +48,7 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
@@ -81,9 +82,9 @@ public class OauthPlainST extends OauthAbstractST {
 
         LOGGER.info("Use clients without access token containing audience token");
         oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientTimeout(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT);
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(OAUTH_PRODUCER_NAME, NAMESPACE, MESSAGE_COUNT));
         oauthInternalClientJob.createAndWaitForReadiness(oauthInternalClientJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientTimeout(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT));
 
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_PRODUCER_NAME);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CONSUMER_NAME);
@@ -111,10 +112,10 @@ public class OauthPlainST extends OauthAbstractST {
                 .build();
 
         oauthInternalClientChecksJob.createAndWaitForReadiness(oauthInternalClientChecksJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientTimeout(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT);
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT));
 
         oauthInternalClientChecksJob.createAndWaitForReadiness(oauthInternalClientChecksJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientTimeout(OAUTH_CLIENT_AUDIENCE_CONSUMER, NAMESPACE, MESSAGE_COUNT);
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(OAUTH_CLIENT_AUDIENCE_CONSUMER, NAMESPACE, MESSAGE_COUNT));
 
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_PRODUCER);
         JobUtils.deleteJobWithWait(NAMESPACE, OAUTH_CLIENT_AUDIENCE_CONSUMER);
