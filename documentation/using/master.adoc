@@ -5,11 +5,9 @@ include::shared/attributes.adoc[]
 
 = Using Strimzi
 
-//overview part
-include::assemblies/assembly-overview.adoc[]
+include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
-//configuring part
-include::assemblies/configuring/assembly-deployment-configuration.adoc[]
+include::assemblies/configuring/assembly-deployment-configuration.adoc[leveloffset=+1]
 
 include::assemblies/assembly-securing-external-listeners.adoc[leveloffset=+1]
 
@@ -25,16 +23,14 @@ include::assemblies/tracing/assembly-distributed-tracing.adoc[leveloffset=+1]
 
 include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 
-//managing part
-include::assemblies/managing/assembly-management-tasks.adoc[]
+include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]
 
 [id='api_reference-{context}']
 :parent-context: {context}
 :context: reference
-//schema part
-= Custom resource API reference
 
-include::modules/con-common-configuration-properties.adoc[]
-== Schema properties
-include::modules/appendix_crds.adoc[]
+== Custom resource API reference
+include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
+=== Schema properties
+include::modules/appendix_crds.adoc[leveloffset=+1]
 :context: {parent-context}
