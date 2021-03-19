@@ -191,6 +191,7 @@ public class ListenersUtilsTest {
             .withNewConfiguration()
                 .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                 .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
+                .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
                 .withNewBootstrap()
                     .withAlternativeNames(asList("my-lb-1", "my-lb-2"))
                     .withLoadBalancerIP("130.211.204.1")
@@ -565,6 +566,18 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.loadBalancerSourceRanges(newTls), is(emptyList()));
         assertThat(ListenersUtils.loadBalancerSourceRanges(newNodePort), is(emptyList()));
         assertThat(ListenersUtils.loadBalancerSourceRanges(newNodePort3), is(emptyList()));
+    }
+
+    @Test
+    public void testFinalizers() {
+        assertThat(ListenersUtils.finalizers(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.finalizers(oldExternal), is(nullValue()));
+        assertThat(ListenersUtils.finalizers(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.finalizers(newLoadBalancer2), containsInAnyOrder("service.kubernetes.io/load-balancer-cleanup"));
+        assertThat(ListenersUtils.finalizers(oldPlain), is(nullValue()));
+        assertThat(ListenersUtils.finalizers(newTls), is(nullValue()));
+        assertThat(ListenersUtils.finalizers(newNodePort), is(nullValue()));
+        assertThat(ListenersUtils.finalizers(newNodePort3), is(nullValue()));
     }
 
     @Test

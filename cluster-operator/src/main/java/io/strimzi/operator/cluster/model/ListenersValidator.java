@@ -75,6 +75,7 @@ public class ListenersValidator {
                 validateIngressClass(errors, listener);
                 validateExternalTrafficPolicy(errors, listener);
                 validateLoadBalancerSourceRanges(errors, listener);
+                validateFinalizers(errors, listener);
                 validatePreferredAddressType(errors, listener);
 
                 if (listener.getConfiguration().getBootstrap() != null) {
@@ -242,6 +243,20 @@ public class ListenersValidator {
                 && listener.getConfiguration().getLoadBalancerSourceRanges() != null
                 && !listener.getConfiguration().getLoadBalancerSourceRanges().isEmpty())    {
             errors.add("listener " + listener.getName() + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener");
+        }
+    }
+
+    /**
+     * Validates that finalizers is used only with Loadbalancer type listener
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validateFinalizers(Set<String> errors, GenericKafkaListener listener) {
+        if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
+                && listener.getConfiguration().getFinalizers() != null
+                && !listener.getConfiguration().getFinalizers().isEmpty())    {
+            errors.add("listener " + listener.getName() + " cannot configure finalizers because it is not LoadBalancer based listener");
         }
     }
 

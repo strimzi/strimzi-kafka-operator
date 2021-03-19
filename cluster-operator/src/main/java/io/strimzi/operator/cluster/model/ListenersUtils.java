@@ -540,6 +540,20 @@ public class ListenersUtils {
     }
 
     /**
+     * Finds load balancer finalizers
+     *
+     * @param listener  Listener for which the load balancer finalizers should be found
+     * @return          Load Balancer finalizers or null if not specified
+     */
+    public static List<String> finalizers(GenericKafkaListener listener)    {
+        if (listener.getConfiguration() != null) {
+            return listener.getConfiguration().getFinalizers();
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Finds external traffic policy
      *
      * @param listener  Listener for which the external traffic policy should be found
