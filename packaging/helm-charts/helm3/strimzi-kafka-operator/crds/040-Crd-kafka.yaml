@@ -483,6 +483,9 @@ spec:
                         allowOnError:
                           type: boolean
                           description: Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable). Defaults to `false` - all actions will be denied.
+                        authorizerClass:
+                          type: string
+                          description: Authorization implementation class, which must be available in classpath.
                         clientId:
                           type: string
                           description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
@@ -513,7 +516,7 @@ spec:
                           type: array
                           items:
                             type: string
-                          description: List of super users. Should contain list of user principals which should get unlimited access rights.
+                          description: List of super users, which are user principals with unlimited access rights.
                         tlsTrustedCertificates:
                           type: array
                           items:
@@ -538,7 +541,8 @@ spec:
                             - simple
                             - opa
                             - keycloak
-                          description: Authorization type. Currently, the supported types are `simple`, `keycloak`, and `opa`. `simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer` class for authorization. `keycloak` authorization type uses Keycloak Authorization Services for authorization. `opa` authorization type uses Open Policy Agent based authorization.
+                            - custom
+                          description: Authorization type. Currently, the supported types are `simple`, `keycloak`, `opa` and `custom`. `simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer` class for authorization. `keycloak` authorization type uses Keycloak Authorization Services for authorization. `opa` authorization type uses Open Policy Agent based authorization.`custom` authorization type uses user-provided implementation for authorization.
                         url:
                           type: string
                           example: http://opa:8181/v1/data/kafka/authz/allow

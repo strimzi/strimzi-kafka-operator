@@ -7,20 +7,18 @@ package io.strimzi.systemtest.security.custom;
 
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.test.WaitException;
-
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,13 +26,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 public class CustomAuthorizerST extends AbstractST {
@@ -44,8 +41,7 @@ public class CustomAuthorizerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CustomAuthorizerST.class);
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite() {
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
@@ -55,7 +51,7 @@ public class CustomAuthorizerST extends AbstractST {
 
         KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, topicName).build());
 
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserWrite)
+        KafkaUser writeUser = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -68,29 +64,33 @@ public class CustomAuthorizerST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(topicName)
                         .endAclRuleTopicResource()
-                        .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                        .withOperation(AclOperation.DESCRIBE)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
-            .build());
+            .build();
+
+        writeUser = KafkaUserResource.createAndWaitForReadiness(writeUser);
 
         LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-" + Constants.KAFKA_CLIENTS, writeUser).build());
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUserWrite)
             .withMessageCount(numberOfMessages)
-            .withSecurityProtocol(SecurityProtocol.SSL)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .withUsingPodName(kafkaClientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(numberOfMessages));
+        assertThat(internalKafkaClient.sendMessagesTls(), is(numberOfMessages));
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(0));
 
-        assertThrows(WaitException.class, basicExternalKafkaClient::receiveMessagesTls);
-
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
+        KafkaUser readUser = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -109,30 +109,34 @@ public class CustomAuthorizerST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(topicName)
                         .endAclRuleTopicResource()
-                        .withOperation(AclOperation.DESCRIBE)  //s describe is for that user can find out metadata
+                        .withOperation(AclOperation.DESCRIBE)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
-            .build());
-
-        BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
-            .withKafkaUsername(kafkaUserRead)
-            .withConsumerGroupName(consumerGroupName)
             .build();
 
-        assertThat(newBasicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
+        readUser = KafkaUserResource.createAndWaitForReadiness(readUser);
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-" + Constants.KAFKA_CLIENTS, readUser).build());
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient newInternalKafkaClient = internalKafkaClient.toBuilder()
+            .withKafkaUsername(kafkaUserRead)
+            .withConsumerGroupName(consumerGroupName)
+            .withUsingPodName(kafkaClientsPodName)
+            .build();
+
+        assertThat(newInternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
-        assertThrows(WaitException.class, newBasicExternalKafkaClient::sendMessagesTls);
+        assertThat(newInternalKafkaClient.sendMessagesTls(), is(-1));
     }
 
     @Test
-    @Tag(NODEPORT_SUPPORTED)
-    @Tag(EXTERNAL_CLIENTS_USED)
+    @Tag(INTERNAL_CLIENTS_USED)
     void testAclWithSuperUser() {
         KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).build());
 
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(CLUSTER_NAME, ADMIN)
+        KafkaUser adminUser = KafkaUserResource.tlsUser(CLUSTER_NAME, ADMIN)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -145,68 +149,34 @@ public class CustomAuthorizerST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(TOPIC_NAME)
                         .endAclRuleTopicResource()
-                        .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                        .withOperation(AclOperation.DESCRIBE)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
-            .build());
+            .build();
+
+        adminUser = KafkaUserResource.createAndWaitForReadiness(adminUser);
+        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-" + Constants.KAFKA_CLIENTS, adminUser).build());
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", ADMIN, TOPIC_NAME);
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(ADMIN)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol(SecurityProtocol.SSL)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withUsingPodName(kafkaClientsPodName)
             .build();
 
-        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(internalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         LOGGER.info("Checking kafka super user:{} that is able to read messages to topic:{} regardless that " +
                 "we configured Acls with only write operation", ADMIN, TOPIC_NAME);
 
-        assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
-
-        String nonSuperuserName = ADMIN + "-non-super-user";
-
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(CLUSTER_NAME, nonSuperuserName)
-            .editSpec()
-                .withNewKafkaUserAuthorizationSimple()
-                    .addNewAcl()
-                        .withNewAclRuleTopicResource()
-                            .withName(TOPIC_NAME)
-                        .endAclRuleTopicResource()
-                        .withOperation(AclOperation.WRITE)
-                    .endAcl()
-                    .addNewAcl()
-                        .withNewAclRuleTopicResource()
-                            .withName(TOPIC_NAME)
-                        .endAclRuleTopicResource()
-                        .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
-                    .endAcl()
-                .endKafkaUserAuthorizationSimple()
-            .endSpec()
-            .build());
-
-        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", nonSuperuserName, TOPIC_NAME);
-
-        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
-            .withKafkaUsername(nonSuperuserName)
-            .build();
-
-        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
-
-        LOGGER.info("Checking kafka super user:{} that is not able to read messages to topic:{} because of defined" +
-                " ACLs on only write operation", nonSuperuserName, TOPIC_NAME);
-
-        BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
-            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
-            .build();
-
-        assertThrows(WaitException.class, () -> newBasicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
     }
 
     @BeforeAll
@@ -223,9 +193,9 @@ public class CustomAuthorizerST extends AbstractST {
                     .endKafkaAuthorizationCustom()
                     .withNewListeners()
                         .addNewGenericKafkaListener()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationTls())
                         .endGenericKafkaListener()
