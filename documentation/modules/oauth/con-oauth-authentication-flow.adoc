@@ -1,12 +1,29 @@
 // Module included in the following assemblies:
 //
-// assembly-oauth.adoc
+// assembly-oauth-authentication.adoc
 
 [id='con-oauth-authentication-flow-{context}']
-= OAuth 2.0 authentication mechanism
+= OAuth 2.0 authentication mechanisms
+
+You can configure OAuth 2.0 authentication using one of the following authentication mechanisms:
+
+* SASL_OAUTHBEARER
+* SASL_PLAIN
+
+Both mechanisms establish an authenticated session with a Kafka broker. 
+However, the authentication flow between the Kafka client, the authorization server, and the Kafka broker is different in each mechanism.
+
+.SASL_OAUTHBEARER
+
+Support for the SASL_OAUTHBEARER mechanism is built-in to many Kafka clients 
 
 The Kafka _SASL OAUTHBEARER_ mechanism is used to establish authenticated sessions with a Kafka broker.
 
 A Kafka client initiates a session with the Kafka broker using the _SASL OAUTHBEARER_ mechanism for credentials exchange, where credentials take the form of an access token.
 
 Kafka brokers and clients need to be configured to use OAuth 2.0.
+
+.SASL_PLAIN
+
+An advantage of SASL_PLAIN is that it is supported by all Kafka client tools, including developer tools such as kafkacat.
+

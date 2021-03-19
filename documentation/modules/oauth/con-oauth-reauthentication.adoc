@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-oauth.adoc
+// assembly-oauth-authentication.adoc
 
 [id='con-oauth-reauthentication-{context}']
 = Session re-authentication for Kafka brokers
