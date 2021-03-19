@@ -10,12 +10,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -104,6 +106,16 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), anyOf(
                 containsStringIgnoringCase("spec.tracing.type in body should be one of [jaeger]"),
                 containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\"")));
+    }
+
+    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
+    @Test
+    void testCreateKafkaBridgeWithExtraProperty() {
+        Throwable exception = assertThrows(
+            KubeClusterException.class,
+            () -> createDeleteCustomResource("KafkaBridge-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
     }
 
     @Test

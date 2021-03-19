@@ -119,15 +119,6 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
     }
 
-//    @Test
-//    public void testKafkaConnectWithInvalidExternalConfiguration() {
-//        Throwable exception = assertThrows(
-//            KubeClusterException.class,
-//            () -> createDelete(KafkaConnect.class, "KafkaConnect-with-invalid-external-configuration.yaml"));
-//
-//        assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
-//    }
-
     @BeforeEach
     void setup() {
         cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
