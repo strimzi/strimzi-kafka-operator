@@ -8,6 +8,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,6 +45,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
         createDeleteCustomResource("KafkaTopic-minimal.yaml");
     }
 
+    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
     @Test
     void testCreateKafkaTopicWithExtraProperty() {
         Throwable exception = assertThrows(

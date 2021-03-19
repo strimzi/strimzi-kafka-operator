@@ -7,7 +7,9 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +37,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         createDeleteCustomResource("KafkaConnect-minimal.yaml");
     }
 
+    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
     @Test
     void testCreateKafkaConnectWithExtraProperty() {
         Throwable exception = assertThrows(
@@ -125,16 +128,24 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
 //        assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
 //    }
 
-    @BeforeAll
-    void setupEnvironment() {
-        cluster.createNamespace(NAMESPACE);
+    @BeforeEach
+    void setup() {
         cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
         waitForCrd("crd", "kafkaconnects.kafka.strimzi.io");
     }
 
+    @AfterEach
+    void teardown() {
+        cluster.deleteCustomResources();
+    }
+
+    @BeforeAll
+    void setupEnvironment() {
+        cluster.createNamespace(NAMESPACE);
+    }
+
     @AfterAll
     void teardownEnvironment() {
-        cluster.deleteCustomResources();
         cluster.deleteNamespaces();
     }
 }
