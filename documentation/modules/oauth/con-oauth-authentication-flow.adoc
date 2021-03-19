@@ -22,6 +22,16 @@ The client initiates a session with the Kafka broker using the SASL OAUTHBEARER 
 Kafka brokers and clients both need to be configured to use OAuth 2.0. 
 SASL_OAUTHBEARER must be enabled in the listener configuration for the Kafka broker.
 
+[source,yaml,subs="attributes+"]
+----
+  # ...
+  authentication:
+    type: oauth
+    # ...
+    enableOauthBearer: true
+    enablePlain: false
+----
+
 .SASL_PLAIN
 
 SASL_PLAIN is a simple authentication mechanism that is supported by all Kafka client tools, including developer tools such as kafkacat.
@@ -35,7 +45,18 @@ The client must enable SASL_PLAIN and set the `username` and `password`.
 If the client sets `username` to `access-token`, the authorization server will interpret the password as the access token. 
 Otherwise, the authorization server will interpret the user as the `clientId` and the password as the client secret.
 
-Kafka brokers and clients both need to be configured to use OAuth 2.0. SASL_PLAIN must be enabled in the listener configuration for the Kafka broker.
+Kafka brokers and clients both need to be configured to use OAuth 2.0. SASL_PLAIN must be enabled in the listener OAuth 2.0 authentication configuration for the Kafka broker.
+
+[source,yaml,subs="+quotes,attributes+"]
+----
+  # ...
+  authentication:
+    type: oauth
+    # ...
+    enableOauthBearer: false
+    enablePlain: true
+    tokenEndpointUri: https://_OAUTH-SERVER-ADDRESS_/auth/realms/external/protocol/openid-connect/token
+----
 
 .Additional resources
 
