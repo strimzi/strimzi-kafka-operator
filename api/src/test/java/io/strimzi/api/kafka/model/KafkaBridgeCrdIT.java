@@ -6,10 +6,14 @@ package io.strimzi.api.kafka.model;
 
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
+    private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeCrdIT.class);
+
     public static final String NAMESPACE = "kafkabridge-crd-it";
 
     @Test
@@ -33,42 +39,33 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaBridgeMinimal() {
-        createDelete(KafkaBridge.class, "KafkaBridge-minimal.yaml");
-    }
-
-    @Test
-    void testKafkaBridgeWithExtraProperty() {
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-extra-property.yaml"));
-
-        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
+        createDeleteCustomResource("KafkaBridge-minimal.yaml");
     }
 
     @Test
     void testKafkaBridgeWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
-            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-missing-required-property.yaml"));
+            () -> createDeleteCustomResource("KafkaBridge-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "bootstrapServers");
     }
 
     @Test
     void testKafkaBridgeWithTls() {
-        createDelete(KafkaBridge.class, "KafkaBridge-with-tls.yaml");
+        createDeleteCustomResource("KafkaBridge-with-tls.yaml");
     }
 
     @Test
     void testKafkaBridgeWithTlsAuth() {
-        createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth.yaml");
+        createDeleteCustomResource("KafkaBridge-with-tls-auth.yaml");
     }
 
     @Test
     void testKafkaBridgeWithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-tls-auth-with-missing-required.yaml"));
+            () -> createDeleteCustomResource("KafkaBridge-with-tls-auth-with-missing-required.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.authentication.certificateAndKey.certificate",
                 "spec.authentication.certificateAndKey.key");
@@ -76,46 +73,67 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaBridgeWithScramSha512Auth() {
-        createDelete(KafkaBridge.class, "KafkaBridge-with-scram-sha-512-auth.yaml");
+        createDeleteCustomResource("KafkaBridge-with-scram-sha-512-auth.yaml");
     }
 
     @Test
     void testKafkaBridgeWithTemplate() {
-        createDelete(KafkaBridge.class, "KafkaBridge-with-template.yaml");
+        createDeleteCustomResource("KafkaBridge-with-template.yaml");
     }
 
     @Test
     void testKafkaBridgeWithJaegerTracing() {
-        createDelete(KafkaBridge.class, "KafkaBridge-with-jaeger-tracing.yaml");
+        createDeleteCustomResource("KafkaBridge-with-jaeger-tracing.yaml");
     }
 
     @Test
-    void testKafkaBridgeWithWrongTracingType() {
+    void testLoadKafkaBridgeWithWrongTracingType() {
+        Throwable exception = assertThrows(
+            RuntimeException.class,
+            () -> loadCustomResourceToYaml(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml"));
+
+        assertThat(exception.getMessage(), allOf(
+                containsStringIgnoringCase("Could not resolve type id 'wrongtype'"),
+                containsStringIgnoringCase("known type ids = [jaeger]")));
+    }
+
+    @Test
+    void testCreateKafkaBridgeWithWrongTracingType() {
         Throwable exception = assertThrows(
             KubeClusterException.InvalidResource.class,
-            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-wrong-tracing-type.yaml"));
+            () -> createDeleteCustomResource("KafkaBridge-with-wrong-tracing-type.yaml"));
 
         assertThat(exception.getMessage(), anyOf(
                 containsStringIgnoringCase("spec.tracing.type in body should be one of [jaeger]"),
                 containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\"")));
     }
 
+    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
+    @Test
+    void testCreateKafkaBridgeWithExtraProperty() {
+        Throwable exception = assertThrows(
+            KubeClusterException.class,
+            () -> createDeleteCustomResource("KafkaBridge-with-extra-property.yaml"));
+
+        assertThat(exception.getMessage(), containsString("unknown field \"extra\""));
+    }
+
     @Test
     void testKafkaBridgeWithMissingTracingType() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
-            () -> createDelete(KafkaBridge.class, "KafkaBridge-with-missing-tracing-type.yaml"));
+            () -> createDeleteCustomResource("KafkaBridge-with-missing-tracing-type.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "type");
     }
 
     @Test
     void testKafkaBridgeWithMetrics() {
-        createDelete(KafkaBridge.class, "KafkaBridge-with-metrics.yaml");
+        createDeleteCustomResource("KafkaBridge-with-metrics.yaml");
     }
 
     @BeforeAll
-    void setupEnvironment() {
+    void setupEnvironment() throws InterruptedException {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_BRIDGE);
         waitForCrd("crd", "kafkabridges.kafka.strimzi.io");

@@ -8,6 +8,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -25,7 +26,7 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaUserV1alpha1() {
-        createDelete(KafkaUser.class, "KafkaUserV1alpha1.yaml");
+        createDeleteCustomResource("KafkaUserV1alpha1.yaml");
     }
 
     @Test
@@ -35,19 +36,20 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaUserV1beta1() {
-        createDelete(KafkaUser.class, "KafkaUserV1beta1.yaml");
+        createDeleteCustomResource("KafkaUserV1beta1.yaml");
     }
 
     @Test
     void testKafkaUserMinimal() {
-        createDelete(KafkaUser.class, "KafkaUser-minimal.yaml");
+        createDeleteCustomResource("KafkaUser-minimal.yaml");
     }
 
+    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
     @Test
-    void testKafkaUserWithExtraProperty() {
+    void testCreateKafkaUserWithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
-            () -> createDelete(KafkaUser.class, "KafkaUser-with-extra-property.yaml"));
+            () -> createDeleteCustomResource("KafkaUser-with-extra-property.yaml"));
 
         assertThat(exception.getMessage(), containsString("unknown field \"thisPropertyIsNotInTheSchema\""));
     }

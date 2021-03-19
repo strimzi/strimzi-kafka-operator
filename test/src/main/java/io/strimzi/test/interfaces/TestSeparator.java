@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.interfaces;
+package io.strimzi.test.interfaces;
 
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;

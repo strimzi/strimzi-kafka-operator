@@ -20,7 +20,7 @@ public class KafkaConnectorCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaConnector() {
-        createDelete(KafkaConnector.class, "KafkaConnector.yaml");
+        createDeleteCustomResource("KafkaConnector.yaml");
     }
 
     @Test
