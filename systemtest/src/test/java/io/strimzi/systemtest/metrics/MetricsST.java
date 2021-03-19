@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -194,7 +195,7 @@ public class MetricsST extends AbstractST {
         assertThat("KafkaConnect IO network count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
-    @ParallelTest
+    @IsolatedTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
@@ -563,11 +564,10 @@ public class MetricsST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, bridgeTopic).build());
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
         kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
-        // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
+//      Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
         NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext);
         NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, metricsClusterName);
         NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, SECOND_CLUSTER);

@@ -222,10 +222,7 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
-        // TODO: how to solve this...???
-//        ResourceManager.setClassResources();
         resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
-//        ResourceManager.setMethodResources();
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         // check the ClusterRoleBinding annotations and labels in Kafka cluster
