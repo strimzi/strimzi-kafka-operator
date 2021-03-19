@@ -10,12 +10,12 @@ You can configure OAuth 2.0 authentication using one of the following authentica
 * SASL_OAUTHBEARER
 * SASL_PLAIN
 
-Both mechanisms establish an authenticated session with a Kafka broker. 
-However, the authentication flow between the Kafka client, the authorization server, and the Kafka broker is different for each mechanism.
+Both mechanisms allow Kafka clients to establish authenticated sessions with Kafka brokers. 
+However, the authentication flow between a client, the authorization server, and the Kafka broker is different for each mechanism.
 
 .SASL_OAUTHBEARER
 
-Support for the SASL_OAUTHBEARER mechanism is built in to many Kafka clients 
+Support for the SASL_OAUTHBEARER mechanism is built in to many Kafka clients.
 
 The client initiates a session with the Kafka broker using the SASL OAUTHBEARER mechanism for credentials exchange, where credentials take the form of a JWT access token.
 
@@ -34,6 +34,8 @@ SASL_PLAIN allows client authentication using either of the following methods:
 The client must enable SASL_PLAIN and set the `username` and `password`. 
 If the client sets `username` to `access-token`, the authorization server will interpret the password as the access token. 
 Otherwise, the authorization server will interpret the user as the `clientId` and the password as the client secret.
+
+Kafka brokers and clients both need to be configured to use OAuth 2.0. SASL_PLAIN must be enabled in the listener configuration for the Kafka broker.
 
 .Additional resources
 

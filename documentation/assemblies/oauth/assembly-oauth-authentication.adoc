@@ -5,7 +5,7 @@
 [id='assembly-oauth-authentication_{context}']
 = Using OAuth 2.0 token-based authentication
 
-Strimzi supports the use of OAuth 2.0 authentication using the _SASL OAUTHBEARER_ and _SASL_PLAIN_ mechanisma.
+Strimzi supports the use of OAuth 2.0 authentication using the _SASL_OAUTHBEARER_ and _SASL_PLAIN_ mechanisms.
 
 OAuth 2.0 enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
 
