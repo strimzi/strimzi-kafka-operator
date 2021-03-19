@@ -564,6 +564,7 @@ public class MetricsST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, bridgeTopic).build());
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
         kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
@@ -576,7 +577,7 @@ public class MetricsST extends AbstractST {
         NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, SECOND_CLUSTER);
 
         // Wait for Metrics refresh/values change
-        Thread.sleep(60_000);
+        Thread.sleep(100_000);
         kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(kafkaClientsPodName, metricsClusterName);
         deprecatedKafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(kafkaClientsPodName, metricsClusterName);
         zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(kafkaClientsPodName, metricsClusterName);
