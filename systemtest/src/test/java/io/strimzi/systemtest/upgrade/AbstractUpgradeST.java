@@ -25,6 +25,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.executor.Exec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +37,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -54,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class AbstractUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractUpgradeST.class);
+    private io.strimzi.systemtest.Constants systemtestConstants;
 
     protected File coDir = null;
     protected File kafkaTopicYaml = null;
@@ -108,10 +111,54 @@ public class AbstractUpgradeST extends AbstractST {
             procedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
             data.put("proceduresAfterOperatorUpgrade", procedures);
 
-            parameters.add(Arguments.of(data.getString("fromVersion"), "HEAD", data));
+            parameters.add(Arguments.of(data.getString("fromVersion"), "0.22.0", "HEAD", data));
         });
 
         return parameters.stream();
+    }
+
+    protected static List<JsonObject> buildMidStepUpgradeData(JsonObject jsonData) {
+        List<JsonObject> steps = new ArrayList<>();
+
+        // X -> 0.22.0 data
+        JsonObject midStep = JsonObject.mapFrom(jsonData);
+        midStep.put("urlTo", "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/strimzi-0.22.0.zip");
+        midStep.put("toVersion", "0.22.0");
+        midStep.put("toExamples", "strimzi-0.22.0");
+        midStep.put("urlToConversionTool", "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip");
+        midStep.put("toConversionTool", "api-conversion-0.22.0");
+
+        JsonObject midStepProcedures = new JsonObject();
+        midStepProcedures.put("kafkaVersion", "2.7.0");
+        midStepProcedures.put("logMessageVersion", "2.7");
+        midStepProcedures.put("interBrokerProtocolVersion", "2.7");
+        midStep.put("proceduresAfterOperatorUpgrade", midStepProcedures);
+
+        JsonObject midStepImages = new JsonObject();
+        midStepImages.put("zookeeper", "strimzi/kafka:0.22.0-kafka-2.7.0");
+        midStepImages.put("kafka", "strimzi/kafka:0.22.0-kafka-2.7.0");
+        midStepImages.put("topicOperator", "strimzi/operator:0.22.0");
+        midStepImages.put("userOperator", "strimzi/operator:0.22.0");
+        midStep.put("imagesAfterKafkaUpgrade", midStepImages);
+
+        steps.add(midStep);
+
+        // 0.22.0 -> HEAD
+        JsonObject afterMidStep = JsonObject.mapFrom(jsonData);
+        afterMidStep.put("urlFrom", "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/strimzi-0.22.0.zip");
+        afterMidStep.put("fromVersion", "0.22.0");
+        afterMidStep.put("fromExamples", "strimzi-0.22.0");
+
+        JsonObject afterMidStepImages = new JsonObject();
+        afterMidStepImages.put("zookeeper", "strimzi/kafka:0.22.0-kafka-2.6.0");
+        afterMidStepImages.put("kafka", "strimzi/kafka:0.22.0-kafka-2.6.0");
+        afterMidStepImages.put("topicOperator", "strimzi/operator:0.22.0");
+        afterMidStepImages.put("userOperator", "strimzi/operator:0.22.0");
+        afterMidStep.put("imagesBeforeKafkaUpgrade", midStepImages);
+
+        steps.add(afterMidStep);
+
+        return steps;
     }
 
     protected static Stream<Arguments> loadJsonDowngradeData() {
@@ -484,10 +531,32 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected String getResourceApiVersion(String resourcePlural, String coVersion) {
-        if (coVersion.equals("HEAD") || TestKafkaVersion.compareDottedVersions(coVersion, "0.22.0") == -1) {
-            return resourcePlural + "." + Constants.V1BETA1 + "." + Constants.STRIMZI_GROUP;
-        } else {
+        if (coVersion.equals("HEAD") || TestKafkaVersion.compareDottedVersions(coVersion, "0.22.0") == 1) {
             return resourcePlural + "." + Constants.V1BETA2 + "." + Constants.STRIMZI_GROUP;
+        } else {
+            return resourcePlural + "." + Constants.V1BETA1 + "." + Constants.STRIMZI_GROUP;
         }
+    }
+
+    protected void convertCRDs(JsonObject midStep, String namespace) throws IOException {
+        String url = midStep.getString("urlToConversionTool");
+        File dir = FileUtils.downloadAndUnzip(url);
+        String convertorPath = dir.getAbsolutePath() + "/" + midStep.getString("toConversionTool") + "/bin/api-conversion.sh";
+
+        Exec.exec("chmod", "+x", convertorPath);
+
+        LOGGER.info("Converting CRs");
+        // run conversion of crs
+        Exec.exec(convertorPath, "cr", "-n=" + namespace);
+        // run crd-upgrade
+        LOGGER.info("Converting CRDs");
+        Exec.exec(convertorPath, "crd");
+
+        waitForKafkaCRDChange();
+    }
+
+    protected void waitForKafkaCRDChange() {
+        TestUtils.waitFor("Kafka CRD kafkas.kafka.strimzi.io will change it's api version", systemtestConstants.GLOBAL_POLL_INTERVAL, systemtestConstants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().exec(true, false, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.status.storedVersions}").out().trim().contains(Constants.V1BETA2));
     }
 }
