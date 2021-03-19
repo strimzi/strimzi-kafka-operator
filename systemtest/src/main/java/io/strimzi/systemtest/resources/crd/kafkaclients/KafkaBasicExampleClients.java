@@ -269,7 +269,7 @@ public class KafkaBasicExampleClients {
                         .withLabels(consumerLabels)
                     .endMetadata()
                     .withNewSpec()
-                        .withRestartPolicy("OnFailure")
+                        .withRestartPolicy("Never")
                             .withContainers()
                                 .addNewContainer()
                                     .withName(consumerName)

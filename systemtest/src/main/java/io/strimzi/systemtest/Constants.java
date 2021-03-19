@@ -125,6 +125,7 @@ public interface Constants {
      * Basic paths to examples
      */
     String PATH_TO_PACKAGING_EXAMPLES = TestUtils.USER_PATH + "/../packaging/examples";
+    String PATH_TO_PACKAGING_INSTALL_FILES = TestUtils.USER_PATH + "/../packaging/install";
 
     /**
      * File paths for metrics YAMLs
