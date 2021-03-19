@@ -4,6 +4,7 @@
  */
 package io.strimzi.kafka.api.conversion.cli;
 
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -74,7 +75,11 @@ public class CrdUpgradeCommandIT {
                             .endEphemeralStorage()
                             .withNewJmxPrometheusExporterMetricsConfig()
                                 .withNewValueFrom()
-                                    .withNewConfigMapKeyRef("zoo-metrics", "metrics-cm", false)
+                                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                                            .withKey("zoo-metrics")
+                                            .withName("metrics-cm")
+                                            .withOptional(false)
+                                            .build())
                                 .endValueFrom()
                             .endJmxPrometheusExporterMetricsConfig()
                         .endZookeeper()
@@ -100,7 +105,11 @@ public class CrdUpgradeCommandIT {
                             .endEphemeralStorage()
                             .withNewJmxPrometheusExporterMetricsConfig()
                                 .withNewValueFrom()
-                                    .withNewConfigMapKeyRef("kafka-metrics", "metrics-cm", false)
+                                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                                            .withKey("kafka-metrics")
+                                            .withName("metrics-cm")
+                                            .withOptional(false)
+                                            .build())
                                 .endValueFrom()
                             .endJmxPrometheusExporterMetricsConfig()
                         .endKafka()
