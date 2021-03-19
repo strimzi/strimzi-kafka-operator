@@ -35,7 +35,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
     @Override
     public String getKind() {
-        return "NetworkPolicy";
+        return Constants.NETWORK_POLICY;
     }
     @Override
     public NetworkPolicy get(String namespace, String name) {
@@ -165,7 +165,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withNewApiVersion("networking.k8s.io/v1")
-            .withNewKind("NetworkPolicy")
+            .withNewKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName(resource.getMetadata().getName() + "-allow")
                 .withNamespace(resource.getMetadata().getNamespace())

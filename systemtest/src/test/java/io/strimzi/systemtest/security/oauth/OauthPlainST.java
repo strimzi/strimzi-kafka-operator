@@ -96,16 +96,21 @@ public class OauthPlainST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
-    @Test
-    void testSaslPlainProducerConsumer() {
+    @ParallelTest
+    void testSaslPlainProducerConsumer(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + clusterName;
+        String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+
         String plainAdditionalConfig =
             "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=%s password=%s;\n" +
                 "sasl.mechanism=PLAIN";
 
         KafkaOauthExampleClients plainSaslOauthConsumerClientsJob = new KafkaOauthExampleClients.Builder()
-            .withConsumerName(OAUTH_CLIENT_AUDIENCE_CONSUMER)
+            .withConsumerName(audienceConsumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withOAuthClientId(OAUTH_CLIENT_NAME)
             .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
@@ -114,9 +119,9 @@ public class OauthPlainST extends OauthAbstractST {
             .build();
 
         KafkaOauthExampleClients plainSaslOauthProducerClientsJob = new KafkaOauthExampleClients.Builder()
-            .withProducerName(OAUTH_CLIENT_AUDIENCE_PRODUCER)
+            .withProducerName(audienceProducerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withOAuthClientId(OAUTH_CLIENT_NAME)
             .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
@@ -124,11 +129,11 @@ public class OauthPlainST extends OauthAbstractST {
             .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_PRODUCER, OAUTH_CLIENT_AUDIENCE_SECRET))
             .build();
 
-        plainSaslOauthProducerClientsJob.createAndWaitForReadiness(plainSaslOauthProducerClientsJob.producerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_PRODUCER, NAMESPACE, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, plainSaslOauthProducerClientsJob.producerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(audienceProducerName, NAMESPACE, MESSAGE_COUNT);
 
-        plainSaslOauthConsumerClientsJob.createAndWaitForReadiness(plainSaslOauthConsumerClientsJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientSuccess(OAUTH_CLIENT_AUDIENCE_CONSUMER, NAMESPACE, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, plainSaslOauthConsumerClientsJob.consumerStrimziOauthPlain().build());
+        ClientUtils.waitForClientSuccess(audienceConsumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     @ParallelTest

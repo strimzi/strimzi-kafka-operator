@@ -782,7 +782,7 @@ public class TracingST extends AbstractST {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withNewApiVersion("networking.k8s.io/v1")
-            .withNewKind("NetworkPolicy")
+            .withNewKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
             .endMetadata()

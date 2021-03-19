@@ -7,6 +7,7 @@ package io.strimzi.systemtest.templates.kubernetes;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +31,7 @@ public class NetworkPolicyTemplates {
     public static NetworkPolicyBuilder networkPolicyBuilder(String name, LabelSelector labelSelector) {
         return new NetworkPolicyBuilder()
             .withNewApiVersion("networking.k8s.io/v1")
-                .withNewKind("NetworkPolicy")
+                .withNewKind(Constants.NETWORK_POLICY)
                     .withNewMetadata()
                         .withName(name + "-allow")
                         .withNamespace(kubeClient().getNamespace())
@@ -48,7 +49,7 @@ public class NetworkPolicyTemplates {
     public static NetworkPolicy applyDefaultNetworkPolicy(ExtensionContext extensionContext, String namespace, DefaultNetworkPolicy policy) {
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withNewApiVersion("networking.k8s.io/v1")
-            .withNewKind("NetworkPolicy")
+            .withNewKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("global-network-policy")
                 .withNamespace(namespace)

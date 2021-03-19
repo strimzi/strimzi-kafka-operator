@@ -194,11 +194,11 @@ public class ResourceManager {
         while (!timeout.timeoutExpired()) {
             T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             if (condition.test(res)) {
-                LOGGER.info("Resource {} in namespace {} is {}}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
+                LOGGER.info("Resource {} in namespace {} is {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
                 return true;
             }
             try {
-                Thread.sleep(1000);
+                Thread.sleep(Duration.ofSeconds(1).toMillis());
             } catch (InterruptedException e) {
                 LOGGER.info("Resource {} in namespace {} is not {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
                 Thread.currentThread().interrupt();
@@ -222,7 +222,7 @@ public class ResourceManager {
         try {
             return MAPPER.writeValueAsString(resource);
         } catch (JsonProcessingException e) {
-            LOGGER.error("Resource {} failed converting resource to YAML: {}", resource.getMetadata().getName(), e.getMessage());
+            LOGGER.error("Resource {} is not convertible to YAML: {}", resource.getMetadata().getName(), e.getMessage());
             return "unknown";
         }
     }

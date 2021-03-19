@@ -6,6 +6,7 @@ package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.test.TestUtils;
@@ -19,7 +20,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
 
     @Override
     public String getKind() {
-        return "ClusterRoleBinding";
+        return Constants.CLUSTER_ROLE_BINDING;
     }
     @Override
     public ClusterRoleBinding get(String namespace, String name) {

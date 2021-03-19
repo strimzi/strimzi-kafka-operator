@@ -6,6 +6,7 @@ package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -20,7 +21,7 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
 
     @Override
     public String getKind() {
-        return "RoleBinding";
+        return Constants.ROLE_BINDING;
     }
     @Override
     public RoleBinding get(String namespace, String name) {

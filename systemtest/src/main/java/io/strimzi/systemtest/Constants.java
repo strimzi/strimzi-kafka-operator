@@ -101,6 +101,7 @@ public interface Constants {
     String KAFKA_CRUISE_CONTROL_DEPLOYMENT = "KafkaWithCruiseControl";
     String STATEFUL_SET = "StatefulSet";
     String POD = "Pod";
+    String NETWORK_POLICY = "NetworkPolicy";
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format

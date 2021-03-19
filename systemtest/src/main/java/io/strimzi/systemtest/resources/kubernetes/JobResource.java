@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 
-
 public class JobResource implements ResourceType<Job> {
 
     @Override

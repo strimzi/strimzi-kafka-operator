@@ -18,7 +18,6 @@ public class DeploymentResource implements ResourceType<Deployment> {
 
     private static final Logger LOGGER = LogManager.getLogger(DeploymentResource.class);
 
-
     @Override
     public String getKind() {
         return Constants.DEPLOYMENT;
