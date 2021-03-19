@@ -69,7 +69,7 @@ public class ClientUtils {
             if (kubeClient().namespace(namespace).getJobStatus(jobName).getFailed().equals(1)) {
                 LOGGER.debug("Job finished with 1 failed pod (expected - timeout).");
             } else {
-                throw new UnexpectedException("Job did not finish with 1 failed pod (not expected).");
+                throw new UnexpectedException("Job finished (unexpectedly) with 1 successful pod.");
             }
         } catch (WaitException e) {
             if (e.getMessage().contains("Timeout after ")) {
