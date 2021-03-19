@@ -33,7 +33,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -74,7 +73,6 @@ public class OauthPlainST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, NAMESPACE, MESSAGE_COUNT);
     }
 
-    @Disabled("Example Kafka Clients do not support this yet - https://github.com/strimzi/client-examples/pull/54")
     @Test
     void testSaslPlainProducerConsumer() {
         String plainAdditionalConfig =
