@@ -72,6 +72,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -1042,12 +1043,12 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("There should be no more messages to read. Try to consume at least 1 message. " +
                 "This client job should fail on timeout.");
         initialInternalClientTargetJob.createAndWaitForReadiness(initialInternalClientTargetJob.consumerStrimzi().build());
-        ClientUtils.waitForClientTimeout(targetConsumerName, NAMESPACE, 1);
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(targetConsumerName, NAMESPACE, 1));
 
         LOGGER.info("As it's Active-Active MM2 mode, there should be no more messages to read from Source cluster" +
                 " topic. This client job should fail on timeout.");
         initialInternalClientSourceJob.createAndWaitForReadiness(initialInternalClientSourceJob.consumerStrimzi().build());
-        ClientUtils.waitForClientTimeout(sourceConsumerName, NAMESPACE, 1);
+        assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(sourceConsumerName, NAMESPACE, 1));
     }
 
     @BeforeAll

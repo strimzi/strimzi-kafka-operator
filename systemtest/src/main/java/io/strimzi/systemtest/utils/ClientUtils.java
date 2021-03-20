@@ -11,6 +11,7 @@ import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.rmi.UnexpectedException;
 import java.time.Duration;
 import java.util.Random;
 
@@ -51,20 +52,25 @@ public class ClientUtils {
     public static void waitTillContinuousClientsFinish(String producerName, String consumerName, String namespace, int messageCount) {
         LOGGER.info("Waiting till producer {} and consumer {} finish", producerName, consumerName);
         TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().getJobStatus(producerName) && kubeClient().getJobStatus(consumerName));
+            () -> kubeClient().checkSucceededJobStatus(producerName) && kubeClient().checkSucceededJobStatus(consumerName));
     }
 
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
         LOGGER.info("Waiting for producer/consumer:{} to finished", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().namespace(namespace).getJobStatus(jobName));
+            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
     }
 
-    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) {
+    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) throws UnexpectedException {
         LOGGER.info("Waiting for producer/consumer:{} to finish with failure.", jobName);
         try {
             TestUtils.waitFor("Job did not finish within time limit (as expected).", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-                () -> kubeClient().namespace(namespace).getJobStatus(jobName));
+                () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
+            if (kubeClient().namespace(namespace).getJobStatus(jobName).getFailed().equals(1)) {
+                LOGGER.debug("Job finished with 1 failed pod (expected - timeout).");
+            } else {
+                throw new UnexpectedException("Job finished (unexpectedly) with 1 successful pod.");
+            }
         } catch (WaitException e) {
             if (e.getMessage().contains("Timeout after ")) {
                 LOGGER.info("Client job '{}' finished with expected timeout.", jobName);
