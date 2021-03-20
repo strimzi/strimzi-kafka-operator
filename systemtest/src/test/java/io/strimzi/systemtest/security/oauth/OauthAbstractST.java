@@ -77,6 +77,7 @@ public class OauthAbstractST extends AbstractST {
 
         KeycloakUtils.deployKeycloak(extensionContext, namespace);
 
+        SecretUtils.waitForSecretReady("credential-example-keycloak");
         String passwordEncoded = kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_PASSWORD");
         String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
         keycloakInstance = new KeycloakInstance("admin", password, namespace);
