@@ -19,9 +19,6 @@ import io.strimzi.systemtest.resources.ResourceType;
 import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.interfaces.TestSeparator.LOGGER;
-import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaResource implements ResourceType<Kafka> {
 
