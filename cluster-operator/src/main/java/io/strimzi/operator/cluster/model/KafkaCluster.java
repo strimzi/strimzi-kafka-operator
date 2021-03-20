@@ -858,15 +858,19 @@ public class KafkaCluster extends AbstractModel {
                 if (loadBalancerIP != null) {
                     service.getSpec().setLoadBalancerIP(loadBalancerIP);
                 }
-            }
 
-            if (KafkaListenerType.LOADBALANCER == listener.getType()) {
                 List<String> loadBalancerSourceRanges = ListenersUtils.loadBalancerSourceRanges(listener);
                 if (loadBalancerSourceRanges != null
                         && !loadBalancerSourceRanges.isEmpty()) {
                     service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
                 } else if (templateExternalBootstrapServiceLoadBalancerSourceRanges != null) {
                     service.getSpec().setLoadBalancerSourceRanges(templateExternalBootstrapServiceLoadBalancerSourceRanges);
+                }
+
+                List<String> finalizers = ListenersUtils.finalizers(listener);
+                if (finalizers != null
+                        && !finalizers.isEmpty()) {
+                    service.getMetadata().setFinalizers(finalizers);
                 }
             }
 
@@ -922,15 +926,19 @@ public class KafkaCluster extends AbstractModel {
                 if (loadBalancerIP != null) {
                     service.getSpec().setLoadBalancerIP(loadBalancerIP);
                 }
-            }
 
-            if (KafkaListenerType.LOADBALANCER == listener.getType()) {
                 List<String> loadBalancerSourceRanges = ListenersUtils.loadBalancerSourceRanges(listener);
                 if (loadBalancerSourceRanges != null
                         && !loadBalancerSourceRanges.isEmpty()) {
                     service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
                 } else if (templatePerPodServiceLoadBalancerSourceRanges != null) {
                     service.getSpec().setLoadBalancerSourceRanges(templatePerPodServiceLoadBalancerSourceRanges);
+                }
+
+                List<String> finalizers = ListenersUtils.finalizers(listener);
+                if (finalizers != null
+                        && !finalizers.isEmpty()) {
+                    service.getMetadata().setFinalizers(finalizers);
                 }
             }
 

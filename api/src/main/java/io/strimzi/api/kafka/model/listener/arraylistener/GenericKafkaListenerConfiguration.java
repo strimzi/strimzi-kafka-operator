@@ -44,6 +44,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     private NodeAddressType preferredNodePortAddressType;
     private ExternalTrafficPolicy externalTrafficPolicy;
     private List<String> loadBalancerSourceRanges = new ArrayList<>(0);
+    private List<String> finalizers;
     private Boolean useServiceDnsDomain;
     private GenericKafkaListenerConfigurationBootstrap bootstrap;
     private List<GenericKafkaListenerConfigurationBroker> brokers;
@@ -121,6 +122,19 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
 
     public void setLoadBalancerSourceRanges(List<String> loadBalancerSourceRanges) {
         this.loadBalancerSourceRanges = loadBalancerSourceRanges;
+    }
+
+    @Description("A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. " +
+            "If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service." +
+            "For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. " +
+            "This field can be used only with `loadbalancer` type listeners.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<String> getFinalizers() {
+        return finalizers;
+    }
+
+    public void setFinalizers(List<String> finalizers) {
+        this.finalizers = finalizers;
     }
 
     @Description("Configures whether the Kubernetes service DNS domain should be used or not. " +

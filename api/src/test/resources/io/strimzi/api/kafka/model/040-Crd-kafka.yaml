@@ -467,6 +467,18 @@ spec:
                                 can be used only with `ingress` type listener. If
                                 not specified, the default Ingress controller will
                                 be used.
+                            finalizers:
+                              type: array
+                              items:
+                                type: string
+                              description: A list of finalizers which will be configured
+                                for the `LoadBalancer` type Services created for this
+                                listener. If supported by the platform, the finalizer
+                                `service.kubernetes.io/load-balancer-cleanup` to make
+                                sure that the external load balancer is deleted together
+                                with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers.
+                                This field can be used only with `loadbalancer` type
+                                listeners.
                             preferredNodePortAddressType:
                               type: string
                               enum:
@@ -6306,6 +6318,19 @@ spec:
                                   can be used only with `ingress` type listener. If
                                   not specified, the default Ingress controller will
                                   be used.
+                              finalizers:
+                                type: array
+                                items:
+                                  type: string
+                                description: A list of finalizers which will be configured
+                                  for the `LoadBalancer` type Services created for
+                                  this listener. If supported by the platform, the
+                                  finalizer `service.kubernetes.io/load-balancer-cleanup`
+                                  to make sure that the external load balancer is
+                                  deleted together with the service.For more information,
+                                  see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers.
+                                  This field can be used only with `loadbalancer`
+                                  type listeners.
                               preferredNodePortAddressType:
                                 type: string
                                 enum:
@@ -14681,6 +14706,19 @@ spec:
                                   can be used only with `ingress` type listener. If
                                   not specified, the default Ingress controller will
                                   be used.
+                              finalizers:
+                                type: array
+                                items:
+                                  type: string
+                                description: A list of finalizers which will be configured
+                                  for the `LoadBalancer` type Services created for
+                                  this listener. If supported by the platform, the
+                                  finalizer `service.kubernetes.io/load-balancer-cleanup`
+                                  to make sure that the external load balancer is
+                                  deleted together with the service.For more information,
+                                  see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers.
+                                  This field can be used only with `loadbalancer`
+                                  type listeners.
                               preferredNodePortAddressType:
                                 type: string
                                 enum:

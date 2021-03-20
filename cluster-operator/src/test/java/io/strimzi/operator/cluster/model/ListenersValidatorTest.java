@@ -236,6 +236,7 @@ public class ListenersValidatorTest {
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
+                    .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
                     .withNewBootstrap()
                         .withAlternativeNames(asList("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -273,6 +274,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
                 "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
@@ -303,6 +305,7 @@ public class ListenersValidatorTest {
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
+                    .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
                     .withNewBootstrap()
                         .withAlternativeNames(asList("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -360,6 +363,7 @@ public class ListenersValidatorTest {
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
+                    .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
                     .withNewBootstrap()
                         .withAlternativeNames(asList("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -394,6 +398,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
@@ -438,6 +443,7 @@ public class ListenersValidatorTest {
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
+                    .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
                     .withNewBootstrap()
                         .withAlternativeNames(asList("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -476,6 +482,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
                 "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
@@ -534,6 +541,7 @@ public class ListenersValidatorTest {
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
+                    .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
                     .withNewBootstrap()
                         .withAlternativeNames(asList("my-name-1", "my-name-2"))
                         .withLoadBalancerIP("130.211.204.1")
@@ -568,6 +576,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
                 "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
