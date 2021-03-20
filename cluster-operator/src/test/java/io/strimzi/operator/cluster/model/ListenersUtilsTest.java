@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -558,14 +557,14 @@ public class ListenersUtilsTest {
 
     @Test
     public void testLoadBalancerSourceRanges() {
-        assertThat(ListenersUtils.loadBalancerSourceRanges(newLoadBalancer), is(emptyList()));
-        assertThat(ListenersUtils.loadBalancerSourceRanges(oldExternal), is(emptyList()));
-        assertThat(ListenersUtils.loadBalancerSourceRanges(newLoadBalancer), is(emptyList()));
+        assertThat(ListenersUtils.loadBalancerSourceRanges(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.loadBalancerSourceRanges(oldExternal), is(nullValue()));
+        assertThat(ListenersUtils.loadBalancerSourceRanges(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.loadBalancerSourceRanges(newLoadBalancer2), containsInAnyOrder("10.0.0.0/8", "130.211.204.1/32"));
-        assertThat(ListenersUtils.loadBalancerSourceRanges(oldPlain), is(emptyList()));
-        assertThat(ListenersUtils.loadBalancerSourceRanges(newTls), is(emptyList()));
-        assertThat(ListenersUtils.loadBalancerSourceRanges(newNodePort), is(emptyList()));
-        assertThat(ListenersUtils.loadBalancerSourceRanges(newNodePort3), is(emptyList()));
+        assertThat(ListenersUtils.loadBalancerSourceRanges(oldPlain), is(nullValue()));
+        assertThat(ListenersUtils.loadBalancerSourceRanges(newTls), is(nullValue()));
+        assertThat(ListenersUtils.loadBalancerSourceRanges(newNodePort), is(nullValue()));
+        assertThat(ListenersUtils.loadBalancerSourceRanges(newNodePort3), is(nullValue()));
     }
 
     @Test

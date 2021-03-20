@@ -535,7 +535,7 @@ public class ListenersUtils {
         if (listener.getConfiguration() != null) {
             return listener.getConfiguration().getLoadBalancerSourceRanges();
         } else {
-            return Collections.emptyList();
+            return null;
         }
     }
 
