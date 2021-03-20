@@ -66,7 +66,7 @@ public class ClientUtils {
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> {
                 LOGGER.info("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(jobName));
-                return kubeClient().namespace(namespace).checkSucceededJobStatus(jobName)
+                return kubeClient().namespace(namespace).checkSucceededJobStatus(jobName);
             });
     }
 
