@@ -122,6 +122,17 @@ public class KafkaConnectResources {
     }
 
     /**
+     * Returns the name of the Kafka Connect Build {@code ServiceAccount} for a {@code KafkaConnect} cluster of the given name.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
+     *
+     * @return The name of the corresponding Kafka Connect Build {@code ServiceAccount}.
+     */
+    public static String buildServiceAccountName(String clusterName) {
+        return deploymentName(clusterName) + "-build";
+    }
+
+    /**
      * Returns the name of the Kafka Connect {@code BuildConfig} for a {@code KafkaConnect} build that builds the new image.
      *
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.

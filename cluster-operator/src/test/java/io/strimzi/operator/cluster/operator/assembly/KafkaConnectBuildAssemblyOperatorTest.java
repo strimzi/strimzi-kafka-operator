@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ContainerStatusBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -45,6 +46,7 @@ import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -135,6 +137,7 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
+        ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
@@ -165,6 +168,10 @@ public class KafkaConnectBuildAssemblyOperatorTest {
         when(mockCmOps.reconcile(anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<ConfigMap> dockerfileCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         when(mockCmOps.reconcile(anyString(), eq(KafkaConnectResources.dockerFileConfigMapName(NAME)), dockerfileCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+
+        // Mock and capture SA ops
+        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
+        when(mockSaOps.reconcile(anyString(), anyString(), saCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ServiceAccount())));
 
         // Mock and capture Pod ops
         ArgumentCaptor<Pod> builderPodCaptor = ArgumentCaptor.forClass(Pod.class);
@@ -223,6 +230,14 @@ public class KafkaConnectBuildAssemblyOperatorTest {
                 ConfigMap dockerfileCm = capturedCms.get(0);
                 assertThat(dockerfileCm.getData().containsKey("Dockerfile"), is(true));
                 assertThat(dockerfileCm.getData().get("Dockerfile"), is(build.generateDockerfile().getDockerfile()));
+
+                // Verify Service Account
+                List<ServiceAccount> capturedSas = saCaptor.getAllValues();
+                assertThat(capturedSas, hasSize(2));
+                ServiceAccount sa = capturedSas.get(0);
+                assertThat(sa.getMetadata().getName(), is(KafkaConnectResources.serviceAccountName(NAME)));
+                sa = capturedSas.get(1);
+                assertThat(sa.getMetadata().getName(), is(KafkaConnectResources.buildServiceAccountName(NAME)));
 
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();

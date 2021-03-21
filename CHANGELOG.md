@@ -5,6 +5,7 @@
 
 * Add support for configuring finalizers for `loadbalancer` type listeners
 * Remove support for Kafka 2.5.x
+* Use dedicated Service Account for Kafka Connect Build on Kubernetes 
 * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
 * Migrate to CRD v1 (required by Kubernetes 1.22+)
 
