@@ -100,31 +100,44 @@ public class AbstractUpgradeST extends AbstractST {
 
         upgradeData.forEach(jsonData -> {
             JsonObject data = (JsonObject) jsonData;
-            data.put("urlTo", "HEAD");
-            data.put("toVersion", "HEAD");
-            data.put("toExamples", "HEAD");
 
-            // Generate procedures for upgrade
-            JsonObject procedures = new JsonObject();
-            procedures.put("kafkaVersion", testKafkaVersion.version());
-            procedures.put("logMessageVersion", testKafkaVersion.messageVersion());
-            procedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
-            data.put("proceduresAfterOperatorUpgrade", procedures);
+            if (!data.getBoolean("useAsMidStep")) {
+                data.put("urlTo", "HEAD");
+                data.put("toVersion", "HEAD");
+                data.put("toExamples", "HEAD");
 
-            parameters.add(Arguments.of(data.getString("fromVersion"), "0.22.0", "HEAD", data));
+                // Generate procedures for upgrade
+                JsonObject procedures = new JsonObject();
+                procedures.put("kafkaVersion", testKafkaVersion.version());
+                procedures.put("logMessageVersion", testKafkaVersion.messageVersion());
+                procedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
+                data.put("proceduresAfterOperatorUpgrade", procedures);
+
+                parameters.add(Arguments.of(data.getString("fromVersion"), "0.22.0", "HEAD", data));
+            }
         });
 
         return parameters.stream();
     }
 
     protected static List<JsonObject> buildMidStepUpgradeData(JsonObject jsonData) {
+        JsonArray jsonArray = readUpgradeJson(UPGRADE_JSON_FILE);
+        JsonObject midStepJson = (JsonObject) jsonArray.stream()
+            .filter(version -> JsonObject.mapFrom(version).getBoolean("useAsMidStep")).findFirst().get();
+
         List<JsonObject> steps = new ArrayList<>();
+
+        String url = midStepJson.getString("fromUrl");
+        String version = midStepJson.getString("fromVersion");
+        String examples = midStepJson.getString("fromExamples");
+
+        JsonObject images = midStepJson.getJsonObject("imagesAfterKafkaUpgrade");
 
         // X -> 0.22.0 data
         JsonObject midStep = JsonObject.mapFrom(jsonData);
-        midStep.put("urlTo", "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/strimzi-0.22.0.zip");
-        midStep.put("toVersion", "0.22.0");
-        midStep.put("toExamples", "strimzi-0.22.0");
+        midStep.put("urlTo", url);
+        midStep.put("toVersion", version);
+        midStep.put("toExamples", examples);
         midStep.put("urlToConversionTool", "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip");
         midStep.put("toConversionTool", "api-conversion-0.22.0");
 
@@ -134,27 +147,17 @@ public class AbstractUpgradeST extends AbstractST {
         midStepProcedures.put("interBrokerProtocolVersion", "2.7");
         midStep.put("proceduresAfterOperatorUpgrade", midStepProcedures);
 
-        JsonObject midStepImages = new JsonObject();
-        midStepImages.put("zookeeper", "strimzi/kafka:0.22.0-kafka-2.7.0");
-        midStepImages.put("kafka", "strimzi/kafka:0.22.0-kafka-2.7.0");
-        midStepImages.put("topicOperator", "strimzi/operator:0.22.0");
-        midStepImages.put("userOperator", "strimzi/operator:0.22.0");
-        midStep.put("imagesAfterKafkaUpgrade", midStepImages);
+        midStep.put("imagesAfterKafkaUpgrade", images);
 
         steps.add(midStep);
 
         // 0.22.0 -> HEAD
         JsonObject afterMidStep = JsonObject.mapFrom(jsonData);
-        afterMidStep.put("urlFrom", "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/strimzi-0.22.0.zip");
-        afterMidStep.put("fromVersion", "0.22.0");
-        afterMidStep.put("fromExamples", "strimzi-0.22.0");
+        afterMidStep.put("urlFrom", url);
+        afterMidStep.put("fromVersion", version);
+        afterMidStep.put("fromExamples", examples);
 
-        JsonObject afterMidStepImages = new JsonObject();
-        afterMidStepImages.put("zookeeper", "strimzi/kafka:0.22.0-kafka-2.6.0");
-        afterMidStepImages.put("kafka", "strimzi/kafka:0.22.0-kafka-2.6.0");
-        afterMidStepImages.put("topicOperator", "strimzi/operator:0.22.0");
-        afterMidStepImages.put("userOperator", "strimzi/operator:0.22.0");
-        afterMidStep.put("imagesBeforeKafkaUpgrade", midStepImages);
+        afterMidStep.put("imagesBeforeKafkaUpgrade", images);
 
         steps.add(afterMidStep);
 
@@ -531,7 +534,7 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected String getResourceApiVersion(String resourcePlural, String coVersion) {
-        if (coVersion.equals("HEAD") || TestKafkaVersion.compareDottedVersions(coVersion, "0.22.0") == 1) {
+        if (coVersion.equals("HEAD") || TestKafkaVersion.compareDottedVersions(coVersion, "0.22.0") >= 0) {
             return resourcePlural + "." + Constants.V1BETA2 + "." + Constants.STRIMZI_GROUP;
         } else {
             return resourcePlural + "." + Constants.V1BETA1 + "." + Constants.STRIMZI_GROUP;
