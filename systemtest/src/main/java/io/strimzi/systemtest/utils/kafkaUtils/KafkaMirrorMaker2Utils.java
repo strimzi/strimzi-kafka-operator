@@ -21,16 +21,16 @@ public class KafkaMirrorMaker2Utils {
      * @param clusterName name of KafkaMirrorMaker2 cluster
      * @param state desired state
      */
-    public static void waitForKafkaMirrorMaker2Status(String clusterName, Enum<?>  state) {
+    public static boolean waitForKafkaMirrorMaker2Status(String clusterName, Enum<?>  state) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-        ResourceManager.waitForResourceStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
+        return ResourceManager.waitForResourceStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
     }
 
-    public static void waitForKafkaMirrorMaker2Ready(String clusterName) {
-        waitForKafkaMirrorMaker2Status(clusterName, Ready);
+    public static boolean waitForKafkaMirrorMaker2Ready(String clusterName) {
+        return waitForKafkaMirrorMaker2Status(clusterName, Ready);
     }
 
-    public static void waitForKafkaMirrorMaker2NotReady(String clusterName) {
-        waitForKafkaMirrorMaker2Status(clusterName, NotReady);
+    public static boolean waitForKafkaMirrorMaker2NotReady(String clusterName) {
+        return waitForKafkaMirrorMaker2Status(clusterName, NotReady);
     }
 }

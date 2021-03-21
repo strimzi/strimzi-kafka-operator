@@ -11,7 +11,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
@@ -59,17 +61,17 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static void waitForKafkaReady(String clusterName) {
-        waitForKafkaStatus(clusterName, Ready);
+    public static boolean waitForKafkaReady(String clusterName) {
+        return waitForKafkaStatus(clusterName, Ready);
     }
 
     public static void waitForKafkaNotReady(String clusterName) {
         waitForKafkaStatus(clusterName, NotReady);
     }
 
-    public static void waitForKafkaStatus(String clusterName, Enum<?>  state) {
+    public static boolean waitForKafkaStatus(String clusterName, Enum<?>  state) {
         Kafka kafka = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-        ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
+        return ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }
 
     /**
@@ -92,7 +94,8 @@ public class KafkaUtils {
             Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
-                    if (condition.getMessage().matches(message)) {
+                    String conditionMessage = condition.getMessage();
+                    if (conditionMessage.matches(message)) {
                         return true;
                     }
                 }
@@ -377,6 +380,30 @@ public class KafkaUtils {
                 }
             },
             () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).get()));
+    }
+
+    public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName, String listenerName) {
+        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
+
+        GenericKafkaListener tlsListener = listenerName == null || listenerName.isEmpty() ?
+            listeners.stream().filter(listener -> Constants.TLS_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
+            listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
+        return tlsListener.getConfiguration() == null ?
+            KafkaResources.clusterCaCertificateSecretName(clusterName) : tlsListener.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+    }
+
+    public static String getKafkaExternalListenerCaCertName(String namespace, String clusterName, String listenerName) {
+        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().newOrConverted();
+
+        GenericKafkaListener external = listenerName == null || listenerName.isEmpty() ?
+            listeners.stream().filter(listener -> Constants.EXTERNAL_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
+            listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
+        return external.getConfiguration() == null ?
+            KafkaResources.clusterCaCertificateSecretName(clusterName) : external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+    }
+
+    public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {
+        return KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus();
     }
 
     public static String changeOrRemoveKafkaVersion(File file, String version) {

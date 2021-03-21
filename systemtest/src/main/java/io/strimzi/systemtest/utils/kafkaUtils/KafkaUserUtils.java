@@ -91,17 +91,17 @@ public class KafkaUserUtils {
      * @param userName name of KafkaUser
      * @param state desired state
      */
-    public static void waitForKafkaUserStatus(String userName, Enum<?> state) {
+    public static boolean waitForKafkaUserStatus(String userName, Enum<?> state) {
         KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
-        ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, state);
+        return ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, state);
     }
 
-    public static void waitForKafkaUserReady(String userName) {
-        waitForKafkaUserStatus(userName, Ready);
+    public static boolean waitForKafkaUserReady(String userName) {
+        return waitForKafkaUserStatus(userName, Ready);
     }
 
-    public static void waitForKafkaUserNotReady(String userName) {
-        waitForKafkaUserStatus(userName, NotReady);
+    public static boolean waitForKafkaUserNotReady(String userName) {
+        return waitForKafkaUserStatus(userName, NotReady);
     }
 
     public static String removeKafkaUserPart(File kafkaUserFile, String partName) {

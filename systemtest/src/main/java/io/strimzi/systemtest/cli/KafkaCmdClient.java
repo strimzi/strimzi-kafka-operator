@@ -5,16 +5,12 @@
 package io.strimzi.systemtest.cli;
 
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaCmdClient {
 
@@ -35,9 +31,6 @@ public class KafkaCmdClient {
                 " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
 
         KafkaTopicUtils.waitForKafkaTopicCreation(topic);
-
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topic).get();
-        ResourceManager.getPointerResources().push(() -> ResourceManager.deleteLater(KafkaTopicResource.kafkaTopicClient(), kafkaTopic));
 
         return response;
     }

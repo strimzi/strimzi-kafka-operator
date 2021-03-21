@@ -4,15 +4,17 @@
  */
 package io.strimzi.systemtest.utils;
 
-import org.junit.jupiter.api.Test;
+import io.strimzi.systemtest.annotations.ParallelSuite;
+import io.strimzi.systemtest.annotations.ParallelTest;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ParallelSuite
 public class KafkaVersionUtilsTest {
 
-    @Test
+    @ParallelTest
     public void parsingTest() {
         List<TestKafkaVersion> versions = TestKafkaVersion.getKafkaVersions();
         assertTrue(versions.size() > 0);

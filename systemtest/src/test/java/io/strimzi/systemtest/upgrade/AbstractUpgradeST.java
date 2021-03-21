@@ -12,16 +12,16 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
@@ -149,7 +149,7 @@ public class AbstractUpgradeST extends AbstractST {
         String toUrl = testParameters.getString("urlTo");
         String examplesPath = "";
         if (toUrl.equals("HEAD")) {
-            examplesPath = TestUtils.USER_PATH + "/../packaging/examples";
+            examplesPath = io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES + "";
         } else {
             File dir = FileUtils.downloadAndUnzip(toUrl);
             examplesPath = dir.getAbsolutePath() + "/" + testParameters.getString("toExamples") + "/examples";
@@ -332,9 +332,13 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void setupEnvAndUpgradeClusterOperator(JsonObject testParameters, String producerName, String consumerName,
-                                                     String continuousTopicName, String continuousConsumerGroup,
-                                                     String kafkaVersion, String namespace) throws IOException {
+    protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, JsonObject testParameters, String producerName, String consumerName,
+                                                   String continuousTopicName, String continuousConsumerGroup,
+                                                   String kafkaVersion, String namespace) throws IOException {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+
         int continuousClientsMessageCount = testParameters.getJsonObject("client").getInteger("continuousClientsMessages");
 
         LOGGER.info("Going to test upgrade of Cluster Operator from version {} to version {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
@@ -362,7 +366,7 @@ public class AbstractUpgradeST extends AbstractST {
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion)).contains(clusterName)) {
             // Deploy a Kafka cluster
             if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-                KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
+                resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
             } else {
                 kafkaYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
                 LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
@@ -374,7 +378,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL, operatorVersion)).contains(userName)) {
             if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-                KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, userName).build());
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
             } else {
                 kafkaUserYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/user/kafka-user.yaml");
                 LOGGER.info("Going to deploy KafkaUser from: {}", kafkaUserYaml.getPath());
@@ -384,7 +388,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion)).contains(topicName)) {
             if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-                KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, userName).build());
             } else {
                 kafkaTopicYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
                 LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
@@ -396,7 +400,7 @@ public class AbstractUpgradeST extends AbstractST {
         if (testParameters.getBoolean("generateTopics")) {
             for (int x = 0; x < upgradeTopicCount; x++) {
                 if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-                    KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(clusterName, topicName + "-" + x, 1, 1, 1)
+                    resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, topicName + "-" + x, 1, 1, 1)
                         .editSpec()
                             .withTopicName(topicName + "-" + x)
                         .endSpec()
@@ -414,7 +418,7 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
             if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion)).contains(continuousTopicName)) {
-                String pathToTopicExamples = testParameters.getString("fromExamples").equals("HEAD") ? KafkaTopicResource.PATH_TO_KAFKA_TOPIC_CONFIG : testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml";
+                String pathToTopicExamples = testParameters.getString("fromExamples").equals("HEAD") ? KafkaTopicTemplates.PATH_TO_KAFKA_TOPIC_CONFIG : testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml";
 
                 kafkaTopicYaml = new File(dir, pathToTopicExamples);
                 cmdKubeClient().applyContent(TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString)
@@ -439,8 +443,8 @@ public class AbstractUpgradeST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.producerStrimzi().build());
-            kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.consumerStrimzi().build());
+            resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
+            resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
             // ##############################
         }
 

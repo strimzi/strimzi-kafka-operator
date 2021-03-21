@@ -14,19 +14,20 @@ import java.util.Map;
 
 public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
 
-    private static final String JAEGER_AGENT_HOST =  "my-jaeger-agent";
     private static final String JAEGER_SAMPLER_TYPE =  "const";
     private static final String JAEGER_SAMPLER_PARAM =  "1";
 
     private final String jaegerServiceProducerName;
     private final String jaegerServiceConsumerName;
     private final String jaegerServiceStreamsName;
+    private final String jaegerServerAgentName;
     private final String streamsTopicTargetName;
 
     public static class Builder extends KafkaBasicExampleClients.Builder {
         private String jaegerServiceProducerName;
         private String jaegerServiceConsumerName;
         private String jaegerServiceStreamsName;
+        private String jaegerServerAgentName;
         private String streamsTopicTargetName;
 
         public Builder withJaegerServiceProducerName(String jaegerServiceProducerName) {
@@ -41,6 +42,11 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
 
         public Builder withJaegerServiceStreamsName(String jaegerServiceStreamsName) {
             this.jaegerServiceStreamsName = jaegerServiceStreamsName;
+            return this;
+        }
+
+        public Builder withJaegerServiceAgentName(String jaegerServerAgentName) {
+            this.jaegerServerAgentName = jaegerServerAgentName;
             return this;
         }
 
@@ -107,6 +113,10 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
         return jaegerServiceStreamsName;
     }
 
+    public String getJaegerServiceAgentName() {
+        return jaegerServerAgentName;
+    }
+
     public String getStreamsTopicTargetName() {
         return streamsTopicTargetName;
     }
@@ -121,6 +131,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
             .withJaegerServiceProducerName(getJaegerServiceProducerName())
             .withJaegerServiceConsumerName(getJaegerServiceConsumerName())
             .withJaegerServiceStreamsName(getJaegerServiceStreamsName())
+            .withJaegerServiceAgentName(getJaegerServiceAgentName())
             .withStreamsTopicTargetName(getStreamsTopicTargetName());
     }
 
@@ -133,6 +144,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
         jaegerServiceProducerName = builder.jaegerServiceProducerName;
         jaegerServiceConsumerName = builder.jaegerServiceConsumerName;
         jaegerServiceStreamsName = builder.jaegerServiceStreamsName;
+        jaegerServerAgentName = builder.jaegerServerAgentName;
         streamsTopicTargetName = builder.streamsTopicTargetName;
     }
 
@@ -148,7 +160,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(JAEGER_AGENT_HOST)
+                                .withValue(jaegerServerAgentName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
@@ -176,7 +188,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(JAEGER_AGENT_HOST)
+                                .withValue(jaegerServerAgentName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
@@ -242,7 +254,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(JAEGER_AGENT_HOST)
+                                .withValue(jaegerServerAgentName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")

@@ -20,13 +20,15 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -39,7 +41,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
@@ -62,32 +64,33 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(ROLLING_UPDATE)
 class AlternativeReconcileTriggersST extends AbstractST {
-    private static final Logger LOGGER = LogManager.getLogger(RollingUpdateST.class);
+    private static final Logger LOGGER = LogManager.getLogger(AlternativeReconcileTriggersST.class);
 
     static final String NAMESPACE = "alternative-reconcile-triggers-cluster-test";
 
-    @Test
-    void testManualTriggeringRollingUpdate() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String continuousTopicName = "continuous-topic";
         // 500 messages will take 500 seconds in that case
         int continuousClientsMessageCount = 500;
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         String zkName = KafkaResources.zookeeperStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zkName);
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         // ##############################
         // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2).build());
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
@@ -103,14 +106,15 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.producerStrimzi().build());
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, userName).build());
+        KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, user);
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String defaultKafkaClientsPodName =
             ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -130,7 +134,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // rolling update for kafka
         LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
+        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         // set annotation to trigger Kafka rolling update
         kubeClient().statefulSet(kafkaName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
             .editMetadata()
@@ -151,7 +155,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // rolling update for zookeeper
         LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
+        operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(sent));
@@ -183,7 +187,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, newTopicName, 1, 1).build());
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, newTopicName, 1, 1).build());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(newTopicName)
@@ -206,12 +211,13 @@ class AlternativeReconcileTriggersST extends AbstractST {
     // This test is affected by https://github.com/strimzi/strimzi-kafka-operator/issues/3913 so it needs longer operation timeout set in CO
     @Description("Test for checking that overriding of bootstrap server, triggers the rolling update and verifying that" +
             " new bootstrap DNS is appended inside certificate in subject alternative names property.")
-    @Test
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ROLLING_UPDATE)
-    void testTriggerRollingUpdateAfterOverrideBootstrap() throws CertificateException {
+    void testTriggerRollingUpdateAfterOverrideBootstrap(ExtensionContext extensionContext) throws CertificateException {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
@@ -257,9 +263,11 @@ class AlternativeReconcileTriggersST extends AbstractST {
         }
     }
 
-    @Test
-    void testManualRollingUpdateForSinglePod() {
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3).build());
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    void testManualRollingUpdateForSinglePod(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
         String zkSsName = KafkaResources.zookeeperStatefulSetName(clusterName);
@@ -321,9 +329,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
      * Adding and removing JBOD volumes requires rolling updates in the sequential order. Otherwise the StatefulSet does
      * not like it. This tests tries to add and remove volume from JBOD to test both of these situations.
      */
-    @Test
-    void testAddingAndRemovingJbodVolumes() {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    void testAddingAndRemovingJbodVolumes(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String continuousTopicName = "continuous-topic";
         // 500 messages will take 500 seconds in that case
         int continuousClientsMessageCount = 500;
@@ -333,60 +342,62 @@ class AlternativeReconcileTriggersST extends AbstractST {
         PersistentClaimStorage vol0 = new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(true).build();
         PersistentClaimStorage vol1 = new PersistentClaimStorageBuilder().withId(1).withSize("100Gi").withDeleteClaim(true).build();
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaJBOD(clusterName, 3, 3, new JbodStorageBuilder().addToVolumes(vol0).build()).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, 3, 3, new JbodStorageBuilder().addToVolumes(vol0).build()).build());
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaName);
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         // ##############################
         // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
         // ##############################
         // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2).build());
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         // Add transactional id to make producer transactional
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
         KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-                .withTopicName(continuousTopicName)
-                .withMessageCount(continuousClientsMessageCount)
-                .withAdditionalConfig(producerAdditionConfiguration)
-                .withDelayMs(1000)
-                .build();
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+            .withTopicName(continuousTopicName)
+            .withMessageCount(continuousClientsMessageCount)
+            .withAdditionalConfig(producerAdditionConfiguration)
+            .withDelayMs(1000)
+            .build();
 
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.producerStrimzi().build());
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
-        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(clusterName, userName).build());
+        KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, user);
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(defaultKafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
-                .withClusterName(clusterName)
-                .withMessageCount(MESSAGE_COUNT)
-                .withKafkaUsername(userName)
-                .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                .build();
+            .withUsingPodName(defaultKafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(clusterName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withKafkaUsername(userName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
         assertThat(sent, is(MESSAGE_COUNT));
 
         // Add Jbod volume to Kafka => triggers RU
         LOGGER.info("Add JBOD volume to the Kafka cluster {}", kafkaName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
+
+        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
             storage.getVolumes().add(vol1);
@@ -398,7 +409,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // Remove Jbod volume to Kafka => triggers RU
         LOGGER.info("Remove JBOD volume to the Kafka cluster {}", kafkaName);
-        timeMeasuringSystem.setOperationID(timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE));
+
+        operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
             storage.getVolumes().remove(vol1);
@@ -415,9 +427,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    void setup(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 }
 

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.operator;
+package io.strimzi.systemtest.resources.specific;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
-public class HelmResource {
+public class HelmResource implements SpecificResourceType {
     private static final Logger LOGGER = LogManager.getLogger(HelmResource.class);
 
     public static final String HELM_CHART = TestUtils.USER_PATH + "/../packaging/helm-charts/helm3/strimzi-kafka-operator/";
@@ -35,15 +35,27 @@ public class HelmResource {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    public static void clusterOperator() {
+    public void create() {
+        this.clusterOperator();
+    }
+
+    public void create(long operationTimeout, long reconciliationInterval) {
+        this.clusterOperator(operationTimeout, reconciliationInterval);
+    }
+
+    public void delete() {
+        this.deleteClusterOperator();
+    }
+
+    private void clusterOperator() {
         clusterOperator(Constants.CO_OPERATION_TIMEOUT_DEFAULT);
     }
 
-    public static void clusterOperator(long operationTimeout) {
+    private void clusterOperator(long operationTimeout) {
         clusterOperator(operationTimeout, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public static void clusterOperator(long operationTimeout, long reconciliationInterval) {
+    private void clusterOperator(long operationTimeout, long reconciliationInterval) {
         Map<String, String> values = Collections.unmodifiableMap(Stream.of(
                 // image registry config
                 entry("image.registry", Environment.STRIMZI_REGISTRY),
@@ -83,7 +95,6 @@ public class HelmResource {
         String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
         cmdKubeClient().applyContent(helmServiceAccount);
         KubeClusterResource.getInstance().setNamespace(oldNamespace);
-        ResourceManager.getPointerResources().push(HelmResource::deleteClusterOperator);
         ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
         DeploymentUtils.waitForDeploymentReady(ResourceManager.getCoDeploymentName());
     }
@@ -91,7 +102,7 @@ public class HelmResource {
     /**
      * Delete CO deployed via helm chart.
      */
-    public static void deleteClusterOperator() {
+    private void deleteClusterOperator() {
         ResourceManager.helmClient().delete(HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
         cmdKubeClient().delete(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");

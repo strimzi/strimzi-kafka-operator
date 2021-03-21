@@ -9,7 +9,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.operator.OlmResource;
+import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -21,6 +21,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -95,7 +96,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // 2. Approve installation
         //   a) get name of install-plan
         //   b) approve installation
-        OlmResource.clusterOperator(namespace, OlmInstallationStrategy.Manual, fromVersion);
+        olmResource.create(namespace, OlmInstallationStrategy.Manual, fromVersion);
 
         String url = testParameters.getString("urlFrom");
         File dir = FileUtils.downloadAndUnzip(url);
@@ -109,8 +110,8 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
         OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
 
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.producerStrimzi().build());
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
 
         String clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         LOGGER.info("Old deployment name of cluster operator is {}", clusterOperatorDeploymentName);
@@ -158,9 +159,14 @@ public class OlmUpgradeST extends AbstractUpgradeST {
 
     @BeforeAll
     void setup() {
-        ResourceManager.setClassResources();
-
         cluster.setNamespace(namespace);
         cluster.createNamespace(namespace);
+
+        olmResource = new OlmResource();
+    }
+
+    @AfterAll
+    void tearDown() {
+        olmResource.delete();
     }
 }

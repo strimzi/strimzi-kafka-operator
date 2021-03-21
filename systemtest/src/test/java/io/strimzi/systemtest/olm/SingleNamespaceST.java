@@ -4,16 +4,17 @@
  */
 package io.strimzi.systemtest.olm;
 
-import io.strimzi.systemtest.resources.operator.OlmResource;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.specific.OlmResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.OLM;
 
@@ -33,8 +34,8 @@ public class SingleNamespaceST extends OlmAbstractST {
 
     @Test
     @Order(2)
-    void testDeployExampleKafkaUser() {
-        doTestDeployExampleKafkaUser();
+    void testDeployExampleKafkaUser(ExtensionContext extensionContext) {
+        doTestDeployExampleKafkaUser(extensionContext);
     }
 
     @Test
@@ -75,15 +76,21 @@ public class SingleNamespaceST extends OlmAbstractST {
 
     @Test
     @Order(9)
-    void testDeployExampleKafkaRebalance() {
-        doTestDeployExampleKafkaRebalance();
+    void testDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
+        doTestDeployExampleKafkaRebalance(extensionContext);
     }
 
     @BeforeAll
     void setup() {
-        ResourceManager.setClassResources();
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
-        OlmResource.clusterOperator(NAMESPACE);
+
+        olmResource = new OlmResource(NAMESPACE);
+        olmResource.create();
+    }
+
+    @AfterAll
+    void tearDown() {
+        olmResource.delete();
     }
 }

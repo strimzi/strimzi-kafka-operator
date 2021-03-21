@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
@@ -13,6 +12,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
@@ -27,9 +27,8 @@ public class KeycloakUtils {
 
     private KeycloakUtils() {}
 
-    public static void deployKeycloak(String namespace) {
+    public static void deployKeycloak(ExtensionContext extensionContext, String namespace) {
         LOGGER.info("Prepare Keycloak in namespace: {}", namespace);
-        ResourceManager.getPointerResources().push(() -> deleteKeycloak(namespace));
 
         // This is needed because from time to time the first try fails on Azure
         TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {

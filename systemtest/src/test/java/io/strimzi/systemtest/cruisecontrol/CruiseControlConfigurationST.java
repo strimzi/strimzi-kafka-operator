@@ -14,8 +14,10 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -28,9 +30,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -67,7 +68,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     private static final String CRUISE_CONTROL_POD_PREFIX = CRUISE_CONTROL_CONFIGURATION_CLUSTER_NAME + "-cruise-control-";
 
     @Order(1)
-    @Test
+    @ParallelTest
     void testCapacityFile() {
 
         String cruiseControlPodName = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0).getMetadata().getName();
@@ -98,7 +99,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @Order(2)
-    @Test
+    @IsolatedTest("Modification of shared Kafka")
     void testDeployAndUnDeployCruiseControl() throws IOException {
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CRUISE_CONTROL_CONFIGURATION_CLUSTER_NAME));
@@ -140,7 +141,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @Order(3)
-    @Test
+    @IsolatedTest("Modification of shared Kafka")
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods() {
 
         Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(CRUISE_CONTROL_CONFIGURATION_CLUSTER_NAME));
@@ -174,7 +175,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @Order(4)
-    @Test
+    @ParallelTest
     void testConfigurationReflection() throws IOException {
 
         Pod cruiseControlPod = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0);
@@ -225,7 +226,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @Order(5)
-    @Test
+    @ParallelTest
     void testConfigurationFileIsCreated() {
         String cruiseControlPodName = kubeClient().listPodsByPrefixInName(CRUISE_CONTROL_POD_PREFIX).get(0).getMetadata().getName();
 
@@ -235,7 +236,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @Order(6)
-    @Test
+    @IsolatedTest("Modification of shared Kafka")
     void testConfigurationPerformanceOptions() throws IOException {
         Container cruiseControlContainer;
         EnvVar cruiseControlConfiguration;
@@ -285,10 +286,9 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
     
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) throws Exception {
+        installClusterOperator(extensionContext, NAMESPACE);
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(CRUISE_CONTROL_CONFIGURATION_CLUSTER_NAME, 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(CRUISE_CONTROL_CONFIGURATION_CLUSTER_NAME, 3, 3).build());
     }
 }

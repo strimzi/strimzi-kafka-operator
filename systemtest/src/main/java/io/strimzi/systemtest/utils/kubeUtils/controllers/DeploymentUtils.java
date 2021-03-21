@@ -147,7 +147,7 @@ public class DeploymentUtils {
         LOGGER.info("Deployment {} was recovered", name);
     }
 
-    public static void waitForDeploymentReady(String deploymentName) {
+    public static boolean waitForDeploymentReady(String deploymentName) {
         LOGGER.info("Wait for Deployment: {} will be ready", deploymentName);
 
         TestUtils.waitFor(String.format("Wait for Deployment: %s will be ready", deploymentName),
@@ -156,6 +156,7 @@ public class DeploymentUtils {
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(deploymentName)));
 
         LOGGER.info("Deployment: {} is ready", deploymentName);
+        return true;
     }
 
     /**
@@ -163,13 +164,14 @@ public class DeploymentUtils {
      * @param deploymentName The name of the Deployment.
      * @param expectPods The expected number of pods.
      */
-    public static void waitForDeploymentAndPodsReady(String deploymentName, int expectPods) {
+    public static boolean waitForDeploymentAndPodsReady(String deploymentName, int expectPods) {
         waitForDeploymentReady(deploymentName);
 
         LOGGER.info("Waiting for {} Pod(s) of Deployment {} to be ready", expectPods, deploymentName);
         PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), expectPods, true,
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(deploymentName)));
         LOGGER.info("Deployment {} is ready", deploymentName);
+        return true;
     }
 
     /**
@@ -184,7 +186,7 @@ public class DeploymentUtils {
                     return true;
                 } else {
                     LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
-                    cmdKubeClient().deleteByName("deployment", name);
+                    cmdKubeClient().deleteByName(Constants.DEPLOYMENT, name);
                     return false;
                 }
             });

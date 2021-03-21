@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.operator.OlmResource;
+import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.test.TestUtils;
 
 public class OlmUtils {

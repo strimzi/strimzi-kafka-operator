@@ -4,11 +4,9 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
-import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
@@ -198,7 +196,9 @@ public class KafkaBasicExampleClients {
                 .withBackoffLimit(0)
                 .withNewTemplate()
                     .withNewMetadata()
-                    .withLabels(producerLabels)
+                        .withName(producerName)
+                        .withNamespace(ResourceManager.kubeClient().getNamespace())
+                        .withLabels(producerLabels)
                     .endMetadata()
                     .withNewSpec()
                         .withRestartPolicy("Never")
@@ -307,9 +307,5 @@ public class KafkaBasicExampleClients {
                     .endSpec()
                 .endTemplate()
             .endSpec();
-    }
-
-    public Job createAndWaitForReadiness(Job job) {
-        return KubernetesResource.deployNewJob(job);
     }
 }

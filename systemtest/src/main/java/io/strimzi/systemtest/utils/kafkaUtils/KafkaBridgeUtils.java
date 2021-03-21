@@ -8,19 +8,19 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.templates.kubernetes.ServiceTemplates;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import io.strimzi.systemtest.resources.KubernetesResource;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.systemtest.resources.crd.KafkaBridgeResource.kafkaBridgeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,7 +47,7 @@ public class KafkaBridgeUtils {
         map.put(Labels.STRIMZI_NAME_LABEL, clusterName + "-bridge");
 
         // Create node port service for expose bridge outside Kubernetes
-        return KubernetesResource.getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")
+        return ServiceTemplates.getSystemtestsServiceResource(serviceName, Constants.HTTP_BRIDGE_DEFAULT_PORT, namespace, "TCP")
                     .editSpec()
                         .withType("NodePort")
                         .withSelector(map)
@@ -72,16 +72,16 @@ public class KafkaBridgeUtils {
      * @param clusterName name of KafkaBridge cluster
      * @param state desired state
      */
-    public static void waitForKafkaBridgeStatus(String clusterName, Enum<?> state) {
-        KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-        ResourceManager.waitForResourceStatus(KafkaBridgeResource.kafkaBridgeClient(), kafkaBridge, state);
+    public static boolean waitForKafkaBridgeStatus(String clusterName, Enum<?> state) {
+        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge, state);
     }
 
-    public static void waitForKafkaBridgeReady(String clusterName) {
-        waitForKafkaBridgeStatus(clusterName, Ready);
+    public static boolean waitForKafkaBridgeReady(String clusterName) {
+        return waitForKafkaBridgeStatus(clusterName, Ready);
     }
 
-    public static void waitForKafkaBridgeNotReady(String clusterName) {
-        waitForKafkaBridgeStatus(clusterName, NotReady);
+    public static boolean waitForKafkaBridgeNotReady(String clusterName) {
+        return waitForKafkaBridgeStatus(clusterName, NotReady);
     }
 }

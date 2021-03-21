@@ -16,8 +16,8 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.OlmResource;
+import io.strimzi.systemtest.resources.specific.OlmResource;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -31,6 +31,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Map;
 
@@ -45,10 +46,10 @@ public class OlmAbstractST extends AbstractST {
         KafkaUtils.waitForKafkaReady(kafkaResource.getJsonObject("metadata").getString("name"));
     }
 
-    void doTestDeployExampleKafkaUser() {
+    void doTestDeployExampleKafkaUser(ExtensionContext extensionContext) {
         String userKafkaName = "user-kafka";
         // KafkaUser example needs Kafka with authorization
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(userKafkaName, 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(userKafkaName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -107,9 +108,9 @@ public class OlmAbstractST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
     }
 
-    void doTestDeployExampleKafkaRebalance() {
+    void doTestDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
         String cruiseControlClusterName = "cruise-control";
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(cruiseControlClusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlClusterName, 3, 3).build());
         JsonObject kafkaRebalanceResource = OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND);
         kafkaRebalanceResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, cruiseControlClusterName);
         cmdKubeClient().applyContent(kafkaRebalanceResource.toString());
@@ -117,7 +118,7 @@ public class OlmAbstractST extends AbstractST {
     }
 
     @AfterAll
-    void teardown() {
+    void teardown(ExtensionContext extensionContext) {
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaMirrorMaker2.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaMirrorMaker.RESOURCE_KIND).toString());

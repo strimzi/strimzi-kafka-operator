@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
+import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
@@ -16,10 +17,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
-import io.strimzi.systemtest.resources.KubernetesResource;
-import io.strimzi.systemtest.resources.ResourceManager;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Base64;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,29 +67,35 @@ public class OauthAbstractST extends AbstractST {
     }
 
     protected WebClient client;
+    
+    protected void setupCoAndKeycloak(ExtensionContext extensionContext, String namespace) {
 
-    void setupCoAndKeycloak() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
-        KubernetesResource.applyDefaultNetworkPolicy(NAMESPACE, DefaultNetworkPolicy.DEFAULT_TO_ALLOW);
+        installClusterOperator(extensionContext, namespace);
+        resourceManager.createResource(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
 
         LOGGER.info("Deploying keycloak...");
 
-        KeycloakUtils.deployKeycloak(NAMESPACE);
+        KeycloakUtils.deployKeycloak(extensionContext, namespace);
 
+        SecretUtils.waitForSecretReady("credential-example-keycloak");
         String passwordEncoded = kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_PASSWORD");
         String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
-        keycloakInstance = new KeycloakInstance("admin", password, NAMESPACE);
+        keycloakInstance = new KeycloakInstance("admin", password, namespace);
 
         createSecretsForDeployments();
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDownEach(ExtensionContext extensionContext) throws Exception {
+        List<Job> clusterJobList = kubeClient().getJobList().getItems()
+            .stream()
+            .filter(
+                job -> job.getMetadata().getName().contains(mapWithClusterNames.get(extensionContext.getDisplayName())))
+            .collect(Collectors.toList());
 
-        for (Job job : kubeClient().getJobList().getItems()) {
+        for (Job job : clusterJobList) {
             LOGGER.info("Deleting {} job", job.getMetadata().getName());
-            JobUtils.deleteJobWithWait(NAMESPACE, job.getMetadata().getName());
+            JobUtils.deleteJobWithWait(job.getMetadata().getNamespace(), job.getMetadata().getName());
         }
     }
 

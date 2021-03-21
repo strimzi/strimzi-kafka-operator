@@ -22,6 +22,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -66,16 +68,17 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @MethodSource("loadJsonUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
     void testUpgradeStrimziVersion(String from, String to, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
-
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
+
 
         LOGGER.debug("Running upgrade test from version {} to {}", from, to);
         performUpgrade(parameters, extensionContext);
     }
 
     @Test
-    void testUpgradeKafkaWithoutVersion() throws IOException {
+    void testUpgradeKafkaWithoutVersion(ExtensionContext extensionContext) throws IOException {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         File dir = FileUtils.downloadAndUnzip(strimziReleaseWithOlderKafka);
         File startKafkaPersistent = new File(dir, "strimzi-" + strimziReleaseWithOlderKafkaVersion + "/examples/kafka/kafka-persistent.yaml");
         File startKafkaVersionsYaml = FileUtils.downloadYaml("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + strimziReleaseWithOlderKafkaVersion + "/kafka-versions.yaml");
@@ -106,7 +109,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         // Update CRDs, CRB, etc.
         applyClusterOperatorInstallFiles(NAMESPACE);
-        applyBindings(NAMESPACE);
+        applyBindings(extensionContext, NAMESPACE);
 
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(BundleResource.defaultClusterOperator(NAMESPACE).build());
@@ -122,6 +125,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @Test
     void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion(ExtensionContext extensionContext) throws IOException {
         JsonObject acrossUpgradeData = buildDataForUpgradeAcrossVersions();
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
@@ -129,7 +133,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), NAMESPACE);
         // Make snapshots of all pods
         makeSnapshots(clusterName);
         // Upgrade CO
@@ -150,6 +154,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @Test
     void testUpgradeAcrossVersionsWithNoKafkaVersion(ExtensionContext extensionContext) throws IOException {
         JsonObject acrossUpgradeData = buildDataForUpgradeAcrossVersions();
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
@@ -157,7 +162,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, NAMESPACE);
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, NAMESPACE);
         // Wait till first upgrade finished
@@ -247,9 +252,10 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String continuousConsumerGroup = "continuous-consumer-group";
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
         // Upgrade CO
         logPodImages(clusterName);
         changeClusterOperator(testParameters, NAMESPACE);
@@ -283,7 +289,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         cluster.createNamespace(NAMESPACE);
     }
 
-    @Override
+    @AfterEach
     protected void tearDownEnvironmentAfterEach() {
         deleteInstalledYamls(coDir, NAMESPACE);
         cluster.deleteNamespaces();
@@ -291,7 +297,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     // There is no value of having teardown logic for class resources due to the fact that
     // CO was deployed by method StrimziUpgradeST.copyModifyApply() and removed by method StrimziUpgradeST.deleteInstalledYamls()
-    @Override
-    protected void tearDownEnvironmentAfterAll() {
-    }
+    @AfterAll
+    protected void tearDownEnvironmentAfterAll() { }
 }

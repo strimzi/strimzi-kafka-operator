@@ -6,19 +6,19 @@ package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,10 +35,12 @@ public class ClusterOperationST extends AbstractST {
 
     public static final String NAMESPACE = "cluster-operations-test";
 
-    @Test
+    @IsolatedTest
     @MultiNodeClusterOnly
     @RequiredMinKubeApiVersion(version = 1.15)
-    void testAvailabilityDuringNodeDrain() {
+    void testAvailabilityDuringNodeDrain(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         int size = 5;
         List<String> topicNames = IntStream.range(0, size).boxed().map(i -> "test-topic-" + i).collect(Collectors.toList());
         List<String> producerNames = IntStream.range(0, size).boxed().map(i -> "hello-world-producer-" + i).collect(Collectors.toList());
@@ -46,7 +48,7 @@ public class ClusterOperationST extends AbstractST {
         List<String> continuousConsumerGroups = IntStream.range(0, size).boxed().map(i -> "continuous-consumer-group-" + i).collect(Collectors.toList());
         int continuousClientsMessageCount = 300;
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
                 .editOrNewSpec()
                     .editEntityOperator()
                         .editUserOperator()
@@ -56,7 +58,7 @@ public class ClusterOperationST extends AbstractST {
                 .endSpec()
                 .build());
 
-        topicNames.forEach(topicName -> KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName, 3, 3, 2).build()));
+        topicNames.forEach(topicName -> resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 3, 3, 2).build()));
 
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
         KafkaBasicExampleClients kafkaBasicClientResource;
@@ -73,8 +75,8 @@ public class ClusterOperationST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            kafkaBasicClientResource.createAndWaitForReadiness(kafkaBasicClientResource.producerStrimzi().build());
-            kafkaBasicClientResource.createAndWaitForReadiness(kafkaBasicClientResource.consumerStrimzi().build());
+            resourceManager.createResource(extensionContext, kafkaBasicClientResource.producerStrimzi().build());
+            resourceManager.createResource(extensionContext, kafkaBasicClientResource.consumerStrimzi().build());
         }
 
         // ##############################
@@ -91,9 +93,8 @@ public class ClusterOperationST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
     }
 
     @AfterEach

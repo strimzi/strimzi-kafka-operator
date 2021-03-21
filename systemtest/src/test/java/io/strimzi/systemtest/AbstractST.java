@@ -15,10 +15,12 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
-import io.strimzi.systemtest.resources.KubernetesResource;
+import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.resources.operator.HelmResource;
-import io.strimzi.systemtest.resources.operator.OlmResource;
+import io.strimzi.systemtest.resources.specific.HelmResource;
+import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -30,7 +32,6 @@ import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
-import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -77,13 +78,21 @@ public abstract class AbstractST implements TestSeparator {
         Crds.registerCustomKinds();
     }
 
+    protected final ResourceManager resourceManager = ResourceManager.getInstance();
+    protected final HelmResource helmResource = new HelmResource();
+    protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
+    private final Object lock = new Object();
+    private final Object lockForTimeMeasuringSystem = new Object();
 
-    protected static String previousClusterName;
-    protected static String clusterName;
-    protected static String kafkaClientsName;
+    // maps for local variables {thread safe}
+    protected static Map<String, String> mapWithClusterNames = new HashMap<>();
+    protected static Map<String, String> mapWithTestTopics = new HashMap<>();
+    protected static Map<String, String> mapWithTestUsers = new HashMap<>();
+    protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
+
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
@@ -94,20 +103,12 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     protected static final String TEST_TOPIC_NAME = "test-topic";
 
-    protected String testClass;
-    protected String testName;
-
     private Stack<String> clusterOperatorConfigs = new Stack<>();
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator";
 
     public static Random rng = new Random();
 
     public static final int MESSAGE_COUNT = 100;
-
-    public static final String EXAMPLE_TOPIC_NAME = "my-topic";
-    public static final String AVAILABILITY_TOPIC_SOURCE_NAME = "availability-topic-source-" + rng.nextInt(Integer.MAX_VALUE);
-    public static final String AVAILABILITY_TOPIC_TARGET_NAME = "availability-topic-target-" + rng.nextInt(Integer.MAX_VALUE);
-
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -122,41 +123,51 @@ public abstract class AbstractST implements TestSeparator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      * @param namespace namespace where CO should be installed into
      */
-    protected void installClusterOperator(String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) {
+    protected void installClusterOperator(ExtensionContext extensionContext, String clusterOperatorName, String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) {
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
-            OlmResource.clusterOperator(namespace, operationTimeout, reconciliationInterval);
+            olmResource = new OlmResource(namespace);
+            olmResource.create(namespace, operationTimeout, reconciliationInterval);
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
-            HelmResource.clusterOperator(operationTimeout, reconciliationInterval);
+            helmResource.create(operationTimeout, reconciliationInterval);
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-            prepareEnvForOperator(namespace, bindingsNamespaces);
+            prepareEnvForOperator(extensionContext,  namespace, bindingsNamespaces);
             if (Environment.isNamespaceRbacScope()) {
                 // if roles only, only deploy the rolebindings
-                applyRoleBindings(namespace, namespace);
+                applyRoleBindings(extensionContext, namespace, namespace);
             } else {
-                applyBindings(namespace, bindingsNamespaces);
+                applyBindings(extensionContext, namespace, bindingsNamespaces);
             }
             // 060-Deployment
-            BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(namespace, operationTimeout, reconciliationInterval).build());
+            ResourceManager.setCoDeploymentName(clusterOperatorName);
+            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, namespace, operationTimeout, reconciliationInterval).build());
         }
     }
 
-    protected void installClusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        installClusterOperator(namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
+    protected void installClusterOperator(ExtensionContext extensionContext, String clusterOperatorName, String namespace, long operationTimeout, long reconciliationInterval) {
+        installClusterOperator(extensionContext, clusterOperatorName, namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
     }
 
-    protected void installClusterOperator(String namespace, long operationTimeout) {
-        installClusterOperator(namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    protected void installClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
+        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, reconciliationInterval);
     }
 
-    protected void installClusterOperator(String namespace) {
-        installClusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+    protected void installClusterOperator(ExtensionContext extensionContext, String name, String namespace) {
+        installClusterOperator(extensionContext, name, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+    }
+
+    protected void installClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout) {
+        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    }
+
+    protected void installClusterOperator(ExtensionContext extensionContext, String namespace) {
+        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     /**
@@ -216,12 +227,12 @@ public abstract class AbstractST implements TestSeparator {
      * @param namespaces list of namespaces which will be created
      * @param resources list of path to yaml files with resources specifications
      */
-    protected void prepareEnvForOperator(String clientNamespace, List<String> namespaces, String... resources) {
+    protected void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         cluster.createNamespaces(clientNamespace, namespaces);
         cluster.createCustomResources(resources);
         applyClusterOperatorInstallFiles(clientNamespace);
-        KubernetesResource.applyDefaultNetworkPolicySettings(namespaces);
+        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
 
         if (cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift) {
             // This is needed in case you are using internal kubernetes registry and you want to pull images from there
@@ -238,8 +249,8 @@ public abstract class AbstractST implements TestSeparator {
      * @param clientNamespace namespace which will be created and used as default by kube client
      * @param resources list of path to yaml files with resources specifications
      */
-    protected void prepareEnvForOperator(String clientNamespace, String... resources) {
-        prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace), resources);
+    protected void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, String... resources) {
+        prepareEnvForOperator(extensionContext, clientNamespace, Collections.singletonList(clientNamespace), resources);
     }
 
     /**
@@ -247,8 +258,8 @@ public abstract class AbstractST implements TestSeparator {
      * specific config files such as ServiceAccount, Roles and CRDs.
      * @param clientNamespace namespace which will be created and used as default by kube client
      */
-    protected void prepareEnvForOperator(String clientNamespace) {
-        prepareEnvForOperator(clientNamespace, Collections.singletonList(clientNamespace));
+    protected void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace) {
+        prepareEnvForOperator(extensionContext, clientNamespace, Collections.singletonList(clientNamespace));
     }
 
     /**
@@ -265,10 +276,10 @@ public abstract class AbstractST implements TestSeparator {
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
      */
-    public static void applyBindings(String namespace, List<String> bindingsNamespaces) {
+    public static void applyBindings(ExtensionContext extensionContext, String namespace, List<String> bindingsNamespaces) {
         for (String bindingsNamespace : bindingsNamespaces) {
-            applyClusterRoleBindings(namespace);
-            applyRoleBindings(namespace, bindingsNamespace);
+            applyClusterRoleBindings(extensionContext, namespace);
+            applyRoleBindings(extensionContext, namespace, bindingsNamespace);
         }
     }
 
@@ -276,8 +287,8 @@ public abstract class AbstractST implements TestSeparator {
      * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
      * @param namespace namespace where CO will be deployed to
      */
-    public static void applyBindings(String namespace) {
-        applyBindings(namespace, Collections.singletonList(namespace));
+    public static void applyBindings(ExtensionContext extensionContext, String namespace) {
+        applyBindings(extensionContext, namespace, Collections.singletonList(namespace));
     }
 
     /**
@@ -285,26 +296,26 @@ public abstract class AbstractST implements TestSeparator {
      * @param namespace namespace where CO will be deployed to
      * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
      */
-    public static void applyBindings(String namespace, String... bindingsNamespaces) {
-        applyBindings(namespace, Arrays.asList(bindingsNamespaces));
+    public static void applyBindings(ExtensionContext extensionContext, String namespace, String... bindingsNamespaces) {
+        applyBindings(extensionContext, namespace, Arrays.asList(bindingsNamespaces));
     }
 
-    private static void applyClusterRoleBindings(String namespace) {
+    private static void applyClusterRoleBindings(ExtensionContext extensionContext, String namespace) {
         // 021-ClusterRoleBinding
-        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
         // 030-ClusterRoleBinding
-        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
         // 033-ClusterRoleBinding
-        KubernetesResource.clusterRoleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
     }
 
-    private static void applyRoleBindings(String namespace, String bindingsNamespace) {
+    protected static void applyRoleBindings(ExtensionContext extensionContext, String namespace, String bindingsNamespace) {
         // 020-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
         // 031-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
         // 032-RoleBinding
-        KubernetesResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
+        RoleBindingResource.roleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", namespace, bindingsNamespace);
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
@@ -657,14 +668,6 @@ public abstract class AbstractST implements TestSeparator {
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
-    protected void tearDownEnvironmentAfterEach() throws Exception {
-        ResourceManager.deleteMethodResources();
-    }
-
-    protected void tearDownEnvironmentAfterAll() {
-        ResourceManager.deleteClassResources();
-    }
-
     protected void testDockerImagesForKafkaCluster(String clusterName, String namespace, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
@@ -704,63 +707,90 @@ public abstract class AbstractST implements TestSeparator {
 
         LOGGER.info("Docker images verified");
     }
+    protected void afterEachMayOverride(ExtensionContext testContext) throws Exception {
+        if (!Environment.SKIP_TEARDOWN) {
+            ResourceManager.getInstance().deleteResources(testContext);
+        }
+    }
+
+    protected void afterAllMayOverride(ExtensionContext testContext) throws Exception {
+        if (!Environment.SKIP_TEARDOWN) {
+            teardownEnvForOperator();
+            ResourceManager.getInstance().deleteResources(testContext);
+        }
+    }
+
+    /**
+     * BeforeEachMayOverride, is a method, which gives you option to override @BeforeAll in sub-classes and
+     * ensure that this is also executed if you call it with super.beforeEachMayOverride(). You can also skip it and
+     * you your implementation in sub-class as you want.
+     * @param extensionContext
+     */
+    protected void beforeEachMayOverride(ExtensionContext extensionContext) {
+        // this is because we need to have different clusterName and kafkaClientsName in each test case without
+        // synchronization it can produce `data-race`
+        String testName = null;
+
+        synchronized (lock) {
+            if (extensionContext.getTestMethod().isPresent()) {
+                testName = extensionContext.getTestMethod().get().getName();
+            }
+
+            LOGGER.info("Not first test we are gonna generate cluster name");
+            String clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
+
+            mapWithClusterNames.put(testName, clusterName);
+            mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
+            mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
+            mapWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
+
+            LOGGER.debug("CLUSTER_NAMES_MAP: \n{}", mapWithClusterNames);
+            LOGGER.debug("USERS_NAME_MAP: \n{}", mapWithTestUsers);
+            LOGGER.debug("TOPIC_NAMES_MAP: \n{}", mapWithTestTopics);
+            LOGGER.debug("============THIS IS CLIENTS MAP:\n{}", mapWithKafkaClientNames);
+        }
+    }
+
+    /**
+     * BeforeAllMayOverride, is a method, which gives you option to override @BeforeAll in sub-classes and
+     * ensure that this is also executed if you call it with super.beforeAllMayOverride(). You can also skip it and
+     * you your implementation in sub-class as you want.
+     * @param extensionContext
+     */
+    protected void beforeAllMayOverride(ExtensionContext extensionContext) {
+        cluster = KubeClusterResource.getInstance();
+        String testClass = null;
+
+        if (extensionContext.getTestClass().isPresent()) {
+            testClass = extensionContext.getTestClass().get().getName();
+        }
+    }
 
     @BeforeEach
-    void createTestResources(ExtensionContext testContext) {
-        if (testContext.getTestMethod().isPresent()) {
-            testName = testContext.getTestMethod().get().getName();
-        }
-        ResourceManager.setMethodResources();
-
-        // This is needed to distinguish created Kafka cluster in ResourceManager and don't delete cluster which are still in use by parallel test cases
-        if (previousClusterName == null) {
-            LOGGER.info("Executing the first test case, using {} as a cluster name", clusterName);
-            previousClusterName = clusterName;
-        } else {
-            clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
-            kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
-            LOGGER.info("Current test case is not the first one, generated new cluster name - {}", clusterName);
-        }
+    void setUpTestCase(ExtensionContext testContext) {
+        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+        LOGGER.debug("{} - [BEFORE EACH] has been called", this.getClass().getName());
+        beforeEachMayOverride(testContext);
     }
 
     @BeforeAll
-    void setTestClassName(ExtensionContext testContext) {
-        cluster = KubeClusterResource.getInstance();
-        if (testContext.getTestClass().isPresent()) {
-            testClass = testContext.getTestClass().get().getName();
-        }
-        // Name for the first test case, other test cases will need different name
-        previousClusterName = null;
-        clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
-        kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
+    void setUpTestSuite(ExtensionContext testContext) {
+        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
+        beforeAllMayOverride(testContext);
     }
 
     @AfterEach
-    void teardownEnvironmentMethod(ExtensionContext testContext) throws Exception {
-        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION);
-        AssertionError assertionError = null;
-        try {
-            long testDuration = timeMeasuringSystem.getDurationInSeconds(testContext.getRequiredTestClass().getName(), testContext.getRequiredTestMethod().getName(), Operation.TEST_EXECUTION.name());
-            assertNoCoErrorsLogged(testDuration);
-        } catch (AssertionError e) {
-            LOGGER.error("Cluster Operator contains unexpected errors!");
-            assertionError = new AssertionError(e);
-        }
-
-        if (!Environment.SKIP_TEARDOWN) {
-            tearDownEnvironmentAfterEach();
-        }
-
-        if (assertionError != null) {
-            throw assertionError;
-        }
+    void tearDownTestCase(ExtensionContext testContext) throws Exception {
+        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+        LOGGER.debug("{} - [AFTER EACH] has been called", this.getClass().getName());
+        afterEachMayOverride(testContext);
     }
 
     @AfterAll
-    void teardownEnvironmentClass() {
-        if (!Environment.SKIP_TEARDOWN) {
-            tearDownEnvironmentAfterAll();
-            teardownEnvForOperator();
-        }
+    void tearDownTestSuite(ExtensionContext testContext) throws Exception {
+        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+        LOGGER.debug("{} - [AFTER ALL] has been called", this.getClass().getName());
+        afterAllMayOverride(testContext);
     }
 }

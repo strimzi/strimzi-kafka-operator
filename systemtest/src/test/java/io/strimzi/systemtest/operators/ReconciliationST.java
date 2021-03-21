@@ -12,13 +12,18 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
@@ -31,7 +36,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.Map;
@@ -49,9 +54,12 @@ public class ReconciliationST extends AbstractST {
     private static final Map<String, String> PAUSE_ANNO = Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true");
     private static final int SCALE_TO = 4;
 
-    @Test
-    void testPauseReconciliationInKafkaAndKafkaConnectWithConnector() {
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3).build());
+    @IsolatedTest
+    void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
 
@@ -69,8 +77,9 @@ public class ReconciliationST extends AbstractST {
         KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"));
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaSsName, SCALE_TO);
 
-        LOGGER.info("Deploying KafkaConnect with pause anno from the start, no pods should appear");
-        KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(clusterName, 1)
+        LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no pods should appear");
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
             .editOrNewMetadata()
                 .addToAnnotations(PAUSE_ANNO)
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -87,7 +96,7 @@ public class ReconciliationST extends AbstractST {
             kc -> kc.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"));
         DeploymentUtils.waitForDeploymentAndPodsReady(connectDepName, 1);
 
-        KafkaConnectorResource.createAndWaitForReadiness(KafkaConnectorResource.kafkaConnector(clusterName).build());
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
 
         String connectPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String connectorSpec = KafkaConnectorUtils.getConnectorSpecFromConnectAPI(connectPodName, clusterName);
@@ -111,11 +120,13 @@ public class ReconciliationST extends AbstractST {
         assertThat(newConfig.getValue("tasks.max"), is(Integer.toString(SCALE_TO)));
     }
 
-    @Test
-    void testPauseReconciliationInKafkaRebalanceAndTopic() {
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaWithCruiseControl(clusterName, 3, 3).build());
+    @IsolatedTest
+    void testPauseReconciliationInKafkaRebalanceAndTopic(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, TOPIC_NAME).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, TOPIC_NAME).build());
 
         /* TODO: after issue with TO and pausing reconciliations in KafkaTopic will be fixed, uncomment these lines
         LOGGER.info("Adding pause annotation into KafkaTopic resource and changing replication factor");
@@ -133,7 +144,7 @@ public class ReconciliationST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(TOPIC_NAME, SCALE_TO);
         */
 
-        KafkaRebalanceResource.createAndWaitForReadiness(KafkaRebalanceResource.kafkaRebalance(clusterName).build());
+        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
 
         LOGGER.info("Waiting for {}, then add pause and rebalance annotation, rebalancing should not be triggered", KafkaRebalanceState.ProposalReady);
 
@@ -161,8 +172,7 @@ public class ReconciliationST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
     }
 }

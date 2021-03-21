@@ -8,11 +8,12 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -51,7 +52,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
     private final String producerName = "hello-world-producer";
     private final String consumerName = "hello-world-consumer";
 
-    @Test
+    @IsolatedTest
     void testKafkaClusterUpgrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
@@ -72,7 +73,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
     }
 
-    @Test
+    @IsolatedTest
     void testKafkaClusterDowngrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
@@ -93,7 +94,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
     }
 
-    @Test
+    @IsolatedTest
     void testKafkaClusterDowngradeToOlderMessageFormat(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
@@ -147,6 +148,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
     @SuppressWarnings({"checkstyle:MethodLength"})
     void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
+        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
         boolean isUpgrade = initialVersion.isUpgrade(newVersion);
         Map<String, String> kafkaPods;
 
@@ -154,7 +156,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
         if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get() == null) {
             LOGGER.info("Deploying initial Kafka version {} with logMessageFormat={} and interBrokerProtocol={}", initialVersion.version(), initLogMsgFormat, initInterBrokerProtocol);
-            KafkaBuilder kafka = KafkaResource.kafkaPersistent(clusterName, kafkaReplicas, zkReplicas)
+            KafkaBuilder kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas, zkReplicas)
                 .editSpec()
                     .editKafka()
                         .withVersion(initialVersion.version())
@@ -180,19 +182,18 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
                         .endKafka()
                     .endSpec();
             }
-
-            KafkaResource.createAndWaitForReadiness(kafka.build());
+            resourceManager.createResource(testContext, kafka.build());
 
             // ##############################
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, continuousTopicName, 3, 3, 2).build());
+            resourceManager.createResource(testContext, KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2).build());
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
+                .withProducerName(producerName + "-" + clusterName)
+                .withConsumerName(consumerName + "-" + clusterName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(continuousTopicName)
                 .withMessageCount(continuousClientsMessageCount)
@@ -200,8 +201,8 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.producerStrimzi().build());
-            kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.consumerStrimzi().build());
+            resourceManager.createResource(testContext, kafkaBasicClientJob.producerStrimzi().build());
+            resourceManager.createResource(testContext, kafkaBasicClientJob.consumerStrimzi().build());
             // ##############################
 
         } else {
@@ -330,12 +331,11 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        prepareEnvForOperator(extensionContext, NAMESPACE);
 
-        applyBindings(NAMESPACE);
+        applyBindings(extensionContext, NAMESPACE);
         // 060-Deployment
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
     }
 }

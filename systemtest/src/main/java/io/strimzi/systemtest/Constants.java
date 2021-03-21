@@ -90,6 +90,7 @@ public interface Constants {
     int KAFKA_BRIDGE_METRICS_PORT = 8080;
 
     String DEPLOYMENT = "Deployment";
+    String DEPLOYMENT_TYPE = "deployment-type";
     String SERVICE = "Service";
     String INGRESS = "Ingress";
     String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
@@ -100,6 +101,7 @@ public interface Constants {
     String KAFKA_CRUISE_CONTROL_DEPLOYMENT = "KafkaWithCruiseControl";
     String STATEFUL_SET = "StatefulSet";
     String POD = "Pod";
+    String NETWORK_POLICY = "NetworkPolicy";
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format
@@ -120,13 +122,19 @@ public interface Constants {
     int HTTP_KEYCLOAK_DEFAULT_NODE_PORT = 32482;
 
     /**
+     * Basic paths to examples
+     */
+    String PATH_TO_PACKAGING_EXAMPLES = TestUtils.USER_PATH + "/../packaging/examples";
+    String PATH_TO_PACKAGING_INSTALL_FILES = TestUtils.USER_PATH + "/../packaging/install";
+
+    /**
      * File paths for metrics YAMLs
      */
-    String PATH_TO_KAFKA_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-metrics.yaml";
-    String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-cruise-control-metrics.yaml";
-    String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-connect-metrics.yaml";
-    String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/connect/kafka-connect-s2i.yaml";
-    String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = TestUtils.USER_PATH + "/../packaging/examples/metrics/kafka-mirror-maker-2-metrics.yaml";
+    String PATH_TO_KAFKA_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-metrics.yaml";
+    String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-cruise-control-metrics.yaml";
+    String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-connect-metrics.yaml";
+    String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/connect/kafka-connect-s2i.yaml";
+    String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     String METRICS_CONFIG_YAML_NAME = "metrics-config.yml";
 

@@ -11,7 +11,9 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -20,9 +22,10 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cmdClient.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
@@ -60,9 +63,10 @@ public class OpenShiftTemplatesST extends AbstractST {
         return KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
-    @Test
-    void testStrimziEphemeral() {
-        String clusterName = "foo";
+    @ParallelTest
+    void testStrimziEphemeral(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
@@ -76,9 +80,10 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(kafka.getSpec().getZookeeper().getStorage().getType(), is("ephemeral"));
     }
 
-    @Test
-    void testStrimziPersistent() {
-        String clusterName = "bar";
+    @ParallelTest
+    void testStrimziPersistent(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_NODE_COUNT", "1",
                 "KAFKA_NODE_COUNT", "1"));
@@ -91,9 +96,10 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(kafka.getSpec().getZookeeper().getStorage().getType(), is("persistent-claim"));
     }
 
-    @Test
-    void testStrimziEphemeralWithCustomParameters() {
-        String clusterName = "test-ephemeral-with-custom-parameters";
+    @ParallelTest
+    void testStrimziEphemeralWithCustomParameters(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-ephemeral", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
@@ -119,9 +125,10 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(kafka.getSpec().getKafka().getConfig().get("transaction.state.log.replication.factor"), is("5"));
     }
 
-    @Test
-    void testStrimziPersistentWithCustomParameters() {
-        String clusterName = "test-persistent-with-custom-parameters";
+    @ParallelTest
+    void testStrimziPersistentWithCustomParameters(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-persistent", map("CLUSTER_NAME", clusterName,
                 "ZOOKEEPER_HEALTHCHECK_DELAY", "30",
                 "ZOOKEEPER_HEALTHCHECK_TIMEOUT", "10",
@@ -152,10 +159,11 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(((PersistentClaimStorage) kafka.getSpec().getZookeeper().getStorage()).getSize(), is("2Gi"));
     }
 
-    @Test
+    @ParallelTest
     @Tag(CONNECT)
-    void testConnect() {
-        String clusterName = "test-connect";
+    void testConnect(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-connect", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
@@ -164,10 +172,11 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(connect.getSpec().getReplicas(), is(1));
     }
 
-    @Test
+    @ParallelTest
     @Tag(CONNECT_S2I)
-    void testConnectS2I() {
-        String clusterName = "test-s2i";
+    void testConnectS2I(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         oc.createResourceAndApply("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
                 "INSTANCES", "1"));
 
@@ -176,9 +185,9 @@ public class OpenShiftTemplatesST extends AbstractST {
         assertThat(cm.getSpec().getReplicas(), is(1));
     }
 
-    @Test
-    void testTopicOperator() {
-        String topicName = "test-topic-topic";
+    @ParallelTest
+    void testTopicOperator(ExtensionContext extensionContext) {
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         oc.createResourceAndApply("strimzi-topic", map(
                 "TOPIC_NAME", topicName,
                 "TOPIC_PARTITIONS", "10",
@@ -193,19 +202,19 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
-        cluster.createCustomResources(TestUtils.USER_PATH + "/../packaging/examples/templates/cluster-operator",
-                TestUtils.USER_PATH + "/../packaging/examples/templates/topic-operator",
-                TestUtils.CRD_KAFKA,
-                TestUtils.CRD_KAFKA_CONNECT,
-                TestUtils.CRD_KAFKA_CONNECT_S2I,
-                TestUtils.CRD_TOPIC,
-                TestUtils.USER_PATH + "/src/rbac/role-edit-kafka.yaml");
+        cluster.createCustomResources(Constants.PATH_TO_PACKAGING_EXAMPLES + "/templates/cluster-operator",
+            Constants.PATH_TO_PACKAGING_EXAMPLES + "/templates/topic-operator",
+            TestUtils.CRD_KAFKA,
+            TestUtils.CRD_KAFKA_CONNECT,
+            TestUtils.CRD_KAFKA_CONNECT_S2I,
+            TestUtils.CRD_TOPIC,
+            TestUtils.USER_PATH + "/src/rbac/role-edit-kafka.yaml");
     }
 
-    @Override
+    @AfterAll
     protected void tearDownEnvironmentAfterAll() {
         cluster.deleteCustomResources();
         cluster.deleteNamespaces();

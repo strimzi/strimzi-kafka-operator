@@ -7,13 +7,14 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,39 +31,40 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class NamespaceRbacScopeOperatorST extends AbstractST {
 
     static final String NAMESPACE = "roles-only-cluster-test";
-    static final String CLUSTER_NAME = "roles-only-cluster";
 
     private static final Logger LOGGER = LogManager.getLogger(NamespaceRbacScopeOperatorST.class);
 
-    @Test
-    void testNamespacedRbacScopeDeploysRoles() {
-        assumeTrue(Environment.isNamespaceRbacScope());
-        prepareEnvironment();
+    @IsolatedTest("This test case needs own Cluster Operator")
+    void testNamespacedRbacScopeDeploysRoles(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(CLUSTER_NAME, 3, 3)
-                .editMetadata()
-                    .addToLabels("app", "strimzi")
-                .endMetadata()
-                .build());
+        assumeTrue(Environment.isNamespaceRbacScope());
+        prepareEnvironment(extensionContext);
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+            .editMetadata()
+                .addToLabels("app", "strimzi")
+            .endMetadata()
+            .build());
 
         // Wait for Kafka to be Ready to ensure all potentially erroneous ClusterRole applications have happened
-        KafkaUtils.waitForKafkaReady(CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(clusterName);
 
         // Assert that no ClusterRoles are present on the server that have app strimzi
         // Naturally returns false positives if another Strimzi operator has been installed
         List<ClusterRole> strimziClusterRoles = kubeClient().listClusterRoles().stream()
-                .filter(cr -> {
-                    Map<String, String> labels = cr.getMetadata().getLabels() != null ? cr.getMetadata().getLabels() : Collections.emptyMap();
-                    return "strimzi".equals(labels.get("app"));
-                })
-                .collect(Collectors.toList());
+            .filter(cr -> {
+                Map<String, String> labels = cr.getMetadata().getLabels() != null ? cr.getMetadata().getLabels() : Collections.emptyMap();
+                return "strimzi".equals(labels.get("app"));
+            })
+            .collect(Collectors.toList());
         assertThat(strimziClusterRoles, is(Collections.emptyList()));
     }
 
-    private void prepareEnvironment() {
-        prepareEnvForOperator(NAMESPACE);
-        applyBindings(NAMESPACE);
+    private void prepareEnvironment(ExtensionContext extensionContext) {
+        prepareEnvForOperator(extensionContext, NAMESPACE);
+        applyBindings(extensionContext, NAMESPACE);
         // 060-Deployment
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
     }
 }

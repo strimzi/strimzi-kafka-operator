@@ -5,15 +5,15 @@
 package io.strimzi.systemtest.operators.topic;
 
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 
@@ -24,17 +24,17 @@ public class TopicScalabilityST extends AbstractST {
     private static final int NUMBER_OF_TOPICS = 1000;
     private static final int SAMPLE_OFFSET = 50;
     static final String NAMESPACE = "topic-scale-cluster-test";
+    private final String sharedClusterName = "topic-scalability-shared-cluster-name";
 
-    @Test
-    void testBigAmountOfTopicsCreatingViaK8s() {
+    @ParallelTest
+    void testBigAmountOfTopicsCreatingViaK8s(ExtensionContext extensionContext) {
         final String topicName = "topic-example";
 
         LOGGER.info("Creating topics via Kubernetes");
         for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
             String currentTopic = topicName + i;
             LOGGER.debug("Creating {} topic", currentTopic);
-            KafkaTopicResource.topicWithoutWait(KafkaTopicResource.defaultTopic(clusterName,
-                currentTopic, 3, 1, 1).build());
+            resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(sharedClusterName, currentTopic, 3, 1, 1).build());
         }
 
         for (int i = 0; i < NUMBER_OF_TOPICS; i = i + SAMPLE_OFFSET) {
@@ -46,16 +46,15 @@ public class TopicScalabilityST extends AbstractST {
 
         LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);
 
-        KafkaTopicUtils.waitForKafkaTopicsCount(NUMBER_OF_TOPICS, clusterName);
+        KafkaTopicUtils.waitForKafkaTopicsCount(NUMBER_OF_TOPICS, sharedClusterName);
     }
 
     @BeforeAll
-    void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
 
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", NAMESPACE);
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1).build());
     }
 
 }

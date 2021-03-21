@@ -254,6 +254,9 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     public String getSecretPrefix() {
         return secretPrefix;
     }
+    public String getClusterName() {
+        return clusterName;
+    }
 
     @Override
     public String toString() {

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.operator;
+package io.strimzi.systemtest.resources.specific;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -33,7 +33,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOU
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class OlmResource {
+public class OlmResource implements SpecificResourceType {
     private static final Logger LOGGER = LogManager.getLogger(OlmResource.class);
 
     public static final String NO_MORE_NON_USED_INSTALL_PLANS = "NoMoreNonUsedInstallPlans";
@@ -43,21 +43,49 @@ public class OlmResource {
 
     private static Map<String, JsonObject> exampleResources = new HashMap<>();
 
-    public static void clusterOperator(String namespace) {
+    private String deploymentName;
+    private String namespace;
+    private String csvName;
+
+    @Override
+    public void create() {
+        this.clusterOperator(namespace);
+    }
+
+    public void create(String namespace, long operationTimeout, long reconciliationInterval) {
+        this.clusterOperator(namespace, operationTimeout, reconciliationInterval);
+    }
+
+    public void create(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+        this.clusterOperator(namespace, olmInstallationStrategy, fromVersion);
+    }
+
+    @Override
+    public void delete() {
+        this.deleteOlm(deploymentName, namespace, csvName);
+    }
+
+    public OlmResource() { }
+
+    public OlmResource(String namespace) {
+        this.namespace = namespace;
+    }
+
+    private void clusterOperator(String namespace) {
         clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, OlmInstallationStrategy.Automatic, null);
     }
 
-    public static void clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+    private void clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
         clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
             olmInstallationStrategy, fromVersion);
     }
 
-    public static void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+    private void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
         clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null);
     }
 
-    public static void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
-                                       OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+    private void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
+                                             OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
 
         // if on cluster is not defaultOlmNamespace apply 'operator group' in current namespace
         if (!KubeClusterResource.getInstance().getDefaultOlmNamespace().equals(namespace)) {
@@ -89,8 +117,6 @@ public class OlmResource {
         String deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);
 
-
-        ResourceManager.getPointerResources().push(() -> deleteOlm(deploymentName, namespace, csvName));
         // Wait for operator creation
         waitFor(deploymentName, namespace, 1);
 
@@ -252,7 +278,7 @@ public class OlmResource {
             Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION);
     }
 
-    public static void deleteOlm(String deploymentName, String namespace, String csvName) {
+    private static void deleteOlm(String deploymentName, String namespace, String csvName) {
         ResourceManager.cmdKubeClient().exec("delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
         ResourceManager.cmdKubeClient().exec("delete", "operatorgroups", "-l", "app=strimzi", "-n", namespace);
         ResourceManager.cmdKubeClient().exec(false, "delete", "csv", csvName, "-n", namespace);

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.watcher;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -14,22 +15,27 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectS2ITemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -59,27 +65,29 @@ class AllNamespaceST extends AbstractNamespaceST {
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
-    @Test
-    void testTopicOperatorWatchingOtherNamespace() {
+    @IsolatedTest
+    void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
+
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE_CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
-        deployNewTopic(SECOND_NAMESPACE, THIRD_NAMESPACE, EXAMPLE_TOPIC_NAME);
-        deleteNewTopic(SECOND_NAMESPACE, EXAMPLE_TOPIC_NAME);
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, SECOND_NAMESPACE).build());
+        KafkaTopicResource.kafkaTopicClient().inNamespace(SECOND_NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         cluster.setNamespace(previousNamespace);
     }
 
     /**
      * Test the case when Kafka will be deployed in different namespace than CO
      */
-    @Test
+    @IsolatedTest
     @Tag(ACCEPTANCE)
-    void testKafkaInDifferentNsThanClusterOperator() {
+    void testKafkaInDifferentNsThanClusterOperator(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -90,80 +98,89 @@ class AllNamespaceST extends AbstractNamespaceST {
     /**
      * Test the case when MirrorMaker will be deployed in different namespace than CO when CO watches all namespaces
      */
-    @Test
+    @IsolatedTest
     @Tag(MIRROR_MAKER)
-    void testDeployMirrorMakerAcrossMultipleNamespace() {
+    void testDeployMirrorMakerAcrossMultipleNamespace(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
-        checkMirrorMakerForKafkaInDifNamespaceThanCO(SECOND_CLUSTER_NAME);
+        checkMirrorMakerForKafkaInDifNamespaceThanCO(extensionContext, SECOND_CLUSTER_NAME);
     }
 
-    @Test
+    @IsolatedTest
     @Tag(CONNECT)
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
-    void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO() {
+    void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
+        String kafkaConnectName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         // Deploy Kafka Connect in other namespace than CO
-        KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(SECOND_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, kafkaConnectName, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND);
+        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND, SECOND_CLUSTER_NAME);
 
         cluster.setNamespace(previousNamespace);
     }
 
-    @Test
+    @IsolatedTest
     @OpenShiftOnly
     @Tag(CONNECT_S2I)
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
-    void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO() {
+    void testDeployKafkaConnectS2IAndKafkaConnectorInOtherNamespaceThanCO(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
+        String kafkaConnectS2IName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect-s2i";
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, SECOND_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).build());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         // Deploy Kafka Connect in other namespace than CO
-        KafkaConnectS2IResource.createAndWaitForReadiness(KafkaConnectS2IResource.kafkaConnectS2I(SECOND_CLUSTER_NAME, SECOND_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, kafkaConnectS2IName, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(SECOND_CLUSTER_NAME, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnectS2I.RESOURCE_KIND);
+        deployKafkaConnectorWithSink(extensionContext, kafkaConnectS2IName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnectS2I.RESOURCE_KIND, SECOND_CLUSTER_NAME);
 
         cluster.setNamespace(previousNamespace);
     }
 
-    @Test
-    void testUOWatchingOtherNamespace() {
+    @IsolatedTest
+    void testUOWatchingOtherNamespace(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
-        KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
 
         cluster.setNamespace(previousNamespace);
     }
 
-    @Test
-    void testUserInDifferentNamespace() {
+    @IsolatedTest
+    void testUserInDifferentNamespace(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        KafkaUser user = KafkaUserResource.createAndWaitForReadiness(KafkaUserResource.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
+
+        KafkaUser user = KafkaUserTemplates.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build();
+
+        resourceManager.createResource(extensionContext, user);
 
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(SECOND_NAMESPACE).withName(USER_NAME)
                 .get().getStatus().getConditions().get(0);
@@ -183,7 +200,7 @@ class AllNamespaceST extends AbstractNamespaceST {
             }
         }
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).build());
 
         final String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
@@ -219,23 +236,23 @@ class AllNamespaceST extends AbstractNamespaceST {
         kubeClient(targetNamespace).getClient().secrets().inNamespace(targetNamespace).createOrReplace(s);
     }
 
-    private void deployTestSpecificResources() {
+    private void deployTestSpecificResources(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
-        prepareEnvForOperator(CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
+        prepareEnvForOperator(extensionContext, CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE));
 
         // Apply role bindings in CO namespace
-        applyBindings(CO_NAMESPACE);
+        applyBindings(extensionContext, CO_NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-        List<ClusterRoleBinding> clusterRoleBindingList = KubernetesResource.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
+        List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(CO_NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
-                KubernetesResource.clusterRoleBinding(clusterRoleBinding));
+            ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
         // 060-Deployment
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator("*").build());
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(CO_NAMESPACE, "*", Constants.RECONCILIATION_INTERVAL).build());
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -250,16 +267,16 @@ class AllNamespaceST extends AbstractNamespaceST {
 
         cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).build());
 
         cluster.setNamespace(previousNamespace);
     }
 
     @BeforeAll
-    void setupEnvironment() {
+    void setupEnvironment(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        deployTestSpecificResources();
+        deployTestSpecificResources(extensionContext);
     }
 }

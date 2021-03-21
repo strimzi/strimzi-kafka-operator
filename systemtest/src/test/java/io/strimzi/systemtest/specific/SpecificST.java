@@ -21,15 +21,18 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
-import io.strimzi.systemtest.resources.KubernetesResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -42,7 +45,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -76,16 +79,20 @@ public class SpecificST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);
     public static final String NAMESPACE = "specific-cluster-test";
+    private ExtensionContext sharedExtensionContext;
 
-    @Test
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testRackAware() {
+    void testRackAware(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
+
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String rackKey = "rack-key";
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewRack()
@@ -127,34 +134,34 @@ public class SpecificST extends AbstractST {
             .withDelayMs(0)
             .build();
 
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.producerStrimzi().build());
-        kafkaBasicClientJob.createAndWaitForReadiness(kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
     }
 
-    @Test
+    @IsolatedTest("Modification of shared Cluster Operator configuration")
     @Tag(CONNECT)
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testRackAwareConnectWrongDeployment() {
+    void testRackAwareConnectWrongDeployment(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         Map<String, String> label = Collections.singletonMap("my-label", "value");
         Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
-        ResourceManager.setClassResources();
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
-        // Now we set pointer stack to method again
-        ResourceManager.setMethodResources();
+
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String wrongRackKey = "wrong-key";
         String rackKey = "rack-key";
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
-                .editSpec()
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .editSpec()
                     .editKafka()
                         .withNewRack()
                             .withTopologyKey(rackKey)
@@ -164,31 +171,33 @@ public class SpecificST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Deploy KafkaConnect with wrong rack-aware topology key: {}", wrongRackKey);
-        KafkaConnect kc = KafkaConnectResource.kafkaConnectWithoutWait(KafkaConnectResource.kafkaConnect(clusterName, clusterName, 1)
-                .editSpec()
-                    .withNewRack()
-                        .withTopologyKey(wrongRackKey)
-                    .endRack()
-                    .addToConfig("key.converter.schemas.enable", false)
-                    .addToConfig("value.converter.schemas.enable", false)
-                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                    .editOrNewTemplate()
-                        .withNewClusterRoleBinding()
-                            .withNewMetadata()
-                                .withAnnotations(anno)
-                                .withLabels(label)
-                            .endMetadata()
-                        .endClusterRoleBinding()
-                    .endTemplate()
-                .endSpec()
-                .build());
 
-        KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(clusterName));
+        KafkaConnect kc = KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
+            .editSpec()
+                .withNewRack()
+                    .withTopologyKey(wrongRackKey)
+                .endRack()
+                .addToConfig("key.converter.schemas.enable", false)
+                .addToConfig("value.converter.schemas.enable", false)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .editOrNewTemplate()
+                    .withNewClusterRoleBinding()
+                        .withNewMetadata()
+                            .withAnnotations(anno)
+                            .withLabels(label)
+                        .endMetadata()
+                    .endClusterRoleBinding()
+                .endTemplate()
+            .endSpec().build();
+
+        resourceManager.createResource(extensionContext, false,  kc);
+
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kc, KafkaConnectResources.deploymentName(clusterName));
 
         PodUtils.waitForPendingPod(clusterName + "-connect");
         List<String> connectWrongPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
@@ -213,9 +222,7 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
-        ResourceManager.setClassResources();
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
-        ResourceManager.setMethodResources();
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         // check the ClusterRoleBinding annotations and labels in Kafka cluster
@@ -226,38 +233,41 @@ public class SpecificST extends AbstractST {
         assertThat(actualAnno, is(anno));
     }
 
-    @Test
+    @IsolatedTest("Modification of shared Cluster Operator configuration")
     @Tag(CONNECT)
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
-    public void testRackAwareConnectCorrectDeployment() {
+    public void testRackAwareConnectCorrectDeployment(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
+
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
-        ResourceManager.setClassResources();
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
-        // Now we set pointer stack to method again
-        ResourceManager.setMethodResources();
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
+
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String rackKey = "rack-key";
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3)
-                .editSpec()
-                    .editKafka()
-                        .withNewRack()
-                            .withTopologyKey(rackKey)
-                        .endRack()
-                        .addToConfig("replica.selector.class", "org.apache.kafka.common.replica.RackAwareReplicaSelector")
-                    .endKafka()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName,  3)
+            .editSpec()
+                .editKafka()
+                    .withNewRack()
+                        .withTopologyKey(rackKey)
+                    .endRack()
+                    .addToConfig("replica.selector.class", "org.apache.kafka.common.replica.RackAwareReplicaSelector")
+                .endKafka()
+            .endSpec()
+            .build());
 
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Deploy KafkaConnect with correct rack-aware topology key: {}", rackKey);
-        KafkaConnect kc = KafkaConnectResource.createAndWaitForReadiness(KafkaConnectResource.kafkaConnect(clusterName, 1)
+        KafkaConnect kc = KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
                 .editSpec()
                     .withNewRack()
                         .withTopologyKey(rackKey)
@@ -267,9 +277,14 @@ public class SpecificST extends AbstractST {
                     .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec()
-                .build());
+                .build();
 
-        KubernetesResource.deployNetworkPolicyForResource(kc, KafkaConnectResources.deploymentName(clusterName));
+        resourceManager.createResource(extensionContext, kc);
+
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kc, KafkaConnectResources.deploymentName(clusterName));
+
+        String topicName = "topic-test-rack-aware";
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         for (String connectPodName : connectPods) {
@@ -283,26 +298,25 @@ public class SpecificST extends AbstractST {
             assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
             assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
-            String topicName = "rw-" + KafkaTopicUtils.generateRandomNameOfTopic();
-            KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(clusterName, topicName).build());
+            topicName = "rw-" + KafkaTopicUtils.generateRandomNameOfTopic();
+            resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
             KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
         }
 
         // Revert changes for CO deployment
-        ResourceManager.setClassResources();
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
-        ResourceManager.setMethodResources();
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 
-    @Test
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancerIpOverride() {
+    void testLoadBalancerIpOverride(ExtensionContext extensionContext) {
         String bootstrapOverrideIP = "10.0.0.1";
         String brokerOverrideIP = "10.0.0.2";
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(clusterName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -343,13 +357,14 @@ public class SpecificST extends AbstractST {
         );
     }
 
-    @Test
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(REGRESSION)
-    void testDeployUnsupportedKafka() {
+    void testDeployUnsupportedKafka(ExtensionContext extensionContext) {
         String nonExistingVersion = "6.6.6";
         String nonExistingVersionMessage = "Version " + nonExistingVersion + " is not supported. Supported versions are.*";
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        KafkaResource.kafkaWithoutWait(KafkaResource.kafkaEphemeral(clusterName, 1, 1)
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
                     .withVersion(nonExistingVersion)
@@ -364,13 +379,14 @@ public class SpecificST extends AbstractST {
         KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
     }
 
-    @Test
+    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    void testLoadBalancerSourceRanges() {
+    void testLoadBalancerSourceRanges(ExtensionContext extensionContext) {
         String networkInterfaces = Exec.exec("ip", "route").out();
         Pattern ipv4InterfacesPattern = Pattern.compile("[0-9]+.[0-9]+.[0-9]+.[0-9]+\\/[0-9]+ dev (eth0|enp11s0u1).*");
         Matcher ipv4InterfacesMatcher = ipv4InterfacesPattern.matcher(networkInterfaces);
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         ipv4InterfacesMatcher.find();
         LOGGER.info(ipv4InterfacesMatcher.group(0));
@@ -382,7 +398,7 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Network address of machine with associated prefix is {}", ipWithPrefix);
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaPersistent(clusterName, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -436,13 +452,15 @@ public class SpecificST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
-        LOGGER.info(BridgeUtils.getBridgeVersion());
-        ResourceManager.setClassResources();
-        prepareEnvForOperator(NAMESPACE);
+    void setup(ExtensionContext extensionContext) {
+        sharedExtensionContext = extensionContext;
 
-        applyBindings(NAMESPACE);
+
+        LOGGER.info(BridgeUtils.getBridgeVersion());
+        prepareEnvForOperator(sharedExtensionContext, NAMESPACE);
+
+        applyBindings(sharedExtensionContext, NAMESPACE);
         // 060-Deployment
-        BundleResource.createAndWaitForReadiness(BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
     }
 }

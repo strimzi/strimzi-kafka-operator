@@ -8,9 +8,11 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.vertx.core.http.HttpMethod;
@@ -20,7 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +44,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     private static final String ALLOWED_ORIGIN = "https://strimzi.io";
     private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
 
-    @Test
+    @ParallelTest
     void testCorsOriginAllowed() {
         final String kafkaBridgeUser = "bridge-user-example";
         final String groupId = ClientUtils.generateRandomConsumerGroup();
@@ -81,7 +83,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         assertThat(response, containsString("404"));
     }
 
-    @Test
+    @ParallelTest
     void testCorsForbidden() {
         final String kafkaBridgeUser = "bridge-user-example";
         final String groupId = ClientUtils.generateRandomConsumerGroup();
@@ -110,16 +112,18 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void beforeAll() throws Exception {
-        deployClusterOperator(NAMESPACE);
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1).build());
-
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(false, kafkaClientsName).build());
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+    void beforeAll(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1).build());
 
         kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeCorsClusterName)).build();
 
-        KafkaBridgeResource.createAndWaitForReadiness(KafkaBridgeResource.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
+        String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+
+        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
             1, ALLOWED_ORIGIN, null).build());
 
         KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(httpBridgeCorsClusterName).get().getSpec().getHttp().getCors();

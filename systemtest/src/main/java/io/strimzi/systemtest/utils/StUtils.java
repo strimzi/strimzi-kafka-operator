@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -227,41 +228,42 @@ public class StUtils {
      * 5. try to parse the JsonArray
      * @param pods snapshot of pods to be checked
      * @param containerName name of container from which to take the log
-     * @return if JSON format was set up or not
      */
-    public static boolean checkLogForJSONFormat(Map<String, String> pods, String containerName) {
-        boolean isJSON = false;
+    public static void checkLogForJSONFormat(Map<String, String> pods, String containerName) {
         //this is only for decrease the number of records - kafka have record/line, operators record/11lines
-        String tail = "--tail=" + (containerName.contains("operator") ? "50" : "10");
+        String tail = "--tail=" + (containerName.contains("operator") ? "100" : "10");
 
-        for (String podName : pods.keySet()) {
-            String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
+        TestUtils.waitFor("for JSON log in " + pods, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            boolean isJSON = false;
+            for (String podName : pods.keySet()) {
+                String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
 
-            // remove incomplete JSON from the end
-            int lastBracket = log.lastIndexOf("}");
-            int firstBracket = log.indexOf("{");
-            if (log.length() >= lastBracket) {
-                log = log.substring(Math.max(0, firstBracket), lastBracket + 1);
+                // remove incomplete JSON from the end
+                int lastBracket = log.lastIndexOf("}");
+                int firstBracket = log.indexOf("{");
+                if (log.length() >= lastBracket) {
+                    log = log.substring(Math.max(0, firstBracket), lastBracket + 1);
+                }
+
+                Matcher matcher = BETWEEN_JSON_OBJECTS_PATTERN.matcher(log);
+
+                log = matcher.replaceAll("}, \\{");
+                matcher = ALL_BEFORE_JSON_PATTERN.matcher(log);
+                log = "[" + matcher.replaceFirst("{") + "]";
+
+                try {
+                    new JsonArray(log);
+                    LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
+                    isJSON = true;
+                } catch (Exception e) {
+                    LOGGER.info(log);
+                    LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName, e);
+                    isJSON = false;
+                    break;
+                }
             }
-
-            Matcher matcher = BETWEEN_JSON_OBJECTS_PATTERN.matcher(log);
-
-            log = matcher.replaceAll("}, \\{");
-            matcher = ALL_BEFORE_JSON_PATTERN.matcher(log);
-            log = "[" + matcher.replaceFirst("{") + "]";
-
-            try {
-                new JsonArray(log);
-                LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
-                isJSON = true;
-            } catch (Exception e) {
-                LOGGER.info(log);
-                LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName, e);
-                isJSON = false;
-                break;
-            }
-        }
-        return isJSON;
+            return isJSON;
+        });
     }
 
     /**
