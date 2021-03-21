@@ -18,7 +18,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +42,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     private String ingressClass;
     private NodeAddressType preferredNodePortAddressType;
     private ExternalTrafficPolicy externalTrafficPolicy;
-    private List<String> loadBalancerSourceRanges = new ArrayList<>(0);
+    private List<String> loadBalancerSourceRanges;
     private List<String> finalizers;
     private Boolean useServiceDnsDomain;
     private GenericKafkaListenerConfigurationBootstrap bootstrap;
