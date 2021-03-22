@@ -17,7 +17,7 @@ Whenever possible the clients should use OAUTHBEARER mechanism, which allows the
 
 .SASL_OAUTHBEARER
 
-Support for the SASL_OAUTHBEARER mechanism is built in to many Kafka clients.
+Support for the SASL_OAUTHBEARER mechanism is built in to many Kafka clients. However, it mostly requires writing custom callbacks that need to provide an access token for authentication as needed. For java based clients using official Kafka Clients library we provide such callbacks, so that users don't need to provide any custom callback code.
 
 The client initiates a session with the Kafka broker using the SASL OAUTHBEARER mechanism for credentials exchange, where credentials take the form of a JWT access token.
 
