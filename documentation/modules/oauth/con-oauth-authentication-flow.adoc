@@ -41,7 +41,7 @@ SASL_OAUTHBEARER must be enabled in the listener configuration for the Kafka bro
 
 SASL_PLAIN is a simple authentication mechanism that is supported by all Kafka client tools, including developer tools such as kafkacat.
 
-SASL_PLAIN allows client authentication using either of the following methods:
+SASL_PLAIN with the Strimzi provided callback is what we also call OAuth over PLAIN, and allows a client to authenticate using either of the following methods:
 
 * OAuth access token
 * OAuth `clientId` and `secret` (the client credentials)
