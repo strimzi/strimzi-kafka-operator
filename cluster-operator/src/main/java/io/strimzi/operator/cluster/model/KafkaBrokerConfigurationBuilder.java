@@ -240,7 +240,7 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the listener. This method is used only internally.
      *
-     * @param listenerName  The name of the listener under which it is used in the KAfka broker configuration file
+     * @param listenerName  The name of the listener as it is referenced in the Kafka broker configuration file
      * @param configuration The configuration of the listener (null if not specified by the user in the Kafka CR)
      */
     private void configureListener(String listenerName, GenericKafkaListenerConfiguration configuration) {
