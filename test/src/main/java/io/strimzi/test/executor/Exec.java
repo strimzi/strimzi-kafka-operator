@@ -166,7 +166,7 @@ public class Exec {
                 if (logToOutput) {
                     LOGGER.info("Command: {}", String.join(" ", command));
                     if (input != null) {
-                        LOGGER.info("Input: {}", input.trim());
+                        LOGGER.debug("Input: {}", input.trim());
                     }
                     LOGGER.info("RETURN code: {}", ret);
                     if (!executor.out().isEmpty()) {

@@ -99,9 +99,23 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @Override
     @SuppressWarnings("unchecked")
     public K create(File file) {
-        Exec.exec(null, namespacedCommand(CREATE, "-f", file.getAbsolutePath()), 0, true, true);
+        Exec.exec(null, namespacedCommand(CREATE, "-f", file.getAbsolutePath()), 0, false, true);
 
         return (K) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public K createOrReplace(File file) {
+        try (Context context = defaultContext()) {
+            try {
+                create(file);
+            } catch (KubeClusterException.AlreadyExists e) {
+                Exec.exec(null, namespacedCommand(REPLACE, "-f", file.getAbsolutePath()), 0, false);
+            }
+
+            return (K) this;
+        }
     }
     
     @Override
@@ -154,7 +168,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         for (File f : files) {
             if (f.isFile()) {
                 if (f.getName().endsWith(".yaml")) {
-                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, true, false));
+                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, false, false));
                 }
             } else if (f.isDirectory()) {
                 File[] children = f.listFiles();

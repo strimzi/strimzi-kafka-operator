@@ -46,6 +46,8 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     /** Deletes the resources in the given files. */
     K delete(File... files);
 
+    K createOrReplace(File file);
+
     default K create(String... files) {
         return create(asList(files).stream().map(File::new).collect(toList()).toArray(new File[0]));
     }
