@@ -46,7 +46,7 @@ SASL_PLAIN with the Strimzi provided callback is what we also call OAuth over PL
 * OAuth access token
 
 The client must enable SASL_PLAIN and set the `username` and `password`. 
-If the client sets `username` to `access-token`, the authorization server will interpret the password as the access token. 
+If the client prefixes the `password` with `$accessToken:` followed by the value of the access token (access token), the authorization server will interpret the password as the access token.
 Otherwise, the authorization server will interpret the user as the `clientId` and the password as the client secret.
 
 Kafka brokers and clients both need to be configured to use OAuth 2.0. SASL_PLAIN must be enabled in the listener OAuth 2.0 authentication configuration for the Kafka broker.
