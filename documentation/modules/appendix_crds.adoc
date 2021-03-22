@@ -73,8 +73,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |map
 |storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim, jbod].
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
-|authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, opa, keycloak].
-|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`]
+|authorization        1.2+<.<|Authorization configuration for Kafka brokers. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple, opa, keycloak, custom].
+|xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`]
 |rack                 1.2+<.<|Configuration of the `broker.rack` broker config.
 |xref:type-Rack-{context}[`Rack`]
 |brokerRackInitImage  1.2+<.<|The image of the init container used for initializing the `broker.rack`.
@@ -911,7 +911,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationSimple.adoc[levelof
 ==== `KafkaAuthorizationSimple` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationSimple` type from xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
+The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationSimple` type from xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `simple` for the type `KafkaAuthorizationSimple`.
 [options="header"]
 |====
@@ -935,7 +935,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationOpa.adoc[leveloffse
 ==== `KafkaAuthorizationOpa` schema properties
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationOpa` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
+The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationOpa` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 [options="header"]
 |====
@@ -962,7 +962,7 @@ It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationKeycloak` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`].
+The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationKeycloak` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationCustom-{context}[`KafkaAuthorizationCustom`].
 It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 [options="header"]
 |====
@@ -984,6 +984,32 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |grantsRefreshPoolSize           1.2+<.<|The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.
 |integer
 |superUsers                      1.2+<.<|List of super users. Should contain list of user principals which should get unlimited access rights.
+|string array
+|====
+
+[id='type-KafkaAuthorizationCustom-{context}']
+### `KafkaAuthorizationCustom` schema reference
+
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+
+xref:type-KafkaAuthorizationCustom-schema-{context}[Full list of `KafkaAuthorizationCustom` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.KafkaAuthorizationCustom.adoc[leveloffset=+1]
+
+[id='type-KafkaAuthorizationCustom-schema-{context}']
+==== `KafkaAuthorizationCustom` schema properties
+
+
+The `type` property is a discriminator that distinguishes use of the `KafkaAuthorizationCustom` type from xref:type-KafkaAuthorizationSimple-{context}[`KafkaAuthorizationSimple`], xref:type-KafkaAuthorizationOpa-{context}[`KafkaAuthorizationOpa`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`].
+It must have the value `custom` for the type `KafkaAuthorizationCustom`.
+[options="header"]
+|====
+|Property                |Description
+|type             1.2+<.<|Must be `custom`.
+|string
+|authorizerClass  1.2+<.<|Authorization implementation class, which must be available in classpath.
+|string
+|superUsers       1.2+<.<|List of super users, which are user principals with unlimited access rights.
 |string array
 |====
 

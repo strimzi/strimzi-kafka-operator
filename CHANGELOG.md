@@ -7,6 +7,7 @@
 * Remove support for Kafka 2.5.x
 * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
 * Migrate to CRD v1 (required by Kubernetes 1.22+)
+* Support for configuring custom Authorizer implementation 
 
 ### Changes, deprecations and removals
 
