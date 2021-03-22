@@ -53,6 +53,8 @@ If the `password` is set as the access token, the `username` has to be set to th
 
 Kafka brokers and clients both need to be configured to use OAuth 2.0. SASL_PLAIN must be enabled in the listener OAuth 2.0 authentication configuration for the Kafka broker.
 
+The following enables SASL_PLAIN in addition to SASL_OAUTHBEARER which is enabled by default. If you want only SASL_PLAIN you can disable SASL_OAUTHBEARER by setting `enableOauthBearer` to `false`.
+
 [source,yaml,subs="+quotes,attributes+"]
 ----
   # ...
