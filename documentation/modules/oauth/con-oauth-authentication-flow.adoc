@@ -25,7 +25,7 @@ The client initiates a session with the Kafka broker using the SASL OAUTHBEARER 
 * A long-lived refresh token, obtained manually by the user at configuration time
 
 Kafka brokers and clients both need to be configured to use OAuth 2.0. 
-SASL_OAUTHBEARER must be enabled in the listener configuration for the Kafka broker.
+SASL_OAUTHBEARER is automatically enabled in the listener configuration for the Kafka broker, so it is not necessary to explicitly enable it.
 
 [source,yaml,subs="attributes+"]
 ----
