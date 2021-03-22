@@ -13,6 +13,7 @@ You can configure OAuth 2.0 authentication using one of the following authentica
 Both mechanisms allow Kafka clients to establish authenticated sessions with Kafka brokers. 
 However, the authentication flow between a client, the authorization server, and the Kafka broker is different for each mechanism.
 Whenever possible the clients should use OAUTHBEARER mechanism, which allows the client to never share its credentials with the Kafka broker. PLAIN mechanism was added to allow the Kafka clients that don't support OAUTHBEARER mechanism, to still be able to authenticate with credentials handled centrally behind the OAuth2 / OIDC compliant authorization server.
+Whenever possible the clients should use OAUTHBEARER mechanism, which allows the client to never share its credentials with the Kafka broker. PLAIN mechanism was added to allow the Kafka clients that don't support OAUTHBEARER mechanism, to still be able to authenticate with credentials handled centrally behind the OAuth2 / OIDC compliant authorization server.
 
 .SASL_OAUTHBEARER
 
