@@ -46,6 +46,7 @@ pipeline {
         stage('Parse parameters from comment') {
             steps {
                 script {
+                    lib = evaluate readFile('./.jenkins/jenkins.groovy')
                     println("Comment body: ${env.ghprbCommentBody}")
                     env.TEST_CASE = params.TEST_CASE
                     env.TEST_PROFILE = params.TEST_PROFILE
@@ -74,7 +75,7 @@ pipeline {
                     } else {
                         env.TEST_ONLY = "false"
                         env.DOCKER_ORG="strimzi"
-                        env.DOCKER_REGISTRY = "172.30.1.1:5000"
+                        env.DOCKER_REGISTRY = "localhost:5000"
                         env.DOCKER_TAG="pr"
                     }
                     if (env.ghprbCommentBody.contains('install_type=')) {
@@ -102,7 +103,6 @@ pipeline {
                     println("DOCKER_TAG: ${env.DOCKER_TAG}")
                     println("CLUSTER_OPERATOR_INSTALL_TYPE: ${env.CLUSTER_OPERATOR_INSTALL_TYPE}")
                     println("KUBE_VERSION: ${env.KUBE_VERSION}")
-
                 }
             }
         }
@@ -110,7 +110,6 @@ pipeline {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
-                        lib = evaluate readFile('./.jenkins/jenkins.groovy')
                         lib.setupKubernetes()
                     }
                 }
@@ -152,6 +151,8 @@ pipeline {
                 script {
                     lib.buildStrimziImages()
                     env.BUILD_DOCKER_IMAGE_STATUS = true
+                    env.DOCKER_REGISTRY = sh(script: "kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'", returnStdout: true).trim() + ":80"
+                    println("DOCKER_REGISTRY: ${env.DOCKER_REGISTRY}")
                 }
             }
         }

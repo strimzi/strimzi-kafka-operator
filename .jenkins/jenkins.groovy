@@ -20,8 +20,12 @@ def installYq(String workspace) {
 }
 
 def buildStrimziImages() {
-    sh(script: "MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make docker_build")
-    sh(script: "make docker_tag")
+    sh(script: """
+        eval \$(minikube docker-env)
+        MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make docker_build
+        make docker_tag
+        make docker_push
+    """)
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
