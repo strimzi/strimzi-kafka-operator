@@ -34,7 +34,6 @@ SASL_OAUTHBEARER is automatically enabled in the listener configuration for the 
     type: oauth
     # ...
     enableOauthBearer: true
-    enablePlain: false
 ----
 
 .SASL_PLAIN
