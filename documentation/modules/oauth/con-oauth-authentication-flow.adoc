@@ -57,7 +57,6 @@ Kafka brokers and clients both need to be configured to use OAuth 2.0. SASL_PLAI
   authentication:
     type: oauth
     # ...
-    enableOauthBearer: false
     enablePlain: true
     tokenEndpointUri: https://_OAUTH-SERVER-ADDRESS_/auth/realms/external/protocol/openid-connect/token
 ----
