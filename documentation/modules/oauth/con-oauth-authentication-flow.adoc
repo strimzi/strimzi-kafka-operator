@@ -44,6 +44,7 @@ SASL_PLAIN is a simple authentication mechanism that is supported by all Kafka c
 SASL_PLAIN with the Strimzi provided callback is what we also call OAuth over PLAIN, and allows a client to authenticate using either of the following methods:
 
 * OAuth `clientId` and `secret` (the client credentials)
+* OAuth access token
 
 The client must enable SASL_PLAIN and set the `username` and `password`. 
 If the client sets `username` to `access-token`, the authorization server will interpret the password as the access token. 
