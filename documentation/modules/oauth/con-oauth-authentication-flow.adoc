@@ -19,7 +19,10 @@ Whenever possible the clients should use OAUTHBEARER mechanism, which allows the
 
 Support for the SASL_OAUTHBEARER mechanism is built in to many Kafka clients. However, it mostly requires writing custom callbacks that need to provide an access token for authentication as needed. For java based clients using official Kafka Clients library we provide such callbacks, so that users don't need to provide any custom callback code.
 
-The client initiates a session with the Kafka broker using the SASL OAUTHBEARER mechanism for credentials exchange, where credentials take the form of a JWT access token.
+The client initiates a session with the Kafka broker using the SASL OAUTHBEARER mechanism for credentials exchange, where credentials take the form of a bearer token provided by the callback code. Using Strimzi OAuth callbacks one can configure three ways to provide the token:
+* Client ID and Secret (by using OAuth2 client credentials mechanism)
+* A long-lived access token, obtained manually by the user at configuration time
+* A long-lived refresh token, obtained manually by the user at configuration time
 
 Kafka brokers and clients both need to be configured to use OAuth 2.0. 
 SASL_OAUTHBEARER must be enabled in the listener configuration for the Kafka broker.
