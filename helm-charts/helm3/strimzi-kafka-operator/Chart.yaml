@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: 0.22.0
+appVersion: 0.22.1
 description: 'Strimzi: Apache Kafka running on Kubernetes'
 home: https://strimzi.io/
 icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
@@ -20,4 +20,4 @@ maintainers:
 name: strimzi-kafka-operator
 sources:
 - https://github.com/strimzi/strimzi-kafka-operator
-version: 0.22.0
+version: 0.22.1
