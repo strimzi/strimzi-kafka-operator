@@ -412,6 +412,70 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @Test
+    public void testConnectionLimits()  {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9100)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .withNewConfiguration()
+                    .withMaxConnections(100)
+                    .withMaxConnectionCreationRate(10)
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
+                .withName("listener2")
+                .withPort(9101)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .withNewConfiguration()
+                    .withMaxConnections(1000)
+                    .withMaxConnectionCreationRate(50)
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener listener3 = new GenericKafkaListenerBuilder()
+                .withName("listener3")
+                .withPort(9102)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .withNewConfiguration()
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener listener4 = new GenericKafkaListenerBuilder()
+                .withName("listener4")
+                .withPort(9103)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder()
+                .withListeners("my-cluster", "my-namespace", asList(listener1, listener2, listener3, listener4))
+                .build();
+
+        assertThat(configuration, isEquivalent("listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
+                "listener.name.replication-9091.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
+                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
+                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
+                "listener.name.replication-9091.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
+                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
+                "listener.name.replication-9091.ssl.client.auth=required",
+                "listener.name.listener1-9100.max.connections=100",
+                "listener.name.listener1-9100.max.connection.creation.rate=10",
+                "listener.name.listener2-9101.max.connections=1000",
+                "listener.name.listener2-9101.max.connection.creation.rate=50",
+                "listeners=REPLICATION-9091://0.0.0.0:9091,LISTENER1-9100://0.0.0.0:9100,LISTENER2-9101://0.0.0.0:9101,LISTENER3-9102://0.0.0.0:9102,LISTENER4-9103://0.0.0.0:9103",
+                "advertised.listeners=REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,LISTENER1-9100://${STRIMZI_LISTENER1_9100_ADVERTISED_HOSTNAME}:${STRIMZI_LISTENER1_9100_ADVERTISED_PORT},LISTENER2-9101://${STRIMZI_LISTENER2_9101_ADVERTISED_HOSTNAME}:${STRIMZI_LISTENER2_9101_ADVERTISED_PORT},LISTENER3-9102://${STRIMZI_LISTENER3_9102_ADVERTISED_HOSTNAME}:${STRIMZI_LISTENER3_9102_ADVERTISED_PORT},LISTENER4-9103://${STRIMZI_LISTENER4_9103_ADVERTISED_HOSTNAME}:${STRIMZI_LISTENER4_9103_ADVERTISED_PORT}",
+                "listener.security.protocol.map=REPLICATION-9091:SSL,LISTENER1-9100:PLAINTEXT,LISTENER2-9101:PLAINTEXT,LISTENER3-9102:PLAINTEXT,LISTENER4-9103:PLAINTEXT",
+                "inter.broker.listener.name=REPLICATION-9091",
+                "sasl.enabled.mechanisms=",
+                "ssl.secure.random.implementation=SHA1PRNG",
+                "ssl.endpoint.identification.algorithm=HTTPS"));
+    }
+
+    @Test
     public void testWithPlainListenersWithoutAuth()  {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("plain")

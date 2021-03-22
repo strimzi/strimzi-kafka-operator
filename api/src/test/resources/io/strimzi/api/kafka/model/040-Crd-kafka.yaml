@@ -479,6 +479,17 @@ spec:
                                 with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers.
                                 This field can be used only with `loadbalancer` type
                                 listeners.
+                            maxConnectionCreationRate:
+                              type: integer
+                              description: The maximum connection creation rate we
+                                allow in this listener at any time. New connections
+                                will be throttled if the limit is reached.Supported
+                                only on Kafka 2.7.0 and newer.
+                            maxConnections:
+                              type: integer
+                              description: The maximum number of connections we allow
+                                for this listener in the broker at any time. New connections
+                                are blocked if the limit is reached.
                             preferredNodePortAddressType:
                               type: string
                               enum:
@@ -6338,6 +6349,17 @@ spec:
                                   see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers.
                                   This field can be used only with `loadbalancer`
                                   type listeners.
+                              maxConnectionCreationRate:
+                                type: integer
+                                description: The maximum connection creation rate
+                                  we allow in this listener at any time. New connections
+                                  will be throttled if the limit is reached.Supported
+                                  only on Kafka 2.7.0 and newer.
+                              maxConnections:
+                                type: integer
+                                description: The maximum number of connections we
+                                  allow for this listener in the broker at any time.
+                                  New connections are blocked if the limit is reached.
                               preferredNodePortAddressType:
                                 type: string
                                 enum:
@@ -14733,6 +14755,17 @@ spec:
                                   see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers.
                                   This field can be used only with `loadbalancer`
                                   type listeners.
+                              maxConnectionCreationRate:
+                                type: integer
+                                description: The maximum connection creation rate
+                                  we allow in this listener at any time. New connections
+                                  will be throttled if the limit is reached.Supported
+                                  only on Kafka 2.7.0 and newer.
+                              maxConnections:
+                                type: integer
+                                description: The maximum number of connections we
+                                  allow for this listener in the broker at any time.
+                                  New connections are blocked if the limit is reached.
                               preferredNodePortAddressType:
                                 type: string
                                 enum:
