@@ -127,7 +127,7 @@ public class AbstractUpgradeST extends AbstractST {
 
         List<JsonObject> steps = new ArrayList<>();
 
-        String url = midStepJson.getString("fromUrl");
+        String url = midStepJson.getString("urlFrom");
         String version = midStepJson.getString("fromVersion");
         String examples = midStepJson.getString("fromExamples");
 
@@ -191,6 +191,7 @@ public class AbstractUpgradeST extends AbstractST {
         String currentInterBrokerProtocol = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.inter\\.broker\\.protocol\\.version");
         // Get Kafka version
         String kafkaVersionFromCR = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.version");
+        kafkaVersionFromCR = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR;
         String kafkaVersionFromProcedure = procedures.getString("kafkaVersion");
 
         // #######################################################################
@@ -208,7 +209,7 @@ public class AbstractUpgradeST extends AbstractST {
         kafkaYaml = new File(examplesPath + "/kafka/kafka-persistent.yaml");
         LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
         // Change kafka version of it's empty (null is for remove the version)
-        String defaultValueForVersions = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR.substring(0, 3);
+        String defaultValueForVersions = kafkaVersionFromCR == null ? null : kafkaVersionFromCR.substring(0, 3);
         cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfiguration(kafkaYaml, kafkaVersionFromCR, defaultValueForVersions, defaultValueForVersions));
 
         kafkaUserYaml = new File(examplesPath + "/user/kafka-user.yaml");
@@ -217,7 +218,7 @@ public class AbstractUpgradeST extends AbstractST {
 
         kafkaTopicYaml = new File(examplesPath + "/topic/kafka-topic.yaml");
         LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
-        cmdKubeClient().create(kafkaTopicYaml);
+        cmdKubeClient().applyContent(TestUtils.readFile(kafkaTopicYaml));
         // #######################################################################
 
 
@@ -385,9 +386,6 @@ public class AbstractUpgradeST extends AbstractST {
     protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, JsonObject testParameters, String producerName, String consumerName,
                                                    String continuousTopicName, String continuousConsumerGroup,
                                                    String kafkaVersion, String namespace) throws IOException {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         int continuousClientsMessageCount = testParameters.getJsonObject("client").getInteger("continuousClientsMessages");
 

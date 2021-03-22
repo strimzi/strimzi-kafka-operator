@@ -33,7 +33,7 @@
     "useAsMidStep": true,
     "fromVersion":"0.22.0",
     "fromExamples":"strimzi-0.22.0",
-    "fromUrl":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/strimzi-0.22.0.zip",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/strimzi-0.22.0.zip",
     "generateTopics": true,
     "additionalTopics": 2,
     "oldestKafka": "2.5.0",
@@ -44,10 +44,10 @@
       "userOperator": "strimzi/operator:0.22.0"
     },
     "imagesAfterKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:0.22.0-kafka-2.7.0",
-      "kafka": "strimzi/kafka:0.22.0-kafka-2.7.0",
-      "topicOperator": "strimzi/operator:0.22.0",
-      "userOperator": "strimzi/operator:0.22.0"
+      "zookeeper": "strimzi/kafka:latest-kafka-2.7.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.7.0",
+      "topicOperator": "strimzi/operator:latest",
+      "userOperator": "strimzi/operator:latest"
     },
     "client": {
       "continuousClientsMessages": 500

@@ -77,7 +77,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeKafkaWithoutVersion(ExtensionContext extensionContext) throws IOException {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         File dir = FileUtils.downloadAndUnzip(strimziReleaseWithOlderKafka);
         File startKafkaPersistent = new File(dir, "strimzi-" + strimziReleaseWithOlderKafkaVersion + "/examples/kafka/kafka-persistent.yaml");
         File startKafkaVersionsYaml = FileUtils.downloadYaml("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + strimziReleaseWithOlderKafkaVersion + "/kafka-versions.yaml");
@@ -107,6 +106,10 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Update CRDs, CRB, etc.
+        JsonObject convert = new JsonObject();
+        convert.put("urlToConversionTool", "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip");
+        convert.put("toConversionTool", "api-conversion-0.22.0");
+        convertCRDs(convert, NAMESPACE);
         applyClusterOperatorInstallFiles(NAMESPACE);
         applyBindings(extensionContext, NAMESPACE);
 
@@ -162,14 +165,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, NAMESPACE);
-
-        // Upgrade to 0.22.0
-        changeClusterOperator(parameters.get(0), NAMESPACE);
         convertCRDs(parameters.get(0), NAMESPACE);
-
-        if (TestKafkaVersion.containsVersion(getDefaultKafkaVersionPerStrimzi(parameters.get(0).getString("fromVersion")).version())) {
-            waitForKafkaClusterRollingUpdate();
-        }
 
         // Upgrade CO
         changeClusterOperator(parameters.get(1), NAMESPACE);
