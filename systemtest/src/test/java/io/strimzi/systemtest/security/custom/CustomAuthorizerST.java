@@ -12,18 +12,17 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -35,23 +34,24 @@ import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
 public class CustomAuthorizerST extends AbstractST {
-    static final String NAMESPACE = "custom-authorizer-test";
+    static final String NAMESPACE = "custom-authorizer-namespace";
     static final String CLUSTER_NAME = "custom-authorizer";
     static final String ADMIN = "sre-admin";
     private static final Logger LOGGER = LogManager.getLogger(CustomAuthorizerST.class);
 
-    @Test
+    @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testAclRuleReadAndWrite() {
+    void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
-        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final int numberOfMessages = 500;
         final String consumerGroupName = "consumer-group-name-1";
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName).build());
 
-        KafkaUser writeUser = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserWrite)
+        KafkaUser writeUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -70,27 +70,7 @@ public class CustomAuthorizerST extends AbstractST {
             .endSpec()
             .build();
 
-        writeUser = KafkaUserResource.createAndWaitForReadiness(writeUser);
-
-        LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
-
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-" + Constants.KAFKA_CLIENTS, writeUser).build());
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUserWrite)
-            .withMessageCount(numberOfMessages)
-            .withUsingPodName(kafkaClientsPodName)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-            .build();
-
-        assertThat(internalKafkaClient.sendMessagesTls(), is(numberOfMessages));
-        assertThat(internalKafkaClient.receiveMessagesTls(), is(0));
-
-        KafkaUser readUser = KafkaUserResource.tlsUser(CLUSTER_NAME, kafkaUserRead)
+        KafkaUser readUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -115,28 +95,54 @@ public class CustomAuthorizerST extends AbstractST {
             .endSpec()
             .build();
 
-        readUser = KafkaUserResource.createAndWaitForReadiness(readUser);
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-" + Constants.KAFKA_CLIENTS, readUser).build());
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        resourceManager.createResource(extensionContext, writeUser);
+        resourceManager.createResource(extensionContext, readUser);
 
-        InternalKafkaClient newInternalKafkaClient = internalKafkaClient.toBuilder()
-            .withKafkaUsername(kafkaUserRead)
-            .withConsumerGroupName(consumerGroupName)
+        LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, writeUser, readUser).build());
+
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+
+        InternalKafkaClient writeKafkaClient = new InternalKafkaClient.Builder()
+            .withTopicName(topicName)
+            .withNamespaceName(NAMESPACE)
+            .withClusterName(CLUSTER_NAME)
+            .withKafkaUsername(kafkaUserWrite)
+            .withMessageCount(numberOfMessages)
             .withUsingPodName(kafkaClientsPodName)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        assertThat(newInternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
+        assertThat(writeKafkaClient.sendMessagesTls(), is(numberOfMessages));
+        assertThat(writeKafkaClient.receiveMessagesTls(), is(0));
+
+        InternalKafkaClient readKafkaClient = new InternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(NAMESPACE)
+                .withClusterName(CLUSTER_NAME)
+                .withKafkaUsername(kafkaUserRead)
+                .withMessageCount(numberOfMessages)
+                .withUsingPodName(kafkaClientsPodName)
+                .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                .withConsumerGroupName(consumerGroupName)
+                .build();
+
+        assertThat(readKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
-        assertThat(newInternalKafkaClient.sendMessagesTls(), is(-1));
+        assertThat(readKafkaClient.sendMessagesTls(), is(-1));
     }
 
-    @Test
+    @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testAclWithSuperUser() {
-        KafkaTopicResource.createAndWaitForReadiness(KafkaTopicResource.topic(CLUSTER_NAME, TOPIC_NAME).build());
+    void testAclWithSuperUser(ExtensionContext extensionContext) {
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        KafkaUser adminUser = KafkaUserResource.tlsUser(CLUSTER_NAME, ADMIN)
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName).build());
+
+        KafkaUser adminUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, ADMIN)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -155,14 +161,15 @@ public class CustomAuthorizerST extends AbstractST {
             .endSpec()
             .build();
 
-        adminUser = KafkaUserResource.createAndWaitForReadiness(adminUser);
-        KafkaClientsResource.createAndWaitForReadiness(KafkaClientsResource.deployKafkaClients(true, kafkaClientsName + "-" + Constants.KAFKA_CLIENTS, adminUser).build());
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        resourceManager.createResource(extensionContext, adminUser);
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, adminUser).build());
 
-        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", ADMIN, TOPIC_NAME);
+        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+
+        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", ADMIN, topicName);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(ADMIN)
@@ -180,11 +187,10 @@ public class CustomAuthorizerST extends AbstractST {
     }
 
     @BeforeAll
-    public void setup() {
-        ResourceManager.setClassResources();
-        installClusterOperator(NAMESPACE);
+    public void setup(ExtensionContext extensionContext) {
+        installClusterOperator(extensionContext, NAMESPACE);
 
-        KafkaResource.createAndWaitForReadiness(KafkaResource.kafkaEphemeral(CLUSTER_NAME,  1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationCustom()
