@@ -264,8 +264,8 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
-                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+            () -> cmdKubeClient().execInPodContainer(false, eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                        && cmdKubeClient().execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
         LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
@@ -313,12 +313,28 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapUo);
 
         ExternalLogging elTo = new ExternalLoggingBuilder()
-                .withName("external-configmap-to")
-                .build();
+            .withName("external-configmap-to")
+            .withNewValueFrom()
+                .withConfigMapKeyRef(
+                    new ConfigMapKeySelectorBuilder()
+                        .withName("external-configmap-to")
+                        .withKey("log4j2.properties")
+                        .build()
+                )
+            .endValueFrom()
+            .build();
 
         ExternalLogging elUo = new ExternalLoggingBuilder()
-                .withName("external-configmap-uo")
-                .build();
+            .withName("external-configmap-uo")
+            .withNewValueFrom()
+                .withConfigMapKeyRef(
+                    new ConfigMapKeySelectorBuilder()
+                        .withName("external-configmap-uo")
+                        .withKey("log4j2.properties")
+                        .build()
+                )
+            .endValueFrom()
+            .build();
 
         LOGGER.info("Setting log level of TO and UO to OFF - records should not appear in log");
         // change to external logging
@@ -329,10 +345,10 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
-                    && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
-                    && cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
-                    && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+            () -> cmdKubeClient().execInPodContainer(false, eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
+                    && cmdKubeClient().execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
+                    && cmdKubeClient().execInPodContainer(false, eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+                    && cmdKubeClient().execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
         LOGGER.info("Waiting {} ms for DEBUG log will disappear", LOGGING_RELOADING_INTERVAL * 2);
@@ -380,8 +396,8 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
-                        && cmdKubeClient().execInPodContainer(eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+            () -> cmdKubeClient().execInPodContainer(false, eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                        && cmdKubeClient().execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
         LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
@@ -435,8 +451,8 @@ class LoggingChangeST extends AbstractST {
         final String bridgePodName = bridgeSnapshot.keySet().iterator().next();
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
-                && cmdKubeClient().execInPodContainer(bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+            () -> cmdKubeClient().execInPodContainer(false, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
+                && cmdKubeClient().execInPodContainer(false, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
         LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
@@ -481,8 +497,16 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapBridge);
 
         ExternalLogging bridgeXternalLogging = new ExternalLoggingBuilder()
-                .withName("external-configmap-bridge")
-                .build();
+            .withName("external-configmap-bridge")
+            .withNewValueFrom()
+                .withConfigMapKeyRef(
+                    new ConfigMapKeySelectorBuilder()
+                        .withName("external-configmap-bridge")
+                        .withKey("log4j2.properties")
+                        .build()
+                )
+            .endValueFrom()
+            .build();
 
         LOGGER.info("Setting log level of Bridge to OFF - records should not appear in the log");
         // change to the external logging
@@ -492,8 +516,8 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level = OFF")
-                && cmdKubeClient().execInPodContainer(bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
+            () -> cmdKubeClient().execInPodContainer(false, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level = OFF")
+                && cmdKubeClient().execInPodContainer(false, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
         LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL * 2);
@@ -665,8 +689,16 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(connectLoggingMap);
 
         ExternalLogging connectXternalLogging = new ExternalLoggingBuilder()
-                .withName(externalCmName)
-                .build();
+            .withName(externalCmName)
+            .withNewValueFrom()
+                .withConfigMapKeyRef(
+                    new ConfigMapKeySelectorBuilder()
+                        .withName(externalCmName)
+                        .withKey("log4j.properties")
+                        .build()
+                )
+            .endValueFrom()
+            .build();
 
         LOGGER.info("Setting log level of Connect to OFF");
         // change to the external logging
@@ -702,7 +734,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for dynamic change in the kafka pod");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(clusterName, 0),
+            () -> cmdKubeClient().execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
                 "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                 .contains("root=DEBUG"));
 
@@ -744,7 +776,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for dynamic change in the kafka pod");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(clusterName, 0),
+            () -> cmdKubeClient().execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
                 "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                 .contains("root=INFO"));
 
@@ -768,7 +800,7 @@ class LoggingChangeST extends AbstractST {
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, kafkaPods);
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(clusterName, 0),
+            () -> cmdKubeClient().execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
                         "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                         .contains("paprika=INFO"));
     }
@@ -824,8 +856,17 @@ class LoggingChangeST extends AbstractST {
                 .build();
 
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
-        ExternalLogging el = new ExternalLogging();
-        el.setName("external-cm");
+        ExternalLogging el = new ExternalLoggingBuilder()
+            .withName("external-cm")
+            .withNewValueFrom()
+                .withConfigMapKeyRef(
+                    new ConfigMapKeySelectorBuilder()
+                        .withName("external-cm")
+                        .withKey("log4j.properties")
+                        .build()
+                )
+            .endValueFrom()
+            .build();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
             .editOrNewSpec()
@@ -867,7 +908,7 @@ class LoggingChangeST extends AbstractST {
         StatefulSetUtils.waitForNoRollingUpdate(kafkaName, kafkaPods);
         assertThat("Kafka pod should not roll", StatefulSetUtils.ssHasRolled(kafkaName, kafkaPods), is(false));
         TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(clusterName, 0),
+            () -> cmdKubeClient().execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
                 "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                 .contains("kafka.authorizer.logger=ERROR"));
 
@@ -901,7 +942,7 @@ class LoggingChangeST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(kafkaName, kafkaPods);
 
         TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().execInPodContainer(KafkaResources.kafkaPodName(clusterName, 0),
+            () -> cmdKubeClient().execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
                 "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                 .contains("kafka.authorizer.logger=DEBUG"));
     }
@@ -964,8 +1005,16 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(mm2LoggingMap);
 
         ExternalLogging mm2XternalLogging = new ExternalLoggingBuilder()
-                .withName(externalCmName)
-                .build();
+            .withName(externalCmName)
+            .withNewValueFrom()
+                .withConfigMapKeyRef(
+                    new ConfigMapKeySelectorBuilder()
+                        .withName(externalCmName)
+                        .withKey("log4j.properties")
+                        .build()
+                )
+            .endValueFrom()
+            .build();
 
         LOGGER.info("Setting log level of MM2 to OFF");
         // change to the external logging
