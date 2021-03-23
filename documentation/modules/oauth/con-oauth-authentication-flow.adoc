@@ -5,27 +5,31 @@
 [id='con-oauth-authentication-flow-{context}']
 = OAuth 2.0 authentication mechanisms
 
-You can configure OAuth 2.0 authentication using one of the following authentication mechanisms:
-
-* SASL_OAUTHBEARER
-* SASL_PLAIN
-
+Strimzi supports the SASL_OAUTHBEARER and SASL_PLAIN mechanisms for OAuth 2.0 authentication. 
 Both mechanisms allow Kafka clients to establish authenticated sessions with Kafka brokers. 
-However, the authentication flow between a client, the authorization server, and the Kafka broker is different for each mechanism.
-Whenever possible the clients should use OAUTHBEARER mechanism, which allows the client to never share its credentials with the Kafka broker. PLAIN mechanism was added to allow the Kafka clients that don't support OAUTHBEARER mechanism, to still be able to authenticate with credentials handled centrally behind the OAuth2 / OIDC compliant authorization server.
-Whenever possible the clients should use OAUTHBEARER mechanism, which allows the client to never share its credentials with the Kafka broker. PLAIN mechanism was added to allow the Kafka clients that don't support OAUTHBEARER mechanism, to still be able to authenticate with credentials handled centrally behind the OAuth2 / OIDC compliant authorization server.
+The authentication flow between clients, the authorization server, and Kafka brokers is different for each mechanism.
 
-.SASL_OAUTHBEARER
+Configure clients to use SASL_OAUTHBEARER whenever possible. 
+This mechanism provides a higher level of security because client credentials are _never_ shared with Kafka brokers. 
+Consider using SASL_PLAIN only with Kafka clients that do not support OAUTHBEARER for authentication with Kafka brokers. 
 
-Support for the SASL_OAUTHBEARER mechanism is built in to many Kafka clients. However, it mostly requires writing custom callbacks that need to provide an access token for authentication as needed. For java based clients using official Kafka Clients library we provide such callbacks, so that users don't need to provide any custom callback code.
+.SASL_OAUTHBEARER overview
 
-The client initiates a session with the Kafka broker using the SASL OAUTHBEARER mechanism for credentials exchange, where credentials take the form of a bearer token provided by the callback code. Using Strimzi OAuth callbacks one can configure three ways to provide the token:
-* Client ID and Secret (by using OAuth2 client credentials mechanism)
-* A long-lived access token, obtained manually by the user at configuration time
-* A long-lived refresh token, obtained manually by the user at configuration time
+Support for SASL_OAUTHBEARER is built in to many Kafka clients. However, the developer must often write custom callbacks that provide access tokens for authentication, as needed.
+Strimzi provides these callbacks for standard Java Kafka clients (clients that use the Kafka producer and consumer APIs). 
+Therefore, developers do not need to provide custom callbacks in their application code. 
 
-Kafka brokers and clients both need to be configured to use OAuth 2.0. 
-SASL_OAUTHBEARER is automatically enabled in the listener configuration for the Kafka broker, so it is not necessary to explicitly enable it.
+With SASL_OAUTHBEARER, the client initiates a session with the Kafka broker for credentials exchange, where credentials take the form of a bearer token provided by the Strimzi OAuth callback code. 
+Using the callbacks, you can configure token provision in one of three ways:
+
+* Client ID and Secret (by using the OAuth 2.0 client credentials mechanism)
+
+* A long-lived access token, obtained manually at configuration time
+
+* A long-lived refresh token, obtained manually at configuration time
+
+SASL_OAUTHBEARER is automatically enabled in the listener configuration for the Kafka broker. 
+You can set the `enableOauthBearer` property to `true`, though this is not required.
 
 [source,yaml,subs="attributes+"]
 ----
@@ -36,24 +40,28 @@ SASL_OAUTHBEARER is automatically enabled in the listener configuration for the 
     enableOauthBearer: true
 ----
 
-.SASL_PLAIN
+.SASL_PLAIN overview
 
-SASL_PLAIN is a simple authentication mechanism that is supported by all Kafka client tools, including developer tools such as kafkacat.
+SASL_PLAIN, also referred to as _OAuth 2.0 over PLAIN_, is a simple authentication mechanism supported by all Kafka client tools (including developer tools such as kafkacat). 
+Client credentials are handled centrally, behind an authorization server that complies with OAuth 2.0 and OpenID Connect (OIDC).
 
-SASL_PLAIN with the Strimzi provided callback is what we also call OAuth over PLAIN, and allows a client to authenticate using either of the following methods:
+SASL_PLAIN, along with the provided callbacks, allows Kafka clients to authenticate with Kafka brokers using either of the following methods:
 
-* OAuth `clientId` and `secret` (the client credentials)
 * OAuth access token
 
+* OAuth `clientId` and `secret` (the client credentials)
+
 The client must enable SASL_PLAIN and set the `username` and `password`. 
-If the client prefixes the `password` with `$accessToken:` followed by the value of the access token (access token), the authorization server will interpret the password as the access token.
+If the client prefixes the `password` with `$accessToken:` followed by the value of the access token (access token ???), the authorization server will interpret the password as the access token. 
 Otherwise, the authorization server will interpret the `username` as the client ID and the `password` as the client secret.
 
-If the `password` is set as the access token, the `username` has to be set to the same principal name the Kafka broker will obtain from the access token. The specifics depend on how you configure username extraction (using `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, `userInfoEndpointUri`), but also on your authorization server - how it maps client Ids to account names.
+If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token. 
+The process depends on how you configure username extraction (using `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, and `userInfoEndpointUri`), and also your authorization server (in particular, how it maps client IDs to account names).
 
-Kafka brokers and clients both need to be configured to use OAuth 2.0. SASL_PLAIN must be enabled in the listener OAuth 2.0 authentication configuration for the Kafka broker.
+To use SASL_PLAIN, you must enable it in the listener OAuth 2.0 authentication configuration for the Kafka broker.
 
-The following enables SASL_PLAIN in addition to SASL_OAUTHBEARER which is enabled by default. If you want only SASL_PLAIN you can disable SASL_OAUTHBEARER by setting `enableOauthBearer` to `false`.
+In the following example, SASL_PLAIN is enabled in addition to SASL_OAUTHBEARER, which is enabled by default. 
+If you want to use SASL_PLAIN only, you can disable SASL_OAUTHBEARER by setting `enableOauthBearer` to `false`.
 
 [source,yaml,subs="+quotes,attributes+"]
 ----
