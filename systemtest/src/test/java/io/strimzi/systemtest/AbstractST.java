@@ -241,9 +241,11 @@ public abstract class AbstractST implements TestSeparator {
 
         if (cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift) {
             // This is needed in case you are using internal kubernetes registry and you want to pull images from there
-            for (String namespace : namespaces) {
-                LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
-                Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+            if (kubeClient().getNamespace(Environment.STRIMZI_ORG) != null) {
+                for (String namespace : namespaces) {
+                    LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
+                    Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+                }
             }
         }
     }
