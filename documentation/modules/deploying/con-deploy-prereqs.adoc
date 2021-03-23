@@ -5,10 +5,10 @@
 [id='deploy-prereqs-{context}']
 = Deployment prerequisites
 
-To deploy Strimzi, make sure:
+To deploy Strimzi, make sure that:
 
 ifdef::Downloading[]
-* A Kubernetes {KubernetesVersion} cluster is available
+* A Kubernetes {KubernetesVersion} cluster is available.
 +
 If you do not have access to a Kubernetes cluster, you can install Strimzi with xref:deploy-kubernetes-{context}[_Minikube_].
 * The `kubectl` command-line tool is installed and configured to connect to the running cluster.
@@ -20,25 +20,25 @@ where such integration benefits OpenShift users and there is no equivalent imple
 == `oc` and `kubectl` commands
 
 The `oc` command functions as an alternative to `kubectl`.
-In almost all cases the example `kubectl` commands given in this guide can be done using `oc` simply by replacing the command name (options and arguments remain the same).
+In almost all cases the example `kubectl` commands used in this guide can be done using `oc` simply by replacing the command name (options and arguments remain the same).
 
 In other words, instead of using:
 
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 
-when using OpenShift you can use
+when using OpenShift you can use:
 
 [source,shell,subs=+quotes]
 oc apply -f _your-file_
 
-NOTE: As an exception to this general rule, `oc` uses `oc adm` subcommands for _cluster management_,
-while `kubectl` does not make such a distinction.
+NOTE: As an exception to this general rule, `oc` uses `oc adm` subcommands for _cluster management_ functionality,
+whereas `kubectl` does not make this distinction.
 For example, the `oc` equivalent of `kubectl taint` is `oc adm taint`.
 
 endif::Downloading[]
 ifndef::Downloading[]
-* An OpenShift {OpenShiftVersion} cluster is available
+* An OpenShift {OpenShiftVersion} cluster is available.
 +
 Strimzi is based on Strimzi {StrimziVersion}.
 
