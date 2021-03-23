@@ -203,7 +203,7 @@ public abstract class AbstractST implements TestSeparator {
             try {
                 File tmpFile = File.createTempFile("rbac-" + oldFile.getName().replace(".yaml", ""), ".yaml");
                 TestUtils.writeFile(tmpFile.getAbsolutePath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
-                LOGGER.info("Replaced ClusterRole for Role");
+                LOGGER.info("Replaced ClusterRole for Role in {}", oldFile.getAbsolutePath());
 
                 return tmpFile;
             } catch (IOException e) {
