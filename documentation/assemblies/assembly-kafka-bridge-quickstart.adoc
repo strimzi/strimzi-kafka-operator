@@ -21,7 +21,7 @@ Use this quickstart to try out the Strimzi Kafka Bridge in your local developmen
 * Create a Kafka Bridge consumer
 * Perform basic consumer operations, such as subscribing the consumer to topics and retrieving the messages that you produced
 
-In this quickstart, HTTP requests are formatted as curl commands that you can copy and paste to your terminal. Access to a Kubernetes cluster is required; to run and manage a local Kubernetes cluster, use a tool such as Minikube, CodeReady Containers, or MiniShift.
+In this quickstart, HTTP requests are formatted as curl commands that you can copy and paste to your terminal. Access to a Kubernetes cluster is required.
 
 Ensure you have the prerequisites and then follow the tasks in the order provided in this chapter.
 
@@ -31,10 +31,10 @@ In this quickstart, you will produce and consume messages in JSON format, not bi
 
 .Prerequisites for the quickstart
 
-* Cluster administrator access to a local or remote Kubernetes cluster. 
+* Cluster administrator access to a local or remote Kubernetes cluster.
 * Strimzi is installed.
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
-* The Entity Operator is deployed and running as part of the Kafka cluster.  
+* The Entity Operator is deployed and running as part of the Kafka cluster.
 
 include::../modules/proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
 

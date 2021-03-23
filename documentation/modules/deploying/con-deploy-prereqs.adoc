@@ -5,28 +5,42 @@
 [id='deploy-prereqs-{context}']
 = Deployment prerequisites
 
-To deploy Strimzi, make sure:
+To deploy Strimzi, make sure that:
 
 ifdef::Downloading[]
-* A Kubernetes {KubernetesVersion} cluster is available
-endif::Downloading[]
-ifndef::Downloading[]
-* An OpenShift {OpenShiftVersion} cluster is available
+* A Kubernetes {KubernetesVersion} cluster is available.
 +
-Strimzi is based on Strimzi {StrimziVersion}.
-endif::Downloading[]
+If you do not have access to a Kubernetes cluster, you can install Strimzi with xref:deploy-kubernetes-{context}[_Minikube_].
 * The `kubectl` command-line tool is installed and configured to connect to the running cluster.
 
 NOTE: Strimzi supports some features that are specific to OpenShift,
 where such integration benefits OpenShift users and there is no equivalent implementation using standard Kubernetes.
 
-ifdef::InstallationAppendix[]
 [discrete]
-== Alternatives if a Kubernetes cluster is not available
+== `oc` and `kubectl` commands
 
-If you do not have access to a Kubernetes cluster, as an alternative you can try installing Strimzi with:
+The `oc` command functions as an alternative to `kubectl`.
+In almost all cases the example `kubectl` commands used in this guide can be done using `oc` simply by replacing the command name (options and arguments remain the same).
 
-* xref:deploy-kubernetes-{context}[_Minikube_]
-* xref:deploy-openshift-{context}[_Minishift_]
+In other words, instead of using:
 
-endif::InstallationAppendix[]
+[source,shell,subs=+quotes]
+kubectl apply -f _your-file_
+
+when using OpenShift you can use:
+
+[source,shell,subs=+quotes]
+oc apply -f _your-file_
+
+NOTE: As an exception to this general rule, `oc` uses `oc adm` subcommands for _cluster management_ functionality,
+whereas `kubectl` does not make this distinction.
+For example, the `oc` equivalent of `kubectl taint` is `oc adm taint`.
+
+endif::Downloading[]
+ifndef::Downloading[]
+* An OpenShift {OpenShiftVersion} cluster is available.
++
+Strimzi is based on Strimzi {StrimziVersion}.
+
+* The `oc` command-line tool is installed and configured to connect to the running cluster.
+endif::Downloading[]
