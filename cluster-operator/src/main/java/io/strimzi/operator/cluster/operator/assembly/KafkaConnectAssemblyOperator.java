@@ -290,6 +290,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             buildState.desiredBuildRevision = null;
             return configMapOperations.reconcile(namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
                     .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
+                    .compose(ignore -> serviceAccountOperations.reconcile(namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), null))
                     .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
                     .mapEmpty();
         }
@@ -347,6 +348,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      */
     private Future<Void> kubernetesBuildStart(String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
         return configMapOperations.reconcile(namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap)
+                .compose(ignore -> serviceAccountOperations.reconcile(namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), connectBuild.generateServiceAccount()))
                 .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, newBuildRevision)))
                 .mapEmpty();
     }

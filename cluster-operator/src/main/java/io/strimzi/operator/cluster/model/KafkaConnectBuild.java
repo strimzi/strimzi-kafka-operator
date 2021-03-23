@@ -182,6 +182,16 @@ public class KafkaConnectBuild extends AbstractModel {
     }
 
     /**
+     * Generates the name of the Service Account used by Kafka Connect Build
+     *
+     * @return  Name of the Kafka Connect Build service account for this cluster
+     */
+    @Override
+    public String getServiceAccountName() {
+        return KafkaConnectResources.buildServiceAccountName(cluster);
+    }
+
+    /**
      * Generates a ConfigMap with the Dockerfile used for the build
      *
      * @param dockerfile    Instance of the KafkaConnectDockerfile class with the prepared Dockerfile
