@@ -125,6 +125,9 @@ public class AbstractUpgradeST extends AbstractST {
         JsonObject midStepJson = (JsonObject) jsonArray.stream()
             .filter(version -> JsonObject.mapFrom(version).getBoolean("useAsMidStep")).findFirst().get();
 
+        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getKafkaVersions();
+        TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
+
         List<JsonObject> steps = new ArrayList<>();
 
         String url = midStepJson.getString("urlFrom");
@@ -132,19 +135,20 @@ public class AbstractUpgradeST extends AbstractST {
         String examples = midStepJson.getString("fromExamples");
 
         JsonObject images = midStepJson.getJsonObject("imagesAfterKafkaUpgrade");
+        JsonObject conversionTool = midStepJson.getJsonObject("conversionTool");
 
         // X -> 0.22.0 data
         JsonObject midStep = JsonObject.mapFrom(jsonData);
         midStep.put("urlTo", url);
         midStep.put("toVersion", version);
         midStep.put("toExamples", examples);
-        midStep.put("urlToConversionTool", "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip");
-        midStep.put("toConversionTool", "api-conversion-0.22.0");
+        midStep.put("urlToConversionTool", conversionTool.getString("urlToConversionTool"));
+        midStep.put("toConversionTool", conversionTool.getString("toConversionTool"));
 
         JsonObject midStepProcedures = new JsonObject();
-        midStepProcedures.put("kafkaVersion", "2.7.0");
-        midStepProcedures.put("logMessageVersion", "2.7");
-        midStepProcedures.put("interBrokerProtocolVersion", "2.7");
+        midStepProcedures.put("kafkaVersion", testKafkaVersion.version());
+        midStepProcedures.put("logMessageVersion", testKafkaVersion.messageVersion());
+        midStepProcedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
         midStep.put("proceduresAfterOperatorUpgrade", midStepProcedures);
 
         midStep.put("imagesAfterKafkaUpgrade", images);
@@ -537,6 +541,13 @@ public class AbstractUpgradeST extends AbstractST {
         } else {
             return resourcePlural + "." + Constants.V1BETA1 + "." + Constants.STRIMZI_GROUP;
         }
+    }
+
+    protected JsonObject getConversionToolDataFromUpgradeJSON() {
+        JsonArray upgradeFile = readUpgradeJson(UPGRADE_JSON_FILE);
+        return ((JsonObject) upgradeFile.stream()
+            .filter(version -> JsonObject.mapFrom(version).getJsonObject("conversionTool") != null)
+            .findFirst().get()).getJsonObject("conversionTool");
     }
 
     protected void convertCRDs(JsonObject midStep, String namespace) throws IOException {

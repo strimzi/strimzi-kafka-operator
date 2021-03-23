@@ -57,6 +57,10 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
+    },
+    "conversionTool": {
+      "urlToConversionTool": "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip",
+      "toConversionTool": "api-conversion-0.22.0"
     }
   }
 ]

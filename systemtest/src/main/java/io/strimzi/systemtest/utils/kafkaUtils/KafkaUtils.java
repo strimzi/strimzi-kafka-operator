@@ -422,6 +422,7 @@ public class KafkaUtils {
             } else if (!version.equals("")) {
                 kafkaNode.put("version", version);
                 ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", version.substring(0, 3));
+                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", version.substring(0, 3));
             }
             if (logMessageFormat != null) {
                 ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", logMessageFormat);
