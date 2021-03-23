@@ -440,7 +440,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion)).contains(topicName)) {
             if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, userName).build());
+                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
             } else {
                 kafkaTopicYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml");
                 LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());

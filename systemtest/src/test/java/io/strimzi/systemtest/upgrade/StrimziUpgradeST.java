@@ -67,11 +67,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     @ParameterizedTest(name = "testUpgradeStrimziVersion->{0}->{1}->{2}")
     @MethodSource("loadJsonUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String from, String to, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
+    void testUpgradeStrimziVersion(String from, String midStep, String to, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
-        LOGGER.debug("Running upgrade test from version {} to {}", from, to);
+        LOGGER.debug("Running upgrade test from version {} through version {} to {}", from, midStep, to);
         performUpgrade(parameters, extensionContext);
     }
 
