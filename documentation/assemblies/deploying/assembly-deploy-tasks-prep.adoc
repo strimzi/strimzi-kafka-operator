@@ -13,7 +13,7 @@ This section shows how you prepare for a Strimzi deployment, describing:
 * xref:container-images-{context}[How to push the Strimzi container images into you own registry (if required)]
 * xref:adding-users-the-strimzi-admin-role-{context}[How to set up _admin_ roles for configuration of custom resources used in deployment]
 ifdef::InstallationAppendix[]
-* xref:deploy-alternatives_{context}[Alternative deployment options to Kubernetes using _Minikube_ or _Minishift_]
+* xref:deploy-kubernetes-{context}[_Minikube_ as an alternative deployment option to Kubernetes]
 endif::InstallationAppendix[]
 
 NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
@@ -28,5 +28,5 @@ include::modules/con-deploy-container-images.adoc[leveloffset=+1]
 include::modules/proc-deploy-designating-strimzi-administrators.adoc[leveloffset=+1]
 //Alternatives to Kubernetes cluster
 ifdef::InstallationAppendix[]
-include::assembly-deploy-alternatives.adoc[leveloffset=+1]
+include::modules/con-deploy-kubernetes-cluster.adoc[leveloffset=+1]
 endif::InstallationAppendix[]

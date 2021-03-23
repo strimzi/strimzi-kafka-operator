@@ -1,22 +1,20 @@
 // Module included in the following assemblies:
 //
-// deploying/assembly_deploy-alternatives.adoc
+// deploying/assembly-deploy-tasks-prep.adoc
 
 [id='deploy-kubernetes-{context}']
-= Installing a local Kubernetes cluster
+= Installing a local Kubernetes cluster with Minikube
 
-The easiest way to get started with Kubernetes is using Minikube.
-This section provides basic guidance on how to use it.
-For more information on the tools, refer to the documentation available online.
+Minikube offers an easy way to get started with Kubernetes.
+If a Kubernetes cluster is unavailable, you can use Minikube to create a local cluster.
 
-In order to interact with a Kubernetes cluster the https://kubernetes.io/docs/tasks/tools/install-kubectl/[`kubectl`]
-utility needs to be installed.
-
-You can download and install Minikube from the https://kubernetes.io/docs/getting-started-guides/minikube/[Kubernetes website].
-Depending on the number of brokers you want to deploy inside the cluster, and if you need Kafka Connect running as well,
+You can download and install Minikube from the https://kubernetes.io/docs/home/[Kubernetes website], which also provides documentation.
+Depending on the number of brokers you want to deploy inside the cluster, and whether you want to run Kafka Connect as well,
 try running Minikube with at least with 4 GB of RAM instead of the default 2 GB.
 
 Once installed, start Minikube using:
 
 [source,shell]
 minikube start --memory 4096
+
+To interact with the cluster, install the https://kubernetes.io/docs/tasks/tools/install-kubectl/[`kubectl`] utility.
