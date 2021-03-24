@@ -6,7 +6,7 @@ TEST_PROFILE=${3}
 BUILD_ID=${4:-0}
 KUBE_VERSION=${5:-1.16.0}
 TEST_ONLY=${6:-''}
-PARALLEL=${7:-''}
+TEST_COUNT_RUNNING_IN_PARALLEL=${7:-''}
 EXCLUDED_GROUPS=${8:-''}
 ENV_VARIABLES=${9:-''}
 ADDITIONAL_INFO=""
@@ -42,7 +42,7 @@ if [[ -n "${ENV_VARIABLES}" ]]; then
   ADDITIONAL_INFO+="**ENV_VARIABLES:** ${ENV_VARIABLES}\n"
 fi
 
-SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n${ADDITIONAL_INFO}**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ALL_FAILED_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ALL_FAILED_COUNT}\n**SKIP:** ${TEST_SKIPPED_COUNT}\n**BUILD_NUMBER:** ${BUILD_ID}\n**KUBE_VERSION:** ${KUBE_VERSION}\n**PARALLEL:** ${PARALLEL}\n"
+SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n${ADDITIONAL_INFO}**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ALL_FAILED_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ALL_FAILED_COUNT}\n**SKIP:** ${TEST_SKIPPED_COUNT}\n**BUILD_NUMBER:** ${BUILD_ID}\n**KUBE_VERSION:** ${KUBE_VERSION}\n**TEST_COUNT_RUNNING_IN_PARALLEL:** ${TEST_COUNT_RUNNING_IN_PARALLEL}\n"
 
 
 FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 awk '/<testcase.*>/{ getline x; if (x ~ "<error" || x ~ "<failure") {  gsub(/classname=|name=|\"/, "", $0); if ($3 ~ "time=") { print "\\n- " $2 } else { print "\\n- " $2 " in " $3 } }}')
