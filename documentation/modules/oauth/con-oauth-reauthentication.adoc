@@ -5,18 +5,36 @@
 [id='con-oauth-reauthentication-{context}']
 = Session re-authentication for Kafka brokers
 
-The _SASL OAUTHBEARER_ authentication mechanism supports a Kafka feature called the _session re-authentication_ mechanism. 
-Session re-authentication is not supported if _SASL_PLAIN_ authentication is used.
+OAuth 2.0 authentication in Strimzi supports a Kafka feature called _session re-authentication_. 
+To enable and configure session re-authentication, you set a time value for `maxSecondsWithoutReauthentication` in the `oauth` listener configuration for the Kafka broker.
 
-When the re-authentication mechanism is enabled in the configuration of an `oauth` type listener, the broker's authenticated session expires when the access token expires.
-The client must then re-authenticate to the existing session by sending a new, valid access token to the broker, without dropping the connection.
+Session re-authentication can be used with _fast local JWT_ or _introspection endpoint_ token validation.
+
+There are some differences in how session expiry is handled in SASL_OAUTHBEARER and SASL_PLAIN authentication.
+
+.Session expiry with OAUTHBEARER
+
+When session re-authentication is configured for SASL_OAUTHBEARER, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
+The session will expire earlier if the access token expires before the `maxSecondsWithoutReauthentication`. 
+The duration of the access token always take precedence over `maxSecondsWithoutReauthentication`.
+
+.Session expiry with PLAIN
+
+When session re-authentication is configured with SASL_PLAIN, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
+If `maxSecondsWithoutReauthentication` is not configured, SASL_PLAIN clients can remain connected to brokers indefinitely, without needing to re-authenticate.
+
+.Client re-authentication
+
+When the broker's authenticated session expires, the client must re-authenticate to the existing session by sending a new, valid access token to the broker, without dropping the connection.
 
 If token validation is successful, a new client session is started using the existing connection.
 If the client fails to re-authenticate, the broker will close the connection if further attempts are made to send or receive messages.
 Java clients that use Kafka client library 2.2 or later automatically re-authenticate if the re-authentication mechanism is enabled on the broker.
 
-You enable session re-authentication in the `Kafka` resource. Set the `maxSecondsWithoutReauthentication` property for a TLS listener with `type: oauth` authentication.
-Session re-authentication is supported for both types of token validation (fast local JWT and introspection endpoint). For an example configuration, see xref:proc-oauth-authentication-broker-config-{context}[].
+You enable session re-authentication in the `Kafka` resource. 
+Set the `maxSecondsWithoutReauthentication` property for a TLS listener with `type: oauth` authentication. 
+The same property is used to configure SASL_OAUTHBEARER and SASL_PLAIN on the same listener.
+For an example configuration, see xref:proc-oauth-authentication-broker-config-{context}[].
 
 For more information about the re-authentication mechanism, which was added in Kafka version 2.2, see link:https://cwiki.apache.org/confluence/display/KAFKA/KIP-368%3A+Allow+SASL+Connections+to+Periodically+Re-Authenticate[KIP-368^].
 
