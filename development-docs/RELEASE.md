@@ -11,7 +11,7 @@ The `release` target will not build the Docker images - they should be built and
 The release process should normally look like this:
 
 1. Create a release branch
-2. On the `master` git branch of the operators repository:
+2. On the `main` git branch of the operators repository:
   * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
 
 3. Run `make clean`
@@ -35,21 +35,20 @@ The release process should normally look like this:
     * Copy files from the operators repository `documentation/html` to `docs/operators/latest/full` in the website repository
   * Update the Helm Chart repository file by copying `helm-charts/helm3/index.yaml` in the operators GitHub repository to `charts/index.yaml` in the website GitHub repsoitory.
 
-12. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
-13. _(only for GA, not for RCs)_ On the `master` git branch of the operators repository:
-  * Copy the `packaging/helm-charts/index.yaml` from the `release` branch to `master`
+12. _(only for GA, not for RCs)_ On the `main` git branch of the operators repository:
+  * Copy the `packaging/helm-charts/index.yaml` from the `release` branch to `main`
   * Update the `ProductVersion` variable in `documentation/using/shared/attributes.doc`
-  * Update the `install`, `examples` and `helm-chart` directories in the `master` branch with the newly released files
+  * Update the `install`, `examples` and `helm-chart` directories in the `main` branch with the newly released files
 
+13. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
 14. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
 15. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziUpgradeST.json` file for the upgrade tests
 16. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziDowngradeST.json` file and remove the old one for the downgrade tests
 
-
 ## Updating Kafka Bridge version
 
 The version of Strimzi Kafka Bridge is defined in the file `./bridge.version`.
-Even the master branch is using this fixed version and not the version build from the `master` branch of Kafka Bridge.
+Even the `main` branch is using this fixed version and not the version build from the `main` branch of Kafka Bridge.
 If you need to update the Kafka bridge to newer version, you should do it with following steps:
 
 1. Edit the `bridge.version` file and update it to contain the new Bridge version
