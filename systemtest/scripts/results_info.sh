@@ -41,7 +41,7 @@ if [[ -n "${ENV_VARIABLES}" ]]; then
   ADDITIONAL_INFO+="**ENV_VARIABLES:** ${ENV_VARIABLES}\n"
 fi
 
-SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n${ADDITIONAL_INFO}**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ALL_FAILED_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ALL_FAILED_COUNT}\n**SKIP:** ${TEST_SKIPPED_COUNT}\n**BUILD_NUMBER:** ${BUILD_ID}\n**KUBE_VERSION:** ${KUBE_VERSION}\n**PARALLEL:** ${PARALLEL}"
+SUMMARY="**TEST_PROFILE**: ${TEST_PROFILE}\n${ADDITIONAL_INFO}**TEST_CASE:** ${TEST_CASE}\n**TOTAL:** ${TEST_COUNT}\n**PASS:** $((TEST_COUNT - TEST_ALL_FAILED_COUNT - TEST_SKIPPED_COUNT))\n**FAIL:** ${TEST_ALL_FAILED_COUNT}\n**SKIP:** ${TEST_SKIPPED_COUNT}\n**BUILD_NUMBER:** ${BUILD_ID}\n**KUBE_VERSION:** ${KUBE_VERSION}\n**PARALLEL:** ${PARALLEL}\n"
 
 
 FAILED_TESTS=$(find "${RESULTS_PATH}" -name 'TEST*.xml' -type f -print0 | xargs -0 awk '/<testcase.*>/{ getline x; if (x ~ "<error" || x ~ "<failure") {  gsub(/classname=|name=|\"/, "", $0); if ($3 ~ "time=") { print "\\n- " $2 } else { print "\\n- " $2 " in " $3 } }}')
