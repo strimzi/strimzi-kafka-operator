@@ -15,6 +15,7 @@ pipeline {
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
         string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
         string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
+        string(name: 'PARALLEL', defaultValue: "1", description: 'maven parameter for turning on parallel execution of test.')
     }
     options {
         timeout(time: 24, unit: 'HOURS')
@@ -94,6 +95,11 @@ pipeline {
                         // Default version (the oldest supported by Strimzi)
                         env.KUBE_VERSION = "stable"
                     }
+
+                    if (env.ghprbCommentBody.contains('parallel=')) {
+                        env.PARALLEL = env.ghprbCommentBody.split('parallel=')[1].split(/\s/)[0]
+                    }
+
                     println("ENV_VARS: ${env.ENV_VARS}")
                     env.BUILD_PROJECT_STATUS = false
                     env.BUILD_DOCKER_IMAGE_STATUS = false
@@ -103,6 +109,7 @@ pipeline {
                     println("DOCKER_TAG: ${env.DOCKER_TAG}")
                     println("CLUSTER_OPERATOR_INSTALL_TYPE: ${env.CLUSTER_OPERATOR_INSTALL_TYPE}")
                     println("KUBE_VERSION: ${env.KUBE_VERSION}")
+                    println("PARALLEL: ${env.PARALLEL}")
                 }
             }
         }
@@ -172,7 +179,7 @@ pipeline {
                             sh(script: "cat ${env.WORKSPACE}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json")
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
                         }
-                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
+                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS, env.PARALLEL)
                     }
                 }
             }
