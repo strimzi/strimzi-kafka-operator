@@ -308,25 +308,12 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @Test
-    public void withOldAffinity() throws IOException {
-        ResourceTester<KafkaMirrorMaker2, KafkaMirrorMaker2Cluster> resourceTester = new ResourceTester<>(KafkaMirrorMaker2.class, VERSIONS, KafkaMirrorMaker2Cluster::fromCrd, this.getClass().getSimpleName() + ".withOldAffinity");
-        resourceTester
-                .assertDesiredResource("-Deployment.yaml", kmm2c -> kmm2c.generateDeployment(new HashMap<String, String>(), true, null, null).getSpec().getTemplate().getSpec().getAffinity());
-    }
-
-    @Test
     public void withAffinity() throws IOException {
         ResourceTester<KafkaMirrorMaker2, KafkaMirrorMaker2Cluster> resourceTester = new ResourceTester<>(KafkaMirrorMaker2.class, VERSIONS, KafkaMirrorMaker2Cluster::fromCrd, this.getClass().getSimpleName() + ".withAffinity");
         resourceTester
             .assertDesiredResource("-Deployment.yaml", kmm2c -> kmm2c.generateDeployment(new HashMap<String, String>(), true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
-    @Test
-    public void withOldTolerations() throws IOException {
-        ResourceTester<KafkaMirrorMaker2, KafkaMirrorMaker2Cluster> resourceTester = new ResourceTester<>(KafkaMirrorMaker2.class, VERSIONS, KafkaMirrorMaker2Cluster::fromCrd, this.getClass().getSimpleName() + ".withOldTolerations");
-        resourceTester
-                .assertDesiredResource("-Deployment.yaml", kmm2c -> kmm2c.generateDeployment(new HashMap<String, String>(), true, null, null).getSpec().getTemplate().getSpec().getTolerations());
-    }
     @Test
     public void withTolerations() throws IOException {
         ResourceTester<KafkaMirrorMaker2, KafkaMirrorMaker2Cluster> resourceTester = new ResourceTester<>(KafkaMirrorMaker2.class, VERSIONS, KafkaMirrorMaker2Cluster::fromCrd, this.getClass().getSimpleName() + ".withTolerations");

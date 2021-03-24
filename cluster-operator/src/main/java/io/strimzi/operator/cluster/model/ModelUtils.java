@@ -244,7 +244,7 @@ public class ModelUtils {
             }
 
             if (pod.getTolerations() != null)   {
-                model.setTolerations(pod.getTolerations());
+                model.setTolerations(removeEmptyValuesFromTolerations(pod.getTolerations()));
             }
 
             model.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
@@ -397,35 +397,18 @@ public class ModelUtils {
      * If the toleration.value is an empty string, set it to null. That solves an issue when built STS contains a filed
      * with an empty property value. K8s is removing properties like this and thus we cannot fetch an equal STS which was
      * created with (some) empty value.
-     * @param tolerations tolerations list to check whether toleration.value is an empty string and eventually replace it by null
+     *
+     * @param tolerations   Tolerations list to check whether toleration.value is an empty string and eventually replace it by null
+     *
+     * @return              List of tolerations with fixed empty strings
      */
-    public static void removeEmptyValuesFromTolerations(List<Toleration> tolerations) {
+    public static List<Toleration> removeEmptyValuesFromTolerations(List<Toleration> tolerations) {
         if (tolerations != null) {
             tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
-        }
-    }
-
-    /**
-     * Checks whether tolerations and template.tolerations exits. If so, latter takes precedence. Entries like tolerations.value == ""
-     * are replaced by tolerations.value = null
-     * @param tolerations path to tolerations in CR
-     * @param tolerationList tolerations
-     * @param templateTolerations path to template.tolerations in CR
-     * @param podTemplate pod template containing tolerations
-     * @return adjusted list with tolerations
-     */
-    public static List<Toleration> tolerations(String tolerations, List<Toleration> tolerationList, String templateTolerations, PodTemplate podTemplate) {
-        List<Toleration> tolerationsListLocal;
-        if (podTemplate != null && podTemplate.getTolerations() != null) {
-            if (tolerationList != null) {
-                log.warn("Tolerations given on both {} and {}; latter takes precedence", tolerations, templateTolerations);
-            }
-            tolerationsListLocal = podTemplate.getTolerations();
+            return tolerations;
         } else {
-            tolerationsListLocal = tolerationList;
+            return null;
         }
-        removeEmptyValuesFromTolerations(tolerationsListLocal);
-        return tolerationsListLocal;
     }
 
     /**

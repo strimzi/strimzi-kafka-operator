@@ -20,6 +20,8 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -393,8 +395,52 @@ public class ModelUtilsTest {
         PodTemplate pt2 = new PodTemplate();
         pt2.setTolerations(singletonList(t2));
 
-        assertThat(ModelUtils.tolerations("tolerations", null, "template.tolerations", pt1),
-                is(ModelUtils.tolerations("tolerations", null, "template.tolerations", pt2)));
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                        .withNewListeners()
+                            .withGenericKafkaListeners(new GenericKafkaListenerBuilder().withType(KafkaListenerType.INTERNAL).withPort(9092).withName("plain").withTls(false).build())
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster model1 = KafkaCluster.fromCrd(kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        /*AbstractModel model1 = new AbstractModel(kafka, "test") {
+            @Override
+            protected String getDefaultLogConfigFileName() {
+                return null;
+            }
+
+            @Override
+            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+                return null;
+            }
+        };*/
+        ModelUtils.parsePodTemplate(model1, pt1);
+
+        KafkaCluster model2 = KafkaCluster.fromCrd(kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        /*AbstractModel model2 = new AbstractModel(kafka, "test") {
+            @Override
+            protected String getDefaultLogConfigFileName() {
+                return null;
+            }
+
+            @Override
+            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+                return null;
+            }
+        };*/
+        ModelUtils.parsePodTemplate(model2, pt2);
+
+        assertThat(model1.getTolerations(), is(model2.getTolerations()));
     }
 
     @Test

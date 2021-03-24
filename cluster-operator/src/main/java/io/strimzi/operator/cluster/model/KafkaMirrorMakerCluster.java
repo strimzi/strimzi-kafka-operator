@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -12,7 +11,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.SecurityContext;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -175,35 +173,12 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
             }
 
-            // Kafka Mirror Maker needs special treatment for Affinity and Tolerations because of deprecated fields in spec
-            kafkaMirrorMakerCluster.setUserAffinity(affinity(spec));
-            kafkaMirrorMakerCluster.setTolerations(tolerations(spec));
-
             kafkaMirrorMakerCluster.tracing = spec.getTracing();
         }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
 
         return kafkaMirrorMakerCluster;
-    }
-
-    @SuppressWarnings("deprecation")
-    static List<Toleration> tolerations(KafkaMirrorMakerSpec kafkaMirrorMakerSpec) {
-        return ModelUtils.tolerations("spec.tolerations", kafkaMirrorMakerSpec.getTolerations(), "spec.template.pod.tolerations", kafkaMirrorMakerSpec.getTemplate() == null ? null : kafkaMirrorMakerSpec.getTemplate().getPod());
-    }
-
-    @SuppressWarnings("deprecation")
-    static Affinity affinity(KafkaMirrorMakerSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getAffinity() != null) {
-            if (spec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.affinity and spec.template.pod.affinity; latter takes precedence");
-            }
-            return spec.getTemplate().getPod().getAffinity();
-        } else {
-            return spec.getAffinity();
-        }
     }
 
     protected List<ContainerPort> getContainerPortList() {

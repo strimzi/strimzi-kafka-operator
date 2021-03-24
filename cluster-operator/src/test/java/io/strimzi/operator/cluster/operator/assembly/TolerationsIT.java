@@ -57,7 +57,7 @@ public class TolerationsIT {
         tolerationList.add(t1);
 
         // CO does this over the generated STS
-        ModelUtils.removeEmptyValuesFromTolerations(tolerationList);
+        tolerationList = ModelUtils.removeEmptyValuesFromTolerations(tolerationList);
 
         StatefulSet ss = new StatefulSetBuilder()
                 .withNewMetadata()

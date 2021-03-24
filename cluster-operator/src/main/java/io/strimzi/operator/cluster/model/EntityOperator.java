@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -16,7 +15,6 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
@@ -191,10 +189,6 @@ public class EntityOperator extends AbstractModel {
                 }
             }
 
-            // Entity Operator needs special treatment for Affinity and Tolerations because of deprecated fields in spec
-            result.setUserAffinity(affinity(entityOperatorSpec));
-            result.setTolerations(tolerations(entityOperatorSpec));
-
             result.setTlsSidecar(tlsSidecar);
             result.setTopicOperator(topicOperator);
             result.setUserOperator(userOperator);
@@ -208,25 +202,6 @@ public class EntityOperator extends AbstractModel {
             result.tlsSidecarImage = tlsSideCarImage;
         }
         return result;
-    }
-
-    @SuppressWarnings("deprecation")
-    static List<Toleration> tolerations(EntityOperatorSpec entityOperatorSpec) {
-        return ModelUtils.tolerations("spec.entityOperator.tolerations", entityOperatorSpec.getTolerations(), "spec.entityOperator.template.pod.tolerations", entityOperatorSpec.getTemplate() == null ? null : entityOperatorSpec.getTemplate().getPod());
-    }
-
-    @SuppressWarnings("deprecation")
-    static Affinity affinity(EntityOperatorSpec entityOperatorSpec) {
-        if (entityOperatorSpec.getTemplate() != null
-                && entityOperatorSpec.getTemplate().getPod() != null
-                && entityOperatorSpec.getTemplate().getPod().getAffinity() != null) {
-            if (entityOperatorSpec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.entityOperator.affinity and spec.entityOperator.template.pod.affinity; latter takes precedence");
-            }
-            return entityOperatorSpec.getTemplate().getPod().getAffinity();
-        } else {
-            return entityOperatorSpec.getAffinity();
-        }
     }
 
     @Override
