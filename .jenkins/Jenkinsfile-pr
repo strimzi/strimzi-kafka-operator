@@ -48,7 +48,6 @@ pipeline {
             steps {
                 script {
                     lib = evaluate readFile('./.jenkins/jenkins.groovy')
-                    println(lib)
                     println("Comment body: ${env.ghprbCommentBody}")
                     env.TEST_CASE = params.TEST_CASE
                     env.TEST_PROFILE = params.TEST_PROFILE

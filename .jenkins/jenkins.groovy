@@ -28,7 +28,7 @@ def buildStrimziImages() {
     """)
 }
 
-def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups, int testsInParallel) {
+def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups, String testsInParallel) {
 
     def runTestsCommand = "mvn -f ${workspace}/systemtest/pom.xml -P all verify " +
             "-Dgroups=${testProfile} " +
@@ -41,7 +41,7 @@ def runSystemTests(String workspace, String testCases, String testProfile, Strin
             "-Dfailsafe.rerunFailingTestsCount=2"
 
     // default (sequence mode)
-    if (testsInParallel == 1) {
+    if (testsInParallel == "1") {
         withMaven(mavenOpts: '-Djansi.force=true') {
             sh(script: runTestsCommand)
         }
