@@ -46,7 +46,8 @@ Notable modules:
 * **clients** — client implementations used in tests.
 * **matchers** — contains our matcher implementation for checking cluster operator logs. For more info see [Cluster Operator log check](#cluster-operator-log-check).
 * **utils** — a lot of actions are the same for most of the tests, and we share them through utils class and static methods. You can find here most of the useful methods.
-* **resources** — heart of the systemtest package. You can find here all methods needed for deploying and managing lifecycle of Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and other resources.
+* **resources** —  you can find here all methods needed for deploying and managing lifecycle of Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and other resources using CRUD methods.
+* **templates** - predefined templates that are used on a broader basis. When creating a resource it is necessary to provide a template for instance  `resource.createResource(extensionContext, template.build())`.
 
 Notable classes:
 
@@ -73,20 +74,15 @@ Currently, we have two stacks, which are stored in `ResourceManager` singleton i
 You can create resources anywhere you want. Our resource lifecycle implementation will handle insertion of the resource on top of stack and deletion at the end of the test method/class.
 
 
-`ResourceManager` stores info, which stack is currently active (class or method) in pointer stack.
-You can change between class and method resources stack with method `ResourceManager.setMethodResources()` or `ResourceManager.setClassResources()`.
-Note that pointer stack is set automatically in `AbstractST.class` in `@BeforeAll` or `@BeforeEach` methods.
+`ResourceManager` has Map<String, Stack<Runnable>>, which means that for each test case we have brand-new stack which 
+stores all resources needed for specific test. An important aspect is also the `ExtensionContext.class` with which
+we are able to uniquely know which stack is associated with which test.
 
-
-Cluster Operator setup example:
+Cluster Operator setup example from user point of view:
 ```
     @BeforeAll
-    void createClassResources() {
-        prepareEnvForOperator(NAMESPACE);                          <--- Create namespaces
-        createTestClassResources();                                <--- Create Resources instance for class
-        applyRoleBindings(NAMESPACE);                              <--- Apply Cluster Operator bindings
-        KubernetesResource.clusterOperator(NAMESPACE).done();      <--- Deploy Cluster Operator
-        ...
+    void createClassResources(ExtensionContext extensionContext) {          <--- extension context used primarily to obtain the name of the test
+        installClusterOperator(extensionContext, NAMESPACE);                <--- this method encapsulate loading ENV variables, binding and lastly creating resource
     }
 ```
 
@@ -99,33 +95,50 @@ When your environment is in place from the previous phase, you can add code for 
 
 ### Teardown
 
-Because we have two stacks for storing resources, cluster resources deletion can be easily performed in `@AfterEach` or `@AfterAll` methods.
 Resource lifecycle implementation will ensure that all resources tied to a specific stack will be deleted in the correct order.
 Teardown is triggered in `@AfterAll` of `AbstractST`:
 ```
     @AfterAll
-    void teardownEnvironmentClass() {
-        if (Environment.SKIP_TEARDOWN == null) {
-            tearDownEnvironmentAfterAll();
+    void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
+        afterAllMayOverride(extensionContext);
+    }
+```
+
+so if you want to change teardown from your `@AfterAll`, you must override method `afterAllMayOverride()`:
+```
+    @Override
+    protected void tearDownTestSuite() {
+        doSomethingYouNeed();
+        super.afterAllMayOverride();
+    }
+    
+    // default implementation for top AbstractST.class
+    protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
+        if (!Environment.SKIP_TEARDOWN) {
             teardownEnvForOperator();
+            ResourceManager.getInstance().deleteResources(extensionContext);
         }
     }
 ```
 
-so if you want to change teardown from your `@AfterAll`, you must override method `tearDownEnvironmentAfterAll()`:
+In order to delete all resources from specific test case you have to provide `ExtensionContext.class`, by which the 
+resource manager will know which resources he can delete. 
+For instance `extensionContext.getDisplayName()` is `myNewTestName` then resource manager will delete all resources 
+related to `myNewTestName` test.
 ```
-    @Override
-    protected void tearDownEnvironmentAfterAll() {
-        doSomethingYouNeed();
-        super.tearDownEnvironmentAfterAll();
-    }
+    ResourceManager.getInstance().deleteResources(extensionContext);
 ```
 
-In order to delete all resources from specific `Resources` instance, execute:
-```
-    ResourceManager.deleteMethodResources();
-    ResourceManager.deleteClassResources();
-```
+## Parallel execution of tests
+
+In case you want to run system tests locally in parallel, you need to take a few additional steps. You have to modify
+two junit properties which are located `systemtests/src/test/resources/junit-platform.properties`:
+- junit.jupiter.execution.parallel.enabled=true
+- junit.jupiter.execution.parallel.config.fixed.parallelism=5 <- specify any number, you just have to be sure that your cluster can take it
+
+On the other hand you can also override it in mvn command using additional parameters:
+- -Djunit.jupiter.execution.parallel.enabled=true
+- -Djunit.jupiter.execution.parallel.config.fixed.parallelism=5
 
 ## Cluster Operator log check
 
@@ -133,7 +146,6 @@ After each test, there is a check for cluster operator logs, which searches for 
 You can see the code of the Hamcrest-based matcher in the systemtest [matchers module](systemtest/src/main/java/io/strimzi/systemtest/matchers/LogHasNoUnexpectedErrors.java).
 There is a whitelist for expected errors, which occasionally happen.
 Expected errors don't have any problematic impact on cluster behavior and required action is usually executed during next reconciliation.
-
 
 ## Available Test groups
 
