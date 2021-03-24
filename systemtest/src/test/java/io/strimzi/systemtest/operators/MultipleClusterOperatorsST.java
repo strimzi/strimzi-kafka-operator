@@ -46,6 +46,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
@@ -68,6 +69,9 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
     @IsolatedTest
     void testMultipleCOsInDifferentNamespaces(ExtensionContext extensionContext) {
+        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 

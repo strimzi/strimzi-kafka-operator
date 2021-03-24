@@ -45,11 +45,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -176,24 +176,21 @@ public abstract class AbstractST implements TestSeparator {
      */
     public void applyClusterOperatorInstallFiles(String namespace) {
         clusterOperatorConfigs.clear();
-        Map<File, String> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
+        List<File> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
                 .filter(File::isFile)
                 .filter(file ->
                         !file.getName().matches(".*(Binding|Deployment)-.*"))
-                .collect(Collectors.toMap(
-                    file -> file,
-                    f -> TestUtils.getContent(f, TestUtils::toYamlString),
-                    (x, y) -> x,
-                    LinkedHashMap::new));
-        for (Map.Entry<File, String> entry : operatorFiles.entrySet()) {
-            LOGGER.info("Creating configuration file: {}", entry.getKey());
-            String fileContents = entry.getValue();
-            if (Environment.isNamespaceRbacScope()) {
-                fileContents = switchClusterRolesToRoles(fileContents);
+                .collect(Collectors.toList());
 
+        for (File operatorFile : operatorFiles) {
+            File createFile = operatorFile;
+            if (operatorFile.getName().contains("ClusterRole-")) {
+                createFile = switchClusterRolesToRolesIfNeeded(createFile);
             }
-            clusterOperatorConfigs.push(entry.getKey().getPath());
-            cmdKubeClient().namespace(namespace).replaceContent(fileContents);
+
+            LOGGER.info("Creating configuration file: {}", createFile.getAbsolutePath());
+            cmdKubeClient().namespace(namespace).createOrReplace(createFile);
+            clusterOperatorConfigs.push(createFile.getPath());
         }
     }
 
@@ -201,12 +198,20 @@ public abstract class AbstractST implements TestSeparator {
      * Replace all references to ClusterRole to Role.
      * This includes ClusterRoles themselves as well as RoleBindings that reference them.
      */
-    public static String switchClusterRolesToRoles(String fileContents) {
-        String newContents = fileContents.replace("ClusterRole", "Role");
-        if (!newContents.equals(fileContents)) {
-            LOGGER.info("Replaced ClusterRole for Role");
+    public static File switchClusterRolesToRolesIfNeeded(File oldFile) {
+        if (Environment.isNamespaceRbacScope()) {
+            try {
+                File tmpFile = File.createTempFile("rbac-" + oldFile.getName().replace(".yaml", ""), ".yaml");
+                TestUtils.writeFile(tmpFile.getAbsolutePath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
+                LOGGER.info("Replaced ClusterRole for Role in {}", oldFile.getAbsolutePath());
+
+                return tmpFile;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            return oldFile;
         }
-        return newContents;
     }
 
     /**
@@ -236,9 +241,11 @@ public abstract class AbstractST implements TestSeparator {
 
         if (cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift) {
             // This is needed in case you are using internal kubernetes registry and you want to pull images from there
-            for (String namespace : namespaces) {
-                LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
-                Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+            if (kubeClient().getNamespace(Environment.STRIMZI_ORG) != null) {
+                for (String namespace : namespaces) {
+                    LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
+                    Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+                }
             }
         }
     }
