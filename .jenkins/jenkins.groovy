@@ -29,8 +29,8 @@ def buildStrimziImages() {
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups, String testsInParallel) {
-
-    def runTestsCommand = "mvn -f ${workspace}/systemtest/pom.xml -P all verify " +
+    withMaven(mavenOpts: '-Djansi.force=true') {
+        sh(script: "mvn -f ${workspace}/systemtest/pom.xml -P all verify " +
             "-Dgroups=${testProfile} " +
             "-DexcludedGroups=${excludeGroups} " +
             "-Dit.test=${testCases} " +
@@ -38,22 +38,10 @@ def runSystemTests(String workspace, String testCases, String testProfile, Strin
             "-DtrimStackTrace=false " +
             "-Dstyle.color=always " +
             "--no-transfer-progress " +
-            "-Dfailsafe.rerunFailingTestsCount=2"
-
-    // default (sequence mode)
-    if (testsInParallel == "1") {
-        withMaven(mavenOpts: '-Djansi.force=true') {
-            sh(script: runTestsCommand)
-        }
-    } else {
-        // parallel mode appending with needed options
-        runTestsCommand = runTestsCommand + " " +
-                "-Djunit.jupiter.execution.parallel.enabled=true " +
-                "-Djunit.jupiter.execution.parallel.config.fixed.parallelism=${testsInParallel}"
-
-        withMaven(mavenOpts: '-Djansi.force=true') {
-            sh(script: runTestsCommand)
-        }
+            "-Dfailsafe.rerunFailingTestsCount=2 " +
+            "-Djunit.jupiter.execution.parallel.enabled=true " +
+            // sequence mode with testInParallel=1 otherwise parallel
+            "-Djunit.jupiter.execution.parallel.config.fixed.parallelism=${testsInParallel}")
     }
 }
 
