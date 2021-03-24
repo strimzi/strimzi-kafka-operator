@@ -125,6 +125,7 @@ public final class TestUtils {
             try {
                 result = ready.getAsBoolean();
             } catch (Exception e) {
+                LOGGER.info("Exception waiting for {}, {}", description, e.getMessage());
                 result = false;
             }
             long timeLeft = deadline - System.currentTimeMillis();

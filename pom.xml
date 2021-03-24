@@ -751,6 +751,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-junit5</artifactId>
                 <version>${vertx-junit5.version}</version>
@@ -1036,7 +1042,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>${maven.dependency.version}</version>
                 <executions>
                     <execution>
                         <id>analyze</id>

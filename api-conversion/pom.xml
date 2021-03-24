@@ -115,6 +115,7 @@
                         </goals>
                         <configuration>
                             <appendAssemblyId>false</appendAssemblyId>
+                            <tarLongFileMode>posix</tarLongFileMode>
                             <descriptors>
                                 <descriptor>src/main/assembly/zip.xml</descriptor>
                             </descriptors>
