@@ -23,8 +23,8 @@
 
     <repositories>
         <repository>
-            <id>jcenter</id>
-            <url>https://linkedin.jfrog.io/ui/repos/tree/General/cruise-control</url>
+            <id>cruise-control</id>
+            <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
         </repository>
     </repositories>
 
