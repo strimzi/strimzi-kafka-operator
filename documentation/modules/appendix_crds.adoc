@@ -27,8 +27,6 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |zookeeper               1.2+<.<|Configuration of the ZooKeeper cluster.
 |xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-|topicOperator           1.2+<.<|*The `topicOperator` property has been deprecated, and should now be configured using `spec.entityOperator.topicOperator`. The property topicOperator is removed in API version `v1beta2`.* Configuration of the Topic Operator.
-|xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`]
 |entityOperator          1.2+<.<|Configuration of the Entity Operator.
 |xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |clusterCa               1.2+<.<|Configuration of the cluster certificate authority.
@@ -68,7 +66,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |image                1.2+<.<|The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.
 |string
 |listeners            1.2+<.<|Configures listeners of Kafka brokers.
-|xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] array or xref:type-KafkaListeners-{context}[`KafkaListeners`]
+|xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] array
 |config               1.2+<.<|Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).
 |map
 |storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim, jbod].
@@ -79,14 +77,6 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |xref:type-Rack-{context}[`Rack`]
 |brokerRackInitImage  1.2+<.<|The image of the init container used for initializing the `broker.rack`.
 |string
-|affinity             1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.kafka.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations          1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.kafka.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |livenessProbe        1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe       1.2+<.<|Pod readiness checking.
@@ -99,14 +89,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|metrics              1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.kafka.metricsConfig`. The property metrics is removed in API version `v1beta2`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
 |metricsConfig        1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |logging              1.2+<.<|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tlsSidecar           1.2+<.<|*The `tlsSidecar` property has been deprecated. The property tlsSidecar is removed in API version `v1beta2`.* TLS sidecar configuration.
-|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template             1.2+<.<|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 |====
@@ -155,7 +141,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 [id='type-KafkaListenerAuthenticationTls-{context}']
 ### `KafkaListenerAuthenticationTls` schema reference
 
-Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationTls` type from xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
@@ -170,7 +156,7 @@ It must have the value `tls` for the type `KafkaListenerAuthenticationTls`.
 [id='type-KafkaListenerAuthenticationScramSha512-{context}']
 ### `KafkaListenerAuthenticationScramSha512` schema reference
 
-Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationScramSha512` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
@@ -185,7 +171,7 @@ It must have the value `scram-sha-512` for the type `KafkaListenerAuthentication
 [id='type-KafkaListenerAuthenticationOAuth-{context}']
 ### `KafkaListenerAuthenticationOAuth` schema reference
 
-Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`], xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
+Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationOAuth` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`].
@@ -327,7 +313,7 @@ This field can be used to select the address type which will be used as the pref
 [id='type-CertAndKeySecretSource-{context}']
 ### `CertAndKeySecretSource` schema reference
 
-Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`], xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`], xref:type-NodePortListenerConfiguration-{context}[`NodePortListenerConfiguration`], xref:type-TlsListenerConfiguration-{context}[`TlsListenerConfiguration`]
+Used in: xref:type-GenericKafkaListenerConfiguration-{context}[`GenericKafkaListenerConfiguration`], xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`]
 
 
 [options="header"]
@@ -402,425 +388,6 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |annotations     1.2+<.<|Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
 |map
 |labels          1.2+<.<|Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
-|map
-|====
-
-[id='type-KafkaListeners-{context}']
-### `KafkaListeners` schema reference
-
-*The type `KafkaListeners` has been deprecated and is removed in API version `v1beta2`.*
-Please use xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`] instead.
-
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
-
-Refer to link:{BookURLUsingPrevious}[previous documentation] for example configuration.
-
-[options="header"]
-|====
-|Property         |Description
-|plain     1.2+<.<|Configures plain listener on port 9092.
-|xref:type-KafkaListenerPlain-{context}[`KafkaListenerPlain`]
-|tls       1.2+<.<|Configures TLS listener on port 9093.
-|xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
-|external  1.2+<.<|Configures external listener on port 9094. The type depends on the value of the `external.type` property within the given object, which must be one of [route, loadbalancer, nodeport, ingress].
-|xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
-|====
-
-[id='type-KafkaListenerPlain-{context}']
-### `KafkaListenerPlain` schema reference
-
-Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
-
-
-[options="header"]
-|====
-|Property                   |Description
-|authentication      1.2+<.<|Authentication configuration for this listener. Since this listener does not use TLS transport you cannot configure an authentication with `type: tls`. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[external documentation for networking.k8s.io/v1 networkpolicypeer].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
-|====
-
-[id='type-KafkaListenerTls-{context}']
-### `KafkaListenerTls` schema reference
-
-Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
-
-
-[options="header"]
-|====
-|Property                   |Description
-|authentication      1.2+<.<|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-|configuration       1.2+<.<|Configuration of TLS listener.
-|xref:type-TlsListenerConfiguration-{context}[`TlsListenerConfiguration`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[external documentation for networking.k8s.io/v1 networkpolicypeer].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
-|====
-
-[id='type-TlsListenerConfiguration-{context}']
-### `TlsListenerConfiguration` schema reference
-
-Used in: xref:type-KafkaListenerTls-{context}[`KafkaListenerTls`]
-
-
-[options="header"]
-|====
-|Property                      |Description
-|brokerCertChainAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair. The certificate can optionally contain the whole chain.
-|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|====
-
-[id='type-KafkaListenerExternalRoute-{context}']
-### `KafkaListenerExternalRoute` schema reference
-
-Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
-
-
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerExternalRoute` type from xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
-It must have the value `route` for the type `KafkaListenerExternalRoute`.
-[options="header"]
-|====
-|Property                   |Description
-|type                1.2+<.<|Must be `route`.
-|string
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
-|xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
-|configuration       1.2+<.<|External listener configuration.
-|xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[external documentation for networking.k8s.io/v1 networkpolicypeer].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
-|====
-
-[id='type-RouteListenerOverride-{context}']
-### `RouteListenerOverride` schema reference
-
-Used in: xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`]
-
-
-[options="header"]
-|====
-|Property          |Description
-|bootstrap  1.2+<.<|External bootstrap service configuration.
-|xref:type-RouteListenerBootstrapOverride-{context}[`RouteListenerBootstrapOverride`]
-|brokers    1.2+<.<|External broker services configuration.
-|xref:type-RouteListenerBrokerOverride-{context}[`RouteListenerBrokerOverride`] array
-|====
-
-[id='type-RouteListenerBootstrapOverride-{context}']
-### `RouteListenerBootstrapOverride` schema reference
-
-Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
-
-
-[options="header"]
-|====
-|Property        |Description
-|address  1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
-|string
-|host     1.2+<.<|Host for the bootstrap route. This field will be used in the `spec.host` field of the OpenShift Route.
-|string
-|====
-
-[id='type-RouteListenerBrokerOverride-{context}']
-### `RouteListenerBrokerOverride` schema reference
-
-Used in: xref:type-RouteListenerOverride-{context}[`RouteListenerOverride`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|broker          1.2+<.<|Id of the kafka broker (broker identifier).
-|integer
-|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
-|string
-|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
-|integer
-|host            1.2+<.<|Host for the broker route. This field will be used in the `spec.host` field of the OpenShift Route.
-|string
-|====
-
-[id='type-KafkaListenerExternalConfiguration-{context}']
-### `KafkaListenerExternalConfiguration` schema reference
-
-Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`]
-
-
-[options="header"]
-|====
-|Property                      |Description
-|brokerCertChainAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair. The certificate can optionally contain the whole chain.
-|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|====
-
-[id='type-KafkaListenerExternalLoadBalancer-{context}']
-### `KafkaListenerExternalLoadBalancer` schema reference
-
-Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
-
-
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerExternalLoadBalancer` type from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
-It must have the value `loadbalancer` for the type `KafkaListenerExternalLoadBalancer`.
-[options="header"]
-|====
-|Property                   |Description
-|type                1.2+<.<|Must be `loadbalancer`.
-|string
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
-|xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
-|configuration       1.2+<.<|External listener configuration.
-|xref:type-KafkaListenerExternalConfiguration-{context}[`KafkaListenerExternalConfiguration`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[external documentation for networking.k8s.io/v1 networkpolicypeer].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
-|tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
-|boolean
-|====
-
-[id='type-LoadBalancerListenerOverride-{context}']
-### `LoadBalancerListenerOverride` schema reference
-
-Used in: xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`]
-
-
-[options="header"]
-|====
-|Property          |Description
-|bootstrap  1.2+<.<|External bootstrap service configuration.
-|xref:type-LoadBalancerListenerBootstrapOverride-{context}[`LoadBalancerListenerBootstrapOverride`]
-|brokers    1.2+<.<|External broker services configuration.
-|xref:type-LoadBalancerListenerBrokerOverride-{context}[`LoadBalancerListenerBrokerOverride`] array
-|====
-
-[id='type-LoadBalancerListenerBootstrapOverride-{context}']
-### `LoadBalancerListenerBootstrapOverride` schema reference
-
-Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
-|string
-|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resource. You can use this field to configure DNS providers such as External DNS.
-|map
-|loadBalancerIP  1.2+<.<|The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.
-|string
-|====
-
-[id='type-LoadBalancerListenerBrokerOverride-{context}']
-### `LoadBalancerListenerBrokerOverride` schema reference
-
-Used in: xref:type-LoadBalancerListenerOverride-{context}[`LoadBalancerListenerOverride`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|broker          1.2+<.<|Id of the kafka broker (broker identifier).
-|integer
-|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
-|string
-|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
-|integer
-|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
-|map
-|loadBalancerIP  1.2+<.<|The loadbalancer is requested with the IP address specified in this field. This feature depends on whether the underlying cloud provider supports specifying the `loadBalancerIP` when a load balancer is created. This field is ignored if the cloud provider does not support the feature.
-|string
-|====
-
-[id='type-KafkaListenerExternalNodePort-{context}']
-### `KafkaListenerExternalNodePort` schema reference
-
-Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
-
-
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerExternalNodePort` type from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`].
-It must have the value `nodeport` for the type `KafkaListenerExternalNodePort`.
-[options="header"]
-|====
-|Property                   |Description
-|type                1.2+<.<|Must be `nodeport`.
-|string
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-|overrides           1.2+<.<|Overrides for external bootstrap and broker services and externally advertised addresses.
-|xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
-|configuration       1.2+<.<|External listener configuration.
-|xref:type-NodePortListenerConfiguration-{context}[`NodePortListenerConfiguration`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[external documentation for networking.k8s.io/v1 networkpolicypeer].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
-|tls                 1.2+<.<|Enables TLS encryption on the listener. By default set to `true` for enabled TLS encryption.
-|boolean
-|====
-
-[id='type-NodePortListenerOverride-{context}']
-### `NodePortListenerOverride` schema reference
-
-Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
-
-
-[options="header"]
-|====
-|Property          |Description
-|bootstrap  1.2+<.<|External bootstrap service configuration.
-|xref:type-NodePortListenerBootstrapOverride-{context}[`NodePortListenerBootstrapOverride`]
-|brokers    1.2+<.<|External broker services configuration.
-|xref:type-NodePortListenerBrokerOverride-{context}[`NodePortListenerBrokerOverride`] array
-|====
-
-[id='type-NodePortListenerBootstrapOverride-{context}']
-### `NodePortListenerBootstrapOverride` schema reference
-
-Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
-|string
-|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resource. You can use this field to configure DNS providers such as External DNS.
-|map
-|nodePort        1.2+<.<|Node port for the bootstrap service.
-|integer
-|====
-
-[id='type-NodePortListenerBrokerOverride-{context}']
-### `NodePortListenerBrokerOverride` schema reference
-
-Used in: xref:type-NodePortListenerOverride-{context}[`NodePortListenerOverride`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|broker          1.2+<.<|Id of the kafka broker (broker identifier).
-|integer
-|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
-|string
-|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
-|integer
-|nodePort        1.2+<.<|Node port for the broker service.
-|integer
-|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Service` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
-|map
-|====
-
-[id='type-NodePortListenerConfiguration-{context}']
-### `NodePortListenerConfiguration` schema reference
-
-Used in: xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`]
-
-
-[options="header"]
-|====
-|Property                      |Description
-|brokerCertChainAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair. The certificate can optionally contain the whole chain.
-|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|preferredAddressType   1.2+<.<|Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
-* `ExternalDNS`
-* `ExternalIP`
-* `InternalDNS`
-* `InternalIP`
-* `Hostname`
-
-This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order..
-|string (one of [ExternalDNS, ExternalIP, Hostname, InternalIP, InternalDNS])
-|====
-
-[id='type-KafkaListenerExternalIngress-{context}']
-### `KafkaListenerExternalIngress` schema reference
-
-Used in: xref:type-KafkaListeners-{context}[`KafkaListeners`]
-
-
-The `type` property is a discriminator that distinguishes use of the `KafkaListenerExternalIngress` type from xref:type-KafkaListenerExternalRoute-{context}[`KafkaListenerExternalRoute`], xref:type-KafkaListenerExternalLoadBalancer-{context}[`KafkaListenerExternalLoadBalancer`], xref:type-KafkaListenerExternalNodePort-{context}[`KafkaListenerExternalNodePort`].
-It must have the value `ingress` for the type `KafkaListenerExternalIngress`.
-[options="header"]
-|====
-|Property                   |Description
-|type                1.2+<.<|Must be `ingress`.
-|string
-|authentication      1.2+<.<|Authentication configuration for Kafka brokers. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].
-|xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
-|class               1.2+<.<|Configures the `Ingress` class that defines which `Ingress` controller will be used.
-|string
-|configuration       1.2+<.<|External listener configuration.
-|xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
-|networkPolicyPeers  1.2+<.<|List of peers which should be able to connect to this listener. Peers in this list are combined using a logical OR operation. If this field is empty or missing, all connections will be allowed for this listener. If this field is present and contains at least one item, the listener only allows the traffic which matches at least one item in this list. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[external documentation for networking.k8s.io/v1 networkpolicypeer].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer] array
-|====
-
-[id='type-IngressListenerConfiguration-{context}']
-### `IngressListenerConfiguration` schema reference
-
-Used in: xref:type-KafkaListenerExternalIngress-{context}[`KafkaListenerExternalIngress`]
-
-
-[options="header"]
-|====
-|Property                      |Description
-|bootstrap              1.2+<.<|External bootstrap ingress configuration.
-|xref:type-IngressListenerBootstrapConfiguration-{context}[`IngressListenerBootstrapConfiguration`]
-|brokers                1.2+<.<|External broker ingress configuration.
-|xref:type-IngressListenerBrokerConfiguration-{context}[`IngressListenerBrokerConfiguration`] array
-|brokerCertChainAndKey  1.2+<.<|Reference to the `Secret` which holds the certificate and private key pair. The certificate can optionally contain the whole chain.
-|xref:type-CertAndKeySecretSource-{context}[`CertAndKeySecretSource`]
-|====
-
-[id='type-IngressListenerBootstrapConfiguration-{context}']
-### `IngressListenerBootstrapConfiguration` schema reference
-
-Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|address         1.2+<.<|Additional address name for the bootstrap service. The address will be added to the list of subject alternative names of the TLS certificates.
-|string
-|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Ingress` resource. You can use this field to configure DNS providers such as External DNS.
-|map
-|host            1.2+<.<|Host for the bootstrap route. This field will be used in the Ingress resource.
-|string
-|====
-
-[id='type-IngressListenerBrokerConfiguration-{context}']
-### `IngressListenerBrokerConfiguration` schema reference
-
-Used in: xref:type-IngressListenerConfiguration-{context}[`IngressListenerConfiguration`]
-
-
-[options="header"]
-|====
-|Property               |Description
-|broker          1.2+<.<|Id of the kafka broker (broker identifier).
-|integer
-|advertisedHost  1.2+<.<|The host name which will be used in the brokers' `advertised.brokers`.
-|string
-|advertisedPort  1.2+<.<|The port number which will be used in the brokers' `advertised.brokers`.
-|integer
-|host            1.2+<.<|Host for the broker ingress. This field will be used in the Ingress resource.
-|string
-|dnsAnnotations  1.2+<.<|Annotations that will be added to the `Ingress` resources for individual brokers. You can use this field to configure DNS providers such as External DNS.
 |map
 |====
 
@@ -1040,7 +607,7 @@ include::../api/io.strimzi.api.kafka.model.Rack.adoc[leveloffset=+1]
 [id='type-Probe-{context}']
 ### `Probe` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TlsSidecar-{context}[`TlsSidecar`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -1061,7 +628,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 [id='type-JvmOptions-{context}']
 ### `JvmOptions` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -1164,7 +731,7 @@ Used in: xref:type-ExternalLogging-{context}[`ExternalLogging`], xref:type-JmxPr
 [id='type-InlineLogging-{context}']
 ### `InlineLogging` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `InlineLogging` type from xref:type-ExternalLogging-{context}[`ExternalLogging`].
@@ -1181,7 +748,7 @@ It must have the value `inline` for the type `InlineLogging`.
 [id='type-ExternalLogging-{context}']
 ### `ExternalLogging` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `ExternalLogging` type from xref:type-InlineLogging-{context}[`InlineLogging`].
@@ -1191,40 +758,8 @@ It must have the value `external` for the type `ExternalLogging`.
 |Property          |Description
 |type       1.2+<.<|Must be `external`.
 |string
-|name       1.2+<.<|*The `name` property has been deprecated, and should now be configured using `valueFrom`. The property name is removed in API version `v1beta2`.* The name of the `ConfigMap` from which to get the logging configuration.
-|string
 |valueFrom  1.2+<.<|`ConfigMap` entry where the logging configuration is stored. 
 |xref:type-ExternalConfigurationReference-{context}[`ExternalConfigurationReference`]
-|====
-
-[id='type-TlsSidecar-{context}']
-### `TlsSidecar` schema reference
-
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-TopicOperatorSpec-{context}[`TopicOperatorSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
-
-xref:type-TlsSidecar-schema-{context}[Full list of `TlsSidecar` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.TlsSidecar.adoc[leveloffset=+1]
-
-[id='type-TlsSidecar-schema-{context}']
-==== `TlsSidecar` schema properties
-
-
-[options="header"]
-|====
-|Property               |Description
-|image           1.2+<.<|The docker image for the container.
-|string
-|livenessProbe   1.2+<.<|Pod liveness checking.
-|xref:type-Probe-{context}[`Probe`]
-|logLevel        1.2+<.<|The log level for the TLS sidecar. Default value is `notice`.
-|string (one of [emerg, debug, crit, err, alert, warning, notice, info])
-|readinessProbe  1.2+<.<|Pod readiness checking.
-|xref:type-Probe-{context}[`Probe`]
-|resources       1.2+<.<|CPU and memory resources to reserve. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
 |====
 
 [id='type-KafkaClusterTemplate-{context}']
@@ -1261,8 +796,6 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |podDisruptionBudget       1.2+<.<|Template for Kafka `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |kafkaContainer            1.2+<.<|Template for the Kafka broker container.
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer       1.2+<.<|*The `tlsSidecarContainer` property has been deprecated. The property tlsSidecarContainer is removed in API version `v1beta2`.* Template for the Kafka broker TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |initContainer             1.2+<.<|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
@@ -1387,13 +920,9 @@ include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc
 
 [options="header"]
 |====
-|Property                         |Description
-|metadata                  1.2+<.<|Metadata applied to the resource.
+|Property         |Description
+|metadata  1.2+<.<|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|externalTrafficPolicy     1.2+<.<|*The `externalTrafficPolicy` property has been deprecated, and should now be configured using `spec.kafka.listeners[].configuration`. The property externalTrafficPolicy is removed in API version `v1beta2`.* Specifies whether the service routes external traffic to node-local or cluster-wide endpoints. `Cluster` may cause a second hop to another node and obscures the client source IP. `Local` avoids a second hop for LoadBalancer and Nodeport type services and preserves the client source IP (when supported by the infrastructure). If unspecified, Kubernetes will use `Cluster` as the default.
-|string (one of [Local, Cluster])
-|loadBalancerSourceRanges  1.2+<.<|*The `loadBalancerSourceRanges` property has been deprecated, and should now be configured using `spec.kafka.listeners[].configuration`. The property loadBalancerSourceRanges is removed in API version `v1beta2`.* A list of CIDR ranges (for example `10.0.0.0/8` or `130.211.204.1/32`) from which clients can connect to load balancer type listeners. If supported by the platform, traffic through the loadbalancer is restricted to the specified CIDR ranges. This field is applicable only for loadbalancer type services and is ignored if the cloud provider does not support the feature. For more information, see https://v1-17.docs.kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/. 
-|string array
 |====
 
 [id='type-PodDisruptionBudgetTemplate-{context}']
@@ -1481,14 +1010,6 @@ include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset
 |xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 |config          1.2+<.<|The ZooKeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme, snapshot.trust.empty, standaloneEnabled, reconfigEnabled, 4lw.commands.whitelist, secureClientPort, ssl., serverCnxnFactory, sslQuorum (with the exception of: ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites, ssl.hostnameVerification, ssl.quorum.hostnameVerification).
 |map
-|affinity        1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.zookeeper.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations     1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.zookeeper.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |livenessProbe   1.2+<.<|Pod liveness checking.
 |xref:type-Probe-{context}[`Probe`]
 |readinessProbe  1.2+<.<|Pod readiness checking.
@@ -1499,16 +1020,12 @@ include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|metrics         1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.zookeeper.metricsConfig`. The property metrics is removed in API version `v1beta2`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
 |metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |logging         1.2+<.<|Logging configuration for ZooKeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |template        1.2+<.<|Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
 |xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
-|tlsSidecar      1.2+<.<|*The `tlsSidecar` property has been deprecated. The property tlsSidecar is removed in API version `v1beta2`.* TLS sidecar configuration. The TLS sidecar is not used anymore and this option will be ignored.
-|xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |====
 
 [id='type-ZookeeperClusterTemplate-{context}']
@@ -1534,52 +1051,6 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |zookeeperContainer     1.2+<.<|Template for the ZooKeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer    1.2+<.<|*The `tlsSidecarContainer` property has been deprecated. The property tlsSidecarContainer is removed in API version `v1beta2`.* Template for the Zookeeper server TLS sidecar container. The TLS sidecar is not used anymore and this option will be ignored.
-|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|====
-
-[id='type-TopicOperatorSpec-{context}']
-### `TopicOperatorSpec` schema reference
-
-*The type `TopicOperatorSpec` has been deprecated and is removed in API version `v1beta2`.*
-Please use xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`] instead.
-
-Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
-
-
-[options="header"]
-|====
-|Property                               |Description
-|watchedNamespace                1.2+<.<|The namespace the Topic Operator should watch.
-|string
-|image                           1.2+<.<|The image to use for the Topic Operator.
-|string
-|reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
-|integer
-|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the ZooKeeper session.
-|integer
-|affinity                        1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.entityOperator.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* Pod affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|resources                       1.2+<.<|CPU and memory resources to reserve. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata.
-|integer
-|tlsSidecar                      1.2+<.<|*The `tlsSidecar` property has been deprecated, and should now be configured using `spec.entityOperator.tlsSidecar`. The property tlsSidecar is removed in API version `v1beta2`.* TLS sidecar configuration.
-|xref:type-TlsSidecar-{context}[`TlsSidecar`]
-|logging                         1.2+<.<|Logging configuration. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
-|xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|jvmOptions                      1.2+<.<|JVM Options for pods.
-|xref:type-JvmOptions-{context}[`JvmOptions`]
-|livenessProbe                   1.2+<.<|Pod liveness checking.
-|xref:type-Probe-{context}[`Probe`]
-|readinessProbe                  1.2+<.<|Pod readiness checking.
-|xref:type-Probe-{context}[`Probe`]
-|startupProbe                    1.2+<.<|Pod startup checking.
-|xref:type-Probe-{context}[`Probe`]
 |====
 
 [id='type-EntityOperatorSpec-{context}']
@@ -1595,14 +1066,6 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`]
 |userOperator   1.2+<.<|Configuration of the User Operator.
 |xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`]
-|affinity       1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.entityOperator.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations    1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.entityOperator.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |tlsSidecar     1.2+<.<|TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |template       1.2+<.<|Template for Entity Operator resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
@@ -1691,6 +1154,36 @@ include::../api/io.strimzi.api.kafka.model.EntityUserOperatorSpec.adoc[leveloffs
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |====
 
+[id='type-TlsSidecar-{context}']
+### `TlsSidecar` schema reference
+
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
+
+xref:type-TlsSidecar-schema-{context}[Full list of `TlsSidecar` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.TlsSidecar.adoc[leveloffset=+1]
+
+[id='type-TlsSidecar-schema-{context}']
+==== `TlsSidecar` schema properties
+
+
+[options="header"]
+|====
+|Property               |Description
+|image           1.2+<.<|The docker image for the container.
+|string
+|livenessProbe   1.2+<.<|Pod liveness checking.
+|xref:type-Probe-{context}[`Probe`]
+|logLevel        1.2+<.<|The log level for the TLS sidecar. Default value is `notice`.
+|string (one of [emerg, debug, crit, err, alert, warning, notice, info])
+|readinessProbe  1.2+<.<|Pod readiness checking.
+|xref:type-Probe-{context}[`Probe`]
+|resources       1.2+<.<|CPU and memory resources to reserve. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
+|====
+
 [id='type-EntityOperatorTemplate-{context}']
 ### `EntityOperatorTemplate` schema reference
 
@@ -1764,8 +1257,6 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |brokerCapacity  1.2+<.<|The Cruise Control `brokerCapacity` configuration.
 |xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 |config          1.2+<.<|The Cruise Control configuration. For a full list of configuration options refer to https://github.com/linkedin/cruise-control/wiki/Configurations. Note that properties with the following prefixes cannot be set: bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,capacity.config.file, self.healing., anomaly.detection., ssl. (with the exception of: ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled,webserver.http.cors.origin, webserver.http.cors.exposeheaders).
-|map
-|metrics         1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.cruiseControl.metricsConfig`. The property metrics is removed in API version `v1beta2`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
 |metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
@@ -2074,18 +1565,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |jmxOptions             1.2+<.<|JMX Options.
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|affinity               1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations            1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |logging                1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`. The property metrics is removed in API version `v1beta2`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
 |tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template               1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
@@ -2625,18 +2106,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectS2ISpec.adoc[leveloffset=
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |jmxOptions                1.2+<.<|JMX Options.
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|affinity                  1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations               1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |logging                   1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                   1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`. The property metrics is removed in API version `v1beta2`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
 |tracing                   1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template                  1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
@@ -3012,20 +2483,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
 |whitelist       1.2+<.<|List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the whitelist `'A\|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. You can also specify multiple regular expressions separated by commas.
 |string
-|affinity        1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations     1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |jvmOptions      1.2+<.<|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |logging         1.2+<.<|Logging configuration for MirrorMaker. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics         1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`. The property metrics is removed in API version `v1beta2`.* The Prometheus JMX Exporter configuration. See {JMXExporter} for details of the structure of this configuration.
-|map
 |metricsConfig   1.2+<.<|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |tracing         1.2+<.<|The configuration of tracing in Kafka MirrorMaker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
@@ -3452,18 +2913,8 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-JvmOptions-{context}[`JvmOptions`]
 |jmxOptions             1.2+<.<|JMX Options.
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
-|affinity               1.2+<.<|*The `affinity` property has been deprecated, and should now be configured using `spec.template.pod.affinity`. The property affinity is removed in API version `v1beta2`.* The pod's affinity rules. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[external documentation for core/v1 affinity].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#affinity-v1-core[Affinity]
-|tolerations            1.2+<.<|*The `tolerations` property has been deprecated, and should now be configured using `spec.template.pod.tolerations`. The property tolerations is removed in API version `v1beta2`.* The pod's tolerations. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[external documentation for core/v1 toleration].
-
-
-|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#toleration-v1-core[Toleration] array
 |logging                1.2+<.<|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|metrics                1.2+<.<|*The `metrics` property has been deprecated, and should now be configured using `spec.metricsConfig`. The property metrics is removed in API version `v1beta2`.* The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
-|map
 |tracing                1.2+<.<|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template               1.2+<.<|Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
