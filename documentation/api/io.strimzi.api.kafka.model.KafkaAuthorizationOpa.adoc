@@ -31,15 +31,24 @@ For more information see xref:con-securing-kafka-authorization-str[Kafka authori
 .An example of Open Policy Agent authorizer configuration
 [source,yaml,subs=attributes+]
 ----
-authorization:
-  type: opa
-  url: http://opa:8181/v1/data/kafka/allow
-  allowOnError: false
-  initialCacheCapacity: 1000
-  maximumCacheSize: 10000
-  expireAfterMs: 60000
-  superUsers:
-    - CN=fred
-    - sam
-    - CN=edward
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: myproject
+spec:
+  kafka:
+    # ...
+    authorization:
+      type: opa
+      url: http://opa:8181/v1/data/kafka/allow
+      allowOnError: false
+      initialCacheCapacity: 1000
+      maximumCacheSize: 10000
+      expireAfterMs: 60000
+      superUsers:
+        - CN=fred
+        - sam
+        - CN=edward
+    # ...
 ----

@@ -23,6 +23,11 @@ You can add configuration for initializing the custom authorizer using `Kafka.sp
 .An example of custom authorization configuration under `Kafka.spec`
 [source,yaml,subs="attributes+"]
 ----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: myproject
 spec:
   kafka:
     # ...
