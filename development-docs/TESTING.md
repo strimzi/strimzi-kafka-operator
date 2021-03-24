@@ -136,6 +136,10 @@ two junit properties which are located `systemtests/src/test/resources/junit-pla
 - junit.jupiter.execution.parallel.enabled=true
 - junit.jupiter.execution.parallel.config.fixed.parallelism=5 <- specify any number, you just have to be sure that your cluster can take it
 
+On the other hand you can also override it in mvn command using additional parameters:
+- -Djunit.jupiter.execution.parallel.enabled=true
+- -Djunit.jupiter.execution.parallel.config.fixed.parallelism=5
+
 ## Cluster Operator log check
 
 After each test, there is a check for cluster operator logs, which searches for unexpected errors or unexpected exceptions.
