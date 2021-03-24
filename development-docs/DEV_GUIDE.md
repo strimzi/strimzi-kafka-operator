@@ -19,14 +19,13 @@ This document gives a detailed breakdown of the various build processes and opti
 
 ## Developer Quick Start
 
-To build Strimzi from source you need an Kubernetes or OpenShift cluster available. You can install either [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) or [minishift](https://www.okd.io/minishift/) to have access to a cluster on your local machine.
+To build Strimzi from a source you need a Kubernetes or OpenShift cluster available. If you do not have existing Kubernetes cluster, you can install [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) to have access to a cluster on your local machine.
 
-You will also need access to several command line utilities. See the [pre-requisites section](#build-pre-requisites) for more details. Make sure your minishift user has `cluster-admin` role - see [minishift](#Minishift) setup details.
-
+You will also need access to several command line utilities. See the [pre-requisites section](#build-pre-requisites) for more details.
 
 ## Build from source
 
-To build Strimzi from source the operator and Kafka code needs to be compiled into Docker container images and placed in a location accessible to the Kubernetes/OpenShift nodes. The easiest way to make your personal Strimzi builds accessible, is to place them on the [Docker Hub](https://hub.docker.com/). The instructions below use this method, however other build options (including options for limited or no network access) are available in the sections below this quick start guide. The commands below should work for both minishift and minikube clusters:
+To build Strimzi from a source the operator and Kafka code needs to be compiled into Docker container images and placed in a location accessible to the Kubernetes/OpenShift nodes. The easiest way to make your personal Strimzi builds accessible, is to place them on the [Docker Hub](https://hub.docker.com/). The instructions below use this method, however other build options (including options for limited or no network access) are available in the sections below this quick start guide.
 
 1. If you don't have one already, create an account on the [Docker Hub](https://hub.docker.com/). Then log your local Docker client into the Hub using:
 
@@ -62,25 +61,11 @@ To build Strimzi from source the operator and Kafka code needs to be compiled in
 
 5. Then you can deploy the Cluster Operator by running: 
 
-   For a minikube cluster:
-
         kubectl create -f install/cluster-operator
-   
-   Or for a minishift cluster:
-        
-        oc create -f install/cluster-operator
-
 
 6. Finally, you can deploy the cluster custom resource running:
    
-   For minikube cluster:
-
         kubectl create -f examples/kafka/kafka-ephemeral.yaml 
-   
-   Or for a minishift cluster:
-
-        oc create -f examples/kafka/kafka-ephemeral.yaml
-
 
 ## Build Pre-Requisites
 
@@ -106,45 +91,15 @@ The `make` build is using GNU versions of `find` and `sed` utilities and is not 
 
 The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via homebrew. You can run `brew install bash` to install a compatible version of `bash`. If you wish to change the default shell to the updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`
 
-#### Install Minishift (local install of OpenShift)
-
-`brew cask install minishift`
-
-At the moment of this writing you will need to fix xhyve driver for Minishift to work:
-https://stackoverflow.com/questions/56358247/error-creating-new-host-json-cannot-unmarshal-bool-into-go-struct-field-driver
-```
-brew uninstall docker-machine-driver-xhyve
-brew edit docker-machine-driver-xhyve
-```
-
-Change tag and revision:
-`:tag => "v0.3.3", :revision => "7d92f74a8b9825e55ee5088b8bfa93b042badc47"`
-
-```
-brew install docker-machine-driver-xhyve
-sudo chown root:wheel $(brew --prefix)/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve
-sudo chmod u+s $(brew --prefix)/opt/docker-machine-driver-xhyve/bin/docker-machine-driver-xhyve
-```
-
 ### Kubernetes or OpenShift Cluster
 
 In order to run the integration tests and test any changes made to the operators you will need a functioning Kubernetes or OpenShift cluster. This can be a remote cluster or a local development cluster.
 
-#### Minishift 
-
-In order to perform the operations necessary for the integration tests, your user must have the cluster administrator role assigned. For example, if your username is `developer`, you can add the `cluster-admin` role using the commands below:
-
-    oc login -u system:admin
-
-    oc adm policy add-cluster-role-to-user cluster-admin developer
-    
-    oc login -u developer -p <password>
-
 #### Minikube
 
-The default minishift setup should allow the integration tests to be run without additional configuration changes. 
+The default Minikube setup should allow the integration tests to be run without additional configuration changes. 
 
-Sometimes however, updates to minikube may prevent the test cluster context being correctly set. If you have errors due to `oc` commands being called on your minikube cluster then explicitly set the `TEST_CLUSTER` environment variable before running the `make` commands.
+Sometimes however, updates to Minikube may prevent the test cluster context being correctly set. If you have errors due to `oc` commands being called on your Minikube cluster then explicitly set the `TEST_CLUSTER` environment variable before running the `make` commands.
 
     export TEST_CLUSTER=minikube
                                                                                             
@@ -163,11 +118,15 @@ Commonly used Make targets:
 ### Java versions
 
 To use different Java version for the Maven build, you can specify the environment variable `JAVA_VERSION_BUILD` and set it to the desired Java version.
-For example, for building with Java 8, you can use `export JAVA_VERSION_BUILD=1.8.0` or for Java 11 you can use `export JAVA_VERSION_BUILD=11`. 
+For example, for building with Java 11 you can use `export JAVA_VERSION_BUILD=11`.
+
+>*Note*: Strimzi currently developed and tested with Java 11.
 
 ### Building Docker images
 
-The `docker_build` target will build the Docker images provided by the Strimzi project. You can build all Strimzi Docker images by calling `make docker_build` from the root of the Strimzi repository. Or you can build an individual Docker image by running `make docker_build` from the subdirectories with their respective Dockerfiles - e.g. `kafka_base`, `kafka` etc.
+The `docker_build` target will build the Docker images provided by the Strimzi project.
+You can build the Docker images by calling `make docker_build` from the root of the Strimzi repository (this will build the Java code as well).
+Or you can build only the Docker images without the Java code by calling `make docker_build` from the `docker-images` subdirectory (this expects that you have build the Java code before).
 
 The `docker_build` target will **always** build the images under the `strimzi` organization. This is necessary in order to be able to reuse the base image you might have just built without modifying all Dockerfiles. The `DOCKER_TAG` environment variable configures the Docker tag to use (default is `latest`).
 
@@ -187,7 +146,8 @@ When building the Docker images you can use an alternative JRE or use an alterna
 ### Alternative Docker image JRE
 
 The docker images can be built with an alternative Java version by setting the environment variable `JAVA_VERSION`. 
-For example, to build docker images that have the Java 8 JRE installed use `JAVA_VERSION=1.8.0 make docker_build`.  If not present, the container images will use Java **11** by default.
+For example, to build docker images that have the Java 11 JRE installed use `JAVA_VERSION=11 make docker_build`.
+If not present, the container images will use Java **11** by default.
 
 ### Alternative `docker` command
 
@@ -196,7 +156,6 @@ The build assumes the `docker` command is available on your `$PATH`. You can set
 ### Alternative Docker base image
 
 The docker images can be built with an alternative container OS version by adding the environment variable `ALTERNATE_BASE`.  When this environment variable is set, for each component the build will look for a Dockerfile in the subdirectory named by `ALTERNATE_BASE`.  For example, to build docker images based on alpine, use `ALTERNATE_BASE=alpine make docker_build`.  Alternative docker images are an experimental feature not supported by the core Strimzi team.
-
 
 ## Building Strimzi
 
@@ -210,8 +169,7 @@ The build can be customised by:
 Other build options:
 
  - [Local build with push to Docker Hub](#local-build-with-push-to-docker-hub)
- - [Local build with push to Minishift Docker registry](#local-build-with-push-to-minishift-docker-registry)
- - [Local build on Minishift or Minikube](#local-build-on-minishift-or-minikube)
+ - [Local build on Minikube](#local-build-on-minikube)
 
 ### Kafka versions
 
@@ -253,62 +211,10 @@ Finally, you can deploy the cluster custom resource running:
 
     oc create -f examples/kafka/kafka-ephemeral.yaml
 
-### Local build with push to Minishift Docker registry
+### Local build on Minikube
 
-When developing locally you might want to push the docker images to the docker repository running in your local OpenShift (minishift) cluster. This can be quicker than pushing to Docker Hub and works even without a network connection.
+If you do not want to have the docker daemon running on your local development machine, you can build the container images in your Minikube VM by setting your docker host to the address of the VM's daemon:
 
-Assuming your OpenShift login is `developer` (a user with the `cluster-admin` role) and the project is `myproject`, you can push the images to OpenShift's Docker repo using the steps below:
-
-1. Make sure your cluster is running,
-
-        oc cluster up
-
-   By default, you should be logged in as `developer` (you can check this with `oc
-   whoami`)
-
-2. Get the *internal* OpenShift docker registry address by running the command below:
-
-        oc get services -n default 
-        
-   `172.30.1.1:5000` is the typical default IP and port of the Docker registry running in the cluster, however the command above may return a different value.
-
-3. Log in to the Docker repo running in the local cluster:
-
-        docker login -u developer -p $(oc whoami -t) 172.30.1.1:5000
-        
-   Note that we are using the `developer` OpenShift user and the token for the current (`developer`) login as the password.
-        
-4. Now run the `docker_push` target to push the development images to that Docker repo. If you need to build/rebuild the Docker images as well, then run the `all` target instead:
-
-        DOCKER_REGISTRY=172.30.1.1:5000 DOCKER_ORG=$(oc project -q) make docker_push
-        
-5. To use the built images in a deployment, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from the registry at `172.30.1.1:5000`, rather than from Docker Registry:
-
-    ```
-    sed -Ei -e 's#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: 172.30.1.1:5000/myproject/\2:latest#' \
-            -e "s#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: 172.30.1.1:5000/myproject/\2#" \
-            -e 's#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=172.30.1.1:5000/myproject/\2#' \
-            install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
-    ```
-
-    This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name from `172.30.1.1:5000/myproject`.
-
-6. Then you can deploy the Cluster Operator by running:
-
-    oc create -f install/cluster-operator
-
-7. Finally, you can deploy the cluster custom resource by running:
-
-    oc create -f examples/kafka/kafka-ephemeral.yaml
-
-### Local build on Minishift or Minikube
-
-If you do not want to have the docker daemon running on your local development machine, you can build the container images in your minishift or minikube VM by setting your docker host to the address of the VM's daemon:
-
-    eval $(minishift docker-env)
-
-or
-    
     eval $(minikube docker-env)
 
 The images will then be built and stored in the cluster VM's local image store and then pushed to your configured Docker registry. 
