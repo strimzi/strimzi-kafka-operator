@@ -53,7 +53,7 @@ When used with the provided callbacks, SASL_PLAIN allows Kafka clients to authen
 * A long-lived access token, obtained manually at configuration time
 
 The client must enable SASL_PLAIN and set the `username` and `password`. 
-If the client prefixes the `password` with `$accessToken:` followed by the value of the access token (access token ???), the authorization server will interpret the password as the access token. 
+If the client prefixes the `password` with `$accessToken:` followed by the value of the access token, the authorization server will interpret the password as the access token. 
 Otherwise, the authorization server will interpret the `username` as the client ID and the `password` as the client secret.
 
 If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token. 
