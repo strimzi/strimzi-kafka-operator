@@ -18,7 +18,7 @@ Default `120`.
 
 `zookeeperSessionTimeoutSeconds`::
 The ZooKeeper session timeout in seconds.
-Default `20`.
+Default `18`.
 
 `image`::
 The `image` property can be used to configure the container image which will be used.

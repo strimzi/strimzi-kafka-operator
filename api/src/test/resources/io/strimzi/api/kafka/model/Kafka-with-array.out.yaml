@@ -104,7 +104,7 @@ spec:
   topicOperator:
     watchedNamespace: "my-ns"
     reconciliationIntervalSeconds: 120
-    zookeeperSessionTimeoutSeconds: 20
+    zookeeperSessionTimeoutSeconds: 18
     topicMetadataMaxAttempts: 6
   clusterCa:
     generateCertificateAuthority: false
