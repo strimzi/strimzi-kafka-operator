@@ -5,23 +5,16 @@
 [id='{context}']
 = Session re-authentication for Kafka brokers
 
-OAuth 2.0 authentication in Strimzi supports a Kafka feature called _session re-authentication_. 
-To enable and configure session re-authentication, you set a time value for `maxSecondsWithoutReauthentication` in the `oauth` listener configuration for the Kafka broker.
+OAuth 2.0 authentication in Strimzi supports _session re-authentication_, which is part of the Kafka Client libraries. 
+This Kafka mechanism is used to enforce the expiry of authenticated sessions between OAuth clients and Kafka brokers after a defined period of time. 
+When a session expires, the client immediately starts a new session by reusing the existing connection rather than dropping it.
+
+Session re-authentication is disabled by default. 
+To enable and configure it, you set a time value for `maxSecondsWithoutReauthentication` in the `oauth` listener configuration in the `Kafka` custom resource. 
+The same property is used to configure session re-authentication for OAUTHBEARER and PLAIN authentication. 
+For an example configuration, see xref:proc-oauth-authentication-broker-config-{context}[].
 
 Session re-authentication can be used with _fast local JWT_ or _introspection endpoint_ token validation.
-
-There are some differences in how session expiry is handled in OAUTHBEARER and PLAIN authentication.
-
-.Session expiry with OAUTHBEARER
-
-When session re-authentication is configured for OAUTHBEARER, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
-The session will expire earlier if the access token expires before the `maxSecondsWithoutReauthentication`. 
-The duration of the access token always take precedence over `maxSecondsWithoutReauthentication`.
-
-.Session expiry with PLAIN
-
-When session re-authentication is configured with PLAIN, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
-If `maxSecondsWithoutReauthentication` is not configured, PLAIN clients can remain connected to brokers indefinitely, without needing to re-authenticate.
 
 .Client re-authentication
 
@@ -31,12 +24,16 @@ If token validation is successful, a new client session is started using the exi
 If the client fails to re-authenticate, the broker will close the connection if further attempts are made to send or receive messages.
 Java clients that use Kafka client library 2.2 or later automatically re-authenticate if the re-authentication mechanism is enabled on the broker.
 
-You enable session re-authentication in the `Kafka` resource. 
-Set the `maxSecondsWithoutReauthentication` property for a TLS listener with `type: oauth` authentication. 
-The same property is used to configure OAUTHBEARER and PLAIN on the same listener.
-For an example configuration, see xref:proc-oauth-authentication-broker-config-{context}[].
+.Differences in session expiry for OAUTHBEARER and PLAIN
 
-For more information about the re-authentication mechanism, which was added in Kafka version 2.2, see link:https://cwiki.apache.org/confluence/display/KAFKA/KIP-368%3A+Allow+SASL+Connections+to+Periodically+Re-Authenticate[KIP-368^].
+There are some differences in how session expiry works when session re-authentication is configured for OAUTHBEARER and PLAIN authentication.
+
+* For OAUTHBEARER, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
+The session will expire earlier if the access token expires before the `maxSecondsWithoutReauthentication`. 
+The duration of the access token always take precedence over `maxSecondsWithoutReauthentication`.
+
+* For PLAIN, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
+If `maxSecondsWithoutReauthentication` is not configured, PLAIN clients can remain connected to brokers indefinitely, without needing to re-authenticate.
 
 .Additional resources
 
@@ -45,3 +42,5 @@ For more information about the re-authentication mechanism, which was added in K
 * xref:proc-oauth-authentication-broker-config-{context}[]
 
 * xref:type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
+
+* link:https://cwiki.apache.org/confluence/display/KAFKA/KIP-368%3A+Allow+SASL+Connections+to+Periodically+Re-Authenticate[KIP-368^]

@@ -13,6 +13,8 @@ Configure clients to use OAUTHBEARER for authentication with Kafka brokers whene
 This mechanism provides a higher level of security because client credentials are _never_ shared with Kafka brokers. 
 Consider using PLAIN only with Kafka clients that do not support OAUTHBEARER. 
 
+OAUTHBEARER and PLAIN can be enabled at the same time, on the same `oauth` listener, if both types of OAuth clients need to authenticate.
+
 .OAUTHBEARER overview
 
 Support for OAUTHBEARER is built in to many Kafka clients. 
@@ -77,4 +79,3 @@ If you want to use PLAIN only, you can disable OAUTHBEARER by setting `enableOau
 .Additional resources
 
 * xref:proc-oauth-authentication-broker-config-{context}[]
-* xref:con-oauth-reauthentication-{context}[] 
