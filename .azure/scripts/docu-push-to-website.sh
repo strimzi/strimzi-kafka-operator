@@ -33,6 +33,6 @@ git config user.email "ci@strimzi.io"
 
 git add -A
 git commit -s -m "Update documentation (Travis CI build ${TRAVIS_BUILD_NUMBER})" --allow-empty
-git push origin master
+git push origin main
 
 popd

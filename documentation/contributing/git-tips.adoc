@@ -7,7 +7,7 @@ To delete all of your branches except the branch you are on:
 
 [source]
 ----
-$ git checkout master
+$ git checkout main
 $ for br in `git branch` ; do git branch -D $br ; done
 ----
 
@@ -15,7 +15,7 @@ To delete one branch:
 
 [source,options="nowrap",subs="+quotes"]
 ----
-$ git checkout master
+$ git checkout main
 $ git branch -D <branch-name>
 ----
 
@@ -27,7 +27,7 @@ To resolve a merge conflict in an existing pull request:
 ----
 $ git checkout <branch-name>
 $ git branch -u origin <branch-name>
-$ git pull --rebase upstream master
+$ git pull --rebase upstream main
 $ git push -f origin HEAD
 ----
 
@@ -37,11 +37,11 @@ If your fork is both ahead of and behind the origin you can reset your fork to m
 
 [source]
 ----
-$ git checkout master
-$ git reset --hard upstream/master
-$ git push origin master --force
-$ git pull upstream master
-$ git push origin master --force
+$ git checkout main
+$ git reset --hard upstream/main
+$ git push origin main --force
+$ git pull upstream main
+$ git push origin main --force
 ----
 
 == Using `ssh-agent` to save your SSH key's passphrase
@@ -52,7 +52,7 @@ Before using the `ssh-agent` you will see a prompt to enter your passphrase afte
 
 [source]
 ----
-[amq-repo]$ git pull --rebase upstream master
+[amq-repo]$ git pull --rebase upstream main
 Enter passphrase for key '/home/<username>/.ssh/id_rsa':
 ----
 
@@ -75,12 +75,12 @@ Identity added: /home/<username>/.ssh/id_rsa (/home/<username>/.ssh/id_rsa)
 
 This is the process you can use if you need commits another writer has submitted in a merge request that is not yet merged.
 
-. Check out a new topic branch from upstream/master as you normally do.
+. Check out a new topic branch from upstream/main as you normally do.
 +
 [source,options="nowrap",subs="+quotes"]
 ----
 $ git fetch upstream
-$ git checkout -b <new-topic-branch> upstream/master
+$ git checkout -b <new-topic-branch> upstream/main
 ----
 . If you have not yet added that writer’s remote repository, add it now.
 +

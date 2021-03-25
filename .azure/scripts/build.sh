@@ -60,18 +60,18 @@ fi
 # Push artifatcs (Docker containers, JARs, docs)
 if [ "$BUILD_REASON" == "PullRequest" ] ; then
     echo "Building Pull Request - nothing to push"
-elif [[ "$BRANCH" != "refs/tags/"* ]] && [ "$BRANCH" != "refs/heads/master" ]; then
-    echo "Not in master branch and not in release tag - nothing to push"
+elif [[ "$BRANCH" != "refs/tags/"* ]] && [ "$BRANCH" != "refs/heads/main" ]; then
+    echo "Not in main branch and not in release tag - nothing to push"
 else
     if [ "${MAIN_BUILD}" == "TRUE" ] ; then
-        echo "Main build on master branch or release tag - going to push to Docker Hub, Nexus and website"
+        echo "Main build on main branch or release tag - going to push to Docker Hub, Nexus and website"
         
         echo "Login into Docker Hub ..."
         docker login -u $DOCKER_USER -p $DOCKER_PASS $DOCKER_REGISTRY
 
         export DOCKER_ORG=strimzi
         
-        if [ "$BRANCH" == "refs/heads/master" ]; then
+        if [ "$BRANCH" == "refs/heads/main" ]; then
             export DOCKER_TAG="latest"
         else
             export DOCKER_TAG="${BRANCH#refs/tags/}"
@@ -80,7 +80,7 @@ else
         echo "Pushing to docker org $DOCKER_ORG"
         make docker_push
 
-        if [ "$BRANCH" == "refs/heads/master" ]; then
+        if [ "$BRANCH" == "refs/heads/main" ]; then
             make docu_pushtowebsite
         fi
 

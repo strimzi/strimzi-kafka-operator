@@ -18,18 +18,18 @@ Once you have your local repository set up and have up to date copies of upstrea
 .Procedure
 . Open your terminal
 . `cd` to the directory where your documentation resides
-. Checkout the master branch
+. Checkout the main branch
 +
 [source]
 ----
-$ git checkout master
+$ git checkout main
 ----
 . Update your local repository and fork with the upstream content
 +
 [source]
 ----
-$ git pull upstream master
-$ git push origin master --force
+$ git pull upstream main
+$ git push origin main --force
 ----
 . Create a new branch for your work (using the issue number is helpful)
 +
@@ -67,7 +67,7 @@ $ git push origin HEAD
 +
 [source]
 ----
-$ git pull upstream master
+$ git pull upstream main
 $ git push -f origin HEAD
 ----
 . Visit your fork on GitHub
