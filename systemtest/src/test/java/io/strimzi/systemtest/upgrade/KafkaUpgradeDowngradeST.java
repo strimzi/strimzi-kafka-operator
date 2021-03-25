@@ -49,12 +49,14 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
     private final String continuousTopicName = "continuous-topic";
     private final int continuousClientsMessageCount = 1000;
-    private final String producerName = "hello-world-producer";
-    private final String consumerName = "hello-world-consumer";
 
     @IsolatedTest
     void testKafkaClusterUpgrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+
+        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
+        String producerName = clusterName + "-producer";
+        String consumerName = clusterName + "-consumer";
 
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
@@ -63,7 +65,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
             // If it is an upgrade test we keep the message format as the lower version number
             String logMsgFormat = initialVersion.messageVersion();
             String interBrokerProtocol = initialVersion.protocolVersion();
-            runVersionChange(initialVersion, newVersion, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, clusterName, producerName, consumerName, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -77,6 +79,10 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
     void testKafkaClusterDowngrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
+        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
+        String producerName = clusterName + "-producer";
+        String consumerName = clusterName + "-consumer";
+
         for (int x = sortedVersions.size() - 1; x > 0; x--) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
@@ -84,7 +90,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
             // If it is a downgrade then we make sure to use the lower version number for the message format
             String logMsgFormat = newVersion.messageVersion();
             String interBrokerProtocol = newVersion.protocolVersion();
-            runVersionChange(initialVersion, newVersion, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, clusterName, producerName, consumerName, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -97,6 +103,10 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
     @IsolatedTest
     void testKafkaClusterDowngradeToOlderMessageFormat(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+
+        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
+        String producerName = clusterName + "-producer";
+        String consumerName = clusterName + "-consumer";
 
         String initLogMsgFormat = sortedVersions.get(0).messageVersion();
 
@@ -118,7 +128,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
-            runVersionChange(initialVersion, newVersion, initLogMsgFormat, interBrokerProtocol, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, clusterName, producerName, consumerName, initLogMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -132,11 +142,15 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
     void testUpgradeWithNoMessageAndProtocolVersionsSet(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
 
+        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
+        String producerName = clusterName + "-producer";
+        String consumerName = clusterName + "-consumer";
+
         for (int x = 0; x < sortedVersions.size() - 1; x++) {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            runVersionChange(initialVersion, newVersion, null, null, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, clusterName, producerName, consumerName, null, null, 3, 3, testContext);
         }
 
         // ##############################
@@ -147,8 +161,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
-        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String clusterName, String producerName, String consumerName, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
         boolean isUpgrade = initialVersion.isUpgrade(newVersion);
         Map<String, String> kafkaPods;
 
@@ -192,8 +205,8 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
-                .withProducerName(producerName + "-" + clusterName)
-                .withConsumerName(consumerName + "-" + clusterName)
+                .withProducerName(producerName)
+                .withConsumerName(consumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(continuousTopicName)
                 .withMessageCount(continuousClientsMessageCount)
