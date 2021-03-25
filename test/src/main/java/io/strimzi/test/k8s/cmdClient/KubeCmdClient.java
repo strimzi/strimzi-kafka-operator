@@ -38,7 +38,11 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     /** Creates the resources in the given files. */
     K create(File... files);
 
-    K create(File file);
+    default K create(File file) {
+        return create(file, true);
+    }
+
+    K create(File file, boolean localValidation);
 
     /** Creates the resources in the given files. */
     K apply(File... files);
