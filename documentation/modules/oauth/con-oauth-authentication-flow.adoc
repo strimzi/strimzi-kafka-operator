@@ -48,9 +48,9 @@ Client credentials are handled centrally, behind an authorization server that co
 
 When used with the provided callbacks, SASL_PLAIN allows Kafka clients to authenticate with Kafka brokers using either of the following methods:
 
-* OAuth access token
+* Client ID and Secret (by using the OAuth 2.0 client credentials mechanism)
 
-* OAuth `clientId` and `secret` (the client credentials)
+* A long-lived access token, obtained manually at configuration time
 
 The client must enable SASL_PLAIN and set the `username` and `password`. 
 If the client prefixes the `password` with `$accessToken:` followed by the value of the access token (access token ???), the authorization server will interpret the password as the access token. 
