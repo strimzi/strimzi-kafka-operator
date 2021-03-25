@@ -382,27 +382,11 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
-    public void withOldAffinity() throws IOException {
-        ResourceTester<KafkaConnectS2I, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2I.class,
-            x -> KafkaConnectS2ICluster.fromCrd(x, VERSIONS), this.getClass().getSimpleName() + ".withOldAffinity");
-        resourceTester
-            .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getAffinity());
-    }
-
-    @Test
     public void withAffinity() throws IOException {
         ResourceTester<KafkaConnectS2I, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2I.class,
             x -> KafkaConnectS2ICluster.fromCrd(x, VERSIONS), this.getClass().getSimpleName() + ".withAffinity");
         resourceTester
                 .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getAffinity());
-    }
-
-    @Test
-    public void withOldTolerations() throws IOException {
-        ResourceTester<KafkaConnectS2I, KafkaConnectS2ICluster> resourceTester = new ResourceTester<>(KafkaConnectS2I.class,
-            x -> KafkaConnectS2ICluster.fromCrd(x, VERSIONS), this.getClass().getSimpleName() + ".withOldTolerations");
-        resourceTester
-                .assertDesiredResource("-DeploymentConfig.yaml", kcc -> kcc.generateDeploymentConfig(Collections.EMPTY_MAP, true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @Test

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -19,7 +18,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -319,30 +317,7 @@ public class ZookeeperCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
-        // Zookeeper needs special treatment for Affinity and Tolerations because of deprecated fields in spec
-        zk.setUserAffinity(affinity(zookeeperClusterSpec));
-        zk.setTolerations(tolerations(zookeeperClusterSpec));
-
         return zk;
-    }
-
-    @SuppressWarnings("deprecation")
-    static List<Toleration> tolerations(ZookeeperClusterSpec zookeeperClusterSpec) {
-        return ModelUtils.tolerations("spec.zookeeper.tolerations", zookeeperClusterSpec.getTolerations(), "spec.zookeeper.template.pod.tolerations", zookeeperClusterSpec.getTemplate() == null ? null : zookeeperClusterSpec.getTemplate().getPod());
-    }
-
-    @SuppressWarnings("deprecation")
-    static Affinity affinity(ZookeeperClusterSpec zookeeperClusterSpec) {
-        if (zookeeperClusterSpec.getTemplate() != null
-                && zookeeperClusterSpec.getTemplate().getPod() != null
-                && zookeeperClusterSpec.getTemplate().getPod().getAffinity() != null) {
-            if (zookeeperClusterSpec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.zookeeper.affinity and spec.zookeeper.template.pod.affinity; latter takes precedence");
-            }
-            return zookeeperClusterSpec.getTemplate().getPod().getAffinity();
-        } else {
-            return zookeeperClusterSpec.getAffinity();
-        }
     }
 
     public Service generateService() {
