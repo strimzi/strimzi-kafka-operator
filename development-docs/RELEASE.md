@@ -17,11 +17,12 @@ The release process should normally look like this:
 3. Run `make clean`
 4. Export the desired version into the environment variable `RELEASE_VERSION`
 5. Run `make release`
-5. Commit the changes to the existing files (do not add the newly created top level TAR.GZ, ZIP archives or .yaml files into Git)
-6. Push the changes to the release branch on GitHub
-7. Create the tag and push it to GitHub. Tag name determines the tag of the resulting Docker images. Therefore the Git tag name has to be the same as the `RELEASE_VERSION`, i.e. `git tag ${RELEASE_VERSION}`,
-8. Once the CI build for the tag is finished, and the Docker images are pushed to Docker Hub, Create a GitHub release and tag based on the release branch. Attach the TAR.GZ/ZIP archives, YAML files (for installation from URL) from step 5 and the Helm Chart to the release
-9. _(only for GA, not for RCs)_ Update the website
+6. Update the `install`, `example` and `helm-chart` files in the release branch with files from `packaging/` updated by `make release`
+7. Commit the changes to the existing files (do not add the newly created top level TAR.GZ, ZIP archives or .yaml files into Git)
+8. Push the changes to the release branch on GitHub
+9. Create the tag and push it to GitHub. Tag name determines the tag of the resulting Docker images. Therefore the Git tag name has to be the same as the `RELEASE_VERSION`, i.e. `git tag ${RELEASE_VERSION}`,
+10. Once the CI build for the tag is finished, and the Docker images are pushed to Docker Hub, Create a GitHub release and tag based on the release branch. Attach the TAR.GZ/ZIP archives, YAML files (for installation from URL) from step 5 and the Helm Chart to the release
+11. _(only for GA, not for RCs)_ Update the website
   * Update the `_redirects` file to make sure the `/install/latest` redirect points to the new release.
   * Update the `_data/releases.yaml` file to add new release
   * Update the documentation: 
@@ -34,15 +35,16 @@ The release process should normally look like this:
     * Copy files from the operators repository `documentation/html` to `docs/operators/latest/full` in the website repository
   * Update the Helm Chart repository file by copying `helm-charts/helm3/index.yaml` in the operators GitHub repository to `charts/index.yaml` in the website GitHub repsoitory.
 
-10. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
-11. _(only for GA, not for RCs)_ On the `master` git branch of the operators repository:
-  * Copy the `packaging/helm-charts/index.yaml` from the `release` branch to `master`.
-  * Update the `ProductVersion` variable in `documentation/using/shared/attributes.doc`.
+12. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
+13. _(only for GA, not for RCs)_ On the `master` git branch of the operators repository:
+  * Copy the `packaging/helm-charts/index.yaml` from the `release` branch to `master`
+  * Update the `ProductVersion` variable in `documentation/using/shared/attributes.doc`
+  * Update the `install`, `examples` and `helm-chart` directories in the `master` branch with the newly released files
 
-12. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operate Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
-13. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziUpgradeST.json` file for the upgrade tests
-14. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziDowngradeST.json` file and remove the old one for the downgrade tests
-15. _(only for GA, not for RCs)_ Update the `install`, `examples` and `helm-chart` directories in the `master` branch with the newly released files
+14. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
+15. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziUpgradeST.json` file for the upgrade tests
+16. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziDowngradeST.json` file and remove the old one for the downgrade tests
+
 
 ## Updating Kafka Bridge version
 
