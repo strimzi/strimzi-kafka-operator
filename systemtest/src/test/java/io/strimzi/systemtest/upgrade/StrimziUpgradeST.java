@@ -251,38 +251,38 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     }
 
     private void performUpgrade(JsonObject testParameters, ExtensionContext extensionContext) throws IOException {
-        List<JsonObject> parameters = buildMidStepUpgradeData(testParameters);
+        Map<String, JsonObject> parameters = buildMidStepUpgradeData(testParameters);
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, parameters.get(0), producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, parameters.get("midStep"), producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
 
         // Upgrade to 0.22.0
         logPodImages(clusterName);
-        changeClusterOperator(parameters.get(0), NAMESPACE);
-        convertCRDs(parameters.get(0), NAMESPACE);
+        changeClusterOperator(parameters.get("midStep"), NAMESPACE);
+        convertCRDs(parameters.get("midStep"), NAMESPACE);
 
         // Upgrade CO to HEAD
         logPodImages(clusterName);
-        changeClusterOperator(parameters.get(1), NAMESPACE);
+        changeClusterOperator(parameters.get("toHEAD"), NAMESPACE);
 
-        if (TestKafkaVersion.containsVersion(getDefaultKafkaVersionPerStrimzi(parameters.get(1).getString("fromVersion")).version())) {
+        if (TestKafkaVersion.containsVersion(getDefaultKafkaVersionPerStrimzi(parameters.get("toHEAD").getString("fromVersion")).version())) {
             waitForKafkaClusterRollingUpdate();
         }
 
         logPodImages(clusterName);
         // Upgrade kafka
-        changeKafkaAndLogFormatVersion(parameters.get(1).getJsonObject("proceduresAfterOperatorUpgrade"), parameters.get(1), clusterName, extensionContext);
+        changeKafkaAndLogFormatVersion(parameters.get("toHEAD").getJsonObject("proceduresAfterOperatorUpgrade"), parameters.get("toHEAD"), clusterName, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(parameters.get(1).getJsonObject("imagesAfterKafkaUpgrade"));
+        checkAllImages(parameters.get("toHEAD").getJsonObject("imagesAfterKafkaUpgrade"));
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         // Verify upgrade
-        verifyProcedure(parameters.get(1), producerName, consumerName, NAMESPACE);
+        verifyProcedure(parameters.get("toHEAD"), producerName, consumerName, NAMESPACE);
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);

@@ -37,8 +37,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -119,11 +119,11 @@ public class AbstractUpgradeST extends AbstractST {
         return parameters.stream();
     }
 
-    protected static List<JsonObject> buildMidStepUpgradeData(JsonObject jsonData) {
+    protected static Map<String, JsonObject> buildMidStepUpgradeData(JsonObject jsonData) {
         List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getKafkaVersions();
         TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
 
-        List<JsonObject> steps = new ArrayList<>();
+        Map<String, JsonObject> steps = new HashMap<>();
 
         String midStepUrl = jsonData.getString("urlFrom");
         String midStepVersion = jsonData.getString("fromVersion");
@@ -149,7 +149,7 @@ public class AbstractUpgradeST extends AbstractST {
         midStepProcedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
         midStep.put("proceduresAfterOperatorUpgrade", midStepProcedures);
 
-        steps.add(midStep);
+        steps.put("midStep", midStep);
 
         // 0.22.0 -> HEAD
         JsonObject afterMidStep = JsonObject.mapFrom(jsonData);
@@ -157,7 +157,7 @@ public class AbstractUpgradeST extends AbstractST {
         afterMidStep.put("fromVersion", midStepVersion);
         afterMidStep.put("fromExamples", midStepExamples);
 
-        steps.add(afterMidStep);
+        steps.put("toHEAD", afterMidStep);
 
         return steps;
     }
