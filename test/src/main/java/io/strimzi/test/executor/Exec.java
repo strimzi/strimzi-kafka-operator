@@ -166,7 +166,7 @@ public class Exec {
                 if (logToOutput || ret != 0) {
                     String log = ret != 0 ? "Failed to exec command" : "Command";
                     LOGGER.info("{}: {}", log, String.join(" ", command));
-                    if (input != null && !input.contains("CusomResourceDefinition")) {
+                    if (input != null && !input.contains("CustomResourceDefinition")) {
                         LOGGER.info("Input: {}", input.trim());
                     }
                     LOGGER.info("RETURN code: {}", ret);
