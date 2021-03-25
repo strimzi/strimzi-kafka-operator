@@ -7,6 +7,7 @@ package io.strimzi.systemtest.log;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -36,10 +37,12 @@ import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,24 +53,30 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.CC_LOG_CONFIG_RELOAD;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CONNECT_S2I;
+import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_MEDIUM;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.TIMEOUT_FOR_LOG;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNot.not;
 
 @Tag(REGRESSION)
 @Tag(CONNECT)
@@ -410,6 +419,37 @@ class LogSettingST extends AbstractST {
 
         kubectlGetStrimzi(bridgeName);
         checkContainersHaveProcessOneAsTini(bridgeName);
+    }
+
+    @ParallelTest
+    // This test might be flaky, as it gets real logs from CruiseControl pod
+    void testCruiseControlLogChange(ExtensionContext extensionContext) {
+        final String debugText = " DEBUG ";
+        String cruiseControlPodName = PodUtils.getPodNameByPrefix(LOG_SETTING_CLUSTER_NAME + "-" + Constants.CRUISE_CONTROL_CONTAINER_NAME);
+        LOGGER.info("Check that default/actual root logging level is info");
+        String containerLogLevel = cmdKubeClient().execInPod(cruiseControlPodName, "grep", "-i", "rootlogger.level",
+                Constants.CRUISE_CONTROL_LOG_FILE_PATH).out().trim().split("=")[1];
+        assertThat(containerLogLevel.toUpperCase(Locale.ENGLISH), is(not(debugText.strip())));
+
+        LOGGER.info("Check logs in CruiseControl - make sure no DEBUG is found there.");
+        String logOut = StUtils.getLogFromPodByTime(cruiseControlPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
+        assertThat(logOut.toUpperCase(Locale.ENGLISH), not(containsString(debugText)));
+
+        InlineLogging logging = new InlineLogging();
+        logging.setLoggers(Collections.singletonMap("rootLogger.level", debugText.strip()));
+        KafkaResource.replaceKafkaResource(LOG_SETTING_CLUSTER_NAME, kafka -> kafka.getSpec().getCruiseControl().setLogging(logging));
+
+        LOGGER.info("Wait for change of root logger in {}.", cruiseControlPodName);
+        TestUtils.waitFor("Waiting for log to be changed", CC_LOG_CONFIG_RELOAD, CO_OPERATION_TIMEOUT_MEDIUM, () -> {
+            String line = StUtils.getLineFromPod(cruiseControlPodName, Constants.CRUISE_CONTROL_LOG_FILE_PATH, "rootlogger.level");
+            return line.toUpperCase(Locale.ENGLISH).contains(debugText.strip());
+        });
+
+        LOGGER.info("Check cruise control logs in pod {} and it's container {} .", cruiseControlPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME);
+        TestUtils.waitFor("Wait for debug log line to show in logs", CC_LOG_CONFIG_RELOAD, TIMEOUT_FOR_LOG, () -> {
+            String log = StUtils.getLogFromPodByTime(cruiseControlPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
+            return log.toUpperCase(Locale.ENGLISH).contains(debugText);
+        });
     }
 
     // only one thread can access (eliminate data-race)

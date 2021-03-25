@@ -52,6 +52,7 @@ public interface Constants {
     long CO_OPERATION_TIMEOUT_MEDIUM = Duration.ofMinutes(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
     long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
+    long CC_LOG_CONFIG_RELOAD = Duration.ofSeconds(5).toMillis();
 
     // Keycloak
     long KEYCLOAK_DEPLOYMENT_POLL = Duration.ofSeconds(5).toMillis();
@@ -301,6 +302,7 @@ public interface Constants {
     String CRUISE_CONTROL_CONFIGURATION_ENV = "CRUISE_CONTROL_CONFIGURATION";
     String CRUISE_CONTROL_CAPACITY_FILE_PATH = "/tmp/capacity.json";
     String CRUISE_CONTROL_CONFIGURATION_FILE_PATH = "/tmp/cruisecontrol.properties";
+    String CRUISE_CONTROL_LOG_FILE_PATH = "/opt/cruise-control/custom-config/log4j2.properties";
 
     /**
      * Default listeners names

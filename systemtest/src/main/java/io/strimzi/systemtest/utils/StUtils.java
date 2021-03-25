@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -322,6 +323,18 @@ public class StUtils {
             return mapper.writeValueAsString(node);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static String getLineFromPod(String podName, String filePath, String grepString) {
+        return getLineFromPodContainer(podName, null, filePath, grepString);
+    }
+
+    public static String getLineFromPodContainer(String podName, String containerName, String filePath, String grepString) {
+        if (containerName == null) {
+            return KubeClusterResource.cmdKubeClient().execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
+        } else {
+            return KubeClusterResource.cmdKubeClient().execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
         }
     }
 }
