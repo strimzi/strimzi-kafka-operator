@@ -39,7 +39,7 @@ If you encounter any issues while using Strimzi, you can get help using:
 
 ### License
 
-Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/strimzi/strimzi-kafka-operator/blob/master/LICENSE).
+Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/strimzi/strimzi-kafka-operator/blob/main/LICENSE).
 
 ## Prerequisites
 

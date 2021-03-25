@@ -7,7 +7,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: e7e45ef15e090a1a6b751f3f83400e9396388ee4d0032d0c2314c006bcb3bfe0
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -35,7 +35,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: fce438f55a5275d0e3303d34c2ad0be9032f18679c109d6712ee26f06419cb55
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -63,7 +63,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: cc6b08c97386fd60b0050bb424df095b4646621c5b4f45602716802ef1e1a48f
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -90,7 +90,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 807252a88f3279a59be42e8c3d9b65a8b7c048f5674de7293797c0d34c81581e
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -117,7 +117,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: bd5d6005bbf1fa03984088fca7401d6ab59d04337dc47f60abc0512577b202a4
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -144,7 +144,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 320f960e9f62622c9e8cbe49566bad449659ba40116d9112338ef1e40b9b61c2
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -171,7 +171,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 9aefea97d6e6a98fbb5ce90d209063d4723f33088a9bf0d83144397805b09fe5
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -198,7 +198,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 1ceb11bbaa54b8da7548602a1f4f918bca8b40530d8dd3fc0d54f59479247a8f
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -225,7 +225,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 935ca1bdae17604fc345da108c2f9f3a4bb633bdebad233b5c7832d7ffa83145
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -250,7 +250,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 07242fa5dec47c32abb576b7b84c8cecad77a7a67828308ee3f018d90b377588
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -275,7 +275,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 29e14d47a0d4ab62687a919712358443c22fce8e36cb1aa59e52a1737b8aba9a
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -300,7 +300,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 0ae2d41bfd5c79b50b89fcdbfab6c53a7a8f810d4a994ba07b916c3d07943802
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -325,7 +325,7 @@ entries:
     description: 'Strimzi: Apache Kafka running on Kubernetes'
     digest: 56783fda7344527405c63778fb32207b6b191b3c5dfdaccbc0eee9d70fe43a29
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -350,7 +350,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: d13f6b16093fb42fdcb0faeed18562b335586747fde9b9c9654b00f258918b69
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -375,7 +375,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 19b2654650bff0bf2b449820ce5104bf6cce3a4f72babea32e5217c6fa751601
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -400,7 +400,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 2d9941e9f73e0e57ed521ddffbd1eb1a5edb39d891cdf7756ecd73e761075b55
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -425,7 +425,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: a9e82303e02d412e4e1b5e13d2b9b2d5c6290d6411f3aa78cd7647cd617dfd89
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -450,7 +450,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 42f957fc2d2df0943e75cf274baba3c839e65e4aafb70e0593e77d69be715098
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -475,7 +475,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 58bb338054aff06dc0ebbdd13f544ec7802bb4dac8a23c32b7533bfa78c4209d
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -500,7 +500,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 03086beb8771c0fe95fd6ef8003ea68dd79f81e66937456c3957d2dd79aa15b8
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -525,7 +525,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 2c8ae7ee38f49cb57ed501a89128d503bb28e034855b2d9cc6f504bd9f65c35d
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -550,7 +550,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: eb5d8fb9f8861a98c22ded2a7143597d49d2276ea55225af2564c365ad2f356d
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -575,7 +575,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 8d429c9b44b2fffe14ff5f00e462934fbdaa83374d7b7221b186c4e24690ef8a
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -600,7 +600,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: d172fa9e91e254e4ba2057ec70a8c047402513f585e07edce59a96fb6d59dd90
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -625,7 +625,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: d915c029ee9692a1eab7d51d71c415db1a533756eb3bf1a997e5769f127601e0
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -650,7 +650,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 2e21d3a86d3fd6f36b259f19086b93c478da1b9e0f9dccbfaa379d87091ce457
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -675,7 +675,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 67d28bf30bad5fbae8a63c4e1bc2065c2b9fd4a88e9dec78e82ddb57d9c49a79
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -700,7 +700,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 331b9bab35aea7413716e8b79e773f653909afc53209f25ff0033fc6a8dbc06a
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -725,7 +725,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 0ae660efb5f445a98649d4a6768d09defe8fabebf0ca807fac9075376f460944
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
@@ -750,7 +750,7 @@ entries:
     description: 'Strimzi: Kafka as a Service'
     digest: 684868a46604411a151d90579f15e065320ba636c2afd25702b508fe11b30c64
     home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/master/documentation/logo/strimzi_logo.png
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
     keywords:
     - kafka
     - queue
