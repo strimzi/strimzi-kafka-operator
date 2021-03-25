@@ -14,7 +14,7 @@ You can configure OAuth 2.0 authentication, then xref:assembly-oauth-authorizati
 
 [NOTE]
 ====
-OAuth 2.0 authentication can also be used in conjunction with `simple` or Open Policy Agent (OPA) based xref:con-securing-kafka-authorization-str[Kafka authorization].
+OAuth 2.0 authentication can also be used in conjunction with Simple or Open Policy Agent (OPA) based xref:con-securing-kafka-authorization-str[Kafka authorization].
 ====
 
 Using OAuth 2.0 authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
