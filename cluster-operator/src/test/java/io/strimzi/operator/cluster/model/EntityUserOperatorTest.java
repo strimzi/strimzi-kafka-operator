@@ -69,7 +69,7 @@ public class EntityUserOperatorTest {
     private final String uoImage = "my-user-operator-image";
     private final String secretPrefix = "strimzi-";
     private final int uoReconciliationInterval = 120;
-    private final int uoZookeeperSessionTimeout = 6;
+    private final int uoZookeeperSessionTimeout = 20;
 
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
