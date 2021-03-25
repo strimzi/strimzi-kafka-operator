@@ -18,7 +18,7 @@ Default `120`.
 
 `zookeeperSessionTimeoutSeconds`::
 The ZooKeeper session timeout in seconds.
-Default `6`.
+Default `20`.
 
 `topicMetadataMaxAttempts`::
 The number of attempts at getting topic metadata from Kafka.

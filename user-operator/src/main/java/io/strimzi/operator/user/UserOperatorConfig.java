@@ -33,7 +33,7 @@ public class UserOperatorConfig {
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
     public static final String DEFAULT_ZOOKEEPER_CONNECT = "localhost:2181";
-    public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = 6_000;
+    public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = 20_000;
     public static final String DEFAULT_SECRET_PREFIX = "";
 
     private final String namespace;

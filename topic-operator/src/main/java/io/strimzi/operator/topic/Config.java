@@ -144,10 +144,10 @@ public class Config {
     public static final Value<String> ZOOKEEPER_CONNECT = new Value<>(TC_ZK_CONNECT, STRING, true);
 
     /** The zookeeper session timeout. */
-    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value<>(TC_ZK_SESSION_TIMEOUT_MS, DURATION, "6000");
+    public static final Value<Long> ZOOKEEPER_SESSION_TIMEOUT_MS = new Value<>(TC_ZK_SESSION_TIMEOUT_MS, DURATION, "20000");
 
     /** The zookeeper connection timeout. */
-    public static final Value<Long> ZOOKEEPER_CONNECTION_TIMEOUT_MS = new Value<>(TC_ZK_CONNECTION_TIMEOUT_MS, DURATION, "6000");
+    public static final Value<Long> ZOOKEEPER_CONNECTION_TIMEOUT_MS = new Value<>(TC_ZK_CONNECTION_TIMEOUT_MS, DURATION, "20000");
 
     /** The period between full reconciliations. */
     public static final Value<Long> FULL_RECONCILIATION_INTERVAL_MS = new Value<>(TC_PERIODIC_INTERVAL_MS, DURATION, "120000");

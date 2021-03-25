@@ -42,7 +42,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
-    public static final int DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 6;
+    public static final int DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 20;
     public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
 
     protected String watchedNamespace;

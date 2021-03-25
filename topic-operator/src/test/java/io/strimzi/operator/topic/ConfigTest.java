@@ -44,7 +44,7 @@ public class ConfigTest {
     public void testDefaultInput() {
         Map<String, String> map = new HashMap<>(MANDATORY);
         Config c = new Config(map);
-        assertThat(c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(), is(6_000));
+        assertThat(c.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(), is(20_000));
     }
 
     @Test
