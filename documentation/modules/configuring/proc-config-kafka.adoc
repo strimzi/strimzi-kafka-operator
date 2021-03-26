@@ -44,7 +44,7 @@ See the _Deploying and Upgrading Strimzi_ guide for instructions on deploying a:
 +
 The properties you can configure are shown in this example configuration:
 +
-[source,shell,subs="+attributes"]
+[source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
