@@ -4,9 +4,14 @@ This guide provides information to assist contributors to the Strimzi documentat
 
 Strimzi documentation is written in Asciidoc.
 
+.Inclusive language
+
+Strimzi is committed to using inclusive and respectful language in its code, web pages, and documentation.
+Contributions to the documentation, as with code submissions, must not contain problematic terms or phrases.
+
 == Documentation tools
 
-Following tools are needed to build the documentation:
+The following tools are needed to build the documentation:
 
 https://asciidoctor.org/[`asciidoctor`^]:: Documentation generation tool
 https://www.gnu.org/software/make/[`make`^]:: Make build system to build complete documentation
