@@ -91,6 +91,10 @@ The `make` build is using GNU versions of `find` and `sed` utilities and is not 
 
 The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via homebrew. You can run `brew install bash` to install a compatible version of `bash`. If you wish to change the default shell to the updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`
 
+The `mvn` tool might install the latest version of openJDK during the brew install. For builds on Mac OS to succeed, openJDK version 11 needs to be installed. This can be done by running `brew install openjdk@11`. For maven to read the new Java version, you will need to edit the `~/.mavenrc` file and paste the following line `export JAVA_HOME=/Library/Java/JavaVirtualMachines/openjdk-11.jdk/Contents/Home`.
+
+You may come across an issue of linking from the above step. To solve this run this command `sudo ln -sfn /usr/local/opt/openjdk@11/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-11.jdk`. If this throws an error that it cannot find the file or directory, navigate into `/Library/Java/` (or how ever deep you can) and create a new folder named `JavaVirtualMachines` followed by creating a file named `openjdk-11.jdk`. The folder structure after everything is said and done should look like `/Library/Java/JavaVirtualMachines/openjdk-11.jdk`. After doing that run the command at the beginning again and this should link the file and allow you to use maven with openJDK version 11.
+
 ### Kubernetes or OpenShift Cluster
 
 In order to run the integration tests and test any changes made to the operators you will need a functioning Kubernetes or OpenShift cluster. This can be a remote cluster or a local development cluster.
