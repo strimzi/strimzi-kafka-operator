@@ -157,6 +157,7 @@ public class OpenSslCertManager implements CertManager {
         Path csrFile = null;
         Path newCertsDir = null;
         Path database = null;
+        Path attr = null;
 
         try {
             tmpKey = Files.createTempFile(null, null);
@@ -176,6 +177,7 @@ public class OpenSslCertManager implements CertManager {
 
             // Generate a self signed cert for the CA
             database = Files.createTempFile(null, null);
+            attr = Files.createFile(new File(database.toString() + ".attr").toPath());
             newCertsDir = Files.createTempDirectory(null);
             defaultConfig = createDefaultConfig();
             new OpensslArgs("openssl", "ca")
@@ -188,7 +190,7 @@ public class OpenSslCertManager implements CertManager {
                     .optArg("-enddate", notAfter)
                     .optArg("-subj", subject)
                     .optArg("-config", defaultConfig)
-                    .database(database)
+                    .database(database, attr)
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
                     .keyUsage("critical,keyCertSign,cRLSign")
@@ -204,6 +206,7 @@ public class OpenSslCertManager implements CertManager {
         } finally {
             delete(tmpKey);
             delete(database);
+            delete(attr);
             delete(newCertsDir);
             delete(csrFile);
             delete(defaultConfig);
@@ -234,6 +237,7 @@ public class OpenSslCertManager implements CertManager {
         Path csrFile = null;
         Path newCertsDir = null;
         Path database = null;
+        Path attr = null;
 
         try {
             tmpKey = Files.createTempFile(null, null);
@@ -255,6 +259,7 @@ public class OpenSslCertManager implements CertManager {
 
             // Generate a self signed cert for the CA
             database = Files.createTempFile(null, null);
+            attr = Files.createFile(new File(database.toString() + ".attr").toPath());
             newCertsDir = Files.createTempDirectory(null);
             defaultConfig = createDefaultConfig();
             new OpensslArgs("openssl", "ca")
@@ -267,7 +272,7 @@ public class OpenSslCertManager implements CertManager {
                     .optArg("-config", defaultConfig)
                     .optArg("-cert", issuerCaCertFile)
                     .optArg("-keyfile", issuerCaKeyFile)
-                    .database(database)
+                    .database(database, attr)
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
                     .keyUsage("critical,keyCertSign,cRLSign")
@@ -283,6 +288,7 @@ public class OpenSslCertManager implements CertManager {
         } finally {
             delete(tmpKey);
             delete(database);
+            delete(attr);
             delete(newCertsDir);
             delete(csrFile);
             delete(defaultConfig);
@@ -457,11 +463,13 @@ public class OpenSslCertManager implements CertManager {
 
         Path defaultConfig = null;
         Path database = null;
+        Path attr = null;
         Path newCertsDir = null;
         Path sna = null;
         try {
             defaultConfig = createDefaultConfig();
             database = Files.createTempFile(null, null);
+            attr = Files.createFile(new File(database.toString() + ".attr").toPath());
             newCertsDir = Files.createTempDirectory(null);
             OpensslArgs cmd = new OpensslArgs("openssl", "ca")
                     .opt("-utf8").opt("-batch").opt("-notext")
@@ -473,20 +481,18 @@ public class OpenSslCertManager implements CertManager {
                     .optArg("-enddate", notAfter)
                     .optArg("-config", defaultConfig, true);
 
-            if (sbj != null) {
-
-                if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
-                    cmd.optArg("-extensions", "v3_req");
-                    // subject alt names need to be in an openssl configuration file
-                    sna = buildConfigFile(sbj, false);
-                    cmd.optArg("-extfile", sna, true);
-                }
+            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+                cmd.optArg("-extensions", "v3_req");
+                // subject alt names need to be in an openssl configuration file
+                sna = buildConfigFile(sbj, false);
+                cmd.optArg("-extfile", sna, true);
             }
 
-            cmd.database(database).newCertsDir(newCertsDir);
+            cmd.database(database, attr).newCertsDir(newCertsDir);
             cmd.exec();
         } finally {
             delete(database);
+            delete(attr);
             delete(newCertsDir);
             delete(defaultConfig);
             delete(sna);
@@ -571,7 +577,9 @@ public class OpenSslCertManager implements CertManager {
             pb.environment().put("STRIMZI_keyUsage", keyUsage);
             return this;
         }
-        public OpensslArgs database(Path database) {
+        public OpensslArgs database(Path database, Path attr) {
+            // Some versions of openssl require the presence of a index.txt.attr file
+            // https://serverfault.com/questions/857131/odd-error-while-using-openssl
             pb.environment().put("STRIMZI_database", database != null ? database.toFile().getAbsolutePath() : "STRIMZI_database");
             return this;
         }
@@ -612,14 +620,19 @@ public class OpenSslCertManager implements CertManager {
                 int result = proc.waitFor();
 
                 if (result != 0) {
-                    log.error(Files.readString(out, Charset.defaultCharset()));
-                    log.error("result {}", result);
+                    String output = Files.readString(out, Charset.defaultCharset());
+                    if (!log.isDebugEnabled()) {
+                        // Include the command if we've not logged it already
+                        log.error("Got result {} from command {} with output\n{}", result, pb.command(), output);
+                    } else {
+                        log.error("Got result {} with output\n{}", result, output);
+                    }
                     throw new RuntimeException("openssl status code " + result);
                 } else {
                     if (log.isTraceEnabled()) {
-                        log.trace(Files.readString(out, Charset.defaultCharset()));
+                        log.trace("Got output\n{}", Files.readString(out, Charset.defaultCharset()));
                     }
-                    log.debug("result {}", result);
+                    log.debug("Got result {}", result);
                 }
 
             } catch (InterruptedException ignored) {
