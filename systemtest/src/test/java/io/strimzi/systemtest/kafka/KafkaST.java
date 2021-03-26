@@ -1036,7 +1036,7 @@ class KafkaST extends AbstractST {
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
                             .withNewConfiguration()
-                                .withFinalizers(Constants.ANNOTATION_LOAD_BALANCER_CLEANUP)
+                                .withFinalizers(LB_FINALIZERS)
                             .endConfiguration()
                             .build()
             ));

@@ -316,7 +316,7 @@ public class MultipleListenersST extends AbstractST {
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(stochasticCommunication)
                             .withNewConfiguration()
-                                .withFinalizers(Constants.ANNOTATION_LOAD_BALANCER_CLEANUP)
+                                .withFinalizers(LB_FINALIZERS)
                             .endConfiguration()
                             .build());
                     }

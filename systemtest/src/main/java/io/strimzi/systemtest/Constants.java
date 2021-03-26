@@ -312,7 +312,7 @@ public interface Constants {
     String EXTERNAL_LISTENER_DEFAULT_NAME = "external";
 
     /**
-     * Annotations
+     * Loadbalancer finalizer config
      */
-    String ANNOTATION_LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
+    String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
 }

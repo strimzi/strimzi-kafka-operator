@@ -119,6 +119,14 @@ public class Environment {
 
     private static final String SKIP_TEARDOWN_ENV = "SKIP_TEARDOWN";
 
+    /**
+     * Use finalizers for loadbalancers
+     */
+    private static final String LB_FINALIZERS_ENV = "LB_FINALIZERS";
+
+    /**
+     * Defaults
+     */
     private static final String ST_KAFKA_VERSION_DEFAULT = "2.7.0";
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
@@ -137,7 +145,11 @@ public class Environment {
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.21.1";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
+    private static final boolean LB_FINALIZERS_DEFAULT = false;
 
+    /**
+     * Set values
+     */
     private static String config;
     public static final String SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET = getOrDefault(STRIMZI_IMAGE_PULL_SECRET_ENV, "");
     public static final String STRIMZI_ORG = getOrDefault(STRIMZI_ORG_ENV, STRIMZI_ORG_DEFAULT);
@@ -170,6 +182,7 @@ public class Environment {
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // ClusterOperator installation type variable
     public static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, value -> ClusterOperatorInstallType.valueOf(value.toUpperCase(Locale.ENGLISH)), CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
+    public static final boolean LB_FINALIZERS = getOrDefault(LB_FINALIZERS_ENV, Boolean::parseBoolean, LB_FINALIZERS_DEFAULT);
 
     private Environment() { }
 
