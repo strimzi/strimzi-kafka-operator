@@ -23,9 +23,9 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Environment (please complete the following information):**
- - Strimzi version: [e.g. main, 0.11.1]
+ - Strimzi version: [e.g. main, 0.22.1]
  - Installation method: [e.g. YAML files, Helm chart, OperatorHub.io]
- - Kubernetes cluster: [e.g. Kubernetes 1.14, OpenShift 3.9]
+ - Kubernetes cluster: [e.g. Kubernetes 1.20, OpenShift 4.7]
  - Infrastructure: [e.g. Amazon EKS, Minikube]
 
 **YAML files and logs**
