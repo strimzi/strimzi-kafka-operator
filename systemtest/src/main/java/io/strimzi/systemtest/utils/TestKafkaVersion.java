@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
+    private static final Logger LOGGER = LogManager.getLogger(TestKafkaVersion.class);
     private static List<TestKafkaVersion> kafkaVersions;
 
     static {
@@ -33,7 +36,13 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
             Collections.sort(supportedKafkaVersions);
 
             kafkaVersions = supportedKafkaVersions;
-        } catch (IOException e) {
+
+            if (kafkaVersions == null || kafkaVersions.size() == 0) {
+                throw new Exception("There is no one Kafka version supported inside " + TestUtils.USER_PATH + "/../kafka-versions.yaml file");
+            }
+
+            LOGGER.info("These are following supported Kafka versions:\n{}", kafkaVersions.toString());
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
