@@ -6,10 +6,10 @@
 * Make it possible to configure maximum number of connections and maximum connection creation rate in listener configuration
 * Add support for configuring finalizers for `loadbalancer` type listeners
 * Remove support for Kafka 2.5.x
-* Use dedicated Service Account for Kafka Connect Build on Kubernetes
+* Use dedicated Service Account for Kafka Connect Build on Kubernetes 
 * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
 * Migrate to CRD v1 (required by Kubernetes 1.22+)
-* Support for configuring custom Authorizer implementation
+* Support for configuring custom Authorizer implementation 
 * Changed Reconciliation interval for Topic Operator from 90 to 120 seconds (to keep it the same as for other operators)
 * Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
 
@@ -43,10 +43,10 @@
 
 ### Changes, deprecations and removals
 
-* In the past, when no Ingress class was specified in the Ingress-type listener in the Kafka custom resource, the
-  `kubernetes.io/ingress.class` annotation was automatically set to `nginx`. Because of the support for the new
-  IngressClass resource and the new `ingressClassName` field in the Ingress resource, the default value will not be set
-  anymore. Please use the `class` field in `.spec.kafka.listeners[].configuration` to specify the class name.
+* In the past, when no Ingress class was specified in the Ingress-type listener in the Kafka custom resource, the 
+  `kubernetes.io/ingress.class` annotation was automatically set to `nginx`. Because of the support for the new 
+  IngressClass resource and the new `ingressClassName` field in the Ingress resource, the default value will not be set 
+  anymore. Please use the `class` field in `.spec.kafka.listeners[].configuration` to specify the class name. 
 * The `KafkaConnectS2I` custom resource is deprecated and will be removed in the future. You can use the new [`KafkaConnect` build feature](https://strimzi.io/docs/operators/latest/full/deploying.html#creating-new-image-using-kafka-connect-build-str) instead.
 * Removed support for Helm2 charts as that version is now unsupported. There is no longer the need for separate `helm2` and `helm3` binaries, only `helm` (version 3) is required.
 * The following annotations are deprecated for a long time and will be removed in 0.23.0:
@@ -69,14 +69,14 @@
       configMapKeyRef:
         name: my-config-map
         key: my-key
-  ```
+  ``` 
 * Existing Cruise Control logging configurations must be updated from `Log4j` syntax to `Log4j 2` syntax.
   * For existing inline configurations, replace the `cruisecontrol.root.logger` property with `rootLogger.level`.
   * For existing external configurations, replace the existing configuration with a new configuration file named `log4j2.properties` using `log4j 2` syntax.
 
 ## 0.21.0
 
-* Add support for declarative management of connector plugins in Kafka Connect CR
+* Add support for declarative management of connector plugins in Kafka Connect CR 
 * Add `inter.broker.protocol.version` to the default configuration in example YAMLs
 * Add support for `secretPrefix` property for User Operator to prefix all secret names created from KafkaUser resource.
 * Allow configuring labels and annotations for Cluster CA certificate secrets
@@ -112,7 +112,7 @@
 * Support dynamically changeable logging configuration of Kafka Connect and Kafka Connect S2I
 * Support dynamically changeable logging configuration of Kafka brokers
 * Support dynamically changeable logging configuration of Kafka MirrorMaker2
-* Add support for `client.rack` property for Kafka Connect to use `fetch from closest replica` feature.
+* Add support for `client.rack` property for Kafka Connect to use `fetch from closest replica` feature. 
 * Refactored operators Grafana dashboard
   * Fixed bug on maximum reconcile time graph
   * Removed the avarage reconcile time graph
@@ -168,10 +168,10 @@ For example the following old configuration:
 listeners:
   plain:
     # ...
-  tls:
+  tls: 
     # ...
   external:
-    type: loadbalancer
+    type: loadbalancer 
     # ...
 ```
 
@@ -217,7 +217,7 @@ Since the Kafka TLS sidecar has been removed, the related configuration options 
   * KafkaBridge
   * KafkaMirrorMaker
   * KafkaMirrorMaker2
-  * KafkaConnector
+  * KafkaConnector 
 * Remove deprecated `Kafka.spec.topicOperator` classes and deployment logic
 * Use Java 11 as the Java runtime
 * Removed the need to manually create Cruise Control metrics topics if topic auto creation is disabled.
@@ -229,14 +229,14 @@ Since the Kafka TLS sidecar has been removed, the related configuration options 
 * Strimzi Kafka Bridge metrics integration:
   * enable/disable metrics in the KafkaBridge custom resource
   * new Grafana dashboard for the bridge metrics
-* Support dynamically changeable logging in the Entity Operator and Kafka Bridge
+* Support dynamically changeable logging in the Entity Operator and Kafka Bridge 
 * Extended the Grafana example dashboard for Kafka Connect to provide more relevant information
 
 ### Deprecations and removals
 
 #### Deprecation of Helm v2 chart
 
-The Helm v2 support will end soon.
+The Helm v2 support will end soon. 
 Bug fixing should stop on August 13th 2020 and security fixes on November 13th.
 See https://helm.sh/blog/covid-19-extending-helm-v2-bug-fixes/ for more details.
 
@@ -253,7 +253,7 @@ In Strimzi 0.12.0, the `v1alpha1` versions of the following resources have been 
 * `KafkaTopic`
 * `KafkaUser`
 
-In the next release, the `v1alpha1` versions of these resources will be removed.
+In the next release, the `v1alpha1` versions of these resources will be removed. 
 Please follow the guide for upgrading the resources: https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-resources-str.
 
 #### Removal deprecated cadvisor metric labels
@@ -280,7 +280,7 @@ Because of the new Cluster Operator dynamic logging configuration via [PR#3328](
 * Make it possible to configure PodManagementPolicy for StatefulSets
 * Update build system to use `yq` version 3 (https://github.com/mikefarah/yq)
 * Add more metrics to Cluster and User Operators
-* New Grafana dashboard for Operator monitoring
+* New Grafana dashboard for Operator monitoring 
 * Allow `ssl.cipher.suites`, `ssl.protocol` and `ssl.enabled.protocols` to be configurable for Kafka and the different components supported by Strimzi
 * Add support for user configurable SecurityContext for each Strimzi container
 * Allow standalone User Operator to modify status on KafkaUser
@@ -357,8 +357,8 @@ Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka s
 ## 0.12.0
 
 * **Drop support for Kubernetes 1.9 and 1.10 and OpenShift 3.9 and 3.10.**
-**Versions supported since Strimzi 0.12.0 are Kubernetes 1.11 and higher and OpenShift 3.11 and higher.**
-**This was required because the CRD versioning and CRD subresources support.**
+**Versions supported since Strimzi 0.12.0 are Kubernetes 1.11 and higher and OpenShift 3.11 and higher.** 
+**This was required because the CRD versioning and CRD subresources support.** 
 * Added support for Kafka 2.2.0 and 2.1.1, dropped support for Kafka 2.0.0 and 2.0.1
 * Persistent storage improvements
   * Add resizing of persistent volumes
@@ -367,7 +367,7 @@ Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka s
 * Custom Resources improvements
   * New CRD version `v1beta1`. See documentation for more information about upgrading from `v1alpha1` to `v1beta1`.
   * Log at the warn level when a custom resource uses deprecated or unknown properties
-  * Add initial support for the `status` sub-resource in the `Kafka` custom resource
+  * Add initial support for the `status` sub-resource in the `Kafka` custom resource 
 * Add support for [Strimzi Kafka Bridge](https://github.com/strimzi/strimzi-kafka-bridge) for HTTP protocol
 * Reduce the number of container images needed to run Strimzi to just two: `kafka` and `operator`.
 * Add support for unprivileged users to install the operator with Helm
@@ -393,8 +393,8 @@ Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka s
 * Add healthchecks to TLS sidecars
 * Add support for new fields in the Pod template: terminationGracePeriod, securityContext and imagePullSecrets
 * Rename annotations to use the `strimzi.io` domain consistently (The old annotations are deprecated, but still functional):
-    * `cluster.operator.strimzi.io/delete-claim` → `strimzi.io/delete-claim`
-    * `operator.strimzi.io/manual-rolling-update` → `strimzi.io/manual-rolling-update`
+    * `cluster.operator.strimzi.io/delete-claim` → `strimzi.io/delete-claim` 
+    * `operator.strimzi.io/manual-rolling-update` → `strimzi.io/manual-rolling-update` 
     * `operator.strimzi.io/delete-pod-and-pvc` → `strimzi.io/delete-pod-and-pvc`
     * `operator.strimzi.io/generation` → `strimzi.io/generation`
 * Add support for mounting Secrets and Config Maps into Kafka Connect and Kafka Connect S2I
@@ -434,7 +434,7 @@ Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka s
   * LoadBalancers
   * NodePorts
 * Use less wide RBAC permissions (`ClusterRoleBindings` where converted to `RoleBindings` where possible)
-* Support for SASL authentication using the SCRAM-SHA-512 mechanism added to Kafka Connect and Kafka Connect with S2I support
+* Support for SASL authentication using the SCRAM-SHA-512 mechanism added to Kafka Connect and Kafka Connect with S2I support 
 * Network policies for managing access to Zookeeper ports and Kafka replication ports
 * Use OwnerReference and Kubernetes garbage collection feature to delete resources and to track the ownership
 
@@ -456,7 +456,7 @@ Note: Strimzi is essentially adding a `tcp-` prefix to the port names in Kafka s
 * Kafka 2.0.0
 * Kafka Connect:
   * Added TLS support for connecting to the Kafka cluster
-  * Added TLS client authentication when connecting to the Kafka cluster
+  * Added TLS client authentication when connecting to the Kafka cluster 
 
 ## 0.5.0
 
