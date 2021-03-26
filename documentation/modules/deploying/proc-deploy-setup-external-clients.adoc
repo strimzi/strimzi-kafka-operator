@@ -88,10 +88,10 @@ spec:
         preferredNodePortAddressType: InternalDNS <7>
         _bootstrap and broker service overrides_ <8>
         #...
-      authorization: <9>
-        type: simple
-        superUsers:
-          - super-user-name <10>
+    authorization: <9>
+      type: simple
+      superUsers:
+        - super-user-name <10>
   # ...
 ----
 <1> Configuration options for enabling external listeners are described in the link:{BookURLUsing}#type-GenericKafkaListener-reference[Generic Kafka listener schema reference^].

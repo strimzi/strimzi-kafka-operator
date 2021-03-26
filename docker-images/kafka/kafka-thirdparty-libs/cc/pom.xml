@@ -21,8 +21,8 @@
 
     <repositories>
       <repository>
-        <id>jcenter</id>
-          <url>https://jcenter.bintray.com/</url>
+        <id>cruise-control</id>
+          <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
       </repository>
     </repositories>
 

@@ -28,17 +28,20 @@ def buildStrimziImages() {
     """)
 }
 
-def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
+def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups, String testsInParallel) {
     withMaven(mavenOpts: '-Djansi.force=true') {
         sh(script: "mvn -f ${workspace}/systemtest/pom.xml -P all verify " +
-                "-Dgroups=${testProfile} " +
-                "-DexcludedGroups=${excludeGroups} " +
-                "-Dit.test=${testCases} " +
-                "-Djava.net.preferIPv4Stack=true " +
-                "-DtrimStackTrace=false " +
-                "-Dstyle.color=always " +
-                "--no-transfer-progress " +
-                "-Dfailsafe.rerunFailingTestsCount=2")
+            "-Dgroups=${testProfile} " +
+            "-DexcludedGroups=${excludeGroups} " +
+            "-Dit.test=${testCases} " +
+            "-Djava.net.preferIPv4Stack=true " +
+            "-DtrimStackTrace=false " +
+            "-Dstyle.color=always " +
+            "--no-transfer-progress " +
+            "-Dfailsafe.rerunFailingTestsCount=2 " +
+            "-Djunit.jupiter.execution.parallel.enabled=true " +
+            // sequence mode with testInParallel=1 otherwise parallel
+            "-Djunit.jupiter.execution.parallel.config.fixed.parallelism=${testsInParallel}")
     }
 }
 

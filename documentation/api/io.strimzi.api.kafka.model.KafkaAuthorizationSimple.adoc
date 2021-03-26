@@ -15,12 +15,21 @@ For more information see xref:con-securing-kafka-authorization-str[Kafka authori
 .An example of simple authorization configuration
 [source,yaml,subs="attributes+"]
 ----
-authorization:
-  type: simple
-  superUsers:
-    - CN=client_1
-    - user_2
-    - CN=client_3
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: myproject
+spec:
+  kafka:
+    # ...
+    authorization:
+      type: simple
+      superUsers:
+        - CN=client_1
+        - user_2
+        - CN=client_3
+    # ...
 ----
 
 NOTE: The `super.user` configuration option in the `config` property in `Kafka.spec.kafka` is ignored.

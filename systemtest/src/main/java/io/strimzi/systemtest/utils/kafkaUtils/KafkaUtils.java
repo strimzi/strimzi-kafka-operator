@@ -418,9 +418,11 @@ public class KafkaUtils {
             if (version == null) {
                 kafkaNode.remove("version");
                 ((ObjectNode) kafkaNode.get("config")).remove("log.message.format.version");
+                ((ObjectNode) kafkaNode.get("config")).remove("inter.broker.protocol.version");
             } else if (!version.equals("")) {
                 kafkaNode.put("version", version);
                 ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", version.substring(0, 3));
+                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", version.substring(0, 3));
             }
             if (logMessageFormat != null) {
                 ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", logMessageFormat);

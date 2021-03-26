@@ -173,7 +173,7 @@ Other build options:
 
 ### Kafka versions
 
-As part of the Docker image build several different versions of Kafka will be built, which can increase build times. Which Kafka versions are to be built are defined in the [kafka-versions.yaml](https://github.com/strimzi/strimzi-kafka-operator/blob/master/kafka-versions.yaml) file. Unwanted versions can be commented out to speed up the build process. 
+As part of the Docker image build several different versions of Kafka will be built, which can increase build times. Which Kafka versions are to be built are defined in the [kafka-versions.yaml](https://github.com/strimzi/strimzi-kafka-operator/blob/main/kafka-versions.yaml) file. Unwanted versions can be commented out to speed up the build process. 
 
 ### Maven Settings
 

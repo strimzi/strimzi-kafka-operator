@@ -24,7 +24,6 @@ import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -299,39 +298,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        // Kafka Connect needs special treatment for Affinity and Tolerations because of deprecated fields in spec
-        kafkaConnect.setUserAffinity(affinity(spec));
-        kafkaConnect.setTolerations(tolerations(spec));
-
         return kafkaConnect;
-    }
-
-    @SuppressWarnings("deprecation")
-    private static <C extends KafkaConnectCluster> List<Toleration> tolerations(KafkaConnectSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getTolerations() != null) {
-            if (spec.getTolerations() != null) {
-                log.warn("Tolerations given on both spec.tolerations and spec.template.pod.tolerations; latter takes precedence");
-            }
-            return spec.getTemplate().getPod().getTolerations();
-        } else {
-            return spec.getTolerations();
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private static <C extends KafkaConnectCluster> Affinity affinity(KafkaConnectSpec spec) {
-        if (spec.getTemplate() != null
-                && spec.getTemplate().getPod() != null
-                && spec.getTemplate().getPod().getAffinity() != null) {
-            if (spec.getAffinity() != null) {
-                log.warn("Affinity given on both spec.affinity and spec.template.pod.affinity; latter takes precedence");
-            }
-            return spec.getTemplate().getPod().getAffinity();
-        } else {
-            return spec.getAffinity();
-        }
     }
 
     public Service generateService() {

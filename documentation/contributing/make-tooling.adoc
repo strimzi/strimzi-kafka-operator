@@ -1,7 +1,7 @@
 [[make-tooling]]
 = Using make with documentation
 
-When you make changes to the documentation, it is a good practice to do a local test build to verify the book builds successfully and renders as you expect before you submit the merge request back to upstream master.
+When you make changes to the documentation, it is a good practice to do a local test build to verify the book builds successfully and renders as you expect before you submit the merge request back to upstream main.
 
 Make is a useful tool for building your documentation and pushing it to a public website so that peer and quality reviewers can see your edits as the user would.
 

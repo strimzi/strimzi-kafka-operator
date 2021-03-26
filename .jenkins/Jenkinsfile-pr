@@ -15,6 +15,7 @@ pipeline {
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
         string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
         string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
+        string(name: 'TEST_COUNT_RUNNING_IN_PARALLEL', defaultValue: "5", description: 'maven parameter for turning on parallel execution of test.')
     }
     options {
         timeout(time: 24, unit: 'HOURS')
@@ -94,6 +95,11 @@ pipeline {
                         // Default version (the oldest supported by Strimzi)
                         env.KUBE_VERSION = "stable"
                     }
+
+                    if (env.ghprbCommentBody.contains('test_count_running_in_parallel=')) {
+                        env.TEST_COUNT_RUNNING_IN_PARALLEL = env.ghprbCommentBody.split('test_count_running_in_parallel=')[1].split(/\s/)[0]
+                    }
+
                     println("ENV_VARS: ${env.ENV_VARS}")
                     env.BUILD_PROJECT_STATUS = false
                     env.BUILD_DOCKER_IMAGE_STATUS = false
@@ -103,6 +109,7 @@ pipeline {
                     println("DOCKER_TAG: ${env.DOCKER_TAG}")
                     println("CLUSTER_OPERATOR_INSTALL_TYPE: ${env.CLUSTER_OPERATOR_INSTALL_TYPE}")
                     println("KUBE_VERSION: ${env.KUBE_VERSION}")
+                    println("TEST_COUNT_RUNNING_IN_PARALLEL: ${env.TEST_COUNT_RUNNING_IN_PARALLEL}")
                 }
             }
         }
@@ -172,7 +179,7 @@ pipeline {
                             sh(script: "cat ${env.WORKSPACE}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json")
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
                         }
-                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
+                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS, env.TEST_COUNT_RUNNING_IN_PARALLEL)
                     }
                 }
             }
@@ -181,7 +188,7 @@ pipeline {
     post {
         always {
             script {
-                sh(script: "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.KUBE_VERSION} ${env.TEST_ONLY} ${env.EXCLUDE_GROUPS} ${env.ENV_VARS}")
+                sh(script: "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.KUBE_VERSION} ${env.TEST_ONLY} ${env.TEST_COUNT_RUNNING_IN_PARALLEL} ${env.EXCLUDE_GROUPS} ${env.ENV_VARS}")
                 lib.postGithubPrComment("results.json")
                 lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, env.STRIMZI_MAILING_LIST)
             }
