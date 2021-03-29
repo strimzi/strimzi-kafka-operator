@@ -194,7 +194,7 @@ public class OpenSslCertManager implements CertManager {
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
                     .keyUsage("critical,keyCertSign,cRLSign")
-                    .exec();
+                    .exec(false);
 
             // The key will be in pkcs#1 format (bracketed by BEGIN/END RSA PRIVATE KEY)
             // Convert it to pkcs#8 format (bracketed by BEGIN/END PRIVATE KEY)
@@ -590,6 +590,10 @@ public class OpenSslCertManager implements CertManager {
         }
 
         public void exec() throws IOException {
+            exec(true);
+        }
+
+        public void exec(boolean failOnNonZero) throws IOException {
 
             if (!pb.environment().containsKey("STRIMZI_basicConstraints")) {
                 basicConstraints("critical,CA:false");
@@ -620,7 +624,7 @@ public class OpenSslCertManager implements CertManager {
 
                 int result = proc.waitFor();
 
-                if (result != 0) {
+                if (failOnNonZero && result != 0) {
                     String output = Files.readString(out, Charset.defaultCharset());
                     if (!log.isDebugEnabled()) {
                         // Include the command if we've not logged it already
