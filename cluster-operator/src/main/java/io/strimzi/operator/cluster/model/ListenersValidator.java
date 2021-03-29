@@ -438,9 +438,6 @@ public class ListenersValidator {
             if (!oAuth.isEnablePlain() && !oAuth.isEnableOauthBearer()) {
                 errors.add("listener " + listenerName + ": At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'");
             }
-            if (oAuth.isEnablePlain() && oAuth.getTokenEndpointUri() == null) {
-                errors.add("listener " + listenerName + ": When 'enablePlain' is 'true' the 'tokenEndpointUri' has to be specified.");
-            }
             boolean hasJwksRefreshSecondsValidInput = oAuth.getJwksRefreshSeconds() != null && oAuth.getJwksRefreshSeconds() > 0;
             boolean hasJwksExpirySecondsValidInput = oAuth.getJwksExpirySeconds() != null && oAuth.getJwksExpirySeconds() > 0;
             boolean hasJwksMinRefreshPauseSecondsValidInput = oAuth.getJwksMinRefreshPauseSeconds() != null && oAuth.getJwksMinRefreshPauseSeconds() >= 0;
