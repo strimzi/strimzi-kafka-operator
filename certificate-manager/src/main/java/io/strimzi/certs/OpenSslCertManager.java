@@ -577,9 +577,10 @@ public class OpenSslCertManager implements CertManager {
             pb.environment().put("STRIMZI_keyUsage", keyUsage);
             return this;
         }
-        public OpensslArgs database(Path database, Path attr) {
+        public OpensslArgs database(Path database, Path attr) throws IOException {
             // Some versions of openssl require the presence of a index.txt.attr file
             // https://serverfault.com/questions/857131/odd-error-while-using-openssl
+            Files.writeString(attr, "unique_subject = no\n");
             pb.environment().put("STRIMZI_database", database != null ? database.toFile().getAbsolutePath() : "STRIMZI_database");
             return this;
         }
