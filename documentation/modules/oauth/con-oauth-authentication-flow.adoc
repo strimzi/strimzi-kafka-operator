@@ -45,7 +45,7 @@ You can set the `enableOauthBearer` property to `true`, though this is not requi
 
 .PLAIN overview
 
-PLAIN, also referred to as _OAuth 2.0 over PLAIN_, is a simple authentication mechanism supported by all Kafka client tools (including developer tools such as kafkacat). 
+PLAIN is a simple authentication mechanism supported by all Kafka client tools (including developer tools such as kafkacat). In order to use it together with OAuth authentication we install additional server-side callbacks and call this _OAuth 2.0 over PLAIN_.
 Client credentials are handled centrally, behind an authorization server that complies with OAuth 2.0 and OpenID Connect (OIDC).
 
 When used with the provided callbacks, PLAIN allows Kafka clients to authenticate with Kafka brokers using either of the following methods:
