@@ -732,7 +732,7 @@ class TopicOperator {
                                 Promise<Void> promise = Promise.promise();
                                 configFuture = promise.future();
                                 LOGGER.debug("{}: Updating kafka config with {}", logContext, kafkaDiff);
-                                enqueue(new UpdateKafkaConfig(logContext, result, involvedObject, configFuture));
+                                enqueue(new UpdateKafkaConfig(logContext, result, involvedObject, promise));
                             } else {
                                 LOGGER.debug("{}: No need to update kafka topic with {}", logContext, kafkaDiff);
                                 configFuture = Future.succeededFuture();

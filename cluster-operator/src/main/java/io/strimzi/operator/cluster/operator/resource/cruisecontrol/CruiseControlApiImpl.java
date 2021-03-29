@@ -92,7 +92,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlRebalanceResponse> rebalance(String host, int port, RebalanceOptions rbOptions, String userTaskId) {
 
         if (rbOptions == null && userTaskId == null) {
-            return Future.factory.failedFuture(
+            return Future.failedFuture(
                     new IllegalArgumentException("Either rebalance options or user task ID should be supplied, both were null"));
         }
 

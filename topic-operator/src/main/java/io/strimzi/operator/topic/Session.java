@@ -235,9 +235,13 @@ public class Session extends AbstractVerticle {
                 startWatcher().compose(
                     ignored -> {
                         LOGGER.debug("Starting health server");
-                        Session.this.healthServer = startHealthServer();
                         return Future.<Void>succeededFuture();
-                    }).onComplete(start);
+                    })
+                    .compose(i -> startHealthServer())
+                    .onComplete(finished -> {
+                        Session.this.healthServer = finished.result();
+                        start.complete();
+                    });
 
                 final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
                 Handler<Long> periodic = new Handler<>() {
@@ -281,7 +285,7 @@ public class Session extends AbstractVerticle {
     /**
      * Start an HTTP health server
      */
-    private HttpServer startHealthServer() {
+    private Future<HttpServer> startHealthServer() {
 
         return this.vertx.createHttpServer()
                 .requestHandler(request -> {
