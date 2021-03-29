@@ -30,7 +30,6 @@ There are some differences in how session expiry works when session re-authentic
 
 * For OAUTHBEARER, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
 The session will expire earlier if the access token expires before the `maxSecondsWithoutReauthentication`. 
-The duration of the access token always take precedence over `maxSecondsWithoutReauthentication`.
 
 * For PLAIN, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
 
