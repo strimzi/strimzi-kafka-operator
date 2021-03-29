@@ -19,7 +19,7 @@ function install_kubectl {
         TEST_KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
     fi
     curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${TEST_KUBECTL_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl
-    sudo cp kubectl /usr/bin
+    sudo cp kubectl /usr/local/bin
 }
 
 function install_nsenter {
@@ -53,7 +53,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     curl -Lo minikube ${TEST_MINIKUBE_URL} && chmod +x minikube
-    sudo cp minikube /usr/bin
+    sudo cp minikube /usr/local/bin
 
     export MINIKUBE_WANTUPDATENOTIFICATION=false
     export MINIKUBE_WANTREPORTERRORPROMPT=false
@@ -80,34 +80,10 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     minikube addons enable default-storageclass
-	minikube addons enable registry
-	minikube addons enable registry-aliases
+	  minikube addons enable registry
+	  minikube addons enable registry-aliases
 
-	kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
-
-elif [ "$TEST_CLUSTER" = "minishift" ]; then
-    #install_kubectl
-    MS_VERSION=1.13.1
-    curl -Lo minishift.tgz https://github.com/minishift/minishift/releases/download/v$MS_VERSION/minishift-$MS_VERSION-linux-amd64.tgz && tar -xvf minishift.tgz --strip-components=1 minishift-$MS_VERSION-linux-amd64/minishift && rm minishift.tgz && chmod +x minishift
-    sudo cp minishift /usr/bin
-
-    #export MINIKUBE_WANTUPDATENOTIFICATION=false
-    #export MINIKUBE_WANTREPORTERRORPROMPT=false
-    export MINISHIFT_HOME=$HOME
-    #export CHANGE_MINIKUBE_NONE_USER=true
-    mkdir $HOME/.kube || true
-    touch $HOME/.kube/config
-
-    docker run -d -p 5000:5000 registry
-
-    export KUBECONFIG=$HOME/.kube/config
-    sudo -E minishift start
-    sudo -E minishift addons enable default-storageclass
-elif [ "$TEST_CLUSTER" = "oc" ]; then
-    mkdir -p /tmp/openshift
-    wget https://github.com/openshift/origin/releases/download/v3.7.0/openshift-origin-client-tools-v3.7.0-7ed6862-linux-64bit.tar.gz -O openshift.tar.gz
-    tar xzf openshift.tar.gz -C /tmp/openshift --strip-components 1
-    sudo cp /tmp/openshift/oc /usr/bin
+	  kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 else
     echo "Unsupported TEST_CLUSTER '$TEST_CLUSTER'"
     exit 1
