@@ -56,7 +56,7 @@ When used with the provided callbacks, PLAIN allows Kafka clients to authenticat
 
 The client must enable PLAIN and set the `username` and `password`. 
 If the client prefixes the `password` with `$accessToken:` followed by the value of the access token, the Kafka broker will interpret the password as the access token. 
-Otherwise, the authorization server will interpret the `username` as the client ID and the `password` as the client secret.
+Otherwise, the Kafka broker will interpret the `username` as the client ID and the `password` as the client secret.
 
 If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token. 
 The process depends on how you configure username extraction (using `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, and `userInfoEndpointUri`), and also your authorization server (in particular, how it maps client IDs to account names).
