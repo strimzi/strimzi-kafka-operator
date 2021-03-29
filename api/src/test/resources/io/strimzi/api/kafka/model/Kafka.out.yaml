@@ -138,8 +138,8 @@ spec:
         memory: "512Mi"
   topicOperator:
     watchedNamespace: "my-ns"
-    reconciliationIntervalSeconds: 90
-    zookeeperSessionTimeoutSeconds: 20
+    reconciliationIntervalSeconds: 120
+    zookeeperSessionTimeoutSeconds: 18
     topicMetadataMaxAttempts: 6
   clusterCa:
     generateCertificateAuthority: false

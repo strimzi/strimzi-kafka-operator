@@ -41,7 +41,7 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
     public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
-    public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 6;
+    public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 18;
     public static final String DEFAULT_SECRET_PREFIX = "";
 
     private String watchedNamespace;

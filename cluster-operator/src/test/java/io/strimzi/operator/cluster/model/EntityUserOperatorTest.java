@@ -68,8 +68,8 @@ public class EntityUserOperatorTest {
     private final String uoWatchedNamespace = "my-user-namespace";
     private final String uoImage = "my-user-operator-image";
     private final String secretPrefix = "strimzi-";
-    private final int uoReconciliationInterval = 90;
-    private final int uoZookeeperSessionTimeout = 20;
+    private final int uoReconciliationInterval = 120;
+    private final int uoZookeeperSessionTimeout = 18;
 
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";

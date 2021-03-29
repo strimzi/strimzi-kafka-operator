@@ -10,6 +10,8 @@
 * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
 * Migrate to CRD v1 (required by Kubernetes 1.22+)
 * Support for configuring custom Authorizer implementation 
+* Changed Reconciliation interval for Topic Operator from 90 to 120 seconds (to keep it the same as for other operators)
+* Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
 
 ### Changes, deprecations and removals
 

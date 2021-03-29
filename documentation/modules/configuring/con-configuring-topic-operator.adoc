@@ -14,11 +14,11 @@ Default is the namespace where the Kafka cluster is deployed.
 
 `reconciliationIntervalSeconds`::
 The interval between periodic reconciliations in seconds.
-Default `90`.
+Default `120`.
 
 `zookeeperSessionTimeoutSeconds`::
 The ZooKeeper session timeout in seconds.
-Default `20`.
+Default `18`.
 
 `topicMetadataMaxAttempts`::
 The number of attempts at getting topic metadata from Kafka.
