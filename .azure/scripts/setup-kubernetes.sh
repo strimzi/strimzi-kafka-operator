@@ -53,7 +53,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     curl -Lo minikube ${TEST_MINIKUBE_URL} && chmod +x minikube
-    sudo cp minikube /usr/local/bin
+    sudo cp minikube /usr/bin
 
     export MINIKUBE_WANTUPDATENOTIFICATION=false
     export MINIKUBE_WANTREPORTERRORPROMPT=false
