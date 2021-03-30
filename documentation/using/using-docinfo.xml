@@ -1,5 +1,5 @@
 <!-- No need to manually update the following attribute for each title change, although it should be technically possible to do so -->
-<!-- As far as I know, the topmost Level 0 title in the `master.adoc` file resolves to this attribute -->
+<!-- As far as I know, the topmost Level 0 title in the `using.adoc` file resolves to this attribute -->
 <title>Using Strimzi</title>
 
 <productname>Strimzi</productname>

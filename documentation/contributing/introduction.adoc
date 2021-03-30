@@ -90,7 +90,7 @@ The majority of the content relates to how you might want to modify your deploym
 
 === Custom Resource API Reference
 
-The _Using Strimzi_ guide (documentation/using/master.adoc) also contains a _Custom Resource API Reference_ that describes the configuration properties for custom resources.
+The _Using Strimzi_ guide (documentation/using/using.adoc) also contains a _Custom Resource API Reference_ that describes the configuration properties for custom resources.
 
 The _Custom Resource API Reference_ is built from two files.
 

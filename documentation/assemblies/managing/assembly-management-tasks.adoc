@@ -1,6 +1,6 @@
 // This assembly is included in:
 //
-// master.adoc
+// using/using.adoc
 
 [id="management-tasks-{context}"]
 = Managing Strimzi

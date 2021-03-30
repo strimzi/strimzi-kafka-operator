@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// master.adoc
+// using/using.adoc
 
 [id='assembly-distributed-tracing-{context}']
 = Distributed tracing

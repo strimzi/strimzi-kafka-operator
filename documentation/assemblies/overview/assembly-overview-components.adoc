@@ -1,6 +1,6 @@
 // This assembly is included in:
 //
-// overview/master.adoc
+// overview/overview.adoc
 // deploying/assembly_deploy-intro.adoc
 
 [id="overview-components_{context}"]

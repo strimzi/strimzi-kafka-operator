@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// deploying/master.adoc
+// deploying/deploying.adoc
 
 [id='assembly-downgrade-{context}']
 = Downgrading Strimzi
