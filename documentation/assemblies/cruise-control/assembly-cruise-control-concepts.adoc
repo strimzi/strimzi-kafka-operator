@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// master.adoc
+// using/using.adoc
 
 [id='cruise-control-concepts-{context}']
 = Cruise Control for cluster rebalancing

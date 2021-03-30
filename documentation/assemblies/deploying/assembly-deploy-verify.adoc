@@ -1,6 +1,6 @@
 // This assembly is included in:
 //
-// deploying/master.adoc
+// deploying/deploying.adoc
 
 [id="deploy-verify_{context}"]
 = Setting up client access to the Kafka cluster

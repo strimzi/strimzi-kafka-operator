@@ -1,7 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// deploying/master.adoc
-// master.adoc
+// deploying/deploying.adoc
 
 [id='assembly-upgrade-{context}']
 = Upgrading Strimzi

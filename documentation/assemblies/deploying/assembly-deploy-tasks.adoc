@@ -1,6 +1,6 @@
 // This assembly is included in:
 //
-// deploying/master.adoc
+// deploying/deploying.adoc
 
 [id="deploy-tasks_{context}"]
 = Deploying Strimzi

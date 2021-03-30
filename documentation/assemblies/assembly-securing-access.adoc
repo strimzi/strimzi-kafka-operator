@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// using/master.adoc
+// using/using.adoc
 
 [id='assembly-securing-access-{context}']
 = Managing secure access to Kafka

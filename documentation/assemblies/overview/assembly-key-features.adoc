@@ -1,6 +1,6 @@
 // This assembly is included in:
 //
-// overview/master.adoc
+// overview/overview.adoc
 
 [id="key-features_{context}"]
 = Key features
