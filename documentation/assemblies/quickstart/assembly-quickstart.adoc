@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// aquickstart/quickstart.adoc
+// quickstart/quickstart.adoc
 
 [id='assembly-evaluation-{context}']
 
