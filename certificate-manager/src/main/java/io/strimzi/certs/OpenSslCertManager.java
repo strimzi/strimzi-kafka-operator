@@ -276,7 +276,7 @@ public class OpenSslCertManager implements CertManager {
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
                     .keyUsage("critical,keyCertSign,cRLSign")
-                    .exec();
+                    .exec(false);
 
             // The key will be in pkcs#1 format (bracketed by BEGIN/END RSA PRIVATE KEY)
             // Convert it to pkcs#8 format (bracketed by BEGIN/END PRIVATE KEY)
