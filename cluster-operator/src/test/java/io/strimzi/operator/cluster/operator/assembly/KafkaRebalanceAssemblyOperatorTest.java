@@ -35,7 +35,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.TimeoutException;
+import io.strimzi.operator.common.operator.resource.NoStackTraceTimeoutException;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
@@ -978,7 +978,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             .onComplete(context.succeeding(v -> {
                 // the resource moved from New to NotReady (mocked Cruise Control didn't reply on time)
                 assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME,
-                        KafkaRebalanceState.NotReady, TimeoutException.class,
+                        KafkaRebalanceState.NotReady, NoStackTraceTimeoutException.class,
                         "The timeout period of 1000ms has been exceeded while executing POST");
                 checkpoint.flag();
             }));
