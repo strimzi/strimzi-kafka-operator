@@ -71,7 +71,7 @@ spec:
 # ...
 ----
 <1> Specifies capacity limits for broker resources. For more information, see xref:capacity-configuration[Capacity configuration].
-<2> Defines the Cruise Control configuration, including the default optimization goals (in `default.goals`) and any customizations to the master optimization goals (in `goals`) or the hard goals (in `hard.goals`). 
+<2> Defines the Cruise Control configuration, including the default optimization goals (in `default.goals`) and any customizations to the main optimization goals (in `goals`) or the hard goals (in `hard.goals`). 
 You can provide any xref:ref-cruise-control-configuration-{context}[standard Cruise Control configuration option] apart from those managed directly by Strimzi. 
 For more information on configuring optimization goals, see xref:con-optimization-goals-{context}[]. 
 <3> CPU and memory resources reserved for Cruise Control. For more information, see xref:con-common-configuration-resources-reference[].
