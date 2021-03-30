@@ -120,12 +120,19 @@ public final class TestUtils {
     public static long waitFor(String description, long pollIntervalMs, long timeoutMs, BooleanSupplier ready, Runnable onTimeout) {
         LOGGER.debug("Waiting for {}", description);
         long deadline = System.currentTimeMillis() + timeoutMs;
+        String exceptionMessage = null;
+        int exceptionCount = 0;
+
         while (true) {
             boolean result;
             try {
                 result = ready.getAsBoolean();
             } catch (Exception e) {
-                LOGGER.info("Exception waiting for {}, {}", description, e.getMessage());
+                exceptionMessage = e.getMessage();
+                if (++exceptionCount == 1) {
+                    // Log the first exception as soon as it occurs
+                    LOGGER.info("Exception waiting for {}, {}", description, exceptionMessage);
+                }
                 result = false;
             }
             long timeLeft = deadline - System.currentTimeMillis();
@@ -133,6 +140,9 @@ public final class TestUtils {
                 return timeLeft;
             }
             if (timeLeft <= 0) {
+                if (exceptionCount > 1) {
+                    LOGGER.info("Exception waiting for {}, {}", description, exceptionMessage);
+                }
                 onTimeout.run();
                 WaitException waitException = new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);
                 waitException.printStackTrace();
