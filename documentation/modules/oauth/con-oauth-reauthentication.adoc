@@ -5,7 +5,7 @@
 [id='{context}']
 = Session re-authentication for Kafka brokers
 
-OAuth 2.0 authentication in Strimzi supports _session re-authentication_, which is part of the Kafka Client libraries. 
+Strimzi's Kafka Client libraries support _session re-athentication_ for OAuth 2.0 authentication. 
 Session re-authentication enforces the expiry of authenticated sessions between OAuth clients and Kafka brokers after a defined period of time. 
 When a session expires, the client immediately starts a new session by reusing the existing connection rather than dropping it.
 
@@ -34,8 +34,8 @@ The session will expire earlier if the access token expires before the `maxSecon
 * For PLAIN, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
 
 If `maxSecondsWithoutReauthentication` is not configured, OAUTHBEARER and PLAIN clients can remain connected to brokers indefinitely, without needing to re-authenticate. 
-In this case, the sessions do not end with access token expiry, but this can be considered when configuring proper authorization. 
-For example, by using `keycloak` authorization or installing a custom authorizer.
+Authenticated sessions do not end with access token expiry. 
+However, this can be considered when configuring authorization, for example, by using `keycloak` authorization or installing a custom authorizer.
 
 .Additional resources
 

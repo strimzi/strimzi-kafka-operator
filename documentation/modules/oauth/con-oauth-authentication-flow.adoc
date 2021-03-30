@@ -9,7 +9,7 @@ Strimzi supports the OAUTHBEARER and PLAIN mechanisms for OAuth 2.0 authenticati
 Both mechanisms allow Kafka clients to establish authenticated sessions with Kafka brokers. 
 The authentication flow between clients, the authorization server, and Kafka brokers is different for each mechanism.
 
-Configure clients to use OAUTHBEARER for authentication with Kafka brokers whenever possible. 
+Configure clients to use OAUTHBEARER whenever possible. 
 This mechanism provides a higher level of security because client credentials are _never_ shared with Kafka brokers. 
 Consider using PLAIN only with Kafka clients that do not support OAUTHBEARER. 
 
@@ -17,7 +17,7 @@ OAUTHBEARER and PLAIN can be enabled at the same time, on the same `oauth` liste
 
 .OAUTHBEARER overview
 
-Support for OAUTHBEARER is built in to many Kafka clients. 
+Many Kafka clients use OAUTHBEARER as an authentication mechanism. 
 However, the developer must often write custom callbacks that provide access tokens for authentication, as needed.
 Strimzi provides these callbacks for standard Java Kafka clients (clients that use the Kafka producer and consumer APIs). 
 Therefore, developers do not need to provide custom callbacks in their application code. 
@@ -43,16 +43,18 @@ You can set the `enableOauthBearer` property to `true`, though this is not requi
     enableOauthBearer: true
 ----
 
+OAUTHBEARER can only be used for Kafka broker authentication by Kafka clients that support this mechanism.
+
 .PLAIN overview
 
-PLAIN is a simple authentication mechanism supported by all Kafka client tools (including developer tools such as kafkacat). 
+PLAIN is a simple authentication mechanism used by all Kafka client tools (including developer tools such as kafkacat). 
 To enable PLAIN to be used together with OAuth authentication, Strimzi includes server-side callbacks and calls this _OAuth 2.0 over PLAIN_. 
 
-With PLAIN, client credentials are handled centrally, behind an authorization server that complies with OAuth 2.0 and OpenID Connect (OIDC).
+With PLAIN, client credentials are handled centrally, behind a compliant authorization server.
 
 When used with the OAuth 2.0 over PLAIN callbacks, Kafka clients authenticate with Kafka brokers using either of the following methods:
 
-* Client ID and Secret (by using the OAuth 2.0 client credentials mechanism)
+* Client ID and secret (by using the OAuth 2.0 client credentials mechanism)
 
 * A long-lived access token, obtained manually at configuration time
 
@@ -61,7 +63,8 @@ If the password is prefixed with `$accessToken:` followed by the value of the ac
 Otherwise, the Kafka broker will interpret the `username` as the client ID and the `password` as the client secret.
 
 If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token. 
-The process depends on how you configure username extraction (using `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, or `userInfoEndpointUri`), and also your authorization server (in particular, how it maps client IDs to account names).
+The process depends on how you configure username extraction using `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, or `userInfoEndpointUri`. 
+It also depends on your authorization server; in particular, how it maps client IDs to account names.
 
 To use PLAIN, you must enable it in the `oauth` listener configuration for the Kafka broker.
 
