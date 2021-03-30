@@ -489,7 +489,7 @@ public class OpenSslCertManager implements CertManager {
             }
 
             cmd.database(database, attr).newCertsDir(newCertsDir);
-            cmd.exec();
+            cmd.exec(false);
         } finally {
             delete(database);
             delete(attr);
