@@ -50,7 +50,7 @@ To enable PLAIN to be used together with OAuth authentication, Strimzi includes 
 
 With PLAIN, client credentials are handled centrally, behind an authorization server that complies with OAuth 2.0 and OpenID Connect (OIDC).
 
-When used with the provided callbacks, PLAIN allows Kafka clients to authenticate with Kafka brokers using either of the following methods:
+When used with the OAuth 2.0 over PLAIN callbacks, Kafka clients authenticate with Kafka brokers using either of the following methods:
 
 * Client ID and Secret (by using the OAuth 2.0 client credentials mechanism)
 
