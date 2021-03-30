@@ -1032,7 +1032,7 @@ class TopicOperator {
                             } else {
                                 LOGGER.error("{}: Error setting resource status", logContext, ar.cause());
                             }
-                            statusFuture.handle(ar.map((Void) null));
+                            promise.handle(ar.map((Void) null));
                         });
                     } else {
                         statusFuture = Future.succeededFuture();
