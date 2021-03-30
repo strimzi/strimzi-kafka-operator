@@ -46,7 +46,7 @@ You can set the `enableOauthBearer` property to `true`, though this is not requi
 .PLAIN overview
 
 PLAIN is a simple authentication mechanism supported by all Kafka client tools (including developer tools such as kafkacat). 
-To enable PLAIN to be used together with OAuth authentication, Strimzi includes additional server-side callbacks and calls this _OAuth 2.0 over PLAIN_. 
+To enable PLAIN to be used together with OAuth authentication, Strimzi includes server-side callbacks and calls this _OAuth 2.0 over PLAIN_. 
 
 With PLAIN, Client credentials are handled centrally, behind an authorization server that complies with OAuth 2.0 and OpenID Connect (OIDC).
 
