@@ -192,19 +192,6 @@ public class MockCertManager implements CertManager {
     }
 
     /**
-     * Generate a self-signed certificate
-     *
-     * @param keyFile  path to the file which will contain the private key
-     * @param certFile path to the file which will contain the self signed certificate
-     * @param days     certificate duration
-     * @throws IOException
-     */
-    @Override
-    public void generateSelfSignedCert(File keyFile, File certFile, int days) throws IOException {
-        generateSelfSignedCert(keyFile, certFile, null, days);
-    }
-
-    /**
      * Renew a new self-signed certificate, keeping the existing private key
      *
      * @param keyFile  path to the file containing the existing private key
@@ -253,38 +240,8 @@ public class MockCertManager implements CertManager {
         write(csrFile, "csr file");
     }
 
-    /**
-     * Generate a certificate signed by a Certificate Authority
-     *
-     * @param csrFile path to the file containing the certificate sign request
-     * @param caKey   path to the file containing the CA private key
-     * @param caCert  path to the file containing the CA certificate
-     * @param crtFile path to the file which will contain the signed certificate
-     * @param days    certificate duration
-     * @throws IOException
-     */
-    @Override
-    public void generateCert(File csrFile, File caKey, File caCert, File crtFile, int days) throws IOException {
-        write(crtFile, "crt file");
-    }
-
     @Override
     public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException {
-        write(crtFile, "crt file");
-    }
-
-    /**
-     * Generate a certificate signed by a Certificate Authority
-     *
-     * @param csrFile path to the file containing the certificate sign request
-     * @param caKey   CA private key bytes
-     * @param caCert  CA certificate bytes
-     * @param crtFile path to the file which will contain the signed certificate
-     * @param days    certificate duration
-     * @throws IOException
-     */
-    @Override
-    public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, int days) throws IOException {
         write(crtFile, "crt file");
     }
 
