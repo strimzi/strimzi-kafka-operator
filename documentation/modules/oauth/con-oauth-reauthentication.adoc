@@ -14,7 +14,7 @@ To enable and configure it, you set a time value for `maxSecondsWithoutReauthent
 The same property is used to configure session re-authentication for OAUTHBEARER and PLAIN authentication. 
 For an example configuration, see xref:proc-oauth-authentication-broker-config-{context}[].
 
-Session re-authentication can be used with _fast local JWT_ or _introspection endpoint_ token validation.
+Session re-authentication is used with _fast local JWT_ or _introspection endpoint_ token validation.
 
 .Client re-authentication
 
