@@ -56,7 +56,7 @@ When used with the provided callbacks, PLAIN allows Kafka clients to authenticat
 
 * A long-lived access token, obtained manually at configuration time
 
-The client must enable PLAIN and set the `username` and `password`. 
+The client must be enabled to use PLAIN authentication, and provide a `username` and `password`. 
 If the client prefixes the `password` with `$accessToken:` followed by the value of the access token, the Kafka broker will interpret the password as the access token. 
 Otherwise, the Kafka broker will interpret the `username` as the client ID and the `password` as the client secret.
 
