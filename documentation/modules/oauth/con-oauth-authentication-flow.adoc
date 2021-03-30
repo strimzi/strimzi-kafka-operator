@@ -61,7 +61,7 @@ If the password is prefixed with `$accessToken:` followed by the value of the ac
 Otherwise, the Kafka broker will interpret the `username` as the client ID and the `password` as the client secret.
 
 If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token. 
-The process depends on how you configure username extraction (using `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, and `userInfoEndpointUri`), and also your authorization server (in particular, how it maps client IDs to account names).
+The process depends on how you configure username extraction (using `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, or `userInfoEndpointUri`), and also your authorization server (in particular, how it maps client IDs to account names).
 
 To use PLAIN, you must enable it in the `oauth` listener configuration for the Kafka broker.
 
