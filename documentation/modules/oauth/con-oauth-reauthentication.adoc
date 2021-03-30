@@ -6,7 +6,7 @@
 = Session re-authentication for Kafka brokers
 
 OAuth 2.0 authentication in Strimzi supports _session re-authentication_, which is part of the Kafka Client libraries. 
-This Kafka mechanism is used to enforce the expiry of authenticated sessions between OAuth clients and Kafka brokers after a defined period of time. 
+Session re-authentication enforces the expiry of authenticated sessions between OAuth clients and Kafka brokers after a defined period of time. 
 When a session expires, the client immediately starts a new session by reusing the existing connection rather than dropping it.
 
 Session re-authentication is disabled by default. 
