@@ -34,7 +34,7 @@ The session will expire earlier if the access token expires before the `maxSecon
 * For PLAIN, the broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
 
 If `maxSecondsWithoutReauthentication` is not configured, OAUTHBEARER and PLAIN clients can remain connected to brokers indefinitely, without needing to re-authenticate. 
-In that case, the sessions do not end with access token expiry, but this can be considered when configuring proper authorization. 
+In this case, the sessions do not end with access token expiry, but this can be considered when configuring proper authorization. 
 For example, by using `keycloak` authorization or installing a custom authorizer.
 
 .Additional resources
