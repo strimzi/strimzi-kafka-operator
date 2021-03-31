@@ -190,7 +190,8 @@ public class KafkaRollerST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
-        String kafkaImage = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getImage();
+        String kafkaImage = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName))
+            .getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
 
         KafkaResource.replaceKafkaResource(clusterName, kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
