@@ -36,7 +36,7 @@ spec:
       type: integer
     - name: Ready
       description: The state of the custom resource
-      jsonPath: .status.conditions[?(@.type=="Ready")].status
+      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
       type: string
     schema:
       openAPIV3Schema:
@@ -47,9 +47,9 @@ spec:
             properties:
               version:
                 type: string
-                description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
-                  Consult the user documentation to understand the process required
-                  to upgrade or downgrade the version.
+                description: "The Kafka Connect version. Defaults to {DefaultKafkaVersion}.\
+                  \ Consult the user documentation to understand the process required\
+                  \ to upgrade or downgrade the version."
               replicas:
                 type: integer
                 description: The number of pods in the Kafka Connect group.
@@ -226,12 +226,12 @@ spec:
                     - scram-sha-512
                     - plain
                     - oauth
-                    description: Authentication type. Currently the only supported
-                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
-                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
-                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
-                      Authentication. The `tls` type uses TLS Client Authentication.
-                      The `tls` type is supported only over TLS connections.
+                    description: "Authentication type. Currently the only supported\
+                      \ types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`\
+                      \ type uses SASL SCRAM-SHA-512 Authentication. `plain` type\
+                      \ uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER\
+                      \ Authentication. The `tls` type uses TLS Client Authentication.\
+                      \ The `tls` type is supported only over TLS connections."
                   username:
                     type: string
                     description: Username used for the authentication.
@@ -241,11 +241,11 @@ spec:
               config:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
-                description: 'The Kafka Connect configuration. Properties with the
-                  following prefixes cannot be set: ssl., sasl., security., listeners,
-                  plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
-                  producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
-                  ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+                description: "The Kafka Connect configuration. Properties with the\
+                  \ following prefixes cannot be set: ssl., sasl., security., listeners,\
+                  \ plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,\
+                  \ producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,\
+                  \ ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
               resources:
                 type: object
                 properties:
@@ -328,11 +328,11 @@ spec:
                     description: A map of -XX options to the JVM.
                   "-Xms":
                     type: string
-                    pattern: '[0-9]+[mMgG]?'
+                    pattern: "[0-9]+[mMgG]?"
                     description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
-                    pattern: '[0-9]+[mMgG]?'
+                    pattern: "[0-9]+[mMgG]?"
                     description: -Xmx option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
@@ -382,7 +382,7 @@ spec:
                     enum:
                     - inline
                     - external
-                    description: Logging type, must be either 'inline' or 'external'.
+                    description: "Logging type, must be either 'inline' or 'external'."
                   valueFrom:
                     type: object
                     properties:
@@ -426,15 +426,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can\
+                              \ be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template.\
+                              \ Can be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                       deploymentStrategy:
                         type: string
@@ -454,15 +454,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can\
+                              \ be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template.\
+                              \ Can be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                       imagePullSecrets:
                         type: array
@@ -471,12 +471,13 @@ spec:
                           properties:
                             name:
                               type: string
-                        description: List of references to secrets in the same namespace
-                          to use for pulling any of the images used by this Pod. When
-                          the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in
-                          Cluster Operator and the `imagePullSecrets` option are specified,
-                          only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS`
-                          variable is ignored.
+                        description: "List of references to secrets in the same namespace\
+                          \ to use for pulling any of the images used by this Pod.\
+                          \ When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable\
+                          \ in Cluster Operator and the `imagePullSecrets` option\
+                          \ are specified, only the `imagePullSecrets` variable is\
+                          \ used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is\
+                          \ ignored."
                       securityContext:
                         type: object
                         properties:
@@ -535,16 +536,16 @@ spec:
                       terminationGracePeriodSeconds:
                         type: integer
                         minimum: 0
-                        description: The grace period is the duration in seconds after
-                          the processes running in the pod are sent a termination
-                          signal, and the time when the processes are forcibly halted
-                          with a kill signal. Set this value to longer than the expected
-                          cleanup time for your process. Value must be a non-negative
-                          integer. A zero value indicates delete immediately. You
-                          might need to increase the grace period for very large Kafka
-                          clusters, so that the Kafka brokers have enough time to
-                          transfer their work to another broker before they are terminated.
-                          Defaults to 30 seconds.
+                        description: "The grace period is the duration in seconds\
+                          \ after the processes running in the pod are sent a termination\
+                          \ signal, and the time when the processes are forcibly halted\
+                          \ with a kill signal. Set this value to longer than the\
+                          \ expected cleanup time for your process. Value must be\
+                          \ a non-negative integer. A zero value indicates delete\
+                          \ immediately. You might need to increase the grace period\
+                          \ for very large Kafka clusters, so that the Kafka brokers\
+                          \ have enough time to transfer their work to another broker\
+                          \ before they are terminated. Defaults to 30 seconds."
                       affinity:
                         type: object
                         properties:
@@ -776,13 +777,14 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: The name of the priority class used to assign
-                          priority to the pods. For more information about priority
-                          classes, see {K8sPriorityClass}.
+                        description: "The name of the priority class used to assign\
+                          \ priority to the pods. For more information about priority\
+                          \ classes, see {K8sPriorityClass}."
                       schedulerName:
                         type: string
-                        description: The name of the scheduler used to dispatch this
-                          `Pod`. If not specified, the default scheduler will be used.
+                        description: "The name of the scheduler used to dispatch this\
+                          \ `Pod`. If not specified, the default scheduler will be\
+                          \ used."
                       hostAliases:
                         type: array
                         items:
@@ -838,15 +840,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can\
+                              \ be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template.\
+                              \ Can be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                     description: Template for Kafka Connect API `Service`.
                   buildConfig:
@@ -858,15 +860,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can\
+                              \ be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template.\
+                              \ Can be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Connect BuildConfig used to
                       build new container images. The BuildConfig is used only on
@@ -954,15 +956,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can\
+                              \ be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template.\
+                              \ Can be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                       imagePullSecrets:
                         type: array
@@ -971,12 +973,13 @@ spec:
                           properties:
                             name:
                               type: string
-                        description: List of references to secrets in the same namespace
-                          to use for pulling any of the images used by this Pod. When
-                          the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in
-                          Cluster Operator and the `imagePullSecrets` option are specified,
-                          only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS`
-                          variable is ignored.
+                        description: "List of references to secrets in the same namespace\
+                          \ to use for pulling any of the images used by this Pod.\
+                          \ When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable\
+                          \ in Cluster Operator and the `imagePullSecrets` option\
+                          \ are specified, only the `imagePullSecrets` variable is\
+                          \ used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is\
+                          \ ignored."
                       securityContext:
                         type: object
                         properties:
@@ -1035,16 +1038,16 @@ spec:
                       terminationGracePeriodSeconds:
                         type: integer
                         minimum: 0
-                        description: The grace period is the duration in seconds after
-                          the processes running in the pod are sent a termination
-                          signal, and the time when the processes are forcibly halted
-                          with a kill signal. Set this value to longer than the expected
-                          cleanup time for your process. Value must be a non-negative
-                          integer. A zero value indicates delete immediately. You
-                          might need to increase the grace period for very large Kafka
-                          clusters, so that the Kafka brokers have enough time to
-                          transfer their work to another broker before they are terminated.
-                          Defaults to 30 seconds.
+                        description: "The grace period is the duration in seconds\
+                          \ after the processes running in the pod are sent a termination\
+                          \ signal, and the time when the processes are forcibly halted\
+                          \ with a kill signal. Set this value to longer than the\
+                          \ expected cleanup time for your process. Value must be\
+                          \ a non-negative integer. A zero value indicates delete\
+                          \ immediately. You might need to increase the grace period\
+                          \ for very large Kafka clusters, so that the Kafka brokers\
+                          \ have enough time to transfer their work to another broker\
+                          \ before they are terminated. Defaults to 30 seconds."
                       affinity:
                         type: object
                         properties:
@@ -1276,13 +1279,14 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: The name of the priority class used to assign
-                          priority to the pods. For more information about priority
-                          classes, see {K8sPriorityClass}.
+                        description: "The name of the priority class used to assign\
+                          \ priority to the pods. For more information about priority\
+                          \ classes, see {K8sPriorityClass}."
                       schedulerName:
                         type: string
-                        description: The name of the scheduler used to dispatch this
-                          `Pod`. If not specified, the default scheduler will be used.
+                        description: "The name of the scheduler used to dispatch this\
+                          \ `Pod`. If not specified, the default scheduler will be\
+                          \ used."
                       hostAliases:
                         type: array
                         items:
@@ -1339,15 +1343,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can\
+                              \ be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template.\
+                              \ Can be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Connect ClusterRoleBinding.
                   connectContainer:
@@ -1505,29 +1509,30 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can\
+                              \ be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template.\
+                              \ Can be applied to different resources such as `StatefulSets`,\
+                              \ `Deployments`, `Pods`, and `Services`."
                         description: Metadata to apply to the `PodDistruptionBugetTemplate`
                           resource.
                       maxUnavailable:
                         type: integer
                         minimum: 0
-                        description: Maximum number of unavailable pods to allow automatic
-                          Pod eviction. A Pod eviction is allowed when the `maxUnavailable`
-                          number of pods or fewer are unavailable after the eviction.
-                          Setting this value to 0 prevents all voluntary evictions,
-                          so the pods must be evicted manually. Defaults to 1.
+                        description: "Maximum number of unavailable pods to allow\
+                          \ automatic Pod eviction. A Pod eviction is allowed when\
+                          \ the `maxUnavailable` number of pods or fewer are unavailable\
+                          \ after the eviction. Setting this value to 0 prevents all\
+                          \ voluntary evictions, so the pods must be evicted manually.\
+                          \ Defaults to 1."
                     description: Template for Kafka Connect `PodDisruptionBudget`.
-                description: Template for Kafka Connect and Kafka Connect S2I resources.
-                  The template allows users to specify how the `Deployment`, `Pods`
-                  and `Service` are generated.
+                description: "Template for Kafka Connect and Kafka Connect S2I resources.\
+                  \ The template allows users to specify how the `Deployment`, `Pods`\
+                  \ and `Service` are generated."
               externalConfiguration:
                 type: object
                 properties:
@@ -1642,18 +1647,18 @@ spec:
                         type: array
                         items:
                           type: string
-                        description: 'Configures additional options which will be
-                          passed to the Kaniko executor when building the new Connect
-                          image. Allowed options are: --customPlatform, --insecure,
-                          --insecure-pull, --insecure-registry, --log-format, --log-timestamp,
-                          --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify,
-                          --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity,
-                          --snapshotMode, --use-new-run. These options will be used
-                          only on Kubernetes where the Kaniko executor is used. They
-                          will be ignored on OpenShift. The options are described
-                          in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko
-                          GitHub repository^]. Changing this field does not trigger
-                          new build of the Kafka Connect image.'
+                        description: "Configures additional options which will be\
+                          \ passed to the Kaniko executor when building the new Connect\
+                          \ image. Allowed options are: --customPlatform, --insecure,\
+                          \ --insecure-pull, --insecure-registry, --log-format, --log-timestamp,\
+                          \ --registry-mirror, --reproducible, --single-snapshot,\
+                          \ --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry,\
+                          \ --verbosity, --snapshotMode, --use-new-run. These options\
+                          \ will be used only on Kubernetes where the Kaniko executor\
+                          \ is used. They will be ignored on OpenShift. The options\
+                          \ are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko\
+                          \ GitHub repository^]. Changing this field does not trigger\
+                          \ new build of the Kafka Connect image."
                       image:
                         type: string
                         description: The name of the image which will be built. Required.
@@ -1691,12 +1696,12 @@ spec:
                       properties:
                         name:
                           type: string
-                          pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
-                          description: 'The unique name of the connector plugin. Will
-                            be used to generate the path where the connector artifacts
-                            will be stored. The name has to be unique within the KafkaConnect
-                            resource. The name has to follow the following pattern:
-                            `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
+                          pattern: "^[a-z0-9][-_a-z0-9]*[a-z0-9]$"
+                          description: "The unique name of the connector plugin. Will\
+                            \ be used to generate the path where the connector artifacts\
+                            \ will be stored. The name has to be unique within the\
+                            \ KafkaConnect resource. The name has to follow the following\
+                            \ pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required."
                         artifacts:
                           type: array
                           items:
@@ -1704,27 +1709,28 @@ spec:
                             properties:
                               sha512sum:
                                 type: string
-                                description: SHA512 checksum of the artifact. Optional.
-                                  If specified, the checksum will be verified while
-                                  building the new container. If not specified, the
-                                  downloaded artifact will not be verified.
+                                description: "SHA512 checksum of the artifact. Optional.\
+                                  \ If specified, the checksum will be verified while\
+                                  \ building the new container. If not specified,\
+                                  \ the downloaded artifact will not be verified."
                               type:
                                 type: string
                                 enum:
                                 - jar
                                 - tgz
                                 - zip
-                                description: Artifact type. Currently, the supported
-                                  artifact types are `tgz`, `jar`, and `zip`.
+                                description: "Artifact type. Currently, the supported\
+                                  \ artifact types are `tgz`, `jar`, and `zip`."
                               url:
                                 type: string
-                                pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
-                                description: URL of the artifact which will be downloaded.
-                                  Strimzi does not do any security scanning of the
-                                  downloaded artifacts. For security reasons, you
-                                  should first verify the artifacts manually and configure
-                                  the checksum verification to make sure the same
-                                  artifact is used in the automated build. Required.
+                                pattern: "^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]"
+                                description: "URL of the artifact which will be downloaded.\
+                                  \ Strimzi does not do any security scanning of the\
+                                  \ downloaded artifacts. For security reasons, you\
+                                  \ should first verify the artifacts manually and\
+                                  \ configure the checksum verification to make sure\
+                                  \ the same artifact is used in the automated build.\
+                                  \ Required."
                             required:
                             - type
                             - url
@@ -1772,9 +1778,9 @@ spec:
                             type: boolean
                         description: Reference to the key in the ConfigMap containing
                           the configuration.
-                    description: ConfigMap entry where the Prometheus JMX Exporter
-                      configuration is stored. For details of the structure of this
-                      configuration, see the {JMXExporter}.
+                    description: "ConfigMap entry where the Prometheus JMX Exporter\
+                      \ configuration is stored. For details of the structure of this\
+                      \ configuration, see the {JMXExporter}."
                 required:
                 - type
                 - valueFrom
@@ -1806,17 +1812,17 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: The unique identifier of a condition, used to distinguish
-                        between other conditions in the resource.
+                      description: "The unique identifier of a condition, used to\
+                        \ distinguish between other conditions in the resource."
                     status:
                       type: string
-                      description: The status of the condition, either True, False
-                        or Unknown.
+                      description: "The status of the condition, either True, False\
+                        \ or Unknown."
                     lastTransitionTime:
                       type: string
-                      description: Last time the condition of a type changed from
-                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                        in the UTC time zone.
+                      description: "Last time the condition of a type changed from\
+                        \ one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',\
+                        \ in the UTC time zone."
                     reason:
                       type: string
                       description: The reason for the condition's last transition
