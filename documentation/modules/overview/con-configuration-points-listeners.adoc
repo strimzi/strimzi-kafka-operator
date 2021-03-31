@@ -10,28 +10,17 @@ Listeners are used to connect to Kafka brokers.
 Strimzi provides a generic `GenericKafkaListener` schema with properties to configure listeners through the `Kafka` resource.
 
 The `GenericKafkaListener` provides a flexible approach to listener configuration.
-
 You can specify properties to configure _internal_ listeners for connecting within the Kubernetes cluster, or _external_ listeners for connecting outside the Kubernetes cluster.
 
-.Generic listener configuration
-
 Each listener is xref:proc-config-kafka-{context}[defined as an array in the `Kafka` resource].
-
-For more information on listener configuration, see the xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
-
-Generic listener configuration replaces the previous approach to listener configuration using the xref:type-KafkaListeners-reference[`KafkaListeners` schema reference],
-which is *deprecated*.
-However, you can xref:property-listener-bwc-reference[convert the old format into the new format] with backwards compatibility.
-
-The `KafkaListeners` schema uses sub-properties for `plain`, `tls` and `external` listeners, with fixed ports for each.
-Because of the limits inherent in the architecture of the schema, it is only possible to configure three listeners, with configuration options limited to the type of listener.
-
-With the `GenericKafkaListener` schema, you can configure as many listeners as required,
-as long as their names and ports are unique.
+You can configure as many listeners as required, as long as their names and ports are unique.
 
 You might want to configure multiple external listeners, for example, to handle access from networks that require different authentication mechanisms.
 Or you might need to join your Kubernetes network to an outside network.
 In which case, you can configure internal listeners (using the `useServiceDnsDomain` property) so that the Kubernetes service DNS domain (typically `.cluster.local`) is not used.
+
+For more information on the configuration options available for listeners,
+see the link:{BookURLUsing}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
 
 .Configuring listeners to secure access to Kafka brokers
 You can configure listeners for secure connection using authentication.

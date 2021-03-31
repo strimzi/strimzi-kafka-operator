@@ -298,31 +298,3 @@ The application pods must be running in the same namespace as the Kafka broker.
 * Only application pods running in namespaces matching the labels `project: myproject` and `project: myproject2` can connect to the `tls` listener.
 
 The syntax of the `networkPolicyPeers` field is the same as the `from` field in `NetworkPolicy` resources.
-
-[id='property-listener-bwc-{context}']
-.Backwards compatibility with `KafkaListeners`
-
-`GenericKafkaListener` replaces the `KafkaListeners` schema, which is now deprecated.
-
-To convert the listeners configured using the `KafkaListeners` schema into the format of the `GenericKafkaListener` schema, with backwards compatibility,
-use the following names, ports and types:
-
-[source,yaml,subs="+quotes,attributes"]
-----
-listeners:
-  #...
-  - name: plain
-    port: 9092
-    type: internal
-    tls: false
-  - name: tls
-    port: 9093
-    type: internal
-    tls: true
-  - name: external
-    port: 9094
-    type: _EXTERNAL-LISTENER-TYPE_ <1>
-    tls: true
-# ...
-----
-<1> Options: `ingress`, `loadbalancer`, `nodeport`, `route`
