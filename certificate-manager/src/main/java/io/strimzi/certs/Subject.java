@@ -4,68 +4,16 @@
  */
 package io.strimzi.certs;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents the subject for a certificate
  */
 public class Subject {
 
-    static class Builder {
-        private String organizationName;
-        private String commonName;
-        private Map<String, Set<String>> subjectAltNames;
-        public Builder withCommonName(String commonName) {
-            this.commonName = commonName;
-            return this;
-        }
-        public Builder withOrganizationName(String organizationName) {
-            this.organizationName = organizationName;
-            return this;
-        }
-        public Builder withSubjectAlternativeName(String type, String san) {
-            if (subjectAltNames == null) {
-                subjectAltNames = new HashMap<>();
-            }
-            subjectAltNames.computeIfAbsent(type, k -> new HashSet<>()).add(san);
-            return this;
-        }
-        public Builder addDnsName(String dnsName) {
-            return withSubjectAlternativeName("DNS", dnsName);
-        }
-        public Builder withIpName(String ip) {
-            return withSubjectAlternativeName("IP", ip);
-        }
-        public Subject build() {
-            Map<String, String> san = new HashMap<>();
-            if (subjectAltNames != null) {
-                for (Map.Entry<String, Set<String>> entry : subjectAltNames.entrySet()) {
-                    int i = 0;
-                    for (String n : entry.getValue()) {
-                        san.put(entry.getKey() + "." + (i++), n);
-                    }
-                }
-            }
-            return new Subject(commonName, organizationName, san);
-        }
-
-    }
-
     private String organizationName;
     private String commonName;
     private Map<String, String> subjectAltNames;
-
-    public Subject() {
-    }
-
-    private Subject(String commonName, String organizationName, Map<String, String> subjectAltNames) {
-        this.organizationName = organizationName;
-        this.commonName = commonName;
-        this.subjectAltNames = subjectAltNames;
-    }
 
     public String organizationName() {
         return organizationName;
