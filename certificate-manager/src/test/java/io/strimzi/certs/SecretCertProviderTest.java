@@ -48,7 +48,7 @@ public class SecretCertProviderTest {
         File cert = File.createTempFile("crt-", ".crt");
         File store = File.createTempFile("crt-", ".str");
 
-        ssl.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
+        ssl.generateSelfSignedCert(key, cert, 365);
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
         Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret",
@@ -81,7 +81,7 @@ public class SecretCertProviderTest {
         File key = File.createTempFile("key-", ".key");
         File cert = File.createTempFile("crt-", ".crt");
 
-        ssl.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
+        ssl.generateSelfSignedCert(key, cert, 365);
 
         Secret secret = secretCertProvider.createSecret("my-namespace", "my-secret",
                 "ca.key", "ca.crt",
@@ -93,7 +93,7 @@ public class SecretCertProviderTest {
         File addedKey = File.createTempFile("added-key-", ".key");
         File addedCert = File.createTempFile("added-crt-", ".crt");
 
-        ssl.generateSelfSignedCert(addedKey, addedCert, new Subject.Builder().withCommonName("Test CA").build(), 365);
+        ssl.generateSelfSignedCert(addedKey, addedCert, 365);
 
         secret = secretCertProvider.addSecret(secret, "added-key", "added-cert", addedKey, addedCert);
 
