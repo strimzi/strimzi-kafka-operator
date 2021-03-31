@@ -896,12 +896,12 @@ public class KafkaClusterTest {
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
+        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(nullValue()));
 
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
+            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(nullValue()));
         }
     }
 
@@ -1008,12 +1008,12 @@ public class KafkaClusterTest {
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
+        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(nullValue()));
 
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
+            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(nullValue()));
         }
     }
 
@@ -1163,12 +1163,12 @@ public class KafkaClusterTest {
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges));
+        assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
 
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges));
+            assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
         }
     }
 
@@ -1842,13 +1842,13 @@ public class KafkaClusterTest {
 
         // Check External Bootstrap service
         svc = kc.generateExternalBootstrapServices().get(0);
-        assertThat(svc.getMetadata().getLabels().entrySet().containsAll(exSvcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(exSvcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getLabels().entrySet().containsAll(exSvcLabels.entrySet()), is(false));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(exSvcAnots.entrySet()), is(false));
 
         // Check per pod service
         svc = kc.generateExternalServices(0).get(0);
-        assertThat(svc.getMetadata().getLabels().entrySet().containsAll(perPodSvcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(perPodSvcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getLabels().entrySet().containsAll(perPodSvcLabels.entrySet()), is(false));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(perPodSvcAnots.entrySet()), is(false));
 
         // Check Bootstrap Route
         Route rt = kc.generateExternalBootstrapRoutes().get(0);

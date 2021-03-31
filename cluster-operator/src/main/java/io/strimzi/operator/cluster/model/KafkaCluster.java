@@ -517,40 +517,6 @@ public class KafkaCluster extends AbstractModel {
                 result.templateHeadlessServiceAnnotations = template.getBrokersService().getMetadata().getAnnotations();
             }
 
-            if (template.getExternalBootstrapService() != null) {
-                if (template.getExternalBootstrapService().getMetadata() != null) {
-                    result.templateExternalBootstrapServiceLabels = template.getExternalBootstrapService().getMetadata().getLabels();
-                    result.templateExternalBootstrapServiceAnnotations = template.getExternalBootstrapService().getMetadata().getAnnotations();
-                }
-
-                result.templateExternalBootstrapServiceTrafficPolicy = template.getExternalBootstrapService().getExternalTrafficPolicy();
-
-                if (result.isExposedWithLoadBalancer()) {
-                    result.templateExternalBootstrapServiceLoadBalancerSourceRanges = template.getExternalBootstrapService().getLoadBalancerSourceRanges();
-                } else if (template.getExternalBootstrapService().getLoadBalancerSourceRanges() != null
-                        && template.getExternalBootstrapService().getLoadBalancerSourceRanges().size() > 0) {
-                    // LoadBalancerSourceRanges have been set, but LaodBalancers are not used
-                    log.warn("The Kafka.spec.kafka.template.externalBootstrapService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
-                }
-            }
-
-            if (template.getPerPodService() != null) {
-                if (template.getPerPodService().getMetadata() != null) {
-                    result.templatePerPodServiceLabels = template.getPerPodService().getMetadata().getLabels();
-                    result.templatePerPodServiceAnnotations = template.getPerPodService().getMetadata().getAnnotations();
-                }
-
-                result.templatePerPodServiceTrafficPolicy = template.getPerPodService().getExternalTrafficPolicy();
-
-                if (result.isExposedWithLoadBalancer()) {
-                    result.templatePerPodServiceLoadBalancerSourceRanges = template.getPerPodService().getLoadBalancerSourceRanges();
-                } else if (template.getPerPodService().getLoadBalancerSourceRanges() != null
-                        && template.getPerPodService().getLoadBalancerSourceRanges().size() > 0) {
-                    // LoadBalancerSourceRanges have been set, but LoadBalancers are not used
-                    log.warn("The Kafka.spec.kafka.template.perPodService.loadBalancerSourceRanges option can be used only with load balancer type listeners");
-                }
-            }
-
             if (template.getExternalBootstrapRoute() != null && template.getExternalBootstrapRoute().getMetadata() != null) {
                 result.templateExternalBootstrapRouteLabels = template.getExternalBootstrapRoute().getMetadata().getLabels();
                 result.templateExternalBootstrapRouteAnnotations = template.getExternalBootstrapRoute().getMetadata().getAnnotations();
@@ -839,8 +805,6 @@ public class KafkaCluster extends AbstractModel {
                 if (loadBalancerSourceRanges != null
                         && !loadBalancerSourceRanges.isEmpty()) {
                     service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
-                } else if (templateExternalBootstrapServiceLoadBalancerSourceRanges != null) {
-                    service.getSpec().setLoadBalancerSourceRanges(templateExternalBootstrapServiceLoadBalancerSourceRanges);
                 }
 
                 List<String> finalizers = ListenersUtils.finalizers(listener);
@@ -854,9 +818,8 @@ public class KafkaCluster extends AbstractModel {
                 ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
                 if (etp != null) {
                     service.getSpec().setExternalTrafficPolicy(etp.toValue());
-                } else if (templateExternalBootstrapServiceTrafficPolicy != null) {
-                    service.getSpec().setExternalTrafficPolicy(templateExternalBootstrapServiceTrafficPolicy.toValue());
                 }
+
             }
 
             services.add(service);
@@ -907,8 +870,6 @@ public class KafkaCluster extends AbstractModel {
                 if (loadBalancerSourceRanges != null
                         && !loadBalancerSourceRanges.isEmpty()) {
                     service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
-                } else if (templatePerPodServiceLoadBalancerSourceRanges != null) {
-                    service.getSpec().setLoadBalancerSourceRanges(templatePerPodServiceLoadBalancerSourceRanges);
                 }
 
                 List<String> finalizers = ListenersUtils.finalizers(listener);
@@ -922,9 +883,8 @@ public class KafkaCluster extends AbstractModel {
                 ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
                 if (etp != null) {
                     service.getSpec().setExternalTrafficPolicy(etp.toValue());
-                } else if (templatePerPodServiceTrafficPolicy != null) {
-                    service.getSpec().setExternalTrafficPolicy(templatePerPodServiceTrafficPolicy.toValue());
                 }
+
             }
 
             services.add(service);
