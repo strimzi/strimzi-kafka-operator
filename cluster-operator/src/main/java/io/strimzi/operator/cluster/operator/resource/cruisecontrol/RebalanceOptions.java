@@ -10,7 +10,7 @@ public class RebalanceOptions {
 
     /** Sets whether this rebalance only provides an optimisation proposal (true) or starts a rebalance (false) */
     private boolean isDryRun;
-    /** List of optimisation goal class names, must be a sub-set of the configured master goals and include all hard.goals unless skipHardGoals=true */
+    /** List of optimisation goal class names, must be a sub-set of the configured main goals and include all hard.goals unless skipHardGoals=true */
     private List<String> goals;
     /** Include additional information in the response from the Cruise Control Server */
     private boolean verbose;
