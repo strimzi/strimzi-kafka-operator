@@ -819,7 +819,6 @@ public class KafkaCluster extends AbstractModel {
                 if (etp != null) {
                     service.getSpec().setExternalTrafficPolicy(etp.toValue());
                 }
-
             }
 
             services.add(service);
@@ -884,7 +883,6 @@ public class KafkaCluster extends AbstractModel {
                 if (etp != null) {
                     service.getSpec().setExternalTrafficPolicy(etp.toValue());
                 }
-
             }
 
             services.add(service);
