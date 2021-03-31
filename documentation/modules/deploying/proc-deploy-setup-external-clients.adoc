@@ -6,6 +6,7 @@
 [id='setup-external-clients-{context}']
 = Setting up access for clients outside of Kubernetes
 
+[role="_abstract"]
 This procedure shows how to configure client access to a Kafka cluster from outside Kubernetes.
 
 Using the address of the Kafka cluster, you can provide external access to a client on a different Kubernetes namespace or outside Kubernetes entirely.
@@ -27,10 +28,7 @@ In this procedure:
 . An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka _simple authorization_ is enabled.
 . A `KafkaUser` is created for the client, with TLS authentication and Access Control Lists (ACLs) defined for _simple authorization_.
 
-You can configure your listener to use TLS or SCRAM-SHA-512 authentication,
-both of which can be used with TLS encryption.
-If you are using an authorization server, you can use token-based link:{BookURLUsing}#assembly-oauth-authentication_str[OAuth 2.0 authentication^] and link:{BookURLUsing}#assembly-oauth-authorization_str[OAuth 2.0 authorization^].
-Open Policy Agent (OPA) authorization is also supported as a link:{BookURLUsing}#con-securing-kafka-authorization-str[Kafka authorization] option.
+You can configure your listener to use TLS or SCRAM-SHA-512 authentication, both of which can be used with TLS encryption.
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent Kafka configuration:
 
@@ -255,3 +253,9 @@ ssl.keystore.password: _USER-CERT-PASSWORD_ <2>
 <2> Specifies the password for accessing the keystore. This property can be omitted if it is not needed by the keystore.
 +
 The public user certificate is signed by the client CA when it is created.
+
+[role="_additional-resources"]
+.Additional resources
+* link:{BookURLUsing}#con-securing-kafka-authentication-str[Listener authentication options^]
+* link:{BookURLUsing}#con-securing-kafka-authorization-str[Kafka authorization options^]
+* If you are using an authorization server, you can use token-based link:{BookURLUsing}#assembly-oauth-authentication_str[OAuth 2.0 authentication^] and link:{BookURLUsing}#assembly-oauth-authorization_str[OAuth 2.0 authorization^].

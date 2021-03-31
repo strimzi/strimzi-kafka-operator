@@ -15,6 +15,7 @@ Supported authorization options:
 * xref:type-KafkaAuthorizationSimple-reference[Simple authorization]
 * xref:assembly-oauth-authorization_str[OAuth 2.0 authorization] (if you are using OAuth 2.0 token based authentication)
 * xref:type-KafkaAuthorizationOpa-reference[Open Policy Agent (OPA) authorization]
+* xref:type-KafkaAuthorizationCustom-reference[Custom authorization]
 
 .Kafka cluster authorization options
 image::kafka-authorization-config-options.svg[options for kafks authorization configuration]
