@@ -867,7 +867,7 @@ public class CrdGenerator {
                 || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
         } else if (Map.class.equals(elementType)) {
-            preserveUnknownFields(itemResult, elementType);
+            preserveUnknownFields(itemResult);
             itemResult.put("type", "object");
         } else  {
             buildObjectSchema(crApiVersion, itemResult, elementType, true, description);
@@ -882,7 +882,9 @@ public class CrdGenerator {
         Type typeAnno = element.getAnnotation(Type.class);
         if (typeAnno == null) {
             typeName = typeName(type);
-            preserveUnknownFields(result, type);
+            if (Map.class.equals(type)) {
+                preserveUnknownFields(result);
+            }
         } else {
             typeName = typeAnno.value();
         }
@@ -891,8 +893,8 @@ public class CrdGenerator {
         return result;
     }
 
-    private void preserveUnknownFields(ObjectNode result, Class type)    {
-        if (crdApiVersion.compareTo(V1) >= 0 && Map.class.equals(type)) {
+    private void preserveUnknownFields(ObjectNode result)    {
+        if (crdApiVersion.compareTo(V1) >= 0) {
             result.put("x-kubernetes-preserve-unknown-fields", true);
         }
     }
