@@ -29,7 +29,7 @@ spec:
     priority: 1
   - name: Ready
     description: The state of the custom resource
-    JSONPath: ".status.conditions[?(@.type==\"Ready\")].status"
+    JSONPath: .status.conditions[?(@.type=="Ready")].status
     type: string
   subresources:
     status: {}
@@ -218,12 +218,12 @@ spec:
                     - scram-sha-512
                     - plain
                     - oauth
-                    description: "Authentication type. Currently the only supported\
-                      \ types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`\
-                      \ type uses SASL SCRAM-SHA-512 Authentication. `plain` type\
-                      \ uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER\
-                      \ Authentication. The `tls` type uses TLS Client Authentication.\
-                      \ The `tls` type is supported only over TLS connections."
+                    description: Authentication type. Currently the only supported
+                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
+                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
+                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
+                      Authentication. The `tls` type uses TLS Client Authentication.
+                      The `tls` type is supported only over TLS connections.
                   username:
                     type: string
                     description: Username used for the authentication.
@@ -261,22 +261,22 @@ spec:
                 properties:
                   config:
                     type: object
-                    description: "The Kafka consumer configuration used for consumer\
-                      \ instances created by the bridge. Properties with the following\
-                      \ prefixes cannot be set: ssl., bootstrap.servers, group.id,\
-                      \ sasl., security. (with the exception of: ssl.endpoint.identification.algorithm,\
-                      \ ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
+                    description: 'The Kafka consumer configuration used for consumer
+                      instances created by the bridge. Properties with the following
+                      prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl.,
+                      security. (with the exception of: ssl.endpoint.identification.algorithm,
+                      ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                 description: Kafka consumer related configuration.
               producer:
                 type: object
                 properties:
                   config:
                     type: object
-                    description: "The Kafka producer configuration used for producer\
-                      \ instances created by the bridge. Properties with the following\
-                      \ prefixes cannot be set: ssl., bootstrap.servers, sasl., security.\
-                      \ (with the exception of: ssl.endpoint.identification.algorithm,\
-                      \ ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
+                    description: 'The Kafka producer configuration used for producer
+                      instances created by the bridge. Properties with the following
+                      prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
+                      (with the exception of: ssl.endpoint.identification.algorithm,
+                      ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                 description: Kafka producer related configuration.
               resources:
                 type: object
@@ -294,11 +294,11 @@ spec:
                     description: A map of -XX options to the JVM.
                   "-Xms":
                     type: string
-                    pattern: "[0-9]+[mMgG]?"
+                    pattern: '[0-9]+[mMgG]?'
                     description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
-                    pattern: "[0-9]+[mMgG]?"
+                    pattern: '[0-9]+[mMgG]?'
                     description: -Xmx option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
@@ -329,7 +329,7 @@ spec:
                     enum:
                     - inline
                     - external
-                    description: "Logging type, must be either 'inline' or 'external'."
+                    description: Logging type, must be either 'inline' or 'external'.
                   valueFrom:
                     type: object
                     properties:
@@ -425,14 +425,14 @@ spec:
                         properties:
                           labels:
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                       deploymentStrategy:
                         type: string
@@ -451,14 +451,14 @@ spec:
                         properties:
                           labels:
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                       imagePullSecrets:
                         type: array
@@ -467,13 +467,12 @@ spec:
                           properties:
                             name:
                               type: string
-                        description: "List of references to secrets in the same namespace\
-                          \ to use for pulling any of the images used by this Pod.\
-                          \ When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable\
-                          \ in Cluster Operator and the `imagePullSecrets` option\
-                          \ are specified, only the `imagePullSecrets` variable is\
-                          \ used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is\
-                          \ ignored."
+                        description: List of references to secrets in the same namespace
+                          to use for pulling any of the images used by this Pod. When
+                          the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in
+                          Cluster Operator and the `imagePullSecrets` option are specified,
+                          only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS`
+                          variable is ignored.
                       securityContext:
                         type: object
                         properties:
@@ -532,16 +531,16 @@ spec:
                       terminationGracePeriodSeconds:
                         type: integer
                         minimum: 0
-                        description: "The grace period is the duration in seconds\
-                          \ after the processes running in the pod are sent a termination\
-                          \ signal, and the time when the processes are forcibly halted\
-                          \ with a kill signal. Set this value to longer than the\
-                          \ expected cleanup time for your process. Value must be\
-                          \ a non-negative integer. A zero value indicates delete\
-                          \ immediately. You might need to increase the grace period\
-                          \ for very large Kafka clusters, so that the Kafka brokers\
-                          \ have enough time to transfer their work to another broker\
-                          \ before they are terminated. Defaults to 30 seconds."
+                        description: The grace period is the duration in seconds after
+                          the processes running in the pod are sent a termination
+                          signal, and the time when the processes are forcibly halted
+                          with a kill signal. Set this value to longer than the expected
+                          cleanup time for your process. Value must be a non-negative
+                          integer. A zero value indicates delete immediately. You
+                          might need to increase the grace period for very large Kafka
+                          clusters, so that the Kafka brokers have enough time to
+                          transfer their work to another broker before they are terminated.
+                          Defaults to 30 seconds.
                       affinity:
                         type: object
                         properties:
@@ -769,14 +768,13 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: "The name of the priority class used to assign\
-                          \ priority to the pods. For more information about priority\
-                          \ classes, see {K8sPriorityClass}."
+                        description: The name of the priority class used to assign
+                          priority to the pods. For more information about priority
+                          classes, see {K8sPriorityClass}.
                       schedulerName:
                         type: string
-                        description: "The name of the scheduler used to dispatch this\
-                          \ `Pod`. If not specified, the default scheduler will be\
-                          \ used."
+                        description: The name of the scheduler used to dispatch this
+                          `Pod`. If not specified, the default scheduler will be used.
                       hostAliases:
                         type: array
                         items:
@@ -830,14 +828,14 @@ spec:
                         properties:
                           labels:
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                     description: Template for Kafka Bridge API `Service`.
                   bridgeContainer:
@@ -921,25 +919,24 @@ spec:
                         properties:
                           labels:
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata to apply to the `PodDistruptionBugetTemplate`
                           resource.
                       maxUnavailable:
                         type: integer
                         minimum: 0
-                        description: "Maximum number of unavailable pods to allow\
-                          \ automatic Pod eviction. A Pod eviction is allowed when\
-                          \ the `maxUnavailable` number of pods or fewer are unavailable\
-                          \ after the eviction. Setting this value to 0 prevents all\
-                          \ voluntary evictions, so the pods must be evicted manually.\
-                          \ Defaults to 1."
+                        description: Maximum number of unavailable pods to allow automatic
+                          Pod eviction. A Pod eviction is allowed when the `maxUnavailable`
+                          number of pods or fewer are unavailable after the eviction.
+                          Setting this value to 0 prevents all voluntary evictions,
+                          so the pods must be evicted manually. Defaults to 1.
                     description: Template for Kafka Bridge `PodDisruptionBudget`.
                 description: Template for Kafka Bridge resources. The template allows
                   users to specify how is the `Deployment` and `Pods` generated.
@@ -968,17 +965,17 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: "The unique identifier of a condition, used to\
-                        \ distinguish between other conditions in the resource."
+                      description: The unique identifier of a condition, used to distinguish
+                        between other conditions in the resource.
                     status:
                       type: string
-                      description: "The status of the condition, either True, False\
-                        \ or Unknown."
+                      description: The status of the condition, either True, False
+                        or Unknown.
                     lastTransitionTime:
                       type: string
-                      description: "Last time the condition of a type changed from\
-                        \ one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',\
-                        \ in the UTC time zone."
+                      description: Last time the condition of a type changed from
+                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
+                        in the UTC time zone.
                     reason:
                       type: string
                       description: The reason for the condition's last transition
@@ -1182,12 +1179,12 @@ spec:
                     - scram-sha-512
                     - plain
                     - oauth
-                    description: "Authentication type. Currently the only supported\
-                      \ types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`\
-                      \ type uses SASL SCRAM-SHA-512 Authentication. `plain` type\
-                      \ uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER\
-                      \ Authentication. The `tls` type uses TLS Client Authentication.\
-                      \ The `tls` type is supported only over TLS connections."
+                    description: Authentication type. Currently the only supported
+                      types are `tls`, `scram-sha-512`, and `plain`. `scram-sha-512`
+                      type uses SASL SCRAM-SHA-512 Authentication. `plain` type uses
+                      SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER
+                      Authentication. The `tls` type uses TLS Client Authentication.
+                      The `tls` type is supported only over TLS connections.
                   username:
                     type: string
                     description: Username used for the authentication.
@@ -1225,22 +1222,22 @@ spec:
                 properties:
                   config:
                     type: object
-                    description: "The Kafka consumer configuration used for consumer\
-                      \ instances created by the bridge. Properties with the following\
-                      \ prefixes cannot be set: ssl., bootstrap.servers, group.id,\
-                      \ sasl., security. (with the exception of: ssl.endpoint.identification.algorithm,\
-                      \ ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
+                    description: 'The Kafka consumer configuration used for consumer
+                      instances created by the bridge. Properties with the following
+                      prefixes cannot be set: ssl., bootstrap.servers, group.id, sasl.,
+                      security. (with the exception of: ssl.endpoint.identification.algorithm,
+                      ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                 description: Kafka consumer related configuration.
               producer:
                 type: object
                 properties:
                   config:
                     type: object
-                    description: "The Kafka producer configuration used for producer\
-                      \ instances created by the bridge. Properties with the following\
-                      \ prefixes cannot be set: ssl., bootstrap.servers, sasl., security.\
-                      \ (with the exception of: ssl.endpoint.identification.algorithm,\
-                      \ ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
+                    description: 'The Kafka producer configuration used for producer
+                      instances created by the bridge. Properties with the following
+                      prefixes cannot be set: ssl., bootstrap.servers, sasl., security.
+                      (with the exception of: ssl.endpoint.identification.algorithm,
+                      ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
                 description: Kafka producer related configuration.
               resources:
                 type: object
@@ -1258,11 +1255,11 @@ spec:
                     description: A map of -XX options to the JVM.
                   "-Xms":
                     type: string
-                    pattern: "[0-9]+[mMgG]?"
+                    pattern: '[0-9]+[mMgG]?'
                     description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
-                    pattern: "[0-9]+[mMgG]?"
+                    pattern: '[0-9]+[mMgG]?'
                     description: -Xmx option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
@@ -1297,7 +1294,7 @@ spec:
                     enum:
                     - inline
                     - external
-                    description: "Logging type, must be either 'inline' or 'external'."
+                    description: Logging type, must be either 'inline' or 'external'.
                   valueFrom:
                     type: object
                     properties:
@@ -1393,14 +1390,14 @@ spec:
                         properties:
                           labels:
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                       deploymentStrategy:
                         type: string
@@ -1419,14 +1416,14 @@ spec:
                         properties:
                           labels:
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                       imagePullSecrets:
                         type: array
@@ -1435,13 +1432,12 @@ spec:
                           properties:
                             name:
                               type: string
-                        description: "List of references to secrets in the same namespace\
-                          \ to use for pulling any of the images used by this Pod.\
-                          \ When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable\
-                          \ in Cluster Operator and the `imagePullSecrets` option\
-                          \ are specified, only the `imagePullSecrets` variable is\
-                          \ used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is\
-                          \ ignored."
+                        description: List of references to secrets in the same namespace
+                          to use for pulling any of the images used by this Pod. When
+                          the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in
+                          Cluster Operator and the `imagePullSecrets` option are specified,
+                          only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS`
+                          variable is ignored.
                       securityContext:
                         type: object
                         properties:
@@ -1500,16 +1496,16 @@ spec:
                       terminationGracePeriodSeconds:
                         type: integer
                         minimum: 0
-                        description: "The grace period is the duration in seconds\
-                          \ after the processes running in the pod are sent a termination\
-                          \ signal, and the time when the processes are forcibly halted\
-                          \ with a kill signal. Set this value to longer than the\
-                          \ expected cleanup time for your process. Value must be\
-                          \ a non-negative integer. A zero value indicates delete\
-                          \ immediately. You might need to increase the grace period\
-                          \ for very large Kafka clusters, so that the Kafka brokers\
-                          \ have enough time to transfer their work to another broker\
-                          \ before they are terminated. Defaults to 30 seconds."
+                        description: The grace period is the duration in seconds after
+                          the processes running in the pod are sent a termination
+                          signal, and the time when the processes are forcibly halted
+                          with a kill signal. Set this value to longer than the expected
+                          cleanup time for your process. Value must be a non-negative
+                          integer. A zero value indicates delete immediately. You
+                          might need to increase the grace period for very large Kafka
+                          clusters, so that the Kafka brokers have enough time to
+                          transfer their work to another broker before they are terminated.
+                          Defaults to 30 seconds.
                       affinity:
                         type: object
                         properties:
@@ -1737,14 +1733,13 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: "The name of the priority class used to assign\
-                          \ priority to the pods. For more information about priority\
-                          \ classes, see {K8sPriorityClass}."
+                        description: The name of the priority class used to assign
+                          priority to the pods. For more information about priority
+                          classes, see {K8sPriorityClass}.
                       schedulerName:
                         type: string
-                        description: "The name of the scheduler used to dispatch this\
-                          \ `Pod`. If not specified, the default scheduler will be\
-                          \ used."
+                        description: The name of the scheduler used to dispatch this
+                          `Pod`. If not specified, the default scheduler will be used.
                       hostAliases:
                         type: array
                         items:
@@ -1798,14 +1793,14 @@ spec:
                         properties:
                           labels:
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                     description: Template for Kafka Bridge API `Service`.
                   bridgeContainer:
@@ -1889,25 +1884,24 @@ spec:
                         properties:
                           labels:
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata to apply to the `PodDistruptionBugetTemplate`
                           resource.
                       maxUnavailable:
                         type: integer
                         minimum: 0
-                        description: "Maximum number of unavailable pods to allow\
-                          \ automatic Pod eviction. A Pod eviction is allowed when\
-                          \ the `maxUnavailable` number of pods or fewer are unavailable\
-                          \ after the eviction. Setting this value to 0 prevents all\
-                          \ voluntary evictions, so the pods must be evicted manually.\
-                          \ Defaults to 1."
+                        description: Maximum number of unavailable pods to allow automatic
+                          Pod eviction. A Pod eviction is allowed when the `maxUnavailable`
+                          number of pods or fewer are unavailable after the eviction.
+                          Setting this value to 0 prevents all voluntary evictions,
+                          so the pods must be evicted manually. Defaults to 1.
                     description: Template for Kafka Bridge `PodDisruptionBudget`.
                 description: Template for Kafka Bridge resources. The template allows
                   users to specify how is the `Deployment` and `Pods` generated.
@@ -1936,17 +1930,17 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: "The unique identifier of a condition, used to\
-                        \ distinguish between other conditions in the resource."
+                      description: The unique identifier of a condition, used to distinguish
+                        between other conditions in the resource.
                     status:
                       type: string
-                      description: "The status of the condition, either True, False\
-                        \ or Unknown."
+                      description: The status of the condition, either True, False
+                        or Unknown.
                     lastTransitionTime:
                       type: string
-                      description: "Last time the condition of a type changed from\
-                        \ one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',\
-                        \ in the UTC time zone."
+                      description: Last time the condition of a type changed from
+                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
+                        in the UTC time zone.
                     reason:
                       type: string
                       description: The reason for the condition's last transition

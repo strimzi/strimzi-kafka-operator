@@ -44,11 +44,11 @@ spec:
               type: array
               items:
                 type: string
-              description: "A list of goals, ordered by decreasing priority, to use\
-                \ for generating and executing the rebalance proposal. The supported\
-                \ goals are available at https://github.com/linkedin/cruise-control#goals.\
-                \ If an empty goals list is provided, the goals declared in the default.goals\
-                \ Cruise Control configuration parameter are used."
+              description: A list of goals, ordered by decreasing priority, to use
+                for generating and executing the rebalance proposal. The supported
+                goals are available at https://github.com/linkedin/cruise-control#goals.
+                If an empty goals list is provided, the goals declared in the default.goals
+                Cruise Control configuration parameter are used.
             skipHardGoalCheck:
               type: boolean
               description: Whether to allow the hard goals specified in the Kafka
@@ -79,16 +79,16 @@ spec:
             replicationThrottle:
               type: integer
               minimum: 0
-              description: "The upper bound, in bytes per second, on the bandwidth\
-                \ used to move replicas. There is no limit by default."
+              description: The upper bound, in bytes per second, on the bandwidth
+                used to move replicas. There is no limit by default.
             replicaMovementStrategies:
               type: array
               items:
                 type: string
-              description: "A list of strategy class names used to determine the execution\
-                \ order for the replica movements in the generated optimization proposal.\
-                \ By default BaseReplicaMovementStrategy is used, which will execute\
-                \ the replica movements in the order that they were generated."
+              description: A list of strategy class names used to determine the execution
+                order for the replica movements in the generated optimization proposal.
+                By default BaseReplicaMovementStrategy is used, which will execute
+                the replica movements in the order that they were generated.
           description: The specification of the Kafka rebalance.
         status:
           type: object
@@ -100,17 +100,17 @@ spec:
                 properties:
                   type:
                     type: string
-                    description: "The unique identifier of a condition, used to distinguish\
-                      \ between other conditions in the resource."
+                    description: The unique identifier of a condition, used to distinguish
+                      between other conditions in the resource.
                   status:
                     type: string
-                    description: "The status of the condition, either True, False\
-                      \ or Unknown."
+                    description: The status of the condition, either True, False or
+                      Unknown.
                   lastTransitionTime:
                     type: string
-                    description: "Last time the condition of a type changed from one\
-                      \ status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',\
-                      \ in the UTC time zone."
+                    description: Last time the condition of a type changed from one
+                      status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
+                      in the UTC time zone.
                   reason:
                     type: string
                     description: The reason for the condition's last transition (a

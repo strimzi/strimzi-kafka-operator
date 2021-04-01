@@ -73,7 +73,7 @@ public class ConvertFileCommand extends AbstractConversionCommand {
      */
     protected String run(byte[] data) throws IOException {
         YAMLFactory yamlFactory = new YAMLFactory();
-        YAMLMapper yamlMapper = new YAMLMapper(yamlFactory.enable(YAMLGenerator.Feature.MINIMIZE_QUOTES));
+        YAMLMapper yamlMapper = new YAMLMapper(yamlFactory.enable(YAMLGenerator.Feature.MINIMIZE_QUOTES).enable(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE));
         YAMLParser yamlParser = yamlFactory.createParser(data);
         List<JsonNode> docs = yamlMapper.readValues(yamlParser, JSON_NODE_TYPE_REFERENCE).readAll();
 
@@ -133,6 +133,7 @@ public class ConvertFileCommand extends AbstractConversionCommand {
             List<MultipartResource> resources = MultipartConversions.get().getResources();
 
             for (MultipartResource resource : resources) {
+                yamlMapper.writerWithDefaultPrettyPrinter().writeValue(new File("kokotina.yaml"), resource.getResource());
                 writer.write(yamlMapper.writeValueAsString(resource.getResource()));
             }
         } finally {

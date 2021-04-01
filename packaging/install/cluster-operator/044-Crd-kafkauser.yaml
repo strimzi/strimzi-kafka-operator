@@ -40,7 +40,7 @@ spec:
       type: string
     - name: Ready
       description: The state of the custom resource
-      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
+      jsonPath: .status.conditions[?(@.type=="Ready")].status
       type: string
     schema:
       openAPIV3Schema:
@@ -87,10 +87,10 @@ spec:
                           - DescribeConfigs
                           - IdempotentWrite
                           - All
-                          description: "Operation which will be allowed or denied.\
-                            \ Supported operations are: Read, Write, Create, Delete,\
-                            \ Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs,\
-                            \ IdempotentWrite and All."
+                          description: 'Operation which will be allowed or denied.
+                            Supported operations are: Read, Write, Create, Delete,
+                            Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs,
+                            IdempotentWrite and All.'
                         resource:
                           type: object
                           properties:
@@ -104,12 +104,12 @@ spec:
                               enum:
                               - literal
                               - prefix
-                              description: "Describes the pattern used in the resource\
-                                \ field. The supported types are `literal` and `prefix`.\
-                                \ With `literal` pattern type, the resource field\
-                                \ will be used as a definition of a full name. With\
-                                \ `prefix` pattern type, the resource name will be\
-                                \ used only as a prefix. Default value is `literal`."
+                              description: Describes the pattern used in the resource
+                                field. The supported types are `literal` and `prefix`.
+                                With `literal` pattern type, the resource field will
+                                be used as a definition of a full name. With `prefix`
+                                pattern type, the resource name will be used only
+                                as a prefix. Default value is `literal`.
                             type:
                               type: string
                               enum:
@@ -117,8 +117,8 @@ spec:
                               - group
                               - cluster
                               - transactionalId
-                              description: "Resource type. The available resource\
-                                \ types are `topic`, `group`, `cluster`, and `transactionalId`."
+                              description: Resource type. The available resource types
+                                are `topic`, `group`, `cluster`, and `transactionalId`.
                           required:
                           - type
                           description: Indicates the resource for which given ACL
@@ -183,15 +183,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                     description: Template for KafkaUser resources. The template allows
                       users to specify how the `Secret` with password or TLS certificates
@@ -208,17 +208,17 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: "The unique identifier of a condition, used to\
-                        \ distinguish between other conditions in the resource."
+                      description: The unique identifier of a condition, used to distinguish
+                        between other conditions in the resource.
                     status:
                       type: string
-                      description: "The status of the condition, either True, False\
-                        \ or Unknown."
+                      description: The status of the condition, either True, False
+                        or Unknown.
                     lastTransitionTime:
                       type: string
-                      description: "Last time the condition of a type changed from\
-                        \ one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',\
-                        \ in the UTC time zone."
+                      description: Last time the condition of a type changed from
+                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
+                        in the UTC time zone.
                     reason:
                       type: string
                       description: The reason for the condition's last transition
@@ -259,7 +259,7 @@ spec:
       type: string
     - name: Ready
       description: The state of the custom resource
-      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
+      jsonPath: .status.conditions[?(@.type=="Ready")].status
       type: string
     schema:
       openAPIV3Schema:
@@ -306,10 +306,10 @@ spec:
                           - DescribeConfigs
                           - IdempotentWrite
                           - All
-                          description: "Operation which will be allowed or denied.\
-                            \ Supported operations are: Read, Write, Create, Delete,\
-                            \ Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs,\
-                            \ IdempotentWrite and All."
+                          description: 'Operation which will be allowed or denied.
+                            Supported operations are: Read, Write, Create, Delete,
+                            Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs,
+                            IdempotentWrite and All.'
                         resource:
                           type: object
                           properties:
@@ -323,12 +323,12 @@ spec:
                               enum:
                               - literal
                               - prefix
-                              description: "Describes the pattern used in the resource\
-                                \ field. The supported types are `literal` and `prefix`.\
-                                \ With `literal` pattern type, the resource field\
-                                \ will be used as a definition of a full name. With\
-                                \ `prefix` pattern type, the resource name will be\
-                                \ used only as a prefix. Default value is `literal`."
+                              description: Describes the pattern used in the resource
+                                field. The supported types are `literal` and `prefix`.
+                                With `literal` pattern type, the resource field will
+                                be used as a definition of a full name. With `prefix`
+                                pattern type, the resource name will be used only
+                                as a prefix. Default value is `literal`.
                             type:
                               type: string
                               enum:
@@ -336,8 +336,8 @@ spec:
                               - group
                               - cluster
                               - transactionalId
-                              description: "Resource type. The available resource\
-                                \ types are `topic`, `group`, `cluster`, and `transactionalId`."
+                              description: Resource type. The available resource types
+                                are `topic`, `group`, `cluster`, and `transactionalId`.
                           required:
                           - type
                           description: Indicates the resource for which given ACL
@@ -402,15 +402,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                     description: Template for KafkaUser resources. The template allows
                       users to specify how the `Secret` with password or TLS certificates
@@ -427,17 +427,17 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: "The unique identifier of a condition, used to\
-                        \ distinguish between other conditions in the resource."
+                      description: The unique identifier of a condition, used to distinguish
+                        between other conditions in the resource.
                     status:
                       type: string
-                      description: "The status of the condition, either True, False\
-                        \ or Unknown."
+                      description: The status of the condition, either True, False
+                        or Unknown.
                     lastTransitionTime:
                       type: string
-                      description: "Last time the condition of a type changed from\
-                        \ one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',\
-                        \ in the UTC time zone."
+                      description: Last time the condition of a type changed from
+                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
+                        in the UTC time zone.
                     reason:
                       type: string
                       description: The reason for the condition's last transition
@@ -478,7 +478,7 @@ spec:
       type: string
     - name: Ready
       description: The state of the custom resource
-      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
+      jsonPath: .status.conditions[?(@.type=="Ready")].status
       type: string
     schema:
       openAPIV3Schema:
@@ -525,10 +525,10 @@ spec:
                           - DescribeConfigs
                           - IdempotentWrite
                           - All
-                          description: "Operation which will be allowed or denied.\
-                            \ Supported operations are: Read, Write, Create, Delete,\
-                            \ Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs,\
-                            \ IdempotentWrite and All."
+                          description: 'Operation which will be allowed or denied.
+                            Supported operations are: Read, Write, Create, Delete,
+                            Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs,
+                            IdempotentWrite and All.'
                         resource:
                           type: object
                           properties:
@@ -542,12 +542,12 @@ spec:
                               enum:
                               - literal
                               - prefix
-                              description: "Describes the pattern used in the resource\
-                                \ field. The supported types are `literal` and `prefix`.\
-                                \ With `literal` pattern type, the resource field\
-                                \ will be used as a definition of a full name. With\
-                                \ `prefix` pattern type, the resource name will be\
-                                \ used only as a prefix. Default value is `literal`."
+                              description: Describes the pattern used in the resource
+                                field. The supported types are `literal` and `prefix`.
+                                With `literal` pattern type, the resource field will
+                                be used as a definition of a full name. With `prefix`
+                                pattern type, the resource name will be used only
+                                as a prefix. Default value is `literal`.
                             type:
                               type: string
                               enum:
@@ -555,8 +555,8 @@ spec:
                               - group
                               - cluster
                               - transactionalId
-                              description: "Resource type. The available resource\
-                                \ types are `topic`, `group`, `cluster`, and `transactionalId`."
+                              description: Resource type. The available resource types
+                                are `topic`, `group`, `cluster`, and `transactionalId`.
                           required:
                           - type
                           description: Indicates the resource for which given ACL
@@ -621,15 +621,15 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can\
-                              \ be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template.\
-                              \ Can be applied to different resources such as `StatefulSets`,\
-                              \ `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                     description: Template for KafkaUser resources. The template allows
                       users to specify how the `Secret` with password or TLS certificates
@@ -646,17 +646,17 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: "The unique identifier of a condition, used to\
-                        \ distinguish between other conditions in the resource."
+                      description: The unique identifier of a condition, used to distinguish
+                        between other conditions in the resource.
                     status:
                       type: string
-                      description: "The status of the condition, either True, False\
-                        \ or Unknown."
+                      description: The status of the condition, either True, False
+                        or Unknown.
                     lastTransitionTime:
                       type: string
-                      description: "Last time the condition of a type changed from\
-                        \ one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',\
-                        \ in the UTC time zone."
+                      description: Last time the condition of a type changed from
+                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
+                        in the UTC time zone.
                     reason:
                       type: string
                       description: The reason for the condition's last transition

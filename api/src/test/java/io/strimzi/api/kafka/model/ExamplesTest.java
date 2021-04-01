@@ -158,7 +158,6 @@ public class ExamplesTest {
                     break;
                 case NUMBER:
                 case BOOLEAN:
-                case OBJECT:
                     value = valueNode.toString();
                     break;
                 case STRING:
@@ -182,7 +181,7 @@ public class ExamplesTest {
             }
             sb.append(s.substring(last));
             String yamlContent = sb.toString();
-            validate(yamlContent.replace("\"{}\"", "{}"));
+            validate(yamlContent);
         }
     }
 
