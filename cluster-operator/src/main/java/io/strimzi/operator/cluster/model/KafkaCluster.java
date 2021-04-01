@@ -221,11 +221,6 @@ public class KafkaCluster extends AbstractModel {
     protected SecurityContext templateKafkaContainerSecurityContext;
     protected SecurityContext templateInitContainerSecurityContext;
 
-    protected ExternalTrafficPolicy templateExternalBootstrapServiceTrafficPolicy;
-    protected List<String> templateExternalBootstrapServiceLoadBalancerSourceRanges;
-    protected ExternalTrafficPolicy templatePerPodServiceTrafficPolicy;
-    protected List<String> templatePerPodServiceLoadBalancerSourceRanges;
-
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
