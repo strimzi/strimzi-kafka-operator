@@ -98,8 +98,15 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     @SuppressWarnings("unchecked")
-    public K create(File file) {
-        Exec.exec(null, namespacedCommand(CREATE, "-f", file.getAbsolutePath()), 0, false, true);
+    public K create(File file, boolean localValidation) {
+        List<String> command = namespacedCommand(CREATE, "-f", file.getAbsolutePath());
+
+        if (!localValidation) {
+            // Disable local CLI validation, delegated to host
+            command.add("--validate=false");
+        }
+
+        Exec.exec(null, command, 0, false, true);
 
         return (K) this;
     }

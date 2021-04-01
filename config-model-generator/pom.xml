@@ -16,6 +16,22 @@
         <config-model-file>../cluster-operator/src/main/resources/kafka-${kafka-metadata-version}-config-model.json</config-model-file>
     </properties>
 
+    <dependencyManagement>
+        <!-- Manage versions to allow for override via the CLI with system property. -->
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka_2.12</artifactId>
+                <version>${kafka-metadata-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${kafka-metadata-version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
@@ -24,12 +40,10 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.12</artifactId>
-            <version>${kafka-metadata-version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>${kafka-metadata-version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -56,5 +70,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

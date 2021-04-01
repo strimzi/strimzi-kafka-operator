@@ -97,19 +97,16 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>${jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>${jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
-            <version>${hamcrest.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -118,7 +115,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.version}</version>
                 <executions>
                     <execution>
                         <id>default-compile</id>
@@ -126,8 +122,8 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
-                        <configuration combine.self="override">
-                            <compilerArgs>
+                        <configuration>
+                            <compilerArgs combine.self="override">
                                 <arg>-Xlint:unchecked,deprecation</arg>
                             </compilerArgs>
                         </configuration>
@@ -138,8 +134,8 @@
                         <goals>
                             <goal>testCompile</goal>
                         </goals>
-                        <configuration combine.self="override">
-                            <compilerArgs>
+                        <configuration>
+                            <compilerArgs combine.self="override">
                                 <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
@@ -162,7 +158,7 @@
                             <executable>java</executable>
                             <arguments>
                                 <argument>-classpath</argument>
-                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--label</argument><argument>app:strimzi</argument>
                                 <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
@@ -195,7 +191,7 @@
                             <executable>java</executable>
                             <arguments>
                                 <argument>-classpath</argument>
-                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--label</argument><argument>app:strimzi</argument>
                                 <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
@@ -204,14 +200,14 @@
                                 <argument>--api-versions</argument><argument>v1beta2</argument>
                                 <argument>--storage-version</argument><argument>v1beta2</argument>
                                 <argument>--yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.Kafka=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnect=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2I=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}042-Crd-kafkaconnects2i.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaBridge=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnector=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaRebalance=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkarebalance.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.Kafka=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}040-Crd-kafka.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnect=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}041-Crd-kafkaconnect.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2I=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}042-Crd-kafkaconnects2i.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}045-Crd-kafkamirrormaker.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaBridge=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}046-Crd-kafkabridge.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnector=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}047-Crd-kafkaconnector.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}048-Crd-kafkamirrormaker2.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaRebalance=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}049-Crd-kafkarebalance.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -230,7 +226,7 @@
                             <executable>java</executable>
                             <arguments>
                                 <argument>-classpath</argument>
-                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--label</argument><argument>app:strimzi</argument>
                                 <argument>--label</argument><argument>strimzi.io/crd-install:true</argument>
@@ -239,8 +235,8 @@
                                 <argument>--api-versions</argument><argument>v1alpha1,v1beta1,v1beta2</argument>
                                 <argument>--storage-version</argument><argument>v1beta2</argument>
                                 <argument>--yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaTopic=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}043-Crd-kafkatopic.yaml</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaUser=${pom.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}044-Crd-kafkauser.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaTopic=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}043-Crd-kafkatopic.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaUser=${project.basedir}${file.separator}..${file.separator}packaging${file.separator}install${file.separator}cluster-operator${file.separator}044-Crd-kafkauser.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -254,7 +250,7 @@
                             <executable>java</executable>
                             <arguments>
                                 <argument>-classpath</argument>
-                                <argument>${pom.basedir}${file.separator}target${file.separator}classes${path.separator}${pom.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
+                                <argument>${project.basedir}${file.separator}target${file.separator}classes${path.separator}${project.basedir}${file.separator}..${file.separator}crd-generator${file.separator}target${file.separator}crd-generator-${project.version}.jar</argument>
                                 <argument>io.strimzi.crdgenerator.DocGenerator</argument>
                                 <argument>--linker</argument>
                                 <argument>io.strimzi.crdgenerator.KubeLinker</argument>
@@ -271,7 +267,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaRebalance</argument>
                             </arguments>
-                            <workingDirectory>${pom.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
+                            <workingDirectory>${project.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>
                     </execution>
                 </executions>
