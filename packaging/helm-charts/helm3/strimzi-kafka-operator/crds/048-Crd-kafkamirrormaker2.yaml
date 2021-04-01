@@ -1633,6 +1633,7 @@ spec:
                 connectors:
                   type: array
                   items:
+                    x-kubernetes-preserve-unknown-fields: true
                     type: object
                   description: List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
                 labelSelector:
