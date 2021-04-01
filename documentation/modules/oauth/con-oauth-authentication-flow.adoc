@@ -13,16 +13,18 @@ Configure clients to use OAUTHBEARER whenever possible.
 This mechanism provides a higher level of security because client credentials are _never_ shared with Kafka brokers. 
 Consider using PLAIN only with Kafka clients that do not support OAUTHBEARER. 
 
-OAUTHBEARER and PLAIN can be enabled at the same time, on the same `oauth` listener, if both types of OAuth clients need to authenticate.
+If necessary, OAUTHBEARER and PLAIN can be enabled together, on the same `oauth` listener.
 
 .OAUTHBEARER overview
 
-Many Kafka clients use OAUTHBEARER as an authentication mechanism. 
-However, the developer must often write custom callbacks that provide access tokens for authentication, as needed.
-Strimzi provides these callbacks for standard Java Kafka clients (clients that use the Kafka producer and consumer APIs). 
-Therefore, developers do not need to provide custom callbacks in their application code. 
+OAUTHBEARER is the default authentication mechanism included as part of Kafka.
 
-With OAUTHBEARER, the client initiates a session with the Kafka broker for credentials exchange, where credentials take the form of a bearer token provided by the Strimzi OAuth callback code. 
+Many Kafka client tools use libraries that provide basic support for OAUTHBEARER at the protocol level. 
+To ease application development, Strimzi provides an _OAuth callback handler_ for the upstream Kafka Client Java libraries (but not for other libraries). 
+An application client can use the callback handler to provide the access token. 
+Clients written in other languages, such as Go, must use custom code to connect to the authorization server and obtain the access token.
+
+With OAUTHBEARER, the client initiates a session with the Kafka broker for credentials exchange, where credentials take the form of a bearer token provided by the callback handler. 
 Using the callbacks, you can configure token provision in one of three ways:
 
 * Client ID and Secret (by using the OAuth 2.0 client credentials mechanism)
@@ -43,12 +45,15 @@ You can set the `enableOauthBearer` property to `true`, though this is not requi
     enableOauthBearer: true
 ----
 
-OAUTHBEARER can only be used for Kafka broker authentication by Kafka clients that support this mechanism.
+[NOTE]
+====
+OAUTHBEARER authentication can only be used by Kafka clients that support the OAUTHBEARER mechanism at the protocol level.
+====
 
 .PLAIN overview
 
 PLAIN is a simple authentication mechanism used by all Kafka client tools (including developer tools such as kafkacat). 
-To enable PLAIN to be used together with OAuth authentication, Strimzi includes server-side callbacks and calls this _OAuth 2.0 over PLAIN_. 
+To enable PLAIN to be used together with OAuth 2.0 authentication, Strimzi includes server-side callbacks and calls this _OAuth 2.0 over PLAIN_. 
 
 With PLAIN, client credentials are handled centrally, behind a compliant authorization server.
 
