@@ -10,10 +10,10 @@ ssh-add github_deploy_key
 git clone git@github.com:strimzi/strimzi.github.io.git /tmp/website
 
 # Operator docs
-rm -rf  /tmp/website/docs/operators/developing/images
-rm -rf  /tmp/website/docs/operators/developing/full/images
-cp -vrL documentation/htmlnoheader/*                        /tmp/website/docs/operators/developing
-cp -vrL documentation/html/*                                /tmp/website/docs/operators/developing/full
+rm -rf  /tmp/website/docs/operators/in-development/images
+rm -rf  /tmp/website/docs/operators/in-development/full/images
+cp -vrL documentation/htmlnoheader/*                        /tmp/website/docs/operators/in-development
+cp -vrL documentation/html/*                                /tmp/website/docs/operators/in-development/full
 
 # Contributing Guide
 rm -rf  /tmp/website/contributing/guide/images
