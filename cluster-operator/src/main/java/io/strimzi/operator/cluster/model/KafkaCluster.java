@@ -517,6 +517,20 @@ public class KafkaCluster extends AbstractModel {
                 result.templateHeadlessServiceAnnotations = template.getBrokersService().getMetadata().getAnnotations();
             }
 
+            if (template.getExternalBootstrapService() != null) {
+                if (template.getExternalBootstrapService().getMetadata() != null) {
+                    result.templateExternalBootstrapServiceLabels = template.getExternalBootstrapService().getMetadata().getLabels();
+                    result.templateExternalBootstrapServiceAnnotations = template.getExternalBootstrapService().getMetadata().getAnnotations();
+                }
+            }
+
+            if (template.getPerPodService() != null) {
+                if (template.getPerPodService().getMetadata() != null) {
+                    result.templatePerPodServiceLabels = template.getPerPodService().getMetadata().getLabels();
+                    result.templatePerPodServiceAnnotations = template.getPerPodService().getMetadata().getAnnotations();
+                }
+            }
+
             if (template.getExternalBootstrapRoute() != null && template.getExternalBootstrapRoute().getMetadata() != null) {
                 result.templateExternalBootstrapRouteLabels = template.getExternalBootstrapRoute().getMetadata().getLabels();
                 result.templateExternalBootstrapRouteAnnotations = template.getExternalBootstrapRoute().getMetadata().getAnnotations();

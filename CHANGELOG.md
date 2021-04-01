@@ -12,6 +12,7 @@
 * Support for configuring custom Authorizer implementation 
 * Changed Reconciliation interval for Topic Operator from 90 to 120 seconds (to keep it the same as for other operators)
 * Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
+* Removed stale code for externalTrafficPolicy and loadBalanceRangeSources from v1beta1 templates
 
 ### Changes, deprecations and removals
 
