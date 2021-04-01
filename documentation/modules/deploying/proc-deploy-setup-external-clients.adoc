@@ -28,7 +28,11 @@ In this procedure:
 . An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka _simple authorization_ is enabled.
 . A `KafkaUser` is created for the client, with TLS authentication and Access Control Lists (ACLs) defined for _simple authorization_.
 
-You can configure your listener to use TLS or SCRAM-SHA-512 authentication, both of which can be used with TLS encryption.
+You can configure your listener to use TLS, SCRAM-SHA-512 or OAuth 2.0 authentication.
+TLS always uses encryption, but it is recommended to also use encryption with SCRAM-SHA-512 and OAuth 2.0 authentication.
+
+You can configure simple, OAuth 2.0, OPA or custom authorization for Kafka brokers.
+When enabled, authorization is applied to all enabled listeners.
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent Kafka configuration:
 
@@ -105,7 +109,7 @@ You can override link:{BookURLUsing}#type-GenericKafkaListenerConfiguration-refe
 Validation is not performed on the overrides.
 The override configuration differs according to the listener type.
 For example, you can override hosts for `route`, DNS names or IP addresses for `loadbalancer`, and node ports for `nodeport`.
-<9> Authoization specified as `simple`, which uses the `AclAuthorizer` Kafka plugin.
+<9> Authorization specified as `simple`, which uses the `AclAuthorizer` Kafka plugin.
 <10> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
 +
 WARNING: An OpenShift Route address comprises the name of the Kafka cluster, the name of the listener, and the name of the namespace it is created in.

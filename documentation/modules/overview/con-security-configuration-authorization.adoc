@@ -20,7 +20,7 @@ Supported authorization mechanisms:
 
 Simple authorization uses `AclAuthorizer`, the default Kafka authorization plugin.
 `AclAuthorizer` uses Access Control Lists (ACLs) to define which users have access to which resources.
-For custom authorization, you configure your own `Authorizer` plugin to define ACLs. 
+For custom authorization, you configure your own `Authorizer` plugin to enforce ACL rules. 
 
 OAuth 2.0 and OPA provide policy-based control from an authorization server.
 Security policies and permissions used to grant access to resources on Kafka brokers are defined in the authorization server.
