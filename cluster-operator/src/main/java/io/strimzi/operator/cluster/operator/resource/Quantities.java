@@ -104,23 +104,16 @@ class Quantities {
      * @return The equivalent number of "millicpus".
      */
     public static int parseCpuAsMilliCpus(String cpu) {
-        int suffixIndex = cpu.length();
-        int factor = 1000;
-        for (int i = 0; i < cpu.length(); i++) {
-            char ch = cpu.charAt(i);
-            if (ch < '0' || '9' < ch) {
-                suffixIndex = i;
-                if ("m".equals(cpu.substring(i))) {
-                    factor = 1;
-                    break;
-                } else if (cpu.substring(i).startsWith(".")) {
-                    return (int) (Double.parseDouble(cpu) * 1000L);
-                } else {
-                    throw new IllegalArgumentException("Failed to parse CPU quantity \"" + cpu + "\"");
-                }
+        int suffixIndex = cpu.length() - 1;
+        try {
+            if ("m".equals(cpu.substring(suffixIndex))) {
+                return Integer.parseInt(cpu.substring(0, suffixIndex));
+            } else {
+                return (int) (Double.parseDouble(cpu) * 1000L);
             }
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Failed to parse CPU quantity \"" + cpu + "\"");
         }
-        return factor * Integer.parseInt(cpu.substring(0, suffixIndex));
     }
 
     public static String formatMilliCpu(int milliCpu) {

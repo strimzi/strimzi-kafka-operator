@@ -125,12 +125,12 @@ public class QuantitiesTest {
         try {
             parseCpuAsMilliCpus("0.0m");
             fail();
-        } catch (NumberFormatException e) { }
+        } catch (IllegalArgumentException e) { }
 
         try {
             parseCpuAsMilliCpus("0.1m");
             fail();
-        } catch (NumberFormatException e) { }
+        } catch (IllegalArgumentException e) { }
     }
 
     @Test
