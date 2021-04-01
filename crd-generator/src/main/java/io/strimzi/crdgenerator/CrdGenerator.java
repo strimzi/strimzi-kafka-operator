@@ -867,7 +867,7 @@ public class CrdGenerator {
                 || long.class.equals(elementType)) {
             itemResult.put("type", "integer");
         } else if (Map.class.equals(elementType)) {
-            preserveUnknownFields(result, elementType);
+            preserveUnknownFields(itemResult, elementType);
             itemResult.put("type", "object");
         } else  {
             buildObjectSchema(crApiVersion, itemResult, elementType, true, description);
