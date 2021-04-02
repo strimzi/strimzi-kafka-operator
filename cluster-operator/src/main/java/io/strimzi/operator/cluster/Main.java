@@ -167,16 +167,13 @@ public class Main {
             List<Future> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
-            Map<String, String> clusterRoles = new HashMap<String, String>() {
-                {
-                    put("strimzi-cluster-operator-namespaced", "020-ClusterRole-strimzi-cluster-operator-role.yaml");
-                    put("strimzi-cluster-operator-global", "021-ClusterRole-strimzi-cluster-operator-role.yaml");
-                    put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
-                    put("strimzi-entity-operator", "031-ClusterRole-strimzi-entity-operator.yaml");
-                    put("strimzi-topic-operator", "032-ClusterRole-strimzi-topic-operator.yaml");
-                    put("strimzi-kafka-client", "033-ClusterRole-strimzi-kafka-client.yaml");
-                }
-            };
+            Map<String, String> clusterRoles = new HashMap<>();
+            clusterRoles.put("strimzi-cluster-operator-namespaced", "020-ClusterRole-strimzi-cluster-operator-role.yaml");
+            clusterRoles.put("strimzi-cluster-operator-global", "021-ClusterRole-strimzi-cluster-operator-role.yaml");
+            clusterRoles.put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
+            clusterRoles.put("strimzi-entity-operator", "031-ClusterRole-strimzi-entity-operator.yaml");
+            clusterRoles.put("strimzi-topic-operator", "032-ClusterRole-strimzi-topic-operator.yaml");
+            clusterRoles.put("strimzi-kafka-client", "033-ClusterRole-strimzi-kafka-client.yaml");
 
             for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {
                 log.info("Creating cluster role {}", clusterRole.getKey());
