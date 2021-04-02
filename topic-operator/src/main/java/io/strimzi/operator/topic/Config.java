@@ -126,6 +126,9 @@ public class Config {
 
     public static final String TC_USE_ZOOKEEPER_TOPIC_STORE = "STRIMZI_USE_ZOOKEEPER_TOPIC_STORE";
 
+    public static final String TC_ADDITIONAL_KAFKA_PROPERTIES = "STRIMZI_ADDITIONAL_KAFKA_PROPERTIES";
+    public static final String TC_ADDITIONAL_KAFKA_PROPERTIES_DELIMITER = "STRIMZI_ADDITIONAL_KAFKA_PROPERTIES_DELIMITER";
+
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
     /** A comma-separated list of key=value pairs for selecting Resources that describe topics. */
@@ -196,6 +199,10 @@ public class Config {
     /** Do we use old ZooKeeper based TopicStore */
     public static final Value<Boolean> USE_ZOOKEEPER_TOPIC_STORE = new Value<>(TC_USE_ZOOKEEPER_TOPIC_STORE, BOOLEAN, "false");
 
+    /** Additional Kafka (Streams) properties */
+    public static final Value<String> ADDITIONAL_KAFKA_PROPERTIES = new Value<>(TC_ADDITIONAL_KAFKA_PROPERTIES, STRING, false);
+    public static final Value<String> ADDITIONAL_KAFKA_PROPERTIES_DELIMITER = new Value<>(TC_ADDITIONAL_KAFKA_PROPERTIES_DELIMITER, STRING, "\\|");
+
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;
         addConfigValue(configValues, LABELS);
@@ -222,6 +229,8 @@ public class Config {
         addConfigValue(configValues, APPLICATION_SERVER);
         addConfigValue(configValues, STALE_RESULT_TIMEOUT_MS);
         addConfigValue(configValues, USE_ZOOKEEPER_TOPIC_STORE);
+        addConfigValue(configValues, ADDITIONAL_KAFKA_PROPERTIES);
+        addConfigValue(configValues, ADDITIONAL_KAFKA_PROPERTIES_DELIMITER);
     }
 
     static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {

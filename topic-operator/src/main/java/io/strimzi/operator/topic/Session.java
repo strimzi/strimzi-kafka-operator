@@ -149,6 +149,18 @@ public class Session extends AbstractVerticle {
         LOGGER.info("Starting");
         Properties kafkaClientProps = new Properties();
 
+        // first add additional props, so that we can override them with more specific
+        String additionalKafkaProperties = config.get(Config.ADDITIONAL_KAFKA_PROPERTIES);
+        if (additionalKafkaProperties != null) {
+            String[] props = additionalKafkaProperties.split(config.get(Config.ADDITIONAL_KAFKA_PROPERTIES_DELIMITER));
+            if (props.length % 2 != 0) {
+                throw new IllegalArgumentException("Invalid additional Kafka properties (odd number of tokens after delimiter split): " + additionalKafkaProperties);
+            }
+            for (int i = 0; i < props.length; i += 2) {
+                kafkaClientProps.put(props[i], props[i + 1]);
+            }
+        }
+
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));

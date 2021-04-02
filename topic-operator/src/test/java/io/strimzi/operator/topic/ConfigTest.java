@@ -69,11 +69,23 @@ public class ConfigTest {
 
     @Test
     public void testTopicMetadataMaxAttemptsIsSetCorrectly() {
-
         Map<String, String> map = new HashMap<>(MANDATORY);
         map.put(Config.TC_TOPIC_METADATA_MAX_ATTEMPTS, "3");
 
         Config c = new Config(map);
-        assertThat(c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS).intValue(), is(3));
+        assertThat(c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS), is(3));
+    }
+
+    @Test
+    public void testAdditionalKafkaProperties() {
+        Map<String, String> map = new HashMap<>(MANDATORY);
+        map.put(Config.TC_ADDITIONAL_KAFKA_PROPERTIES, "key1|value1");
+
+        Config c = new Config(map);
+        String akp = c.get(Config.ADDITIONAL_KAFKA_PROPERTIES);
+        String[] split = akp.split(c.get(Config.ADDITIONAL_KAFKA_PROPERTIES_DELIMITER));
+        assertThat(split.length, is(2));
+        assertThat(split[0], is("key1"));
+        assertThat(split[1], is("value1"));
     }
 }
