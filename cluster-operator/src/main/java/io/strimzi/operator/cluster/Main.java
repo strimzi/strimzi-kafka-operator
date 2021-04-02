@@ -167,7 +167,7 @@ public class Main {
             List<Future> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
-            Map<String, String> clusterRoles = new HashMap<>(9);
+            Map<String, String> clusterRoles = new HashMap<>(6);
             clusterRoles.put("strimzi-cluster-operator-namespaced", "020-ClusterRole-strimzi-cluster-operator-role.yaml");
             clusterRoles.put("strimzi-cluster-operator-global", "021-ClusterRole-strimzi-cluster-operator-role.yaml");
             clusterRoles.put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
