@@ -185,7 +185,7 @@ public class Main {
                         new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()),
                                 StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
-                    ClusterRole role = cro.convertYamlToClusterRole(yaml);
+                    ClusterRole role = ClusterRoleOperator.convertYamlToClusterRole(yaml);
                     Future fut = cro.reconcile(role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {
