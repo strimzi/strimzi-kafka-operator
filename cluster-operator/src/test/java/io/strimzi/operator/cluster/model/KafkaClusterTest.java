@@ -868,47 +868,6 @@ public class KafkaClusterTest {
     }
 
     @Test
-    public void testLoadBalancerExternalTrafficPolicyLocalConflict() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.LOADBALANCER)
-                                .withTls(true)
-                                .withNewConfiguration()
-                                    .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
-                                .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
-                        .withNewTemplate()
-                            .withNewExternalBootstrapService()
-                                .withExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER)
-                            .endExternalBootstrapService()
-                            .withNewPerPodService()
-                                .withExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER)
-                            .endPerPodService()
-                        .endTemplate()
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        // Check external bootstrap service
-        Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
-
-        // Check per pod services
-        for (int i = 0; i < replicas; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
-        }
-    }
-
-    @Test
     public void testLoadBalancerExternalTrafficPolicyClusterFromListener() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
@@ -925,47 +884,6 @@ public class KafkaClusterTest {
                                 .endConfiguration()
                             .endGenericKafkaListener()
                         .endListeners()
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        // Check external bootstrap service
-        Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
-
-        // Check per pod services
-        for (int i = 0; i < replicas; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
-        }
-    }
-
-    @Test
-    public void testLoadBalancerExternalTrafficPolicyClusterConflict() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.LOADBALANCER)
-                                .withTls(true)
-                                .withNewConfiguration()
-                                    .withExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER)
-                                .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
-                        .withNewTemplate()
-                            .withNewExternalBootstrapService()
-                                .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
-                            .endExternalBootstrapService()
-                            .withNewPerPodService()
-                                .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
-                            .endPerPodService()
-                        .endTemplate()
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1051,55 +969,6 @@ public class KafkaClusterTest {
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
             assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges));
-        }
-    }
-
-    @Test
-    public void testLoadBalancerSourceRangeConflict() {
-        List<String> sourceRanges1 = new ArrayList();
-        sourceRanges1.add("10.0.0.0/8");
-        sourceRanges1.add("130.211.204.1/32");
-
-        List<String> sourceRanges2 = new ArrayList();
-        sourceRanges2.add("10.0.0.0/16");
-        sourceRanges2.add("130.211.204.1/30");
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
-                .editSpec()
-                    .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.LOADBALANCER)
-                                .withTls(true)
-                                .withNewConfiguration()
-                                    .withLoadBalancerSourceRanges(sourceRanges2)
-                                .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
-                        .withNewTemplate()
-                            .withNewExternalBootstrapService()
-                                .withLoadBalancerSourceRanges(sourceRanges1)
-                            .endExternalBootstrapService()
-                            .withNewPerPodService()
-                                .withLoadBalancerSourceRanges(sourceRanges1)
-                            .endPerPodService()
-                        .endTemplate()
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        // Check external bootstrap service
-        Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges2));
-
-        // Check per pod services
-        for (int i = 0; i < replicas; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges2));
         }
     }
 
