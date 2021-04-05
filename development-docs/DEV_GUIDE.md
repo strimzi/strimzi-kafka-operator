@@ -11,7 +11,7 @@ This document gives a detailed breakdown of the various build processes and opti
 - [Building Strimzi](#building-strimzi)
 - [Helm Chart](#helm-chart)
 - [Running system tests](#running-system-tests)
-- [DCO Signoff](#cdo-signoff)
+- [DCO Signoff](#dco-signoff)
 - [IDE build problems](#ide-build-problems)
 - [Building container images for other platforms with Docker `buildx`](#building-container-images-for-other-platforms-with-docker-buildx)
 
@@ -270,6 +270,8 @@ You can also run the Checkstyle plugin for every commit you make by adding a pre
 ## IDE build problems
 
 The build also uses a Java annotation processor. Some IDEs (such as IntelliJ's IDEA) by default don't run the annotation processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor as part of the `maven` build and the IDE should then be able to use the generated classes. It is also possible to configure the IDE to run the annotation processor directly.
+
+Eclipse users may find the [m2e-apt plugin](https://marketplace.eclipse.org/content/m2e-apt) useful for the automatic configuration of Eclipse projects for annotation processing.
 
 ## Building container images for other platforms with Docker `buildx`
 
