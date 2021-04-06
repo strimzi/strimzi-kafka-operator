@@ -6,7 +6,8 @@ package io.strimzi.systemtest.kafkaclients.internalClients;
 
 public enum ClientType {
     CLI_KAFKA_VERIFIABLE_PRODUCER,
-    CLI_KAFKA_VERIFIABLE_CONSUMER;
+    CLI_KAFKA_VERIFIABLE_CONSUMER,
+    CLI_KAFKA_CONSUMER_GROUPS;
 
     /**
      * Get bind kafka client type to kafka client executable
@@ -20,6 +21,8 @@ public enum ClientType {
                 return "/opt/kafka/producer.sh";
             case CLI_KAFKA_VERIFIABLE_CONSUMER:
                 return "/opt/kafka/consumer.sh";
+            case CLI_KAFKA_CONSUMER_GROUPS:
+                return "/opt/kafka/bin/kafka-consumer-groups.sh";
             default:
                 throw new IllegalArgumentException("Unexpected client type!");
         }

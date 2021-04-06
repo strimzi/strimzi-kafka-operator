@@ -61,17 +61,18 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static boolean waitForKafkaReady(String clusterName) {
-        return waitForKafkaStatus(clusterName, Ready);
+    public static void waitForKafkaReady(String clusterName) {
+        waitForKafkaStatus(clusterName, Ready);
     }
 
     public static void waitForKafkaNotReady(String clusterName) {
         waitForKafkaStatus(clusterName, NotReady);
     }
 
-    public static boolean waitForKafkaStatus(String clusterName, Enum<?>  state) {
-        Kafka kafka = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
+    public static void waitForKafkaStatus(String clusterName, Enum<?>  state) {
+        String namespace = kubeClient().getNamespace();
+        Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get();
+        ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }
 
     /**
@@ -398,8 +399,16 @@ public class KafkaUtils {
         GenericKafkaListener external = listenerName == null || listenerName.isEmpty() ?
             listeners.stream().filter(listener -> Constants.EXTERNAL_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
             listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
-        return external.getConfiguration() == null ?
-            KafkaResources.clusterCaCertificateSecretName(clusterName) : external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+
+        if (external.getConfiguration() == null) {
+            return KafkaResources.clusterCaCertificateSecretName(clusterName);
+        } else {
+            if (external.getConfiguration().getBrokerCertChainAndKey() != null) {
+                return external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+            } else {
+                return KafkaResources.clusterCaCertificateSecretName(clusterName);
+            }
+        }
     }
 
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {

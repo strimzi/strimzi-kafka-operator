@@ -4,19 +4,22 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
-import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
-import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
+import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
-import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
+import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
 
 /**
  * The InternalKafkaClient for sending and receiving messages using basic properties.
@@ -247,5 +250,33 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
 
     public String getPodName() {
         return podName;
+    }
+
+    public Map<String, String> getCurrentOffsets() {
+        return getCurrentOffsets(Constants.GLOBAL_CLIENTS_TIMEOUT);
+    }
+
+    public Map<String, String> getCurrentOffsets(long timeoutMs) {
+        VerifiableClient consumerGroups = new VerifiableClient.VerifiableClientBuilder()
+            .withClientType(ClientType.CLI_KAFKA_CONSUMER_GROUPS)
+            .withUsingPodName(podName)
+            .withPodNamespace(namespaceName)
+            .withBootstrapServer(getBootstrapServerFromStatus())
+            .withConsumerGroupName(consumerGroup)
+            .build();
+        LOGGER.info("Starting consumerGroups configuration: {}", consumerGroups.toString());
+
+        boolean hasPassed = consumerGroups.run(timeoutMs);
+        LOGGER.info("ConsumerGroups finished correctly: {}", hasPassed);
+
+        // output parsing
+        Map<String, String> currentOffsets = new HashMap<>();
+        for (String row : consumerGroups.getMessages()) {
+            if (row.startsWith(consumerGroup)) {
+                String[] values = row.replaceAll(" +", " ").split(" ");
+                currentOffsets.put(values[0] + "-" + values[1] + "-" + values[2], values[3]);
+            }
+        }
+        return currentOffsets;
     }
 }

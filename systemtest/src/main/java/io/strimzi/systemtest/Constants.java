@@ -310,4 +310,9 @@ public interface Constants {
     String PLAIN_LISTENER_DEFAULT_NAME = "plain";
     String TLS_LISTENER_DEFAULT_NAME = "tls";
     String EXTERNAL_LISTENER_DEFAULT_NAME = "external";
+
+    /**
+     * Loadbalancer finalizer config
+     */
+    String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
 }
