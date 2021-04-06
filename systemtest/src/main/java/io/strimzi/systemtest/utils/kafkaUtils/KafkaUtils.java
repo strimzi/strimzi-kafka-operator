@@ -398,8 +398,16 @@ public class KafkaUtils {
         GenericKafkaListener external = listenerName == null || listenerName.isEmpty() ?
             listeners.stream().filter(listener -> Constants.EXTERNAL_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
             listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
-        return external.getConfiguration() == null ?
-            KafkaResources.clusterCaCertificateSecretName(clusterName) : external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+
+        if (external.getConfiguration() == null) {
+            return KafkaResources.clusterCaCertificateSecretName(clusterName);
+        } else {
+            if (external.getConfiguration().getBrokerCertChainAndKey() != null) {
+                return external.getConfiguration().getBrokerCertChainAndKey().getSecretName();
+            } else {
+                return KafkaResources.clusterCaCertificateSecretName(clusterName);
+            }
+        }
     }
 
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {

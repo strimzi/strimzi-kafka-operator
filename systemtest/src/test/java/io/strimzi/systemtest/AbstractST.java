@@ -78,6 +78,11 @@ public abstract class AbstractST implements TestSeparator {
         Crds.registerCustomKinds();
     }
 
+    public static final List<String> LB_FINALIZERS;
+    static {
+        LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(Constants.LOAD_BALANCER_CLEANUP) : null;
+    }
+
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
     protected final HelmResource helmResource = new HelmResource();
     protected OlmResource olmResource;

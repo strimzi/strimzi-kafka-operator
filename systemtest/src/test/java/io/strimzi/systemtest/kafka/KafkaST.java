@@ -1035,6 +1035,9 @@ class KafkaST extends AbstractST {
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
+                            .withNewConfiguration()
+                                .withFinalizers(LB_FINALIZERS)
+                            .endConfiguration()
                             .build()
             ));
             kafka.getSpec().getKafka().setListeners(lst);
