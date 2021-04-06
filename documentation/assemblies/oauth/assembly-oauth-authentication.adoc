@@ -5,15 +5,19 @@
 [id='assembly-oauth-authentication_{context}']
 = Using OAuth 2.0 token-based authentication
 
-Strimzi supports the use of OAuth 2.0 authentication using the _SASL OAUTHBEARER_ mechanism.
+Strimzi supports the use of OAuth 2.0 authentication using the _OAUTHBEARER_ and _PLAIN_ mechanisms.
 
 OAuth 2.0 enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
 
+Kafka brokers and clients both need to be configured to use OAuth 2.0. 
 You can configure OAuth 2.0 authentication, then xref:assembly-oauth-authorization_{context}[OAuth 2.0 authorization].
 
-OAuth 2.0 authentication can also be used in conjunction with `simple` or OPA-based xref:con-securing-kafka-authorization-str[Kafka authorization].
+[NOTE]
+====
+OAuth 2.0 authentication can be used in conjunction with xref:con-securing-kafka-authorization-str[Kafka authorization]. 
+====
 
-Using OAuth 2.0 token-based authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
+Using OAuth 2.0 authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
 
 The application client passes an access token as a means of authenticating, which application servers can also use to determine the level of access to grant.
 The authorization server handles the granting of access and inquiries about access.
