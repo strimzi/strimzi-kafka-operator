@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import org.apache.kafka.clients.admin.Admin;
@@ -17,6 +18,7 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,16 +38,20 @@ class KafkaAvailability {
     private static final Logger log = LogManager.getLogger(KafkaAvailability.class.getName());
 
     private final Admin ac;
+
+    private final Reconciliation reconciliation;
+
     private final Future<Collection<TopicDescription>> descriptions;
 
-    KafkaAvailability(Admin ac) {
+    KafkaAvailability(Admin ac, Reconciliation reconciliation) {
         this.ac = ac;
+        this.reconciliation = reconciliation;
         // 1. Get all topic names
         Future<Set<String>> topicNames = topicNames();
         // 2. Get topic descriptions
         descriptions = topicNames.compose(names -> {
-            log.debug("Got {} topic names", names.size());
-            log.trace("Topic names {}", names);
+            log.debug("{}: Got {} topic names", reconciliation, names.size());
+            log.trace("{}: Topic names {}", reconciliation, names);
             return describeTopics(names);
         });
     }
@@ -55,17 +61,17 @@ class KafkaAvailability {
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
     Future<Boolean> canRoll(int podId) {
-        log.debug("Determining whether broker {} can be rolled", podId);
+        log.debug("{}: Determining whether broker {} can be rolled", reconciliation, podId);
         return canRollBroker(descriptions, podId);
     }
 
     private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId) {
         Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .compose(topicDescriptions -> {
-                    log.debug("Got {} topic descriptions", topicDescriptions.size());
+                    log.debug("{}: Got {} topic descriptions", reconciliation, topicDescriptions.size());
                     return Future.succeededFuture(groupTopicsByBroker(topicDescriptions, podId));
                 }).recover(error -> {
-                    log.warn(error);
+                    log.warn(new ParameterizedMessage("{}: failed to get topic descriptions", reconciliation), error);
                     return Future.failedFuture(error);
                 });
 
@@ -79,11 +85,11 @@ class KafkaAvailability {
             boolean canRoll = tds.stream().noneMatch(
                 td -> wouldAffectAvailability(podId, topicNameToConfig, td));
             if (!canRoll) {
-                log.debug("Restart pod {} would remove it from ISR, stalling producers with acks=all", podId);
+                log.debug("{}: Restart pod {} would remove it from ISR, stalling producers with acks=all", reconciliation, podId);
             }
             return canRoll;
         }).recover(error -> {
-            log.warn("Error determining whether it is safe to restart pod {}", podId, error);
+            log.warn(new ParameterizedMessage("{}: Error determining whether it is safe to restart pod {}", reconciliation, podId), error);
             return Future.failedFuture(error);
         });
     }
@@ -94,36 +100,36 @@ class KafkaAvailability {
         int minIsr;
         if (minIsrConfig != null && minIsrConfig.value() != null) {
             minIsr = parseInt(minIsrConfig.value());
-            log.debug("{} has {}={}.", td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr);
+            log.debug("{}: {} has {}={}.", reconciliation, td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr);
         } else {
             minIsr = -1;
-            log.debug("{} lacks {}.", td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
+            log.debug("{}: {} lacks {}.", reconciliation, td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
         }
 
         for (TopicPartitionInfo pi : td.partitions()) {
             List<Node> isr = pi.isr();
             if (minIsr >= 0) {
                 if (pi.replicas().size() <= minIsr) {
-                    log.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
-                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                    log.debug("{}: {}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
+                            reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                             pi.replicas().size());
                 } else if (isr.size() < minIsr
                         && contains(pi.replicas(), broker)) {
                     logIsrReplicas(td, pi, isr);
-                    log.info("{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
+                    log.info("{}: {}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
                                     "so should not be restarted right now (it might be first to catch up).",
-                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                            reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                     return true;
                 } else if (isr.size() == minIsr
                         && contains(isr, broker)) {
                     if (minIsr < pi.replicas().size()) {
                         logIsrReplicas(td, pi, isr);
-                        log.info("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
-                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                        log.info("{}: {}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
+                                reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                         return true;
                     } else {
-                        log.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
-                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                        log.debug("{}: {}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
+                                reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                                 pi.replicas().size());
                     }
                 }
@@ -134,7 +140,7 @@ class KafkaAvailability {
 
     private void logIsrReplicas(TopicDescription td, TopicPartitionInfo pi, List<Node> isr) {
         if (log.isDebugEnabled()) {
-            log.debug("{}/{} has ISR={}, replicas={}", td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
+            log.debug("{}: {}/{} has ISR={}, replicas={}", reconciliation, td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
         }
     }
 
@@ -147,7 +153,7 @@ class KafkaAvailability {
     }
 
     private Future<Map<String, Config>> topicConfigs(Collection<String> topicNames) {
-        log.debug("Getting topic configs for {} topics", topicNames.size());
+        log.debug("{}: Getting topic configs for {} topics", reconciliation, topicNames.size());
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
@@ -156,7 +162,7 @@ class KafkaAvailability {
             if (error != null) {
                 promise.fail(error);
             } else {
-                log.debug("Got topic configs for {} topics", topicNames.size());
+                log.debug("{}: Got topic configs for {} topics", reconciliation, topicNames.size());
                 promise.complete(topicNameToConfig.entrySet().stream()
                         .collect(Collectors.toMap(
                             entry -> entry.getKey().name(),
@@ -169,7 +175,7 @@ class KafkaAvailability {
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
         Set<TopicDescription> topicPartitionInfos = new HashSet<>();
         for (TopicDescription td : tds) {
-            log.trace("{}", td);
+            log.trace("{}: {}", reconciliation, td);
             for (TopicPartitionInfo pd : td.partitions()) {
                 for (Node broker : pd.replicas()) {
                     if (podId == broker.id()) {
@@ -188,7 +194,7 @@ class KafkaAvailability {
                     if (error != null) {
                         descPromise.fail(error);
                     } else {
-                        log.debug("Got topic descriptions for {} topics", tds.size());
+                        log.debug("{}: Got topic descriptions for {} topics", reconciliation, tds.size());
                         descPromise.complete(tds.values());
                     }
                 });
@@ -202,7 +208,7 @@ class KafkaAvailability {
                     if (error != null) {
                         namesPromise.fail(error);
                     } else {
-                        log.debug("Got {} topic names", names.size());
+                        log.debug("{}: Got {} topic names", reconciliation, names.size());
                         namesPromise.complete(names);
                     }
                 });

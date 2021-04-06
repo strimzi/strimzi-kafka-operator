@@ -61,6 +61,7 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import static java.util.Collections.singletonList;
 
@@ -214,7 +215,7 @@ public class KafkaRoller {
                     allClient.close(Duration.ofSeconds(30));
                 }
             } catch (RuntimeException e) {
-                log.debug("Exception closing the allClient", e);
+                log.debug(new ParameterizedMessage("{}: Exception closing the allClient", reconciliation), e);
             }
             vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
         });
@@ -703,7 +704,7 @@ public class KafkaRoller {
     }
 
     protected KafkaAvailability availability(Admin ac) {
-        return new KafkaAvailability(ac);
+        return new KafkaAvailability(ac, reconciliation);
     }
 
     String podName(int podId) {

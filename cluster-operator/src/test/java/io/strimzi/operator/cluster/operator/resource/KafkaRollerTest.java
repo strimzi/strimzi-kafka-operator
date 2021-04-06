@@ -621,7 +621,7 @@ public class KafkaRollerTest {
 
         @Override
         protected KafkaAvailability availability(Admin ac) {
-            return new KafkaAvailability(null) {
+            return new KafkaAvailability(null, null) {
                 @Override
                 protected Future<Set<String>> topicNames() {
                     return succeededFuture(Collections.emptySet());
