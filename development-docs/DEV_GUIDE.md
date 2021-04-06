@@ -46,7 +46,7 @@ To build Strimzi from a source the operator and Kafka code needs to be compiled 
    The tests run during the build can be skipped by setting the `MVN_ARGS` environment variable and passing that to the make command:
 
         make clean
-        make MVN_ARGS='-DskipTests -DskipIT' all
+        make MVN_ARGS='-DskipTests -DskipITs' all
 
 4. To use the newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images:
 
@@ -181,7 +181,7 @@ As part of the Docker image build several different versions of Kafka will be bu
 
 ### Maven Settings
 
-Running `make` invokes Maven for packaging Java based applications (that is, Cluster Operator, Topic Operator, etc). The `mvn` command can be customized by setting the `MVN_ARGS` environment variable when launching `make all`. For example, `MVN_ARGS=-DskipTests make all` can be used to avoid running the unit tests and adding `-DskipIT` will skip the integration tests.
+Running `make` invokes Maven for packaging Java based applications (that is, Cluster Operator, Topic Operator, etc). The `mvn` command can be customized by setting the `MVN_ARGS` environment variable when launching `make all`. For example, `MVN_ARGS=-DskipTests make all` can be used to avoid running the unit tests and adding `-DskipITs` will skip the integration tests.
 
 ### Local build with push to Docker Hub
 
