@@ -21,6 +21,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +29,13 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE_TEST;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -348,5 +351,17 @@ public class StUtils {
         } else {
             return KubeClusterResource.cmdKubeClient().execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
         }
+    }
+
+    /**
+     * Checking if test case contains annotation ParallelNamespaceTest
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation ParallelNamespaceTest, otherwise false
+     */
+    public static boolean isParallelNamespaceTest(ExtensionContext extensionContext) {
+        return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
+            annotation -> annotation.annotationType().getName()
+                .toLowerCase(Locale.ENGLISH)
+                .contains(PARALLEL_NAMESPACE_TEST)).count() == 1;
     }
 }

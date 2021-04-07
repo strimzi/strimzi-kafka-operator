@@ -1293,6 +1293,6 @@ class MirrorMaker2ST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        installMultiNamespaceClusterOperator(extensionContext, NAMESPACE);
+        installClusterWideClusterOperator(extensionContext, NAMESPACE);
     }
 }

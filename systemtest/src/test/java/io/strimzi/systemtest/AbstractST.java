@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -182,7 +183,7 @@ public abstract class AbstractST implements TestSeparator {
         installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public void installMultiNamespaceClusterOperator(ExtensionContext extensionContext, String namespace) {
+    public void installClusterWideClusterOperator(ExtensionContext extensionContext, String namespace) {
         prepareEnvForOperator(extensionContext, namespace);
         // Apply role bindings in CO namespace
         applyBindings(extensionContext, namespace);
@@ -785,8 +786,7 @@ public abstract class AbstractST implements TestSeparator {
             ResourceManager.getInstance().deleteResources(testContext);
 
             // if 'parallel namespace test' we are gonna delete namespace
-            if (testContext.getTags().contains(PARALLEL_NAMESPACE_TEST)) {
-
+            if (StUtils.isParallelNamespaceTest(testContext)) {
                 final String namespaceToDelete = mapWithNamespaces.get(testContext.getDisplayName());
 
                 LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, testContext.getDisplayName());
@@ -832,8 +832,7 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.debug("============THIS IS CLIENTS MAP:\n{}", mapWithKafkaClientNames);
 
             // if 'parallel namespace test' we are gonna create
-            if (extensionContext.getTags().contains(PARALLEL_NAMESPACE_TEST)) {
-
+            if (StUtils.isParallelNamespaceTest(extensionContext)) {
                 final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
                 mapWithNamespaces.put(testName, namespaceTestCase);
 

@@ -297,7 +297,7 @@ public interface Constants {
     /**
      * Tag for tests which executing in parallel namespaces
      */
-    String PARALLEL_NAMESPACE_TEST = "parallelnamespace";
+    String PARALLEL_NAMESPACE_TEST = "parallelnamespacetest";
 
     /**
      * Cruise Control related parameters

@@ -112,7 +112,8 @@ public class ClientUtils {
         ResourceManager.getInstance().createResource(extensionContext, KafkaTopicTemplates.topic(internalKafkaClient.getClusterName(), topicName)
             .editMetadata()
                 .withNamespace(internalKafkaClient.getNamespaceName())
-            .endMetadata().build());
+            .endMetadata()
+            .build());
 
         InternalKafkaClient client = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
