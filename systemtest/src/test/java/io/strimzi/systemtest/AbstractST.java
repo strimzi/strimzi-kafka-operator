@@ -27,6 +27,7 @@ import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -50,6 +51,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +62,7 @@ import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE_TEST;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -100,6 +103,9 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithTestTopics = new HashMap<>();
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
+    protected static Map<String, String> mapWithNamespaces = new HashMap<>();
+
+    private AtomicInteger counterOfNamespaces = new AtomicInteger(0);
 
     private AtomicInteger counterOfNamespaces = new AtomicInteger(0);
 
