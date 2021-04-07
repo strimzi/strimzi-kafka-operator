@@ -63,29 +63,26 @@ public class MirrorMakerAgent {
      * @return Runable for liveness check
      */
     private Runnable livenessPoller() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    if (!livenessFile.exists()) {
-                        try {
-                            LOGGER.debug("Mirror Maker is alive");
-                            touch(livenessFile);
-                        } catch (IOException e) {
-                            LOGGER.error("Could not write liveness file {}", livenessFile, e);
-                        }
-                    }
-
+        return () -> {
+            while (true) {
+                if (!livenessFile.exists()) {
                     try {
-                        Thread.sleep(livenessSleepInterval);
-                    } catch (InterruptedException e) {
-                        // In theory this should never normally happen
-                        LOGGER.warn("Unexpectedly interrupted");
-                        break;
+                        LOGGER.debug("Mirror Maker is alive");
+                        touch(livenessFile);
+                    } catch (IOException e) {
+                        LOGGER.error("Could not write liveness file {}", livenessFile, e);
                     }
                 }
-                LOGGER.debug("Exiting thread");
+
+                try {
+                    Thread.sleep(livenessSleepInterval);
+                } catch (InterruptedException e) {
+                    // In theory this should never normally happen
+                    LOGGER.warn("Unexpectedly interrupted");
+                    break;
+                }
             }
+            LOGGER.debug("Exiting thread");
         };
     }
 
