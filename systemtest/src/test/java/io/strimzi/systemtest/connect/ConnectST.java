@@ -138,8 +138,8 @@ class ConnectST extends AbstractST {
         testDockerImagesForKafkaConnect(NAMESPACE, clusterName);
 
         verifyLabelsOnPods(clusterName, "connect", null, "KafkaConnect");
-        verifyLabelsForService(clusterName, "connect-api", "KafkaConnect");
-        verifyLabelsForConfigMaps(clusterName, null, "");
+        verifyLabelsForService(NAMESPACE, clusterName, "connect-api", "KafkaConnect");
+        verifyLabelsForConfigMaps(NAMESPACE, clusterName, null, "");
         verifyLabelsForServiceAccounts(clusterName, null);
     }
 
