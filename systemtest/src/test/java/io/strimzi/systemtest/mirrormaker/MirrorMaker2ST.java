@@ -140,7 +140,7 @@ class MirrorMaker2ST extends AbstractST {
                     .withNamespace(namespaceName)
                 .endMetadata().build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -584,10 +584,7 @@ class MirrorMaker2ST extends AbstractST {
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -708,9 +705,10 @@ class MirrorMaker2ST extends AbstractST {
 
     private void testDockerImagesForKafkaMirrorMaker2(String clusterName, String namespaceName) {
         LOGGER.info("Verifying docker image names");
-        Map<String, String> imgFromDeplConf = getImagesFromConfig(namespaceName);
+        // we must use NAMESPACE because there is CO deployed
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(NAMESPACE);
         //Verifying docker image for kafka mirrormaker2
-        String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(kubeClient(namespaceName).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND)
+        String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(namespaceName, kubeClient(namespaceName).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND)
                .get(0).getMetadata().getName());
 
         String mirrormaker2Version = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getSpec().getVersion();
@@ -884,7 +882,7 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(mm2Pods.size(), is(3));
 
         LOGGER.info("Scaling MirrorMaker2 to zero");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(clusterName, mm2 -> mm2.getSpec().setReplicas(0), namespaceName);
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName, mm2 -> mm2.getSpec().setReplicas(0), namespaceName);
 
         PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(mm2DepName), 0, true, () -> { });
 
@@ -1057,7 +1055,7 @@ class MirrorMaker2ST extends AbstractST {
         String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
 
         LOGGER.info("Adding label to MirrorMaker2 resource, the CR should be recreated");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(clusterName,
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName,
             mm2 -> mm2.getMetadata().setLabels(Collections.singletonMap("some", "label")), namespaceName);
         DeploymentUtils.waitForDeploymentAndPodsReady(mm2DepName, 1);
 
@@ -1069,12 +1067,12 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(kmm2.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
         LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(clusterName,
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName,
             mm2 -> mm2.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), namespaceName);
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(namespaceName, clusterName);
 
         LOGGER.info("Adding another label to MirrorMaker2 resource, pods should be rolled");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2Resource(clusterName, mm2 -> mm2.getMetadata().getLabels().put("another", "label"), namespaceName);
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName, mm2 -> mm2.getMetadata().getLabels().put("another", "label"), namespaceName);
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, mm2DepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
@@ -1189,6 +1187,7 @@ class MirrorMaker2ST extends AbstractST {
                 .withMessageCount(MESSAGE_COUNT)
                 .withMessage("Producer A")
                 .withConsumerGroup(consumerGroup)
+                .withNamespaceName(namespaceName)
                 .build();
 
         KafkaBasicExampleClients initialInternalClientTargetJob = new KafkaBasicExampleClients.Builder()
@@ -1198,18 +1197,13 @@ class MirrorMaker2ST extends AbstractST {
                 .withTopicName(topicTargetNameMirrored)
                 .withMessageCount(MESSAGE_COUNT)
                 .withConsumerGroup(consumerGroup)
+                .withNamespaceName(namespaceName)
                 .build();
 
         LOGGER.info("Send & receive {} messages to/from Source cluster.", MESSAGE_COUNT);
         resourceManager.createResource(extensionContext,
-            initialInternalClientSourceJob.producerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build(),
-            initialInternalClientSourceJob.consumerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            initialInternalClientSourceJob.producerStrimzi().build(),
+            initialInternalClientSourceJob.consumerStrimzi().build());
 
         ClientUtils.waitForClientSuccess(sourceProducerName, namespaceName, MESSAGE_COUNT);
         ClientUtils.waitForClientSuccess(sourceConsumerName, namespaceName, MESSAGE_COUNT);
@@ -1221,20 +1215,14 @@ class MirrorMaker2ST extends AbstractST {
         KafkaBasicExampleClients internalClientSourceJob = initialInternalClientSourceJob.toBuilder().withMessage("Producer B").build();
 
         resourceManager.createResource(extensionContext,
-            internalClientSourceJob.producerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            internalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, namespaceName, MESSAGE_COUNT);
 
         LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
 
         LOGGER.info("Receive {} messages from mirrored topic on Target cluster.", MESSAGE_COUNT);
         resourceManager.createResource(extensionContext,
-            initialInternalClientTargetJob.consumerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            initialInternalClientTargetJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(targetConsumerName, namespaceName, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(namespaceName, sourceProducerName);
         JobUtils.deleteJobWithWait(namespaceName, targetConsumerName);
@@ -1242,10 +1230,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Send 50 messages to Source cluster");
         internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(50).withMessage("Producer C").build();
         resourceManager.createResource(extensionContext,
-            internalClientSourceJob.producerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            internalClientSourceJob.producerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceProducerName, namespaceName, 50);
         JobUtils.deleteJobWithWait(namespaceName, sourceProducerName);
 
@@ -1253,10 +1238,7 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Receive 10 msgs from source cluster");
         internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(10).withAdditionalConfig("max.poll.records=10").build();
         resourceManager.createResource(extensionContext,
-            internalClientSourceJob.consumerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            internalClientSourceJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(sourceConsumerName, namespaceName, 10);
         JobUtils.deleteJobWithWait(namespaceName, sourceConsumerName);
 
@@ -1265,29 +1247,20 @@ class MirrorMaker2ST extends AbstractST {
         LOGGER.info("Receive 40 msgs from mirrored topic on Target cluster");
         KafkaBasicExampleClients internalClientTargetJob = initialInternalClientTargetJob.toBuilder().withMessageCount(40).build();
         resourceManager.createResource(extensionContext,
-            internalClientTargetJob.consumerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            internalClientTargetJob.consumerStrimzi().build());
         ClientUtils.waitForClientSuccess(targetConsumerName, namespaceName, 40);
         JobUtils.deleteJobWithWait(namespaceName, targetConsumerName);
 
         LOGGER.info("There should be no more messages to read. Try to consume at least 1 message. " +
                 "This client job should fail on timeout.");
         resourceManager.createResource(extensionContext,
-            initialInternalClientTargetJob.consumerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            initialInternalClientTargetJob.consumerStrimzi().build());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(targetConsumerName, namespaceName, 1));
 
         LOGGER.info("As it's Active-Active MM2 mode, there should be no more messages to read from Source cluster" +
                 " topic. This client job should fail on timeout.");
         resourceManager.createResource(extensionContext,
-            initialInternalClientSourceJob.consumerStrimzi()
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            initialInternalClientSourceJob.consumerStrimzi().build());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(sourceConsumerName, namespaceName, 1));
     }
 

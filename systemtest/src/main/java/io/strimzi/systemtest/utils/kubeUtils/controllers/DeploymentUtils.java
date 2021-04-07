@@ -37,7 +37,7 @@ public class DeploymentUtils {
      * Log actual status of deployment with pods
      * @param deployment - every Deployment, that HasMetadata and has status (fabric8 status)
      **/
-    public static void logCurrentDeploymentStatus(Deployment deployment) {
+    public static void logCurrentDeploymentStatus(Deployment deployment, String namespaceName) {
         if (deployment != null) {
             String kind = deployment.getKind();
             String name = deployment.getMetadata().getName();
@@ -49,10 +49,10 @@ public class DeploymentUtils {
                 log.add("\tMessage: " + deploymentCondition.getMessage() + "\n");
             }
 
-            if (kubeClient().listPodsByPrefixInName(name).size() != 0) {
+            if (kubeClient(namespaceName).listPodsByPrefixInName(name).size() != 0) {
                 log.add("\nPods with conditions and messages:\n\n");
 
-                for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                for (Pod pod : kubeClient(namespaceName).listPodsByPrefixInName(name)) {
                     log.add(pod.getMetadata().getName() + ":");
                     for (PodCondition podCondition : pod.getStatus().getConditions()) {
                         if (podCondition.getMessage() != null) {
@@ -67,6 +67,10 @@ public class DeploymentUtils {
 
             LOGGER.info("{}", String.join("", log));
         }
+    }
+
+    public static void logCurrentDeploymentStatus(Deployment deployment) {
+        logCurrentDeploymentStatus(deployment, kubeClient().getNamespace());
     }
 
     public static void waitForNoRollingUpdate(String deploymentName, Map<String, String> pods) {
@@ -188,7 +192,7 @@ public class DeploymentUtils {
 
         LOGGER.info("Waiting for {} Pod(s) of Deployment {} to be ready", expectPods, deploymentName);
         PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(deploymentName), expectPods, true,
-            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(deploymentName)));
+            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient(namespaceName).getDeployment(deploymentName), namespaceName));
         LOGGER.info("Deployment {} is ready", deploymentName);
         return true;
     }

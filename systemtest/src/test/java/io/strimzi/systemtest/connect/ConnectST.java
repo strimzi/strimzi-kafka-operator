@@ -147,7 +147,7 @@ class ConnectST extends AbstractST {
         LOGGER.info("Verifying docker image names");
         Map<String, String> imgFromDeplConf = getImagesFromConfig(namespaceName);
         //Verifying docker image for kafka connect
-        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(kubeClient().listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).
+        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(namespaceName, kubeClient().listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).
                 get(0).getMetadata().getName());
 
         String connectVersion = Crds.kafkaConnectOperation(kubeClient(namespaceName).getClient()).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getVersion();

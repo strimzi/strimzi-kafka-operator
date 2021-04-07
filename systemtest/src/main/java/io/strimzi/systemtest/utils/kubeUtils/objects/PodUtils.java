@@ -43,8 +43,12 @@ public class PodUtils {
                     pod -> pod.getMetadata().getUid()));
     }
 
+    public static String getFirstContainerImageNameFromPod(String namespaceName, String podName) {
+        return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().get(0).getImage();
+    }
+
     public static String getFirstContainerImageNameFromPod(String podName) {
-        return kubeClient().getPod(podName).getSpec().getContainers().get(0).getImage();
+        return getFirstContainerImageNameFromPod(kubeClient().getNamespace(), podName);
     }
 
     public static String getContainerImageNameFromPod(String podName, String containerName) {
