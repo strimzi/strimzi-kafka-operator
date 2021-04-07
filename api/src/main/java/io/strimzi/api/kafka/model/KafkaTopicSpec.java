@@ -49,7 +49,8 @@ public class KafkaTopicSpec extends Spec {
             "This cannot be decreased after topic creation. " +
             "It can be increased after topic creation, " +
             "but it is important to understand the consequences that has, " +
-            "especially for topics with semantic partitioning.")
+            "especially for topics with semantic partitioning." +
+            "When absent this will default to the broker configuration for num.partitions.")
     @Minimum(1)
     public Integer getPartitions() {
         return partitions;
@@ -59,7 +60,8 @@ public class KafkaTopicSpec extends Spec {
         this.partitions = partitions;
     }
 
-    @Description("The number of replicas the topic should have.")
+    @Description("The number of replicas the topic should have. " +
+            "When absent this will default to the broker configuration for default.replication.factor.")
     @Minimum(1)
     @Maximum(Short.MAX_VALUE)
     public Integer getReplicas() {
