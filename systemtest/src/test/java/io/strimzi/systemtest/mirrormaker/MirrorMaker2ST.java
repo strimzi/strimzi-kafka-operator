@@ -708,7 +708,7 @@ class MirrorMaker2ST extends AbstractST {
 
     private void testDockerImagesForKafkaMirrorMaker2(String clusterName, String namespaceName) {
         LOGGER.info("Verifying docker image names");
-        Map<String, String> imgFromDeplConf = getImagesFromConfig();
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(namespaceName);
         //Verifying docker image for kafka mirrormaker2
         String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(kubeClient(namespaceName).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND)
                .get(0).getMetadata().getName());
@@ -748,7 +748,7 @@ class MirrorMaker2ST extends AbstractST {
 
         int scaleTo = 4;
         long mm2ObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration();
-        String mm2GenName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
+        String mm2GenName = kubeClient(namespaceName).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaMirrorMaker2 subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);

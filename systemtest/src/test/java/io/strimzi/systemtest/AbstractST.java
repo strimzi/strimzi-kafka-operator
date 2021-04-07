@@ -408,10 +408,10 @@ public abstract class AbstractST implements TestSeparator {
             assertCmdOption(cmd, expectedXx);
     }
 
-    public Map<String, String> getImagesFromConfig() {
+    public Map<String, String> getImagesFromConfig(String namespaceName) {
         Map<String, String> images = new HashMap<>();
         LOGGER.info(ResourceManager.getCoDeploymentName());
-        for (Container c : kubeClient().getDeployment(ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : kubeClient(namespaceName).getDeployment(ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
@@ -745,7 +745,7 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
 
-        Map<String, String> imgFromDeplConf = getImagesFromConfig();
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(namespace);
 
         String kafkaVersion = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getVersion();
         if (kafkaVersion == null) {
