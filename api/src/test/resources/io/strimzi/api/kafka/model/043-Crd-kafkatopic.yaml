@@ -75,9 +75,6 @@ spec:
               description: The name of the topic. When absent this will default to
                 the metadata.name of the topic. It is recommended to not set this
                 unless the topic name is not a valid Kubernetes resource name.
-          required:
-          - partitions
-          - replicas
           description: The specification of the topic.
         status:
           type: object
