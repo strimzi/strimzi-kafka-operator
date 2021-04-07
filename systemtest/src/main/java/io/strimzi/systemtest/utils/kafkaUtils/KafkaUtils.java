@@ -61,18 +61,29 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static void waitForKafkaReady(String clusterName) {
-        waitForKafkaStatus(clusterName, Ready);
+    public static boolean waitForKafkaReady(String namespaceName, String clusterName) {
+        return waitForKafkaStatus(namespaceName, clusterName, Ready);
     }
 
-    public static void waitForKafkaNotReady(String clusterName) {
-        waitForKafkaStatus(clusterName, NotReady);
+    public static boolean waitForKafkaReady(String clusterName) {
+        return waitForKafkaStatus(kubeClient().getNamespace(), clusterName, Ready);
     }
 
-    public static void waitForKafkaStatus(String clusterName, Enum<?>  state) {
-        String namespace = kubeClient().getNamespace();
-        Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get();
-        ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
+    public static boolean waitForKafkaNotReady(String namespaceName, String clusterName) {
+        return waitForKafkaStatus(namespaceName, clusterName, NotReady);
+    }
+
+    public static boolean waitForKafkaNotReady(String clusterName) {
+        return waitForKafkaStatus(kubeClient().getNamespace(), clusterName, NotReady);
+    }
+
+    public static boolean waitForKafkaStatus(String clusterName, Enum<?>  state) {
+        return waitForKafkaStatus(kubeClient().getNamespace(), clusterName, state);
+    }
+
+    public static boolean waitForKafkaStatus(String namespaceName, String clusterName, Enum<?>  state) {
+        Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }
 
     /**

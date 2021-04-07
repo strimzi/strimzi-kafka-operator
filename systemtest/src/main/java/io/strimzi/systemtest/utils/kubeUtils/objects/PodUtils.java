@@ -58,16 +58,24 @@ public class PodUtils {
     }
 
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers) {
-        waitForPodsReady(selector, expectPods, containers, () -> { });
+        waitForPodsReady(kubeClient().getNamespace(), selector, expectPods, containers, () -> { });
+    }
+
+    public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers) {
+        waitForPodsReady(namespaceName, selector, expectPods, containers, () -> { });
     }
 
     public static void waitForPodsReady(LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
+        waitForPodsReady(kubeClient().getNamespace(), selector, expectPods, containers, onTimeout);
+    }
+
+    public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
         int[] counter = {0};
 
         TestUtils.waitFor("All pods matching " + selector + "to be ready",
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(expectPods),
             () -> {
-                List<Pod> pods = kubeClient().listPods(selector);
+                List<Pod> pods = kubeClient(namespaceName).listPods(selector);
                 if (pods.isEmpty() && expectPods == 0) {
                     LOGGER.debug("Expected pods are ready");
                     return true;

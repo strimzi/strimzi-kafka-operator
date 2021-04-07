@@ -109,10 +109,14 @@ public class ClientUtils {
     public static void waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(ExtensionContext extensionContext,
                                                                                      InternalKafkaClient internalKafkaClient) throws Exception {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        ResourceManager.getInstance().createResource(extensionContext, KafkaTopicTemplates.topic(internalKafkaClient.getClusterName(), topicName).build());
+        ResourceManager.getInstance().createResource(extensionContext, KafkaTopicTemplates.topic(internalKafkaClient.getClusterName(), topicName)
+            .editMetadata()
+                .withNamespace(internalKafkaClient.getNamespaceName())
+            .endMetadata().build());
 
         InternalKafkaClient client = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
+            .withNamespaceName(internalKafkaClient.getNamespaceName())
             .withTopicName(topicName)
             .build();
 

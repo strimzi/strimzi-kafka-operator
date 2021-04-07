@@ -186,6 +186,11 @@ public class KubeClusterResource {
         setNamespace(testNamespace);
     }
 
+    public void deleteNamespace(String namespaceName) {
+        kubeClient().deleteNamespace(namespaceName);
+        cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+    }
+
     /**
      * Replaces custom resources for CO such as templates. Deletion is up to caller and can be managed
      * by calling {@link #deleteCustomResources()}

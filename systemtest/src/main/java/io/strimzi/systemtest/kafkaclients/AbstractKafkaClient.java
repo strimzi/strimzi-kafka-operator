@@ -257,7 +257,9 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     public String getClusterName() {
         return clusterName;
     }
-
+    public String getNamespaceName() {
+        return namespaceName;
+    }
     @Override
     public String toString() {
         return "AbstractKafkaClient{" +

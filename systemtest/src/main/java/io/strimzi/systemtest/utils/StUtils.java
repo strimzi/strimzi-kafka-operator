@@ -287,7 +287,19 @@ public class StUtils {
      * @return log from the pod
      */
     public static String getLogFromPodByTime(String podName, String containerName, String timeSince) {
-        return cmdKubeClient().execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
+        return getLogFromPodByTime(kubeClient().getNamespace(), podName, containerName, timeSince);
+    }
+
+    /**
+     * Method which returns log from last {@code timeSince}
+     * @param namespaceName name of the namespace
+     * @param podName name of pod to take a log from
+     * @param containerName name of container
+     * @param timeSince time from which the log should be taken - 3s, 5m, 2h -- back
+     * @return log from the pod
+     */
+    public static String getLogFromPodByTime(String namespaceName, String podName, String containerName, String timeSince) {
+        return cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
     }
 
     /**
