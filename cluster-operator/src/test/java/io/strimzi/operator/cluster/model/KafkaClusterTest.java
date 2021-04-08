@@ -2647,7 +2647,6 @@ public class KafkaClusterTest {
         // Check bootstrap ingress
         Ingress bing = kc.generateExternalBootstrapIngresses().get(0);
         assertThat(bing.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
-        assertThat(bing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is(nullValue()));
         assertThat(bing.getSpec().getIngressClassName(), is(nullValue()));
         assertThat(bing.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-bootstrap.com"));
         assertThat(bing.getMetadata().getLabels().get("label"), is("label-value"));
@@ -2664,7 +2663,6 @@ public class KafkaClusterTest {
 
         io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress bingV1Beta1 = kc.generateExternalBootstrapIngressesV1Beta1().get(0);
         assertThat(bingV1Beta1.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
-        assertThat(bingV1Beta1.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is(nullValue()));
         assertThat(bingV1Beta1.getSpec().getIngressClassName(), is(nullValue()));
         assertThat(bingV1Beta1.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-bootstrap.com"));
         assertThat(bingV1Beta1.getMetadata().getLabels().get("label"), is("label-value"));
@@ -2683,7 +2681,6 @@ public class KafkaClusterTest {
         for (int i = 0; i < replicas; i++)  {
             Ingress ing = kc.generateExternalIngresses(i).get(0);
             assertThat(ing.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
-            assertThat(ing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is(nullValue()));
             assertThat(ing.getSpec().getIngressClassName(), is(nullValue()));
             assertThat(ing.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-broker.com"));
             assertThat(ing.getMetadata().getLabels().get("label"), is("label-value"));
@@ -2700,7 +2697,6 @@ public class KafkaClusterTest {
 
             io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingV1Beta1 = kc.generateExternalIngressesV1Beta1(i).get(0);
             assertThat(ingV1Beta1.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
-            assertThat(ingV1Beta1.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is(nullValue()));
             assertThat(ingV1Beta1.getSpec().getIngressClassName(), is(nullValue()));
             assertThat(ingV1Beta1.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-broker.com"));
             assertThat(ingV1Beta1.getMetadata().getLabels().get("label"), is("label-value"));
@@ -2762,21 +2758,17 @@ public class KafkaClusterTest {
 
          // Check bootstrap ingress
         Ingress bing = kc.generateExternalBootstrapIngresses().get(0);
-        assertThat(bing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is("nginx-internal"));
         assertThat(bing.getSpec().getIngressClassName(), is("nginx-internal"));
 
         io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress bingV1Beta1 = kc.generateExternalBootstrapIngressesV1Beta1().get(0);
-        assertThat(bingV1Beta1.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is("nginx-internal"));
         assertThat(bingV1Beta1.getSpec().getIngressClassName(), is("nginx-internal"));
 
         // Check per pod ingress
         for (int i = 0; i < replicas; i++)  {
             Ingress ing = kc.generateExternalIngresses(i).get(0);
-            assertThat(ing.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is("nginx-internal"));
             assertThat(ing.getSpec().getIngressClassName(), is("nginx-internal"));
 
             io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingV1Beta1 = kc.generateExternalIngressesV1Beta1(i).get(0);
-            assertThat(ingV1Beta1.getMetadata().getAnnotations().get("kubernetes.io/ingress.class"), is("nginx-internal"));
             assertThat(ingV1Beta1.getSpec().getIngressClassName(), is("nginx-internal"));
         }
     }
