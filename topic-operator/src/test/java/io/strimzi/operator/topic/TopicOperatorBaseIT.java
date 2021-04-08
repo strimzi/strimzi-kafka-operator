@@ -390,14 +390,25 @@ public abstract class TopicOperatorBaseIT {
     }
 
     /**
-     * Create a topic in Kafka with a single partition and RF=1.
+     * Create a topic in Kafka with default partitions and replicas from broker settings.
      * @param topicName The name of the topic.
      * @return The name of the KafkaTopic resource that was created in Kube.
      * @throws InterruptedException
      * @throws ExecutionException
      */
     protected String createTopic(String topicName) throws InterruptedException, ExecutionException, TimeoutException {
-        return createTopic(topicName, new NewTopic(topicName, 1, (short) 1));
+        return createTopic(topicName, new NewTopic(topicName, Optional.empty(), Optional.empty()));
+    }
+
+    /**
+     * Create a topic in Kafka with a single partition and RF=1.
+     * @param topicName The name of the topic.
+     * @return The name of the KafkaTopic resource that was created in Kube.
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    protected String createTopic(String topicName, int numPartitions, short numReplicas) throws InterruptedException, ExecutionException, TimeoutException {
+        return createTopic(topicName, new NewTopic(topicName, numPartitions, numReplicas));
     }
 
     /**

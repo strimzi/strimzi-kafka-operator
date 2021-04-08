@@ -379,6 +379,7 @@ public class KafkaCluster extends AbstractModel {
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
+        validateIntConfigProperty("default.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
