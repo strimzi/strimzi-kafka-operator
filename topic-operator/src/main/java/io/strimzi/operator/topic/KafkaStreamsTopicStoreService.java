@@ -112,7 +112,8 @@ public class KafkaStreamsTopicStoreService {
         };
 
         // provide some Kafka Streams defaults
-        Properties streamsProperties = new Properties(kafkaProperties);
+        Properties streamsProperties = new Properties();
+        streamsProperties.putAll(kafkaProperties);
         Object rf = kafkaProperties.get(StreamsConfig.REPLICATION_FACTOR_CONFIG);
         if (rf == null) {
             // this will pickup default broker settings
