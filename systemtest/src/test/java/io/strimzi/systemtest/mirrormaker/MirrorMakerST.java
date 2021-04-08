@@ -103,12 +103,9 @@ public class MirrorMakerST extends AbstractST {
             .editMetadata()
                 .withNamespace(namespaceName)
             .endMetadata().build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -281,10 +278,7 @@ public class MirrorMakerST extends AbstractST {
         certSecretTarget.setCertificate("ca.crt");
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
         final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -478,12 +472,9 @@ public class MirrorMakerST extends AbstractST {
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         String baseTopic = mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicTestName1 = baseTopic + "-test-1";
@@ -619,10 +610,7 @@ public class MirrorMakerST extends AbstractST {
                 .withNamespace(namespaceName)
             .endMetadata().build());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -798,7 +786,7 @@ public class MirrorMakerST extends AbstractST {
             KafkaMirrorMakerResources.deploymentName(clusterName), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", consumerConfig);
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
-        assertThat(StUtils.checkEnvVarInPod(kubeClient(namespaceName).listPods(clusterName, Labels.STRIMZI_KIND_LABEL,
+        assertThat(StUtils.checkEnvVarInPod(namespaceName, kubeClient(namespaceName).listPods(clusterName, Labels.STRIMZI_KIND_LABEL,
             KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable), CoreMatchers.is(not("test.value")));
 
         LOGGER.info("Updating values in MirrorMaker container");

@@ -125,9 +125,13 @@ public class StUtils {
         return testEnvs;
     }
 
+    public static String checkEnvVarInPod(String namespaceName, String podName, String envVarName) {
+        return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().get(0).getEnv()
+            .stream().filter(envVar -> envVar.getName().equals(envVarName)).findFirst().get().getValue();
+    }
+
     public static String checkEnvVarInPod(String podName, String envVarName) {
-        return kubeClient().getPod(podName).getSpec().getContainers().get(0).getEnv()
-                .stream().filter(envVar -> envVar.getName().equals(envVarName)).findFirst().get().getValue();
+        return checkEnvVarInPod(kubeClient().getNamespace(), podName, envVarName);
     }
 
     /**

@@ -135,10 +135,7 @@ class MirrorMaker2ST extends AbstractST {
             .endMetadata().build());
 
         resourceManager.createResource(extensionContext,
-            KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS)
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            KafkaClientsTemplates.kafkaClients(namespaceName, false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -335,12 +332,9 @@ class MirrorMaker2ST extends AbstractST {
 
         resourceManager.createResource(extensionContext, userSource);
         resourceManager.createResource(extensionContext, userTarget);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         String baseTopic = mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicTestName1 = baseTopic + "-test-1";
@@ -586,7 +580,7 @@ class MirrorMaker2ST extends AbstractST {
         // Deploy client
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -886,7 +880,7 @@ class MirrorMaker2ST extends AbstractST {
 
         PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(mm2DepName), 0, true, () -> { });
 
-        mm2Pods = kubeClient().listPodNames(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
+        mm2Pods = kubeClient(namespaceName).listPodNames(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
         KafkaMirrorMaker2Status mm2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus();
         long actualObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getMetadata().getGeneration();
 
@@ -925,12 +919,9 @@ class MirrorMaker2ST extends AbstractST {
                 .withNamespace(namespaceName)
             .endMetadata().build());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, false, kafkaClientsName).build());
 
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editMetadata()

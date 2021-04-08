@@ -92,6 +92,7 @@ public class KafkaClientsTemplates {
                     .withNewMetadata()
                         .addToLabels("app", kafkaClientsName)
                         .addToLabels(label)
+                        .withNamespace(namespaceName)
                     .endMetadata()
                     .withSpec(createClientSpec(namespaceName, tlsListener, kafkaClientsName, hostnameVerification, listenerName, secretPrefix, kafkaUsers))
                 .endTemplate()

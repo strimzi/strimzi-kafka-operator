@@ -108,13 +108,14 @@ public class DeploymentUtils {
 
     /**
      * Method to check that all pods for expected Deployment were rolled
+     * @param namespaceName Namespace name
      * @param name Deployment name
      * @param snapshot Snapshot of pods for Deployment before the rolling update
      * @return true when the pods for Deployment are recreated
      */
-    public static boolean depHasRolled(String name, Map<String, String> snapshot) {
+    public static boolean depHasRolled(String namespaceName, String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
-        Map<String, String> map = PodUtils.podSnapshot(kubeClient().getDeployment(name).getSpec().getSelector());
+        Map<String, String> map = PodUtils.podSnapshot(kubeClient(namespaceName).getDeployment(name).getSpec().getSelector());
         LOGGER.debug("Current  snapshot: {}", new TreeMap<>(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
@@ -125,6 +126,10 @@ public class DeploymentUtils {
             LOGGER.debug("Some pods still need to roll: {}", map);
             return false;
         }
+    }
+
+    public static boolean depHasRolled(String name, Map<String, String> snapshot) {
+        return depHasRolled(kubeClient().getNamespace(), name, snapshot);
     }
 
     /**
@@ -142,7 +147,7 @@ public class DeploymentUtils {
         waitForDeploymentReady(name);
         PodUtils.waitForPodsReady(kubeClient(namespaceName).getDeployment(name).getSpec().getSelector(), expectedPods, true);
         LOGGER.info("Deployment {} rolling update finished", name);
-        return depSnapshot(name);
+        return depSnapshot(namespaceName, name);
     }
 
     public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
