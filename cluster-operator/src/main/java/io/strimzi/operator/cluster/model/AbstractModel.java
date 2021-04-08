@@ -490,7 +490,7 @@ public abstract class AbstractModel {
 
             return createLog4jProperties(newSettings);
         } else if (logging instanceof ExternalLogging) {
-            if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey())) {
+            if (externalCm != null && externalCm.getData() != null && ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey() != null && externalCm.getData().containsKey(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey())) {
                 return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey()));
             } else {
                 log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key. Default logging settings are used.",
