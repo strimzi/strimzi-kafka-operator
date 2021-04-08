@@ -49,11 +49,21 @@ NS=sso
 
 Second, determine the password for the admin user.
 
-For example, if the {keycloak-project-name} Operator was used to install the {keycloak-project-name} server, the password is stored as a secret called `credential-example-keycloak`:
+If you used {keycloak-project-name} Operator, the password is stored as a secret, so you first have to identify the name of the secret. You can inspect the yaml for the {keycloak-project-name} instance. For example:
 
 [source,shell,subs="attributes"]
 ----
-{kubectl} get -n $NS secret credential-example-keycloak -o yaml | grep PASSWORD | awk '{print $2}' | base64 -D
+{kubectl} get -n $NS pod keycloak-0 -o yaml | less
+----
+
+Search for `KEYCLOAK_PASSWORD`, and note the `secretKeyRef`.`name`. It is usually something like `credential-keycloak`.
+
+You can then obtain the clear text password by running:
+
+[source,shell,subs="attributes"]
+----
+SECRET_NAME=credential-keycloak
+{kubectl} get -n $NS secret $SECRET_NAME -o yaml | grep PASSWORD | awk '{print $2}' | base64 -D
 ----
 
 Now, login to the Admin Console (you have to use https://HOST for {kubernetes} {ingress}) using `admin` as the username, and the revealed password.
@@ -80,13 +90,11 @@ NS=sso
 
 [source,shell]
 ----
-SSO_HOST_PORT=<sso_hostname>:443
+SSO_HOST=<sso_hostname>
+SSO_HOST_PORT=$SSO_HOST:443
 STOREPASS=storepass
 
-echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | sed -ne '
-/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p
-/-END CERTIFICATE-/q
-' > /tmp/sso.crt
+echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/sso.crt
 ----
 
 Now we need to deploy the certificate to {kubernetes} as a secret:
@@ -102,7 +110,7 @@ Set the hostname as an ENV var before deploying the prepared `Kafka` custom reso
 ----
 SSO_HOST=&lt;sso_hostname&gt;
 EXAMPLES_DIR=examples
-cat $EXAMPLES_DIR/kafka/kafka-ephemeral-oauth-single-keycloak-authz.yaml | sed -E 's#\${SSO_HOST}'"#$SSO_HOST#" | {kubectl} apply -n $NS -f -
+cat $EXAMPLES_DIR/kafka/kafka-ephemeral-oauth-single-keycloak-authz.yaml | sed -E 's#\${SSO_HOST}'"#$SSO_HOST#" | {kubectl} create -n $NS -f -
 ----
 
 
@@ -185,7 +193,7 @@ First, a new interactive pod container is run using a {strimzi-project-name} Kaf
 [source,shell,subs="attributes"]
 ----
 NS=sso
-{kubectl} run -ti --rm --restart=Never --image={DockerKafkaImageCurrent} kafka-cli -n $NS -- /bin/sh
+{kubectl} run -ti --restart=Never --image={DockerKafkaImageCurrent} kafka-cli -n $NS -- /bin/sh
 ----
 
 NOTE: If `{kubectl}` times out waiting on the image download, subsequent attempts may result in an _AlreadyExists_ error.
@@ -206,13 +214,11 @@ First, we use the external hostname exposing the {keycloak-project-name} to obta
 
 [source,shell]
 ----
-SSO_HOST_PORT=<sso_hostname>:443
+SSO_HOST=<sso_hostname>
+SSO_HOST_PORT=$SSO_HOST:443
 STOREPASS=storepass
 
-echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | sed -ne '
-/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p
-/-END CERTIFICATE-/q
-' > /tmp/sso.crt
+echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/sso.crt
 
 keytool -keystore /tmp/truststore.p12 -storetype pkcs12 -alias sso -storepass $STOREPASS -import -file /tmp/sso.crt -noprompt
 ----
@@ -224,10 +230,7 @@ Then, we add to the same truststore the certificate for the Kafka broker, which 
 KAFKA_HOST_PORT=my-cluster-kafka-bootstrap:9093
 STOREPASS=storepass
 
-echo "Q" | openssl s_client -showcerts -connect $KAFKA_HOST_PORT 2>/dev/null | sed -ne '
-/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p
-/-END CERTIFICATE-/q
-' > /tmp/my-cluster-kafka.crt
+echo "Q" | openssl s_client -showcerts -connect $KAFKA_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/my-cluster-kafka.crt
 
 keytool -keystore /tmp/truststore.p12 -storetype pkcs12 -alias my-cluster-kafka -storepass $STOREPASS -import -file /tmp/my-cluster-kafka.crt -noprompt
 ----
@@ -255,14 +258,15 @@ sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthL
 EOF
 ----
 
-The roles assigned to a client, such as the `Dev Team A` realm role assigned to the `team-a-client` service account, are presented in {keycloak-project-name} on the  *Service Account Roles* tab from *Clients*.
+The roles assigned to a client, such as the `Dev Team A` realm role assigned to the `team-a-client` service account, are presented in {keycloak-project-name} Admin Console on the *Service Account Roles* tab of *Clients* section.
 
 We can use this configuration from the Kafka CLI to produce and consume messages, and perform other administration tasks.
 
 
 .Producing messages with authorized access
 
-The `team-a-client` configuration is used to produce messages to topic `my-topic`:
+The `team-a-client` configuration is used to produce messages to topics that start with `a_` or `x_`.
+The next command will result in error due to trying to write to topic `my-topic`:
 
 [source,shell]
 ----
@@ -297,7 +301,7 @@ You can see the Kafka container log by running:
 
 .Consuming messages with authorized access
 
-The `team-a-client` configuration is used to consume messages from topic `a_messages`:
+The `team-a-client` configuration can be used to consume messages from topic `a_messages`, but the next command will result in error:
 
 [source,shell,subs=+quotes]
 ----
@@ -319,7 +323,7 @@ This time the consumer receives all the messages from the `a_messages` topic.
 
 .Administering Kafka with authorized access
 
-The `team-a-client` configuration is used in administrative operations.
+The `team-a-client` is an account without any cluster-level access, but can still be used with some administrative operations.
 
 Listing topics returns the `a_messages` topic:
 
@@ -370,7 +374,7 @@ EOF
 The `team-b-client` client configuration includes a `Dev Team B` realm role and permissions that start with `Dev Team B ...`. These match the users and service accounts that have the `Dev Team B` realm role assigned to them.
 The `Dev Team B` users have full access to topics beginning with `b_` on the Kafka cluster `my-cluster`, the name of the designated cluster, and read access on topics that start with `x_`.
 
-The `team-b-client` configuration is used to produce messages to topic `a_messages`:
+The `team-b-client` configuration is used to produce messages to topics that start with `b_`. Writing to topic `a_messages` will result in error:
 
 [source,shell]
 ----
@@ -417,14 +421,14 @@ Before `team-a-client` can write to the `x_messages` topic, a admin _power user_
 
 .Managing Kafka with an authorized admin
 
-Admin user `bob` is created with full access to manage everything on the Kafka cluster `my-cluster`.
+Admin user `alice` is created with full access to manage everything on any Kafka cluster.
 
-We can authenticate as `bob` by using `curl` and perform password grant authentication to obtain a refresh token which we can then use to configure the Kafka client.
+We can authenticate as `alice` by using `curl` and perform password grant authentication to obtain a refresh token which we can then use to configure the Kafka client.
 
 [source,shell]
 ----
-USERNAME=bob
-PASSWORD=bob-password
+USERNAME=alice
+PASSWORD=alice-password
 
 GRANT_RESPONSE=$(curl -X POST "https://$SSO_HOST/auth/realms/kafka-authz/protocol/openid-connect/token" -H 'Content-Type: application/x-www-form-urlencoded' -d "grant_type=password&username=$USERNAME&password=$PASSWORD&client_id=kafka-cli&scope=offline_access" -s -k)
 
@@ -433,11 +437,11 @@ REFRESH_TOKEN=$(echo $GRANT_RESPONSE | awk -F "refresh_token\":\"" '{printf $2}'
 
 The refresh token in this case is an offline token which is a long-lived refresh token that does not expire.
 
-A configuration file for `bob` looks like the following:
+A configuration file for `alice` looks like the following:
 
 [source,shell]
 ----
-cat > /tmp/bob.properties << EOF
+cat > /tmp/alice.properties << EOF
 security.protocol=SASL_SSL
 ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
@@ -459,20 +463,20 @@ Since that is a public client it does not require a Secret.
 We can use this because we authenticate with a token directly. In this case, the refresh token requests an access token behind the scenes, which is then sent to the Kafka broker for authentication. The refresh token has already been authenticated.
 
 
-User `bob` has permission to create the `x_messages` topic:
+User `alice` has permission to create the `x_messages` topic:
 
 [source,shell]
 ----
-bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --command-config /tmp/bob.properties \
+bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --command-config /tmp/alice.properties \
   --topic x_messages --create --replication-factor 1 --partitions 1
 ----
 
 
-User `bob` can list all the topic, whereas `team-a-client` and `team-b-client` can only list topics they have access to:
+User `alice` can list all the topic, whereas `team-a-client` and `team-b-client` can only list topics they have access to:
 
 [source,shell]
 ----
-bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --command-config /tmp/bob.properties --list
+bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --command-config /tmp/alice.properties --list
 bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --command-config /tmp/team-a-client.properties --list
 bin/kafka-topics.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --command-config /tmp/team-b-client.properties --list
 ----
@@ -527,17 +531,17 @@ An error is still returned, but this time it is `Not authorized to access topics
 
 `Dev Team A` has no `Read` access on topics that start with 'x_'.
 
-User `bob` can read from or write to any topic:
+User `alice` can read from or write to any topic:
 
 [source,shell]
 ----
 bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic x_messages \
-  --from-beginning --consumer.config /tmp/bob.properties
+  --from-beginning --consumer.config /tmp/alice.properties
 ----
 
-User `bob` can also read the cluster configuration:
+User `alice` can also read the cluster configuration (which in this case is empty):
 [source,shell]
 ----
-bin/kafka-configs.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --command-config /tmp/bob.properties \
+bin/kafka-configs.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --command-config /tmp/alice.properties \
   --entity-type brokers --describe --entity-default
 ----
