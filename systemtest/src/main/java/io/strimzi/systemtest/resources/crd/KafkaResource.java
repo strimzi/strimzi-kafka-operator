@@ -67,6 +67,10 @@ public class KafkaResource implements ResourceType<Kafka> {
         ResourceManager.replaceCrdResource(Kafka.class, KafkaList.class, resourceName, editor);
     }
 
+    public static void replaceKafkaResourceInSpecificNamespace(String resourceName, Consumer<Kafka> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(Kafka.class, KafkaList.class, resourceName, editor, namespaceName);
+    }
+
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {
         return kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus();
     }

@@ -49,4 +49,8 @@ public class KafkaBridgeResource implements ResourceType<KafkaBridge> {
     public static void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
         ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, resourceName, editor);
     }
+
+    public static void replaceBridgeResourceInSpecificNamespace(String resourceName, Consumer<KafkaBridge> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, resourceName, editor, namespaceName);
+    }
 }

@@ -342,14 +342,14 @@ public class StUtils {
     }
 
     public static String getLineFromPod(String podName, String filePath, String grepString) {
-        return getLineFromPodContainer(podName, null, filePath, grepString);
+        return getLineFromPodContainer(kubeClient().getNamespace(), podName, null, filePath, grepString);
     }
 
-    public static String getLineFromPodContainer(String podName, String containerName, String filePath, String grepString) {
+    public static String getLineFromPodContainer(String namespaceName, String podName, String containerName, String filePath, String grepString) {
         if (containerName == null) {
-            return KubeClusterResource.cmdKubeClient().execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeClusterResource.cmdKubeClient(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
         } else {
-            return KubeClusterResource.cmdKubeClient().execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeClusterResource.cmdKubeClient(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
         }
     }
 

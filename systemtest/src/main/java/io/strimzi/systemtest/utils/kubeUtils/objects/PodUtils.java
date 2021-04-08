@@ -35,12 +35,16 @@ public class PodUtils {
      * Returns a map of resource name to resource version for all the pods in the given {@code namespace}
      * matching the given {@code selector}.
      */
-    public static Map<String, String> podSnapshot(LabelSelector selector) {
-        List<Pod> pods = kubeClient().listPods(selector);
+    public static Map<String, String> podSnapshot(String namespaceName, LabelSelector selector) {
+        List<Pod> pods = kubeClient(namespaceName).listPods(selector);
         return pods.stream()
             .collect(
                 Collectors.toMap(pod -> pod.getMetadata().getName(),
                     pod -> pod.getMetadata().getUid()));
+    }
+
+    public static Map<String, String> podSnapshot(LabelSelector selector) {
+        return podSnapshot(kubeClient().getNamespace(), selector);
     }
 
     public static String getFirstContainerImageNameFromPod(String namespaceName, String podName) {
@@ -133,9 +137,13 @@ public class PodUtils {
             .forEach(p -> deletePodWithWait(p.getMetadata().getName()));
     }
 
-    public static String getPodNameByPrefix(String prefix) {
-        return kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
+    public static String getPodNameByPrefix(String namespaceName, String prefix) {
+        return kubeClient(namespaceName).listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
             .findFirst().get().getMetadata().getName();
+    }
+
+    public static String getPodNameByPrefix(String prefix) {
+       return getPodNameByPrefix(kubeClient().getNamespace(), prefix);
     }
 
     public static String getFirstPodNameContaining(String searchTerm) {
@@ -328,11 +336,15 @@ public class PodUtils {
             });
     }
 
-    public static void waitForPodContainerReady(String podName, String containerName) {
+    public static void waitForPodContainerReady(String namespaceName, String podName, String containerName) {
         LOGGER.info("Waiting for Pod {} container {} will be ready", podName, containerName);
         TestUtils.waitFor("Pod " + podName + " container " + containerName + "will be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT, () ->
-            kubeClient().getPod(podName).getStatus().getContainerStatuses().stream().filter(container -> container.getName().equals(containerName)).findFirst().get().getReady()
+            kubeClient(namespaceName).getPod(podName).getStatus().getContainerStatuses().stream().filter(container -> container.getName().equals(containerName)).findFirst().get().getReady()
         );
         LOGGER.info("Pod {} container {} is ready", podName, containerName);
+    }
+
+    public static void waitForPodContainerReady(String podName, String containerName) {
+        waitForPodContainerReady(kubeClient().getNamespace(), podName, containerName);
     }
 }

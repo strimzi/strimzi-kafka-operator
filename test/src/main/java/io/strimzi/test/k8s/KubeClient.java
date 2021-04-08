@@ -394,8 +394,22 @@ public class KubeClient {
     /**
      * Gets deployment config
      */
+    public DeploymentConfig getDeploymentConfig(String namespaceName, String deploymentConfigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespaceName).withName(deploymentConfigName).get();
+    }
+
+    /**
+     * Gets deployment config
+     */
     public DeploymentConfig getDeploymentConfig(String deploymentConfigName) {
         return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).get();
+    }
+
+    /**
+     * Gets deployment config selector
+     */
+    public Map<String, String> getDeploymentConfigSelectors(String namespaceName, String deploymentConfigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespaceName).withName(deploymentConfigName).get().getSpec().getSelector();
     }
 
     /**

@@ -294,7 +294,7 @@ public class ResourceManager {
 
                     log.add("\nPods with conditions and messages:\n\n");
 
-                    for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                    for (Pod pod : kubeClient().namespace(customResource.getMetadata().getNamespace()).listPodsByPrefixInName(name)) {
                         log.add(pod.getMetadata().getName() + ":");
                         for (PodCondition podCondition : pod.getStatus().getConditions()) {
                             if (podCondition.getMessage() != null) {
