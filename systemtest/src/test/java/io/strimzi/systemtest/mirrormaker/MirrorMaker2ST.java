@@ -94,7 +94,7 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     void testMirrorMaker2(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -119,28 +119,15 @@ class MirrorMaker2ST extends AbstractST {
         String topicSourceNameMirrored = kafkaClusterSourceName + "." + sourceTopicName;
 
         // Deploy source kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
         // Deploy Topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceName, 3)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceName, 3).build());
 
-        resourceManager.createResource(extensionContext,
-            KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS)
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -175,9 +162,6 @@ class MirrorMaker2ST extends AbstractST {
         );
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .editFirstMirror()
                     .editSourceConnector()
@@ -263,7 +247,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth(ExtensionContext extensionContext) throws Exception {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -280,9 +264,6 @@ class MirrorMaker2ST extends AbstractST {
 
         // Deploy source kafka with tls listener and mutual tls auth
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -300,9 +281,6 @@ class MirrorMaker2ST extends AbstractST {
 
         // Deploy target kafka with tls listener and mutual tls auth
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -319,26 +297,14 @@ class MirrorMaker2ST extends AbstractST {
             .build());
 
         // Deploy topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceName, 3)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceName, 3).build());
         // Create Kafka user
-        KafkaUser userSource = KafkaUserTemplates.tlsUser(kafkaClusterSourceName, kafkaUserSourceName)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build();
-        KafkaUser userTarget = KafkaUserTemplates.tlsUser(kafkaClusterTargetName, kafkaUserTargetName)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build();
+        KafkaUser userSource = KafkaUserTemplates.tlsUser(kafkaClusterSourceName, kafkaUserSourceName).build();
+        KafkaUser userTarget = KafkaUserTemplates.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).build();
 
         resourceManager.createResource(extensionContext, userSource);
         resourceManager.createResource(extensionContext, userTarget);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
@@ -346,14 +312,8 @@ class MirrorMaker2ST extends AbstractST {
         String topicTestName1 = baseTopic + "-test-1";
         String topicTestName2 = baseTopic + "-test-2";
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicTestName1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, topicTestName2)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicTestName1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, topicTestName2).build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -429,9 +389,6 @@ class MirrorMaker2ST extends AbstractST {
                 .build();
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .withClusters(sourceClusterWithTlsAuth, targetClusterWithTlsAuth)
                 .editFirstMirror()
@@ -491,7 +448,7 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     void testMirrorMaker2TlsAndScramSha512Auth(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -505,9 +462,6 @@ class MirrorMaker2ST extends AbstractST {
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -525,9 +479,6 @@ class MirrorMaker2ST extends AbstractST {
 
         // Deploy target kafka with tls listener and SCRAM-SHA authentication
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewListeners()
@@ -544,23 +495,14 @@ class MirrorMaker2ST extends AbstractST {
             .build());
 
         // Deploy topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceName, 3)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceName, 3).build());
 
         // Create Kafka user for source cluster
-        KafkaUser userSource = KafkaUserTemplates.scramShaUser(kafkaClusterSourceName, kafkaUserSource)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build();
+        KafkaUser userSource = KafkaUserTemplates.scramShaUser(kafkaClusterSourceName, kafkaUserSource).build();
         resourceManager.createResource(extensionContext, userSource);
 
         // Create Kafka user for target cluster
-        KafkaUser userTarget = KafkaUserTemplates.scramShaUser(kafkaClusterTargetName, kafkaUserTarget)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build();
+        KafkaUser userTarget = KafkaUserTemplates.scramShaUser(kafkaClusterTargetName, kafkaUserTarget).build();
         resourceManager.createResource(extensionContext, userTarget);
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker2 spec
@@ -651,9 +593,6 @@ class MirrorMaker2ST extends AbstractST {
                 .build();
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .withClusters(targetClusterWithScramSha512Auth, sourceClusterWithScramSha512Auth)
                 .editFirstMirror()
@@ -723,26 +662,17 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
     void testScaleMirrorMaker2Subresource(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
         // Deploy source kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).build());
 
         int scaleTo = 4;
         long mm2ObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration();
@@ -771,7 +701,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker2CorrectlyMirrorsHeaders(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -781,25 +711,13 @@ class MirrorMaker2ST extends AbstractST {
         String targetExampleTopic = kafkaClusterSourceName + "." + sourceExampleTopic;
 
         // Deploy source kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 // Deploy Topic for example clients
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, sourceExampleTopic)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, sourceExampleTopic).build());
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).build());
 
         //deploying example clients for checking if mm2 will mirror messages with headers
 
@@ -811,10 +729,7 @@ class MirrorMaker2ST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResource(extensionContext, targetKafkaClientsJob.consumerStrimzi()
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, targetKafkaClientsJob.consumerStrimzi().build());
 
         KafkaBasicExampleClients sourceKafkaClientsJob = new KafkaBasicExampleClients.Builder()
             .withProducerName(sourceProducerName)
@@ -825,9 +740,6 @@ class MirrorMaker2ST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, sourceKafkaClientsJob.producerStrimzi()
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -855,26 +767,17 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
     void testScaleMirrorMaker2ToZero(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
         // Deploy source kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 3, false)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 3, false).build());
 
         long oldObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration();
         String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
@@ -902,7 +805,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testIdentityReplicationPolicy(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -910,32 +813,17 @@ class MirrorMaker2ST extends AbstractST {
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         // Deploy source kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, originalTopicName, 3)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, originalTopicName, 3).build());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .editMirror(0)
                     .editSourceConnector()
@@ -980,7 +868,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testHostAliases(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -991,20 +879,11 @@ class MirrorMaker2ST extends AbstractST {
             .build();
 
         // Deploy source kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .withNewTemplate()
                     .withNewPod()
@@ -1023,26 +902,17 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
         // Deploy source kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-            .editMetadata()
-                .withNamespace(namespaceName)
-            .endMetadata()
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()
@@ -1085,7 +955,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testRestoreOffsetsInConsumerGroup(ExtensionContext extensionContext) {
-        String namespaceName = mapWithNamespaces.get(extensionContext.getDisplayName());
+        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClusterSourceName = clusterName + "-source";
         final String kafkaClusterTargetName = clusterName + "-target";
@@ -1102,15 +972,9 @@ class MirrorMaker2ST extends AbstractST {
 
         resourceManager.createResource(extensionContext, false,
             // Deploy source kafka
-            KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1, 1)
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build(),
+            KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1, 1).build(),
             // Deploy target kafka
-            KafkaTemplates.kafkaPersistent(kafkaClusterTargetName, 1, 1)
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build()
+            KafkaTemplates.kafkaPersistent(kafkaClusterTargetName, 1, 1).build()
         );
 
         // Wait for Kafka clusters readiness
@@ -1121,9 +985,6 @@ class MirrorMaker2ST extends AbstractST {
             // MM2 Active (S) <-> Active (T) // direction S -> T mirroring
             // *.replication.factor(s) to 1 are added just to speed up test by using only 1 ZK and 1 Kafka
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mm2TrgSrcName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata()
                 .editSpec()
                 .editFirstMirror()
                     .editSourceConnector()
@@ -1148,9 +1009,6 @@ class MirrorMaker2ST extends AbstractST {
             .endSpec().build(),
             // MM2 Active (S) <-> Active (T) // direction S <- T mirroring
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mm2SrcTrgName, kafkaClusterSourceName, kafkaClusterTargetName, 1, false)
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata()
                 .editSpec()
                 .editFirstMirror()
                     .editSourceConnector()
@@ -1174,10 +1032,7 @@ class MirrorMaker2ST extends AbstractST {
                 .endMirror()
             .endSpec().build(),
             // deploy topic
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceNameMirrored, 3)
-                .editMetadata()
-                    .withNamespace(namespaceName)
-                .endMetadata().build());
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceNameMirrored, 3).build());
 
         KafkaBasicExampleClients initialInternalClientSourceJob = new KafkaBasicExampleClients.Builder()
                 .withProducerName(sourceProducerName)

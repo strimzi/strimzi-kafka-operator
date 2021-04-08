@@ -45,6 +45,7 @@ import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.time.TimeoutBudget;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -145,7 +146,16 @@ public class ResourceManager {
             LOGGER.info("Create/Update of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 
-            type.create(resource);
+            // if it is parallel namespace test we are gonna replace resource a namespace
+            if (StUtils.isParallelNamespaceTest(testContext)) {
+                final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                LOGGER.info("This is parallel namespace test and we are gonna use context namespace {}", namespace);
+                resource.getMetadata().setNamespace(namespace);
+                type.create(resource);
+            } else {
+                // otherwise use resource namespace
+                type.create(resource);
+            }
 
             synchronized (this) {
                 STORED_RESOURCES.computeIfAbsent(testContext.getDisplayName(), k -> new Stack<>());

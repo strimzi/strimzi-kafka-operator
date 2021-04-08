@@ -320,4 +320,9 @@ public interface Constants {
      * Loadbalancer finalizer config
      */
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
+
+    /**
+     * Auxiliary variables for storing data across our tests
+     */
+    String NAMESPACE_KEY = "NAMESPACE_NAME";
 }

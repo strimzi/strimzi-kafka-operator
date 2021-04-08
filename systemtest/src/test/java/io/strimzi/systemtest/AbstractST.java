@@ -100,7 +100,6 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithTestTopics = new HashMap<>();
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
-    protected static Map<String, String> mapWithNamespaces = new HashMap<>();
 
     private AtomicInteger counterOfNamespaces = new AtomicInteger(0);
 
@@ -785,7 +784,8 @@ public abstract class AbstractST implements TestSeparator {
 
             // if 'parallel namespace test' we are gonna delete namespace
             if (StUtils.isParallelNamespaceTest(testContext)) {
-                final String namespaceToDelete = mapWithNamespaces.get(testContext.getDisplayName());
+
+                final String namespaceToDelete = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
                 LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, testContext.getDisplayName());
                 cluster.deleteNamespace(namespaceToDelete);
@@ -832,8 +832,8 @@ public abstract class AbstractST implements TestSeparator {
             // if 'parallel namespace test' we are gonna create
             if (StUtils.isParallelNamespaceTest(extensionContext)) {
                 final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
-                mapWithNamespaces.put(testName, namespaceTestCase);
 
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
                 // create namespace by
                 LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testName);
 
