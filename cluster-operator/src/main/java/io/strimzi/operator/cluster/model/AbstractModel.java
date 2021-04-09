@@ -501,8 +501,7 @@ public abstract class AbstractModel {
                             + "with external logging configuration does not exist or doesn't contain the configuration under the {} key"
                             + ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey() + ".");
                 }
-            }
-            else {
+            } else {
                 throw new InvalidResourceException("Property logging.valueFrom has to be specified when using external logging.");
             }
         } else {
