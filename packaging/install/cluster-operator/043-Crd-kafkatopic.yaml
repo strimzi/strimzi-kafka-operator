@@ -77,6 +77,9 @@ spec:
           status:
             type: object
             properties:
+              topicName:
+                type: string
+                description: Topic name.
               conditions:
                 type: array
                 items:
@@ -166,6 +169,9 @@ spec:
           status:
             type: object
             properties:
+              topicName:
+                type: string
+                description: Topic name.
               conditions:
                 type: array
                 items:
@@ -255,6 +261,9 @@ spec:
           status:
             type: object
             properties:
+              topicName:
+                type: string
+                description: Topic name.
               conditions:
                 type: array
                 items:

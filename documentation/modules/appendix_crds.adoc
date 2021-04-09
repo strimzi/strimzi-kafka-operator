@@ -2192,6 +2192,8 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 [options="header"]
 |====
 |Property                   |Description
+|topicName           1.2+<.<|Topic name.
+|string
 |conditions          1.2+<.<|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<|The generation of the CRD that was last reconciled by the operator.
