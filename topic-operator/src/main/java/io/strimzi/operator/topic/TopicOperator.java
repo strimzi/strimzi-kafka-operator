@@ -1012,7 +1012,7 @@ class TopicOperator {
 
 
 
-                    if (topic.getStatus() == null || (topic.getStatus() != null && topic.getStatus().getTopicName() == null)) {
+                    if (topic.getStatus() == null || topic.getStatus().getTopicName() == null) {
                         String specTopicName = new TopicName(topic).toString();
                         kts.setTopicName(specTopicName);
                     } else {
