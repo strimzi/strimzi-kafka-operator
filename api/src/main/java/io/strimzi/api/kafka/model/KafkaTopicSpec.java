@@ -50,7 +50,7 @@ public class KafkaTopicSpec extends Spec {
             "It can be increased after topic creation, " +
             "but it is important to understand the consequences that has, " +
             "especially for topics with semantic partitioning. " +
-            "When absent this will default to the broker configuration for num.partitions.")
+            "When absent this will default to the broker configuration for `num.partitions`.")
     @Minimum(1)
     public Integer getPartitions() {
         return partitions;
