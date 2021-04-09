@@ -61,7 +61,7 @@ public class KafkaTopicSpec extends Spec {
     }
 
     @Description("The number of replicas the topic should have. " +
-            "When absent this will default to the broker configuration for default.replication.factor.")
+            "When absent this will default to the broker configuration for `default.replication.factor`.")
     @Minimum(1)
     @Maximum(Short.MAX_VALUE)
     public Integer getReplicas() {
