@@ -20,7 +20,7 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "topicName", "conditions", "observedGeneration" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "topicName" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class KafkaTopicStatus extends Status {
