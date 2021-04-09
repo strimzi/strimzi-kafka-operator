@@ -1010,8 +1010,6 @@ class TopicOperator {
                     KafkaTopicStatus kts = new KafkaTopicStatus();
                     StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result);
 
-
-
                     if (topic.getStatus() == null || topic.getStatus().getTopicName() == null) {
                         String specTopicName = new TopicName(topic).toString();
                         kts.setTopicName(specTopicName);
@@ -1076,17 +1074,22 @@ class TopicOperator {
                 });
     }
 
+    private boolean isTopicNameChanged(TopicName topicName, KafkaTopic topicResource) {
+        TopicName topicNameFromStatus = topicResource.getStatus() == null ? null : new TopicName(topicResource.getStatus().getTopicName());
+        return topicNameFromStatus != null && !topicName.equals(topicNameFromStatus);
+    }
+
     private Future<Void> reconcileOnResourceChange(Reconciliation reconciliation, LogContext logContext, KafkaTopic topicResource, Topic k8sTopic,
                                            boolean isModify) {
         TopicName topicName = new TopicName(topicResource);
-        TopicName topicNameFromStatus = topicResource.getStatus() == null ? null : new TopicName(topicResource.getStatus().getTopicName());
+
         return CompositeFuture.all(getFromKafka(topicName), getFromTopicStore(topicName))
             .compose(compositeResult -> {
                 Topic kafkaTopic = compositeResult.resultAt(0);
                 Topic privateTopic = compositeResult.resultAt(1);
                 Future<Void> result;
 
-                if (isModify && (topicNameFromStatus != null && !topicName.equals(topicNameFromStatus))) {
+                if (isTopicNameChanged(topicName, topicResource)) {
                     Promise<Void> promise = Promise.promise();
                     result = promise.future();
                     enqueue(new Event(topicResource,
@@ -1416,6 +1419,9 @@ class TopicOperator {
             Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
             kafka.topicMetadata(topicName)
                 .compose(kafkaTopicMeta -> {
+                    if (isTopicNameChanged(topicName, kafkaTopicResource)) {
+                        return Future.failedFuture(new IllegalArgumentException("Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed."));
+                    }
                     Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
                     return reconcile(reconciliation, logContext, kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic);
                 })
