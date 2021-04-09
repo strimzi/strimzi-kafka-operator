@@ -490,7 +490,7 @@ public abstract class AbstractModel {
 
             return createLog4jProperties(newSettings);
         } else if (logging instanceof ExternalLogging) {
-            if (((ExternalLogging) logging).getValueFrom() != null) {
+            if (((ExternalLogging) logging).getValueFrom() != null && ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef() != null && ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey() != null) {
                 if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey())) {
                     return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey()));
                 } else {
