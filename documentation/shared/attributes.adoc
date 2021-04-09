@@ -54,7 +54,7 @@
 :oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples[Using Keycloak as the OAuth 2.0 authorization server^]
 :oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/master/examples/docker[Using Hydra as the OAuth 2.0 authorization server^]
 :oauth-kubernetes-examples-link: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-artifact-version}/examples/kubernetes[https://github.com/strimzi/strimzi-kafka-oauth/tree/{oauth-artifact-version}/examples/kubernetes]
-:cli-kafka-image: quay.io/strimzi/kafka:0.21.1-kafka-2.6.0
+:cli-kafka-image: quay.io/strimzi/kafka:0.22.1-kafka-2.7.0
 :kubectl: kubectl
 :kubernetes: Kubernetes
 :ingress: ingress
