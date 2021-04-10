@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -51,6 +52,7 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import kafka.log.Log;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -189,7 +191,6 @@ public class ResourceManager {
                 String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
         }
     }
-
     public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition) {
         return waitResourceCondition(resource, condition, TimeoutBudget.ofDuration(Duration.ofMinutes(5)));
     }
@@ -198,29 +199,32 @@ public class ResourceManager {
         assertNotNull(resource);
         assertNotNull(resource.getMetadata());
         assertNotNull(resource.getMetadata().getName());
+
+        // cluster role binding does not need namespace...
+        if (!(resource instanceof ClusterRoleBinding)) {
+            assertNotNull(resource.getMetadata().getNamespace());
+        }
+
         ResourceType<T> type = findResourceType(resource);
         assertNotNull(type);
 
-        while (!timeout.timeoutExpired()) {
-            T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-            if (condition.test(res)) {
-                LOGGER.info("Resource {} in namespace {} is {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
-                return true;
-            }
-            try {
-                Thread.sleep(Duration.ofSeconds(1).toMillis());
-            } catch (InterruptedException e) {
-                LOGGER.info("Resource {} in namespace {} is not {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
-                Thread.currentThread().interrupt();
-                return false;
-            }
-        }
-        T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-        boolean pass = condition.test(res);
-        if (!pass) {
-            LOGGER.info("Resource {} with with type {} failed condition check: {}", resource.getMetadata().getName(), type, resourceToString(res));
-        }
-        return pass;
+        boolean[] resourceReady = new boolean[1];
+
+        TestUtils.waitFor("Wait until resource condition:" + condition + " is fulfilled", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(16).toMillis(),
+            () -> {
+                T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+
+                LOGGER.debug("This is resource:\n{}", res);
+
+                resourceReady[0] =  condition.test(res);
+
+                LOGGER.debug("Condition result:{}", resourceReady[0]);
+
+                return resourceReady[0];
+
+            });
+
+        return resourceReady[0];
     }
 
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());

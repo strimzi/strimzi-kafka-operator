@@ -95,12 +95,16 @@ public class KafkaTopicUtils {
         );
     }
 
-    public static void waitForKafkaTopicPartitionChange(String topicName, int partitions) {
+    public static void waitForKafkaTopicPartitionChange(String namespaceName, String topicName, int partitions) {
         LOGGER.info("Waiting for KafkaTopic change {}", topicName);
         TestUtils.waitFor("KafkaTopic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getSpec().getPartitions() == partitions,
-            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getSpec().getPartitions() == partitions,
+            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get())
         );
+    }
+
+    public static void waitForKafkaTopicPartitionChange(String topicName, int partitions) {
+        waitForKafkaTopicPartitionChange(kubeClient().getNamespace(), topicName, partitions);
     }
 
     /**

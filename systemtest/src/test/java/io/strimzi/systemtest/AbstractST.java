@@ -349,9 +349,9 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = kubeClient().getPod(podName);
+        Pod po = kubeClient(namespace).getPod(podName);
         assertThat("Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-            kubeClient().listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), po, is(notNullValue()));
+            kubeClient(namespace).listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), po, is(notNullValue()));
 
         Optional optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
         assertThat("Not found an expected container " + containerName, optional.isPresent(), is(true));
@@ -409,7 +409,7 @@ public abstract class AbstractST implements TestSeparator {
     public Map<String, String> getImagesFromConfig(String namespaceName) {
         Map<String, String> images = new HashMap<>();
         LOGGER.info(ResourceManager.getCoDeploymentName());
-        for (Container c : kubeClient(namespaceName).getDeployment(ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : kubeClient(namespaceName).getDeployment(namespaceName, ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }

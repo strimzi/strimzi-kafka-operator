@@ -131,7 +131,8 @@ public final class TestUtils {
                 exceptionMessage = e.getMessage();
                 if (++exceptionCount == 1) {
                     // Log the first exception as soon as it occurs
-                    LOGGER.info("Exception waiting for {}, {}", description, exceptionMessage);
+                    LOGGER.error("Exception waiting for {}, {}", description, exceptionMessage);
+                    e.printStackTrace();
                 }
                 result = false;
             }

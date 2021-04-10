@@ -13,6 +13,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
+import io.strimzi.test.k8s.KubeClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -21,6 +22,7 @@ import java.rmi.UnexpectedException;
 import java.time.Duration;
 import java.util.Random;
 
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 /**
@@ -58,7 +60,7 @@ public class ClientUtils {
     public static void waitTillContinuousClientsFinish(String producerName, String consumerName, String namespace, int messageCount) {
         LOGGER.info("Waiting till producer {} and consumer {} finish", producerName, consumerName);
         TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().checkSucceededJobStatus(producerName) && kubeClient().checkSucceededJobStatus(consumerName));
+            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(producerName) && kubeClient().namespace(namespace).checkSucceededJobStatus(consumerName));
     }
 
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
@@ -99,7 +101,7 @@ public class ClientUtils {
         deployment[0] = resource;
 
         TestUtils.waitFor(" for resource: " + resource + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
-            deployment[0] = ResourceManager.kubeClient().getDeployment(ResourceManager.kubeClient().getDeploymentBySubstring(resource.getMetadata().getName()));
+            deployment[0] = kubeClient().getDeploymentFromAnyNamespaces(ResourceManager.kubeClient().getDeploymentFromAnyNamespaceBySubstring(deployment[0].getMetadata().getName()));
             return deployment[0] != null;
         });
 

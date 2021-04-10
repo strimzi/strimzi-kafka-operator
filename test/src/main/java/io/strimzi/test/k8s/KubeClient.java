@@ -42,21 +42,25 @@ import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.test.TestUtils;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Constants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -219,7 +223,11 @@ public class KubeClient {
     }
 
     public List<Pod> listPods() {
-        return client.pods().inNamespace(getNamespace()).list().getItems();
+        return listPods(getNamespace());
+    }
+
+    public List<Pod> listPods(String namespaceName) {
+        return client.pods().inNamespace(namespaceName).list().getItems();
     }
 
     /**
@@ -231,6 +239,28 @@ public class KubeClient {
         return listPods()
                 .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
                 .collect(Collectors.toList());
+    }
+
+    public List<Pod> listPodsByPrefixInNameWithDynamicWait(String namespaceName, String podNamePrefix) {
+        AtomicReference<List<Pod>> result = new AtomicReference<>();
+
+        TestUtils.waitFor("wait until some pod is present", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(16).toMillis(),
+            () -> {
+                LOGGER.info("In namespace:{}, podNamePrefix:\n{}", namespaceName, podNamePrefix);
+                List<Pod> listOfPods = listPods(namespaceName)
+                    .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
+                    .collect(Collectors.toList());
+                LOGGER.debug("List of pods:\n{}", listOfPods.toString());
+
+                // true if number of pods is more than 1
+                result.set(listOfPods);
+
+                LOGGER.info("Size of list....{}", result.get().size());
+
+                return result.get().size() > 0;
+            });
+
+        return result.get();
     }
 
     public List<Pod> listKafkaConnectS2IPods(String connectS2iClusterName) {
@@ -339,8 +369,20 @@ public class KubeClient {
     /**
      * Gets deployment
      */
+
+    public Deployment getDeployment(String namespaceName, String deploymentName) {
+        return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get();
+    }
+
     public Deployment getDeployment(String deploymentName) {
-        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).get();
+        return getDeployment(kubeClient().getNamespace(), deploymentName);
+    }
+
+    public Deployment getDeploymentFromAnyNamespaces(String deploymentName) {
+        return client.apps().deployments().inAnyNamespace().list().getItems().stream().filter(
+            deployment -> deployment.getMetadata().getName().equals(deploymentName))
+                .findFirst()
+                .orElseThrow();
     }
 
     public String getDeploymentNameByPrefix(String namePrefix) {
@@ -354,9 +396,12 @@ public class KubeClient {
         }
     }
 
-    public String getDeploymentBySubstring(String subString) {
-        return client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream()
-            .filter(rs -> rs.getMetadata().getName().contains(subString)).collect(Collectors.toList()).get(0).getMetadata().getName();
+    public String getDeploymentFromAnyNamespaceBySubstring(String subString) {
+        Deployment deployment = client.apps().deployments().inAnyNamespace().list().getItems().stream()
+            .filter(rs -> rs.getMetadata().getName().contains(subString))
+            .findFirst()
+            .orElseThrow();
+        return deployment.getMetadata().getName();
     }
     /**
      * Gets deployment UID
@@ -375,16 +420,24 @@ public class KubeClient {
     /**
      * Gets deployment status
      */
+    public boolean getDeploymentStatus(String namespaceName, String deploymentName) {
+        return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).isReady();
+    }
+
     public boolean getDeploymentStatus(String deploymentName) {
-        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).isReady();
+        return getDeploymentStatus(kubeClient().getNamespace(), deploymentName);
+    }
+
+    public void deleteDeployment(String namespaceName, String deploymentName) {
+        client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     public void deleteDeployment(String deploymentName) {
-        client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        deleteDeployment(kubeClient().getNamespace(), deploymentName);
     }
 
     public Deployment createOrReplaceDeployment(Deployment deployment) {
-        return client.apps().deployments().inNamespace(getNamespace()).createOrReplace(deployment);
+        return client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).createOrReplace(deployment);
     }
 
     // =======================================
@@ -480,7 +533,7 @@ public class KubeClient {
     }
 
     public Job createJob(Job job) {
-        return client.batch().jobs().inNamespace(getNamespace()).createOrReplace(job);
+        return client.batch().jobs().inNamespace(job.getMetadata().getNamespace()).createOrReplace(job);
     }
 
     public Job replaceJob(Job job) {

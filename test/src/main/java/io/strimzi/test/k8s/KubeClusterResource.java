@@ -188,7 +188,7 @@ public class KubeClusterResource {
 
     public void deleteNamespace(String namespaceName) {
         kubeClient().deleteNamespace(namespaceName);
-        cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+        cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
     }
 
     /**

@@ -32,12 +32,12 @@ public class DeploymentResource implements ResourceType<Deployment> {
     }
     @Override
     public void delete(Deployment resource) throws Exception {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getName());
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 
     @Override
     public boolean waitForReadiness(Deployment resource) {
-        return DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
+        return DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
 
     public static Deployment getDeploymentFromYaml(String yamlPath) {

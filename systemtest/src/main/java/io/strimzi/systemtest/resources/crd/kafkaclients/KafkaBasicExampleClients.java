@@ -156,6 +156,10 @@ public class KafkaBasicExampleClients {
         return delayMs;
     }
 
+    public String getNamespaceName() {
+        return namespaceName;
+    }
+
     protected Builder newBuilder() {
         return new Builder();
     }
@@ -170,7 +174,8 @@ public class KafkaBasicExampleClients {
             .withMessageCount(getMessageCount())
             .withProducerName(getProducerName())
             .withTopicName(getTopicName())
-            .withMessage(getMessage());
+            .withMessage(getMessage())
+            .withNamespaceName(getNamespaceName());
     }
 
     public Builder toBuilder() {
@@ -281,6 +286,8 @@ public class KafkaBasicExampleClients {
                 .withNewTemplate()
                     .withNewMetadata()
                         .withLabels(consumerLabels)
+                        .withNamespace(namespaceName)
+                        .withName(consumerName)
                     .endMetadata()
                     .withNewSpec()
                         .withRestartPolicy("Never")
