@@ -50,6 +50,7 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import kafka.log.Log;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -180,7 +181,6 @@ public class ResourceManager {
                 String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
         }
     }
-
     public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition) {
         assertNotNull(resource);
         assertNotNull(resource.getMetadata());

@@ -42,21 +42,25 @@ import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.test.TestUtils;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Constants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -245,6 +249,28 @@ public class KubeClient {
         return listPods(namespaceName)
                 .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
                 .collect(Collectors.toList());
+    }
+
+    public List<Pod> listPodsByPrefixInNameWithDynamicWait(String namespaceName, String podNamePrefix) {
+        AtomicReference<List<Pod>> result = new AtomicReference<>();
+
+        TestUtils.waitFor("wait until some pod is present", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(16).toMillis(),
+            () -> {
+                LOGGER.info("In namespace:{}, podNamePrefix:\n{}", namespaceName, podNamePrefix);
+                List<Pod> listOfPods = listPods(namespaceName)
+                    .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
+                    .collect(Collectors.toList());
+                LOGGER.debug("List of pods:\n{}", listOfPods.toString());
+
+                // true if number of pods is more than 1
+                result.set(listOfPods);
+
+                LOGGER.info("Size of list....{}", result.get().size());
+
+                return result.get().size() > 0;
+            });
+
+        return result.get();
     }
 
     public List<Pod> listPodsByPrefixInName(String podNamePrefix) {

@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.kubernetes;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;

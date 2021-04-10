@@ -13,6 +13,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
+import io.strimzi.test.k8s.KubeClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -21,6 +22,7 @@ import java.rmi.UnexpectedException;
 import java.time.Duration;
 import java.util.Random;
 
+import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 /**
