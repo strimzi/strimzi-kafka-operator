@@ -464,7 +464,7 @@ public abstract class AbstractModel {
      * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
      * @return The logging properties as a String in log4j/2 properties file format.
      */
-    @SuppressWarnings("deprecation")
+
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             InlineLogging inlineLogging = (InlineLogging) logging;
@@ -490,16 +490,14 @@ public abstract class AbstractModel {
 
             return createLog4jProperties(newSettings);
         } else if (logging instanceof ExternalLogging) {
-            if (((ExternalLogging) logging).getValueFrom() != null && ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef() != null && ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey() != null) {
-                if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey())) {
-                    return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey()));
+            ExternalLogging externalLogging = (ExternalLogging) logging;
+            if (externalLogging.getValueFrom() != null && externalLogging.getValueFrom().getConfigMapKeyRef() != null && externalLogging.getValueFrom().getConfigMapKeyRef().getKey() != null) {
+                if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(externalLogging.getValueFrom().getConfigMapKeyRef().getKey())) {
+                    return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(externalLogging.getValueFrom().getConfigMapKeyRef().getKey()));
                 } else {
-                    log.warn("ConfigMap {} with external logging configuration does not exist or doesn't contain the configuration under the {} key.",
-                            ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getName(),
-                            ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey());
-                    throw new InvalidResourceException("ConfigMap " + ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getName()
+                    throw new InvalidResourceException("ConfigMap " + externalLogging.getValueFrom().getConfigMapKeyRef().getName()
                             + "with external logging configuration does not exist or doesn't contain the configuration under the {} key"
-                            + ((ExternalLogging) logging).getValueFrom().getConfigMapKeyRef().getKey() + ".");
+                            + externalLogging.getValueFrom().getConfigMapKeyRef().getKey() + ".");
                 }
             } else {
                 throw new InvalidResourceException("Property logging.valueFrom has to be specified when using external logging.");

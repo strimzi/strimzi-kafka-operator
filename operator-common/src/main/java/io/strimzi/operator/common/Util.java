@@ -487,7 +487,6 @@ public class Util {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public static Future<ConfigMap> getExternalLoggingCm(ConfigMapOperator configMapOperations, String namespace, ExternalLogging logging) {
         Future<ConfigMap> loggingCmFut;
         if (logging.getValueFrom() != null
