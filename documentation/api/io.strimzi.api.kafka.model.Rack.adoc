@@ -1,21 +1,58 @@
-Configures rack awareness to spread partition replicas across different racks.
-
+The `rack` option configures rack awareness.
 A _rack_ can represent an availability zone, data center, or an actual rack in your data center.
-By configuring a `rack` for a Kafka cluster, consumers can fetch data from the closest replica.
-This is useful for reducing the load on your network when a Kafka cluster spans multiple datacenters.
+The _rack_ is configured through a `topologyKey`.
+`topologyKey` identifies a label on Kubernetes nodes which contains the name of the topology in its value.
+An example of such label is `topology.kubernetes.io/zone` (or `failure-domain.beta.kubernetes.io/zone` on older Kubernetes versions) which contains the name of the availability zone in which the Kubernetes node runs.
+You can configure your Kafka cluster to be aware of the _rack_ in which it runs and enable some additional features such as spreading partition replicas across different racks or consuming messages from the closest replicas.
 
-To configure Kafka brokers for rack awareness, you specify a `topologyKey` value to match the label of the cluster node used by Kubernetes when scheduling Kafka broker pods to nodes.
-
-If the Kubernetes cluster is running on a cloud provider platform, the label must represent the availability zone where the node is running.
-Usually, nodes are labeled with the `topology.kubernetes.io/zone` label (or `failure-domain.beta.kubernetes.io/zone` on older Kubernetes versions),
-which can be used as the `topologyKey` value.
-
-The rack awareness configuration spreads the broker pods and partition replicas across zones, improving resiliency, and also sets a `broker.rack` configuration for each Kafka broker.
-The `broker.rack` configuration assigns a rack ID to each broker.
-
+For more information about Kubernetes node labels, see {K8sWellKnownLabelsAnnotationsAndTaints}.
 Consult your Kubernetes administrator regarding the node label that represents the zone or rack into which the node is deployed.
 
+=== Spreading partition replicas across racks
+
+When rack awareness is enabled, Strimzi will set `broker.rack` configuration for each Kafka broker.
+The `broker.rack` configuration assigns a rack ID to each broker.
+When it is configured, Kafka brokers will spread partition replicas across as many different racks as possible.
+This improves the resiliency and is important for availability and reliability.
+When the replicas are spread across multiple racks, the probability that multiple replicas will fail at the same time is lower than if they would be in the same rack.
+To enable rack awareness in Kafka, add the `rack` option to the `.spec.kafka` section of the `Kafka` custom resource as shown in the example below.
+
 .Example `rack` configuration for Kafka
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    rack:
+      topologyKey: topology.kubernetes.io/zone
+    # ...
+----
+
+NOTE: In some case, the brokers might change the _rack_ in which they run.
+That can cause that replicas running in different racks will now share the same rack.
+You should regularly use Cruise Control and `KafkaRebalance` resource with the `RackAwareGoal` to make sure the replicas stay distributed across different racks.
+
+When rack awareness is enabled in the `Kafka` custom resource, Strimzi will automatically add `preferredDuringSchedulingIgnoredDuringExecution` affinity rule to distribute the Kafka brokers across the different racks.
+However, the _preferred_ rule does not guarantee that the brokers will be spread.
+Depending on your exact Kubernetes and Kafka configurations, you should add additional `affinity` rules or configure `topologySpreadConstraints` for both ZooKeeper and Kafka to make sure the nodes are properly distributed accross as many racks as possible.
+For more information see xref:assembly-scheduling-str[].
+
+=== Consuming messages from closest replicas
+
+Rack awareness can be also used in consumers to fetch data from the closest replica.
+This is useful for reducing the load on your network when a Kafka cluster spans multiple datacenters and can also reduce costs when running Kafka in public clouds.
+However, it can lead to increased latency.
+
+In order to be able to consume from the closest replica, the rack awareness has to be configured in the Kafka cluster, and the `RackAwareReplicaSelector` has to be enabled.
+The replica selector plugin provides the logic that enables clients to consume from the nearest replica.
+The default implementation uses `LeaderSelector` to always select the leader replica for the client.
+Specify `RackAwareReplicaSelector` for the `replica.selector.class` to switch from the default implementation.
+
+.Example `rack` configuration with enabled replica-aware selector
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -33,14 +70,17 @@ spec:
     # ...
 ----
 
-Use the `RackAwareReplicaSelector` implementation for the Kafka `ReplicaSelector` plugin if you want clients to consume from the closest replica.
-The `ReplicaSelector` plugin provides the logic that enables clients to consume from the nearest replica.
-Specify `RackAwareReplicaSelector` for the `replica.selector.class` to switch from the default implementation.
-The default implementation uses `LeaderSelector` to always select the leader replica for the client.
-By switching from the leader replica to the replica follower, there is some cost to latency.
-If required, you can also customize your own implementation.
+In addition to the Kafka broker configuration, you also need to specify the `client.rack` option in your consumers.
+The `client.rack` option should specify the _rack ID_ in which the consumer is running.
+`RackAwareReplicaSelector` associates matching `broker.rack` and `client.rack` IDs, to find the nearest replica and consume from it.
+If there are multiple replicas in the same rack, `RackAwareReplicaSelector` always selects the most up-to-date replica.
+If the rack ID is not specified, or if it cannot find a replica with the same rack ID, it will fall back to the leader replica.
 
-For clients, including Kafka Connect, you specify the same topology key as the broker that the client will use to consume messages.
+.Example showing client consuming from replicas in the same availability zone
+image::rack-config-availability-zones.svg[consuming from replicas in the same availability zone]
+
+Consuming messages from the closest replicas can be used also in Kafka Connect for sink connectors which are consuming messages.
+When deploying Kafka Connect using Strimzi, you can use the `rack` section in the `KafkaConnect` or `KafkaConnectS2I` CRs to automatically configure the `client.rack` option.
 
 .Example `rack` configuration for Kafka Connect
 [source,yaml,subs=attributes+]
@@ -56,15 +96,6 @@ spec:
     # ...
 ----
 
-The client is assigned a `client.rack` ID.
-
-`RackAwareReplicaSelector` associates matching `broker.rack` and `client.rack` IDs,
-so the client can consume from the nearest replica.
-
-.Example showing client consuming from replicas in the same availability zone
-image::rack-config-availability-zones.svg[consuming from replicas in the same availability zone]
-
-If there are multiple replicas in the same rack, `RackAwareReplicaSelector` always selects the most up-to-date replica.
-If the rack ID is not specified, or if it cannot find a replica with the same rack ID, it will fall back to the leader replica.
-
-For more information about Kubernetes node labels, see {K8sWellKnownLabelsAnnotationsAndTaints}.
+Enabling the rack awareness in the `KafkaConnect` or `KafkaConnectS2I` custom resource will not set any affinity rules.
+You can configure `affinity` or `topologySpreadConstraints` in other parts of the custom resource.
+For more information see xref:assembly-scheduling-str[].
