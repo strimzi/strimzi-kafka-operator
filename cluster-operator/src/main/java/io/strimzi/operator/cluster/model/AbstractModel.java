@@ -464,7 +464,6 @@ public abstract class AbstractModel {
      * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
      * @return The logging properties as a String in log4j/2 properties file format.
      */
-
     public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             InlineLogging inlineLogging = (InlineLogging) logging;
