@@ -81,8 +81,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         List<String> result = new ArrayList<>();
         result.add(cmd());
         result.add("--namespace");
-        LOGGER.error("========================================", cmd(), namespace);
-        LOGGER.error("EXECUTING COMMAND:\n{} In NAMESpACE:\n{}", cmd(), namespace);
         result.add(namespace);
         result.addAll(rest);
         return result;

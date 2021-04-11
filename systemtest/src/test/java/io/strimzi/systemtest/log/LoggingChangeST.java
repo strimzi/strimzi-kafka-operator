@@ -966,7 +966,8 @@ class LoggingChangeST extends AbstractST {
                         "log4j.logger.kafka.controller=ERROR\n" +
                         "log4j.logger.kafka.log.LogCleaner=ERROR\n" +
                         "log4j.logger.state.change.logger=TRACE\n" +
-                        "log4j.logger.kafka.authorizer.logger=DEBUG\n"
+                        "log4j.logger.kafka.authorizer.logger=${kafka.my.level.string}\n" +
+                        "kafka.my.level.string=DEBUG"
                 ))
                 .build();
 
