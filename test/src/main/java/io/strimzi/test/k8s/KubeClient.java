@@ -198,13 +198,22 @@ public class KubeClient {
         return client.pods().inNamespace(getNamespace()).withLabels(labelSelector).list().getItems();
     }
 
+    public List<Pod> listPods(String namespaceName, Map<String, String> labelSelector) {
+        return client.pods().inNamespace(namespaceName).withLabels(labelSelector).list().getItems();
+    }
+
     public List<Pod> listPods(String key, String value) {
         return listPods(Collections.singletonMap(key, value));
     }
 
-    public List<Pod> listPods(String clusterName, String key, String value) {
-        return listPods(Collections.singletonMap(key, value)).stream()
+    public List<Pod> listPods(String namespaceName, String clusterName, String key, String value) {
+        return listPods(namespaceName, Collections.singletonMap(key, value)).stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
+    }
+
+    public List<Pod> listPods(String clusterName, String key, String value) {
+        return listPods(kubeClient().getNamespace(), Collections.singletonMap(key, value)).stream()
+        .filter(pod -> pod.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
     }
 
     public List<String> listPodNames(String key, String value) {
@@ -255,17 +264,12 @@ public class KubeClient {
 
         TestUtils.waitFor("wait until some pod is present", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(16).toMillis(),
             () -> {
-                LOGGER.info("In namespace:{}, podNamePrefix:\n{}", namespaceName, podNamePrefix);
                 List<Pod> listOfPods = listPods(namespaceName)
                     .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
                     .collect(Collectors.toList());
-                LOGGER.debug("List of pods:\n{}", listOfPods.toString());
-
-                // true if number of pods is more than 1
                 result.set(listOfPods);
 
-                LOGGER.info("Size of list....{}", result.get().size());
-
+                // true if number of pods is more than 1
                 return result.get().size() > 0;
             });
 
@@ -289,7 +293,7 @@ public class KubeClient {
      * Gets pod
      */
     public Pod getPod(String namespaceName, String name) {
-        return client.pods().inNamespace(getNamespace()).withName(name).get();
+        return client.pods().inNamespace(namespaceName).withName(name).get();
     }
 
     public Pod getPod(String name) {
@@ -362,11 +366,19 @@ public class KubeClient {
         return statefulSet(getNamespace(), statefulSetName);
     }
 
+
+    /**
+     * Gets stateful set selectors
+     */
+    public LabelSelector getStatefulSetSelectors(String namespaceName, String statefulSetName) {
+        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).get().getSpec().getSelector();
+    }
+
     /**
      * Gets stateful set selectors
      */
     public LabelSelector getStatefulSetSelectors(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).get().getSpec().getSelector();
+        return getStatefulSetSelectors(kubeClient().getNamespace(), statefulSetName);
     }
 
     /**
