@@ -16,6 +16,7 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,8 +111,18 @@ public class KafkaStreamsTopicStoreService {
             }
         };
 
-        Topology topology = new TopicStoreTopologyProvider(storeTopic, storeName, kafkaProperties, dispatcher).get();
-        streams = new KafkaStreams(topology, kafkaProperties);
+        // provide some Kafka Streams defaults
+        Properties streamsProperties = new Properties();
+        streamsProperties.putAll(kafkaProperties);
+        Object rf = kafkaProperties.get(StreamsConfig.REPLICATION_FACTOR_CONFIG);
+        if (rf == null) {
+            // this will pickup default broker settings
+            streamsProperties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "-1");
+        }
+
+        Topology topology = new TopicStoreTopologyProvider(storeTopic, storeName, streamsProperties, dispatcher).get();
+
+        streams = new KafkaStreams(topology, streamsProperties);
         streams.setStateListener(listener);
         streams.setGlobalStateRestoreListener(new LoggingStateRestoreListener());
         closeables.add(streams);
