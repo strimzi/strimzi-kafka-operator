@@ -36,7 +36,7 @@ public class PodUtils {
      * matching the given {@code selector}.
      */
     public static Map<String, String> podSnapshot(String namespaceName, LabelSelector selector) {
-        List<Pod> pods = kubeClient(namespaceName).listPods(selector);
+        List<Pod> pods = kubeClient(namespaceName).listPods(namespaceName, selector);
         return pods.stream()
             .collect(
                 Collectors.toMap(pod -> pod.getMetadata().getName(),
@@ -83,7 +83,7 @@ public class PodUtils {
         TestUtils.waitFor("All pods matching " + selector + "to be ready",
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(expectPods),
             () -> {
-                List<Pod> pods = kubeClient(namespaceName).listPods(selector);
+                List<Pod> pods = kubeClient(namespaceName).listPods(namespaceName, selector);
                 if (pods.isEmpty() && expectPods == 0) {
                     LOGGER.debug("Expected pods are ready");
                     return true;
@@ -143,7 +143,7 @@ public class PodUtils {
     }
 
     public static String getPodNameByPrefix(String prefix) {
-       return getPodNameByPrefix(kubeClient().getNamespace(), prefix);
+        return getPodNameByPrefix(kubeClient().getNamespace(), prefix);
     }
 
     public static String getFirstPodNameContaining(String searchTerm) {

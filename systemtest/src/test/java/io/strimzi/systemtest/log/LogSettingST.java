@@ -38,6 +38,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -53,6 +54,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -74,9 +76,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNot.not;
 
 @Tag(REGRESSION)
 @Tag(CONNECT)
@@ -198,8 +200,6 @@ class LogSettingST extends AbstractST {
 
     @IsolatedTest("Using shared Kafka")
     void testKafkaLogSetting(ExtensionContext extensionContext) {
-        String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-
         String kafkaMap = KafkaResources.kafkaMetricsAndLogConfigMapName(LOG_SETTING_CLUSTER_NAME);
         String zookeeperMap = KafkaResources.zookeeperMetricsAndLogConfigMapName(LOG_SETTING_CLUSTER_NAME);
         String topicOperatorMap = String.format("%s-%s", LOG_SETTING_CLUSTER_NAME, "entity-topic-operator-config");
@@ -209,9 +209,9 @@ class LogSettingST extends AbstractST {
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(LOG_SETTING_CLUSTER_NAME);
         String zkSsName = KafkaResources.zookeeperStatefulSetName(LOG_SETTING_CLUSTER_NAME);
 
-        Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, eoDepName);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaSsName);
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, zkSsName);
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(NAMESPACE, eoDepName);
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(NAMESPACE, kafkaSsName);
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(NAMESPACE, zkSsName);
 
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
@@ -220,16 +220,16 @@ class LogSettingST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(LOG_SETTING_CLUSTER_NAME, userName).build());
 
         LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has log level set properly", LOG_SETTING_CLUSTER_NAME);
-        assertThat("Kafka's log level is set properly", checkLoggersLevel(namespaceName, KAFKA_LOGGERS, kafkaMap), is(true));
-        assertThat("Zookeeper's log level is set properly", checkLoggersLevel(namespaceName, ZOOKEEPER_LOGGERS, zookeeperMap), is(true));
-        assertThat("Topic operator's log level is set properly", checkLoggersLevel(namespaceName, OPERATORS_LOGGERS, topicOperatorMap), is(true));
-        assertThat("User operator's log level is set properly", checkLoggersLevel(namespaceName, OPERATORS_LOGGERS, userOperatorMap), is(true));
+        assertThat("Kafka's log level is set properly", checkLoggersLevel(NAMESPACE, KAFKA_LOGGERS, kafkaMap), is(true));
+        assertThat("Zookeeper's log level is set properly", checkLoggersLevel(NAMESPACE, ZOOKEEPER_LOGGERS, zookeeperMap), is(true));
+        assertThat("Topic operator's log level is set properly", checkLoggersLevel(NAMESPACE, OPERATORS_LOGGERS, topicOperatorMap), is(true));
+        assertThat("User operator's log level is set properly", checkLoggersLevel(NAMESPACE, OPERATORS_LOGGERS, userOperatorMap), is(true));
 
         LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has GC logging enabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
-        assertThat("Kafka GC logging is not enabled", checkGcLoggingStatefulSets(namespaceName, kafkaSsName), is(true));
-        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(namespaceName, zkSsName), is(true));
-        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(namespaceName, eoDepName, "topic-operator"), is(true));
-        assertThat("UO GC logging is enabled", checkGcLoggingDeployments(namespaceName, eoDepName, "user-operator"), is(true));
+        assertThat("Kafka GC logging is not enabled", checkGcLoggingStatefulSets(NAMESPACE, kafkaSsName), is(true));
+        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(NAMESPACE, zkSsName), is(true));
+        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(NAMESPACE, eoDepName, "topic-operator"), is(true));
+        assertThat("UO GC logging is enabled", checkGcLoggingDeployments(NAMESPACE, eoDepName, "user-operator"), is(true));
 
         LOGGER.info("Changing JVM options - setting GC logging to false");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(LOG_SETTING_CLUSTER_NAME, kafka -> {
@@ -237,29 +237,29 @@ class LogSettingST extends AbstractST {
             kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
             kafka.getSpec().getEntityOperator().getTopicOperator().setJvmOptions(JVM_OPTIONS);
             kafka.getSpec().getEntityOperator().getUserOperator().setJvmOptions(JVM_OPTIONS);
-        }, namespaceName);
+        }, NAMESPACE);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, zkSsName, 1, zkPods);
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaSsName, 3, kafkaPods);
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, eoDepName, 1, eoPods);
+        StatefulSetUtils.waitTillSsHasRolled(NAMESPACE, zkSsName, 1, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(NAMESPACE, kafkaSsName, 3, kafkaPods);
+        DeploymentUtils.waitTillDepHasRolled(NAMESPACE, eoDepName, 1, eoPods);
 
         LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has GC logging disabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
-        assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(namespaceName, kafkaSsName), is(false));
-        assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(namespaceName, zkSsName), is(false));
-        assertThat("TO GC logging is disabled", checkGcLoggingDeployments(namespaceName, eoDepName, "topic-operator"), is(false));
-        assertThat("UO GC logging is disabled", checkGcLoggingDeployments(namespaceName, eoDepName, "user-operator"), is(false));
+        assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(NAMESPACE, kafkaSsName), is(false));
+        assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(NAMESPACE, zkSsName), is(false));
+        assertThat("TO GC logging is disabled", checkGcLoggingDeployments(NAMESPACE, eoDepName, "topic-operator"), is(false));
+        assertThat("UO GC logging is disabled", checkGcLoggingDeployments(NAMESPACE, eoDepName, "user-operator"), is(false));
 
         LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has GC logging disabled in stateful sets/deployments", GC_LOGGING_SET_NAME);
-        assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(namespaceName, kafkaSsName), is(false));
-        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(namespaceName, zkSsName), is(false));
-        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(namespaceName, eoDepName, "topic-operator"), is(false));
-        assertThat("UO GC logging is enabled", checkGcLoggingDeployments(namespaceName, eoDepName, "user-operator"), is(false));
+        assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(NAMESPACE, kafkaSsName), is(false));
+        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(NAMESPACE, zkSsName), is(false));
+        assertThat("TO GC logging is enabled", checkGcLoggingDeployments(NAMESPACE, eoDepName, "topic-operator"), is(false));
+        assertThat("UO GC logging is enabled", checkGcLoggingDeployments(NAMESPACE, eoDepName, "user-operator"), is(false));
 
-        kubectlGetStrimzi(namespaceName, LOG_SETTING_CLUSTER_NAME);
-        kubectlGetStrimzi(namespaceName, GC_LOGGING_SET_NAME);
+        kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, LOG_SETTING_CLUSTER_NAME);
+        kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, GC_LOGGING_SET_NAME);
 
-        checkContainersHaveProcessOneAsTini(namespaceName, LOG_SETTING_CLUSTER_NAME);
-        checkContainersHaveProcessOneAsTini(namespaceName, GC_LOGGING_SET_NAME);
+        checkContainersHaveProcessOneAsTini(NAMESPACE, LOG_SETTING_CLUSTER_NAME);
+        checkContainersHaveProcessOneAsTini(NAMESPACE, GC_LOGGING_SET_NAME);
     }
 
     @ParallelTest
@@ -293,7 +293,7 @@ class LogSettingST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(NAMESPACE, connectDepName, 1, connectPods);
         assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(NAMESPACE, connectDepName), is(false));
 
-        kubectlGetStrimzi(NAMESPACE, connectClusterName);
+        kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, connectClusterName);
         checkContainersHaveProcessOneAsTini(NAMESPACE, connectClusterName);
     }
 
@@ -326,7 +326,7 @@ class LogSettingST extends AbstractST {
         DeploymentConfigUtils.waitTillDepConfigHasRolled(NAMESPACE, connectS2IDepName, connectS2IPods);
         assertThat("ConnectS2I GC logging is disabled", checkGcLoggingDeploymentConfig(NAMESPACE, connectS2IDepName), is(false));
 
-        kubectlGetStrimzi(NAMESPACE, connectS2IClusterName);
+        kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, connectS2IClusterName);
         checkContainersHaveProcessOneAsTini(NAMESPACE, connectS2IClusterName);
     }
 
@@ -361,7 +361,7 @@ class LogSettingST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(NAMESPACE, mmDepName, 1, mmPods);
         assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(NAMESPACE, mmDepName), is(false));
 
-        kubectlGetStrimzi(NAMESPACE, mirrorMakerName);
+        kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, mirrorMakerName);
         checkContainersHaveProcessOneAsTini(NAMESPACE, mirrorMakerName);
     }
 
@@ -396,7 +396,7 @@ class LogSettingST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(NAMESPACE, mm2DepName, 1, mm2Pods);
         assertThat("Mirror-maker2 GC logging is disabled", checkGcLoggingDeployments(NAMESPACE, mm2DepName), is(false));
 
-        kubectlGetStrimzi(NAMESPACE, mirrorMaker2Name);
+        kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, mirrorMaker2Name);
         checkContainersHaveProcessOneAsTini(NAMESPACE, mirrorMaker2Name);
     }
 
@@ -431,11 +431,11 @@ class LogSettingST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(NAMESPACE, bridgeDepName, 1, bridgePods);
         assertThat("Bridge GC logging is disabled", checkGcLoggingDeployments(NAMESPACE, bridgeDepName), is(false));
 
-        kubectlGetStrimzi(NAMESPACE, bridgeName);
+        kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, bridgeName);
         checkContainersHaveProcessOneAsTini(NAMESPACE, bridgeName);
     }
 
-    @ParallelTest
+    @IsolatedTest("Updating shared Kafka")
     // This test might be flaky, as it gets real logs from CruiseControl pod
     void testCruiseControlLogChange(ExtensionContext extensionContext) {
         final String debugText = " DEBUG ";
@@ -467,14 +467,13 @@ class LogSettingST extends AbstractST {
     }
 
     // only one thread can access (eliminate data-race)
-    private synchronized void kubectlGetStrimzi(String namespaceName, String resourceName) {
-        LOGGER.info("Checking if kubectl get strimzi contains {}", resourceName);
-        String strimziCRs = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("get", "strimzi").out();
-        assertThat(strimziCRs, containsString(resourceName));
+    private synchronized void kubectlGetStrimziUntilOperationIsSuccessful(String namespaceName, String resourceName) {
+        TestUtils.waitFor("Checking if kubectl get strimzi contains:" + resourceName, Duration.ofSeconds(10).toMillis(),
+            Constants.GLOBAL_TIMEOUT, () -> cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("get", "strimzi").out().contains(resourceName));
     }
 
-    private synchronized void kubectlGetStrimzi(String resourceName) {
-        kubectlGetStrimzi(kubeClient().getNamespace(), resourceName);
+    private synchronized void kubectlGetStrimziUntilOperationIsSuccessful(String resourceName) {
+        kubectlGetStrimziUntilOperationIsSuccessful(kubeClient().getNamespace(), resourceName);
     }
 
     // only one thread can access (eliminate data-race)
@@ -543,7 +542,7 @@ class LogSettingST extends AbstractST {
 
     private synchronized Boolean checkGcLoggingDeployments(String namespaceName, String deploymentName) {
         LOGGER.info("Checking deployment: {}", deploymentName);
-        Container container = kubeClient(namespaceName).getDeployment(deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = kubeClient(namespaceName).getDeployment(namespaceName, deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
@@ -588,7 +587,7 @@ class LogSettingST extends AbstractST {
 
         String operationId = timeMeasuringSystem.startOperation(Operation.CLASS_EXECUTION, extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestClass().getName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewInlineLogging()
@@ -632,7 +631,7 @@ class LogSettingST extends AbstractST {
             .build());
 
 //         deploying second Kafka here because of MM and MM2 tests
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -656,7 +655,12 @@ class LogSettingST extends AbstractST {
             .build());
 
         String kafkaClientsName = "shared" + "-" + Constants.KAFKA_CLIENTS;
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(NAMESPACE, false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(NAMESPACE, false, kafkaClientsName).build());
+
+        // sync point wait for all resources
+        KafkaUtils.waitForKafkaReady(NAMESPACE, LOG_SETTING_CLUSTER_NAME);
+        KafkaUtils.waitForKafkaReady(NAMESPACE, GC_LOGGING_SET_NAME);
+        DeploymentUtils.waitForDeploymentReady(NAMESPACE, kafkaClientsName);
     }
 
     @AfterAll

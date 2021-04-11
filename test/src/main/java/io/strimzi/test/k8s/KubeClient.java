@@ -46,7 +46,6 @@ import io.strimzi.test.TestUtils;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.util.Constants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -189,6 +188,10 @@ public class KubeClient {
 
     public List<Pod> listPods(LabelSelector selector) {
         return client.pods().inNamespace(getNamespace()).withLabelSelector(selector).list().getItems();
+    }
+
+    public List<Pod> listPods(String namespaceName, LabelSelector selector) {
+        return client.pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();
     }
 
     public List<Pod> listPods(Map<String, String> labelSelector) {
@@ -483,8 +486,12 @@ public class KubeClient {
     /**
      * Gets deployment config status
      */
+    public boolean getDeploymentConfigReadiness(String namespaceName, String deploymentConfigName) {
+        return Boolean.TRUE.equals(client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespaceName).withName(deploymentConfigName).isReady());
+    }
+
     public boolean getDeploymentConfigReadiness(String deploymentConfigName) {
-        return Boolean.TRUE.equals(client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).isReady());
+        return getDeploymentConfigReadiness(kubeClient().getNamespace(), deploymentConfigName);
     }
 
     // ==================================

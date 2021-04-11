@@ -126,7 +126,7 @@ class MirrorMaker2ST extends AbstractST {
         // Deploy Topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceName, 3).build());
 
-        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName,false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, false, kafkaClientsName).build());
 
         final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
@@ -298,7 +298,7 @@ class MirrorMaker2ST extends AbstractST {
 
         resourceManager.createResource(extensionContext, userSource);
         resourceManager.createResource(extensionContext, userTarget);
-        resourceManager.createResource(extensionContext, false , KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, userSource, userTarget).build());
+        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, userSource, userTarget).build());
 
         final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
@@ -521,7 +521,7 @@ class MirrorMaker2ST extends AbstractST {
         certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
 
         // Deploy client
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName,true, kafkaClientsName, userSource, userTarget).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, userSource, userTarget).build());
 
         final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 

@@ -115,7 +115,7 @@ public class DeploymentUtils {
      */
     public static boolean depHasRolled(String namespaceName, String name, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
-        Map<String, String> map = PodUtils.podSnapshot(namespaceName, kubeClient(namespaceName).getDeployment(name).getSpec().getSelector());
+        Map<String, String> map = PodUtils.podSnapshot(namespaceName, kubeClient(namespaceName).getDeployment(namespaceName, name).getSpec().getSelector());
         LOGGER.debug("Current  snapshot: {}", new TreeMap<>(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
@@ -145,7 +145,7 @@ public class DeploymentUtils {
         TestUtils.waitFor("Deployment " + name + " rolling update in namespace:" + namespaceName,
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(expectedPods), () -> depHasRolled(namespaceName, name, snapshot));
         waitForDeploymentReady(namespaceName, name);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeployment(name).getSpec().getSelector(), expectedPods, true);
+        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeployment(namespaceName, name).getSpec().getSelector(), expectedPods, true);
         LOGGER.info("Deployment {} rolling update finished", name);
         return depSnapshot(namespaceName, name);
     }

@@ -52,7 +52,6 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
-import kafka.log.Log;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;

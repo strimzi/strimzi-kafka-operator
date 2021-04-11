@@ -33,7 +33,7 @@ public class DeploymentConfigUtils {
      */
     public static Map<String, String> depConfigSnapshot(String namespaceName, String name) {
         LabelSelector selector = new LabelSelectorBuilder().addToMatchLabels(kubeClient(namespaceName).getDeploymentConfigSelectors(namespaceName, name)).build();
-        return PodUtils.podSnapshot(selector);
+        return PodUtils.podSnapshot(namespaceName, selector);
     }
 
     public static Map<String, String> depConfigSnapshot(String name) {
@@ -77,10 +77,10 @@ public class DeploymentConfigUtils {
     public static Map<String, String> waitTillDepConfigHasRolled(String namespaceName, String depConfigName, Map<String, String> snapshot) {
         LOGGER.info("Waiting for DeploymentConfig {} rolling update", depConfigName);
         TestUtils.waitFor("DeploymentConfig roll of " + depConfigName,
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> depConfigHasRolled(depConfigName, snapshot));
-        waitForDeploymentConfigReady(depConfigName);
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> depConfigHasRolled(namespaceName, depConfigName, snapshot));
+        waitForDeploymentConfigReady(namespaceName, depConfigName);
         LOGGER.info("DeploymentConfig {} rolling update finished", depConfigName);
-        return depConfigSnapshot(depConfigName);
+        return depConfigSnapshot(namespaceName, depConfigName);
     }
 
     public static Map<String, String> waitTillDepConfigHasRolled(String depConfigName, Map<String, String> snapshot) {
@@ -122,6 +122,21 @@ public class DeploymentConfigUtils {
         LOGGER.info("DeploymentConfig {} is ready", depConfigName);
 
         return depConfigSnapshot(depConfigName);
+    }
+
+    public static void waitForDeploymentConfigReady(String namespaceName, String depConfigName) {
+        LOGGER.info("Wait for DeploymentConfig: {} will be ready", depConfigName);
+
+        TestUtils.waitFor(String.format("Wait for DeploymentConfig: %s will be ready", depConfigName),
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
+            () -> kubeClient(namespaceName).getDeploymentConfigReadiness(namespaceName, depConfigName),
+            () -> {
+                if (kubeClient(namespaceName).getDeploymentConfig(namespaceName, depConfigName) != null) {
+                    LOGGER.info(kubeClient(namespaceName).getDeploymentConfig(namespaceName, depConfigName));
+                }
+            });
+
+        LOGGER.info("Wait for DeploymentConfig: {} is ready", depConfigName);
     }
 
     public static void waitForDeploymentConfigReady(String depConfigName) {
