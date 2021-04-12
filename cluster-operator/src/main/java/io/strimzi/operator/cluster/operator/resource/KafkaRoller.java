@@ -215,7 +215,7 @@ public class KafkaRoller {
                     allClient.close(Duration.ofSeconds(30));
                 }
             } catch (RuntimeException e) {
-                log.debug(new ParameterizedMessage("{}: Exception closing the allClient", reconciliation), e);
+                log.debug("{}: Exception closing admin client", reconciliation, e);
             }
             vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
         });

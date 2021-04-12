@@ -18,7 +18,6 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -71,7 +70,7 @@ class KafkaAvailability {
                     log.debug("{}: Got {} topic descriptions", reconciliation, topicDescriptions.size());
                     return Future.succeededFuture(groupTopicsByBroker(topicDescriptions, podId));
                 }).recover(error -> {
-                    log.warn(new ParameterizedMessage("{}: failed to get topic descriptions", reconciliation), error);
+                    log.warn("{}: failed to get topic descriptions", reconciliation, error);
                     return Future.failedFuture(error);
                 });
 
@@ -89,7 +88,7 @@ class KafkaAvailability {
             }
             return canRoll;
         }).recover(error -> {
-            log.warn(new ParameterizedMessage("{}: Error determining whether it is safe to restart pod {}", reconciliation, podId), error);
+            log.warn("{}: Error determining whether it is safe to restart pod {}", reconciliation, podId, error);
             return Future.failedFuture(error);
         });
     }
