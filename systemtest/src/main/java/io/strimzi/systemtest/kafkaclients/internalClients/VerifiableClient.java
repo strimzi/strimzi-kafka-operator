@@ -121,7 +121,7 @@ public class VerifiableClient {
         this.clientArgumentMap.put(ClientArgument.MAX_MESSAGES, Integer.toString(maxMessages));
         if (kafkaUsername != null) this.clientArgumentMap.put(ClientArgument.USER, kafkaUsername.replace("-", "_"));
 
-        String image = kubeClient().namespace(podNamespace).getPod(this.podName).getSpec().getContainers().get(0).getImage();
+        String image = kubeClient().namespace(podNamespace).getPod(podNamespace, this.podName).getSpec().getContainers().get(0).getImage();
         String clientVersion = image.substring(image.length() - 5);
 
         this.clientArgumentMap.put(allowParameter("2.5.0", clientVersion) ? ClientArgument.BOOTSTRAP_SERVER : ClientArgument.BROKER_LIST, bootstrapServer);

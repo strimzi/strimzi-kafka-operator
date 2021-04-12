@@ -628,7 +628,7 @@ class LoggingChangeST extends AbstractST {
         assertThat(podLogConfig, equalTo(log4jConfig));
 
         LOGGER.info("Checking if CO rolled its pod");
-        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(STRIMZI_DEPLOYMENT_NAME)));
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
 
         long reconciliationSleep = RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis();
         LOGGER.info("Waiting {} ms log not to be empty", reconciliationSleep);
