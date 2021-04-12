@@ -1230,11 +1230,7 @@ public class KafkaCluster extends AbstractModel {
      * @return Map with the annotations
      */
     private Map<String, String> generateInternalIngressAnnotations(String ingressClass) {
-        Map<String, String> internalAnnotations = new HashMap<>(4);
-
-        if (ingressClass != null) {
-            internalAnnotations.put("kubernetes.io/ingress.class", ingressClass);
-        }
+        Map<String, String> internalAnnotations = new HashMap<>(3);
 
         internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
         internalAnnotations.put("nginx.ingress.kubernetes.io/ssl-passthrough", "true");
