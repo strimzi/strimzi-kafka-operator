@@ -1074,43 +1074,48 @@ class TopicOperator {
                 });
     }
 
-    private boolean isTopicNameChanged(TopicName topicName, KafkaTopic topicResource) {
+    private Future<Void> checkForNameChange(TopicName topicName, KafkaTopic topicResource) {
+        if (topicResource == null) {
+            return Future.succeededFuture();
+        }
         TopicName topicNameFromStatus = topicResource.getStatus() == null ? null : new TopicName(topicResource.getStatus().getTopicName());
-        return topicNameFromStatus != null && !topicName.equals(topicNameFromStatus);
+        if (topicNameFromStatus != null && !topicName.equals(topicNameFromStatus)) {
+            return Future.failedFuture(new IllegalArgumentException("Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed."));
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     private Future<Void> reconcileOnResourceChange(Reconciliation reconciliation, LogContext logContext, KafkaTopic topicResource, Topic k8sTopic,
                                            boolean isModify) {
         TopicName topicName = new TopicName(topicResource);
 
-        return CompositeFuture.all(getFromKafka(topicName), getFromTopicStore(topicName))
-            .compose(compositeResult -> {
-                Topic kafkaTopic = compositeResult.resultAt(0);
-                Topic privateTopic = compositeResult.resultAt(1);
-                Future<Void> result;
-
-                if (isTopicNameChanged(topicName, topicResource)) {
-                    Promise<Void> promise = Promise.promise();
-                    result = promise.future();
+        return checkForNameChange(topicName, topicResource)
+            .onComplete(nameChanged -> {
+                if (nameChanged.failed()) {
                     enqueue(new Event(topicResource,
                             "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
-                            EventType.WARNING, result));
-                    result = result.compose(i -> Future.failedFuture(new IllegalArgumentException("Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.")));
-                } else if (kafkaTopic == null
-                    && privateTopic == null
-                    && isModify
-                    && topicResource.getMetadata().getDeletionTimestamp() != null) {
-                    // When processing a Kafka-side deletion then when we delete the KT
-                    // We first receive a modify event (setting deletionTimestamp etc)
-                    // then the deleted event. We need to ignore the modify event.
-                    LOGGER.debug("Ignoring pre-delete modify event");
-                    reconciliation.observedTopicFuture(null);
-                    result = Future.succeededFuture();
-                } else {
-                    result = reconcile(reconciliation, logContext, topicResource, k8sTopic, kafkaTopic, privateTopic);
+                            EventType.WARNING, eventResult -> { }));
                 }
-                return result;
-            });
+            })
+            .compose(i -> CompositeFuture.all(getFromKafka(topicName), getFromTopicStore(topicName))
+                .compose(compositeResult -> {
+                    Topic kafkaTopic = compositeResult.resultAt(0);
+                    Topic privateTopic = compositeResult.resultAt(1);
+                    if (kafkaTopic == null
+                            && privateTopic == null
+                            && isModify
+                            && topicResource.getMetadata().getDeletionTimestamp() != null) {
+                        // When processing a Kafka-side deletion then when we delete the KT
+                        // We first receive a modify event (setting deletionTimestamp etc)
+                        // then the deleted event. We need to ignore the modify event.
+                        LOGGER.debug("Ignoring pre-delete modify event");
+                        reconciliation.observedTopicFuture(null);
+                        return Future.succeededFuture();
+                    } else {
+                        return reconcile(reconciliation, logContext, topicResource, k8sTopic, kafkaTopic, privateTopic);
+                    }
+                }));
     }
 
     private class UpdateInTopicStore implements Handler<Void> {
@@ -1417,11 +1422,16 @@ class TopicOperator {
         Promise<Void> topicPromise = Promise.promise();
         try {
             Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
-            kafka.topicMetadata(topicName)
-                .compose(kafkaTopicMeta -> {
-                    if (isTopicNameChanged(topicName, kafkaTopicResource)) {
-                        return Future.failedFuture(new IllegalArgumentException("Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed."));
+            checkForNameChange(topicName, kafkaTopicResource)
+                .onComplete(nameChanged -> {
+                    if (nameChanged.failed()) {
+                        enqueue(new Event(kafkaTopicResource,
+                                "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.",
+                                EventType.WARNING, eventResult -> { }));
                     }
+                })
+                .compose(i -> kafka.topicMetadata(topicName))
+                .compose(kafkaTopicMeta -> {
                     Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
                     return reconcile(reconciliation, logContext, kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic);
                 })
