@@ -61,7 +61,6 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import static java.util.Collections.singletonList;
 
