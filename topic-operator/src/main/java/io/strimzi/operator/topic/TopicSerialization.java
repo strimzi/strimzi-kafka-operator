@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -89,10 +90,15 @@ class TopicSerialization {
         Topic.Builder builder = new Topic.Builder()
                 .withMapName(kafkaTopic.getMetadata().getName())
                 .withTopicName(getTopicName(kafkaTopic))
-                .withNumPartitions(getPartitions(kafkaTopic))
-                .withNumReplicas(getReplicas(kafkaTopic))
                 .withConfig(topicConfigFromTopicConfig(kafkaTopic))
                 .withMetadata(kafkaTopic.getMetadata());
+
+        if (kafkaTopic.getSpec().getPartitions() != null) {
+            builder.withNumPartitions(getPartitions(kafkaTopic));
+        }
+        if (kafkaTopic.getSpec().getReplicas() != null) {
+            builder.withNumReplicas(getReplicas(kafkaTopic));
+        }
         return builder.build();
     }
 
@@ -190,7 +196,9 @@ class TopicSerialization {
             }
             newTopic = new NewTopic(topic.getTopicName().toString(), assignment);
         } else {
-            newTopic = new NewTopic(topic.getTopicName().toString(), topic.getNumPartitions(), topic.getNumReplicas());
+            Optional<Integer> numPartitions = topic.getNumPartitions() == -1 ? Optional.empty() : Optional.of(topic.getNumPartitions());
+            Optional<Short> numReplicas = topic.getNumReplicas() == -1 ? Optional.empty() : Optional.of(topic.getNumReplicas());
+            newTopic = new NewTopic(topic.getTopicName().toString(), numPartitions, numReplicas);
         }
 
         newTopic.configs(topic.getConfig());

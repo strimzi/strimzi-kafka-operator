@@ -14,7 +14,7 @@ public class Topic {
 
     public static class Builder {
         private TopicName topicName;
-        private int numPartitions;
+        private int numPartitions = -1;
         private short numReplicas = -1;
         private Map<String, String> config = new HashMap<>();
         private ObjectMeta metadata = new ObjectMeta();

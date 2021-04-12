@@ -62,13 +62,13 @@ spec:
                 be decreased after topic creation. It can be increased after topic
                 creation, but it is important to understand the consequences that
                 has, especially for topics with semantic partitioning. When absent
-                this will default to the broker configuration for num.partitions.
+                this will default to the broker configuration for `num.partitions`.
             replicas:
               type: integer
               minimum: 1
               maximum: 32767
               description: The number of replicas the topic should have. When absent
-                this will default to the broker configuration for default.replication.factor.
+                this will default to the broker configuration for `default.replication.factor`.
             config:
               type: object
               description: The topic configuration.
