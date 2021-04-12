@@ -10,9 +10,9 @@ Consult your Kubernetes administrator regarding the node label that represents t
 
 === Spreading partition replicas across racks
 
-When rack awareness is enabled, Strimzi will set `broker.rack` configuration for each Kafka broker.
+When rack awareness is configured, Strimzi will set `broker.rack` configuration for each Kafka broker.
 The `broker.rack` configuration assigns a rack ID to each broker.
-When it is configured, Kafka brokers will spread partition replicas across as many different racks as possible.
+When `broker.rack` is configured, Kafka brokers will spread partition replicas across as many different racks as possible.
 When replicas are spread across multiple racks, the probability that multiple replicas will fail at the same time is lower than if they would be in the same rack.
 Spreading replicas improves resiliency, and is important for availability and reliability.
 To enable rack awareness in Kafka, add the `rack` option to the `.spec.kafka` section of the `Kafka` custom resource as shown in the example below.
@@ -32,9 +32,9 @@ spec:
     # ...
 ----
 
-NOTE: In some case, the brokers might change the _rack_ in which they run.
-That can cause that replicas running in different racks will now share the same rack.
-You should regularly use Cruise Control and `KafkaRebalance` resource with the `RackAwareGoal` to make sure the replicas stay distributed across different racks.
+NOTE: The _rack_ in which brokers are running can change in some cases when the pods are deleted or restarted.
+As a result, the replicas running in different racks might then share the same rack.
+Use Cruise Control and the `KafkaRebalance` resource with the `RackAwareGoal` to make sure that replicas remain distributed across different racks.
 
 When rack awareness is enabled in the `Kafka` custom resource, Strimzi will automatically add the Kubernetes `preferredDuringSchedulingIgnoredDuringExecution` affinity rule to distribute the Kafka brokers across the different racks.
 However, the _preferred_ rule does not guarantee that the brokers will be spread.
