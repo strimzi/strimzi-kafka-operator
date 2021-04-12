@@ -53,12 +53,12 @@ spec:
                 partitions:
                   type: integer
                   minimum: 1
-                  description: The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for num.partitions.
+                  description: The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for `num.partitions`.
                 replicas:
                   type: integer
                   minimum: 1
                   maximum: 32767
-                  description: The number of replicas the topic should have. When absent this will default to the broker configuration for default.replication.factor.
+                  description: The number of replicas the topic should have. When absent this will default to the broker configuration for `default.replication.factor`.
                 config:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
@@ -127,12 +127,12 @@ spec:
                 partitions:
                   type: integer
                   minimum: 1
-                  description: The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for num.partitions.
+                  description: The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for `num.partitions`.
                 replicas:
                   type: integer
                   minimum: 1
                   maximum: 32767
-                  description: The number of replicas the topic should have. When absent this will default to the broker configuration for default.replication.factor.
+                  description: The number of replicas the topic should have. When absent this will default to the broker configuration for `default.replication.factor`.
                 config:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
@@ -201,12 +201,12 @@ spec:
                 partitions:
                   type: integer
                   minimum: 1
-                  description: The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for num.partitions.
+                  description: The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for `num.partitions`.
                 replicas:
                   type: integer
                   minimum: 1
                   maximum: 32767
-                  description: The number of replicas the topic should have. When absent this will default to the broker configuration for default.replication.factor.
+                  description: The number of replicas the topic should have. When absent this will default to the broker configuration for `default.replication.factor`.
                 config:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
