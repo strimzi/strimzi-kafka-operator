@@ -487,12 +487,9 @@ public class Util {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public static Future<ConfigMap> getExternalLoggingCm(ConfigMapOperator configMapOperations, String namespace, ExternalLogging logging) {
         Future<ConfigMap> loggingCmFut;
-        if (logging.getName() != null) {
-            loggingCmFut = configMapOperations.getAsync(namespace, logging.getName());
-        } else if (logging.getValueFrom() != null
+        if (logging.getValueFrom() != null
                 && logging.getValueFrom().getConfigMapKeyRef() != null
                 && logging.getValueFrom().getConfigMapKeyRef().getName() != null) {
             loggingCmFut = configMapOperations.getAsync(namespace, logging.getValueFrom().getConfigMapKeyRef().getName());
