@@ -354,4 +354,20 @@ public class TopicOperatorMockTest {
         testCreatedInKube(context, kt);
     }
 
+    @Test
+    public void testCreatedWithDefaultsInKube(VertxTestContext context) throws InterruptedException {
+        int retention = 100_000_000;
+        KafkaTopic kt = new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withName("my-topic")
+                    .withNamespace("myproject")
+                    .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
+                .endMetadata()
+                .withNewSpec()
+                    .addToConfig("retention.bytes", retention)
+                .endSpec().build();
+    
+        testCreatedInKube(context, kt);
+    }
+
 }

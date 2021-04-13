@@ -55,15 +55,6 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), containsString("unknown field \"foo\""));
     }
 
-    @Test
-    void testKafkaTopicWithMissingProperty() {
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> createDeleteCustomResource("KafkaTopic-with-missing-required-property.yaml"));
-
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "partitions", "replicas");
-    }
-
     @BeforeAll
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);

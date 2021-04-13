@@ -228,11 +228,11 @@ class TopicDiff {
             throw new IllegalArgumentException();
         }
         Map<String, Difference> differences = new HashMap<>();
-        if (source.getNumPartitions() != target.getNumPartitions()) {
+        if (target.getNumPartitions() != -1 && source.getNumPartitions() != target.getNumPartitions()) {
             NumPartitionsDifference numPartitionsDifference = new NumPartitionsDifference(source.getNumPartitions(), target.getNumPartitions());
             differences.put(numPartitionsDifference.address(), numPartitionsDifference);
         }
-        if (source.getNumReplicas() != target.getNumReplicas()) {
+        if (target.getNumReplicas() != -1 && source.getNumReplicas() != target.getNumReplicas()) {
             NumReplicasDifference numReplicasDifference = new NumReplicasDifference(target.getNumReplicas());
             differences.put(numReplicasDifference.address(), numReplicasDifference);
         }
@@ -375,4 +375,3 @@ class TopicDiff {
         return new TopicDiff(union, other.objectMeta);
     }
 }
-

@@ -61,6 +61,11 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     }
 
     @Test
+    public void testTopicAddedWithReplicasAndPartitions() throws Exception {
+        createTopic("test-topic-added-rp", 1, (short) 1);
+    }
+
+    @Test
     public void testTopicAddedWithEncodableName() throws Exception {
         createTopic("test-TOPIC_ADDED_ENCODABLE");
     }
@@ -144,6 +149,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         assertStatusNotReady(topicName, expectedMessage);
     }
 
+    @Test
     public void testKafkaTopicAddedWithMoreReplicasThanBrokers() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-more-replicas-than-brokers", emptyMap(), 42, "Replication factor: 42 larger than available brokers: 1.");
     }
