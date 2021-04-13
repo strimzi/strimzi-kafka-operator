@@ -261,7 +261,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.prepareVersionChange())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
+
                 .compose(state -> state.getZookeeperDescription())
+                .compose(state -> state.getEntityOperatorDescription())
+                .compose(state -> state.getCruiseControlDescription())
+                .compose(state -> state.getKafkaExporterDescription())
+                .compose(state -> state.getJmxTransDescription())   
+
+                .compose(state -> state.zkGenerateCertificates(this::dateSupplier))
+                .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
+                .compose(state -> state.entityOperatorSecret(this::dateSupplier))
+                .compose(state -> state.cruiseControlSecret(this::dateSupplier))
+                .compose(state -> state.kafkaExporterSecret(this::dateSupplier))
+
                 .compose(state -> state.zkModelWarnings())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkNetPolicy())
@@ -271,7 +283,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkPvcs())
                 .compose(state -> state.zkService())
                 .compose(state -> state.zkHeadlessService())
-                .compose(state -> state.zkGenerateCertificates(this::dateSupplier))
                 .compose(state -> state.zkAncillaryCm())
                 .compose(state -> state.zkNodesSecret())
                 .compose(state -> state.zkPodDisruptionBudget())
@@ -304,7 +315,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaRoutesReady())
                 .compose(state -> state.kafkaIngressesReady())
                 .compose(state -> state.kafkaIngressesV1Beta1Ready())
-                .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
+
                 .compose(state -> state.customListenerCertificates())
                 .compose(state -> state.kafkaAncillaryCm())
                 .compose(state -> state.kafkaBrokersSecret())
@@ -324,8 +335,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaCustomCertificatesToStatus())
 
                 .compose(state -> state.checkUnsupportedTopicOperator())
-
-                .compose(state -> state.getEntityOperatorDescription())
                 .compose(state -> state.entityOperatorRole())
                 .compose(state -> state.entityTopicOperatorRole())
                 .compose(state -> state.entityUserOperatorRole())
@@ -334,26 +343,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorUserOpRoleBindingForRole())
                 .compose(state -> state.entityOperatorTopicOpAncillaryCm())
                 .compose(state -> state.entityOperatorUserOpAncillaryCm())
-                .compose(state -> state.entityOperatorSecret(this::dateSupplier))
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
-                .compose(state -> state.getCruiseControlDescription())
                 .compose(state -> state.cruiseControlNetPolicy())
                 .compose(state -> state.cruiseControlServiceAccount())
                 .compose(state -> state.cruiseControlAncillaryCm())
-                .compose(state -> state.cruiseControlSecret(this::dateSupplier))
                 .compose(state -> state.cruiseControlDeployment())
                 .compose(state -> state.cruiseControlService())
                 .compose(state -> state.cruiseControlReady())
 
-                .compose(state -> state.getKafkaExporterDescription())
                 .compose(state -> state.kafkaExporterServiceAccount())
-                .compose(state -> state.kafkaExporterSecret(this::dateSupplier))
                 .compose(state -> state.kafkaExporterDeployment())
                 .compose(state -> state.kafkaExporterReady())
 
-                .compose(state -> state.getJmxTransDescription())
                 .compose(state -> state.jmxTransServiceAccount())
                 .compose(state -> state.jmxTransConfigMap())
                 .compose(state -> state.jmxTransDeployment())

@@ -1112,16 +1112,16 @@ public class KafkaAssemblyOperatorTest {
                 Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.nodesSecretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                Future.succeededFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.brokersSecretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                Future.succeededFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, EntityOperator.secretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                Future.succeededFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaExporter.secretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                Future.succeededFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.clusterCaCertificateSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(new Secret())
@@ -1130,7 +1130,7 @@ public class KafkaAssemblyOperatorTest {
                 Future.succeededFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, CruiseControl.secretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                Future.succeededFuture(new Secret())
         );
 
         // Mock NetworkPolicy get
