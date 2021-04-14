@@ -19,6 +19,13 @@ spec:
       labels:
         name: strimzi-cluster-operator
         strimzi.io/kind: cluster-operator
+        {{- with .Values.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: strimzi-cluster-operator
       {{- if .Values.image.imagePullSecrets }}

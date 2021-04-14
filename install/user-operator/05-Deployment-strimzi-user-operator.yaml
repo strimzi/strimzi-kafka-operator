@@ -17,7 +17,7 @@ spec:
       serviceAccountName: strimzi-user-operator
       containers:
         - name: strimzi-user-operator
-          image: quay.io/strimzi/operator:0.21.1
+          image: quay.io/strimzi/operator:0.22.1
           args:
           - /opt/strimzi/bin/user_operator_run.sh
           env:

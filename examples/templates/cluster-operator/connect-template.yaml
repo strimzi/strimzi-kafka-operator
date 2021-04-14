@@ -25,7 +25,7 @@ parameters:
   displayName: The Kafka version to use
   name: KAFKA_VERSION
   required: true
-  value: "2.6.0"
+  value: "2.7.0"
 - description: A list of host:port pairs to use for establishing the initial connection to the Kafka cluster.
   displayName: Kafka bootstrap servers
   name: KAFKA_CONNECT_BOOTSTRAP_SERVERS
@@ -75,7 +75,7 @@ parameters:
   name: HEALTHCHECK_TIMEOUT
   value: "5"
 objects:
-- apiVersion: kafka.strimzi.io/v1beta1
+- apiVersion: kafka.strimzi.io/v1beta2
   kind: KafkaConnect
   metadata:
     name: ${CLUSTER_NAME}

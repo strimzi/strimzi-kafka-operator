@@ -34,7 +34,7 @@ parameters:
   displayName: The Kafka version to use
   name: KAFKA_VERSION
   required: true
-  value: "2.6.0"
+  value: "2.7.0"
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Zookeeper healthcheck initial delay
   name: ZOOKEEPER_HEALTHCHECK_DELAY
@@ -64,7 +64,7 @@ parameters:
   name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
   value: "3"
 objects:
-- apiVersion: kafka.strimzi.io/v1beta1
+- apiVersion: kafka.strimzi.io/v1beta2
   kind: Kafka
   metadata:
     name: ${CLUSTER_NAME}
