@@ -35,7 +35,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE_TEST;
+import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -366,6 +366,6 @@ public class StUtils {
         return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
             annotation -> annotation.annotationType().getName()
                 .toLowerCase(Locale.ENGLISH)
-                .contains(PARALLEL_NAMESPACE_TEST)).count() == 1;
+                .contains(PARALLEL_NAMESPACE)).count() == 1;
     }
 }

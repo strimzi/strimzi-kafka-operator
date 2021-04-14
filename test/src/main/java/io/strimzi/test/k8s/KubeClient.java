@@ -247,19 +247,13 @@ public class KubeClient {
     public List<Pod> listPodsByPrefixInNameWithDynamicWait(String namespaceName, String podNamePrefix) {
         AtomicReference<List<Pod>> result = new AtomicReference<>();
 
-        TestUtils.waitFor("wait until some pod is present", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(16).toMillis(),
+        TestUtils.waitFor("pod with prefix" + podNamePrefix + " is present.", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(16).toMillis(),
             () -> {
-                LOGGER.info("In namespace:{}, podNamePrefix:\n{}", namespaceName, podNamePrefix);
                 List<Pod> listOfPods = listPods(namespaceName)
                     .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
                     .collect(Collectors.toList());
-                LOGGER.debug("List of pods:\n{}", listOfPods.toString());
-
                 // true if number of pods is more than 1
                 result.set(listOfPods);
-
-                LOGGER.info("Size of list....{}", result.get().size());
-
                 return result.get().size() > 0;
             });
 

@@ -193,7 +193,7 @@ public class KafkaBasicExampleClients {
     public JobBuilder defaultProducerStrimzi() {
         if (producerName == null || producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");
         if (namespaceName == null || namespaceName.isEmpty()) {
-            LOGGER.info("Namespace is null we are gonna use actual kubernetes client namespace: {}", ResourceManager.kubeClient().getNamespace());
+            LOGGER.info("Namespace name is not set, gonna use current kubernetes client namespace: {}", ResourceManager.kubeClient().getNamespace());
             namespaceName = ResourceManager.kubeClient().getNamespace();
         }
 
@@ -267,7 +267,7 @@ public class KafkaBasicExampleClients {
     public JobBuilder defaultConsumerStrimzi() {
         if (consumerName == null || consumerName.isEmpty()) throw new InvalidParameterException("Consumer name is not set.");
         if (namespaceName == null || namespaceName.isEmpty()) {
-            LOGGER.info("Namespace is null we are gonna use actual kubernetes client namespace: {}", ResourceManager.kubeClient().getNamespace());
+            LOGGER.info("Namespace name is not set, gonna use current kubernetes client namespace: {}", ResourceManager.kubeClient().getNamespace());
             namespaceName = ResourceManager.kubeClient().getNamespace();
         }
 
