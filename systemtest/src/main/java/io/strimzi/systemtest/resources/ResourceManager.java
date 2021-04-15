@@ -150,7 +150,7 @@ public class ResourceManager {
             // if it is parallel namespace test we are gonna replace resource a namespace
             if (StUtils.isParallelNamespaceTest(testContext)) {
                 final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                LOGGER.info("This is parallel namespace test and we are gonna use context namespace {}", namespace);
+                LOGGER.info("Using namespace: {}", namespace);
                 resource.getMetadata().setNamespace(namespace);
                 type.create(resource);
             } else {
@@ -209,7 +209,7 @@ public class ResourceManager {
 
         boolean[] resourceReady = new boolean[1];
 
-        TestUtils.waitFor("Resource condition:" + condition + " is fulfilled", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(16).toMillis(),
+        TestUtils.waitFor("Resource condition:" + condition + " is fulfilled", Constants.RESOURCE_WAIT_POLL, Constants.RESOURCE_WAIT_TIMEOUT,
             () -> {
                 T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
                 resourceReady[0] =  condition.test(res);

@@ -135,7 +135,7 @@ public final class TestUtils {
                 exceptionMessage = e.getMessage();
                 if (++exceptionCount == 1) {
                     // Log the first exception as soon as it occurs
-                    LOGGER.info("Exception waiting for {}, {}", description, exceptionMessage);
+                    LOGGER.error("Exception waiting for {}, {}", description, exceptionMessage);
                     // log the stacktrace
                     e.printStackTrace(new PrintWriter(stackTraceError));
                 }
@@ -147,7 +147,7 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 if (exceptionCount > 1) {
-                    LOGGER.info("Exception waiting for {}, {}", description, exceptionMessage);
+                    LOGGER.error("Exception waiting for {}, {}", description, exceptionMessage);
                     // printing handled stacktrace
                     LOGGER.error(stackTraceError.toString());
                 }
