@@ -34,7 +34,7 @@ To build Strimzi from a source the operator and Kafka code needs to be compiled 
 2. Make sure that the `DOCKER_ORG` and `DOCKER_REGISTRY` environment variables are set to the same value as your username on the Docker Registry, and the Docker Registry you are using.
 
         export DOCKER_ORG=docker_hub_username
-        export DOCKER_REGISTRY=docker_registry_name
+        export DOCKER_REGISTRY=docker_registry_name  #defaults to docker.io if unset
 
 3. Now build the Docker images and push them to your repository on Docker Hub:
 
@@ -48,29 +48,50 @@ To build Strimzi from a source the operator and Kafka code needs to be compiled 
         make clean
         make MVN_ARGS='-DskipTests -DskipITs' all
 
-4. To use the newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images:
-
-    ```
-    sed -Ei -e "s#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#" \
+4. To use the newly built images, update the `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images:
+\
+\
+   **Linux**
+   ```
+   sed -Ei -e "s#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#" \
             -e "s#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
             -e "s#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
-            install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
     ```
-
-   This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
-
+   
+    **OS X**
+    ```
+    sed -E -i '' -e "s#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#" \
+                 -e "s#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
+                 -e "s#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
+                  packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+    ```
+   
+   This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.\
+   >*Note*: please ensure you don't commit these changes accidentally.
+   
 
 5. The installation files assume you're installing into the namespace `myproject`.  If you wish to use a different one, you'll need to replace it in the installation files.
+   \
+   \
+   **Linux**
+       
+       sed -Ei "s/myproject/<desired_namespace>/g" packaging/install/cluster-operator/*.yaml
+   
+   **OS X**
 
-       sed -Ei "s/myproject/<desired_namespace>/g" install/cluster-operator/*.yaml
+        sed -E -i '' -e "s/myproject/<desired_namespace>/g" packaging/install/cluster-operator/*RoleBinding*.yaml"
+
+   This updates the RoleBinding and ClusterRoleBinding files to ensure that the roles binding to the service account use the correct namespace.
+   >*Note*: please ensure you don't commit these changes accidentally.
+   
 
 6. Then deploy the Cluster Operator by running the following (replace `myproject` with your desired namespace if necessary): 
 
-        kubectl -n myproject create -f install/cluster-operator
+        kubectl -n myproject create -f packaging/install/cluster-operator
 
 7. Finally, you can deploy the cluster custom resource running:
    
-        kubectl -n myproject create -f examples/kafka/kafka-ephemeral.yaml 
+        kubectl -n myproject create -f packaging/examples/kafka/kafka-ephemeral.yaml 
 
 ## Build Pre-Requisites
 
@@ -197,28 +218,40 @@ To build the images on your local machine and push them to the Docker Hub, log i
 By default, the `docker_push` target will build the images under the strimzi organisation (e.g. `strimzi/operator:latest`) and attempt to push them to the strimzi repositories on the Docker Hub. Only certain users are approved to do this, so you should push to your own Docker Hub organisation (account) instead. To do this, make sure that the `DOCKER_ORG` and `DOCKER_REGISTRY` environment variables are set to the same value as your username on the Docker Registry, and Docker Registry you are using before running the `make` commands.
 
     export DOCKER_ORG=docker_hub_username
-    export DOCKER_REGISTRY=docker_registry_name
+    export DOCKER_REGISTRY=docker_registry_name  #defaults to docker.io if unset
 
 When the Docker images are build, they will be labeled in the form: `docker_registry_name/docker_hub_username/operator:latest` in your local repository and pushed to your Docker Hub account under the same label.
 
-To use these newly built images, update the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images, replacing `docker_hub_username` and `docker_registry_name` with the relevant value:
+To use these newly built images, update the `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` to obtain the images from your repositories on Docker Registry rather than the official Strimzi images, replacing `docker_hub_username` and `docker_registry_name` with the relevant value:
 
+
+**Linux**
 ```
-sed -Ei -e 's#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#' \
-        -e 's#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2#' \
-        -e 's#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_REGISTRY/$DOCKER_ORG/\2#' \
-        install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
-```
+sed -Ei -e "s#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#" \
+        -e "s#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
+        -e "s#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
+        packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+ ```
+   
+ **OS X**
+ ```
+ sed -E -i '' -e "s#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#" \
+              -e "s#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
+              -e "s#([0-9.]+)=quay.io/strimzi/([a-zA-Z0-9-]+:[a-zA-Z0-9.-]+-kafka-[0-9.]+)#\1=$DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
+              packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+ ```
 
 This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
+>*Note*: please ensure you don't commit these changes accidentally.
+
 
 Then you can deploy the Cluster Operator by running (for an OpenShift cluster):
 
-    oc create -f install/cluster-operator
+    oc create -f packaging/install/cluster-operator
 
 Finally, you can deploy the cluster custom resource running:
 
-    oc create -f examples/kafka/kafka-ephemeral.yaml
+    oc create -f packaging/examples/kafka/kafka-ephemeral.yaml
 
 ### Local build on Minikube
 
