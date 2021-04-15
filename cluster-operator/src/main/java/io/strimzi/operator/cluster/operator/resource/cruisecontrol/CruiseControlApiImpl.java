@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.json.Json;
@@ -15,7 +15,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.net.ConnectException;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiConsumer;
 
 public class CruiseControlApiImpl implements CruiseControlApi {
 
@@ -50,7 +49,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .addParameter(CruiseControlParameters.VERBOSE, String.valueOf(verbose))
                 .build();
 
-        return withHttpClient((httpClient, result) -> {
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+
+        return HttpClientUtils.withHttpClient(vertx, options, (httpClient, result) -> {
                 HttpClientRequest request = httpClient.get(port, host, path, response -> {
                     response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 200 || response.statusCode() == 201) {
@@ -83,7 +84,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
                 request.end();
             }
-        );
+                                             );
     }
 
     @Override
@@ -101,7 +102,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .addRebalanceParameters(rbOptions)
                 .build();
 
-        return withHttpClient((httpClient, result) -> {
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+
+        return HttpClientUtils.withHttpClient(vertx, options, (httpClient, result) -> {
             HttpClientRequest request = httpClient.post(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 200 || response.statusCode() == 201) {
@@ -181,7 +184,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
         String path = pathBuilder.build();
 
-        return withHttpClient((httpClient, result) -> {
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+
+        return HttpClientUtils.withHttpClient(vertx, options, (httpClient, result) -> {
             HttpClientRequest request = httpClient.get(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 200 || response.statusCode() == 201) {
@@ -253,7 +258,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
                         .addParameter(CruiseControlParameters.JSON, "true").build();
 
-        return withHttpClient((httpClient, result) -> {
+        HttpClientOptions options = new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+
+        return HttpClientUtils.withHttpClient(vertx, options, (httpClient, result) -> {
             HttpClientRequest request = httpClient.post(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 200 || response.statusCode() == 201) {
@@ -295,27 +302,5 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         } else {
             result.fail(t);
         }
-    }
-
-    /**
-     * Perform the given operation, which completes the promise, using an HTTP client instance,
-     * after which the client is closed and the future for the promise returned.
-     * @param operation The operation to perform.
-     * @param <T> The type of the result
-     * @return A future which is completed with the result performed by the operation
-     */
-    private <T> Future<T> withHttpClient(BiConsumer<HttpClient, Promise<T>> operation) {
-        HttpClient httpClient = vertx.createHttpClient(new HttpClientOptions().setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING));
-        Promise<T> promise = Promise.promise();
-        operation.accept(httpClient, promise);
-        return promise.future().compose(
-            result -> {
-                httpClient.close();
-                return Future.succeededFuture(result);
-            },
-            error -> {
-                httpClient.close();
-                return Future.failedFuture(error);
-            });
     }
 }
