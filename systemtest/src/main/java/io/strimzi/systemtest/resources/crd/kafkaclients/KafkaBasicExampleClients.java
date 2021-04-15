@@ -93,11 +93,6 @@ public class KafkaBasicExampleClients {
             return this;
         }
 
-        public Builder withNamespaceName(String namespaceName) {
-            this.namespaceName = namespaceName;
-            return this;
-        }
-
         public KafkaBasicExampleClients build() {
             return new KafkaBasicExampleClients(this);
         }

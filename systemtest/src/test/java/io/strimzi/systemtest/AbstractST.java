@@ -103,8 +103,6 @@ public abstract class AbstractST implements TestSeparator {
 
     private AtomicInteger counterOfNamespaces = new AtomicInteger(0);
 
-    private AtomicInteger counterOfNamespaces = new AtomicInteger(0);
-
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";

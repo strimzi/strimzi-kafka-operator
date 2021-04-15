@@ -154,10 +154,6 @@ public class DeploymentUtils {
         return waitTillDepHasRolled(kubeClient().getNamespace(), name, expectedPods, snapshot);
     }
 
-    public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
-        return waitTillDepHasRolled(kubeClient().getNamespace(), name, expectedPods, snapshot);
-    }
-
     /**
      * Wait until the given Deployment has been recovered.
      * @param name The name of the Deployment.
