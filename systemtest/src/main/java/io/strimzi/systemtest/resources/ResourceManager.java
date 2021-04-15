@@ -45,7 +45,6 @@ import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.time.TimeoutBudget;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
@@ -56,7 +55,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -190,11 +188,8 @@ public class ResourceManager {
                 String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
         }
     }
-    public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition) {
-        return waitResourceCondition(resource, condition, TimeoutBudget.ofDuration(Duration.ofMinutes(5)));
-    }
 
-    public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition, TimeoutBudget timeout) {
+    public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition) {
         assertNotNull(resource);
         assertNotNull(resource.getMetadata());
         assertNotNull(resource.getMetadata().getName());
@@ -209,7 +204,7 @@ public class ResourceManager {
 
         boolean[] resourceReady = new boolean[1];
 
-        TestUtils.waitFor("Resource condition:" + condition + " is fulfilled", Constants.RESOURCE_WAIT_POLL, Constants.RESOURCE_WAIT_TIMEOUT,
+        TestUtils.waitFor("Resource condition:" + condition + " is fulfilled", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
             () -> {
                 T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
                 resourceReady[0] =  condition.test(res);

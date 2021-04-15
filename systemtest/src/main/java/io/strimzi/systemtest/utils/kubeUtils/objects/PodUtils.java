@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -144,6 +145,22 @@ public class PodUtils {
 
     public static String getPodNameByPrefix(String prefix) {
         return getPodNameByPrefix(kubeClient().getNamespace(), prefix);
+    }
+
+    public static List<Pod> getPodsByPrefixInNameWithDynamicWait(String namespaceName, String podNamePrefix) {
+        AtomicReference<List<Pod>> result = new AtomicReference<>();
+
+        TestUtils.waitFor("pod with prefix" + podNamePrefix + " is present.", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                List<Pod> listOfPods = kubeClient(namespaceName).listPods(namespaceName)
+                    .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
+                    .collect(Collectors.toList());
+                // true if number of pods is more than 1
+                result.set(listOfPods);
+                return result.get().size() > 0;
+            });
+
+        return result.get();
     }
 
     public static String getFirstPodNameContaining(String searchTerm) {

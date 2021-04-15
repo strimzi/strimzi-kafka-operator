@@ -96,7 +96,7 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceName).build());
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -241,7 +241,7 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         String baseTopic = mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicTestName1 = baseTopic + "-test-1";
@@ -411,7 +411,7 @@ public class MirrorMakerST extends AbstractST {
         // Deploy client
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-" + Constants.KAFKA_CLIENTS, userSource, userTarget).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         String baseTopic = mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicTestName1 = baseTopic + "-test-1";
@@ -528,7 +528,7 @@ public class MirrorMakerST extends AbstractST {
 
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
-        String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)

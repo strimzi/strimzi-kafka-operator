@@ -54,9 +54,6 @@ public interface Constants {
     long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
     long CC_LOG_CONFIG_RELOAD = Duration.ofSeconds(5).toMillis();
 
-    long RESOURCE_WAIT_POLL = Duration.ofSeconds(10).toMillis();
-    long RESOURCE_WAIT_TIMEOUT = Duration.ofMinutes(16).toMillis();
-
     // Keycloak
     long KEYCLOAK_DEPLOYMENT_POLL = Duration.ofSeconds(5).toMillis();
     long KEYCLOAK_DEPLOYMENT_TIMEOUT = Duration.ofMinutes(10).toMillis();

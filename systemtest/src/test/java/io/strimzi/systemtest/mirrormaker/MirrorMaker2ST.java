@@ -128,7 +128,7 @@ class MirrorMaker2ST extends AbstractST {
 
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, false, kafkaClientsName).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -300,7 +300,7 @@ class MirrorMaker2ST extends AbstractST {
         resourceManager.createResource(extensionContext, userTarget);
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, userSource, userTarget).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         String baseTopic = mapWithTestTopics.get(extensionContext.getDisplayName());
         String topicTestName1 = baseTopic + "-test-1";
@@ -816,7 +816,7 @@ class MirrorMaker2ST extends AbstractST {
 
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, false, kafkaClientsName).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
