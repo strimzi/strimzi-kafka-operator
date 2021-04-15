@@ -767,7 +767,13 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
 
         ExternalLogging elKafka = new ExternalLoggingBuilder()
-            .withName("external-configmap")
+            .withNewValueFrom()
+            .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                .withKey("log4j.properties")
+                .withName("external-configmap")
+                .withOptional(false)
+                .build())
+            .endValueFrom()
             .build();
 
         LOGGER.info("Setting log level of kafka INFO");
@@ -1107,7 +1113,7 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if Kafka:{} contains error about non-existing CM", clusterName);
         Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
         assertThat(condition.getType(), is(CustomResourceStatus.NotReady.toString()));
-        assertTrue(condition.getMessage().matches("ConfigMap " + nonExistingCmName + "with external logging configuration does not exist .*"));
+        assertTrue(condition.getMessage().matches("ConfigMap " + nonExistingCmName + " with external logging configuration does not exist .*"));
     }
 
     @BeforeAll
