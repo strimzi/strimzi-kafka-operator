@@ -303,7 +303,6 @@ public class ResourceManager {
      * @return returns CR
      */
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> status, long resourceTimeout) {
-        LOGGER.info("[=============================] -> waiting for resource:{} in namespace:{}", resource.getMetadata().getName(), resource.getMetadata().getNamespace());
         waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), status, resourceTimeout);
         return true;
     }
