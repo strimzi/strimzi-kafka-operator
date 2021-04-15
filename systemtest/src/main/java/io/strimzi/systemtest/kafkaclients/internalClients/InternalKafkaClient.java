@@ -216,6 +216,11 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
             });
     }
 
+    public void produceTlsMessagesUntilOperationIsSuccessful(int receivedMessages) {
+        TestUtils.waitFor("wait until producer and consumer will successfully send and receive messages.", Constants.GLOBAL_CLIENTS_POLL,
+            Constants.GLOBAL_TIMEOUT, () -> this.sendMessagesTls() == receivedMessages);
+    }
+
     public void checkProducedAndConsumedMessages(int producedMessages, int consumedMessages) {
         assertSentAndReceivedMessages(producedMessages, consumedMessages);
     }

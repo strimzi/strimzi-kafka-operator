@@ -59,20 +59,25 @@ public class BundleResource implements ResourceType<Deployment> {
         return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
     }
 
+    public static DeploymentBuilder clusterOperator(String namespace, String namespaceEnv, long operationTimeout, long reconciliationInterval) {
+        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, operationTimeout, reconciliationInterval);
+    }
+
     public static DeploymentBuilder clusterOperator(String namespace, String namespaceEnv, long reconciliationInterval) {
         return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, Constants.CO_OPERATION_TIMEOUT_DEFAULT, reconciliationInterval);
     }
 
     public static DeploymentBuilder clusterOperator(String namespace, String namespaceEnv) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
+        // TODO zmen to potom na `CO_OPERATION_TIMEOUT_SHORT`
+        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
     public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
         return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespace, operationTimeout, reconciliationInterval);
     }
 
-    public static DeploymentBuilder clusterOperator(String name, String namespace, long operationTimeout, long reconciliationInterval) {
-        return defaultClusterOperator(name, namespace, namespace, operationTimeout, reconciliationInterval);
+    public static DeploymentBuilder clusterOperator(String name, String namespace, String namespaceEnv, long operationTimeout, long reconciliationInterval) {
+        return defaultClusterOperator(name, namespace, namespaceEnv, operationTimeout, reconciliationInterval);
     }
 
     public static DeploymentBuilder clusterOperator(String namespace) {

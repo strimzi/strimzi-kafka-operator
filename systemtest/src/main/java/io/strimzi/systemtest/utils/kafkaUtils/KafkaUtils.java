@@ -377,21 +377,25 @@ public class KafkaUtils {
         ).out().trim();
     }
 
-    public static void waitForKafkaDeletion(String kafkaClusterName) {
+    public static void waitForKafkaDeletion(String namespaceName, String kafkaClusterName) {
         LOGGER.info("Waiting for deletion of Kafka:{}", kafkaClusterName);
         TestUtils.waitFor("Kafka deletion " + kafkaClusterName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).get() == null &&
-                    kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(kafkaClusterName)) == null &&
-                    kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(kafkaClusterName)) == null &&
-                    kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
+                if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
+                    kubeClient(namespaceName).getStatefulSet(KafkaResources.kafkaStatefulSetName(kafkaClusterName)) == null &&
+                    kubeClient(namespaceName).getStatefulSet(KafkaResources.zookeeperStatefulSetName(kafkaClusterName)) == null &&
+                    kubeClient(namespaceName).getDeployment(KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {
-                    cmdKubeClient().deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
+                    cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
                     return false;
                 }
             },
-            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).get()));
+            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get()));
+    }
+
+    public static void waitForKafkaDeletion(String kafkaClusterName) {
+        waitForKafkaDeletion(kubeClient().getNamespace(), kafkaClusterName);
     }
 
     public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName, String listenerName) {

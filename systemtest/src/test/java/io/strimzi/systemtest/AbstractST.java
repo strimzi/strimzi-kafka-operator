@@ -156,7 +156,7 @@ public abstract class AbstractST implements TestSeparator {
             }
             // 060-Deployment
             ResourceManager.setCoDeploymentName(clusterOperatorName);
-            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, namespace, operationTimeout, reconciliationInterval).build());
+            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, namespace, namespace, operationTimeout, reconciliationInterval).build());
         }
     }
 
@@ -180,7 +180,7 @@ public abstract class AbstractST implements TestSeparator {
         installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public void installClusterWideClusterOperator(ExtensionContext extensionContext, String namespace) {
+    public void installClusterWideClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
         prepareEnvForOperator(extensionContext, namespace);
         // Apply role bindings in CO namespace
         applyBindings(extensionContext, namespace);
@@ -190,7 +190,7 @@ public abstract class AbstractST implements TestSeparator {
         clusterRoleBindingList.forEach(clusterRoleBinding ->
             ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(namespace, "*").build());
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(namespace, "*", operationTimeout, reconciliationInterval).build());
     }
 
     /**
