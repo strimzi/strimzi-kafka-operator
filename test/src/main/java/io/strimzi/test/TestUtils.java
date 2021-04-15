@@ -34,7 +34,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -62,6 +64,7 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public final class TestUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(TestUtils.class);
@@ -122,6 +125,7 @@ public final class TestUtils {
         long deadline = System.currentTimeMillis() + timeoutMs;
         String exceptionMessage = null;
         int exceptionCount = 0;
+        StringWriter stackTraceError = new StringWriter();
 
         while (true) {
             boolean result;
@@ -131,7 +135,9 @@ public final class TestUtils {
                 exceptionMessage = e.getMessage();
                 if (++exceptionCount == 1) {
                     // Log the first exception as soon as it occurs
-                    LOGGER.info("Exception waiting for {}, {}", description, exceptionMessage);
+                    LOGGER.error("Exception waiting for {}, {}", description, exceptionMessage);
+                    // log the stacktrace
+                    e.printStackTrace(new PrintWriter(stackTraceError));
                 }
                 result = false;
             }
@@ -141,7 +147,9 @@ public final class TestUtils {
             }
             if (timeLeft <= 0) {
                 if (exceptionCount > 1) {
-                    LOGGER.info("Exception waiting for {}, {}", description, exceptionMessage);
+                    LOGGER.error("Exception waiting for {}, {}", description, exceptionMessage);
+                    // printing handled stacktrace
+                    LOGGER.error(stackTraceError.toString());
                 }
                 onTimeout.run();
                 WaitException waitException = new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);

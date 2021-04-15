@@ -21,6 +21,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +29,13 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -122,9 +125,13 @@ public class StUtils {
         return testEnvs;
     }
 
-    public static String checkEnvVarInPod(String podName, String envVarName) {
-        return kubeClient().getPod(podName).getSpec().getContainers().get(0).getEnv()
+    public static String checkEnvVarInPod(String namespaceName, String podName, String envVarName) {
+        return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().get(0).getEnv()
                 .stream().filter(envVar -> envVar.getName().equals(envVarName)).findFirst().get().getValue();
+    }
+
+    public static String checkEnvVarInPod(String podName, String envVarName) {
+        return checkEnvVarInPod(kubeClient().getNamespace(), podName, envVarName);
     }
 
     /**
@@ -287,7 +294,19 @@ public class StUtils {
      * @return log from the pod
      */
     public static String getLogFromPodByTime(String podName, String containerName, String timeSince) {
-        return cmdKubeClient().execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
+        return getLogFromPodByTime(kubeClient().getNamespace(), podName, containerName, timeSince);
+    }
+
+    /**
+     * Method which returns log from last {@code timeSince}
+     * @param namespaceName name of the namespace
+     * @param podName name of pod to take a log from
+     * @param containerName name of container
+     * @param timeSince time from which the log should be taken - 3s, 5m, 2h -- back
+     * @return log from the pod
+     */
+    public static String getLogFromPodByTime(String namespaceName, String podName, String containerName, String timeSince) {
+        return cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
     }
 
     /**
@@ -327,14 +346,26 @@ public class StUtils {
     }
 
     public static String getLineFromPod(String podName, String filePath, String grepString) {
-        return getLineFromPodContainer(podName, null, filePath, grepString);
+        return getLineFromPodContainer(kubeClient().getNamespace(), podName, null, filePath, grepString);
     }
 
-    public static String getLineFromPodContainer(String podName, String containerName, String filePath, String grepString) {
+    public static String getLineFromPodContainer(String namespaceName, String podName, String containerName, String filePath, String grepString) {
         if (containerName == null) {
-            return KubeClusterResource.cmdKubeClient().execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeClusterResource.cmdKubeClient(namespaceName).execInPod(podName, "grep", "-i", grepString, filePath).out().trim();
         } else {
-            return KubeClusterResource.cmdKubeClient().execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
+            return KubeClusterResource.cmdKubeClient(namespaceName).execInPodContainer(podName, containerName, "grep", "-i", grepString, filePath).out().trim();
         }
+    }
+
+    /**
+     * Checking if test case contains annotation ParallelNamespaceTest
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation ParallelNamespaceTest, otherwise false
+     */
+    public static boolean isParallelNamespaceTest(ExtensionContext extensionContext) {
+        return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
+            annotation -> annotation.annotationType().getName()
+                .toLowerCase(Locale.ENGLISH)
+                .contains(PARALLEL_NAMESPACE)).count() == 1;
     }
 }

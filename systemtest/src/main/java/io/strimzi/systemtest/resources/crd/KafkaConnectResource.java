@@ -49,4 +49,8 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
     public static void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
         ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, resourceName, editor);
     }
+
+    public static void replaceKafkaConnectResourceInSpecificNamespace(String resourceName, Consumer<KafkaConnect> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, resourceName, editor, namespaceName);
+    }
 }

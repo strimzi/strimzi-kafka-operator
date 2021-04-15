@@ -8,12 +8,15 @@ import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_
 import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -193,6 +196,24 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
         LOGGER.info("Consumer consumed {} messages", received);
 
         return received;
+    }
+
+    public void produceAndConsumesPlainMessagesUntilBothOperationsAreSuccessful() {
+        TestUtils.waitFor("wait until producer and consumer will successfully send and receive messages.", Duration.ofMinutes(1).toMillis(),
+            Constants.GLOBAL_TIMEOUT, () -> {
+                // generate new consumer group...
+                this.consumerGroup = ClientUtils.generateRandomConsumerGroup();
+                return this.sendMessagesPlain() == this.receiveMessagesPlain();
+            });
+    }
+
+    public void consumesPlainMessagesUntilOperationIsSuccessful(int sentMessages) {
+        TestUtils.waitFor("wait until consumer will successfully receive messages.", Duration.ofMinutes(1).toMillis(),
+            Constants.GLOBAL_TIMEOUT, () -> {
+                // generate new consumer group...
+                this.consumerGroup = ClientUtils.generateRandomConsumerGroup();
+                return sentMessages == this.receiveMessagesPlain();
+            });
     }
 
     public void checkProducedAndConsumedMessages(int producedMessages, int consumedMessages) {

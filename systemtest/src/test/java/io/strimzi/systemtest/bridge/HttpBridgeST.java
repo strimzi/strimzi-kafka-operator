@@ -85,7 +85,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
         // Checking labels for Kafka Bridge
         verifyLabelsOnPods(httpBridgeClusterName, "my-bridge", null, "KafkaBridge");
-        verifyLabelsForService(httpBridgeClusterName, "my-bridge", "KafkaBridge");
+        verifyLabelsForService(NAMESPACE, httpBridgeClusterName, "my-bridge", "KafkaBridge");
     }
 
     @ParallelTest

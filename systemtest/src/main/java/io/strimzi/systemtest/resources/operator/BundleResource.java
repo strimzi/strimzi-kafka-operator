@@ -63,6 +63,10 @@ public class BundleResource implements ResourceType<Deployment> {
         return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, Constants.CO_OPERATION_TIMEOUT_DEFAULT, reconciliationInterval);
     }
 
+    public static DeploymentBuilder clusterOperator(String namespace, String namespaceEnv) {
+        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
+    }
+
     public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
         return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespace, operationTimeout, reconciliationInterval);
     }

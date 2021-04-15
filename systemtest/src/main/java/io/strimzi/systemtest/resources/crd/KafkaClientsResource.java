@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
-import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,22 +25,20 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
     @Override
     public Deployment get(String namespace, String name) {
         String deploymentName = ResourceManager.kubeClient().namespace(namespace).getDeploymentNameByPrefix(name);
-        return deploymentName != null ?  ResourceManager.kubeClient().getDeployment(deploymentName) : null;
+        return deploymentName != null ?  ResourceManager.kubeClient().namespace(namespace).getDeployment(deploymentName) : null;
     }
 
     @Override
     public void create(Deployment resource) {
-        ResourceManager.kubeClient().createOrReplaceDeployment(resource);
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createOrReplaceDeployment(resource);
     }
     @Override
     public void delete(Deployment resource) throws Exception {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getName());
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 
     @Override
     public boolean waitForReadiness(Deployment resource) {
-        resource = ClientUtils.waitUntilClientsArePresent(resource);
-
-        return DeploymentUtils.waitForDeploymentReady(resource.getMetadata().getName());
+        return DeploymentUtils.waitForDeploymentReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 }

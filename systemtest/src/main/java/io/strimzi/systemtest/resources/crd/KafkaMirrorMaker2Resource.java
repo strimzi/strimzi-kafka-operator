@@ -37,7 +37,7 @@ public class KafkaMirrorMaker2Resource implements ResourceType<KafkaMirrorMaker2
     }
     @Override
     public boolean waitForReadiness(KafkaMirrorMaker2 resource) {
-        return KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(resource.getMetadata().getName());
+        return KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
@@ -48,4 +48,7 @@ public class KafkaMirrorMaker2Resource implements ResourceType<KafkaMirrorMaker2
         ResourceManager.replaceCrdResource(KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, resourceName, editor);
     }
 
+    public static void replaceKafkaMirrorMaker2ResourceInSpecificNamespace(String resourceName, Consumer<KafkaMirrorMaker2> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, resourceName, editor, namespaceName);
+    }
 }

@@ -187,6 +187,10 @@ public class KubeClient {
         return client.pods().inNamespace(getNamespace()).withLabelSelector(selector).list().getItems();
     }
 
+    public List<Pod> listPods(String namespaceName, LabelSelector selector) {
+        return client.pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();
+    }
+
     public List<Pod> listPods(Map<String, String> labelSelector) {
         return client.pods().inNamespace(getNamespace()).withLabels(labelSelector).list().getItems();
     }
@@ -219,7 +223,11 @@ public class KubeClient {
     }
 
     public List<Pod> listPods() {
-        return client.pods().inNamespace(getNamespace()).list().getItems();
+        return listPods(getNamespace());
+    }
+
+    public List<Pod> listPods(String namespaceName) {
+        return client.pods().inNamespace(namespaceName).list().getItems();
     }
 
     /**
@@ -339,8 +347,20 @@ public class KubeClient {
     /**
      * Gets deployment
      */
+
+    public Deployment getDeployment(String namespaceName, String deploymentName) {
+        return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get();
+    }
+
     public Deployment getDeployment(String deploymentName) {
-        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).get();
+        return getDeployment(kubeClient().getNamespace(), deploymentName);
+    }
+
+    public Deployment getDeploymentFromAnyNamespaces(String deploymentName) {
+        return client.apps().deployments().inAnyNamespace().list().getItems().stream().filter(
+            deployment -> deployment.getMetadata().getName().equals(deploymentName))
+                .findFirst()
+                .orElseThrow();
     }
 
     public String getDeploymentNameByPrefix(String namePrefix) {
@@ -354,9 +374,12 @@ public class KubeClient {
         }
     }
 
-    public String getDeploymentBySubstring(String subString) {
-        return client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream()
-            .filter(rs -> rs.getMetadata().getName().contains(subString)).collect(Collectors.toList()).get(0).getMetadata().getName();
+    public String getDeploymentFromAnyNamespaceBySubstring(String subString) {
+        Deployment deployment = client.apps().deployments().inAnyNamespace().list().getItems().stream()
+            .filter(rs -> rs.getMetadata().getName().contains(subString))
+            .findFirst()
+            .orElseThrow();
+        return deployment.getMetadata().getName();
     }
     /**
      * Gets deployment UID
@@ -375,16 +398,24 @@ public class KubeClient {
     /**
      * Gets deployment status
      */
+    public boolean getDeploymentStatus(String namespaceName, String deploymentName) {
+        return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).isReady();
+    }
+
     public boolean getDeploymentStatus(String deploymentName) {
-        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).isReady();
+        return getDeploymentStatus(kubeClient().getNamespace(), deploymentName);
+    }
+
+    public void deleteDeployment(String namespaceName, String deploymentName) {
+        client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     public void deleteDeployment(String deploymentName) {
-        client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        deleteDeployment(kubeClient().getNamespace(), deploymentName);
     }
 
     public Deployment createOrReplaceDeployment(Deployment deployment) {
-        return client.apps().deployments().inNamespace(getNamespace()).createOrReplace(deployment);
+        return client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).createOrReplace(deployment);
     }
 
     // =======================================
@@ -394,8 +425,22 @@ public class KubeClient {
     /**
      * Gets deployment config
      */
+    public DeploymentConfig getDeploymentConfig(String namespaceName, String deploymentConfigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespaceName).withName(deploymentConfigName).get();
+    }
+
+    /**
+     * Gets deployment config
+     */
     public DeploymentConfig getDeploymentConfig(String deploymentConfigName) {
         return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).get();
+    }
+
+    /**
+     * Gets deployment config selector
+     */
+    public Map<String, String> getDeploymentConfigSelectors(String namespaceName, String deploymentConfigName) {
+        return client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespaceName).withName(deploymentConfigName).get().getSpec().getSelector();
     }
 
     /**
@@ -416,8 +461,12 @@ public class KubeClient {
     /**
      * Gets deployment config status
      */
+    public boolean getDeploymentConfigReadiness(String namespaceName, String deploymentConfigName) {
+        return Boolean.TRUE.equals(client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(namespaceName).withName(deploymentConfigName).isReady());
+    }
+
     public boolean getDeploymentConfigReadiness(String deploymentConfigName) {
-        return Boolean.TRUE.equals(client.adapt(OpenShiftClient.class).deploymentConfigs().inNamespace(getNamespace()).withName(deploymentConfigName).isReady());
+        return getDeploymentConfigReadiness(kubeClient().getNamespace(), deploymentConfigName);
     }
 
     // ==================================
@@ -466,7 +515,7 @@ public class KubeClient {
     }
 
     public Job createJob(Job job) {
-        return client.batch().jobs().inNamespace(getNamespace()).createOrReplace(job);
+        return client.batch().jobs().inNamespace(job.getMetadata().getNamespace()).createOrReplace(job);
     }
 
     public Job replaceJob(Job job) {

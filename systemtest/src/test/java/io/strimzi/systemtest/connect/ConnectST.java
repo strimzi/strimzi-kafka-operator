@@ -135,22 +135,22 @@ class ConnectST extends AbstractST {
         assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0, "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
                 hasItem(KafkaResources.tlsBootstrapAddress(clusterName))));
         assertThat(StUtils.getPropertiesFromJson(0, kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(exceptedConfig));
-        testDockerImagesForKafkaConnect(clusterName);
+        testDockerImagesForKafkaConnect(NAMESPACE, clusterName);
 
         verifyLabelsOnPods(clusterName, "connect", null, "KafkaConnect");
-        verifyLabelsForService(clusterName, "connect-api", "KafkaConnect");
-        verifyLabelsForConfigMaps(clusterName, null, "");
+        verifyLabelsForService(NAMESPACE, clusterName, "connect-api", "KafkaConnect");
+        verifyLabelsForConfigMaps(NAMESPACE, clusterName, null, "");
         verifyLabelsForServiceAccounts(clusterName, null);
     }
 
-    private void testDockerImagesForKafkaConnect(String clusterName) {
+    private void testDockerImagesForKafkaConnect(String namespaceName, String clusterName) {
         LOGGER.info("Verifying docker image names");
-        Map<String, String> imgFromDeplConf = getImagesFromConfig();
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(namespaceName);
         //Verifying docker image for kafka connect
-        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(kubeClient().listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).
+        String connectImageName = PodUtils.getFirstContainerImageNameFromPod(namespaceName, kubeClient().listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).
                 get(0).getMetadata().getName());
 
-        String connectVersion = Crds.kafkaConnectOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getVersion();
+        String connectVersion = Crds.kafkaConnectOperation(kubeClient(namespaceName).getClient()).inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getVersion();
         if (connectVersion == null) {
             connectVersion = Environment.ST_KAFKA_VERSION;
         }

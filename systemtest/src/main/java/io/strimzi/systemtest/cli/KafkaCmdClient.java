@@ -10,6 +10,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaCmdClient {
@@ -18,10 +19,14 @@ public class KafkaCmdClient {
 
     public KafkaCmdClient() { }
 
-    public static List<String> listTopicsUsingPodCli(String clusterName, int kafkaPodId) {
+    public static List<String> listTopicsUsingPodCli(String namespaceName, String clusterName, int kafkaPodId) {
         String podName = KafkaResources.kafkaPodName(clusterName, kafkaPodId);
-        return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+        return Arrays.asList(cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --list --bootstrap-server localhost:" + PORT).out().split("\\s+"));
+    }
+
+    public static List<String> listTopicsUsingPodCli(String clusterName, int kafkaPodId) {
+        return listTopicsUsingPodCli(kubeClient().getNamespace(), clusterName, kafkaPodId);
     }
 
     public static String createTopicUsingPodCli(String clusterName, int kafkaPodId, String topic, int replicationFactor, int partitions) {
@@ -42,8 +47,12 @@ public class KafkaCmdClient {
     }
 
     public static List<String> describeTopicUsingPodCli(String clusterName, int kafkaPodId, String topic) {
+        return describeTopicUsingPodCli(kubeClient().getNamespace(), clusterName, kafkaPodId, topic);
+    }
+
+    public static List<String> describeTopicUsingPodCli(String namespaceName, String clusterName, int kafkaPodId, String topic) {
         String podName = KafkaResources.kafkaPodName(clusterName, kafkaPodId);
-        return Arrays.asList(cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+        return Arrays.asList(cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
             "bin/kafka-topics.sh --bootstrap-server localhost:" + PORT + " --describe --topic " + topic).out().replace(": ", ":").split("\\s+"));
     }
 

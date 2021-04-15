@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -44,7 +45,7 @@ import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.time.TimeoutBudget;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -54,7 +55,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -145,7 +145,16 @@ public class ResourceManager {
             LOGGER.info("Create/Update of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 
-            type.create(resource);
+            // if it is parallel namespace test we are gonna replace resource a namespace
+            if (StUtils.isParallelNamespaceTest(testContext)) {
+                final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                LOGGER.info("Using namespace: {}", namespace);
+                resource.getMetadata().setNamespace(namespace);
+                type.create(resource);
+            } else {
+                // otherwise use resource namespace
+                type.create(resource);
+            }
 
             synchronized (this) {
                 STORED_RESOURCES.computeIfAbsent(testContext.getDisplayName(), k -> new Stack<>());
@@ -181,36 +190,28 @@ public class ResourceManager {
     }
 
     public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition) {
-        return waitResourceCondition(resource, condition, TimeoutBudget.ofDuration(Duration.ofMinutes(5)));
-    }
-
-    public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition, TimeoutBudget timeout) {
         assertNotNull(resource);
         assertNotNull(resource.getMetadata());
         assertNotNull(resource.getMetadata().getName());
+
+        // cluster role binding does not need namespace...
+        if (!(resource instanceof ClusterRoleBinding)) {
+            assertNotNull(resource.getMetadata().getNamespace());
+        }
+
         ResourceType<T> type = findResourceType(resource);
         assertNotNull(type);
 
-        while (!timeout.timeoutExpired()) {
-            T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-            if (condition.test(res)) {
-                LOGGER.info("Resource {} in namespace {} is {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
-                return true;
-            }
-            try {
-                Thread.sleep(Duration.ofSeconds(1).toMillis());
-            } catch (InterruptedException e) {
-                LOGGER.info("Resource {} in namespace {} is not {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
-                Thread.currentThread().interrupt();
-                return false;
-            }
-        }
-        T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-        boolean pass = condition.test(res);
-        if (!pass) {
-            LOGGER.info("Resource {} with with type {} failed condition check: {}", resource.getMetadata().getName(), type, resourceToString(res));
-        }
-        return pass;
+        boolean[] resourceReady = new boolean[1];
+
+        TestUtils.waitFor("Resource condition:" + condition + " is fulfilled", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
+            () -> {
+                T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+                resourceReady[0] =  condition.test(res);
+                return resourceReady[0];
+            });
+
+        return resourceReady[0];
     }
 
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
@@ -225,6 +226,13 @@ public class ResourceManager {
             LOGGER.error("Resource {} is not convertible to YAML: {}", resource.getMetadata().getName(), e.getMessage());
             return "unknown";
         }
+    }
+
+    public static <T extends CustomResource, L extends CustomResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor, String namespace) {
+        Resource<T> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).withName(resourceName);
+        T resource = namedResource.get();
+        editor.accept(resource);
+        namedResource.replace(resource);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor) {
@@ -277,7 +285,7 @@ public class ResourceManager {
 
                     log.add("\nPods with conditions and messages:\n\n");
 
-                    for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                    for (Pod pod : kubeClient().namespace(customResource.getMetadata().getNamespace()).listPodsByPrefixInName(name)) {
                         log.add(pod.getMetadata().getName() + ":");
                         for (PodCondition podCondition : pod.getStatus().getConditions()) {
                             if (podCondition.getMessage() != null) {

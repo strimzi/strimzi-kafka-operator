@@ -157,7 +157,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
             .build();
 
-        if (kubeClient().listPods(labelSelector).size() == 0) {
+        if (kubeClient(resource.getMetadata().getNamespace()).listPods(labelSelector).size() == 0) {
             throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind());
         }
 

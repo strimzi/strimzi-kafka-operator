@@ -295,6 +295,11 @@ public interface Constants {
     String OLM = "olm";
 
     /**
+     * Tag for tests which executing in parallel namespaces
+     */
+    String PARALLEL_NAMESPACE = "parallelnamespace";
+
+    /**
      * Cruise Control related parameters
      */
     String CRUISE_CONTROL_NAME = "Cruise Control";
@@ -315,4 +320,9 @@ public interface Constants {
      * Loadbalancer finalizer config
      */
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
+
+    /**
+     * Auxiliary variables for storing data across our tests
+     */
+    String NAMESPACE_KEY = "NAMESPACE_NAME";
 }
