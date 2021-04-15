@@ -1,0 +1,10 @@
+diff a/test/src/main/java/io/strimzi/test/k8s/KubeClient.java b/test/src/main/java/io/strimzi/test/k8s/KubeClient.java	(rejected hunks)
+@@ -299,7 +299,7 @@ public class KubeClient {
+     }
+ 
+     public Pod getPod(String name) {
+-        return getPod(kubeClient().getNamespace(), name);
++        return getPod(getNamespace(), name);
+     }
+ 
+     /**
