@@ -66,7 +66,7 @@ To build Strimzi from a source the operator and Kafka code needs to be compiled 
                   packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
     ```
    
-   This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.\
+   This updates `060-Deployment-strimzi-cluster-operator.yaml`, replacing all the image references (in `image` and `value` properties) with ones with the same name but with the repository changed.
    >*Note*: please ensure you don't commit these changes accidentally.
    
 
@@ -79,7 +79,7 @@ To build Strimzi from a source the operator and Kafka code needs to be compiled 
    
    **OS X**
 
-        sed -E -i '' -e "s/myproject/<desired_namespace>/g" packaging/install/cluster-operator/*RoleBinding*.yaml"
+        sed -E -i '' -e "s/myproject/<desired_namespace>/g" packaging/install/cluster-operator/*RoleBinding*.yaml
 
    This updates the RoleBinding and ClusterRoleBinding files to ensure that the roles binding to the service account use the correct namespace.
    >*Note*: please ensure you don't commit these changes accidentally.
