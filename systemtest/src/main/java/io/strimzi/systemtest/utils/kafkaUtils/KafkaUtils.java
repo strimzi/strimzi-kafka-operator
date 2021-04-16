@@ -119,7 +119,7 @@ public class KafkaUtils {
         waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, message, Constants.GLOBAL_STATUS_TIMEOUT);
     }
 
-    public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {
+    public static void waitForZkMntr(String namespaceName, String clusterName, Pattern pattern, int... podIndexes) {
         long timeoutMs = 120_000L;
         long pollMs = 1_000L;
 
@@ -128,7 +128,7 @@ public class KafkaUtils {
             String zookeeperPort = String.valueOf(12181);
             waitFor("mntr", pollMs, timeoutMs, () -> {
                     try {
-                        String output = cmdKubeClient().execInPod(zookeeperPod,
+                        String output = cmdKubeClient(namespaceName).execInPod(zookeeperPod,
                             "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out();
 
                         if (pattern.matcher(output).find()) {
@@ -142,9 +142,13 @@ public class KafkaUtils {
                 () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
                     pattern.pattern(),
                     System.lineSeparator(),
-                    indent(cmdKubeClient().execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
+                    indent(cmdKubeClient(namespaceName).execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
             );
         }
+    }
+
+    public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {
+        waitForZkMntr(kubeClient().getNamespace(), clusterName, pattern, podIndexes);
     }
 
     public static String getKafkaStatusCertificates(String listenerType, String namespace, String clusterName) {

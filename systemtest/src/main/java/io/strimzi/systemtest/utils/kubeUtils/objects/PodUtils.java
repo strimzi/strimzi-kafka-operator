@@ -56,6 +56,12 @@ public class PodUtils {
         return getFirstContainerImageNameFromPod(kubeClient().getNamespace(), podName);
     }
 
+    public static String getContainerImageNameFromPod(String namespaceName, String podName, String containerName) {
+        return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().stream()
+            .filter(c -> c.getName().equals(containerName))
+            .findFirst().get().getImage();
+    }
+
     public static String getContainerImageNameFromPod(String podName, String containerName) {
         return kubeClient().getPod(podName).getSpec().getContainers().stream()
             .filter(c -> c.getName().equals(containerName))
@@ -299,15 +305,20 @@ public class PodUtils {
 
     /**
      * Ensures that at least one pod from listed (by prefix) is in {@code Pending} phase
+     * @param namespaceName Namespace name
      * @param podPrefix - all pods that matched the prefix will be verified
      */
-    public static void waitForPendingPod(String podPrefix) {
+    public static void waitForPendingPod(String namespaceName, String podPrefix) {
         LOGGER.info("Wait for at least one pod with prefix: {} will be in pending phase", podPrefix);
         TestUtils.waitFor("One pod to be in PENDING state", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> actualPods = kubeClient().listPodsByPrefixInName(podPrefix);
+                List<Pod> actualPods = kubeClient(namespaceName).listPodsByPrefixInName(podPrefix);
                 return actualPods.stream().anyMatch(pod -> pod.getStatus().getPhase().equals("Pending"));
             });
+    }
+
+    public static void waitForPendingPod(String podPrefix) {
+        waitForPendingPod(kubeClient().getNamespace(), podPrefix);
     }
 
     /**
@@ -344,7 +355,7 @@ public class PodUtils {
 
         TestUtils.waitFor(String.format("Pods stability in phase %s", phase), Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> actualPods = runningPods.stream().map(p -> kubeClient(namespaceName).getPod(p.getMetadata().getName())).collect(Collectors.toList());
+                List<Pod> actualPods = runningPods.stream().map(p -> kubeClient(namespaceName).getPod(namespaceName, p.getMetadata().getName())).collect(Collectors.toList());
 
                 for (Pod pod : actualPods) {
                     if (pod.getStatus().getPhase().equals(phase)) {
