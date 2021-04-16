@@ -292,7 +292,7 @@ public class KafkaAvailabilityTest {
 
             .addBroker(4);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -331,7 +331,7 @@ public class KafkaAvailabilityTest {
 
             .addBroker(2);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -370,7 +370,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -396,7 +396,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -423,7 +423,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -449,7 +449,7 @@ public class KafkaAvailabilityTest {
                 .endTopic()
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -484,7 +484,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaSorted = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaSorted = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -521,7 +521,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -557,7 +557,7 @@ public class KafkaAvailabilityTest {
                 .addBroker(3)
                 .listTopicsResult(new TimeoutException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -591,7 +591,7 @@ public class KafkaAvailabilityTest {
                 .addBroker(3)
                 .describeTopicsResult("A", new UnknownTopicOrPartitionException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -625,7 +625,7 @@ public class KafkaAvailabilityTest {
                 .addBroker(3)
                 .describeConfigsResult(new ConfigResource(ConfigResource.Type.TOPIC, "A"), new UnknownTopicOrPartitionException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), null);
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {

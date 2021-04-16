@@ -214,7 +214,7 @@ public class KafkaRoller {
                     allClient.close(Duration.ofSeconds(30));
                 }
             } catch (RuntimeException e) {
-                log.debug("Exception closing the allClient", e);
+                log.debug("{}: Exception closing admin client", reconciliation, e);
             }
             vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
         });
@@ -703,7 +703,7 @@ public class KafkaRoller {
     }
 
     protected KafkaAvailability availability(Admin ac) {
-        return new KafkaAvailability(ac);
+        return new KafkaAvailability(ac, reconciliation);
     }
 
     String podName(int podId) {
