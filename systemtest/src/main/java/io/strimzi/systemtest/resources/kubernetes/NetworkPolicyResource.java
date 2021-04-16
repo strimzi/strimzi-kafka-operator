@@ -46,7 +46,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createNetworkPolicy(resource);
     }
     @Override
-    public void delete(NetworkPolicy resource) throws Exception {
+    public void delete(NetworkPolicy resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteNetworkPolicy(resource.getMetadata().getName());
     }
     @Override

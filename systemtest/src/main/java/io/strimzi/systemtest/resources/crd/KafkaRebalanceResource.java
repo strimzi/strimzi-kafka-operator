@@ -35,7 +35,7 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
         kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
     }
     @Override
-    public void delete(KafkaRebalance resource) throws Exception {
+    public void delete(KafkaRebalance resource) {
         kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }

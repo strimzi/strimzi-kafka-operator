@@ -35,7 +35,7 @@ public class KafkaConnectS2IResource implements ResourceType<KafkaConnectS2I> {
         kafkaConnectS2IClient().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).createOrReplace(resource);
     }
     @Override
-    public void delete(KafkaConnectS2I resource) throws Exception {
+    public void delete(KafkaConnectS2I resource) {
         kafkaConnectS2IClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }

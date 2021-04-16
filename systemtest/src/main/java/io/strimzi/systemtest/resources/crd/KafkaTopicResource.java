@@ -33,7 +33,7 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
         kafkaTopicClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
     }
     @Override
-    public void delete(KafkaTopic resource) throws Exception {
+    public void delete(KafkaTopic resource) {
         kafkaTopicClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }

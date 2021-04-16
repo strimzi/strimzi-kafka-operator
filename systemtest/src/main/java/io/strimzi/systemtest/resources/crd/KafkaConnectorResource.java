@@ -34,7 +34,7 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
         kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
     }
     @Override
-    public void delete(KafkaConnector resource) throws Exception {
+    public void delete(KafkaConnector resource) {
         kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
