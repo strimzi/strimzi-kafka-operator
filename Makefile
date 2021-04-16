@@ -178,6 +178,8 @@ helm_install: packaging/helm-charts/helm3
 
 crd_install: packaging/install
 
+olm_install: packaging/olm-bundle
+
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
