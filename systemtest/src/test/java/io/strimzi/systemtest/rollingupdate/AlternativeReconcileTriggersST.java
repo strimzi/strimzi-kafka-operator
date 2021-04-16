@@ -123,8 +123,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
-        LOGGER.info("=================\n namespace:{} \n client-name:{}\n");
-
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
