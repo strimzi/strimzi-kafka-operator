@@ -217,7 +217,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     }
 
     public void produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful() {
-        TestUtils.waitFor("wait until producer and consumer will successfully send and receive messages.", Duration.ofMinutes(1).toMillis(),
+        TestUtils.waitFor("Producer and consumer will successfully send and receive messages.", Duration.ofMinutes(1).toMillis(),
             Constants.GLOBAL_TIMEOUT, () -> {
                 // generate new consumer group...
                 this.consumerGroup = ClientUtils.generateRandomConsumerGroup();
@@ -231,7 +231,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     }
 
     public void consumesTlsMessagesUntilOperationIsSuccessful(int sentMessages) {
-        TestUtils.waitFor("wait until consumer will successfully receive messages.", Duration.ofMinutes(1).toMillis(),
+        TestUtils.waitFor("Consumer will successfully receive messages.", Duration.ofMinutes(1).toMillis(),
             Constants.GLOBAL_TIMEOUT, () -> {
                 // generate new consumer group...
                 this.consumerGroup = ClientUtils.generateRandomConsumerGroup();
