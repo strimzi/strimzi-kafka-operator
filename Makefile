@@ -8,6 +8,13 @@ CHART_SEMANTIC_RELEASE_VERSION ?= $(shell cat ./release.version | tr A-Z a-z)
 BRIDGE_VERSION ?= $(shell cat ./bridge.version | tr A-Z a-z)
 DOCKER_CMD ?= docker
 
+ifeq ($(RELEASE_VERSION), latest)
+  source $(dirname $(realpath $0))/../tools/strimzi-oauth-version.sh
+  OAUTH_BRANCH=$strimzi_oauth_version
+else
+  OAUTH_BRANCH=main
+endif
+
 ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
@@ -107,6 +114,7 @@ docu_versions:
 	documentation/snip-images.sh > documentation/modules/snip-images.adoc
 
 docu_html: docu_htmlclean docu_versions docu_check
+    sed -Ei -e "s/(.*github.com/strimzi/strimzi-kafka-oauth/tree/)main(/.*)/\1$OAUTH_BRANCH\2/" documentation/shared/attributes.adoc
 	mkdir -p documentation/html
 	$(CP) -vrL documentation/shared/images documentation/html/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) documentation/deploying/deploying.adoc -o documentation/html/deploying.html
