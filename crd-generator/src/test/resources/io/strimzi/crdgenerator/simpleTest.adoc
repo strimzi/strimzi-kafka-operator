@@ -5,81 +5,81 @@
 [options="header"]
 |====
 |Property                       |Description
-|affinity                1.2+<.<| For more information, see the {KubeApiReferenceBase}#affinity-v1-core[external documentation for core/v1 affinity].
+|affinity                1.2+<.<a| For more information, see the {KubeApiReferenceBase}#affinity-v1-core[external documentation for core/v1 affinity].
 
 
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
-|alternatives            1.2+<.<|
+|alternatives            1.2+<.<a|
 |string array or map
-|arrayOfBoundTypeVar     1.2+<.<|
+|arrayOfBoundTypeVar     1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array
-|arrayOfBoundTypeVar2    1.2+<.<|
+|arrayOfBoundTypeVar2    1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array
-|arrayOfList             1.2+<.<|
+|arrayOfList             1.2+<.<a|
 |string array of dimension 2
-|arrayOfRawList          1.2+<.<|
+|arrayOfRawList          1.2+<.<a|
 |object array of dimension 2
-|arrayOfTypeVar          1.2+<.<|
+|arrayOfTypeVar          1.2+<.<a|
 |object array
-|arrayProperty           1.2+<.<|
+|arrayProperty           1.2+<.<a|
 |string array
-|arrayProperty2          1.2+<.<|
+|arrayProperty2          1.2+<.<a|
 |string array of dimension 2
-|booleanProperty         1.2+<.<|
+|booleanProperty         1.2+<.<a|
 |boolean
-|customisedEnum          1.2+<.<|
+|customisedEnum          1.2+<.<a|
 |string (one of [one, two])
-|fieldProperty           1.2+<.<|Example of field property.
+|fieldProperty           1.2+<.<a|Example of field property.
 |string
-|intProperty             1.2+<.<|An example int property.
+|intProperty             1.2+<.<a|An example int property.
 |integer
-|listOfArray             1.2+<.<|
+|listOfArray             1.2+<.<a|
 |string array of dimension 2
-|listOfBoundTypeVar      1.2+<.<|
+|listOfBoundTypeVar      1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array
-|listOfBoundTypeVar2     1.2+<.<|
+|listOfBoundTypeVar2     1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array
-|listOfInts              1.2+<.<|
+|listOfInts              1.2+<.<a|
 |integer array
-|listOfInts2             1.2+<.<|
+|listOfInts2             1.2+<.<a|
 |integer array of dimension 2
-|listOfMaps              1.2+<.<|
+|listOfMaps              1.2+<.<a|
 |map array
-|listOfObjects           1.2+<.<|
+|listOfObjects           1.2+<.<a|
 |xref:type-ObjectProperty-{context}[`ObjectProperty`] array
-|listOfPolymorphic       1.2+<.<|
+|listOfPolymorphic       1.2+<.<a|
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`] array
-|listOfRawList           1.2+<.<|
+|listOfRawList           1.2+<.<a|
 |object array of dimension 2
-|listOfTypeVar           1.2+<.<|
+|listOfTypeVar           1.2+<.<a|
 |object array
-|listOfWildcardTypeVar1  1.2+<.<|
+|listOfWildcardTypeVar1  1.2+<.<a|
 |string array
-|listOfWildcardTypeVar2  1.2+<.<|
+|listOfWildcardTypeVar2  1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array
-|listOfWildcardTypeVar3  1.2+<.<|
+|listOfWildcardTypeVar3  1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array
-|listOfWildcardTypeVar4  1.2+<.<|
+|listOfWildcardTypeVar4  1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array of dimension 2
-|longProperty            1.2+<.<|An example long property.
+|longProperty            1.2+<.<a|An example long property.
 |integer
-|mapProperty             1.2+<.<|
+|mapProperty             1.2+<.<a|
 |map
-|normalEnum              1.2+<.<|
+|normalEnum              1.2+<.<a|
 |string (one of [BAR, FOO])
-|objectProperty          1.2+<.<|
+|objectProperty          1.2+<.<a|
 |xref:type-ObjectProperty-{context}[`ObjectProperty`]
-|polymorphicProperty     1.2+<.<| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right].
+|polymorphicProperty     1.2+<.<a| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right].
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
-|rawList                 1.2+<.<|
+|rawList                 1.2+<.<a|
 |object array
-|spec                    1.2+<.<|
+|spec                    1.2+<.<a|
 |object
-|status                  1.2+<.<|
+|status                  1.2+<.<a|
 |object
-|stringProperty          1.2+<.<|
+|stringProperty          1.2+<.<a|
 |string
-|typedAlternatives       1.2+<.<|
+|typedAlternatives       1.2+<.<a|
 |xref:type-Type2-{context}[`Type2`] or xref:type-Type1-{context}[`Type1`]
 |====
 
@@ -104,9 +104,9 @@ Example of complex type.
 [options="header"]
 |====
 |Property    |Description
-|bar  1.2+<.<|
+|bar  1.2+<.<a|
 |string
-|foo  1.2+<.<|
+|foo  1.2+<.<a|
 |string
 |====
 
@@ -121,11 +121,11 @@ It must have the value `left` for the type `PolymorphicLeft`.
 [options="header"]
 |====
 |Property               |Description
-|commonProperty  1.2+<.<|
+|commonProperty  1.2+<.<a|
 |string
-|discrim         1.2+<.<|
+|discrim         1.2+<.<a|
 |string
-|leftProperty    1.2+<.<|when descrim=left, the left-hand property.
+|leftProperty    1.2+<.<a|when descrim=left, the left-hand property.
 |string
 |====
 
@@ -140,11 +140,11 @@ It must have the value `right` for the type `PolymorphicRight`.
 [options="header"]
 |====
 |Property               |Description
-|commonProperty  1.2+<.<|
+|commonProperty  1.2+<.<a|
 |string
-|discrim         1.2+<.<|
+|discrim         1.2+<.<a|
 |string
-|rightProperty   1.2+<.<|when descrim=right, the right-hand property.
+|rightProperty   1.2+<.<a|when descrim=right, the right-hand property.
 |string
 |====
 
@@ -157,7 +157,7 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 [options="header"]
 |====
 |Property     |Description
-|key2  1.2+<.<|
+|key2  1.2+<.<a|
 |string
 |====
 
@@ -173,7 +173,7 @@ Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
 [options="header"]
 |====
 |Property     |Description
-|key1  1.2+<.<|
+|key1  1.2+<.<a|
 |string
 |====
 

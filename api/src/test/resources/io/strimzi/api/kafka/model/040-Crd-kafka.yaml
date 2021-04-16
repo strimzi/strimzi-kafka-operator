@@ -105,7 +105,7 @@ spec:
                             \ type uses LoadBalancer type services to expose Kafka.\n\
                             * `nodeport` type uses NodePort type services to expose\
                             \ Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress\
-                            \ to expose Kafka.\n."
+                            \ to expose Kafka.\n"
                         tls:
                           type: boolean
                           description: Enables TLS encryption on the listener. This
@@ -506,7 +506,7 @@ spec:
                                 * `InternalIP`
                                 * `Hostname`
 
-                                This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener..
+                                This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener.
                             useServiceDnsDomain:
                               type: boolean
                               description: Configures whether the Kubernetes service
@@ -5972,7 +5972,7 @@ spec:
                               * `loadbalancer` type uses LoadBalancer type services\
                               \ to expose Kafka.\n* `nodeport` type uses NodePort\
                               \ type services to expose Kafka.\n* `ingress` type uses\
-                              \ Kubernetes Nginx Ingress to expose Kafka.\n."
+                              \ Kubernetes Nginx Ingress to expose Kafka.\n"
                           tls:
                             type: boolean
                             description: Enables TLS encryption on the listener. This
@@ -6376,7 +6376,7 @@ spec:
                                   * `InternalIP`
                                   * `Hostname`
 
-                                  This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener..
+                                  This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener.
                               useServiceDnsDomain:
                                 type: boolean
                                 description: Configures whether the Kubernetes service
@@ -7400,7 +7400,7 @@ spec:
                                 \ and `nodeport`. \n\n* `route` type uses OpenShift\
                                 \ Routes to expose Kafka.* `loadbalancer` type uses\
                                 \ LoadBalancer type services to expose Kafka.* `nodeport`\
-                                \ type uses NodePort type services to expose Kafka.."
+                                \ type uses NodePort type services to expose Kafka."
                           required:
                           - type
                           description: Configures external listener on port 9094.
@@ -14378,7 +14378,7 @@ spec:
                               * `loadbalancer` type uses LoadBalancer type services\
                               \ to expose Kafka.\n* `nodeport` type uses NodePort\
                               \ type services to expose Kafka.\n* `ingress` type uses\
-                              \ Kubernetes Nginx Ingress to expose Kafka.\n."
+                              \ Kubernetes Nginx Ingress to expose Kafka.\n"
                           tls:
                             type: boolean
                             description: Enables TLS encryption on the listener. This
@@ -14782,7 +14782,7 @@ spec:
                                   * `InternalIP`
                                   * `Hostname`
 
-                                  This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener..
+                                  This field can be used to select the address type which will be used as the preferred type and checked first. In case no address will be found for this address type, the other types will be used in the default order.This field can be used only with `nodeport` type listener.
                               useServiceDnsDomain:
                                 type: boolean
                                 description: Configures whether the Kubernetes service
@@ -15806,7 +15806,7 @@ spec:
                                 \ and `nodeport`. \n\n* `route` type uses OpenShift\
                                 \ Routes to expose Kafka.* `loadbalancer` type uses\
                                 \ LoadBalancer type services to expose Kafka.* `nodeport`\
-                                \ type uses NodePort type services to expose Kafka.."
+                                \ type uses NodePort type services to expose Kafka."
                           required:
                           - type
                           description: Configures external listener on port 9094.
