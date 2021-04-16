@@ -122,7 +122,7 @@ public class SpecificST extends AbstractST {
         assertThat(brokerRack.contains("broker.rack=zone"), is(true));
 
         String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(clusterName, 0));
-        List<Event> events = kubeClient().listEvents(uid);
+        List<Event> events = kubeClient().listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
         KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()

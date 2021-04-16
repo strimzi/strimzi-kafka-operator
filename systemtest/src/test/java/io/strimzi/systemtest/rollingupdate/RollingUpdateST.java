@@ -492,7 +492,7 @@ class RollingUpdateST extends AbstractST {
         assertThat(received, is(sent));
 
         //Test that the second pod has event 'Killing'
-        assertThat(kubeClient().listEvents(uid), hasAllOfReasons(Killing));
+        assertThat(kubeClient().listEventsByResourceUid(uid), hasAllOfReasons(Killing));
         // Stop measuring
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }

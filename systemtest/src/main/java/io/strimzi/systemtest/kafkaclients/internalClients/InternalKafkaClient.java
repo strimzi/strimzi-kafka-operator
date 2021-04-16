@@ -199,7 +199,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     }
 
     public void produceAndConsumesPlainMessagesUntilBothOperationsAreSuccessful() {
-        TestUtils.waitFor("wait until producer and consumer will successfully send and receive messages.", Duration.ofMinutes(1).toMillis(),
+        TestUtils.waitFor("Producer and consumer will successfully send and receive messages.", Duration.ofMinutes(1).toMillis(),
             Constants.GLOBAL_TIMEOUT, () -> {
                 // generate new consumer group...
                 this.consumerGroup = ClientUtils.generateRandomConsumerGroup();
@@ -208,12 +208,17 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
     }
 
     public void consumesPlainMessagesUntilOperationIsSuccessful(int sentMessages) {
-        TestUtils.waitFor("wait until consumer will successfully receive messages.", Duration.ofMinutes(1).toMillis(),
+        TestUtils.waitFor("Consumer will successfully receive messages.", Duration.ofMinutes(1).toMillis(),
             Constants.GLOBAL_TIMEOUT, () -> {
                 // generate new consumer group...
                 this.consumerGroup = ClientUtils.generateRandomConsumerGroup();
                 return sentMessages == this.receiveMessagesPlain();
             });
+    }
+
+    public void produceTlsMessagesUntilOperationIsSuccessful(int receivedMessages) {
+        TestUtils.waitFor("Producer and consumer will successfully send and receive messages.", Constants.GLOBAL_CLIENTS_POLL,
+            Constants.GLOBAL_TIMEOUT, () -> this.sendMessagesTls() == receivedMessages);
     }
 
     public void checkProducedAndConsumedMessages(int producedMessages, int consumedMessages) {

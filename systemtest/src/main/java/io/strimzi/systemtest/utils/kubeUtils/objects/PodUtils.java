@@ -234,13 +234,13 @@ public class PodUtils {
         LOGGER.info("Pod {} has {} containers", podNamePrefix, numberOfContainers);
     }
 
-    public static void waitUntilPodStabilityReplicasCount(String podNamePrefix, int expectedPods) {
+    public static void waitUntilPodStabilityReplicasCount(String namespaceName, String podNamePrefix, int expectedPods) {
         LOGGER.info("Wait until Pod {} will have stable {} replicas", podNamePrefix, expectedPods);
         int[] stableCounter = {0};
-        TestUtils.waitFor("Pod" + podNamePrefix + " will have " + expectedPods + " replicas",
+        TestUtils.waitFor(" Pod" + podNamePrefix + " will have " + expectedPods + " replicas",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                if (kubeClient().listPodsByPrefixInName(podNamePrefix).size() == expectedPods) {
+                if (kubeClient(namespaceName).listPodsByPrefixInName(podNamePrefix).size() == expectedPods) {
                     stableCounter[0]++;
                     if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                         LOGGER.info("Pod replicas are stable for {} polls intervals", stableCounter[0]);
@@ -255,6 +255,10 @@ public class PodUtils {
                 return false;
             });
         LOGGER.info("Pod {} has {} replicas", podNamePrefix, expectedPods);
+    }
+
+    public static void waitUntilPodStabilityReplicasCount(String podNamePrefix, int expectedPods) {
+        waitUntilPodStabilityReplicasCount(kubeClient().getNamespace(), podNamePrefix, expectedPods);
     }
 
     public static void waitUntilPodIsInCrashLoopBackOff(String podName) {
@@ -312,24 +316,35 @@ public class PodUtils {
      * it to be considered as stable. Otherwise this procedure will be repeat.
      * @param podPrefix all pods that matched the prefix will be verified
      * */
+    public static void verifyThatRunningPodsAreStable(String namespaceName, String podPrefix) {
+        LOGGER.info("Verify that all pods with prefix: {} are stable", podPrefix);
+        verifyThatPodsAreStable(namespaceName, podPrefix, "Running");
+    }
+
+    public static void verifyThatPendingPodsAreStable(String namespaceName, String podPrefix) {
+        LOGGER.info("Verify that all pods with prefix: {} are stable in pending phase", podPrefix);
+        verifyThatPodsAreStable(namespaceName, podPrefix, "Pending");
+    }
+
     public static void verifyThatRunningPodsAreStable(String podPrefix) {
         LOGGER.info("Verify that all pods with prefix: {} are stable", podPrefix);
-        verifyThatPodsAreStable(podPrefix, "Running");
+        verifyThatPodsAreStable(kubeClient().getNamespace(), podPrefix, "Running");
     }
 
     public static void verifyThatPendingPodsAreStable(String podPrefix) {
         LOGGER.info("Verify that all pods with prefix: {} are stable in pending phase", podPrefix);
-        verifyThatPodsAreStable(podPrefix, "Pending");
+        verifyThatPodsAreStable(kubeClient().getNamespace(), podPrefix, "Pending");
     }
 
-    private static void verifyThatPodsAreStable(String podPrefix, String phase) {
+    private static void verifyThatPodsAreStable(String namespaceName, String podPrefix, String phase) {
         int[] stabilityCounter = {0};
-        List<Pod> runningPods = kubeClient().listPodsByPrefixInName(podPrefix).stream()
+
+        List<Pod> runningPods = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, podPrefix).stream()
             .filter(pod -> pod.getStatus().getPhase().equals(phase)).collect(Collectors.toList());
 
         TestUtils.waitFor(String.format("Pods stability in phase %s", phase), Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> actualPods = runningPods.stream().map(p -> kubeClient().getPod(p.getMetadata().getName())).collect(Collectors.toList());
+                List<Pod> actualPods = runningPods.stream().map(p -> kubeClient(namespaceName).getPod(p.getMetadata().getName())).collect(Collectors.toList());
 
                 for (Pod pod : actualPods) {
                     if (pod.getStatus().getPhase().equals(phase)) {
