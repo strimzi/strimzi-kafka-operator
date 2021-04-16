@@ -93,7 +93,6 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.security.SystemTestCertManager.STRIMZI_INTERMEDIATE_CA;
 import static io.strimzi.systemtest.security.SystemTestCertManager.convertPrivateKeyToPKCS8File;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;

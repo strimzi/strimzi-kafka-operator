@@ -900,6 +900,7 @@
                         <configuration>
                             <configLocation>.checkstyle/checkstyle.xml</configLocation>
                             <suppressionsLocation>.checkstyle/suppressions.xml</suppressionsLocation>
+                            <headerLocation>.checkstyle/java.header</headerLocation>
                             <includeTestSourceDirectory>true</includeTestSourceDirectory>
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
