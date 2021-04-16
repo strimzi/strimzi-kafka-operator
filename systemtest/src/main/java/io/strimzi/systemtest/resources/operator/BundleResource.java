@@ -68,7 +68,6 @@ public class BundleResource implements ResourceType<Deployment> {
     }
 
     public static DeploymentBuilder clusterOperator(String namespace, String namespaceEnv) {
-        // TODO zmen to potom na `CO_OPERATION_TIMEOUT_SHORT`
         return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
