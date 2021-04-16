@@ -25,7 +25,7 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
     @Override
     public Deployment get(String namespace, String name) {
         String deploymentName = ResourceManager.kubeClient().namespace(namespace).getDeploymentNameByPrefix(name);
-        return deploymentName != null ?  ResourceManager.kubeClient().namespace(namespace).getDeployment(deploymentName) : null;
+        return deploymentName != null ?  ResourceManager.kubeClient().namespace(namespace).getDeployment(namespace, deploymentName) : null;
     }
 
     @Override

@@ -1288,7 +1288,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different TLS version");
 
-        KafkaConnectUtils.waitForConnectStatus(clusterName, NotReady);
+        KafkaConnectUtils.waitForConnectNotReady(clusterName);
 
         LOGGER.info("Replacing Kafka Connect config to the newest(TLSv1.2) one same as the Kafka broker has.");
 
