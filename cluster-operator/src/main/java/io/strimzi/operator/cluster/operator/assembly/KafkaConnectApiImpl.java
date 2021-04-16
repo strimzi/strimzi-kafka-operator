@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -16,7 +17,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -32,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static java.util.Arrays.asList;
@@ -63,7 +62,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         Buffer data = configJson.toBuffer();
         String path = "/connectors/" + connectorName + "/config";
         log.debug("Making PUT request to {} with body {}", path, configJson);
-        return withHttpClient((httpClient, result) ->
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
             httpClient.put(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 200 || response.statusCode() == 201) {
@@ -94,28 +93,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             .end());
     }
 
-    /**
-     * Perform the given operation, which completes the promise, using an HTTP client instance,
-     * after which the client is closed and the future for the promise returned.
-     * @param operation The operation to perform.
-     * @param <T> The type of the result
-     * @return A future which is completed with the result performed by the operation
-     */
-    private <T> Future<T> withHttpClient(BiConsumer<HttpClient, Promise<T>> operation) {
-        HttpClient httpClient = vertx.createHttpClient(new HttpClientOptions().setLogActivity(true));
-        Promise<T> promise = Promise.promise();
-        operation.accept(httpClient, promise);
-        return promise.future().compose(
-            result -> {
-                httpClient.close();
-                return Future.succeededFuture(result);
-            },
-            error -> {
-                httpClient.close();
-                return Future.failedFuture(error);
-            });
-    }
-
     @Override
     public Future<Map<String, Object>> getConnector(
             String host, int port,
@@ -127,7 +104,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     private <T> Future<T> doGet(String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
         log.debug("Making GET request to {}", path);
-        return withHttpClient((httpClient, result) ->
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
             httpClient.get(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (okStatusCodes.contains(response.statusCode())) {
@@ -173,7 +150,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<Void> delete(String host, int port, String connectorName) {
         String path = "/connectors/" + connectorName;
-        return withHttpClient((httpClient, result) ->
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
             httpClient.delete(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 204) {
@@ -283,8 +260,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> pauseResume(String host, int port, String path) {
-        return withHttpClient((httpClient, result) -> httpClient
-                .put(port, host, path, response -> {
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.put(port, host, path, response -> {
                     response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 202) {
                         result.complete();
@@ -302,8 +279,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<List<String>> list(String host, int port) {
         String path = "/connectors";
-        return withHttpClient((httpClient, result) -> httpClient
-                .get(port, host, path, response -> {
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.get(port, host, path, response -> {
                     response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
@@ -331,8 +308,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port) {
         String path = "/connector-plugins";
-        return withHttpClient((httpClient, result) -> httpClient
-                .get(port, host, path, response -> {
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.get(port, host, path, response -> {
                     response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
@@ -358,7 +335,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         JsonObject levelJO = new JsonObject();
         levelJO.put("level", level);
         log.debug("Making PUT request to {} with body {}", path, levelJO);
-        return withHttpClient((httpClient, result) -> {
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) -> {
             Buffer buffer = levelJO.toBuffer();
             httpClient
                     .put(port, host, path, response -> {
@@ -383,8 +360,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<Map<String, Map<String, String>>> listConnectLoggers(String host, int port) {
         String path = "/admin/loggers/";
-        return withHttpClient((httpClient, result) -> httpClient
-                .get(port, host, path, response -> {
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.get(port, host, path, response -> {
                     response.exceptionHandler(result::tryFail);
                     if (response.statusCode() == 200) {
                         response.bodyHandler(buffer -> {
@@ -503,8 +480,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> restartConnectorOrTask(String host, int port, String path) {
-        return withHttpClient((httpClient, result) -> httpClient
-            .post(port, host, path, response -> {
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+            httpClient.post(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 204) {
                     result.complete();
@@ -522,8 +499,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<List<String>> getConnectorTopics(String host, int port, String connectorName) {
         String path = String.format("/connectors/%s/topics", connectorName);
-        return withHttpClient((httpClient, result) -> httpClient
-            .get(port, host, path, response -> {
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+            httpClient.get(port, host, path, response -> {
                 response.exceptionHandler(result::tryFail);
                 if (response.statusCode() == 200) {
                     response.bodyHandler(buffer -> {
