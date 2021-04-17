@@ -333,7 +333,7 @@ class ConnectST extends AbstractST {
         assertThat(received, greaterThanOrEqualTo(MESSAGE_COUNT));
 
         String service = KafkaConnectResources.url(clusterName, namespaceName, 8083);
-        String output = cmdKubeClient().execInPod(kafkaClientsPodName, "/bin/bash", "-c", "curl " + service + "/connectors/" + connectorName).out();
+        String output = cmdKubeClient(namespaceName).execInPod(kafkaClientsPodName, "/bin/bash", "-c", "curl " + service + "/connectors/" + connectorName).out();
         assertThat(output, containsString("\"name\":\"license-source\""));
         assertThat(output, containsString("\"connector.class\":\"org.apache.kafka.connect.file.FileStreamSourceConnector\""));
         assertThat(output, containsString("\"tasks.max\":\"2\""));
@@ -561,7 +561,7 @@ class ConnectST extends AbstractST {
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", kafkaClientsPodName, topicName);
-        KafkaConnectorUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespaceName, 8083));
+        KafkaConnectorUtils.createFileSinkConnector(namespaceName, kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespaceName, 8083));
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-second", kafkaUser).build());
 
@@ -720,7 +720,7 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnectS2IUtils.waitForConnectS2INotReady(clusterName);
+        KafkaConnectS2IUtils.waitForConnectS2INotReady(namespaceName, clusterName);
 
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editSpec()
@@ -993,7 +993,7 @@ class ConnectST extends AbstractST {
 
         assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, connectorPodName, Constants.DEFAULT_SINK_FILE_PATH);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
     }
 
     @ParallelNamespaceTest
