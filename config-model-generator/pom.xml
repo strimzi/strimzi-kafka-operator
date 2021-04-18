@@ -29,6 +29,12 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka-metadata-version}</version>
             </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.apache.kafka</groupId>-->
+<!--                <artifactId>kafka-raft</artifactId>-->
+<!--                <version>${kafka.version}</version>-->
+<!--                <optional>true</optional>-->
+<!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 
@@ -41,6 +47,11 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.12</artifactId>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.kafka</groupId>-->
+<!--            <artifactId>kafka-raft</artifactId>-->
+<!--            <optional>true</optional>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
