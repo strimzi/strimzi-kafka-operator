@@ -39,7 +39,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     @Override
-    public void delete(Kafka resource) throws Exception {
+    public void delete(Kafka resource) {
         kafkaClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }

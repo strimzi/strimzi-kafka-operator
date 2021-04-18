@@ -27,7 +27,7 @@ public interface ResourceType<T extends HasMetadata> {
     /**
      * Delete specific resource based on T type using Kubernetes API
      */
-    void delete(T resource) throws Exception;
+    void delete(T resource);
 
     /**
      * Check if this resource is marked as ready or not with wait.

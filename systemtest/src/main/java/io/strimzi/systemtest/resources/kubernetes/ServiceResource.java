@@ -29,7 +29,7 @@ public class ServiceResource implements ResourceType<Service> {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createService(resource);
     }
     @Override
-    public void delete(Service resource) throws Exception {
+    public void delete(Service resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteService(resource);
     }
     @Override

@@ -31,7 +31,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
         ResourceManager.kubeClient().createOrReplaceDeployment(resource);
     }
     @Override
-    public void delete(Deployment resource) throws Exception {
+    public void delete(Deployment resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 

@@ -172,7 +172,7 @@ public class ResourceManager {
     }
 
     @SafeVarargs
-    public final <T extends HasMetadata> void deleteResource(T... resources) throws Exception {
+    public final <T extends HasMetadata> void deleteResource(T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
             if (type == null) {
@@ -201,13 +201,16 @@ public class ResourceManager {
 
         ResourceType<T> type = findResourceType(resource);
         assertNotNull(type);
-
         boolean[] resourceReady = new boolean[1];
 
-        TestUtils.waitFor("Resource condition:" + condition + " is fulfilled", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
+        TestUtils.waitFor("Resource condition: " + condition + " is fulfilled for resource " + resource.getKind() + ":" + resource.getMetadata().getName(),
+            Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
             () -> {
                 T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
                 resourceReady[0] =  condition.test(res);
+                if (!resourceReady[0]) {
+                    type.delete(res);
+                }
                 return resourceReady[0];
             });
 

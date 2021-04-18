@@ -31,7 +31,7 @@ public class KafkaMirrorMakerResource implements ResourceType<KafkaMirrorMaker> 
         kafkaMirrorMakerClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
     }
     @Override
-    public void delete(KafkaMirrorMaker resource) throws Exception {
+    public void delete(KafkaMirrorMaker resource) {
         kafkaMirrorMakerClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }

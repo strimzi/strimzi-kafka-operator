@@ -494,9 +494,11 @@ public abstract class AbstractModel {
                 if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(externalLogging.getValueFrom().getConfigMapKeyRef().getKey())) {
                     return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(externalLogging.getValueFrom().getConfigMapKeyRef().getKey()));
                 } else {
-                    throw new InvalidResourceException("ConfigMap " + externalLogging.getValueFrom().getConfigMapKeyRef().getName()
-                            + "with external logging configuration does not exist or doesn't contain the configuration under the {} key"
-                            + externalLogging.getValueFrom().getConfigMapKeyRef().getKey() + ".");
+                    throw new InvalidResourceException(
+                        String.format("ConfigMap %s with external logging configuration does not exist or doesn't contain the configuration under the %s key.",
+                            externalLogging.getValueFrom().getConfigMapKeyRef().getName(),
+                            externalLogging.getValueFrom().getConfigMapKeyRef().getKey())
+                    );
                 }
             } else {
                 throw new InvalidResourceException("Property logging.valueFrom has to be specified when using external logging.");

@@ -33,7 +33,7 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createOrReplaceDeployment(resource);
     }
     @Override
-    public void delete(Deployment resource) throws Exception {
+    public void delete(Deployment resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 

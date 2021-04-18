@@ -16,12 +16,14 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -765,7 +767,13 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMap);
 
         ExternalLogging elKafka = new ExternalLoggingBuilder()
-            .withName("external-configmap")
+            .withNewValueFrom()
+            .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                .withKey("log4j.properties")
+                .withName("external-configmap")
+                .withOptional(false)
+                .build())
+            .endValueFrom()
             .build();
 
         LOGGER.info("Setting log level of kafka INFO");
@@ -1030,7 +1038,7 @@ class LoggingChangeST extends AbstractST {
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testNotExistingCMSetsDefaultLogging(ExtensionContext extensionContext) {
+    void testNotExistingCMKeepPreviousCMAndPrintsError(ExtensionContext extensionContext) {
         String defaultProps = TestUtils.getFileAsString(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/kafkaDefaultLoggingProperties");
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -1043,9 +1051,12 @@ class LoggingChangeST extends AbstractST {
             "log4j.logger.kafka=INFO\n" +
             "log4j.logger.org.apache.kafka=INFO";
 
+        String existingCmName = "external-cm";
+        String nonExistingCmName = "non-existing-cm-name";
+
         ConfigMap configMap = new ConfigMapBuilder()
             .withNewMetadata()
-                .withName("external-cm")
+                .withName(existingCmName)
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .withData(Collections.singletonMap("log4j.properties", cmData))
@@ -1061,7 +1072,7 @@ class LoggingChangeST extends AbstractST {
                     .withNewValueFrom()
                         .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
                                 .withKey("log4j.properties")
-                                .withName("external-cm")
+                                .withName(existingCmName)
                                 .withOptional(false)
                                 .build())
                     .endValueFrom()
@@ -1083,7 +1094,7 @@ class LoggingChangeST extends AbstractST {
                 .withNewValueFrom()
                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
                             .withKey("log4j.properties")
-                            .withName("non-existing-cm-name")
+                            .withName(nonExistingCmName)
                             .withOptional(false)
                             .build())
                 .endValueFrom()
@@ -1096,8 +1107,13 @@ class LoggingChangeST extends AbstractST {
             "kafka", "/bin/bash", "-c", "cat custom-config/log4j.properties").out();
 
         assertFalse(log4jFile.isEmpty());
-        assertFalse(log4jFile.contains(cmData));
-        assertTrue(log4jFile.contains(defaultProps));
+        assertTrue(log4jFile.contains(cmData));
+        assertFalse(log4jFile.contains(defaultProps));
+
+        LOGGER.info("Checking if Kafka:{} contains error about non-existing CM", clusterName);
+        Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
+        assertThat(condition.getType(), is(CustomResourceStatus.NotReady.toString()));
+        assertTrue(condition.getMessage().matches("ConfigMap " + nonExistingCmName + " with external logging configuration does not exist .*"));
     }
 
     @BeforeAll
