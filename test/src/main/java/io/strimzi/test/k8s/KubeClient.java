@@ -324,8 +324,12 @@ public class KubeClient {
     /**
      * Gets stateful set
      */
+    public RollableScalableResource<StatefulSet> statefulSet(String namespaceName, String statefulSetName) {
+        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName);
+    }
+
     public RollableScalableResource<StatefulSet> statefulSet(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName);
+        return statefulSet(getNamespace(), statefulSetName);
     }
 
     /**
@@ -338,8 +342,12 @@ public class KubeClient {
     /**
      * Gets stateful set status
      */
+    public boolean getStatefulSetStatus(String namespaceName, String statefulSetName) {
+        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).isReady();
+    }
+
     public boolean getStatefulSetStatus(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).isReady();
+        return getStatefulSetStatus(getNamespace(), statefulSetName);
     }
 
     /**

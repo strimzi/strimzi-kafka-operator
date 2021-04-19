@@ -386,9 +386,9 @@ public class KafkaUtils {
         TestUtils.waitFor("Kafka deletion " + kafkaClusterName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
                 if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
-                    kubeClient(namespaceName).getStatefulSet(KafkaResources.kafkaStatefulSetName(kafkaClusterName)) == null &&
-                    kubeClient(namespaceName).getStatefulSet(KafkaResources.zookeeperStatefulSetName(kafkaClusterName)) == null &&
-                    kubeClient(namespaceName).getDeployment(KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
+                    kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(kafkaClusterName)) == null &&
+                    kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.zookeeperStatefulSetName(kafkaClusterName)) == null &&
+                    kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {
                     cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);

@@ -160,7 +160,7 @@ public class StatefulSetUtils {
 
         LOGGER.info("Waiting for StatefulSet {} to be ready", statefulSetName);
         TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
-            () -> kubeClient(namespaceName).getStatefulSetStatus(statefulSetName),
+            () -> kubeClient(namespaceName).getStatefulSetStatus(namespaceName, statefulSetName),
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
 
         LOGGER.info("Waiting for {} Pod(s) of StatefulSet {} to be ready", expectPods, statefulSetName);
