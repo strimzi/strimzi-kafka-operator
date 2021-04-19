@@ -37,7 +37,7 @@ public class StatefulSetUtils {
      * @return A map of pod name to resource version for pods in the given StatefulSet.
      */
     public static Map<String, String> ssSnapshot(String namespaceName, String name) {
-        StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(name);
+        StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
         return PodUtils.podSnapshot(namespaceName, selector);
     }

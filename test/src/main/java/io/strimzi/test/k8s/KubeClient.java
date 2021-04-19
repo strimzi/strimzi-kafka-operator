@@ -313,8 +313,12 @@ public class KubeClient {
     /**
      * Gets stateful set
      */
+    public StatefulSet getStatefulSet(String namespaceName, String statefulSetName) {
+        return  client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).get();
+    }
+
     public StatefulSet getStatefulSet(String statefulSetName) {
-        return  client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).get();
+        return getStatefulSet(getNamespace(), statefulSetName);
     }
 
     /**
