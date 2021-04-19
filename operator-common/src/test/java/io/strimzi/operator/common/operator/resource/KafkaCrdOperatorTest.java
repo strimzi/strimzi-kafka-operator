@@ -71,6 +71,20 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     }
 
     @Override
+    protected Kafka modifiedResource() {
+        return new KafkaBuilder(resource())
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+    }
+
+    @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         when(mockClient.customResources(any(CustomResourceDefinitionContext.class), any(), any())).thenReturn(op);
     }

@@ -6,7 +6,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
+import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class KafkaBrokerLoggingConfigurationDiff extends AbstractResourceDiff {
+public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
     private static final Logger log = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;

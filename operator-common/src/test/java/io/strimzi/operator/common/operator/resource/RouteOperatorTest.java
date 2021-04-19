@@ -27,7 +27,23 @@ public class RouteOperatorTest extends AbstractResourceOperatorTest<OpenShiftCli
 
     @Override
     protected Route resource() {
-        return new RouteBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
+        return new RouteBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .build();
+    }
+
+    @Override
+    protected Route modifiedResource() {
+        return new RouteBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                    .addToLabels("foo", "bar")
+                .endMetadata()
+                .build();
     }
 
     @Override

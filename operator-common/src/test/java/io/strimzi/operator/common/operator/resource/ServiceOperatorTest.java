@@ -37,7 +37,24 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
 
     @Override
     protected Service resource() {
-        return new ServiceBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
+        return new ServiceBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewType("LoadBalancer")
+                .endSpec()
+                .build();
+    }
+
+    @Override
+    protected Service modifiedResource() {
+        return new ServiceBuilder(resource())
+                .editSpec()
+                    .withNewType("NodePort")
+                .endSpec()
+                .build();
     }
 
     @Override

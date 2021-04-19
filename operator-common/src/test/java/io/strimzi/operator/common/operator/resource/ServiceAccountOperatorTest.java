@@ -52,6 +52,17 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
     }
 
     @Override
+    protected ServiceAccount modifiedResource() {
+        return new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(NAMESPACE)
+                    .withLabels(singletonMap("foo2", "bar2"))
+                .endMetadata()
+                .build();
+    }
+
+    @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         when(mockClient.serviceAccounts()).thenReturn(op);
     }
@@ -63,11 +74,12 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
 
     @Override
     @Test
-    public void testCreateWhenExistsIsAPatch(VertxTestContext context) {
-        createWhenExistsIsAPatch(context, true);
+    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
+        testCreateWhenExistsWithChangeIsAPatch(context, true);
     }
+
     @Override
-    public void createWhenExistsIsAPatch(VertxTestContext context, boolean cascade) {
+    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context, boolean cascade) {
         // This is overridden because SA patch is coded as a no op to avoid needless token creation.
         ServiceAccount resource = resource();
         Resource mockResource = mock(resourceType());

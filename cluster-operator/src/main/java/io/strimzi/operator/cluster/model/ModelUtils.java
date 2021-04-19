@@ -192,20 +192,24 @@ public class ModelUtils {
         if (ownerReference == null) {
             return new SecretBuilder()
                     .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
+                        .withName(name)
+                        .withNamespace(namespace)
+                        .withLabels(labels.toMap())
                     .endMetadata()
-                    .withData(data).build();
+                    .withType("Opaque")
+                    .withData(data)
+                    .build();
         } else {
             return new SecretBuilder()
                     .withNewMetadata()
-                    .withName(name)
-                    .withOwnerReferences(ownerReference)
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
+                        .withName(name)
+                        .withOwnerReferences(ownerReference)
+                        .withNamespace(namespace)
+                        .withLabels(labels.toMap())
                     .endMetadata()
-                    .withData(data).build();
+                    .withType("Opaque")
+                    .withData(data)
+                    .build();
         }
     }
 

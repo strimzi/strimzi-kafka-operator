@@ -573,6 +573,7 @@ public class CruiseControl extends AbstractModel {
         NetworkPolicyIngressRule restApiRule = new NetworkPolicyIngressRuleBuilder()
                 .addNewPort()
                     .withNewPort(REST_API_PORT)
+                    .withNewProtocol("TCP")
                 .endPort()
                 .build();
 
@@ -592,7 +593,10 @@ public class CruiseControl extends AbstractModel {
             metricsPort.setPort(new IntOrString(METRICS_PORT));
 
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(metricsPort)
+                    .addNewPort()
+                        .withNewPort(METRICS_PORT)
+                        .withNewProtocol("TCP")
+                    .endPort()
                     .withFrom()
                     .build();
 

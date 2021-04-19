@@ -18,12 +18,22 @@ import io.vertx.core.Vertx;
 
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
  * Operations for {@code Service}s.
  */
 public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
+
+    protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
+            "^(/metadata/managedFields" +
+                    "|/spec/sessionAffinity" +
+                    "|/spec/clusterIP" +
+                    "|/spec/clusterIPs" +
+                    "|/spec/ipFamilies" +
+                    "|/spec/ipFamilyPolicy" +
+                    "|/status)$");
 
     private final EndpointOperator endpointOperations;
     /**
@@ -39,6 +49,13 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     @Override
     protected MixedOperation<Service, ServiceList, ServiceResource<Service>> operation() {
         return client.services();
+    }
+
+    /**
+     * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
+     */
+    protected Pattern ignorablePaths() {
+        return IGNORABLE_PATHS;
     }
 
     /**

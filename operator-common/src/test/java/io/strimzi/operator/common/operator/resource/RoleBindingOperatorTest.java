@@ -61,6 +61,19 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
     }
 
     @Override
+    protected RoleBinding modifiedResource() {
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName("some-other-role")
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        return new RoleBindingBuilder(resource())
+                .withRoleRef(roleRef)
+                .build();
+    }
+
+    @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(mockRbac);
