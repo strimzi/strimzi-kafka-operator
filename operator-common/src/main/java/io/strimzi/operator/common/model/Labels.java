@@ -94,6 +94,13 @@ public class Labels {
     public static final String KUBERNETES_STATEFULSET_POD_LABEL = "statefulset.kubernetes.io/pod-name";
 
     /**
+     * Used to exclude user labels from being assign to provisioned resources
+     * Can be overwritten by the LABELS_EXCLUSION_PATTERN_ANNOTATION annotation
+     */
+    public static final String DEFAULT_LABELS_EXCLUSION_PATTERN = "^app.kubernetes.io/(?!part-of).*";
+    public static final String LABELS_EXCLUSION_PATTERN_ANNOTATION = "labels-exclusion-pattern";
+
+    /**
      * The empty set of labels.
      */
     public static final Labels EMPTY = new Labels(emptyMap());
@@ -120,7 +127,7 @@ public class Labels {
      * @param additionalLabels The labels
      * @return A {@code Labels} instance from the given map
      */
-    private static Labels additionalLabels(Map<String, String> additionalLabels) {
+    private static Labels additionalLabels(Map<String, String> additionalLabels, String exclusionPattern) {
 
         if (additionalLabels == null) {
             return EMPTY;
@@ -135,13 +142,13 @@ public class Labels {
             throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
         }
 
-        // Remove Kubernetes Domain specific labels
-        // Exceptions app.kubernetes.io/part-of
+        // Remove labels that match the provided regex exclusionPattern
+        // By default it will remove Kubernetes Domain specific labels
+        // with an exception: app.kubernetes.io/part-of
         Map<String, String> filteredLabels = additionalLabels
                 .entrySet()
                 .stream()
-                .filter(entryset ->
-                        !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN) || entryset.getKey().equals(KUBERNETES_PART_OF_LABEL))
+                .filter(entryset -> !entryset.getKey().matches(exclusionPattern != null ? exclusionPattern : DEFAULT_LABELS_EXCLUSION_PATTERN))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return new Labels(filteredLabels);
@@ -154,7 +161,7 @@ public class Labels {
     public Labels withAdditionalLabels(Map<String, String> additionalLabels) {
         Map<String, String> newLabels = new HashMap<>(labels.size());
         newLabels.putAll(labels);
-        newLabels.putAll(Labels.additionalLabels(additionalLabels).toMap());
+        newLabels.putAll(Labels.additionalLabels(additionalLabels, "").toMap());
 
         return new Labels(newLabels);
     }
@@ -164,7 +171,8 @@ public class Labels {
      * @return the labels of the given {@code resource}.
      */
     public static Labels fromResource(HasMetadata resource) {
-        return resource.getMetadata().getLabels() != null ? additionalLabels(resource.getMetadata().getLabels()) : EMPTY;
+        String exclusionPattern = resource.getMetadata().getAnnotations().get(LABELS_EXCLUSION_PATTERN_ANNOTATION);
+        return resource.getMetadata().getLabels() != null ? additionalLabels(resource.getMetadata().getLabels(), exclusionPattern) : EMPTY;
     }
 
     /**
