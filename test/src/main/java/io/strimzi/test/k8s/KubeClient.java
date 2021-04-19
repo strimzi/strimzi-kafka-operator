@@ -608,16 +608,23 @@ public class KubeClient {
     }
 
     public Boolean checkSucceededJobStatus(String jobName) {
-        return checkSucceededJobStatus(jobName, 1);
+        return checkSucceededJobStatus(getNamespace(), jobName, 1);
     }
 
+    public Boolean checkSucceededJobStatus(String namespaceName, String jobName, int expectedSucceededPods) {
+        return getJobStatus(namespaceName, jobName).getSucceeded().equals(expectedSucceededPods);
+    }
     public Boolean checkSucceededJobStatus(String jobName, int expectedSucceededPods) {
-        return getJobStatus(jobName).getSucceeded().equals(expectedSucceededPods);
+        return checkSucceededJobStatus(getNamespace(), jobName, expectedSucceededPods);
     }
 
     // Pods Statuses:  0 Running / 0 Succeeded / 1 Failed
-    public JobStatus getJobStatus(String jobName) {
+    public JobStatus getJobStatus(String namespaceName, String jobName) {
         return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get().getStatus();
+    }
+
+    public JobStatus getJobStatus(String jobName) {
+        return getJobStatus(getNamespace(), jobName);
     }
 
     public JobList getJobList() {
