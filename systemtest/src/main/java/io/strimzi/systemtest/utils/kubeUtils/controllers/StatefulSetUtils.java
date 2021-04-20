@@ -37,7 +37,7 @@ public class StatefulSetUtils {
      * @return A map of pod name to resource version for pods in the given StatefulSet.
      */
     public static Map<String, String> ssSnapshot(String namespaceName, String name) {
-        StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(name);
+        StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
         return PodUtils.podSnapshot(namespaceName, selector);
     }
@@ -160,7 +160,7 @@ public class StatefulSetUtils {
 
         LOGGER.info("Waiting for StatefulSet {} to be ready", statefulSetName);
         TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
-            () -> kubeClient(namespaceName).getStatefulSetStatus(statefulSetName),
+            () -> kubeClient(namespaceName).getStatefulSetStatus(namespaceName, statefulSetName),
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
 
         LOGGER.info("Waiting for {} Pod(s) of StatefulSet {} to be ready", expectPods, statefulSetName);

@@ -216,9 +216,27 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
             });
     }
 
+    public void produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful() {
+        TestUtils.waitFor("Producer and consumer will successfully send and receive messages.", Duration.ofMinutes(1).toMillis(),
+            Constants.GLOBAL_TIMEOUT, () -> {
+                // generate new consumer group...
+                this.consumerGroup = ClientUtils.generateRandomConsumerGroup();
+                return this.sendMessagesTls() == this.receiveMessagesTls();
+            });
+    }
+
     public void produceTlsMessagesUntilOperationIsSuccessful(int receivedMessages) {
         TestUtils.waitFor("Producer and consumer will successfully send and receive messages.", Constants.GLOBAL_CLIENTS_POLL,
             Constants.GLOBAL_TIMEOUT, () -> this.sendMessagesTls() == receivedMessages);
+    }
+
+    public void consumesTlsMessagesUntilOperationIsSuccessful(int sentMessages) {
+        TestUtils.waitFor("Consumer will successfully receive messages.", Duration.ofMinutes(1).toMillis(),
+            Constants.GLOBAL_TIMEOUT, () -> {
+                // generate new consumer group...
+                this.consumerGroup = ClientUtils.generateRandomConsumerGroup();
+                return sentMessages == this.receiveMessagesTls();
+            });
     }
 
     public void checkProducedAndConsumedMessages(int producedMessages, int consumedMessages) {
