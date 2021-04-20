@@ -302,7 +302,7 @@ public class MockKube {
                 Resource crdResource = mock(Resource.class);
                 when(crdResource.get()).thenReturn(crd);
                 when(crds.withName(crd.getMetadata().getName())).thenReturn(crdResource);
-                String key = crdKey(CustomResourceDefinitionContext.fromCrd(crd));
+                String key = crdKey(mockedCrd.crClass);
                 CreateOrReplaceable crdMixedOp = crdMixedOps.get(key);
                 if (crdMixedOp == null) {
                     CustomResourceMockBuilder customResourceMockBuilder = addMockBuilder(crd.getSpec().getNames().getPlural(), new CustomResourceMockBuilder<>((MockedCrd) mockedCrd));
@@ -369,8 +369,8 @@ public class MockKube {
         return mockClient;
     }
 
-    public String crdKey(CustomResourceDefinitionContext crdc) {
-        return crdc.getGroup() + "##" + crdc.getVersion() + "##" + crdc.getKind();
+    public <T extends CustomResource> String crdKey(Class<T> crClass) {
+        return crClass.getName();
     }
 
     @SuppressWarnings({"unchecked", "deprecation"})
@@ -378,23 +378,22 @@ public class MockKube {
         when(mockClient.customResources(any(CustomResourceDefinitionContext.class),
                 any(Class.class),
                 any(Class.class))).thenAnswer(invocation -> {
-                    CustomResourceDefinitionContext crdArg = invocation.getArgument(0);
-                    String key = crdKey(crdArg);
+                    Class<CustomResource> crClass = invocation.getArgument(1);
+                    String key = crdKey(crClass);
                     CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
                     if (createOrReplaceable == null) {
-                        throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));
+                        throw new RuntimeException("Unknown CRD " + key);
                     }
                     return createOrReplaceable;
                 });
 
-        when(mockClient.customResources(any(CustomResourceDefinition.class),
-                any(Class.class),
-                any(Class.class))).thenAnswer(invocation -> {
-                    CustomResourceDefinition crdArg = invocation.getArgument(0);
-                    String key = crdKey(CustomResourceDefinitionContext.fromCrd(crdArg));
+        when(mockClient.customResources(any(Class.class), any(Class.class)))
+                .thenAnswer(invocation -> {
+                    Class<CustomResource> crClass = invocation.getArgument(0);
+                    String key = crdKey(crClass);
                     CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
                     if (createOrReplaceable == null) {
-                        throw new RuntimeException("Unknown CRD " + invocation.getArgument(0));
+                        throw new RuntimeException("Unknown CRD " + key);
                     }
                     return createOrReplaceable;
                 });

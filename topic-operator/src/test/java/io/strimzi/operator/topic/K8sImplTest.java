@@ -5,11 +5,9 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -58,8 +56,8 @@ public class K8sImplTest {
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
         MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> mockResources = mock(MixedOperation.class);
-        when(mockClient.customResources(any(CustomResourceDefinitionContext.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
-        when(mockClient.customResources(any(CustomResourceDefinition.class), any(Class.class), any(Class.class))).thenReturn(mockResources);
+        when(mockClient.customResources(any(Class.class), any(Class.class))).thenReturn(mockResources);
+        when(mockClient.customResources(any(Class.class), any(Class.class))).thenReturn(mockResources);
         when(mockResources.withLabels(any())).thenReturn(mockResources);
         when(mockResources.inNamespace(any())).thenReturn(mockResources);
         when(mockResources.list()).thenAnswer(invocation -> {

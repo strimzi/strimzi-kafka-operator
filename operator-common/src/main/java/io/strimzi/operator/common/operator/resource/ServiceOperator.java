@@ -147,7 +147,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @param desired   Desired Service
      */
     protected void patchIpFamily(Service current, Service desired) {
-        desired.getSpec().setIpFamily(current.getSpec().getIpFamily());
+        desired.getSpec().setIpFamilies(current.getSpec().getIpFamilies());
     }
 
     /**

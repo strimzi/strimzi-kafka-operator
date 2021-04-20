@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mockito.ArgumentMatchers;
@@ -295,9 +294,10 @@ class MockBuilder<T extends HasMetadata,
             return doPatch(t.getMetadata().getName(), resource, (T) f.apply(t));
         });
         mockDelete(resourceName, resource);
-        if (Readiness.isReadinessApplicable(resourceTypeClass)) {
-            mockIsReady(resourceName, resource);
-        }
+        mockIsReady(resourceName, resource);
+        //if (Readiness.isReadinessApplicable(resourceTypeClass)) {
+        //    mockIsReady(resourceName, resource);
+        //}
         try {
             when(resource.waitUntilCondition(any(), anyLong(), any())).thenAnswer(i -> {
                 Predicate<T> p = i.getArgument(0);
