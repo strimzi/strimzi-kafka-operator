@@ -3,6 +3,7 @@
 
 ## 0.23.0
 
+* Add support for Kafka 2.8.0
 * Make it possible to configure maximum number of connections and maximum connection creation rate in listener configuration
 * Add support for configuring finalizers for `loadbalancer` type listeners
 * Remove support for Kafka 2.5.x

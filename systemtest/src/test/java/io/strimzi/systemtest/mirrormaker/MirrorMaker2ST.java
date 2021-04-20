@@ -857,8 +857,8 @@ class MirrorMaker2ST extends AbstractST {
         assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(originalTopicName)).findAny());
 
         List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(namespaceName, kafkaClusterTargetName, 0, originalTopicName);
-        assertThat(kafkaTopicSpec.get(0), equalTo("Topic:" + originalTopicName));
-        assertThat(kafkaTopicSpec.get(1), equalTo("PartitionCount:3"));
+        assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("Topic:")).findFirst().orElse(null), equalTo("Topic:" + originalTopicName));
+        assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("PartitionCount:")).findFirst().orElse(null), equalTo("PartitionCount:3"));
     }
 
     @ParallelNamespaceTest
