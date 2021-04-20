@@ -21,7 +21,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 @Crd(spec = @Crd.Spec(group = "strimzi.io", names = @Crd.Spec.Names(kind = "Topic", plural = "topics", categories = "strimzi"), scope = "Namespaced"))
-public class TopicCrd extends CustomResource {
+public class TopicCrd extends CustomResource<Object, Object> {
 
     public String name;
 

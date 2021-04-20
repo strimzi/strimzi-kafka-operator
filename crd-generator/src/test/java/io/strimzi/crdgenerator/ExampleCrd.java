@@ -44,7 +44,7 @@ import java.util.Map;
     }
     ))
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or"))})
-public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
+public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource<Object, Object> {
 
     private String ignored;
 

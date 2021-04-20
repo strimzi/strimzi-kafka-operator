@@ -194,11 +194,7 @@ public class CrdGenerator {
         }
     }
 
-    Reporter reporter = new DefaultReporter();
-
-    public void warn(String s) {
-        reporter.warn(s);
-    }
+    Reporter reporter;
 
     public static void argParseErr(String s) {
         System.err.println("CrdGenerator: error: " + s);
@@ -307,7 +303,7 @@ public class CrdGenerator {
         this.conversionStrategy = conversionStrategy;
     }
 
-    public int generate(Class<? extends CustomResource> crdClass, Writer out) throws IOException {
+    public <T extends CustomResource<?, ?>> void generate(Class<T> crdClass, Writer out) throws IOException {
         ObjectNode node = nf.objectNode();
         Crd crd = crdClass.getAnnotation(Crd.class);
         if (crd == null) {
@@ -336,12 +332,11 @@ public class CrdGenerator {
             node.set("spec", buildSpec(crdApiVersion, crd.spec(), crdClass));
         }
         mapper.writeValue(out, node);
-        return numErrors;
     }
 
-    @SuppressWarnings("NPathComplexity")
+    @SuppressWarnings({"NPathComplexity", "OptionalGetWithoutIsPresent"})
     private ObjectNode buildSpec(ApiVersion crdApiVersion,
-                                 Crd.Spec crd, Class<? extends CustomResource> crdClass) {
+                                 Crd.Spec crd, Class<? extends CustomResource<?, ?>> crdClass) {
         checkKubeVersionsSupportCrdVersion(crdApiVersion);
         ObjectNode result = nf.objectNode();
         result.put("group", crd.group());
@@ -413,7 +408,7 @@ public class CrdGenerator {
             result.put("version", Arrays.stream(crd.versions())
                     .map(v -> ApiVersion.parse(v.name()))
                     .filter(this::shouldIncludeVersion)
-                    .findFirst().map(v -> v.toString()).get());
+                    .findFirst().map(ApiVersion::toString).get());
         }
 
         if (!perVersionSchemas) {
@@ -450,7 +445,7 @@ public class CrdGenerator {
         return conversion;
     }
 
-    private Map<ApiVersion, ObjectNode> buildSchemas(Crd.Spec crd, Class<? extends CustomResource> crdClass) {
+    private Map<ApiVersion, ObjectNode> buildSchemas(Crd.Spec crd, Class<? extends CustomResource<?, ?>> crdClass) {
         return Arrays.stream(crd.versions())
             .map(version -> ApiVersion.parse(version.name()))
             .filter(this::shouldIncludeVersion)
@@ -629,19 +624,19 @@ public class CrdGenerator {
         return result;
     }
 
-    private ObjectNode buildValidation(Class<? extends CustomResource> crdClass, ApiVersion crApiVersion, boolean description) {
+    private ObjectNode buildValidation(Class<? extends CustomResource<?, ?>> crdClass, ApiVersion crApiVersion, boolean description) {
         ObjectNode result = nf.objectNode();
         // OpenShift Origin 3.10-rc0 doesn't like the `type: object` in schema root
         boolean noTopLevelTypeProperty = targetKubeVersions.intersects(KubeVersion.parseRange("1.11-1.15"));
-        result.set("openAPIV3Schema", buildObjectSchema(crApiVersion, crdClass, crdClass, crdApiVersion.compareTo(V1) >= 0 || !noTopLevelTypeProperty, description));
+        result.set("openAPIV3Schema", buildObjectSchema(crApiVersion, crdClass, crdApiVersion.compareTo(V1) >= 0 || !noTopLevelTypeProperty, description));
         return result;
     }
 
-    private ObjectNode buildObjectSchema(ApiVersion crApiVersion, AnnotatedElement annotatedElement, Class<?> crdClass, boolean description) {
-        return buildObjectSchema(crApiVersion, annotatedElement, crdClass, true, description);
+    private ObjectNode buildObjectSchema(ApiVersion crApiVersion, Class<?> crdClass, boolean description) {
+        return buildObjectSchema(crApiVersion, crdClass, true, description);
     }
 
-    private ObjectNode buildObjectSchema(ApiVersion crApiVersion, AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType, boolean description) {
+    private ObjectNode buildObjectSchema(ApiVersion crApiVersion, Class<?> crdClass, boolean printType, boolean description) {
         ObjectNode result = nf.objectNode();
         buildObjectSchema(crApiVersion, result, crdClass, printType, description);
         return result;
@@ -703,7 +698,7 @@ public class CrdGenerator {
         if (!Modifier.isAbstract(crdClass.getModifiers())) {
             hasAnyGetterAndAnySetter(crdClass);
         } else {
-            for (Class c : subtypes(crdClass)) {
+            for (Class<?> c : subtypes(crdClass)) {
                 hasAnyGetterAndAnySetter(c);
             }
         }
@@ -729,7 +724,7 @@ public class CrdGenerator {
         outer: do {
             if (className.equals(c.getName())) {
                 found = true;
-                break outer;
+                break;
             }
             for (Class<?> i : c.getInterfaces()) {
                 if (inherits(i, className)) {
@@ -760,7 +755,7 @@ public class CrdGenerator {
 
     private Collection<Property> unionOfSubclassProperties(ApiVersion crApiVersion, Class<?> crdClass) {
         TreeMap<String, Property> result = new TreeMap<>();
-        for (Class subtype : Property.subtypes(crdClass)) {
+        for (Class<?> subtype : Property.subtypes(crdClass)) {
             result.putAll(properties(crApiVersion, subtype));
         }
         result.putAll(properties(crApiVersion, crdClass));
@@ -836,7 +831,7 @@ public class CrdGenerator {
         } else if (returnType.isArray() || List.class.equals(returnType)) {
             schema = buildArraySchema(crApiVersion, property, property.getType(), description);
         } else {
-            schema = buildObjectSchema(crApiVersion, property, returnType, description);
+            schema = buildObjectSchema(crApiVersion, returnType, description);
         }
 
         if (description) {
@@ -875,7 +870,7 @@ public class CrdGenerator {
         return result;
     }
 
-    private ObjectNode buildBasicTypeSchema(AnnotatedElement element, Class type) {
+    private ObjectNode buildBasicTypeSchema(AnnotatedElement element, Class<?> type) {
         ObjectNode result = nf.objectNode();
 
         String typeName;
@@ -988,15 +983,12 @@ public class CrdGenerator {
                 });
     }
 
-    @SuppressWarnings("unchecked")
     private static <T> VersionRange<ApiVersion> apiVersion(T element, Class<T> annotationClass) {
         try {
             Method apiVersionsMethod = annotationClass.getDeclaredMethod("apiVersions");
             String apiVersions = (String) apiVersionsMethod.invoke(element);
             return ApiVersion.parseRange(apiVersions);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        } catch (ClassCastException e) {
+        } catch (ReflectiveOperationException | ClassCastException e) {
             throw new RuntimeException(e);
         }
     }
@@ -1007,7 +999,7 @@ public class CrdGenerator {
         return arrayNode;
     }
 
-    private String typeName(Class type) {
+    private String typeName(Class<?> type) {
         if (String.class.equals(type)) {
             return "string";
         } else if (int.class.equals(type)
@@ -1042,13 +1034,13 @@ public class CrdGenerator {
 
     static class CommandOptions {
         private boolean yaml = false;
-        private LinkedHashMap<String, String> labels = new LinkedHashMap<>();
+        private final LinkedHashMap<String, String> labels = new LinkedHashMap<>();
         VersionRange<KubeVersion> targetKubeVersions = null;
         ApiVersion crdApiVersion = null;
         List<ApiVersion> apiVersions = null;
         VersionRange<ApiVersion> describeVersions = null;
         ApiVersion storageVersion = null;
-        Map<String, Class<? extends CustomResource>> classes = new HashMap<>();
+        Map<String, Class<? extends CustomResource<?, ?>>> classes = new HashMap<>();
         private final ConversionStrategy conversionStrategy;
 
         @SuppressWarnings({"unchecked", "CyclomaticComplexity", "JavaNCSS", "MethodLength"})
@@ -1098,7 +1090,7 @@ public class CrdGenerator {
                             } else if (i >= arg.length() - 1) {
                                 argParseErr("--api-versions needs an argument");
                             } else {
-                                apiVersions = Arrays.stream(args[++i].split(",")).map(v -> ApiVersion.parse(v)).collect(Collectors.toList());
+                                apiVersions = Arrays.stream(args[++i].split(",")).map(ApiVersion::parse).collect(Collectors.toList());
                             }
                             break;
                         case "--describe-api-versions":
@@ -1189,7 +1181,7 @@ public class CrdGenerator {
                     Class<?> cls = Class.forName(className);
                     if (!CustomResource.class.equals(cls)
                             && CustomResource.class.isAssignableFrom(cls)) {
-                        classes.put(fileName, (Class<? extends CustomResource>) cls);
+                        classes.put(fileName, (Class<? extends CustomResource<?, ?>>) cls);
                     } else {
                         argParseErr(cls + " is not a subclass of " + CustomResource.class.getName());
                     }
@@ -1218,7 +1210,7 @@ public class CrdGenerator {
                 opts.yaml ? YAML_MAPPER.configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true) : JSON_MATTER,
                 opts.labels, new DefaultReporter(),
                 opts.apiVersions, opts.storageVersion, null, opts.conversionStrategy, opts.describeVersions);
-        for (Map.Entry<String, Class<? extends CustomResource>> entry : opts.classes.entrySet()) {
+        for (Map.Entry<String, Class<? extends CustomResource<?, ?>>> entry : opts.classes.entrySet()) {
             File file = new File(entry.getKey());
             if (file.getParentFile().exists()) {
                 if (!file.getParentFile().isDirectory()) {
