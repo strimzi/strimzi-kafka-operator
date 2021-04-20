@@ -481,13 +481,13 @@ class TopicOperator {
                             .stream()
                             .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
                                     meter.getId().getTags().contains(Tag.of("kind", "KafkaTopic")) &&
-                                    meter.getId().getTags().contains(Tag.of("name", key.asKubeName().toString())) &&
+                                    meter.getId().getTags().contains(Tag.of("name", action.topic.getMetadata().getName())) &&
                                     meter.getId().getTags().contains(Tag.of("resource-namespace", namespace))
                             ).findFirst();
                     if (metric.isPresent()) {
                         // remove metric so it can be re-added with new tags
                         metrics.meterRegistry().remove(metric.get().getId());
-                        LOGGER.debug("Removed metric " + METRICS_PREFIX + "resource.state{}", keytag);
+                        LOGGER.debug("Removed metric {}.resource.state{{}}", METRICS_PREFIX, keytag);
                     }
 
                     if (action.topic != null) {

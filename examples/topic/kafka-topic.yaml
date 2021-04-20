@@ -1,7 +1,7 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
-  name: my-topic
+  name: my-topic1
   labels:
     strimzi.io/cluster: my-cluster
 spec:
@@ -10,3 +10,4 @@ spec:
   config:
     retention.ms: 7200000
     segment.bytes: 1073741824
+  topicName: my-topic3
