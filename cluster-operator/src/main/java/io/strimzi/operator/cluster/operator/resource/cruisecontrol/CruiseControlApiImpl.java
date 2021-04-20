@@ -121,7 +121,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     if (userTaskId != null) {
                         request.result().putHeader(CC_REST_API_USER_ID_HEADER, userTaskId);
                     }
-                    request.result().end();
 
                     request.result().send(response -> {
                         if (response.succeeded()) {
