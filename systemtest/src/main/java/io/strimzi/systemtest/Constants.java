@@ -89,6 +89,7 @@ public interface Constants {
     int USER_OPERATOR_METRICS_PORT = 8081;
     int TOPIC_OPERATOR_METRICS_PORT = 8080;
     int KAFKA_BRIDGE_METRICS_PORT = 8080;
+    int JMX_PORT = 9999;
 
     String DEPLOYMENT = "Deployment";
     String DEPLOYMENT_TYPE = "deployment-type";
