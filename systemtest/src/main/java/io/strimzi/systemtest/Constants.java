@@ -51,7 +51,7 @@ public interface Constants {
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
     long CO_OPERATION_TIMEOUT_MEDIUM = Duration.ofMinutes(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
-    long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(60).toMillis();
+    long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
     long CC_LOG_CONFIG_RELOAD = Duration.ofSeconds(5).toMillis();
 
     // Keycloak

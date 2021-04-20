@@ -605,9 +605,9 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if CO rolled its pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
 
-        LOGGER.info("Waiting {} ms log to be empty", 4 * LOGGING_RELOADING_INTERVAL);
+        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL);
         // wait some time and check whether logs after this time are empty
-        Thread.sleep(4 * LOGGING_RELOADING_INTERVAL);
+        Thread.sleep(LOGGING_RELOADING_INTERVAL);
 
         LOGGER.info("Asserting if log will contain no records");
         assertThat(StUtils.getLogFromPodByTime(NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(emptyString()));
@@ -1142,7 +1142,7 @@ class LoggingChangeST extends AbstractST {
         assertFalse(log4jFile.contains(defaultProps));
 
         LOGGER.info("Checking if Kafka:{} contains error about non-existing CM", clusterName);
-        Condition condition = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
+        Condition condition = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConditions().get(0);
         assertThat(condition.getType(), is(CustomResourceStatus.NotReady.toString()));
         assertTrue(condition.getMessage().matches("ConfigMap " + nonExistingCmName + " with external logging configuration does not exist .*"));
     }

@@ -177,7 +177,7 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0, "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
                 hasItem(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))));
         assertThat(StUtils.getPropertiesFromJson(0, kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(expectedConfig));
-        testDockerImagesForKafkaMirrorMaker2(clusterName, namespaceName);
+        testDockerImagesForKafkaMirrorMaker2(clusterName, NAMESPACE, namespaceName);
 
         verifyLabelsOnPods(namespaceName, clusterName, "mirrormaker2", null, "KafkaMirrorMaker2");
         verifyLabelsForService(namespaceName, clusterName, "mirrormaker2-api", "KafkaMirrorMaker2");
@@ -637,15 +637,15 @@ class MirrorMaker2ST extends AbstractST {
         assertThat(mirroredTopic, nullValue());
     }
 
-    private void testDockerImagesForKafkaMirrorMaker2(String clusterName, String namespaceName) {
+    private void testDockerImagesForKafkaMirrorMaker2(String clusterName, String clusterOperatorNamespace, String mirrorMakerNamespace) {
         LOGGER.info("Verifying docker image names");
         // we must use NAMESPACE because there is CO deployed
-        Map<String, String> imgFromDeplConf = getImagesFromConfig(namespaceName);
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(clusterOperatorNamespace);
         //Verifying docker image for kafka mirrormaker2
-        String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(namespaceName, kubeClient(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND)
+        String mirrormaker2ImageName = PodUtils.getFirstContainerImageNameFromPod(mirrorMakerNamespace, kubeClient(mirrorMakerNamespace).listPods(mirrorMakerNamespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND)
                .get(0).getMetadata().getName());
 
-        String mirrormaker2Version = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getSpec().getVersion();
+        String mirrormaker2Version = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(mirrorMakerNamespace).withName(clusterName).get().getSpec().getVersion();
         if (mirrormaker2Version == null) {
             mirrormaker2Version = Environment.ST_KAFKA_VERSION;
         }
