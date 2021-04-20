@@ -27,7 +27,6 @@ public class CrdOperator<C extends KubernetesClient,
 
     private final Class<T> cls;
     private final Class<L> listCls;
-    protected final CustomResourceDefinition crd;
 
     /**
      * Constructor
@@ -41,7 +40,6 @@ public class CrdOperator<C extends KubernetesClient,
         super(vertx, client, crd.getSpec().getNames().getKind());
         this.cls = cls;
         this.listCls = listCls;
-        this.crd = crd;
     }
 
     @Override
