@@ -251,13 +251,17 @@ public class KubeClient {
         return listPodsByPrefixInName(getNamespace(), podNamePrefix);
     }
 
-    public List<Pod> listKafkaConnectS2IPods(String connectS2iClusterName) {
-        return listPods()
+    public List<Pod> listKafkaConnectS2IPods(String namespaceName, String connectS2iClusterName) {
+        return listPods(namespaceName)
             .stream().filter(p ->
                 p.getMetadata().getName().startsWith(connectS2iClusterName) &&
                 !p.getMetadata().getName().endsWith("-build") &&
                 !p.getMetadata().getName().endsWith("-deploy"))
             .collect(Collectors.toList());
+    }
+
+    public List<Pod> listKafkaConnectS2IPods(String connectS2iClusterName) {
+        return listKafkaConnectS2IPods(getNamespace(), connectS2iClusterName);
     }
 
     /**
