@@ -116,8 +116,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             httpClient.request(HttpMethod.GET, port, host, path, request -> {
                 if (request.succeeded()) {
                     request.result().setFollowRedirects(true)
-                            .putHeader("Accept", "application/json")
-                            .end();
+                            .putHeader("Accept", "application/json");
                     request.result().send(response -> {
                         if (response.succeeded()) {
                             if (okStatusCodes.contains(response.result().statusCode())) {
@@ -171,8 +170,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 if (request.succeeded()) {
                     request.result().setFollowRedirects(true)
                             .putHeader("Accept", "application/json")
-                            .putHeader("Content-Type", "application/json")
-                            .end();
+                            .putHeader("Content-Type", "application/json");
                     request.result().send(response -> {
                         if (response.succeeded()) {
                             if (response.result().statusCode() == 204) {
@@ -288,8 +286,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 httpClient.request(HttpMethod.PUT, port, host, path, request -> {
                     if (request.succeeded()) {
                         request.result().setFollowRedirects(true)
-                                .putHeader("Accept", "application/json")
-                                .end();
+                                .putHeader("Accept", "application/json");
                         request.result().send(response -> {
                             if (response.succeeded()) {
                                 if (response.result().statusCode() == 202) {
@@ -316,8 +313,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
                     if (request.succeeded()) {
                         request.result().setFollowRedirects(true)
-                                .putHeader("Accept", "application/json")
-                                .end();
+                                .putHeader("Accept", "application/json");
                         request.result().send(response -> {
                             if (response.succeeded()) {
                                 if (response.result().statusCode() == 200) {
@@ -353,8 +349,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 httpClient.request(HttpMethod.GET, port, host, path, request -> {
                     if (request.succeeded()) {
                         request.result().setFollowRedirects(true)
-                                .putHeader("Accept", "application/json")
-                                .end();
+                                .putHeader("Accept", "application/json");
                         request.result().send(response -> {
                             if (response.succeeded()) {
                                 if (response.result().statusCode() == 200) {
@@ -391,7 +386,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         if (request.succeeded()) {
                             request.result().putHeader("Content-Type", "application/json")
                                     .setFollowRedirects(true)
-                                    .end(buffer);
+                                    .putHeader("Content-Length", Integer.toString(buffer.toString().length()))
+                                    .write(buffer.toString());
                             request.result().send(response -> {
                                 if (response.succeeded()) {
                                     response.result().bodyHandler(body -> {
@@ -421,8 +417,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 httpClient.request(HttpMethod.GET, port, host, path, request -> {
                     if (request.succeeded()) {
                         request.result().setFollowRedirects(true)
-                                .putHeader("Accept", "application/json")
-                                .end();
+                                .putHeader("Accept", "application/json");
                         request.result().send(response -> {
                             if (response.succeeded()) {
                                 if (response.result().statusCode() == 200) {
@@ -549,8 +544,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             httpClient.request(HttpMethod.POST, port, host, path, request -> {
                 if (request.succeeded()) {
                     request.result().setFollowRedirects(true)
-                            .putHeader("Accept", "application/json")
-                            .end();
+                            .putHeader("Accept", "application/json");
                     request.result().send(response -> {
                         if (response.succeeded()) {
                             if (response.result().statusCode() == 204) {
@@ -576,8 +570,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             httpClient.request(HttpMethod.GET, port, host, path, request -> {
                 if (request.succeeded()) {
                     request.result().setFollowRedirects(true)
-                            .putHeader("Accept", "application/json")
-                            .end();
+                            .putHeader("Accept", "application/json");
                 } else {
                     result.tryFail(request.cause());
                 }

@@ -89,7 +89,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 if (userTaskId != null) {
                     request.result().putHeader(CC_REST_API_USER_ID_HEADER, userTaskId);
                 }
-                request.result().end();
             });
         });
     }
@@ -180,7 +179,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 } else {
                     httpExceptionHandler(result, request.cause());
                 }
-                request.result().end();
             });
         });
     }
@@ -267,11 +265,9 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                         request.result().setTimeout(idleTimeout * 1000);
                     }
 
-                    request.result().end();
                 } else {
                     httpExceptionHandler(result, request.cause());
                 }
-                request.result().end();
             });
         });
     }
@@ -317,7 +313,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
                     request.result().setTimeout(idleTimeout * 1000);
                 }
-                request.result().end();
             });
         });
     }
