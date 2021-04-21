@@ -147,11 +147,13 @@ function download_kafka_binaries_from_mirror {
     local filename="${url/https:\/\/archive.apache.org\/dist\//}"
     local dynamic_url="https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=${filename}"
     local redirect=$(curl -Ls -o /dev/null -w %{url_effective} "${dynamic_url}")
-    local code=$(curl -Ls --output "${path}" -w %{http_code} "${redirect}")
+    echo "Trying to download Kafka ${filename} from one of the mirrors: ${redirect}"
+    local code=$(curl -Ls --output "${path}" -w %{http_code} "${redirect}${filename}")
+    echo "The download from the mirror returned HTTP code ${code}"
 
     if [[ "$code" == "404" ]]
     then
-        echo "Kafka ${filename} not found on mirrors. Using the original URL"
+        echo "Kafka ${filename} not found on mirrors. Using the original URL ${url}"
         curl -L --output "${path}" "${url}"
     else
         echo "Kafka ${filename} downloaded from one of the Apache mirrors"
