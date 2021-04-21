@@ -295,9 +295,7 @@ class MockBuilder<T extends HasMetadata,
         });
         mockDelete(resourceName, resource);
         mockIsReady(resourceName, resource);
-        //if (Readiness.isReadinessApplicable(resourceTypeClass)) {
-        //    mockIsReady(resourceName, resource);
-        //}
+
         try {
             when(resource.waitUntilCondition(any(), anyLong(), any())).thenAnswer(i -> {
                 Predicate<T> p = i.getArgument(0);

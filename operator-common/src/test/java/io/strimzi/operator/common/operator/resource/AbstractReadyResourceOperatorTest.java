@@ -134,16 +134,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         Checkpoint async = context.checkpoint();
         op.readiness(NAMESPACE, RESOURCE_NAME, 20, 5_000)
             .onComplete(context.succeeding(v -> {
-                /*if (clientType() == OpenShiftClient.class)    {
-                    verify(mockResource, times(OpenShiftReadiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
-                } else {
-                    verify(mockResource, times(Readiness.isReadinessApplicable(resource.getClass()) ? unreadyCount + 1 : 1)).get();
-                }*/
-
                 verify(mockResource, times(unreadyCount + 1)).isReady();
-                /*if (Readiness.isReadinessApplicable(resource.getClass())) {
-                    verify(mockResource, times(unreadyCount + 1)).isReady();
-                }*/
                 async.flag();
             }));
     }
@@ -151,11 +142,6 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
     @Test
     public void testWaitUntilReadyUnsuccessful(VertxTestContext context) {
         T resource = resource();
-
-        // This test does not apply to the resource types without the Ready field
-        /*if (!Readiness.isReadinessApplicable(resource.getClass()))  {
-            context.completeNow();
-        }*/
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -185,11 +171,6 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
     @Test
     public void testWaitUntilReadyThrows(VertxTestContext context) {
         T resource = resource();
-
-        // This test does not apply to the resource types without the Ready field
-        /*if (!Readiness.isReadinessApplicable(resource.getClass()))  {
-            context.completeNow();
-        }*/
 
         RuntimeException ex = new RuntimeException("This is a test exception");
 
