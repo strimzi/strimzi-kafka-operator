@@ -200,8 +200,8 @@ public class DeploymentUtils {
         waitForDeploymentReady(namespaceName, deploymentName);
 
         LOGGER.info("Waiting for {} Pod(s) of Deployment {} to be ready", expectPods, deploymentName);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(deploymentName), expectPods, true,
-            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient(namespaceName).getDeployment(deploymentName), namespaceName));
+        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, deploymentName), expectPods, true,
+            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient(namespaceName).getDeployment(namespaceName, deploymentName), namespaceName));
         LOGGER.info("Deployment {} is ready", deploymentName);
         return true;
     }
