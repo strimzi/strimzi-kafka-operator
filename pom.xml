@@ -899,7 +899,6 @@
                         <phase>validate</phase>
                         <configuration>
                             <configLocation>.checkstyle/checkstyle.xml</configLocation>
-                            <headerLocation>.checkstyle/java.header</headerLocation>
                             <suppressionsLocation>.checkstyle/suppressions.xml</suppressionsLocation>
                             <includeTestSourceDirectory>true</includeTestSourceDirectory>
                             <encoding>UTF-8</encoding>
