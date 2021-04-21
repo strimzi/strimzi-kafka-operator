@@ -56,7 +56,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
 
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
-        // https://strimzi.io/docs/operators/0.22.1/full/deploying.html#con-target-downgrade-version-str
+        // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
         setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getString("deployKafkaVersion"), NAMESPACE);
         logPodImages(clusterName);
         // Downgrade CO
