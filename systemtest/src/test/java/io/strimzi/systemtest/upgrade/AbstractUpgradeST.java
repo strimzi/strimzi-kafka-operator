@@ -412,7 +412,15 @@ public class AbstractUpgradeST extends AbstractST {
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion)).contains(clusterName)) {
             // Deploy a Kafka cluster
             if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-                resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
+                resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+                    .editSpec()
+                        .editKafka()
+                            .withVersion(kafkaVersion)
+                            .addToConfig("log.message.format.version", kafkaVersion.substring(0, 3))
+                            .addToConfig("inter.broker.protocol.version", kafkaVersion.substring(0, 3))
+                        .endKafka()
+                    .endSpec()
+                    .build());
             } else {
                 kafkaYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
                 LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
