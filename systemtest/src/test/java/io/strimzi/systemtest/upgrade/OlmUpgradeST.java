@@ -67,7 +67,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         JsonArray upgradeData = readUpgradeJson(UPGRADE_JSON_FILE);
         JsonObject latestUpgradeData = upgradeData.getJsonObject(upgradeData.size() - 1);
 
-        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
 
         // Generate procedures and data for OLM upgrade

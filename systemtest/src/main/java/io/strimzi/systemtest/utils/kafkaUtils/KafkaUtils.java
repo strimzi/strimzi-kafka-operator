@@ -22,6 +22,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
@@ -449,8 +450,8 @@ public class KafkaUtils {
                 ((ObjectNode) kafkaNode.get("config")).remove("inter.broker.protocol.version");
             } else if (!version.equals("")) {
                 kafkaNode.put("version", version);
-                ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", version.substring(0, 3));
-                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", version.substring(0, 3));
+                ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", TestKafkaVersion.getSpecificVersion(version).messageVersion());
+                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", TestKafkaVersion.getSpecificVersion(version).protocolVersion());
             }
             if (logMessageFormat != null) {
                 ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", logMessageFormat);

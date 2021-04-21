@@ -592,7 +592,7 @@ class ConnectS2IST extends AbstractST {
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .editSpec()
-                    .withVersion(TestKafkaVersion.getKafkaVersions().get(0).version())
+                    .withVersion(TestKafkaVersion.getSupportedKafkaVersions().get(0).version())
                 .endSpec()
                 .build());
 
@@ -647,9 +647,9 @@ class ConnectS2IST extends AbstractST {
 
         LOGGER.info("===== CONNECTS2I VERSION CHANGE =====");
 
-        LOGGER.info("Setting version from {} to {}", TestKafkaVersion.getKafkaVersions().get(0).version(), TestKafkaVersion.getKafkaVersions().get(1).version());
+        LOGGER.info("Setting version from {} to {}", TestKafkaVersion.getSupportedKafkaVersions().get(0).version(), TestKafkaVersion.getSupportedKafkaVersions().get(1).version());
         KafkaConnectS2IResource.replaceConnectS2IResource(connectS2IClusterName,
-            kafkaConnectS2I -> kafkaConnectS2I.getSpec().setVersion(TestKafkaVersion.getKafkaVersions().get(1).version()));
+            kafkaConnectS2I -> kafkaConnectS2I.getSpec().setVersion(TestKafkaVersion.getSupportedKafkaVersions().get(1).version()));
 
         depConfSnapshot = DeploymentConfigUtils.waitTillDepConfigHasRolled(deploymentConfigName, depConfSnapshot);
 
@@ -658,7 +658,7 @@ class ConnectS2IST extends AbstractST {
         String actualVersion = cmdKubeClient().execInPodContainer(kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0),
                 "", "/bin/bash", "-c", versionCommand).out().trim();
 
-        assertThat(actualVersion, is(TestKafkaVersion.getKafkaVersions().get(1).version()));
+        assertThat(actualVersion, is(TestKafkaVersion.getSupportedKafkaVersions().get(1).version()));
 
         LOGGER.info("===== CONNECTS2I CERT CHANGE =====");
         InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/expired-cluster-ca.crt");
