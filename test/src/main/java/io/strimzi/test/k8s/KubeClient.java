@@ -237,13 +237,18 @@ public class KubeClient {
 
     /**
      * Returns list of pods by prefix in pod name
+     * @param namespaceName Namespace name
      * @param podNamePrefix prefix with which the name should begin
      * @return List of pods
      */
-    public List<Pod> listPodsByPrefixInName(String podNamePrefix) {
-        return listPods()
+    public List<Pod> listPodsByPrefixInName(String namespaceName, String podNamePrefix) {
+        return listPods(namespaceName)
                 .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
                 .collect(Collectors.toList());
+    }
+
+    public List<Pod> listPodsByPrefixInName(String podNamePrefix) {
+        return listPodsByPrefixInName(getNamespace(), podNamePrefix);
     }
 
     public List<Pod> listKafkaConnectS2IPods(String connectS2iClusterName) {
@@ -415,7 +420,6 @@ public class KubeClient {
     public LabelSelector getDeploymentSelectors(String namespaceName, String deploymentName) {
         return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get().getSpec().getSelector();
     }
-
 
     public LabelSelector getDeploymentSelectors(String deploymentName) {
         return getDeploymentSelectors(getNamespace(), deploymentName);

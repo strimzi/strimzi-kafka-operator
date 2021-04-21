@@ -122,7 +122,6 @@ class ConnectST extends AbstractST {
                 "status.storage.topic=" + KafkaConnectResources.configStorageTopicStatus(clusterName) + "\n" +
                 "offset.storage.topic=" + KafkaConnectResources.configStorageTopicOffsets(clusterName) + "\n");
 
-
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, true).build());
@@ -563,7 +562,7 @@ class ConnectST extends AbstractST {
         LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", kafkaClientsPodName, topicName);
         KafkaConnectorUtils.createFileSinkConnector(namespaceName, kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespaceName, 8083));
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-second", kafkaUser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName + "-second", kafkaUser).build());
 
         final String kafkaClientsSecondPodName = kubeClient(namespaceName).listPodsByPrefixInName(kafkaClientsName + "-second").get(0).getMetadata().getName();
 
@@ -971,7 +970,7 @@ class ConnectST extends AbstractST {
 
     void testConnectAuthorizationWithWeirdUserName(ExtensionContext extensionContext, String clusterName, String userName, SecurityProtocol securityProtocol, String topicName) {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-        final String connectorPodName = kubeClient(namespaceName).listPodsByPrefixInName(clusterName + "-connect").get(0).getMetadata().getName();
+        final String connectorPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-connect").get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editSpec()
@@ -1053,7 +1052,7 @@ class ConnectST extends AbstractST {
             .build());
 
         String connectDeploymentName = KafkaConnectResources.deploymentName(clusterName);
-        List<Pod> connectPods = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName));
+        List<Pod> connectPods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaConnectResources.deploymentName(clusterName));
 
         assertThat(connectPods.size(), is(2));
         //scale down
@@ -1061,9 +1060,9 @@ class ConnectST extends AbstractST {
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> kafkaConnect.getSpec().setReplicas(0), namespaceName);
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-        PodUtils.waitForPodsReady(kubeClient(namespaceName).getDeploymentSelectors(connectDeploymentName), 0, true);
+        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, connectDeploymentName), 0, true);
 
-        connectPods = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName));
+        connectPods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, connectDeploymentName);
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
         KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
 
