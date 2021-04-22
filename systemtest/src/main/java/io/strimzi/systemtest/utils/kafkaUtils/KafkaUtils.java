@@ -90,16 +90,20 @@ public class KafkaUtils {
      * Waits for the Kafka Status to be updated after changed. It checks the generation and observed generation to
      * ensure the status is up to date.
      *
+     * @param namespaceName Namespace name
      * @param clusterName   Name of the Kafka cluster which should be checked
      */
-    public static void waitForKafkaStatusUpdate(String clusterName)   {
+    public static void waitForKafkaStatusUpdate(String namespaceName, String clusterName) {
         LOGGER.info("Waiting for Kafka status to be updated");
         TestUtils.waitFor("KafkaStatus update", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Kafka k = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+            Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
             return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
         });
     }
 
+    public static void waitForKafkaStatusUpdate(String clusterName) {
+        waitForKafkaStatusUpdate(kubeClient().getNamespace(), clusterName);
+    }
 
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message, long timeout) {
         TestUtils.waitFor("Kafka Status with message [" + message + "]",
@@ -163,13 +167,17 @@ public class KafkaUtils {
         return certs;
     }
 
-    public static String getKafkaSecretCertificates(String secretName, String certType) {
+    public static String getKafkaSecretCertificates(String namespaceName, String secretName, String certType) {
         String secretCerts = "";
-        secretCerts = kubeClient().getSecret(secretName).getData().get(certType);
+        secretCerts = kubeClient(namespaceName).getSecret(namespaceName, secretName).getData().get(certType);
         byte[] decodedBytes = Base64.getDecoder().decode(secretCerts);
         secretCerts = new String(decodedBytes, Charset.defaultCharset());
 
         return secretCerts;
+    }
+
+    public static String getKafkaSecretCertificates(String secretName, String certType) {
+        return getKafkaSecretCertificates(kubeClient().getNamespace(), secretName, certType);
     }
 
     @SuppressWarnings("unchecked")

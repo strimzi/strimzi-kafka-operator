@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -165,7 +166,10 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             resource.getMetadata().getNamespace();
 
         if (kubeClient(namespaceName).listPods(namespaceName, labelSelector).size() == 0) {
-            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind());
+            List<String> pods = kubeClient(namespaceName).listPods(namespaceName).stream()
+                .map(pod -> pod.getMetadata().getName()).collect(Collectors.toList());
+            LOGGER.error("Pods inside {} namespace are {}", namespaceName, pods.toString());
+            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind() + " in namespace:" + namespaceName);
         }
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", deploymentName, labelSelector);

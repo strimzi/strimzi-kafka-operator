@@ -594,8 +594,12 @@ public class KubeClient {
         return client.secrets().inNamespace(getNamespace()).withName(secretName).patch(secret);
     }
 
-    public Secret getSecret(String secretName) {
+    public Secret getSecret(String namespaceName, String secretName) {
         return client.secrets().inNamespace(getNamespace()).withName(secretName).get();
+    }
+
+    public Secret getSecret(String secretName) {
+        return getSecret(kubeClient().getNamespace(), secretName);
     }
 
     public boolean deleteSecret(String secretName) {
@@ -677,6 +681,10 @@ public class KubeClient {
 
     public String logs(String podName) {
         return client.pods().inNamespace(getNamespace()).withName(podName).getLog();
+    }
+
+    public String logsInSpecificNamespace(String namespaceName, String podName, String containerName) {
+        return client.pods().inNamespace(namespaceName).withName(podName).inContainer(containerName).getLog();
     }
 
     public String logs(String podName, String containerName) {
