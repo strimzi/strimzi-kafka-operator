@@ -170,7 +170,7 @@ public class Config {
 
     /** If the connection with Kafka has to be encrypted by TLS protocol */
     public static final Value<String> TLS_ENABLED = new Value<>(TC_TLS_ENABLED, STRING, "false");
-    /** If the connection with Kafka has to be encrypted by TLS protocol */
+    /** If the connection with Kafka has to be authenticated */
     public static final Value<String> TLS_AUTH_ENABLED = new Value<>(TC_TLS_AUTH_ENABLED, STRING, "true");
     /** The truststore with CA certificate for Kafka broker/server authentication */
     public static final Value<String> TLS_TRUSTSTORE_LOCATION = new Value<>(TC_TLS_TRUSTSTORE_LOCATION, STRING, "");
