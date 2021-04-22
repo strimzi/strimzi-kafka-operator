@@ -136,7 +136,7 @@ public class Environment {
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     private static final String STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT = "INFO";
     static final String KUBERNETES_DOMAIN_DEFAULT = ".nip.io";
-    public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
+    public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi-kafka-operator";
     public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = Constants.STRIMZI_DEPLOYMENT_NAME;

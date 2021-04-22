@@ -167,7 +167,7 @@ class ConnectS2IST extends AbstractST {
         // Make sure that connector is really created
         Thread.sleep(10_000);
 
-        String connectorStatus = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(connectS2IClusterName) + ":8083/connectors/" + connectS2IClusterName + "/status").out();
+        String connectorStatus = cmdKubeClient(NAMESPACE).execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectS2IResources.serviceName(connectS2IClusterName) + ":8083/connectors/" + connectS2IClusterName + "/status").out();
 
         assertThat(connectorStatus, containsString("RUNNING"));
 
@@ -271,7 +271,7 @@ class ConnectS2IST extends AbstractST {
 
         KafkaUser user  = KafkaUserTemplates.scramShaUser(clusterName, userName).build();
         resourceManager.createResource(extensionContext, user);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, user).build());
         resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, connectS2IClusterName, clusterName, 1)
                 .editSpec()
                     .addToConfig("key.converter.schemas.enable", false)
@@ -551,8 +551,7 @@ class ConnectS2IST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
-        final String kafkaClientsPodName = kubeClient(NAMESPACE).listPodsByPrefixInName(NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
-
+        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         // Crate connect cluster with default connect image
@@ -1059,7 +1058,7 @@ class ConnectS2IST extends AbstractST {
         assertThat(kafkaConnectS2I.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
-    private void deployConnectS2IWithCamelTimer(ExtensionContext extensionContext, String namespaceName, String clusterName, String kafkaConnectS2IName, boolean useConnectorOperator, String kafkaClientsPodName) throws IOException {
+    synchronized private void deployConnectS2IWithCamelTimer(ExtensionContext extensionContext, String namespaceName, String clusterName, String kafkaConnectS2IName, boolean useConnectorOperator, String kafkaClientsPodName) throws IOException {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editMetadata()
                 .withNamespace(namespaceName)
@@ -1118,7 +1117,7 @@ class ConnectS2IST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        installClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
+        installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
 
         connectS2IClusterName = NAMESPACE + "-s2i";
         secondClusterName = "second-" + NAMESPACE;
