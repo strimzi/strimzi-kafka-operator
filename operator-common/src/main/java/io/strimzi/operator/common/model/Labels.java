@@ -163,15 +163,17 @@ public class Labels {
      * @return A new instance with removed labels that match the given {@code exclusionPattern} pattern.
      */
     public Labels withAdditionalLabels(Map<String, String> additionalLabels, String exclusionPattern) {
-        Map<String, String> filteredLabels = additionalLabels == null ? additionalLabels : additionalLabels
-              .entrySet()
-              .stream()
-              .filter(entryset -> !entryset.getKey().matches(exclusionPattern != null ? exclusionPattern : DEFAULT_LABELS_EXCLUSION_PATTERN))
-              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
         Map<String, String> newLabels = new HashMap<>(labels.size());
         newLabels.putAll(labels);
-        newLabels.putAll(Labels.additionalLabels(filteredLabels).toMap());
+
+        if (additionalLabels != null) {
+            Map<String, String> filteredLabels = additionalLabels
+                    .entrySet()
+                    .stream()
+                    .filter(entryset -> !entryset.getKey().matches(exclusionPattern != null ? exclusionPattern : DEFAULT_LABELS_EXCLUSION_PATTERN))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            newLabels.putAll(Labels.additionalLabels(filteredLabels).toMap());
+        }
 
         return new Labels(newLabels);
     }
