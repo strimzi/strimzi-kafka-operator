@@ -52,6 +52,7 @@ spec:
                   to upgrade or downgrade the version.
               replicas:
                 type: integer
+                default: 3
                 description: The number of pods in the Kafka Connect group.
               image:
                 type: string
@@ -262,28 +263,33 @@ spec:
                 properties:
                   failureThreshold:
                     type: integer
+                    default: 3
                     minimum: 1
                     description: Minimum consecutive failures for the probe to be
                       considered failed after having succeeded. Defaults to 3. Minimum
                       value is 1.
                   initialDelaySeconds:
                     type: integer
+                    default: 15
                     minimum: 0
                     description: The initial delay before first the health is first
                       checked. Default to 15 seconds. Minimum value is 0.
                   periodSeconds:
                     type: integer
+                    default: 10
                     minimum: 1
                     description: How often (in seconds) to perform the probe. Default
                       to 10 seconds. Minimum value is 1.
                   successThreshold:
                     type: integer
+                    default: 1
                     minimum: 1
                     description: Minimum consecutive successes for the probe to be
                       considered successful after having failed. Defaults to 1. Must
                       be 1 for liveness. Minimum value is 1.
                   timeoutSeconds:
                     type: integer
+                    default: 5
                     minimum: 1
                     description: The timeout for each attempted health check. Default
                       to 5 seconds. Minimum value is 1.
@@ -293,28 +299,33 @@ spec:
                 properties:
                   failureThreshold:
                     type: integer
+                    default: 3
                     minimum: 1
                     description: Minimum consecutive failures for the probe to be
                       considered failed after having succeeded. Defaults to 3. Minimum
                       value is 1.
                   initialDelaySeconds:
                     type: integer
+                    default: 15
                     minimum: 0
                     description: The initial delay before first the health is first
                       checked. Default to 15 seconds. Minimum value is 0.
                   periodSeconds:
                     type: integer
+                    default: 10
                     minimum: 1
                     description: How often (in seconds) to perform the probe. Default
                       to 10 seconds. Minimum value is 1.
                   successThreshold:
                     type: integer
+                    default: 1
                     minimum: 1
                     description: Minimum consecutive successes for the probe to be
                       considered successful after having failed. Defaults to 1. Must
                       be 1 for liveness. Minimum value is 1.
                   timeoutSeconds:
                     type: integer
+                    default: 5
                     minimum: 1
                     description: The timeout for each attempted health check. Default
                       to 5 seconds. Minimum value is 1.
@@ -534,6 +545,7 @@ spec:
                           common container settings.
                       terminationGracePeriodSeconds:
                         type: integer
+                        default: 30
                         minimum: 0
                         description: The grace period is the duration in seconds after
                           the processes running in the pod are sent a termination
@@ -1034,6 +1046,7 @@ spec:
                           common container settings.
                       terminationGracePeriodSeconds:
                         type: integer
+                        default: 30
                         minimum: 0
                         description: The grace period is the duration in seconds after
                           the processes running in the pod are sent a termination
@@ -1518,6 +1531,7 @@ spec:
                           resource.
                       maxUnavailable:
                         type: integer
+                        default: 1
                         minimum: 0
                         description: Maximum number of unavailable pods to allow automatic
                           Pod eviction. A Pod eviction is allowed when the `maxUnavailable`

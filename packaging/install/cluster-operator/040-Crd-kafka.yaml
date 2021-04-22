@@ -210,6 +210,7 @@ spec:
                                 can be used for local JWT validation.
                             jwksExpirySeconds:
                               type: integer
+                              default: 360
                               minimum: 1
                               description: Configures how often are the JWKS certificates
                                 considered valid. The expiry interval has to be at
@@ -218,6 +219,7 @@ spec:
                                 seconds.
                             jwksMinRefreshPauseSeconds:
                               type: integer
+                              default: 1
                               minimum: 0
                               description: The minimum pause between two consecutive
                                 refreshes. When an unknown signing key is encountered
@@ -225,6 +227,7 @@ spec:
                                 wait for this minimum pause. Defaults to 1 second.
                             jwksRefreshSeconds:
                               type: integer
+                              default: 300
                               minimum: 1
                               description: Configures how often are the JWKS certificates
                                 refreshed. The refresh interval has to be at least
@@ -755,11 +758,13 @@ spec:
                           Defaults to `3600000`.
                       grantsRefreshPeriodSeconds:
                         type: integer
+                        default: 60
                         minimum: 0
                         description: The time between two consecutive grants refresh
                           runs in seconds. The default value is 60.
                       grantsRefreshPoolSize:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The number of threads to use to refresh grants
                           for active sessions. The more threads, the more parallelism,
@@ -848,28 +853,33 @@ spec:
                     properties:
                       failureThreshold:
                         type: integer
+                        default: 3
                         minimum: 1
                         description: Minimum consecutive failures for the probe to
                           be considered failed after having succeeded. Defaults to
                           3. Minimum value is 1.
                       initialDelaySeconds:
                         type: integer
+                        default: 15
                         minimum: 0
                         description: The initial delay before first the health is
                           first checked. Default to 15 seconds. Minimum value is 0.
                       periodSeconds:
                         type: integer
+                        default: 10
                         minimum: 1
                         description: How often (in seconds) to perform the probe.
                           Default to 10 seconds. Minimum value is 1.
                       successThreshold:
                         type: integer
+                        default: 1
                         minimum: 1
                         description: Minimum consecutive successes for the probe to
                           be considered successful after having failed. Defaults to
                           1. Must be 1 for liveness. Minimum value is 1.
                       timeoutSeconds:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The timeout for each attempted health check.
                           Default to 5 seconds. Minimum value is 1.
@@ -879,28 +889,33 @@ spec:
                     properties:
                       failureThreshold:
                         type: integer
+                        default: 3
                         minimum: 1
                         description: Minimum consecutive failures for the probe to
                           be considered failed after having succeeded. Defaults to
                           3. Minimum value is 1.
                       initialDelaySeconds:
                         type: integer
+                        default: 15
                         minimum: 0
                         description: The initial delay before first the health is
                           first checked. Default to 15 seconds. Minimum value is 0.
                       periodSeconds:
                         type: integer
+                        default: 10
                         minimum: 1
                         description: How often (in seconds) to perform the probe.
                           Default to 10 seconds. Minimum value is 1.
                       successThreshold:
                         type: integer
+                        default: 1
                         minimum: 1
                         description: Minimum consecutive successes for the probe to
                           be considered successful after having failed. Defaults to
                           1. Must be 1 for liveness. Minimum value is 1.
                       timeoutSeconds:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The timeout for each attempted health check.
                           Default to 5 seconds. Minimum value is 1.
@@ -1149,6 +1164,7 @@ spec:
                               and common container settings.
                           terminationGracePeriodSeconds:
                             type: integer
+                            default: 30
                             minimum: 0
                             description: The grace period is the duration in seconds
                               after the processes running in the pod are sent a termination
@@ -1650,6 +1666,7 @@ spec:
                               resource.
                           maxUnavailable:
                             type: integer
+                            default: 1
                             minimum: 0
                             description: Maximum number of unavailable pods to allow
                               automatic Pod eviction. A Pod eviction is allowed when
@@ -1935,28 +1952,33 @@ spec:
                     properties:
                       failureThreshold:
                         type: integer
+                        default: 3
                         minimum: 1
                         description: Minimum consecutive failures for the probe to
                           be considered failed after having succeeded. Defaults to
                           3. Minimum value is 1.
                       initialDelaySeconds:
                         type: integer
+                        default: 15
                         minimum: 0
                         description: The initial delay before first the health is
                           first checked. Default to 15 seconds. Minimum value is 0.
                       periodSeconds:
                         type: integer
+                        default: 10
                         minimum: 1
                         description: How often (in seconds) to perform the probe.
                           Default to 10 seconds. Minimum value is 1.
                       successThreshold:
                         type: integer
+                        default: 1
                         minimum: 1
                         description: Minimum consecutive successes for the probe to
                           be considered successful after having failed. Defaults to
                           1. Must be 1 for liveness. Minimum value is 1.
                       timeoutSeconds:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The timeout for each attempted health check.
                           Default to 5 seconds. Minimum value is 1.
@@ -1966,28 +1988,33 @@ spec:
                     properties:
                       failureThreshold:
                         type: integer
+                        default: 3
                         minimum: 1
                         description: Minimum consecutive failures for the probe to
                           be considered failed after having succeeded. Defaults to
                           3. Minimum value is 1.
                       initialDelaySeconds:
                         type: integer
+                        default: 15
                         minimum: 0
                         description: The initial delay before first the health is
                           first checked. Default to 15 seconds. Minimum value is 0.
                       periodSeconds:
                         type: integer
+                        default: 10
                         minimum: 1
                         description: How often (in seconds) to perform the probe.
                           Default to 10 seconds. Minimum value is 1.
                       successThreshold:
                         type: integer
+                        default: 1
                         minimum: 1
                         description: Minimum consecutive successes for the probe to
                           be considered successful after having failed. Defaults to
                           1. Must be 1 for liveness. Minimum value is 1.
                       timeoutSeconds:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The timeout for each attempted health check.
                           Default to 5 seconds. Minimum value is 1.
@@ -2218,6 +2245,7 @@ spec:
                               and common container settings.
                           terminationGracePeriodSeconds:
                             type: integer
+                            default: 30
                             minimum: 0
                             description: The grace period is the duration in seconds
                               after the processes running in the pod are sent a termination
@@ -2596,6 +2624,7 @@ spec:
                               resource.
                           maxUnavailable:
                             type: integer
+                            default: 1
                             minimum: 0
                             description: Maximum number of unavailable pods to allow
                               automatic Pod eviction. A Pod eviction is allowed when
@@ -2709,29 +2738,34 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
@@ -2741,29 +2775,34 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
@@ -2773,29 +2812,34 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
@@ -2907,29 +2951,34 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
@@ -2939,29 +2988,34 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
@@ -3054,35 +3108,41 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
                         description: Pod liveness checking.
                       logLevel:
                         type: string
+                        default: notice
                         enum:
                         - emerg
                         - alert
@@ -3099,29 +3159,34 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
@@ -3250,6 +3315,7 @@ spec:
                               and common container settings.
                           terminationGracePeriodSeconds:
                             type: integer
+                            default: 30
                             minimum: 0
                             description: The grace period is the duration in seconds
                               after the processes running in the pod are sent a termination
@@ -3868,35 +3934,41 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
                         description: Pod liveness checking.
                       logLevel:
                         type: string
+                        default: notice
                         enum:
                         - emerg
                         - alert
@@ -3913,29 +3985,34 @@ spec:
                         properties:
                           failureThreshold:
                             type: integer
+                            default: 3
                             minimum: 1
                             description: Minimum consecutive failures for the probe
                               to be considered failed after having succeeded. Defaults
                               to 3. Minimum value is 1.
                           initialDelaySeconds:
                             type: integer
+                            default: 15
                             minimum: 0
                             description: The initial delay before first the health
                               is first checked. Default to 15 seconds. Minimum value
                               is 0.
                           periodSeconds:
                             type: integer
+                            default: 10
                             minimum: 1
                             description: How often (in seconds) to perform the probe.
                               Default to 10 seconds. Minimum value is 1.
                           successThreshold:
                             type: integer
+                            default: 1
                             minimum: 1
                             description: Minimum consecutive successes for the probe
                               to be considered successful after having failed. Defaults
                               to 1. Must be 1 for liveness. Minimum value is 1.
                           timeoutSeconds:
                             type: integer
+                            default: 5
                             minimum: 1
                             description: The timeout for each attempted health check.
                               Default to 5 seconds. Minimum value is 1.
@@ -3967,28 +4044,33 @@ spec:
                     properties:
                       failureThreshold:
                         type: integer
+                        default: 3
                         minimum: 1
                         description: Minimum consecutive failures for the probe to
                           be considered failed after having succeeded. Defaults to
                           3. Minimum value is 1.
                       initialDelaySeconds:
                         type: integer
+                        default: 15
                         minimum: 0
                         description: The initial delay before first the health is
                           first checked. Default to 15 seconds. Minimum value is 0.
                       periodSeconds:
                         type: integer
+                        default: 10
                         minimum: 1
                         description: How often (in seconds) to perform the probe.
                           Default to 10 seconds. Minimum value is 1.
                       successThreshold:
                         type: integer
+                        default: 1
                         minimum: 1
                         description: Minimum consecutive successes for the probe to
                           be considered successful after having failed. Defaults to
                           1. Must be 1 for liveness. Minimum value is 1.
                       timeoutSeconds:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The timeout for each attempted health check.
                           Default to 5 seconds. Minimum value is 1.
@@ -3998,28 +4080,33 @@ spec:
                     properties:
                       failureThreshold:
                         type: integer
+                        default: 3
                         minimum: 1
                         description: Minimum consecutive failures for the probe to
                           be considered failed after having succeeded. Defaults to
                           3. Minimum value is 1.
                       initialDelaySeconds:
                         type: integer
+                        default: 15
                         minimum: 0
                         description: The initial delay before first the health is
                           first checked. Default to 15 seconds. Minimum value is 0.
                       periodSeconds:
                         type: integer
+                        default: 10
                         minimum: 1
                         description: How often (in seconds) to perform the probe.
                           Default to 10 seconds. Minimum value is 1.
                       successThreshold:
                         type: integer
+                        default: 1
                         minimum: 1
                         description: Minimum consecutive successes for the probe to
                           be considered successful after having failed. Defaults to
                           1. Must be 1 for liveness. Minimum value is 1.
                       timeoutSeconds:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The timeout for each attempted health check.
                           Default to 5 seconds. Minimum value is 1.
@@ -4202,6 +4289,7 @@ spec:
                               and common container settings.
                           terminationGracePeriodSeconds:
                             type: integer
+                            default: 30
                             minimum: 0
                             description: The grace period is the duration in seconds
                               after the processes running in the pod are sent a termination
@@ -4540,6 +4628,7 @@ spec:
                               resource.
                           maxUnavailable:
                             type: integer
+                            default: 1
                             minimum: 0
                             description: Maximum number of unavailable pods to allow
                               automatic Pod eviction. A Pod eviction is allowed when
@@ -4975,6 +5064,7 @@ spec:
                               and common container settings.
                           terminationGracePeriodSeconds:
                             type: integer
+                            default: 30
                             minimum: 0
                             description: The grace period is the duration in seconds
                               after the processes running in the pod are sent a termination
@@ -5498,6 +5588,7 @@ spec:
                               and common container settings.
                           terminationGracePeriodSeconds:
                             type: integer
+                            default: 30
                             minimum: 0
                             description: The grace period is the duration in seconds
                               after the processes running in the pod are sent a termination
@@ -5893,28 +5984,33 @@ spec:
                     properties:
                       failureThreshold:
                         type: integer
+                        default: 3
                         minimum: 1
                         description: Minimum consecutive failures for the probe to
                           be considered failed after having succeeded. Defaults to
                           3. Minimum value is 1.
                       initialDelaySeconds:
                         type: integer
+                        default: 15
                         minimum: 0
                         description: The initial delay before first the health is
                           first checked. Default to 15 seconds. Minimum value is 0.
                       periodSeconds:
                         type: integer
+                        default: 10
                         minimum: 1
                         description: How often (in seconds) to perform the probe.
                           Default to 10 seconds. Minimum value is 1.
                       successThreshold:
                         type: integer
+                        default: 1
                         minimum: 1
                         description: Minimum consecutive successes for the probe to
                           be considered successful after having failed. Defaults to
                           1. Must be 1 for liveness. Minimum value is 1.
                       timeoutSeconds:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The timeout for each attempted health check.
                           Default to 5 seconds. Minimum value is 1.
@@ -5924,28 +6020,33 @@ spec:
                     properties:
                       failureThreshold:
                         type: integer
+                        default: 3
                         minimum: 1
                         description: Minimum consecutive failures for the probe to
                           be considered failed after having succeeded. Defaults to
                           3. Minimum value is 1.
                       initialDelaySeconds:
                         type: integer
+                        default: 15
                         minimum: 0
                         description: The initial delay before first the health is
                           first checked. Default to 15 seconds. Minimum value is 0.
                       periodSeconds:
                         type: integer
+                        default: 10
                         minimum: 1
                         description: How often (in seconds) to perform the probe.
                           Default to 10 seconds. Minimum value is 1.
                       successThreshold:
                         type: integer
+                        default: 1
                         minimum: 1
                         description: Minimum consecutive successes for the probe to
                           be considered successful after having failed. Defaults to
                           1. Must be 1 for liveness. Minimum value is 1.
                       timeoutSeconds:
                         type: integer
+                        default: 5
                         minimum: 1
                         description: The timeout for each attempted health check.
                           Default to 5 seconds. Minimum value is 1.
