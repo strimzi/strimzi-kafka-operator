@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.operator.common.Annotations;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,10 +96,9 @@ public class Labels {
 
     /**
      * Used to exclude user labels from being assign to provisioned resources
-     * Can be overwritten by the LABELS_EXCLUSION_PATTERN_ANNOTATION annotation
      */
+    public static final String ANNO_LABELS_EXCLUSION_PATTERN = STRIMZI_DOMAIN + "labels-exclusion-pattern";
     public static final String DEFAULT_LABELS_EXCLUSION_PATTERN = "^app.kubernetes.io/(?!part-of).*";
-    public static final String LABELS_EXCLUSION_PATTERN_ANNOTATION = "labels-exclusion-pattern";
 
     /**
      * The empty set of labels.
@@ -127,7 +127,7 @@ public class Labels {
      * @param additionalLabels The labels
      * @return A {@code Labels} instance from the given map
      */
-    private static Labels additionalLabels(Map<String, String> additionalLabels, String exclusionPattern) {
+    private static Labels additionalLabels(Map<String, String> additionalLabels) {
 
         if (additionalLabels == null) {
             return EMPTY;
@@ -142,16 +142,7 @@ public class Labels {
             throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
         }
 
-        // Remove labels that match the provided regex exclusionPattern
-        // By default it will remove Kubernetes Domain specific labels
-        // with an exception: app.kubernetes.io/part-of
-        Map<String, String> filteredLabels = additionalLabels
-                .entrySet()
-                .stream()
-                .filter(entryset -> !entryset.getKey().matches(exclusionPattern != null ? exclusionPattern : DEFAULT_LABELS_EXCLUSION_PATTERN))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        return new Labels(filteredLabels);
+        return new Labels(additionalLabels);
     }
 
     /**
@@ -161,7 +152,26 @@ public class Labels {
     public Labels withAdditionalLabels(Map<String, String> additionalLabels) {
         Map<String, String> newLabels = new HashMap<>(labels.size());
         newLabels.putAll(labels);
-        newLabels.putAll(Labels.additionalLabels(additionalLabels, "").toMap());
+        newLabels.putAll(Labels.additionalLabels(additionalLabels).toMap());
+
+        return new Labels(newLabels);
+    }
+
+    /**
+    * @param additionalLabels The labels to add.
+     * @param exclusionPattern regex pattern that will be used to remove unwanted labels.
+     * @return A new instance with removed labels that match the given {@code exclusionPattern} pattern.
+     */
+    public Labels withAdditionalLabels(Map<String, String> additionalLabels, String exclusionPattern) {
+        Map<String, String> filteredLabels = additionalLabels == null ? additionalLabels : additionalLabels
+              .entrySet()
+              .stream()
+              .filter(entryset -> !entryset.getKey().matches(exclusionPattern != null ? exclusionPattern : DEFAULT_LABELS_EXCLUSION_PATTERN))
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<String, String> newLabels = new HashMap<>(labels.size());
+        newLabels.putAll(labels);
+        newLabels.putAll(Labels.additionalLabels(filteredLabels).toMap());
 
         return new Labels(newLabels);
     }
@@ -171,8 +181,7 @@ public class Labels {
      * @return the labels of the given {@code resource}.
      */
     public static Labels fromResource(HasMetadata resource) {
-        String exclusionPattern = resource.getMetadata().getAnnotations().get(LABELS_EXCLUSION_PATTERN_ANNOTATION);
-        return resource.getMetadata().getLabels() != null ? additionalLabels(resource.getMetadata().getLabels(), exclusionPattern) : EMPTY;
+        return resource.getMetadata().getLabels() != null ? additionalLabels(resource.getMetadata().getLabels()) : EMPTY;
     }
 
     /**
@@ -423,7 +432,9 @@ public class Labels {
      */
     public static Labels generateDefaultLabels(HasMetadata resource, String applicationName, String managedBy) {
         String instanceName = resource.getMetadata().getName();
-        return Labels.fromResource(resource)
+        String exclusionPattern = Annotations.stringAnnotation(resource, ANNO_LABELS_EXCLUSION_PATTERN, DEFAULT_LABELS_EXCLUSION_PATTERN);
+
+        return Labels.EMPTY.withAdditionalLabels(fromResource(resource).toMap(), exclusionPattern)
                 .withStrimziKind(resource.getKind())
                 // Default Strimzi name is the owning application name (Strimzi)
                 // for resources belonging to no particular component
