@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -135,13 +134,6 @@ public class ResourceManager {
     public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
-            // Convenience for tests that create resources in non-existing namespaces. This will create and clean them up.
-            synchronized (this) {
-                if (resource.getMetadata().getNamespace() != null && !kubeClient().namespaceExists(resource.getMetadata().getNamespace())) {
-                    createResource(testContext, waitReady, new NamespaceBuilder().editOrNewMetadata().withName(resource.getMetadata().getNamespace()).endMetadata().build());
-                }
-            }
-
             LOGGER.info("Create/Update of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 

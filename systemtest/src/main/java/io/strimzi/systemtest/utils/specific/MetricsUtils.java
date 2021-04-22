@@ -42,8 +42,8 @@ public class MetricsUtils {
      * @param metricsPath endpoint where metrics should be available
      * @return collected metrics
      */
-    public static String collectMetrics(String scraperPodName, String metricsPodIp, int port, String metricsPath) throws InterruptedException, ExecutionException, IOException {
-        List<String> executableCommand = Arrays.asList(cmdKubeClient().toString(), "exec", scraperPodName,
+    public static String collectMetrics(String namespaceName, String scraperPodName, String metricsPodIp, int port, String metricsPath) throws InterruptedException, ExecutionException, IOException {
+        List<String> executableCommand = Arrays.asList(cmdKubeClient(namespaceName).toString(), "exec", scraperPodName,
                 "-n", kubeClient().getNamespace(),
                 "--", "curl", metricsPodIp + ":" + port + metricsPath);
 
@@ -57,14 +57,21 @@ public class MetricsUtils {
         return exec.out();
     }
 
+    public static HashMap<String, String> collectKafkaPodsMetrics(String namespaceName, String scraperPodName, String clusterName) {
+        LabelSelector kafkaSelector = kubeClient(namespaceName).getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(clusterName));
+        return collectMetricsFromPods(namespaceName, scraperPodName, kafkaSelector, Constants.COMPONENTS_METRICS_PORT);
+    }
     public static HashMap<String, String> collectKafkaPodsMetrics(String scraperPodName, String clusterName) {
-        LabelSelector kafkaSelector = kubeClient().getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(clusterName));
-        return collectMetricsFromPods(scraperPodName, kafkaSelector, Constants.COMPONENTS_METRICS_PORT);
+        return collectKafkaPodsMetrics(kubeClient().getNamespace(), scraperPodName, clusterName);
+    }
+
+    public static HashMap<String, String> collectZookeeperPodsMetrics(String namespaceName, String scraperPodName, String clusterName) {
+        LabelSelector zookeeperSelector = kubeClient(namespaceName).getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(clusterName));
+        return collectMetricsFromPods(scraperPodName, zookeeperSelector, Constants.COMPONENTS_METRICS_PORT);
     }
 
     public static HashMap<String, String> collectZookeeperPodsMetrics(String scraperPodName, String clusterName) {
-        LabelSelector zookeeperSelector = kubeClient().getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(clusterName));
-        return collectMetricsFromPods(scraperPodName, zookeeperSelector, Constants.COMPONENTS_METRICS_PORT);
+        return collectZookeeperPodsMetrics(kubeClient().getNamespace(), scraperPodName, clusterName);
     }
 
     public static HashMap<String, String> collectKafkaConnectPodsMetrics(String scraperPodName, String clusterName) {
@@ -74,7 +81,7 @@ public class MetricsUtils {
 
     public static HashMap<String, String> collectKafkaExporterPodsMetrics(String scraperPodName, String clusterName) {
         LabelSelector kafkaExporterSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(clusterName));
-        return collectMetricsFromPods(scraperPodName, kafkaExporterSelector, Constants.COMPONENTS_METRICS_PORT, "/metrics");
+        return collectMetricsFromPods(kubeClient().getNamespace(), scraperPodName, kafkaExporterSelector, Constants.COMPONENTS_METRICS_PORT, "/metrics");
     }
 
     public static HashMap<String, String> collectKafkaMirrorMaker2PodsMetrics(String scraperPodName, String clusterName) {
@@ -84,22 +91,22 @@ public class MetricsUtils {
 
     public static HashMap<String, String> collectUserOperatorPodMetrics(String scraperPodName, String clusterName) {
         LabelSelector uoSelector = kubeClient().getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(clusterName));
-        return collectMetricsFromPods(scraperPodName, uoSelector, Constants.USER_OPERATOR_METRICS_PORT, "/metrics");
+        return collectMetricsFromPods(kubeClient().getNamespace(), scraperPodName, uoSelector, Constants.USER_OPERATOR_METRICS_PORT, "/metrics");
     }
 
     public static HashMap<String, String> collectTopicOperatorPodMetrics(String scraperPodName, String clusterName) {
         LabelSelector toSelector = kubeClient().getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(clusterName));
-        return collectMetricsFromPods(scraperPodName, toSelector, Constants.TOPIC_OPERATOR_METRICS_PORT, "/metrics");
+        return collectMetricsFromPods(kubeClient().getNamespace(), scraperPodName, toSelector, Constants.TOPIC_OPERATOR_METRICS_PORT, "/metrics");
     }
 
     public static HashMap<String, String> collectClusterOperatorPodMetrics(String scraperPodName) {
         LabelSelector coSelector = kubeClient().getDeploymentSelectors(ResourceManager.getCoDeploymentName());
-        return collectMetricsFromPods(scraperPodName, coSelector, Constants.CLUSTER_OPERATOR_METRICS_PORT, "/metrics");
+        return collectMetricsFromPods(kubeClient().getNamespace(), scraperPodName, coSelector, Constants.CLUSTER_OPERATOR_METRICS_PORT, "/metrics");
     }
 
     public static HashMap<String, String> collectKafkaBridgePodMetrics(String scraperPodName, String clusterName) {
         LabelSelector coSelector = kubeClient().getDeploymentSelectors(KafkaBridgeResources.deploymentName(clusterName));
-        return collectMetricsFromPods(scraperPodName, coSelector, Constants.KAFKA_BRIDGE_METRICS_PORT, "/metrics");
+        return collectMetricsFromPods(kubeClient().getNamespace(), scraperPodName, coSelector, Constants.KAFKA_BRIDGE_METRICS_PORT, "/metrics");
     }
 
     /**
@@ -128,22 +135,27 @@ public class MetricsUtils {
      * @return map with metrics {podName, metrics}
      */
     public static HashMap<String, String> collectMetricsFromPods(String scraperPodName, LabelSelector labelSelector, int port) {
-        return collectMetricsFromPods(scraperPodName, labelSelector, port, "");
+        return collectMetricsFromPods(kubeClient().getNamespace(), scraperPodName, labelSelector, port, "");
+    }
+
+    public static HashMap<String, String> collectMetricsFromPods(String namespaceName, String scraperPodName, LabelSelector labelSelector, int port) {
+        return collectMetricsFromPods(namespaceName, scraperPodName, labelSelector, port, "");
     }
 
     /**
      * Collect metrics from all pods with specific selector
+     * @param namespaceName Namespace name
      * @param scraperPodName name of pod from where the metrics will be scraped
      * @param labelSelector pod selector
      * @param port port where metrics are exposed
      * @param metricsPath additional path where metrics are available
      * @return map with metrics {podName, metrics}
      */
-    public static HashMap<String, String> collectMetricsFromPods(String scraperPodName, LabelSelector labelSelector, int port, String metricsPath) {
+    public static HashMap<String, String> collectMetricsFromPods(String namespaceName, String scraperPodName, LabelSelector labelSelector, int port, String metricsPath) {
         HashMap<String, String> map = new HashMap<>();
-        kubeClient().listPods(labelSelector).forEach(p -> {
+        kubeClient(namespaceName).listPods(namespaceName, labelSelector).forEach(p -> {
             try {
-                map.put(p.getMetadata().getName(), collectMetrics(scraperPodName, p.getStatus().getPodIP(), port, metricsPath));
+                map.put(p.getMetadata().getName(), collectMetrics(namespaceName, scraperPodName, p.getStatus().getPodIP(), port, metricsPath));
             } catch (InterruptedException | ExecutionException | IOException e) {
                 throw new RuntimeException(e);
             }

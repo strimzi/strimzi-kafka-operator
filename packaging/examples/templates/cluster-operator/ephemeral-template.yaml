@@ -34,7 +34,7 @@ parameters:
   displayName: The Kafka version to use
   name: KAFKA_VERSION
   required: true
-  value: "2.7.0"
+  value: "2.8.0"
 - description: Number of seconds after the container has started before healthcheck probes are initiated.
   displayName: Zookeeper healthcheck initial delay
   name: ZOOKEEPER_HEALTHCHECK_DELAY

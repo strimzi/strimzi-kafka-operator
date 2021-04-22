@@ -217,6 +217,11 @@ public class KubeClient {
             .collect(Collectors.toList());
     }
 
+    public List<PersistentVolumeClaim> listPersistentVolumeClaims(String namespaceName, String clusterName) {
+        return client.persistentVolumeClaims().inNamespace(namespaceName).list().getItems().stream()
+            .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
+            .collect(Collectors.toList());
+    }
 
     public List<PersistentVolumeClaim> listPersistentVolumeClaims() {
         return client.persistentVolumeClaims().inNamespace(getNamespace()).list().getItems();
@@ -253,8 +258,12 @@ public class KubeClient {
     /**
      * Gets pod
      */
-    public Pod getPod(String name) {
+    public Pod getPod(String namespaceName, String name) {
         return client.pods().inNamespace(getNamespace()).withName(name).get();
+    }
+
+    public Pod getPod(String name) {
+        return getPod(getNamespace(), name);
     }
 
     /**
@@ -304,15 +313,23 @@ public class KubeClient {
     /**
      * Gets stateful set
      */
+    public StatefulSet getStatefulSet(String namespaceName, String statefulSetName) {
+        return  client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).get();
+    }
+
     public StatefulSet getStatefulSet(String statefulSetName) {
-        return  client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).get();
+        return getStatefulSet(getNamespace(), statefulSetName);
     }
 
     /**
      * Gets stateful set
      */
+    public RollableScalableResource<StatefulSet> statefulSet(String namespaceName, String statefulSetName) {
+        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName);
+    }
+
     public RollableScalableResource<StatefulSet> statefulSet(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName);
+        return statefulSet(getNamespace(), statefulSetName);
     }
 
     /**
@@ -325,8 +342,12 @@ public class KubeClient {
     /**
      * Gets stateful set status
      */
+    public boolean getStatefulSetStatus(String namespaceName, String statefulSetName) {
+        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).isReady();
+    }
+
     public boolean getStatefulSetStatus(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).isReady();
+        return getStatefulSetStatus(getNamespace(), statefulSetName);
     }
 
     /**
