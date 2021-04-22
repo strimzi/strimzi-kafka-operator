@@ -13,6 +13,7 @@
 * Changed Reconciliation interval for Topic Operator from 90 to 120 seconds (to keep it the same as for other operators)
 * Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
 * Removed requirement for replicas and partitions KafkaTopic spec making these parameters optional
+* Support to configure a custom filter for parent CR's labels propagation into subresources 
 
 ### Changes, deprecations and removals
 

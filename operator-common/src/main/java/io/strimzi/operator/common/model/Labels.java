@@ -158,7 +158,7 @@ public class Labels {
     }
 
     /**
-    * @param additionalLabels The labels to add.
+     * @param additionalLabels The labels to add.
      * @param exclusionPattern regex pattern that will be used to remove unwanted labels.
      * @return A new instance with removed labels that match the given {@code exclusionPattern} pattern.
      */
