@@ -64,7 +64,6 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     protected static KubernetesClient client;
     private static KubeClusterResource cluster;
 
-
     protected abstract CrdOperator<C, T, L> operator();
     protected abstract CustomResourceDefinition getCrd();
     protected abstract String getNamespace();
@@ -72,7 +71,6 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     protected abstract T getResourceWithModifications(T resourceInCluster);
     protected abstract T getResourceWithNewReadyStatus(T resourceInCluster);
     protected abstract void assertReady(VertxTestContext context, T modifiedCustomResource);
-
 
     @BeforeAll
     public void before() {
@@ -95,7 +93,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         cmdKubeClient().waitForResourceCreation("Namespace", namespace);
 
         log.info("Creating CRD");
-        client.customResourceDefinitions().createOrReplace(getCrd());
+        client.apiextensions().v1beta1().customResourceDefinitions().createOrReplace(getCrd());
         log.info("Created CRD");
     }
 

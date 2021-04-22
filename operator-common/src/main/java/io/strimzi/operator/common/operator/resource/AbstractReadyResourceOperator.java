@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -52,13 +51,7 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
         R resourceOp = operation().inNamespace(namespace).withName(name);
         T resource = resourceOp.get();
         if (resource != null)   {
-            if (Readiness.isReadinessApplicable(resource.getClass())) {
-                return Boolean.TRUE.equals(resourceOp.isReady());
-            } else {
-                log.warn("Method isReady was called on resource {} of kind {} on which readiness is not applicable.",
-                        resource.getMetadata().getName(), resource.getKind());
-                return true;
-            }
+            return Boolean.TRUE.equals(resourceOp.isReady());
         } else {
             return false;
         }

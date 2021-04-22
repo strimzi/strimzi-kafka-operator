@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -110,7 +109,7 @@ public class K8sImpl implements K8s {
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> operation() {
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class);
+        return client.customResources(KafkaTopic.class, KafkaTopicList.class);
     }
 
     @Override
@@ -126,7 +125,6 @@ public class K8sImpl implements K8s {
     /**
      * Create the given k8s event
      */
-    @SuppressWarnings("deprecation")
     @Override
     public Future<Void> createEvent(Event event) {
         Promise<Void> handler = Promise.promise();
@@ -134,7 +132,7 @@ public class K8sImpl implements K8s {
             try {
                 try {
                     LOGGER.debug("Creating event {}", event);
-                    client.events().inNamespace(namespace).create(event);
+                    client.v1().events().inNamespace(namespace).create(event);
                 } catch (KubernetesClientException e) {
                     LOGGER.error("Error creating event {}", event, e);
                 }
