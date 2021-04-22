@@ -17,6 +17,11 @@ import java.util.function.Consumer;
 
 import static io.strimzi.api.annotations.ApiVersion.V1;
 
+/**
+ * Processes {@link io.vertx.core.cli.annotations.DefaultValue} annotations on API model properties to populate
+ * the CRD schema with the default value. It seeks to ensure that annotated default values are valid for the type of the
+ * given property.
+ */
 class DefaultValueHandler {
 
     private final ApiVersion crdApiVersion;
@@ -45,7 +50,7 @@ class DefaultValueHandler {
                 // Parse as long as ints and shorts will fit happily into it
                 schemaNode.put("default", Long.parseLong(defaultValue));
             } catch (NumberFormatException e) {
-                err.accept("Default value " + defaultValue + " cannot be converted to an integer for property "
+                err.accept("Default value " + defaultValue + " cannot be converted to an OpenAPI integer for property "
                              + property.getName() + " with return type of " + returnType);
             }
         } else if (property.getType().isEnum()) {

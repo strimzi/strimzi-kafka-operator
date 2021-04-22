@@ -116,8 +116,6 @@ class DefaultValueHandlerTest {
         assertEquals(CustomisedEnum.TWO.toValue(), result.get("default").asText());
     }
 
-
-
     @Test
     void testErrorLoggedWhenDefaultNotParsableWholeNumber() throws NoSuchMethodException {
 
@@ -129,7 +127,7 @@ class DefaultValueHandlerTest {
         ObjectNode result = handler.addDefaultValueIfApplicable(blankNode.deepCopy(), property);
 
         assertEquals(blankNode, result);
-        assertEquals("Default value Not_A_Number cannot be converted to an integer for " +
+        assertEquals("Default value Not_A_Number cannot be converted to an OpenAPI integer for " +
                 "property unparseableDefaultNumber with return type of long", errorLogger.get());
     }
 
@@ -217,6 +215,5 @@ class DefaultValueHandlerTest {
             return null;
         }
     }
-
 
 }
