@@ -15,7 +15,6 @@ pipeline {
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
         string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
         string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
-        string(name: 'TEST_COUNT_RUNNING_IN_PARALLEL', defaultValue: "5", description: 'maven parameter for turning on parallel execution of test.')
     }
     options {
         timeout(time: 24, unit: 'HOURS')
@@ -98,6 +97,8 @@ pipeline {
 
                     if (env.ghprbCommentBody.contains('test_count_running_in_parallel=')) {
                         env.TEST_COUNT_RUNNING_IN_PARALLEL = env.ghprbCommentBody.split('test_count_running_in_parallel=')[1].split(/\s/)[0]
+                    } else {
+                        env.TEST_COUNT_RUNNING_IN_PARALLEL = "3"
                     }
 
                     println("ENV_VARS: ${env.ENV_VARS}")
