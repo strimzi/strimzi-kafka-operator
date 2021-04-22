@@ -139,12 +139,12 @@ public abstract class AbstractST implements TestSeparator {
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
             olmResource = new OlmResource(namespace);
-            olmResource.create(namespace, operationTimeout, reconciliationInterval);
+            olmResource.create(extensionContext, namespace, operationTimeout, reconciliationInterval);
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
-            helmResource.create(operationTimeout, reconciliationInterval);
+            helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
             prepareEnvForOperator(extensionContext,  namespace, bindingsNamespaces);

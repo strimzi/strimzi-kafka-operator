@@ -59,12 +59,11 @@ class HelmChartST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
-        helmResource.create();
+        helmResource.create(extensionContext);
     }
 
     @AfterAll
     protected void tearDownEnvironmentAfterAll() {
-        helmResource.delete();
         cluster.deleteNamespaces();
     }
 }

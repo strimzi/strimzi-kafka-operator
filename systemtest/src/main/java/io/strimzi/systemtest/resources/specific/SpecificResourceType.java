@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.resources.specific;
 
+import org.junit.jupiter.api.extension.ExtensionContext;
+
 /**
  * Interface for resources which has different deployment strategies such as Helm or Olm.
  */
@@ -12,7 +14,7 @@ public interface SpecificResourceType {
     /**
      * Creates specific resource
      */
-    void create();
+    void create(ExtensionContext extensionContext);
 
     /**
      * Delete specific resource

@@ -13,12 +13,14 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Stack;
 import java.util.stream.Stream;
 
 import static io.strimzi.test.TestUtils.entry;
@@ -35,14 +37,17 @@ public class HelmResource implements SpecificResourceType {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    public void create() {
-        this.clusterOperator();
+    public void create(ExtensionContext extensionContext) {
+        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public void create(long operationTimeout, long reconciliationInterval) {
+    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval) {
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(this::delete);
         this.clusterOperator(operationTimeout, reconciliationInterval);
     }
 
+    @Override
     public void delete() {
         this.deleteClusterOperator();
     }
