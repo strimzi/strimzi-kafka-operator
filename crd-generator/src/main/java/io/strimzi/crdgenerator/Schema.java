@@ -32,6 +32,15 @@ class Schema {
                 || cls.isEnum();
     }
 
+    static boolean isIntegerType(Class<?> cls) {
+        return int.class.equals(cls)
+                || Integer.class.equals(cls)
+                || long.class.equals(cls)
+                || Long.class.equals(cls)
+                || short.class.equals(cls)
+                || Short.class.equals(cls);
+    }
+
     static List<JsonNode> enumCases(Enum<?>[] values) {
         try {
             List<JsonNode> result = new ArrayList<>();

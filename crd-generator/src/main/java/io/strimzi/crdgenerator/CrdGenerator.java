@@ -173,6 +173,8 @@ public class CrdGenerator {
     private final ApiVersion storageVersion;
     private final VersionRange<ApiVersion> servedVersion;
     private final VersionRange<ApiVersion> describeVersions;
+    private final DefaultValueHandler defaultValueHandler;
+
     // TODO CrdValidator
     // extraProperties
     // @Buildable
@@ -264,7 +266,7 @@ public class CrdGenerator {
 
     public CrdGenerator(VersionRange<KubeVersion> targetKubeVersions, ApiVersion crdApiVersion) {
         this(targetKubeVersions, crdApiVersion, CrdGenerator.YAML_MAPPER, emptyMap(), new DefaultReporter(),
-                emptyList(), null, null, new NoneConversionStrategy(), null);
+                emptyList(), null, null, new NoneConversionStrategy(), null, null);
     }
 
     /**
@@ -278,6 +280,7 @@ public class CrdGenerator {
      * @param servedVersions If not null, override the serverd versions according to the given range.
      * @param conversionStrategy The conversion strategy.
      * @param describeVersions The range of API versions for which descriptions should be added
+     * @param defaultValueHandler If not null, overrides the hander that sets default values for annotated properties
      */
     public CrdGenerator(VersionRange<KubeVersion> targetKubeVersions, ApiVersion crdApiVersion,
                  ObjectMapper mapper, Map<String, String> labels, Reporter reporter,
@@ -285,7 +288,8 @@ public class CrdGenerator {
                  ApiVersion storageVersion,
                  VersionRange<ApiVersion> servedVersions,
                  ConversionStrategy conversionStrategy,
-                 VersionRange<ApiVersion> describeVersions) {
+                 VersionRange<ApiVersion> describeVersions,
+                 DefaultValueHandler defaultValueHandler) {
         this.reporter = reporter;
         if (targetKubeVersions.isEmpty()
             || targetKubeVersions.isAll()) {
@@ -301,6 +305,13 @@ public class CrdGenerator {
         this.storageVersion = storageVersion;
         this.servedVersion = servedVersions;
         this.conversionStrategy = conversionStrategy;
+
+        //noinspection ReplaceNullCheck
+        if (defaultValueHandler == null) {
+            this.defaultValueHandler = new DefaultValueHandler(crdApiVersion, this::err);
+        } else {
+            this.defaultValueHandler = defaultValueHandler;
+        }
     }
 
     public <T extends CustomResource<?, ?>> void generate(Class<T> crdClass, Writer out) throws IOException {
@@ -825,9 +836,8 @@ public class CrdGenerator {
             schema = nf.objectNode();
             schema.put("type", "object");
             schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(crApiVersion, property, new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1]), description));
-        } else if (Schema.isJsonScalarType(returnType)
-                || Map.class.equals(returnType)) {            
-            schema = addSimpleTypeConstraints(crApiVersion, buildBasicTypeSchema(property, returnType), property);
+        } else if (Schema.isJsonScalarType(returnType) || Map.class.equals(returnType)) {
+            schema = createScalarSchema(crApiVersion, property, returnType);
         } else if (returnType.isArray() || List.class.equals(returnType)) {
             schema = buildArraySchema(crApiVersion, property, property.getType(), description);
         } else {
@@ -839,6 +849,12 @@ public class CrdGenerator {
         }
 
         return schema;
+    }
+
+    private ObjectNode createScalarSchema(ApiVersion crApiVersion, Property property, Class<?> returnType) {
+        ObjectNode basicTypeSchema = buildBasicTypeSchema(property, returnType);
+        ObjectNode maybeWithDefault = defaultValueHandler.addDefaultValueIfApplicable(basicTypeSchema, property);
+        return addSimpleTypeConstraints(crApiVersion, maybeWithDefault, property);
     }
 
     private ObjectNode buildArraySchema(ApiVersion crApiVersion, Property property, PropertyType propertyType, boolean description) {
@@ -1002,12 +1018,7 @@ public class CrdGenerator {
     private String typeName(Class<?> type) {
         if (String.class.equals(type)) {
             return "string";
-        } else if (int.class.equals(type)
-                || Integer.class.equals(type)
-                || long.class.equals(type)
-                || Long.class.equals(type)
-                || short.class.equals(type)
-                || Short.class.equals(type)) {
+        } else if (Schema.isIntegerType(type)) {
             return "integer";
         } else if (boolean.class.equals(type)
                 || Boolean.class.equals(type)) {
@@ -1209,7 +1220,7 @@ public class CrdGenerator {
         CrdGenerator generator = new CrdGenerator(opts.targetKubeVersions, opts.crdApiVersion,
                 opts.yaml ? YAML_MAPPER.configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true) : JSON_MATTER,
                 opts.labels, new DefaultReporter(),
-                opts.apiVersions, opts.storageVersion, null, opts.conversionStrategy, opts.describeVersions);
+                opts.apiVersions, opts.storageVersion, null, opts.conversionStrategy, opts.describeVersions, null);
         for (Map.Entry<String, Class<? extends CustomResource<?, ?>>> entry : opts.classes.entrySet()) {
             File file = new File(entry.getKey());
             if (file.getParentFile().exists()) {

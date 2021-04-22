@@ -41,7 +41,7 @@ public class TopicCrd extends CustomResource<Object, Object> {
         System.out.println(m.writeValueAsString(x));
 
         new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1, m, emptyMap(), new CrdGenerator.DefaultReporter(),
-                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null)
+                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null, null)
             .generate(TopicCrd.class, new OutputStreamWriter(System.out));
     }
 }
