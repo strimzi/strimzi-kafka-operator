@@ -309,7 +309,7 @@ class ConnectS2IST extends AbstractST {
             .build();
 
         String kafkaConnectS2IPodName = kubeClient(namespaceName).listKafkaConnectS2IPods(namespaceName, connectS2IClusterName).get(0).getMetadata().getName();
-        String kafkaConnectS2ILogs = kubeClient(namespaceName).logs(namespaceName, kafkaConnectS2IPodName);
+        String kafkaConnectS2ILogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, kafkaConnectS2IPodName);
 
         LOGGER.info("Verifying that in KafkaConnect logs not contain ERRORs");
         assertThat(kafkaConnectS2ILogs, not(containsString("ERROR")));
@@ -333,7 +333,9 @@ class ConnectS2IST extends AbstractST {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String connectS2IClusterName = clusterName + "-connect-s2i";
+        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
 
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
@@ -364,7 +366,7 @@ class ConnectS2IST extends AbstractST {
             kubeClient(namespaceName).getDeploymentConfigSelectors(namespaceName, KafkaConnectS2IResources.deploymentName(connectS2IClusterName))).build();
         String connectPodName = kubeClient(namespaceName).listPods(namespaceName, deploymentConfigSelector).get(0).getMetadata().getName();
 
-        checkSpecificVariablesInContainer(connectPodName, KafkaConnectS2IResources.deploymentName(connectS2IClusterName), envVarGeneral);
+        checkSpecificVariablesInContainer(namespaceName, connectPodName, KafkaConnectS2IResources.deploymentName(connectS2IClusterName), envVarGeneral);
 
         LOGGER.info("Updating values in ConnectS2I container");
         KafkaConnectS2IResource.replaceConnectS2IResourceInSpecificNamespace(connectS2IClusterName, kc -> {
@@ -386,7 +388,9 @@ class ConnectS2IST extends AbstractST {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String connectS2IClusterName = clusterName + "-connect-s2i";
+        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         Map<String, String> jvmOptionsXX = new HashMap<>();
@@ -443,7 +447,7 @@ class ConnectS2IST extends AbstractST {
 
         assertResources(namespaceName, podName, connectS2IClusterName + "-connect",
             "400M", "2", "300M", "1");
-        assertExpectedJavaOpts(podName, connectS2IClusterName + "-connect",
+        assertExpectedJavaOpts(namespaceName, podName, connectS2IClusterName + "-connect",
             "-Xmx200m", "-Xms200m", "-XX:+UseG1GC");
 
         kafkaConnectS2IClient().inNamespace(namespaceName).withName(connectS2IClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
@@ -588,7 +592,7 @@ class ConnectS2IST extends AbstractST {
 
         String execConnectPod =  kubeClient(namespaceName).listKafkaConnectS2IPods(namespaceName, connectS2IClusterName).get(0).getMetadata().getName();
 
-        JsonObject connectStatus = new JsonObject(cmdKubeClient().execInPod(
+        JsonObject connectStatus = new JsonObject(cmdKubeClient(namespaceName).execInPod(
                 execConnectPod,
                 "curl", "-X", "GET", "http://localhost:8083/connectors/" + connectS2IClusterName + "/status").out()
         );
@@ -724,7 +728,9 @@ class ConnectS2IST extends AbstractST {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String connectS2IClusterName = clusterName + "-connect-s2i";
+        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, connectS2IClusterName, clusterName, 2).build());
 
@@ -752,7 +758,9 @@ class ConnectS2IST extends AbstractST {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String connectS2IClusterName = clusterName + "-connect-s2i";
+        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, connectS2IClusterName, clusterName, 2)
             .editMetadata()
@@ -796,13 +804,15 @@ class ConnectS2IST extends AbstractST {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String connectS2IClusterName = clusterName + "-connect-s2i";
+        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, connectS2IClusterName, clusterName, 1).build());
 
         int scaleTo = 4;
         long connectS2IObsGen = kafkaConnectS2IClient().inNamespace(namespaceName).withName(connectS2IClusterName).get().getStatus().getObservedGeneration();
-        String connectS2IGenName = kubeClient().listKafkaConnectS2IPods(connectS2IClusterName).get(0).getMetadata().getGenerateName();
+        String connectS2IGenName = kubeClient(namespaceName).listKafkaConnectS2IPods(namespaceName, connectS2IClusterName).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaConnectS2I subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
@@ -829,7 +839,9 @@ class ConnectS2IST extends AbstractST {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String connectS2IClusterName = clusterName + "connect-s2i";
+        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         HostAlias hostAlias = new HostAliasBuilder()
@@ -847,7 +859,7 @@ class ConnectS2IST extends AbstractST {
             .endSpec()
             .build());
 
-        String connectS2IPodName = kubeClient().listKafkaConnectS2IPods(clusterName).get(0).getMetadata().getName();
+        String connectS2IPodName = kubeClient(namespaceName).listKafkaConnectS2IPods(namespaceName, clusterName).get(0).getMetadata().getName();
 
         LOGGER.info("Checking the /etc/hosts file");
         String output = cmdKubeClient(namespaceName).execInPod(connectS2IPodName, "cat", "/etc/hosts").out();
@@ -911,6 +923,9 @@ class ConnectS2IST extends AbstractST {
             .addToData(configMapKey, configMapValue)
             .build();
 
+        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         kubeClient(namespaceName).createSecret(connectSecret);
         kubeClient(namespaceName).createSecret(dotedConnectSecret);
         kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMap);
@@ -1016,7 +1031,9 @@ class ConnectS2IST extends AbstractST {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String connectS2IClusterName = clusterName + "connect-s2i";
+        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, clusterName, clusterName, 1)
             .editSpec()
