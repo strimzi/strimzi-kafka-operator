@@ -412,8 +412,13 @@ public class KubeClient {
     /**
      * Gets deployment status
      */
+    public LabelSelector getDeploymentSelectors(String namespaceName, String deploymentName) {
+        return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get().getSpec().getSelector();
+    }
+
+
     public LabelSelector getDeploymentSelectors(String deploymentName) {
-        return client.apps().deployments().inNamespace(getNamespace()).withName(deploymentName).get().getSpec().getSelector();
+        return getDeploymentSelectors(getNamespace(), deploymentName);
     }
 
     /**

@@ -21,6 +21,7 @@ import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
+import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -157,7 +158,13 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
             .build();
 
-        if (kubeClient(resource.getMetadata().getNamespace()).listPods(labelSelector).size() == 0) {
+        final String namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ?
+            // if parallel namespace test use namespace from store
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString() :
+            // otherwise use resource namespace
+            resource.getMetadata().getNamespace();
+
+        if (kubeClient(namespaceName).listPods(namespaceName, labelSelector).size() == 0) {
             throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind());
         }
 
@@ -168,7 +175,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .withNewKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName(resource.getMetadata().getName() + "-allow")
-                .withNamespace(resource.getMetadata().getNamespace())
+                .withNamespace(namespaceName)
             .endMetadata()
             .withNewSpec()
                 .addNewIngress()

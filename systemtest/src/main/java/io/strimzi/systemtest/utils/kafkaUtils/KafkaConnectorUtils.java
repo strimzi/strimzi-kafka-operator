@@ -54,17 +54,25 @@ public class KafkaConnectorUtils {
      * @param connectorName name of KafkaConnector
      * @param state desired state
      */
-    public static boolean waitForConnectorStatus(String connectorName, Enum<?>  state) {
+    public static boolean waitForConnectorStatus(String namespaceName, String connectorName, Enum<?>  state) {
         KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get();
         return ResourceManager.waitForResourceStatus(KafkaConnectorResource.kafkaConnectorClient(), kafkaConnector, state);
     }
 
+    public static boolean waitForConnectorReady(String namespaceName, String connectorName) {
+        return waitForConnectorStatus(namespaceName, connectorName, Ready);
+    }
+
     public static boolean waitForConnectorReady(String connectorName) {
-        return waitForConnectorStatus(connectorName, Ready);
+        return waitForConnectorStatus(kubeClient().getNamespace(), connectorName, Ready);
+    }
+
+    public static boolean waitForConnectorNotReady(String namespaceName, String connectorName) {
+        return waitForConnectorStatus(namespaceName, connectorName, NotReady);
     }
 
     public static boolean waitForConnectorNotReady(String connectorName) {
-        return waitForConnectorStatus(connectorName, NotReady);
+        return waitForConnectorStatus(kubeClient().getNamespace(), connectorName, NotReady);
     }
 
     public static String getCreatedConnectors(String connectPodName) {
@@ -110,9 +118,19 @@ public class KafkaConnectorUtils {
         );
     }
 
+    public static String getConnectorSpecFromConnectAPI(String namespaceName, String podName, String connectorName) {
+        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
+            "curl http://localhost:8083/connectors/" + connectorName).out();
+    }
+
     public static String getConnectorSpecFromConnectAPI(String podName, String connectorName) {
         return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
             "curl http://localhost:8083/connectors/" + connectorName).out();
+    }
+
+    public static String getConnectorConfig(String namespaceName, String podName, String connectorName, String apiUrl) {
+        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c", "curl http://" + apiUrl + ":8083/connectors/" +
+            connectorName + "/config").out();
     }
 
     public static String getConnectorConfig(String podName, String connectorName, String apiUrl) {
@@ -120,21 +138,25 @@ public class KafkaConnectorUtils {
             connectorName + "/config").out();
     }
 
-    public static String waitForConnectorConfigUpdate(String podName, String connectorName, String oldConfig, String apiUrl) {
+    public static String waitForConnectorConfigUpdate(String namespaceName, String podName, String connectorName, String oldConfig, String apiUrl) {
         TestUtils.waitFor("Wait for KafkaConnector config will contain desired config", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
             ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND),
-            () -> !oldConfig.equals(getConnectorConfig(podName, connectorName, apiUrl)));
+            () -> !oldConfig.equals(getConnectorConfig(namespaceName, podName, connectorName, apiUrl)));
         return getConnectorConfig(podName, connectorName, apiUrl);
+    }
+
+    public static String waitForConnectorConfigUpdate(String podName, String connectorName, String oldConfig, String apiUrl) {
+        return waitForConnectorConfigUpdate(kubeClient().getNamespace(), podName, connectorName, oldConfig, apiUrl);
     }
 
     /**
      * Checks stability of Connector's spec on Connect API, which should be same like before changes
      */
-    public static void waitForConnectorSpecFromConnectAPIStability(String podName, String connectorName, String oldSpec) {
+    public static void waitForConnectorSpecFromConnectAPIStability(String namespaceName, String podName, String connectorName, String oldSpec) {
         int[] stableCounter = {0};
 
         TestUtils.waitFor("Connector's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            if (getConnectorSpecFromConnectAPI(podName, connectorName).equals(oldSpec)) {
+            if (getConnectorSpecFromConnectAPI(namespaceName, podName, connectorName).equals(oldSpec)) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                     LOGGER.info("Connector's spec is stable for {} polls intervals", stableCounter[0]);

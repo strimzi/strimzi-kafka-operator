@@ -44,13 +44,17 @@ public class KafkaUserUtils {
         return  KAFKA_USER_NAME_PREFIX + salt;
     }
 
-    public static void waitForKafkaUserCreation(String userName) {
-        KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
+    public static void waitForKafkaUserCreation(String namespaceName, String userName) {
+        KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get();
 
         SecretUtils.waitForSecretReady(userName,
-            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get()));
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get()));
 
         ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, Ready);
+    }
+
+    public static void waitForKafkaUserCreation(String userName) {
+        waitForKafkaUserCreation(kubeClient().getNamespace(), userName);
     }
 
     public static void waitForKafkaUserDeletion(String userName) {
@@ -70,21 +74,30 @@ public class KafkaUserUtils {
         LOGGER.info("KafkaUser {} deleted", userName);
     }
 
-    public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
+    public static void waitForKafkaUserIncreaseObserverGeneration(String namespaceName, long observation, String userName) {
         TestUtils.waitFor("increase observation generation from " + observation + " for user " + userName,
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> observation < KafkaUserResource.kafkaUserClient()
-                .inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getObservedGeneration());
+                .inNamespace(namespaceName).withName(userName).get().getStatus().getObservedGeneration());
     }
 
-    public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
+    public static void waitForKafkaUserIncreaseObserverGeneration(long observation, String userName) {
+        waitForKafkaUserIncreaseObserverGeneration(kubeClient().getNamespace(), observation, userName);
+    }
+
+    public static void waitUntilKafkaUserStatusConditionIsPresent(String namespaceName, String userName) {
         LOGGER.info("Wait until KafkaUser {} status is available", userName);
         TestUtils.waitFor("KafkaUser " + userName + " status is available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get().getStatus().getConditions() != null,
-            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
+            () -> KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get().getStatus().getConditions() != null,
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get())
         );
         LOGGER.info("KafkaUser {} status is available", userName);
     }
+
+    public static void waitUntilKafkaUserStatusConditionIsPresent(String userName) {
+        waitUntilKafkaUserStatusConditionIsPresent(kubeClient().getNamespace(), userName);
+    }
+
 
     /**
      * Wait until KafkaUser is in desired state

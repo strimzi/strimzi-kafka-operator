@@ -21,7 +21,7 @@
         <property name="fileExtensions" value="java"/>
     </module>
 
-    <module name="SuppressWarningsFilter"/>
+    <module name="SuppressWarningsFilter" />
     <module name="TreeWalker">
         <!-- code cleanup -->
         <module name="UnusedImports">
