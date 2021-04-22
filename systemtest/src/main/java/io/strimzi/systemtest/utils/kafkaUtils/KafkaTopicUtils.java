@@ -70,13 +70,17 @@ public class KafkaTopicUtils {
         );
     }
 
-    public static void waitForKafkaTopicCreationByNamePrefix(String topicNamePrefix) {
+    public static void waitForKafkaTopicCreationByNamePrefix(String namespaceName, String topicNamePrefix) {
         LOGGER.info("Waiting for KafkaTopic {} creation", topicNamePrefix);
         TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).list().getItems().stream()
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list().getItems().stream()
                     .filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix))
                     .findFirst().get().getStatus().getConditions().get(0).getType().equals(Ready.toString())
         );
+    }
+
+    public static void waitForKafkaTopicCreationByNamePrefix(String topicNamePrefix) {
+        waitForKafkaTopicCreationByNamePrefix(kubeClient().getNamespace(), topicNamePrefix);
     }
 
     public static void waitForKafkaTopicDeletion(String topicName) {

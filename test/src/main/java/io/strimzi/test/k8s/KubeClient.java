@@ -630,8 +630,12 @@ public class KubeClient {
     // ---------> SERVICE <---------
     // =============================
 
+    public Service getService(String namespaceName, String serviceName) {
+        return client.services().inNamespace(namespaceName).withName(serviceName).get();
+    }
+
     public Service getService(String serviceName) {
-        return client.services().inNamespace(getNamespace()).withName(serviceName).get();
+        return getService(getNamespace(), serviceName);
     }
 
     public Service createService(Service service) {
