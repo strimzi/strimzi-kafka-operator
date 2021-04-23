@@ -213,7 +213,7 @@ public class KubeClusterResource {
      * @param resources array of paths to yaml files with resources specifications
      */
     public void createCustomResources(ExtensionContext extensionContext, String... resources) {
-        final String namespaceName =  extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString() != null ?
+        final String namespaceName = !extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString().isEmpty() ?
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString() :
             getNamespace();
 
@@ -261,7 +261,7 @@ public class KubeClusterResource {
     }
 
     public void deleteCustomResources(ExtensionContext extensionContext, String... resources) {
-        final String namespaceName =  extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString() != null ?
+        final String namespaceName = !extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString().isEmpty() ?
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString() :
             getNamespace();
 
