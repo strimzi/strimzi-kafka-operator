@@ -22,8 +22,8 @@ import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionList;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
@@ -41,8 +41,8 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.RoleList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.V1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.V1NetworkAPIGroupDSL;
-import io.fabric8.kubernetes.client.V1beta1ApiextensionAPIGroupDSL;
 import io.fabric8.kubernetes.client.V1beta1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
@@ -313,11 +313,11 @@ public class MockKube {
             }
 
             ApiextensionsAPIGroupDSL mockApiEx = mock(ApiextensionsAPIGroupDSL.class);
-            V1beta1ApiextensionAPIGroupDSL mockv1b1 = mock(V1beta1ApiextensionAPIGroupDSL.class);
+            V1ApiextensionAPIGroupDSL mockv1 = mock(V1ApiextensionAPIGroupDSL.class);
 
             when(mockClient.apiextensions()).thenReturn(mockApiEx);
-            when(mockApiEx.v1beta1()).thenReturn(mockv1b1);
-            when(mockv1b1.customResourceDefinitions()).thenReturn(mockCrds);
+            when(mockApiEx.v1()).thenReturn(mockv1);
+            when(mockv1.customResourceDefinitions()).thenReturn(mockCrds);
 
             mockCrs(mockClient);
         }
@@ -352,11 +352,11 @@ public class MockKube {
         buildConfigMockBuilder.build2(mockOpenShiftClient::buildConfigs);
         if (mockedCrds != null && !mockedCrds.isEmpty()) {
             ApiextensionsAPIGroupDSL mockApiEx = mock(ApiextensionsAPIGroupDSL.class);
-            V1beta1ApiextensionAPIGroupDSL mockv1b1 = mock(V1beta1ApiextensionAPIGroupDSL.class);
+            V1ApiextensionAPIGroupDSL mockv1 = mock(V1ApiextensionAPIGroupDSL.class);
 
             when(mockOpenShiftClient.apiextensions()).thenReturn(mockApiEx);
-            when(mockApiEx.v1beta1()).thenReturn(mockv1b1);
-            when(mockv1b1.customResourceDefinitions()).thenReturn(mockCrds);
+            when(mockApiEx.v1()).thenReturn(mockv1);
+            when(mockv1.customResourceDefinitions()).thenReturn(mockCrds);
             mockCrs(mockOpenShiftClient);
         }
 

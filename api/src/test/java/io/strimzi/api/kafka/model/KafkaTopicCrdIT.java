@@ -59,7 +59,7 @@ public class KafkaTopicCrdIT extends AbstractCrdIT {
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_TOPIC);
-        waitForCrd("crd", "kafkatopics.kafka.strimzi.io");
+        cluster.waitForCustomResourceDefinition("kafkatopics.kafka.strimzi.io");
     }
 
     @AfterAll

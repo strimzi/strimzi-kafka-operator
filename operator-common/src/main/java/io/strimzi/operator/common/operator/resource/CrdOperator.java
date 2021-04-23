@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -34,10 +33,10 @@ public class CrdOperator<C extends KubernetesClient,
      * @param client The Kubernetes client
      * @param cls The class of the CR
      * @param listCls The class of the list.
-     * @param crd The CustomResourceDefinition of the CR
+     * @param kind The Kind of the CR for which this operator should be used
      */
-    public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, CustomResourceDefinition crd) {
-        super(vertx, client, crd.getSpec().getNames().getKind());
+    public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, String kind) {
+        super(vertx, client, kind);
         this.cls = cls;
         this.listCls = listCls;
     }

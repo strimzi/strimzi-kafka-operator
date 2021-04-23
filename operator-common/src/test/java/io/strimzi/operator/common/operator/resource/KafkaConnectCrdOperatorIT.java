@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -31,12 +30,17 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, Crds.kafkaConnect());
+        return new CrdOperator(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
     }
 
     @Override
-    protected CustomResourceDefinition getCrd() {
-        return Crds.kafkaConnect();
+    protected String getCrd() {
+        return TestUtils.CRD_KAFKA_CONNECT;
+    }
+
+    @Override
+    protected String getCrdName() {
+        return KafkaConnect.CRD_NAME;
     }
 
     @Override
@@ -52,6 +56,7 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
+                    .withNewBootstrapServers("localhost:9092")
                 .endSpec()
                 .withNewStatus()
                 .endStatus()

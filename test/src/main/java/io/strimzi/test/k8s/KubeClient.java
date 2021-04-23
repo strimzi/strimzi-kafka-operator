@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.Job;
@@ -772,7 +772,7 @@ public class KubeClient {
     // =========================
 
     public List<CustomResourceDefinition> listCustomResourceDefinition() {
-        return client.apiextensions().v1beta1().customResourceDefinitions().list().getItems();
+        return client.apiextensions().v1().customResourceDefinitions().list().getItems();
     }
 
     private static class SimpleListener implements ExecListener {

@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -76,7 +75,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
 
     @Override
     protected CrdOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new CrdOperator(vertx, mockClient, Kafka.class, KafkaList.class, Crds.kafka());
+        return new CrdOperator(vertx, mockClient, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
     }
 
     @Test
