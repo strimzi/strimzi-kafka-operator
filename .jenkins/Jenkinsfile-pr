@@ -158,6 +158,7 @@ pipeline {
             }
             steps {
                 script {
+                    lib.setupShellheck()
                     lib.buildStrimziImages()
                     env.BUILD_DOCKER_IMAGE_STATUS = true
                     env.DOCKER_REGISTRY = sh(script: "kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'", returnStdout: true).trim() + ":80"
