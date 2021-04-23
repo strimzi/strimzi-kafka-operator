@@ -115,8 +115,7 @@ generate_related_images() {
     yq ea -i ".spec.relatedImages += [{\"name\": \"$name\", \"image\": \"$image\"}]" ${CSV_FILE};
   done
 
-  # Add Kafka images to relatedImages section. Since make isolates each line into its own subshell,
-  # we run following shell commands as one line, joining the lines with ";" and "\"
+  # Add Kafka images to relatedImages section.
   KAFKA_IMAGE_VALUES=$(yq eval '.. | select(has("name")).env[] | (select (.name == "STRIMZI_KAFKA_IMAGES")).value' ${CSV_FILE})
   for val in $KAFKA_IMAGE_VALUES;
   do
