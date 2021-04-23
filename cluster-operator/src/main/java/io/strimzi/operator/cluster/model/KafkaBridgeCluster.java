@@ -182,8 +182,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ModelUtils.parsePodTemplate(kafkaBridgeCluster, template.getPod());
 
             if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
-                kafkaBridgeCluster.templateServiceLabels = Util.mergeLabelsOrAnnotations(template.getApiService().getMetadata().getLabels(),
-                        ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS));
+                kafkaBridgeCluster.templateServiceLabels = template.getApiService().getMetadata().getLabels();
                 kafkaBridgeCluster.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
             }
 
@@ -220,7 +219,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
 
-        return createDiscoverableService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
+        return createDiscoverableService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceLabels, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS)),
+                Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
     }
 
     /**
