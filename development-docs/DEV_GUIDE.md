@@ -173,7 +173,7 @@ make command:
    \
    **Linux**
 
-       sed -Ei "s/myproject/<desired_namespace>/g" packaging/install/cluster-operator/*.yaml
+       sed -Ei "s/myproject/<desired_namespace>/g" packaging/install/cluster-operator/*RoleBinding*.yaml
 
    **OS X**
 
@@ -324,7 +324,7 @@ and pull the official images instead of using your freshly built image.
 
 The `strimzi-kafka-operator` Helm Chart can be installed directly from its source.
 
-    `helm install ./helm-charts/helm3/strimzi-kafka-operator`
+    `helm install packaging/helm-charts/helm3/strimzi-kafka-operator`
 
 The chart is also available in the release artifact as a tarball.
 
