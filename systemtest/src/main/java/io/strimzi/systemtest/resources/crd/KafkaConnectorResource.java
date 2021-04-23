@@ -40,7 +40,7 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
     }
     @Override
     public boolean waitForReadiness(KafkaConnector resource) {
-        return KafkaConnectorUtils.waitForConnectorReady(resource.getMetadata().getName());
+        return KafkaConnectorUtils.waitForConnectorReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {

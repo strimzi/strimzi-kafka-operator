@@ -56,22 +56,30 @@ public class KafkaConnectUtils {
         waitForConnectStatus(kubeClient().getNamespace(), clusterName, NotReady);
     }
 
-    public static void waitUntilKafkaConnectRestApiIsAvailable(String podNamePrefix) {
+    public static void waitUntilKafkaConnectRestApiIsAvailable(String namespaceName, String podNamePrefix) {
         LOGGER.info("Waiting until KafkaConnect API is available");
         TestUtils.waitFor("Waiting until KafkaConnect API is available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> cmdKubeClient().execInPod(podNamePrefix, "/bin/bash", "-c", "curl -I http://localhost:8083/connectors").out().contains("HTTP/1.1 200 OK\n"));
+            () -> cmdKubeClient(namespaceName).execInPod(podNamePrefix, "/bin/bash", "-c", "curl -I http://localhost:8083/connectors").out().contains("HTTP/1.1 200 OK\n"));
         LOGGER.info("KafkaConnect API is available");
     }
 
-    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String sinkFileName, String message) {
+    public static void waitUntilKafkaConnectRestApiIsAvailable(String podNamePrefix) {
+        waitUntilKafkaConnectRestApiIsAvailable(kubeClient().getNamespace(), podNamePrefix);
+    }
+
+    public static void waitForMessagesInKafkaConnectFileSink(String namespaceName, String kafkaConnectPodName, String sinkFileName, String message) {
         LOGGER.info("Waiting for messages in file sink on {}", kafkaConnectPodName);
         TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient().execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message));
+            () -> cmdKubeClient(namespaceName).execInPod(kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message));
         LOGGER.info("Expected messages are in file sink on {}", kafkaConnectPodName);
     }
 
+    public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String sinkFileName, String message) {
+        waitForMessagesInKafkaConnectFileSink(kubeClient().getNamespace(), kafkaConnectPodName, sinkFileName, message);
+    }
+
     public static void waitForMessagesInKafkaConnectFileSink(String kafkaConnectPodName, String sinkFileName) {
-        waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, sinkFileName,
+        waitForMessagesInKafkaConnectFileSink(kubeClient().getNamespace(), kafkaConnectPodName, sinkFileName,
                 "\"Hello-world - 99\"");
     }
 

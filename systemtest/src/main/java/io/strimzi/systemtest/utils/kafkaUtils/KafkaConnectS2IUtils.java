@@ -23,16 +23,24 @@ public class KafkaConnectS2IUtils {
      */
     // Deprecation is suppressed because of KafkaConnectS2I
     @SuppressWarnings("deprecation")
-    public static boolean waitForConnectS2IStatus(String clusterName, Enum<?>  status) {
-        KafkaConnectS2I kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+    public static boolean waitForConnectS2IStatus(String namespaceName, String clusterName, Enum<?> status) {
+        KafkaConnectS2I kafkaConnectS2I = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(namespaceName).withName(clusterName).get();
         return ResourceManager.waitForResourceStatus(KafkaConnectS2IResource.kafkaConnectS2IClient(), kafkaConnectS2I, status);
     }
 
+    public static boolean waitForConnectS2IReady(String namespaceName, String clusterName) {
+        return waitForConnectS2IStatus(namespaceName, clusterName, Ready);
+    }
+
     public static boolean waitForConnectS2IReady(String clusterName) {
-        return waitForConnectS2IStatus(clusterName, Ready);
+        return waitForConnectS2IStatus(kubeClient().getNamespace(), clusterName, Ready);
+    }
+
+    public static boolean waitForConnectS2INotReady(String namespaceName, String clusterName) {
+        return waitForConnectS2IStatus(namespaceName, clusterName, NotReady);
     }
 
     public static boolean waitForConnectS2INotReady(String clusterName) {
-        return waitForConnectS2IStatus(clusterName, NotReady);
+        return waitForConnectS2IStatus(kubeClient().getNamespace(), clusterName, NotReady);
     }
 }

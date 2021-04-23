@@ -27,17 +27,18 @@ public class KafkaConnectorUtils {
 
     /**
      * WaitForStabilityConnector method, verifying stability of connector
+     * @param namespaceName Namespace name
      * @param connectorName connector name
      * @param connectPodName connects2i or connect pod name
      */
-    public static void waitForConnectorStability(String connectorName, String connectPodName) {
+    public static void waitForConnectorStability(String namespaceName, String connectorName, String connectPodName) {
         // alternative to sync hassling AtomicInteger one could use an integer array instead
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
         TestUtils.waitFor("Waiting for stability of connector " + connectorName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                String availableConnectors = getCreatedConnectors(connectPodName);
+                String availableConnectors = getCreatedConnectors(namespaceName, connectPodName);
                 if (availableConnectors.contains(connectorName)) {
                     LOGGER.info("Connector with name {} is present. Remaining seconds for stability {}", connectorName,
                             Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
@@ -45,17 +46,22 @@ public class KafkaConnectorUtils {
                 } else {
                     throw new RuntimeException("Connector" + connectorName + " is not stable!");
                 }
-            }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get())
+            }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get())
         );
+    }
+
+    public static void waitForConnectorStability(String connectorName, String connectPodName) {
+        waitForConnectorStability(kubeClient().getNamespace(), connectorName, connectPodName);
     }
 
     /**
      * Wait until KafkaConnector is in desired state
+     * @param namespaceName Namespace name
      * @param connectorName name of KafkaConnector
      * @param state desired state
      */
     public static boolean waitForConnectorStatus(String namespaceName, String connectorName, Enum<?>  state) {
-        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get();
+        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get();
         return ResourceManager.waitForResourceStatus(KafkaConnectorResource.kafkaConnectorClient(), kafkaConnector, state);
     }
 
@@ -72,20 +78,28 @@ public class KafkaConnectorUtils {
     }
 
     public static boolean waitForConnectorNotReady(String connectorName) {
-        return waitForConnectorStatus(kubeClient().getNamespace(), connectorName, NotReady);
+        return waitForConnectorNotReady(kubeClient().getNamespace(), connectorName);
     }
 
-    public static String getCreatedConnectors(String connectPodName) {
-        return cmdKubeClient().execInPod(connectPodName, "/bin/bash", "-c",
+    public static String getCreatedConnectors(String namespaceName, String connectPodName) {
+        return cmdKubeClient(namespaceName).execInPod(connectPodName, "/bin/bash", "-c",
                 "curl -X GET http://localhost:8083/connectors"
         ).out();
     }
 
-    public static void waitForConnectorCreation(String connectS2IPodName, String connectorName) {
+    public static String getCreatedConnectors(String connectPodName) {
+        return getCreatedConnectors(kubeClient().getNamespace(), connectPodName);
+    }
+
+    public static void waitForConnectorCreation(String namespaceName, String connectS2IPodName, String connectorName) {
         TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, READINESS_TIMEOUT, () -> {
-            String availableConnectors = getCreatedConnectors(connectS2IPodName);
+            String availableConnectors = getCreatedConnectors(namespaceName, connectS2IPodName);
             return availableConnectors.contains(connectorName);
-        }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
+        }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get()));
+    }
+
+    public static void waitForConnectorCreation(String connectS2IPodName, String connectorName) {
+        waitForConnectorCreation(kubeClient().getNamespace(), connectS2IPodName, connectorName);
     }
 
     public static void waitForConnectorDeletion(String connectorName) {
@@ -100,8 +114,8 @@ public class KafkaConnectorUtils {
         }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
     }
 
-    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName, String apiUrl) {
-        cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+    public static void createFileSinkConnector(String namespaceName, String podName, String topicName, String sinkFileName, String apiUrl) {
+        cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
             "curl -X POST -H \"Content-Type: application/json\" " + "--data '{ \"name\": \"sink-test\", " +
                 "\"config\": " + "{ \"connector.class\": \"FileStreamSink\", " +
                 "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"" + sinkFileName + "\" } }' " +
@@ -109,13 +123,21 @@ public class KafkaConnectorUtils {
         );
     }
 
-    public static void waitForConnectorsTaskMaxChange(String connectorName, int taskMax) {
+    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName, String apiUrl) {
+        createFileSinkConnector(kubeClient().getNamespace(), podName, topicName, sinkFileName, apiUrl);
+    }
+
+    public static void waitForConnectorsTaskMaxChange(String namespaceName, String connectorName, int taskMax) {
         TestUtils.waitFor("Wait for KafkaConnector taskMax will change", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
-            () -> (KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace())
+            () -> (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
                 .withName(connectorName).get().getSpec().getTasksMax() == taskMax)
-                && (KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace())
+                && (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
                 .withName(connectorName).get().getStatus().getTasksMax() == taskMax)
         );
+    }
+
+    public static void waitForConnectorsTaskMaxChange(String connectorName, int taskMax) {
+        waitForConnectorsTaskMaxChange(kubeClient().getNamespace(), connectorName, taskMax);
     }
 
     public static String getConnectorSpecFromConnectAPI(String namespaceName, String podName, String connectorName) {
@@ -124,8 +146,7 @@ public class KafkaConnectorUtils {
     }
 
     public static String getConnectorSpecFromConnectAPI(String podName, String connectorName) {
-        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
-            "curl http://localhost:8083/connectors/" + connectorName).out();
+        return getConnectorSpecFromConnectAPI(kubeClient().getNamespace(), podName, connectorName);
     }
 
     public static String getConnectorConfig(String namespaceName, String podName, String connectorName, String apiUrl) {
@@ -134,15 +155,14 @@ public class KafkaConnectorUtils {
     }
 
     public static String getConnectorConfig(String podName, String connectorName, String apiUrl) {
-        return cmdKubeClient().execInPod(podName, "/bin/bash", "-c", "curl http://" + apiUrl + ":8083/connectors/" +
-            connectorName + "/config").out();
+        return getConnectorConfig(kubeClient().getNamespace(), podName, connectorName, apiUrl);
     }
 
     public static String waitForConnectorConfigUpdate(String namespaceName, String podName, String connectorName, String oldConfig, String apiUrl) {
         TestUtils.waitFor("Wait for KafkaConnector config will contain desired config", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
             ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND),
             () -> !oldConfig.equals(getConnectorConfig(namespaceName, podName, connectorName, apiUrl)));
-        return getConnectorConfig(podName, connectorName, apiUrl);
+        return getConnectorConfig(namespaceName, podName, connectorName, apiUrl);
     }
 
     public static String waitForConnectorConfigUpdate(String podName, String connectorName, String oldConfig, String apiUrl) {
