@@ -30,7 +30,6 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     private static List<TestKafkaVersion> kafkaVersions;
     private static List<TestKafkaVersion> supportedKafkaVersions;
 
-
     static {
         try {
             kafkaVersions = parseKafkaVersions(TestUtils.USER_PATH + "/../kafka-versions.yaml");
@@ -42,7 +41,7 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
                 throw new Exception("There is no one Kafka version supported inside " + TestUtils.USER_PATH + "/../kafka-versions.yaml file");
             }
 
-            LOGGER.debug("These are following supported Kafka versions:\n{}", kafkaVersions.toString());
+            LOGGER.debug("These are following Kafka versions:\n{}", kafkaVersions.toString());
             LOGGER.debug("These are following supported Kafka versions:\n{}", supportedKafkaVersions.toString());
         } catch (Exception e) {
             e.printStackTrace();
