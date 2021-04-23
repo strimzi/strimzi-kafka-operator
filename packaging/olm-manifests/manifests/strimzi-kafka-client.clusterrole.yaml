@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-kafka-client
+  labels:
+    app: strimzi
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      # The Kafka clients (Connect, Mirror Maker, etc.) require "get" permissions to view the node they are on
+      # This information is used to generate a Rack ID (client.rack option) that is used for consuming from the closest
+      # replicas when enabled
+      - nodes
+    verbs:
+      - get
