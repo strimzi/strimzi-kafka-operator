@@ -38,7 +38,7 @@ public class ConfigMapUtils {
         LOGGER.info("Config map {} was recovered", name);
     }
 
-    public static void waitForConfigMapLabelsChange(String configMapName, Map<String, String> labels) {
+    public static void waitForConfigMapLabelsChange(String namespaceName, String configMapName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
@@ -47,18 +47,22 @@ public class ConfigMapUtils {
                 LOGGER.info("Waiting for ConfigMap {} label change {} -> {}", configMapName, entry.getKey(), entry.getValue());
                 TestUtils.waitFor("ConfigMap label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.GLOBAL_TIMEOUT, () ->
-                        kubeClient().getConfigMap(configMapName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                        kubeClient(namespaceName).getConfigMap(namespaceName, configMapName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
         }
     }
 
-    public static void waitForConfigMapLabelsDeletion(String configMapName, String... labelKeys) {
+    public static void waitForConfigMapLabelsChange(String configMapName, Map<String, String> labels) {
+        waitForConfigMapLabelsChange(kubeClient().getNamespace(), configMapName, labels);
+    }
+
+    public static void waitForConfigMapLabelsDeletion(String namespaceName, String configMapName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for ConfigMap {} label {} change to {}", configMapName, labelKey, null);
             TestUtils.waitFor("Kafka configMap label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
-                    kubeClient().getConfigMap(configMapName).getMetadata().getLabels().get(labelKey) == null
+                    kubeClient(namespaceName).getConfigMap(configMapName, namespaceName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("ConfigMap {} label {} change to {}", configMapName, labelKey, null);
         }

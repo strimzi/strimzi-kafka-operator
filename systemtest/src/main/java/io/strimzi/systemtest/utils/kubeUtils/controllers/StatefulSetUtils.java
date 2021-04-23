@@ -185,21 +185,26 @@ public class StatefulSetUtils {
 
     /**
      * Wait until the given StatefulSet has been deleted.
+     * @param namespaceName Namespace name
      * @param name The name of the StatefulSet.
      */
-    public static void waitForStatefulSetDeletion(String name) {
+    public static void waitForStatefulSetDeletion(String namespaceName, String name) {
         LOGGER.debug("Waiting for StatefulSet {} deletion", name);
         TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
-                if (kubeClient().getStatefulSet(name) == null) {
+                if (kubeClient(namespaceName).getStatefulSet(namespaceName, name) == null) {
                     return true;
                 } else {
                     LOGGER.warn("StatefulSet {} is not deleted yet! Triggering force delete by cmd client!", name);
-                    cmdKubeClient().deleteByName("statefulset", name);
+                    cmdKubeClient(namespaceName).deleteByName("statefulset", name);
                     return false;
                 }
             });
         LOGGER.debug("StatefulSet {} was deleted", name);
+    }
+
+    public static void waitForStatefulSetDeletion(String name) {
+        waitForStatefulSetDeletion(kubeClient().getNamespace(), name);
     }
 
     /**
@@ -213,7 +218,7 @@ public class StatefulSetUtils {
         LOGGER.info("StatefulSet {} was recovered", name);
     }
 
-    public static void waitForStatefulSetLabelsChange(String statefulSetName, Map<String, String> labels) {
+    public static void waitForStatefulSetLabelsChange(String namespaceName, String statefulSetName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
@@ -222,18 +227,22 @@ public class StatefulSetUtils {
                 LOGGER.info("Waiting for Stateful set label change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Waits for StatefulSet label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.GLOBAL_TIMEOUT, () ->
-                        kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                        kubeClient(namespaceName).getStatefulSet(namespaceName, statefulSetName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
         }
     }
 
-    public static void waitForStatefulSetLabelsDeletion(String statefulSetName, String... labelKeys) {
+    public static void waitForStatefulSetLabelsChange(String statefulSetName, Map<String, String> labels) {
+        waitForStatefulSetLabelsChange(kubeClient().getNamespace(), statefulSetName, labels);
+    }
+
+    public static void waitForStatefulSetLabelsDeletion(String namespaceName, String statefulSetName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for StatefulSet label {} change to {}", labelKey, null);
             TestUtils.waitFor("Waiting for StatefulSet label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
-                    kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(labelKey) == null
+                    kubeClient(namespaceName).getStatefulSet(statefulSetName, namespaceName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("StatefulSet label {} change to {}", labelKey, null);
         }
