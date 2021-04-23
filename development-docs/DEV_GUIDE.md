@@ -154,7 +154,7 @@ make command:
             packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
     ```
 
-   **OS X**
+   **macOS**
     ```
     sed -E -i '' -e "s#(image|value): quay.io/strimzi/([a-z0-9-]+):latest#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2:latest#" \
                  -e "s#(image|value): quay.io/strimzi/([a-zA-Z0-9-]+:[0-9.]+)#\1: $DOCKER_REGISTRY/$DOCKER_ORG/\2#" \
@@ -175,7 +175,7 @@ make command:
 
        sed -Ei "s/myproject/<desired_namespace>/g" packaging/install/cluster-operator/*RoleBinding*.yaml
 
-   **OS X**
+   **macOS**
 
         sed -E -i '' -e "s/myproject/<desired_namespace>/g" packaging/install/cluster-operator/*RoleBinding*.yaml
 
