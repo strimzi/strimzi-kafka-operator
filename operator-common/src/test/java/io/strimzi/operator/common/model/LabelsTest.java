@@ -117,62 +117,21 @@ public class LabelsTest {
     public void testWithUserLabels()   {
         Labels start = Labels.forStrimziCluster("my-cluster");
 
-        Map<String, String> userLabels = new HashMap<String, String>();
-        Map<String, String> expected = new HashMap<String, String>();
-        expected.putAll(start.toMap());
-
         // null user labels
-        Labels nullLabels = start.withAdditionalLabels(null, null);
+        Labels nullLabels = start.withAdditionalLabels(null);
         assertThat(nullLabels.toMap(), is(start.toMap()));
 
-        // Non-null values with default exclusion
-        userLabels.put("key1", "value");
-        expected.putAll(userLabels);
-        userLabels.put("app.kubernetes.io/instance", "value");
-        Labels nonNullLabels = start.withAdditionalLabels(userLabels, null);
-        assertThat(nonNullLabels.toMap(), is(expected));
-
-        // Exclude all user Labels
-        expected.remove("key1");
-        Labels excludeAll = start.withAdditionalLabels(userLabels, ".*");
-        assertThat(excludeAll.toMap(), is(expected));
-
-        // Exclude user Labels that starts with test
-        userLabels.put("key2", "value");
-        expected.putAll(userLabels);
-        userLabels.put("testkey1", "value");
-        Labels excludeTestStart = start.withAdditionalLabels(userLabels, "^test.*");
-        assertThat(excludeTestStart.toMap(), is(expected));
-    }
-
-    @Test
-    public void testWithUserLabelsFiltersKubernetesDomainLabelsWithExceptionPartOfLabel()   {
-        Labels start = Labels.forStrimziCluster("my-cluster");
-
-        Map userLabels = new HashMap<String, String>(5);
-        userLabels.put(Labels.KUBERNETES_NAME_LABEL, "kafka");
+        // Non-null values
+        Map userLabels = new HashMap<String, String>(2);
         userLabels.put("key1", "value1");
-        userLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
-        userLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-my-cluster");
         userLabels.put("key2", "value2");
-        userLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, "my-operator");
-        String validLabelContainingKubernetesDomainSubstring = "foo/" + Labels.KUBERNETES_DOMAIN;
-        userLabels.put(validLabelContainingKubernetesDomainSubstring, "bar");
-
-
-        // user labels should appear as if Kubernetes Domain labels are not present
-        Map expectedUserLabels = new HashMap<String, String>(2);
-        expectedUserLabels.put("key1", "value1");
-        expectedUserLabels.put("key2", "value2");
-        expectedUserLabels.put(validLabelContainingKubernetesDomainSubstring, "bar");
-        expectedUserLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "strimzi-my-cluster");
 
         Map<String, String> expected = new HashMap<String, String>();
         expected.putAll(start.toMap());
-        expected.putAll(expectedUserLabels);
+        expected.putAll(userLabels);
 
-        Labels labels = start.withAdditionalLabels(userLabels, null);
-        assertThat(labels.toMap(), is(expected));
+        Labels nonNullLabels = start.withAdditionalLabels(userLabels);
+        assertThat(nonNullLabels.toMap(), is(expected));
     }
 
     @Test
@@ -238,8 +197,10 @@ public class LabelsTest {
                 .endSpec()
                 .build();
 
-        Map<String, String> expectedLabels = new HashMap<String, String>(6);
-        expectedLabels.putAll(userProvidedLabels);
+        Map<String, String> expectedLabels = new HashMap<String, String>(3);
+        expectedLabels.put("key1", "value1");
+        expectedLabels.put("key2", "value2");
+        expectedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "some-other-application-name");
 
         Labels l = Labels.fromResource(kafka);
         assertThat(l.toMap(), is(expectedLabels));
@@ -269,13 +230,6 @@ public class LabelsTest {
 
     @Test
     public void testGenerateDefaultLabels() {
-        Map<String, String> userProvidedLabels = new HashMap<String, String>(2);
-        userProvidedLabels.put("key1", "value1");
-        userProvidedLabels.put("key2", "value2");
-
-        Map<String, String> userProvidedAnotations = new HashMap<String, String>(1);
-        userProvidedAnotations.put("strimzi.io/labels-exclusion-pattern", "^key1.*");
-
         String instance = "my-cluster";
         String operatorName  = "my-operator";
         String appName = "an-app";
@@ -321,23 +275,12 @@ public class LabelsTest {
         expectedLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, instance);
         expectedLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
         expectedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + instance);
-        expectedLabels.put("key2", "value2");
 
         Labels l = Labels.generateDefaultLabels(new ResourceWithMetadata("MyResource", "strimzi.io/v0", new ObjectMetaBuilder()
             .withNewName(instance)
-            .withLabels(userProvidedLabels)
-            .withAnnotations(userProvidedAnotations)
             .build()), appName, operatorName);
-        assertThat(l.toMap(), is(expectedLabels));
 
-        // Without strimzi.io/labels-exclusion-pattern annotation
-        expectedLabels.put("key1", "value1");
-        l = Labels.generateDefaultLabels(new ResourceWithMetadata("MyResource", "strimzi.io/v0", new ObjectMetaBuilder()
-            .withNewName(instance)
-            .withLabels(userProvidedLabels)
-            .build()), appName, operatorName);
         assertThat(l.toMap(), is(expectedLabels));
-
     }
 
     @Test
