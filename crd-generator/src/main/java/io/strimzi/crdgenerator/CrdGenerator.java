@@ -339,7 +339,7 @@ public class CrdGenerator {
         return numErrors;
     }
 
-    @SuppressWarnings("NPathComplexity")
+    @SuppressWarnings({"NPathComplexity"})
     private ObjectNode buildSpec(ApiVersion crdApiVersion,
                                  Crd.Spec crd, Class<? extends CustomResource> crdClass) {
         checkKubeVersionsSupportCrdVersion(crdApiVersion);
@@ -390,6 +390,8 @@ public class CrdGenerator {
             versionNode.put("served", servedVersion != null ? servedVersion.contains(crApiVersion) : version.served());
             versionNode.put("storage", storageVersion != null ? crApiVersion.equals(storageVersion) : version.storage());
 
+            deprecatedVersion(version, versionNode);
+
             if (perVersionSubResources) {
                 ObjectNode subresourcesForVersion = subresources.get(crApiVersion);
                 if (!subresourcesForVersion.isEmpty()) {
@@ -421,6 +423,22 @@ public class CrdGenerator {
         }
 
         return result;
+    }
+
+    /**
+     * Checks of the CRD version is deprecated and sets the deprecated and deprecatedWarning fields.
+     *
+     * @param version       The CRD version
+     * @param versionNode   The node in the CRD spec which represents the version
+     */
+    private void deprecatedVersion(Crd.Spec.Version version, ObjectNode versionNode)    {
+        if (version.deprecated())   {
+            versionNode.put("deprecated", true);
+
+            if (!version.deprecationWarning().isEmpty())    {
+                versionNode.put("deprecationWarning", version.deprecationWarning());
+            }
+        }
     }
 
     private ObjectNode buildConversion(ApiVersion crdApiVersion) {

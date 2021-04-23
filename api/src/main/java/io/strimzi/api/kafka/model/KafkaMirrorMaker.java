@@ -42,9 +42,9 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaMirrorMaker.RESOURCE_GROUP,
                 scope = KafkaMirrorMaker.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(name = KafkaMirrorMaker.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaMirrorMaker.V1BETA1, served = true, storage = true),
-                        @Crd.Spec.Version(name = KafkaMirrorMaker.V1ALPHA1, served = true, storage = false)
+                        @Crd.Spec.Version(name = KafkaMirrorMaker.V1BETA2, served = true, storage = true),
+                        @Crd.Spec.Version(name = KafkaMirrorMaker.V1BETA1, served = true, storage = false, deprecated = true),
+                        @Crd.Spec.Version(name = KafkaMirrorMaker.V1ALPHA1, served = true, storage = false, deprecated = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status(),

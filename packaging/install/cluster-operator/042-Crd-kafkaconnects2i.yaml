@@ -23,6 +23,10 @@ spec:
   - name: v1beta2
     served: true
     storage: true
+    deprecated: true
+    deprecationWarning: KafkaConnectS2I resource is deprecated. Use the KafkaConnect
+      resource instead. See https://strimzi.io/docs/operators/latest/using.html#proc-migrating-kafka-connect-s2i-str
+      for instructions how to migrate.
     subresources:
       status: {}
       scale:

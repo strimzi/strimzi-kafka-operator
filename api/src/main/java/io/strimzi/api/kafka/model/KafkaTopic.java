@@ -42,9 +42,9 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaTopic.RESOURCE_GROUP,
                 scope = KafkaTopic.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(name = KafkaTopic.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaTopic.V1BETA1, served = true, storage = true),
-                        @Crd.Spec.Version(name = KafkaTopic.V1ALPHA1, served = true, storage = false)
+                        @Crd.Spec.Version(name = KafkaTopic.V1BETA2, served = true, storage = true),
+                        @Crd.Spec.Version(name = KafkaTopic.V1BETA1, served = true, storage = false, deprecated = true),
+                        @Crd.Spec.Version(name = KafkaTopic.V1ALPHA1, served = true, storage = false, deprecated = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status()

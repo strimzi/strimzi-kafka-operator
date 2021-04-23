@@ -88,6 +88,8 @@ public @interface Crd {
             String name();
             boolean served();
             boolean storage();
+            String deprecationWarning() default "";
+            boolean deprecated() default false;
         }
 
         /**

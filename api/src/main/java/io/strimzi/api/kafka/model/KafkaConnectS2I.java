@@ -47,9 +47,12 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaConnectS2I.RESOURCE_GROUP,
                 scope = KafkaConnectS2I.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(name = KafkaConnectS2I.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaConnectS2I.V1BETA1, served = true, storage = true),
-                        @Crd.Spec.Version(name = KafkaConnectS2I.V1ALPHA1, served = true, storage = false)
+                        @Crd.Spec.Version(name = KafkaConnectS2I.V1BETA2, served = true, storage = true, deprecated = true,
+                                deprecationWarning = "KafkaConnectS2I resource is deprecated. " +
+                                        "Use the KafkaConnect resource instead. " +
+                                        "See https://strimzi.io/docs/operators/latest/using.html#proc-migrating-kafka-connect-s2i-str for instructions how to migrate."),
+                        @Crd.Spec.Version(name = KafkaConnectS2I.V1BETA1, served = true, storage = false, deprecated = true),
+                        @Crd.Spec.Version(name = KafkaConnectS2I.V1ALPHA1, served = true, storage = false, deprecated = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status(),

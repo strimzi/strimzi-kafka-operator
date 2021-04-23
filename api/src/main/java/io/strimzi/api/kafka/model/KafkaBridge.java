@@ -42,8 +42,8 @@ import static java.util.Collections.unmodifiableList;
                 group = KafkaBridge.RESOURCE_GROUP,
                 scope = KafkaBridge.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(name = KafkaBridge.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaBridge.V1ALPHA1, served = true, storage = true)
+                        @Crd.Spec.Version(name = KafkaBridge.V1BETA2, served = true, storage = true),
+                        @Crd.Spec.Version(name = KafkaBridge.V1ALPHA1, served = true, storage = false, deprecated = true)
                 },
                 subresources = @Crd.Spec.Subresources(
                         status = @Crd.Spec.Subresources.Status(),
