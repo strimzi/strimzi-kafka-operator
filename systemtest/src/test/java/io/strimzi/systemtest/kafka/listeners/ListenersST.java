@@ -1686,7 +1686,6 @@ public class ListenersST extends AbstractST {
         basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(null)
             .build();
-
         basicExternalKafkaClient.verifyProducedAndConsumedMessages(
             basicExternalKafkaClient.sendMessagesTls(),
             basicExternalKafkaClient.receiveMessagesTls()
