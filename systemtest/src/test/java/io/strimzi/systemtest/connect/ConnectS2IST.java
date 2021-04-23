@@ -268,7 +268,6 @@ class ConnectS2IST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-
         KafkaUser user  = KafkaUserTemplates.scramShaUser(clusterName, userName).build();
         resourceManager.createResource(extensionContext, user);
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, user).build());
