@@ -793,7 +793,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-        return createDiscoverableService("ClusterIP", getServicePorts(),
+        return createDiscoverableService("ClusterIP", getServicePorts(), templateServiceLabels,
                 Util.mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), templateServiceAnnotations));
     }
 

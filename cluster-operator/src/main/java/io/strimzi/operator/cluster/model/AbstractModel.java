@@ -370,7 +370,6 @@ public abstract class AbstractModel {
         return getLabelsWithStrimziName(name, additionalLabels).withStrimziDiscovery();
     }
 
-
     /**
      * @return Whether metrics are enabled.
      */
@@ -944,9 +943,8 @@ public abstract class AbstractModel {
                 getSelectorLabels(), annotations);
     }
 
-    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, templateServiceLabels),
-                getSelectorLabels(), annotations);
+    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
+        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, labels), getSelectorLabels(), annotations);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations) {
