@@ -475,13 +475,12 @@ class TopicOperator {
                 action.execute().onComplete(actionResult -> {
                     LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
                     action.result = actionResult;
-
                     String keytag = namespace + ":" + "KafkaTopic" + "/" + key.asKubeName().toString();
                     Optional<Meter> metric = metrics.meterRegistry().getMeters()
                             .stream()
                             .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
                                     meter.getId().getTags().contains(Tag.of("kind", "KafkaTopic")) &&
-                                    meter.getId().getTags().contains(Tag.of("name", action.topic.getMetadata().getName())) &&
+                                    meter.getId().getTags().contains(Tag.of("name",  action.topic == null ? key.asKubeName().toString() : action.topic.getMetadata().getName())) &&
                                     meter.getId().getTags().contains(Tag.of("resource-namespace", namespace))
                             ).findFirst();
                     if (metric.isPresent()) {
