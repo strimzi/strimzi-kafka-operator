@@ -8,6 +8,9 @@ def setupKubernetes() {
 }
 
 def setupShellheck() {
+    // set SElinux to permisive mode
+    sh(script: "sudo setenforce 0")
+
     // setup shellcheck
     sh(script: "${workspace}/.azure/scripts/setup_shellcheck.sh")
 }
