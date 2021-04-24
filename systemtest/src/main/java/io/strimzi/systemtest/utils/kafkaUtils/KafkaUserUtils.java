@@ -47,7 +47,7 @@ public class KafkaUserUtils {
     public static void waitForKafkaUserCreation(String namespaceName, String userName) {
         KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get();
 
-        SecretUtils.waitForSecretReady(userName,
+        SecretUtils.waitForSecretReady(namespaceName, userName,
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get()));
 
         ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, Ready);

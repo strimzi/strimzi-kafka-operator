@@ -40,13 +40,13 @@ public class SecretUtils {
     private SecretUtils() { }
 
     public static void waitForSecretReady(String secretName) {
-        waitForSecretReady(secretName, () -> { });
+        waitForSecretReady(kubeClient().getNamespace(),  secretName, () -> { });
     }
 
-    public static void waitForSecretReady(String secretName, Runnable onTimeout) {
+    public static void waitForSecretReady(String namespaceName, String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Secret {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kubeClient().getSecret(secretName) != null,
+            () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) != null,
             onTimeout);
         LOGGER.info("Secret {} created", secretName);
     }
@@ -142,7 +142,7 @@ public class SecretUtils {
         certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
 
         SecretUtils.createSecretFromFile(certsPaths, name, namespace, secretLabels);
-        waitForSecretReady(name);
+        waitForSecretReady(namespace, name, () -> { });
     }
 
     public static void waitForCertToChange(String originalCert, String secretName) {

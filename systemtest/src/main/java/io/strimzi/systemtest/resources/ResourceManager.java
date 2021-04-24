@@ -324,7 +324,6 @@ public class ResourceManager {
         return true;
     }
 
-
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> status) {
         long resourceTimeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
         return waitForResourceStatus(operation, resource, status, resourceTimeout);
