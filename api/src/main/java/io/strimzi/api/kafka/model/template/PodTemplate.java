@@ -52,6 +52,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private String priorityClassName;
     private String schedulerName;
     private List<HostAlias> hostAliases;
+    private Boolean enableServiceLinks;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata applied to the resource.")
@@ -169,6 +170,16 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     public void setHostAliases(List<HostAlias> hostAliases) {
         this.hostAliases = hostAliases;
+    }
+
+    @Description("Indicates whether information about services should be injected into pod's environment variables.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public Boolean getEnableServiceLinks() {
+        return enableServiceLinks;
+    }
+
+    public void setEnableServiceLinks(Boolean enableServiceLinks) {
+        this.enableServiceLinks = enableServiceLinks;
     }
 
     @Override

@@ -276,6 +276,7 @@ public abstract class AbstractModel {
     protected List<HostAlias> templatePodHostAliases;
     protected List<TopologySpreadConstraint> templatePodTopologySpreadConstraints;
     protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
+    protected Boolean templatePodEnableServiceLinks;
     protected Map<String, String> templateClusterRoleBindingLabels;
     protected Map<String, String> templateClusterRoleBindingAnnotations;
 
@@ -1027,6 +1028,7 @@ public abstract class AbstractModel {
                         .endMetadata()
                         .withNewSpec()
                             .withServiceAccountName(getServiceAccountName())
+                            .withEnableServiceLinks(templatePodEnableServiceLinks)
                             .withAffinity(affinity)
                             .withInitContainers(initContainers)
                             .withContainers(containers)
@@ -1079,6 +1081,7 @@ public abstract class AbstractModel {
                 .withNewSpec()
                     .withRestartPolicy("Never")
                     .withServiceAccountName(getServiceAccountName())
+                    .withEnableServiceLinks(templatePodEnableServiceLinks)
                     .withAffinity(getUserAffinity())
                     .withInitContainers(initContainers)
                     .withContainers(containers)
@@ -1125,6 +1128,7 @@ public abstract class AbstractModel {
                         .withNewSpec()
                             .withAffinity(affinity)
                             .withServiceAccountName(getServiceAccountName())
+                            .withEnableServiceLinks(templatePodEnableServiceLinks)
                             .withInitContainers(initContainers)
                             .withContainers(containers)
                             .withVolumes(volumes)
