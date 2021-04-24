@@ -158,13 +158,14 @@ public class TopicOperatorTest {
                     .withConfig(singletonMap(null, null))
                 .endSpec()
             .build();
+        String errorMessage = "KafkaTopic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null";
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
         Checkpoint async = context.checkpoint();
         topicOperator.onResourceEvent(logContext, kafkaTopic, ADDED).onComplete(ar -> {
             assertFailed(context, ar);
             context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidTopicException.class)));
-            context.verify(() -> assertThat(ar.cause().getMessage(), is("KafkaTopic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null")));
+            context.verify(() -> assertThat(ar.cause().getMessage(), is(errorMessage)));
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
             assertNotReadyStatus(context, new InvalidTopicException(null, ar.cause().getMessage()));
@@ -177,6 +178,13 @@ public class TopicOperatorTest {
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                        .tag("kind", "KafkaTopic")
+                        .tag("name", "invalid")
+                        .tag("resource-namespace", "default-namespace")
+                        .tag("reason", errorMessage)
+                        .gauge().value(), is(0.0));
             });
             async.flag();
 
@@ -334,6 +342,15 @@ public class TopicOperatorTest {
             mockK8s.assertExists(context, resourceName);
             Topic t = TopicSerialization.fromTopicMetadata(topicMetadata);
             mockTopicStore.assertContains(context, t);
+            context.verify(() -> {
+                MeterRegistry registry = metrics.meterRegistry();
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                        .tag("kind", "KafkaTopic")
+                        .tag("name", topicName.toString())
+                        .tag("resource-namespace", "default-namespace")
+                        .gauge().value(), is(1.0));
+            });
             async.flag();
         });
     }
@@ -390,6 +407,12 @@ public class TopicOperatorTest {
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                        .tag("kind", "KafkaTopic")
+                        .tag("name", topicName.toString())
+                        .tag("resource-namespace", "default-namespace")
+                        .gauge().value(), is(1.0));
             });
             async.flag();
         });
@@ -475,6 +498,23 @@ public class TopicOperatorTest {
                 assertSucceeded(context, ar2);
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"), is("baz")));
                 async.flag();
+            });
+
+            context.verify(() -> {
+                MeterRegistry registry = metrics.meterRegistry();
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                        .tag("kind", "KafkaTopic")
+                        .tag("name", topicName.toString())
+                        .tag("resource-namespace", "default-namespace")
+                        .gauge().value(), is(1.0));
             });
             async.flag();
         });
@@ -691,6 +731,12 @@ public class TopicOperatorTest {
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                        .tag("kind", "KafkaTopic")
+                        .tag("name", topicName.toString())
+                        .tag("resource-namespace", "default-namespace")
+                        .gauge().value(), is(0.0));
             });
 
         });
@@ -1010,6 +1056,17 @@ public class TopicOperatorTest {
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"), is("baz")));
                 async.countDown();
             });
+
+            context.verify(() -> {
+                MeterRegistry registry = metrics.meterRegistry();
+
+                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                        .tag("kind", "KafkaTopic")
+                        .tag("name", topicName.toString())
+                        .tag("resource-namespace", "default-namespace")
+                        .gauge().value(), is(1.0));
+            });
+
             async.countDown();
             try {
                 async.await(60, TimeUnit.SECONDS);
@@ -1192,6 +1249,12 @@ public class TopicOperatorTest {
 
             assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
             assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                    .tag("kind", "KafkaTopic")
+                    .tag("name", topicName.toString())
+                    .tag("resource-namespace", "default-namespace")
+                    .gauge().value(), is(1.0));
 
             async.flag();
         })));

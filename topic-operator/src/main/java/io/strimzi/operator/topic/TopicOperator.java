@@ -12,6 +12,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.Meter;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
@@ -39,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -473,6 +475,32 @@ class TopicOperator {
                 action.execute().onComplete(actionResult -> {
                     LOGGER.debug("{}: Executing handler for action {} on topic {}", logContext, action, lockName);
                     action.result = actionResult;
+                    String keytag = namespace + ":" + "KafkaTopic" + "/" + key.asKubeName().toString();
+                    Optional<Meter> metric = metrics.meterRegistry().getMeters()
+                            .stream()
+                            .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
+                                    meter.getId().getTags().contains(Tag.of("kind", "KafkaTopic")) &&
+                                    meter.getId().getTags().contains(Tag.of("name",  action.topic == null ? key.asKubeName().toString() : action.topic.getMetadata().getName())) &&
+                                    meter.getId().getTags().contains(Tag.of("resource-namespace", namespace))
+                            ).findFirst();
+                    if (metric.isPresent()) {
+                        // remove metric so it can be re-added with new tags
+                        metrics.meterRegistry().remove(metric.get().getId());
+                        LOGGER.debug("Removed metric {}.resource.state{{}}", METRICS_PREFIX, keytag);
+                    }
+
+                    if (action.topic != null) {
+                        boolean succeeded = actionResult.succeeded();
+                        Tags metricTags;
+                        metricTags = Tags.of(
+                                Tag.of("kind", action.topic.getKind()),
+                                Tag.of("name", action.topic.getMetadata().getName()),
+                                Tag.of("resource-namespace", namespace),
+                                Tag.of("reason", succeeded ? "none" : actionResult.cause().getMessage() == null ? "unknown error" : actionResult.cause().getMessage()));
+
+                        metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags).set(actionResult.succeeded() ? 1 : 0);
+                        LOGGER.debug("Updated metric " + METRICS_PREFIX + "resource.state{} = {}", metricTags, succeeded ? 1 : 0);
+                    }
                     // Update status with lock held so that event is ignored via statusUpdateGeneration
                     action.updateStatus(logContext).onComplete(statusResult -> {
                         if (statusResult.failed()) {
