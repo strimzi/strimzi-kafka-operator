@@ -58,7 +58,7 @@ public class ClientUtils {
     public static void waitTillContinuousClientsFinish(String producerName, String consumerName, String namespace, int messageCount) {
         LOGGER.info("Waiting till producer {} and consumer {} finish", producerName, consumerName);
         TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(producerName) && kubeClient().namespace(namespace).checkSucceededJobStatus(consumerName));
+            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, producerName, 1) && kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, consumerName, 1));
     }
 
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {

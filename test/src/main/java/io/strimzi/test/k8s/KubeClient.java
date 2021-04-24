@@ -195,13 +195,22 @@ public class KubeClient {
         return client.pods().inNamespace(getNamespace()).withLabels(labelSelector).list().getItems();
     }
 
+    public List<Pod> listPods(String namespaceName, Map<String, String> labelSelector) {
+        return client.pods().inNamespace(namespaceName).withLabels(labelSelector).list().getItems();
+    }
+
     public List<Pod> listPods(String key, String value) {
         return listPods(Collections.singletonMap(key, value));
     }
 
-    public List<Pod> listPods(String clusterName, String key, String value) {
-        return listPods(Collections.singletonMap(key, value)).stream()
+    public List<Pod> listPods(String namespaceName, String clusterName, String key, String value) {
+        return listPods(namespaceName, Collections.singletonMap(key, value)).stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
+    }
+
+    public List<Pod> listPods(String clusterName, String key, String value) {
+        return listPods(kubeClient().getNamespace(), Collections.singletonMap(key, value)).stream()
+        .filter(pod -> pod.getMetadata().getName().startsWith(clusterName)).collect(Collectors.toList());
     }
 
     public List<String> listPodNames(String key, String value) {
@@ -223,6 +232,13 @@ public class KubeClient {
             .collect(Collectors.toList());
     }
 
+    public List<String> listPodNames(String namespaceName, String clusterName, String key, String value) {
+        return listPods(namespaceName, Collections.singletonMap(key, value)).stream()
+            .filter(pod -> pod.getMetadata().getName().startsWith(clusterName))
+            .map(pod -> pod.getMetadata().getName())
+            .collect(Collectors.toList());
+    }
+
     public List<PersistentVolumeClaim> listPersistentVolumeClaims() {
         return client.persistentVolumeClaims().inNamespace(getNamespace()).list().getItems();
     }
@@ -233,6 +249,12 @@ public class KubeClient {
 
     public List<Pod> listPods(String namespaceName) {
         return client.pods().inNamespace(namespaceName).list().getItems();
+    }
+
+    public List<Pod> listPodsByNamespace(String namespaceName, String clusterName) {
+        return client.pods().inNamespace(namespaceName).list().getItems().stream()
+            .filter(pod -> pod.getMetadata().getName().startsWith(clusterName))
+            .collect(Collectors.toList());
     }
 
     /**
@@ -264,7 +286,7 @@ public class KubeClient {
      * Gets pod
      */
     public Pod getPod(String namespaceName, String name) {
-        return client.pods().inNamespace(getNamespace()).withName(name).get();
+        return client.pods().inNamespace(namespaceName).withName(name).get();
     }
 
     public Pod getPod(String name) {
@@ -337,11 +359,19 @@ public class KubeClient {
         return statefulSet(getNamespace(), statefulSetName);
     }
 
+
+    /**
+     * Gets stateful set selectors
+     */
+    public LabelSelector getStatefulSetSelectors(String namespaceName, String statefulSetName) {
+        return client.apps().statefulSets().inNamespace(namespaceName).withName(statefulSetName).get().getSpec().getSelector();
+    }
+
     /**
      * Gets stateful set selectors
      */
     public LabelSelector getStatefulSetSelectors(String statefulSetName) {
-        return client.apps().statefulSets().inNamespace(getNamespace()).withName(statefulSetName).get().getSpec().getSelector();
+        return getStatefulSetSelectors(kubeClient().getNamespace(), statefulSetName);
     }
 
     /**
@@ -561,16 +591,23 @@ public class KubeClient {
     }
 
     public Boolean checkSucceededJobStatus(String jobName) {
-        return checkSucceededJobStatus(jobName, 1);
+        return checkSucceededJobStatus(getNamespace(), jobName, 1);
     }
 
+    public Boolean checkSucceededJobStatus(String namespaceName, String jobName, int expectedSucceededPods) {
+        return getJobStatus(namespaceName, jobName).getSucceeded().equals(expectedSucceededPods);
+    }
     public Boolean checkSucceededJobStatus(String jobName, int expectedSucceededPods) {
-        return getJobStatus(jobName).getSucceeded().equals(expectedSucceededPods);
+        return checkSucceededJobStatus(getNamespace(), jobName, expectedSucceededPods);
     }
 
     // Pods Statuses:  0 Running / 0 Succeeded / 1 Failed
-    public JobStatus getJobStatus(String jobName) {
+    public JobStatus getJobStatus(String namespaceName, String jobName) {
         return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get().getStatus();
+    }
+
+    public JobStatus getJobStatus(String jobName) {
+        return getJobStatus(getNamespace(), jobName);
     }
 
     public JobList getJobList() {

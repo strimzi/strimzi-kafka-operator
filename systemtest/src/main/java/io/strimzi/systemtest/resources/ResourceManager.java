@@ -180,7 +180,6 @@ public class ResourceManager {
                 String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
         }
     }
-
     public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition) {
         assertNotNull(resource);
         assertNotNull(resource.getMetadata());

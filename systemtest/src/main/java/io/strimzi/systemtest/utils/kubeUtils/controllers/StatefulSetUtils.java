@@ -61,7 +61,7 @@ public class StatefulSetUtils {
         LabelSelector selector = null;
         int times = 60;
         do {
-            selector = kubeClient(namespaceName).getStatefulSetSelectors(name);
+            selector = kubeClient(namespaceName).getStatefulSetSelectors(namespaceName, name);
             if (selector == null) {
                 if (times-- == 0) {
                     throw new RuntimeException("Retry failed");
@@ -74,7 +74,7 @@ public class StatefulSetUtils {
             }
         } while (selector == null);
 
-        Map<String, String> map = PodUtils.podSnapshot(selector);
+        Map<String, String> map = PodUtils.podSnapshot(namespaceName, selector);
         if (log) {
             LOGGER.debug("Current snapshot: {}", new TreeMap<>(map));
         }
@@ -164,7 +164,7 @@ public class StatefulSetUtils {
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
 
         LOGGER.info("Waiting for {} Pod(s) of StatefulSet {} to be ready", expectPods, statefulSetName);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getStatefulSetSelectors(statefulSetName), expectPods, true,
+        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getStatefulSetSelectors(namespaceName, statefulSetName), expectPods, true,
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
         LOGGER.info("StatefulSet {} is ready", statefulSetName);
     }
@@ -239,14 +239,14 @@ public class StatefulSetUtils {
         }
     }
 
-    public static void waitForNoRollingUpdate(String statefulSetName, Map<String, String> pods) {
+    public static void waitForNoRollingUpdate(String namespaceName, String statefulSetName, Map<String, String> pods) {
         // alternative to sync hassling AtomicInteger one could use an integer array instead
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
         TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                if (!StatefulSetUtils.ssHasRolled(statefulSetName, pods)) {
+                if (!StatefulSetUtils.ssHasRolled(namespaceName, statefulSetName, pods)) {
                     LOGGER.info("{} pods didn't roll. Remaining seconds for stability: {}", pods.toString(),
                             Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
@@ -255,5 +255,9 @@ public class StatefulSetUtils {
                 }
             }
         );
+    }
+
+    public static void waitForNoRollingUpdate(String statefulSetName, Map<String, String> pods) {
+        waitForNoRollingUpdate(kubeClient().getNamespace(), statefulSetName, pods);
     }
 }

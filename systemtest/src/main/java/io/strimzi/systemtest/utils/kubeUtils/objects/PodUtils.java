@@ -49,7 +49,7 @@ public class PodUtils {
     }
 
     public static String getFirstContainerImageNameFromPod(String namespaceName, String podName) {
-        return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().get(0).getImage();
+        return kubeClient(namespaceName).getPod(namespaceName, podName).getSpec().getContainers().get(0).getImage();
     }
 
     public static String getFirstContainerImageNameFromPod(String podName) {

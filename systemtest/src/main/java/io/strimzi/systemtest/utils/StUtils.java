@@ -234,17 +234,18 @@ public class StUtils {
      * 3. replace everything from beginning to the first proper JSON object with `{`- by {@link #ALL_BEFORE_JSON_PATTERN}
      * 4. also add `[` to beginning and `]` to the end of String to create proper JsonArray
      * 5. try to parse the JsonArray
+     * @param namespaceName Namespace name
      * @param pods snapshot of pods to be checked
      * @param containerName name of container from which to take the log
      */
-    public static void checkLogForJSONFormat(Map<String, String> pods, String containerName) {
+    public static void checkLogForJSONFormat(String namespaceName, Map<String, String> pods, String containerName) {
         //this is only for decrease the number of records - kafka have record/line, operators record/11lines
         String tail = "--tail=" + (containerName.contains("operator") ? "100" : "10");
 
         TestUtils.waitFor("for JSON log in " + pods, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
-                String log = cmdKubeClient().execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
+                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
 
                 // remove incomplete JSON from the end
                 int lastBracket = log.lastIndexOf("}");
@@ -261,17 +262,21 @@ public class StUtils {
 
                 try {
                     new JsonArray(log);
-                    LOGGER.info("JSON format logging successfully set for {} - {}", podName, containerName);
+                    LOGGER.info("JSON format logging successfully set for {} - {} in namespace {}", podName, containerName, namespaceName);
                     isJSON = true;
                 } catch (Exception e) {
                     LOGGER.info(log);
-                    LOGGER.info("Failed to set JSON format logging for {} - {}", podName, containerName, e);
+                    LOGGER.info("Failed to set JSON format logging for {} - {} in namespace {}", podName, containerName, namespaceName, e);
                     isJSON = false;
                     break;
                 }
             }
             return isJSON;
         });
+    }
+
+    public static void checkLogForJSONFormat(Map<String, String> pods, String containerName) {
+        checkLogForJSONFormat(kubeClient().getNamespace(), pods, containerName);
     }
 
     /**
