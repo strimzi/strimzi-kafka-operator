@@ -769,10 +769,6 @@ public class KubeClient {
         return client.pods().inNamespace(getNamespace()).withName(podName).inContainer(containerName).getLog();
     }
 
-    public String logsInSpecificNamespace(String namespaceName, String podName, String containerName) {
-        return client.pods().inNamespace(namespaceName).withName(podName).inContainer(containerName).getLog();
-    }
-
     public String logsInSpecificNamespace(String namespaceName, String podName) {
         return client.pods().inNamespace(namespaceName).withName(podName).getLog();
     }
