@@ -47,7 +47,7 @@ spec:
   versions:
   - name: v1beta2
     served: true
-    storage: false
+    storage: true
     schema:
       openAPIV3Schema:
         type: object
@@ -1204,7 +1204,7 @@ spec:
             description: The status of Kafka MirrorMaker.
   - name: v1beta1
     served: true
-    storage: true
+    storage: false
     schema:
       openAPIV3Schema:
         type: object

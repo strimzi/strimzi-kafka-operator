@@ -43,8 +43,8 @@ import static java.util.Collections.unmodifiableList;
                 group = Kafka.RESOURCE_GROUP,
                 scope = Kafka.SCOPE,
                 versions = {
-                        @Crd.Spec.Version(name = Kafka.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
+                        @Crd.Spec.Version(name = Kafka.V1BETA2, served = true, storage = true),
+                        @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = false),
                         @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
                 },
                 subresources = @Crd.Spec.Subresources(
