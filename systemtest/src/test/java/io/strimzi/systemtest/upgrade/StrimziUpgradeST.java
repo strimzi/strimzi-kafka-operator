@@ -191,7 +191,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     }
 
     private JsonObject buildDataForUpgradeAcrossVersions() throws IOException {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion latestKafkaSupported = sortedVersions.get(sortedVersions.size() - 1);
 
         JsonArray upgradeJson = readUpgradeJson(UPGRADE_JSON_FILE);
@@ -224,7 +224,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     }
 
     private JsonObject getDataForStartUpgrade(JsonArray upgradeJson) throws IOException {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
         List<String> versions = sortedVersions.stream().map(item -> item.version()).collect(Collectors.toList());
 
         Collections.reverse(upgradeJson.getList());

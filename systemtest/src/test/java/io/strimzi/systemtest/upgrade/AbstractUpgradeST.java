@@ -95,7 +95,7 @@ public class AbstractUpgradeST extends AbstractST {
         JsonArray upgradeData = readUpgradeJson(UPGRADE_JSON_FILE);
         List<Arguments> parameters = new LinkedList<>();
 
-        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
 
         upgradeData.forEach(jsonData -> {
@@ -120,7 +120,7 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected static Map<String, JsonObject> buildMidStepUpgradeData(JsonObject jsonData) {
-        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
 
         Map<String, JsonObject> steps = new HashMap<>();
@@ -207,7 +207,7 @@ public class AbstractUpgradeST extends AbstractST {
         kafkaYaml = new File(examplesPath + "/kafka/kafka-persistent.yaml");
         LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
         // Change kafka version of it's empty (null is for remove the version)
-        String defaultValueForVersions = kafkaVersionFromCR == null ? null : kafkaVersionFromCR.substring(0, 3);
+        String defaultValueForVersions = kafkaVersionFromCR == null ? null : TestKafkaVersion.getSpecificVersion(kafkaVersionFromCR).messageVersion();
         cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfiguration(kafkaYaml, kafkaVersionFromCR, defaultValueForVersions, defaultValueForVersions));
 
         kafkaUserYaml = new File(examplesPath + "/user/kafka-user.yaml");
@@ -412,7 +412,15 @@ public class AbstractUpgradeST extends AbstractST {
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion)).contains(clusterName)) {
             // Deploy a Kafka cluster
             if ("HEAD".equals(testParameters.getString("fromVersion"))) {
-                resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
+                resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+                    .editSpec()
+                        .editKafka()
+                            .withVersion(kafkaVersion)
+                            .addToConfig("log.message.format.version", TestKafkaVersion.getSpecificVersion(kafkaVersion).messageVersion())
+                            .addToConfig("inter.broker.protocol.version", TestKafkaVersion.getSpecificVersion(kafkaVersion).protocolVersion())
+                        .endKafka()
+                    .endSpec()
+                    .build());
             } else {
                 kafkaYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
                 LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());

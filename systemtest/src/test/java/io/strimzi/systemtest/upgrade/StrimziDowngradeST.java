@@ -55,10 +55,10 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
+        // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
+        // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
+        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getString("deployKafkaVersion"), NAMESPACE);
         logPodImages(clusterName);
-        //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresBeforeOperatorDowngrade"), testParameters, clusterName, extensionContext);
         // Downgrade CO
         changeClusterOperator(testParameters, NAMESPACE);
         // Wait for Kafka cluster rolling update

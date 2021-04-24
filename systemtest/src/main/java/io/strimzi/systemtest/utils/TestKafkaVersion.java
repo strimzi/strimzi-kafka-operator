@@ -28,20 +28,21 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     private static final Logger LOGGER = LogManager.getLogger(TestKafkaVersion.class);
     private static List<TestKafkaVersion> kafkaVersions;
+    private static List<TestKafkaVersion> supportedKafkaVersions;
 
     static {
         try {
-            List<TestKafkaVersion> tmpKafkaVersions = parseKafkaVersions(TestUtils.USER_PATH + "/../kafka-versions.yaml");
-            List<TestKafkaVersion> supportedKafkaVersions = tmpKafkaVersions.stream().filter(TestKafkaVersion::isSupported).collect(Collectors.toList());
+            kafkaVersions = parseKafkaVersions(TestUtils.USER_PATH + "/../kafka-versions.yaml");
+            supportedKafkaVersions = kafkaVersions.stream().filter(TestKafkaVersion::isSupported).collect(Collectors.toList());
+            Collections.sort(kafkaVersions);
             Collections.sort(supportedKafkaVersions);
 
-            kafkaVersions = supportedKafkaVersions;
-
-            if (kafkaVersions == null || kafkaVersions.size() == 0) {
+            if (supportedKafkaVersions == null || supportedKafkaVersions.size() == 0) {
                 throw new Exception("There is no one Kafka version supported inside " + TestUtils.USER_PATH + "/../kafka-versions.yaml file");
             }
 
-            LOGGER.info("These are following supported Kafka versions:\n{}", kafkaVersions.toString());
+            LOGGER.debug("These are following Kafka versions:\n{}", kafkaVersions.toString());
+            LOGGER.debug("These are following supported Kafka versions:\n{}", supportedKafkaVersions.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -175,9 +176,14 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
         return kafkaVersions;
     }
 
+    public static List<TestKafkaVersion> getSupportedKafkaVersions() {
+        return supportedKafkaVersions;
+    }
+
     public static List<TestKafkaVersion> getKafkaVersions() {
         return kafkaVersions;
     }
+
 
     /**
      * Parse the version information present in the {@code /kafka-versions} classpath resource and return a map
@@ -195,5 +201,10 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     public static boolean containsVersion(String kafkaVersion) {
         return kafkaVersions.stream().map(item -> item.version()).collect(Collectors.toList()).contains(kafkaVersion);
+    }
+
+    public static TestKafkaVersion getSpecificVersion(String kafkaVersion) {
+        // One specific version will always be only once in the list
+        return kafkaVersions.stream().filter(it -> it.version.equals(kafkaVersion)).collect(Collectors.toList()).get(0);
     }
 }
