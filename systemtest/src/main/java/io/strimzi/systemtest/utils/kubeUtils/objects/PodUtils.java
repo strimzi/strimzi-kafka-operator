@@ -305,7 +305,7 @@ public class PodUtils {
             LOGGER.info("Waiting for Pod label {} change to {}", labelKey, null);
             TestUtils.waitFor("Pod label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
-                    kubeClient(namespaceName).getPod(podName, namespaceName).getMetadata().getLabels().get(labelKey) == null
+                    kubeClient(namespaceName).getPod(namespaceName, podName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("Pod label {} changed to {}", labelKey, null);
         }

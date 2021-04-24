@@ -242,7 +242,7 @@ public class StatefulSetUtils {
             LOGGER.info("Waiting for StatefulSet label {} change to {}", labelKey, null);
             TestUtils.waitFor("Waiting for StatefulSet label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
-                    kubeClient(namespaceName).getStatefulSet(statefulSetName, namespaceName).getMetadata().getLabels().get(labelKey) == null
+                    kubeClient(namespaceName).getStatefulSet(namespaceName, statefulSetName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("StatefulSet label {} change to {}", labelKey, null);
         }
