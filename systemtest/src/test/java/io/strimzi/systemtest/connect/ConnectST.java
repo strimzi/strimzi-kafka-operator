@@ -104,7 +104,6 @@ class ConnectST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);
     public static final String NAMESPACE = "connect-cluster-test";
 
-    private static final String CONNECT_TOPIC_NAME = "connect-topic-example";
     private static final String KAFKA_CLIENTS_NAME = "shared-" +  Constants.KAFKA_CLIENTS;
 
     @ParallelNamespaceTest
