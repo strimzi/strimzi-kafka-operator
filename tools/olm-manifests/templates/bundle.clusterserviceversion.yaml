@@ -346,7 +346,7 @@ metadata:
     categories: Streaming & Messaging
     certified: 'false'
     containerImage: quay.io/strimzi/operator@sha256:0e37f671e6d489c3e56ffb8f51f19a2a014b2cb3f57eafcc5e2931090932e725
-    createdAt: 2021-03-23 13:13:13
+    createdAt: placeholder
     description: Strimzi provides a way to run an Apache Kafka cluster on Kubernetes
       or OpenShift in various deployment configurations.
     repository: https://github.com/strimzi/strimzi-kafka-operator
