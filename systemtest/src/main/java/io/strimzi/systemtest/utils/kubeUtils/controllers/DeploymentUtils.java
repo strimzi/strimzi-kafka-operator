@@ -208,20 +208,25 @@ public class DeploymentUtils {
 
     /**
      * Wait until the given Deployment has been deleted.
+     * @param namespaceName Namespace name
      * @param name The name of the Deployment.
      */
-    public static void waitForDeploymentDeletion(String name) {
+    public static void waitForDeploymentDeletion(String namespaceName, String name) {
         LOGGER.debug("Waiting for Deployment {} deletion", name);
         TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
-                if (kubeClient().getDeployment(name) == null) {
+                if (kubeClient(namespaceName).getDeployment(namespaceName, name) == null) {
                     return true;
                 } else {
                     LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
-                    cmdKubeClient().deleteByName(Constants.DEPLOYMENT, name);
+                    cmdKubeClient(namespaceName).deleteByName(Constants.DEPLOYMENT, name);
                     return false;
                 }
             });
         LOGGER.debug("Deployment {} was deleted", name);
+    }
+
+    public static void waitForDeploymentDeletion(String name) {
+        waitForDeploymentDeletion(kubeClient().getNamespace(), name);
     }
 }
