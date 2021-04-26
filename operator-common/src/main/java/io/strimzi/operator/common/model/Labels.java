@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -164,10 +165,11 @@ public class Labels {
         Map<String, String> additionalLabels = resource.getMetadata().getLabels();
 
         if (additionalLabels != null) {
+            Pattern exclusionPattern = Pattern.compile(STRIMZI_LABELS_EXCLUSION_PATTERN);
             additionalLabels = additionalLabels
                     .entrySet()
                     .stream()
-                    .filter(entryset -> !entryset.getKey().matches(STRIMZI_LABELS_EXCLUSION_PATTERN))
+                    .filter(entryset -> !exclusionPattern.matcher(entryset.getKey()).matches())
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 

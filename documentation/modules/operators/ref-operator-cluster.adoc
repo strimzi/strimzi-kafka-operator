@@ -69,6 +69,17 @@ env:
     value: label1=value1,label2=value2
 ----
 
+`STRIMZI_LABELS_EXCLUSION_PATTERN`:: Optional, default regex pattern is `^app.kubernetes.io/(?!part-of).*`.
+Specifies regex exclusion pattern used to filter labels propagation from the main custom resource to its subresources.
+The labels exclusion filter is not applied to labels in template sections such as `spec.kafka.template.pod.metadata.labels`.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_LABELS_EXCLUSION_PATTERN
+    value: "^key1.*"
+----
+
 `STRIMZI_KAFKA_IMAGES`:: Required.
 This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
