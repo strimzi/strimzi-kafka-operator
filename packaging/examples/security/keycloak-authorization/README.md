@@ -1,9 +1,11 @@
 # Keycloak authorization example
 
-This folder contains an example of Strimzi custom resource with configured `keycloak` authorization and a corresponding `oauth` authentication,
-and a Keycloak realm export that should be imported into your Keycloak instance to support the example.
+This folder contains an example `Kafka` custom resource configured for OAuth 2.0 token-based authorization using Keycloak. The example resource is configured with: 
+- `keycloak` authorization 
+- the corresponding `oauth` authentication
+The folder also contains a Keycloak realm export to import into your Keycloak instance to support the example.
 
-Full example instructions are available in [Strimzi Documentation](https://strimzi.io/docs/operators/in-development/using.html#con-oauth-authorization-keycloak-example).
+Full instructions for the example are available in the [Strimzi Documentation](https://strimzi.io/docs/operators/in-development/using.html#con-oauth-authorization-keycloak-example).
 
 * [kafka-authz-realm.json](./kafka-authz-realm.json)
     * The Keycloak realm export file
