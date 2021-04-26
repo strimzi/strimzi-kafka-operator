@@ -509,7 +509,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             return Future.succeededFuture();
                         } else {
                             log.warn("Build {} completed successfully. But the new container image was not found.", buildState.currentBuildName);
-                            return Future.failedFuture("The Kafka Connect build " + buildState.currentBuildName + " completed, but the new container image was not found");
+                            return Future.failedFuture("The Kafka Connect build completed, but the new container image was not found.");
                         }
                     } else {
                         // Build failed. If the Status exists, we try to provide more detailed information
@@ -519,7 +519,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             log.warn("Build {} failed for unknown reason", buildState.currentBuildName);
                         }
 
-                        return Future.failedFuture("The Kafka Connect build " + buildState.currentBuildName + " failed");
+                        return Future.failedFuture("The Kafka Connect build failed.");
                     }
                 })
                 .compose(ignore -> podOperator.reconcile(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
