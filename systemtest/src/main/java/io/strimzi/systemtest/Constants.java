@@ -54,6 +54,8 @@ public interface Constants {
     long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
     long CC_LOG_CONFIG_RELOAD = Duration.ofSeconds(5).toMillis();
 
+    long SYNC_POINT_TIMEOUT = Duration.ofMinutes(15).toMillis();
+
     // Keycloak
     long KEYCLOAK_DEPLOYMENT_POLL = Duration.ofSeconds(5).toMillis();
     long KEYCLOAK_DEPLOYMENT_TIMEOUT = Duration.ofMinutes(10).toMillis();
@@ -62,6 +64,7 @@ public interface Constants {
     int GLOBAL_STABILITY_OFFSET_COUNT = 20;
     // it is replacement instead of checking logs for reconciliation using dynamic waiting on some change for some period of time
     int GLOBAL_RECONCILIATION_COUNT = (int) ((RECONCILIATION_INTERVAL / GLOBAL_POLL_INTERVAL) + GLOBAL_STABILITY_OFFSET_COUNT);
+
 
     /**
      * Constants for Kafka clients labels

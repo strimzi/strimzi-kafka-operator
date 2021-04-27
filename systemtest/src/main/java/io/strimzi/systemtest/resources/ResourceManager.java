@@ -73,14 +73,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     "checkstyle:ClassFanOutComplexity",
     "checkstyle:ClassDataAbstractionCoupling"})
 @SuppressFBWarnings({"MS_MUTABLE_COLLECTION_PKGPROTECT", "MS_MUTABLE_COLLECTION"})
-public class ResourceManager {
+public class ResourceManager<T extends HasMetadata> {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
 
     public static final String STRIMZI_PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
     public static final long CR_CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
-    public static final Map<String, Stack<ThrowableRunner>> STORED_RESOURCES = new LinkedHashMap<>();
+    public static final Map<String, Stack<ResourceItem>> STORED_RESOURCES = new LinkedHashMap<>();
 
     private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
     private static ResourceManager instance;
@@ -150,7 +150,11 @@ public class ResourceManager {
 
             synchronized (this) {
                 STORED_RESOURCES.computeIfAbsent(testContext.getDisplayName(), k -> new Stack<>());
-                STORED_RESOURCES.get(testContext.getDisplayName()).push(() -> deleteResource(resource));
+                STORED_RESOURCES.get(testContext.getDisplayName()).push(
+                    new ResourceItem<T>(
+                        () -> deleteResource(resource),
+                        resource
+                    ));
             }
         }
 
@@ -208,6 +212,22 @@ public class ResourceManager {
         return resourceReady[0];
     }
 
+    /**
+     * Synchronizing all resources which are inside specific extension context.
+     * @param testContext context of the test case
+     * @param <T> type of the resource which inherits from HasMetadata f.e Kafka, KafkaConnect, Pod, Deployment etc..
+     */
+    public final <T extends HasMetadata> void synchronizeResources(ExtensionContext testContext) {
+        Stack<ResourceItem> resources = STORED_RESOURCES.get(testContext.getDisplayName());
+
+        // sync all resources
+        for (ResourceItem resource : resources) {
+            ResourceType<T> type = findResourceType((T) resource.getResource());
+
+            waitResourceCondition((T) resource.getResource(), type::waitForReadiness);
+        }
+    }
+
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 
     public static <T extends HasMetadata> String resourceToString(T resource) {
@@ -244,7 +264,7 @@ public class ResourceManager {
             LOGGER.info("In context {} is everything deleted.", testContext.getDisplayName());
         }
         while (STORED_RESOURCES.containsKey(testContext.getDisplayName()) && !STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
-            STORED_RESOURCES.get(testContext.getDisplayName()).pop().run();
+            STORED_RESOURCES.get(testContext.getDisplayName()).pop().getThrowableRunner().run();
         }
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         STORED_RESOURCES.remove(testContext.getDisplayName());
