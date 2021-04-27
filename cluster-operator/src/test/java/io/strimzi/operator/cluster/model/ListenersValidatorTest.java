@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListenersValidatorTest {
@@ -765,7 +766,7 @@ public class ListenersValidatorTest {
         assertThat(exception.getMessage(), allOf(
                 containsString("listener listener1: At least one of 'enablePlain', 'enableOauthBearer' has to be set to 'true'")));
 
-        // enable plain
+        // enable plain with neither introspectionEndpointUri nor jwksEndpointUri set
         authBuilder.withEnablePlain(true);
         listener = listenerBuilder.withAuth(authBuilder.build())
                 .build();
@@ -773,7 +774,15 @@ public class ListenersValidatorTest {
 
         exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(3, listeners2));
         assertThat(exception.getMessage(), allOf(
-                containsString("listener listener1: When 'enablePlain' is 'true' the 'tokenEndpointUri' has to be specified.")));
+                containsString("listener listener1: Introspection endpoint URI or JWKS endpoint URI has to be specified")));
+
+        // enable plain with jwksEndpointUri set but tokenEndpointUri not set
+        authBuilder.withJwksEndpointUri("http://localhost:8080/jwks").withCheckIssuer(false);
+        listener = listenerBuilder.withAuth(authBuilder.build())
+                .build();
+        List<GenericKafkaListener> listeners3 = asList(listener);
+
+        assertDoesNotThrow(() -> ListenersValidator.validate(3, listeners3));
     }
 
     @Test
