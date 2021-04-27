@@ -86,7 +86,7 @@ public class Crds {
             group = KafkaConnect.RESOURCE_GROUP;
             kind = KafkaConnect.RESOURCE_KIND;
             listKind = KafkaConnect.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaConnect.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaConnectS2I.class)) {
             scope = KafkaConnectS2I.SCOPE;
@@ -95,7 +95,7 @@ public class Crds {
             group = KafkaConnectS2I.RESOURCE_GROUP;
             kind = KafkaConnectS2I.RESOURCE_KIND;
             listKind = KafkaConnectS2I.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaConnectS2I.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaTopic.class)) {
             scope = KafkaTopic.SCOPE;
@@ -104,7 +104,7 @@ public class Crds {
             group = KafkaTopic.RESOURCE_GROUP;
             kind = KafkaTopic.RESOURCE_KIND;
             listKind = KafkaTopic.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaTopic.VERSIONS;
         } else if (cls.equals(KafkaUser.class)) {
             scope = KafkaUser.SCOPE;
             plural = KafkaUser.RESOURCE_PLURAL;
@@ -112,7 +112,7 @@ public class Crds {
             group = KafkaUser.RESOURCE_GROUP;
             kind = KafkaUser.RESOURCE_KIND;
             listKind = KafkaUser.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaUser.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaMirrorMaker.class)) {
             scope = KafkaMirrorMaker.SCOPE;
@@ -121,7 +121,7 @@ public class Crds {
             group = KafkaMirrorMaker.RESOURCE_GROUP;
             kind = KafkaMirrorMaker.RESOURCE_KIND;
             listKind = KafkaMirrorMaker.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaMirrorMaker.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaBridge.class)) {
             scope = KafkaBridge.SCOPE;
@@ -130,7 +130,7 @@ public class Crds {
             group = KafkaBridge.RESOURCE_GROUP;
             kind = KafkaBridge.RESOURCE_KIND;
             listKind = KafkaBridge.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaBridge.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaConnector.class)) {
             scope = KafkaConnector.SCOPE;
@@ -139,7 +139,7 @@ public class Crds {
             group = KafkaConnector.RESOURCE_GROUP;
             kind = KafkaConnector.RESOURCE_KIND;
             listKind = KafkaConnector.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaConnector.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaMirrorMaker2.class)) {
             scope = KafkaMirrorMaker2.SCOPE;
@@ -148,7 +148,7 @@ public class Crds {
             group = KafkaMirrorMaker2.RESOURCE_GROUP;
             kind = KafkaMirrorMaker2.RESOURCE_KIND;
             listKind = KafkaMirrorMaker2.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaMirrorMaker2.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaRebalance.class)) {
             scope = KafkaRebalance.SCOPE;
@@ -157,7 +157,7 @@ public class Crds {
             group = KafkaRebalance.RESOURCE_GROUP;
             kind = KafkaRebalance.RESOURCE_KIND;
             listKind = KafkaRebalance.RESOURCE_LIST_KIND;
-            versions = Kafka.VERSIONS;
+            versions = KafkaRebalance.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else {
             throw new RuntimeException();
