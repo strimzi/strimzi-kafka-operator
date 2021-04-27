@@ -142,11 +142,9 @@ public class ResourceManager {
                 final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
                 LOGGER.info("Using namespace: {}", namespace);
                 resource.getMetadata().setNamespace(namespace);
-                type.create(resource);
-            } else {
-                // otherwise use resource namespace
-                type.create(resource);
             }
+
+            type.create(resource);
 
             synchronized (this) {
                 STORED_RESOURCES.computeIfAbsent(testContext.getDisplayName(), k -> new Stack<>());
