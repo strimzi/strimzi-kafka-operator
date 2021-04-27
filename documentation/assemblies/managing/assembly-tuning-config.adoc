@@ -1,0 +1,24 @@
+// This assembly is included in the following assemblies:
+//
+// using/assembly-management-tasks.adoc
+
+[id='assembly-tuning-config-{context}']
+= Tuning Kafka configuration
+
+Use configuration properties to optimize the performance of Kafka brokers, producers and consumers.
+
+A minimum set of configuration properties is required,
+but you can add or adjust properties to change how producers and consumers interact with Kafka brokers.
+For example, you can tune latency and throughput of messages so that clients can respond to data in real time.
+
+You might start by analyzing metrics to gauge where to make your initial configurations,
+then make incremental changes and further comparisons of metrics until you have the configuration you need.
+
+[role="_additional-resources"]
+.Additional resources
+* {kafkaDoc}
+
+//Tips to optimize the performance of brokers, and producer and consumer clients
+include::modules/con-broker-config-properties.adoc[leveloffset=+1]
+include::modules/con-producer-config-properties.adoc[leveloffset=+1]
+include::modules/con-consumer-config-properties.adoc[leveloffset=+1]
