@@ -54,4 +54,14 @@ public class NodeOperatorTest extends AbstractNonNamespacedResourceOperatorTest<
                 .endMetadata()
                 .build();
     }
+
+    @Override
+    protected Node modifiedResource() {
+        return new NodeBuilder()
+                .withNewMetadata()
+                    .withName(RESOURCE_NAME)
+                    .withLabels(singletonMap("foo2", "bar2"))
+                .endMetadata()
+                .build();
+    }
 }

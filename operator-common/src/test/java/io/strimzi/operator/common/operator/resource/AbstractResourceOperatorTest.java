@@ -70,6 +70,11 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     protected abstract T resource();
 
     /**
+     * Get a modified test resource to test how are changes handled
+     */
+    protected abstract T modifiedResource();
+
+    /**
      * Configure the given {@code mockClient} to return the given {@code op}
      * that's appropriate for the kind of resource being tests.
      */
@@ -84,11 +89,46 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     }
 
     @Test
-    public void testCreateWhenExistsIsAPatch(VertxTestContext context) {
-        createWhenExistsIsAPatch(context, true);
+    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
+        testCreateWhenExistsWithChangeIsAPatch(context, true);
     }
 
-    public void createWhenExistsIsAPatch(VertxTestContext context, boolean cascade) {
+    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context, boolean cascade) {
+        T resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
+        when(mockResource.patch(any())).thenReturn(resource);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+
+        Checkpoint async = context.checkpoint();
+        op.createOrUpdate(modifiedResource()).onComplete(context.succeeding(rr -> context.verify(() -> {
+            verify(mockResource).get();
+            verify(mockResource).patch(any());
+            verify(mockResource, never()).create(any());
+            verify(mockResource, never()).create();
+            verify(mockResource, never()).createOrReplace(any());
+            verify(mockCms, never()).createOrReplace(any());
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context) {
+        testCreateWhenExistsWithoutChangeIsNotAPatch(context, true);
+    }
+
+    public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -109,7 +149,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
-            verify(mockResource).patch(any());
+            verify(mockResource, never()).patch(any());
             verify(mockResource, never()).create(any());
             verify(mockResource, never()).create();
             verify(mockResource, never()).createOrReplace(any());

@@ -62,4 +62,11 @@ public class StorageClassOperatorTest extends AbstractNonNamespacedResourceOpera
                 .withParameters(singletonMap("type", "gp2"))
             .build();
     }
+
+    @Override
+    protected StorageClass modifiedResource() {
+        return new StorageClassBuilder(resource())
+                .withParameters(singletonMap("type", "st1"))
+            .build();
+    }
 }

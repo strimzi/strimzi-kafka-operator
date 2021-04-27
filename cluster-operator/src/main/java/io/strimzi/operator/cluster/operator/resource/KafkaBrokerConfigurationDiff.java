@@ -21,7 +21,7 @@ import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
+import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -39,7 +39,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
  *  3b. If entry was removed from desired, add it to the diff with null value.
  *  3c. If custom entry was removed, delete property
  */
-public class KafkaBrokerConfigurationDiff extends AbstractResourceDiff {
+public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
 
     private static final Logger log = LogManager.getLogger(KafkaBrokerConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;

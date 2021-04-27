@@ -63,4 +63,15 @@ public class BuildOperatorTest extends AbstractResourceOperatorTest<OpenShiftCli
                 .endSpec()
                 .build();
     }
+
+    @Override
+    protected Build modifiedResource() {
+        return new BuildBuilder(resource())
+                .editSpec()
+                    .editSource()
+                        .withNewDockerfile("FROM centos:8\nUSER 1001")
+                    .endSource()
+                .endSpec()
+                .build();
+    }
 }
