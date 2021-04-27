@@ -396,7 +396,7 @@ public class KubeClient {
     }
 
     public LabelSelector getStatefulSetSelectors(String statefulSetName) {
-        return getDeploymentSelectors(kubeClient().getNamespace(), statefulSetName);
+        return getStatefulSetSelectors(getNamespace(), statefulSetName);
     }
 
     /**
