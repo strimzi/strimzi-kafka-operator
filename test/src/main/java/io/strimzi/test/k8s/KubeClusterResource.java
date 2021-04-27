@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
@@ -216,6 +217,32 @@ public class KubeClusterResource {
             deploymentResources.add(resource);
             cmdKubeClient().namespace(getNamespace()).create(resource);
         }
+    }
+
+    /**
+     * Waits for a CRD resource to be ready
+     *
+     * @param name  Name of the CRD to wait for
+     */
+    public void waitForCustomResourceDefinition(String name) {
+        cmdKubeClient().waitFor("crd", name, crd -> {
+            JsonNode json = (JsonNode) crd;
+            if (json != null
+                    && json.hasNonNull("status")
+                    && json.get("status").hasNonNull("conditions")
+                    && json.get("status").get("conditions").isArray()) {
+                for (JsonNode condition : json.get("status").get("conditions")) {
+                    if ("Established".equals(condition.get("type").asText())
+                            && "True".equals(condition.get("status").asText()))   {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            return false;
+        });
     }
 
     /**

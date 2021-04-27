@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
@@ -23,6 +22,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.kafka.api.conversion.converter.MultipartConversions;
+import io.strimzi.kafka.api.conversion.utils.LegacyCrds;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -66,7 +66,7 @@ public class ConvertResourceCommandIT {
 
     @Test
     public void testNamedConversion() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -143,7 +143,7 @@ public class ConvertResourceCommandIT {
 
     @Test
     public void testMultiResourceConversion() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -228,7 +228,7 @@ public class ConvertResourceCommandIT {
 
     @Test
     public void testMultipleResourcesConversion() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -306,8 +306,8 @@ public class ConvertResourceCommandIT {
 
     @Test
     public void testMultipleKindsConversion() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaOp = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
-        MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> connectOp = Crds.kafkaConnectS2iOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaOp = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> connectOp = LegacyCrds.kafkaConnectS2iOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -406,7 +406,7 @@ public class ConvertResourceCommandIT {
 
     @Test
     public void testFailingTopicOperatorConversion() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -497,7 +497,7 @@ public class ConvertResourceCommandIT {
 
     @Test
     public void testFailingAffinityConversion() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Affinity affinity = new AffinityBuilder()
@@ -580,7 +580,7 @@ public class ConvertResourceCommandIT {
 
     @Test
     public void testFailingLoadBalancerSourceRangesConversion() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -653,8 +653,8 @@ public class ConvertResourceCommandIT {
 
     @Test
     public void testAllKindsConversion() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaOp = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
-        MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> connectOp = Crds.kafkaConnectS2iOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaOp = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> connectOp = LegacyCrds.kafkaConnectS2iOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -755,7 +755,7 @@ public class ConvertResourceCommandIT {
     public void tesAllNamespacesConversion() {
         String namespace2 = NAMESPACE + "2";
         CLUSTER.createNamespace(namespace2);
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -836,7 +836,7 @@ public class ConvertResourceCommandIT {
     @Test
     public void testWrongNamespaceOrKindConversion() {
         CLUSTER.createNamespace(NAMESPACE + "-other");
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()

@@ -9,12 +9,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
+import io.strimzi.kafka.api.conversion.utils.LegacyCrds;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,8 +64,8 @@ public class FullUpgradeLifecycleIT {
      */
     @Test
     public void testFullLifecycleAsExpected() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta2 = Crds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta1 = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta2 = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta1 = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -160,8 +160,8 @@ public class FullUpgradeLifecycleIT {
      */
     @Test
     public void testFullLifecycleOnSecondTry() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta2 = Crds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta1 = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta2 = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> opV1Beta1 = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()

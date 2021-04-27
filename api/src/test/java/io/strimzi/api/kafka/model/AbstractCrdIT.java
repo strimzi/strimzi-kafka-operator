@@ -4,7 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
@@ -120,27 +119,6 @@ public abstract class AbstractCrdIT implements TestSeparator {
                     containsStringIgnoringCase("missing required field \"" + requiredProperty + "\"")
             ));
         }
-    }
-
-    protected void waitForCrd(String resource, String name) {
-        cluster.cmdClient().waitFor(resource, name, crd -> {
-            JsonNode json = (JsonNode) crd;
-            if (json != null
-                    && json.hasNonNull("status")
-                    && json.get("status").hasNonNull("conditions")
-                    && json.get("status").get("conditions").isArray()) {
-                for (JsonNode condition : json.get("status").get("conditions")) {
-                    if ("Established".equals(condition.get("type").asText())
-                            && "True".equals(condition.get("status").asText()))   {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
-            return false;
-        });
     }
 
     @BeforeEach

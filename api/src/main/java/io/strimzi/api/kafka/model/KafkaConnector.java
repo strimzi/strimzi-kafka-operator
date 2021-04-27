@@ -95,12 +95,12 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
     public static final String CONSUMED_VERSION = V1BETA2;
     public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1ALPHA1));
     public static final String SCOPE = "Namespaced";
-    public static final String CRD_API_VERSION = Constants.V1BETA1_API_VERSION;
     public static final String RESOURCE_PLURAL = "kafkaconnectors";
     public static final String RESOURCE_SINGULAR = "kafkaconnector";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_KIND = "KafkaConnector";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
+    public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kctr";
     public static final String SPEC_REPLICAS_PATH = ".spec.tasksMax";
     public static final String STATUS_REPLICAS_PATH = ".status.tasksMax";
