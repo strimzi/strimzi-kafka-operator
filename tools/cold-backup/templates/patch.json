@@ -3,7 +3,7 @@
         "containers": [
             {
                 "name": "dummy",
-                "image": "quay.io/centos/centos:8",
+                "image": "centos:7",
                 "command": [
                     "/bin/bash",
                     "-c",
