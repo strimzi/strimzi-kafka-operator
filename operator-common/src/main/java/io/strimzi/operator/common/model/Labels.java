@@ -97,8 +97,8 @@ public class Labels {
     /**
      * Used to exclude parent CR's labels from being assigned to provisioned subresources
      */
-    public static final String STRIMZI_LABELS_EXCLUSION_PATTERN = System.getenv()
-            .getOrDefault("STRIMZI_LABELS_EXCLUSION_PATTERN", "^app.kubernetes.io/(?!part-of).*");
+    public static final Pattern STRIMZI_LABELS_EXCLUSION_PATTERN = Pattern.compile(System.getenv()
+            .getOrDefault("STRIMZI_LABELS_EXCLUSION_PATTERN", "^app.kubernetes.io/(?!part-of).*"));
 
     /**
      * The empty set of labels.
@@ -165,11 +165,10 @@ public class Labels {
         Map<String, String> additionalLabels = resource.getMetadata().getLabels();
 
         if (additionalLabels != null) {
-            Pattern exclusionPattern = Pattern.compile(STRIMZI_LABELS_EXCLUSION_PATTERN);
             additionalLabels = additionalLabels
                     .entrySet()
                     .stream()
-                    .filter(entryset -> !exclusionPattern.matcher(entryset.getKey()).matches())
+                    .filter(entryset -> !STRIMZI_LABELS_EXCLUSION_PATTERN.matcher(entryset.getKey()).matches())
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
 
