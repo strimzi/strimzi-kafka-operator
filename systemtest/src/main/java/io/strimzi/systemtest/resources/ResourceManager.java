@@ -217,6 +217,7 @@ public class ResourceManager {
      * @param testContext context of the test case
      * @param <T> type of the resource which inherits from HasMetadata f.e Kafka, KafkaConnect, Pod, Deployment etc..
      */
+    @SuppressWarnings(value = "unchecked")
     public final <T extends HasMetadata> void synchronizeResources(ExtensionContext testContext) {
         Stack<ResourceItem> resources = STORED_RESOURCES.get(testContext.getDisplayName());
 
