@@ -73,7 +73,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     "checkstyle:ClassFanOutComplexity",
     "checkstyle:ClassDataAbstractionCoupling"})
 @SuppressFBWarnings({"MS_MUTABLE_COLLECTION_PKGPROTECT", "MS_MUTABLE_COLLECTION"})
-public class ResourceManager<T extends HasMetadata> {
+public class ResourceManager {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceManager.class);
 
