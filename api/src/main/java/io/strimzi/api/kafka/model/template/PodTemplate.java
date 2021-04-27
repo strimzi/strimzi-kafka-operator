@@ -161,7 +161,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     }
 
     @Description("The pod's HostAliases. " +
-            "HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.")
+            "HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.")
     @KubeLink(group = "core", version = "v1", kind = "HostAlias")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<HostAlias> getHostAliases() {
@@ -172,7 +172,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.hostAliases = hostAliases;
     }
 
-    @Description("Indicates whether information about services should be injected into pod's environment variables.")
+    @Description("Indicates whether information about services should be injected into Pod's environment variables.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public Boolean getEnableServiceLinks() {
         return enableServiceLinks;
