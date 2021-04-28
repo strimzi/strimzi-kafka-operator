@@ -9,10 +9,10 @@
 This procedure describes how to upgrade a Strimzi Kafka cluster to the latest supported Kafka version.
 
 Compared to your current Kafka version, the new version might support a higher _log message format version_ or _inter-broker protocol version_, or both.
-Follow the steps to upgrade these versions, if required. 
+Follow the steps to upgrade these versions, if required.
 For more information, see xref:ref-kafka-versions-{context}[].
 
-You should also choose a xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients]. 
+You should also choose a xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients].
 Kafka clients are upgraded in step 6 of this procedure.
 
 .Prerequisites
@@ -31,9 +31,7 @@ For the `Kafka` resource to be upgraded, check that:
 kubectl edit kafka _my-cluster_
 ----
 
-. If the `log.message.format.version` and `inter.broker.protocol.version` of the _current_ Kafka version are _the same_ as the new Kafka version, go to step 3.
-+
-Otherwise, ensure that `Kafka.spec.kafka.config` has the `log.message.format.version` and `inter.broker.protocol.version` configured to the defaults for the _current_ Kafka version.
+. If configured, ensure that `Kafka.spec.kafka.config` has the `log.message.format.version` and `inter.broker.protocol.version` set to the defaults for the _current_ Kafka version.
 +
 For example, if upgrading from Kafka version {KafkaVersionLower} to {KafkaVersionHigher}:
 +
@@ -50,15 +48,17 @@ spec:
       # ...
 ----
 +
+If `log.message.format.version` and `inter.broker.protocol.version` are not configured, Strimzi updates these versions automatically following the update to the Kafka version.
++
 NOTE: The value of `log.message.format.version` and `inter.broker.protocol.version` must be strings to prevent them from being interpreted as floating point numbers.
 
 . Change the `Kafka.spec.kafka.version` to specify the new Kafka version; leave the `log.message.format.version` and `inter.broker.protocol.version` at the defaults for the _current_ Kafka version.
 +
 [NOTE]
 ====
-Changing the `kafka.version` ensures that all brokers in the cluster will be upgraded to start using the new broker binaries. 
-During this process, some brokers are using the old binaries while others have already upgraded to the new ones. 
-Leaving the `inter.broker.protocol.version` unchanged ensures that the brokers can continue to communicate with each other throughout the upgrade. 
+Changing the `kafka.version` ensures that all brokers in the cluster will be upgraded to start using the new broker binaries.
+During this process, some brokers are using the old binaries while others have already upgraded to the new ones.
+Leaving the `inter.broker.protocol.version` unchanged ensures that the brokers can continue to communicate with each other throughout the upgrade.
 ====
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
@@ -95,10 +95,7 @@ Check the progress of the rolling updates by watching the pod state transitions:
 kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The rolling updates:
-+
-* Ensure each pod is using the broker binaries for the new version of Kafka
-* Configure the brokers to send messages using the inter-broker protocol version of the new version of Kafka
+The rolling updates ensure that each pod is using the broker binaries for the new version of Kafka.
 
 . Depending on your chosen xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients], upgrade all client applications to use the new version of the client binaries.
 +
@@ -110,14 +107,32 @@ If required, set the `version` property for Kafka Connect and MirrorMaker as the
 
 . _Optional step to reduce rolling updates_:
 +
-You can now perform one or more further product upgrades, starting with xref:proc-upgrading-the-co-{context}[]. 
+You can now perform one or more further product upgrades, starting with xref:proc-upgrading-the-co-{context}[].
 After reaching this step for the last upgrade you want to perform, you can complete this procedure.
 +
 Alternatively, skip this step and go to step 8.
 +
-. If the `log.message.format.version` and `inter.broker.protocol.version` of the _new_ Kafka version are _different from_ the old Kafka version, update the Kafka resource to use the new default versions. Otherwise, go to step 9.
+. If configured, update the Kafka resource to use the new `inter.broker.protocol.version` version. Otherwise, go to step 10.
 +
-In `Kafka.spec.kafka.config`, change the `log.message.format.version` and `inter.broker.protocol.version`.
+For example, if upgrading to Kafka {KafkaVersionHigher}:
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+spec:
+  # ...
+  kafka:
+    version: {KafkaVersionHigher}
+    config:
+      log.message.format.version: "{LogMsgVersLower}"
+      inter.broker.protocol.version: "{InterBrokVersHigher}"
+      # ...
+----
+
+. Wait for the Cluster Operator to update the cluster.
+
+. If configured, update the Kafka resource to use the new `log.message.format.version` version. Otherwise, go to step 11.
 +
 For example, if upgrading to Kafka {KafkaVersionHigher}:
 +
@@ -137,10 +152,11 @@ spec:
 
 . Wait for the Cluster Operator to update the cluster.
 +
-The Kafka cluster and clients are now using the new Kafka version.
+* The Kafka cluster and clients are now using the new Kafka version.
+* The brokers are configured to send messages using the inter-broker protocol version and message format version of the new version of Kafka.
 
 Following the Kafka upgrade, if required, you can:
 
 * xref:con-upgrade-listeners-{context}[Update listeners to the `GenericKafkaListener` schema]
 * xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[Upgrade consumers to use the incremental cooperative rebalance protocol]
-* xref:assembly-upgrade-resources-{context}[Update existing custom resources] 
+* xref:assembly-upgrade-resources-{context}[Update existing custom resources]

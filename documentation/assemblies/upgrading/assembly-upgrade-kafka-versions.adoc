@@ -8,7 +8,7 @@
 
 After you have upgraded your Cluster Operator to {ProductVersion}, the next step is to upgrade all Kafka brokers to the latest supported version of Kafka.
 
-Kafka upgrades are performed by the Cluster Operator through rolling updates of the Kafka brokers. 
+Kafka upgrades are performed by the Cluster Operator through rolling updates of the Kafka brokers.
 
 The Cluster Operator initiates rolling updates based on the Kafka cluster configuration.
 
@@ -19,7 +19,8 @@ The Cluster Operator initiates rolling updates based on the Kafka cluster config
 ¦The Cluster Operator initiates...
 
 ¦Both the `inter.broker.protocol.version` and the `log.message.format.version`.
-¦A single rolling update.
+¦A rolling update for the update of each property, which must be updated separately.
+The `inter.broker.protocol.version` must be updated first, followed by the `log.message.format.version`
 
 ¦Either the `inter.broker.protocol.version` or the `log.message.format.version`.
 ¦Two rolling updates.
