@@ -80,7 +80,8 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     minikube addons enable default-storageclass
-	  minikube addons enable registry
+	  minikube addons enable registry \
+	   --images="Registry=openshift/community-e2e-images@sha256:bac2d7050dc4826516650267fe7dc6627e9e11ad653daca0641437abdf18df27" --registries="Registry=quay.io"
 	  minikube addons enable registry-aliases
 
 	  kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
