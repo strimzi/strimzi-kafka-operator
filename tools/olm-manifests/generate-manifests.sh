@@ -47,9 +47,13 @@ generate_manifests() {
   # Update deployment
   yq ea -i 'select(fi==0).spec.install.spec.deployments[0].spec = select(fi==1).spec | select(fi==0)' ${CSV_FILE} ${CRD_DIR}/060-Deployment-strimzi-cluster-operator.yaml
   yq ea -i ".spec.install.spec.deployments[0].name = \"${BUNDLE_NAME}\"" ${CSV_FILE}
-  # Update namespaced cluster roles
+  
+  # Update namespaced RBAC rules with Cluster Operator roles
   yq ea -i 'select(fi==0).spec.install.spec.permissions[0].rules = select(fi==1).rules | select(fi==0)' ${CSV_FILE} ${CRD_DIR}/020-ClusterRole-strimzi-cluster-operator-role.yaml
-  # Update global cluster roles
+  # Update namespaced RBAC rules with Entity Operator roles
+  yq ea -i 'select(fi==0).spec.install.spec.permissions[0].rules + select(fi==1).rules | select(fi==0)' ${CSV_FILE} ${CRD_DIR}/031-ClusterRole-strimzi-entity-operator.yaml
+   
+  # Update global RBAC rules with Cluster Operator roles
   yq ea -i 'select(fi==0).spec.install.spec.clusterPermissions[0].rules = select(fi==1).rules | select(fi==0)' ${CSV_FILE} ${CRD_DIR}/021-ClusterRole-strimzi-cluster-operator-role.yaml
   # Update creation timestamp
   yq ea -i ".metadata.annotations.createdAt = \"$(date +'%Y-%m-%d %H:%M:%S')\"" ${CSV_FILE}
