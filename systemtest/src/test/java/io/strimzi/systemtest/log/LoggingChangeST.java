@@ -1156,9 +1156,4 @@ class LoggingChangeST extends AbstractST {
     protected void tearDownEnvironmentAfterAll() {
         teardownEnvForOperator();
     }
-
-    @Override
-    protected void assertNoCoErrorsLogged(long sinceSeconds) {
-        LOGGER.info("Skipping assertion if CO has some unexpected errors");
-    }
 }

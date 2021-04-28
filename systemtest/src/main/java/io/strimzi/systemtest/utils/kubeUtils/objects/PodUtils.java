@@ -190,17 +190,17 @@ public class PodUtils {
         LOGGER.info("Pod {} is ready", name);
     }
 
-    public static void deletePodWithWait(String name) {
+    public static void deletePodWithWait(String namespaceName, String name) {
         LOGGER.info("Waiting when Pod {} will be deleted", name);
 
         TestUtils.waitFor("Pod " + name + " could not be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
-                List<Pod> pods = kubeClient().listPodsByPrefixInName(name);
+                List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, name);
                 if (pods.size() != 0) {
                     for (Pod pod : pods) {
                         if (pod.getStatus().getPhase().equals("Terminating")) {
                             LOGGER.debug("Deleting pod {}", pod.getMetadata().getName());
-                            cmdKubeClient().deleteByName("pod", pod.getMetadata().getName());
+                            cmdKubeClient(namespaceName).deleteByName("pod", pod.getMetadata().getName());
                         }
                     }
                     return false;
@@ -209,6 +209,10 @@ public class PodUtils {
                 }
             });
         LOGGER.info("Pod {} deleted", name);
+    }
+
+    public static void deletePodWithWait(String name) {
+        deletePodWithWait(kubeClient().getNamespace(), name);
     }
 
     public static void waitUntilPodsCountIsPresent(String podNamePrefix, int numberOfPods) {
@@ -232,12 +236,16 @@ public class PodUtils {
         LOGGER.info("Message {} found in {}:{} log", message, podName, containerName);
     }
 
-    public static void waitUntilPodContainersCount(String podNamePrefix, int numberOfContainers) {
+    public static void waitUntilPodContainersCount(String namespaceName, String podNamePrefix, int numberOfContainers) {
         LOGGER.info("Wait until Pod {} will have {} containers", podNamePrefix, numberOfContainers);
         TestUtils.waitFor("Pod " + podNamePrefix + " will have " + numberOfContainers + " containers",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
+            () -> kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix).get(0).getSpec().getContainers().size() == numberOfContainers);
         LOGGER.info("Pod {} has {} containers", podNamePrefix, numberOfContainers);
+    }
+
+    public static void waitUntilPodContainersCount(String podNamePrefix, int numberOfContainers) {
+        waitUntilPodContainersCount(kubeClient().getNamespace(), podNamePrefix, numberOfContainers);
     }
 
     public static void waitUntilPodStabilityReplicasCount(String namespaceName, String podNamePrefix, int expectedPods) {
@@ -292,12 +300,12 @@ public class PodUtils {
         LOGGER.info("Pod:" + podName + " is in pending status");
     }
 
-    public static void waitUntilPodLabelsDeletion(String podName, String... labelKeys) {
+    public static void waitUntilPodLabelsDeletion(String namespaceName, String podName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for Pod label {} change to {}", labelKey, null);
             TestUtils.waitFor("Pod label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
-                    kubeClient().getPod(podName).getMetadata().getLabels().get(labelKey) == null
+                    kubeClient(namespaceName).getPod(namespaceName, podName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("Pod label {} changed to {}", labelKey, null);
         }

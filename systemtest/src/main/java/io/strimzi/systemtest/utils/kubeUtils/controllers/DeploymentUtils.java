@@ -73,14 +73,14 @@ public class DeploymentUtils {
         logCurrentDeploymentStatus(deployment, kubeClient().getNamespace());
     }
 
-    public static void waitForNoRollingUpdate(String deploymentName, Map<String, String> pods) {
+    public static void waitForNoRollingUpdate(String namespaceName, String deploymentName, Map<String, String> pods) {
         // alternative to sync hassling AtomicInteger one could use an integer array instead
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
         TestUtils.waitFor("stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                if (!DeploymentUtils.depHasRolled(deploymentName, pods)) {
+                if (!DeploymentUtils.depHasRolled(namespaceName, deploymentName, pods)) {
                     LOGGER.info("{} pods not rolling waiting, remaining seconds for stability {}", pods.toString(),
                         Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
@@ -89,6 +89,10 @@ public class DeploymentUtils {
                 }
             }
         );
+    }
+
+    public static void waitForNoRollingUpdate(String deploymentName, Map<String, String> pods) {
+        waitForNoRollingUpdate(kubeClient().getNamespace(), deploymentName, pods);
     }
 
     /**

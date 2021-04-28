@@ -28,12 +28,12 @@ public class PersistentVolumeClaimUtils {
 
     private PersistentVolumeClaimUtils() { }
 
-    public static void waitUntilPVCLabelsChange(String clusterName, Map<String, String> newLabels, String labelKey) {
+    public static void waitUntilPVCLabelsChange(String namespaceName, String clusterName, Map<String, String> newLabels, String labelKey) {
         LOGGER.info("Wait until PVC labels will change {}", newLabels.toString());
         TestUtils.waitFor("PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
-                    kubeClient().listPersistentVolumeClaims().stream()
+                    kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
                         // filter specific pvc which belongs to cluster-name
                         .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
                         // map each value if it is changed [False, True, True] etc.
@@ -48,12 +48,16 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("PVC labels has changed {}", newLabels.toString());
     }
 
-    public static void waitUntilPVCAnnotationChange(String clusterName, Map<String, String> newAnnotation, String annotationKey) {
+    public static void waitUntilPVCLabelsChange(String clusterName, Map<String, String> newLabels, String labelKey) {
+        waitUntilPVCLabelsChange(kubeClient().getNamespace(), clusterName, newLabels, labelKey);
+    }
+
+    public static void waitUntilPVCAnnotationChange(String namespaceName, String clusterName, Map<String, String> newAnnotation, String annotationKey) {
         LOGGER.info("Wait until PVC annotation will change {}", newAnnotation.toString());
         TestUtils.waitFor("PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
-                    kubeClient().listPersistentVolumeClaims().stream()
+                    kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
                         // filter specific pvc which belongs to cluster-name
                         .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
                         // map each value if it is changed [False, True, True] etc.
@@ -66,6 +70,10 @@ public class PersistentVolumeClaimUtils {
                 return allPvcsHasLabelsChanged.size() > 0 && !allPvcsHasLabelsChanged.contains(Boolean.FALSE);
             });
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
+    }
+
+    public static void waitUntilPVCAnnotationChange(String clusterName, Map<String, String> newAnnotation, String annotationKey) {
+        waitUntilPVCAnnotationChange(kubeClient().getNamespace(), clusterName, newAnnotation, annotationKey);
     }
 
     public static void waitUntilPVCDeletion(String clusterName) {
@@ -86,13 +94,13 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("PVC for cluster {} was deleted", clusterName);
     }
 
-    public static void waitForPVCDeletion(int volumesCount, JbodStorage jbodStorage, String clusterName) {
+    public static void waitForPVCDeletion(String namespaceName, int volumesCount, JbodStorage jbodStorage, String clusterName) {
         int numberOfPVCWhichShouldBeDeleted = jbodStorage.getVolumes().stream().filter(
             singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
         ).collect(Collectors.toList()).size();
 
         TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
-            List<String> pvcs = kubeClient().listPersistentVolumeClaims().stream()
+            List<String> pvcs = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
                 .map(pvc -> pvc.getMetadata().getName())
                 .collect(Collectors.toList());
