@@ -58,4 +58,14 @@ public class ClusterRoleOperatorTest extends AbstractNonNamespacedResourceOperat
                 .endMetadata()
             .build();
     }
+
+    @Override
+    protected ClusterRole modifiedResource() {
+        return new ClusterRoleBuilder()
+                .withNewMetadata()
+                    .withName(RESOURCE_NAME)
+                    .withLabels(singletonMap("foo2", "bar2"))
+                .endMetadata()
+            .build();
+    }
 }

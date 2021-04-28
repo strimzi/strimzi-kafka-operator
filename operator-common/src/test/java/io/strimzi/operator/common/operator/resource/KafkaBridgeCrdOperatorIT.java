@@ -4,15 +4,13 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
-
+import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -34,12 +32,17 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaBridge.class, KafkaBridgeList.class, Crds.kafkaBridge());
+        return new CrdOperator(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND);
     }
 
     @Override
-    protected CustomResourceDefinition getCrd() {
-        return Crds.kafkaBridge();
+    protected String getCrd() {
+        return TestUtils.CRD_KAFKA_BRIDGE;
+    }
+
+    @Override
+    protected String getCrdName() {
+        return KafkaBridge.CRD_NAME;
     }
 
     @Override
@@ -51,10 +54,11 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
     protected KafkaBridge getResource(String resourceName) {
         return new KafkaBridgeBuilder()
                 .withNewMetadata()
-                .withName(resourceName)
-                .withNamespace(getNamespace())
+                    .withName(resourceName)
+                    .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
+                    .withNewBootstrapServers("localhost:9092")
                 .endSpec()
                 .withNewStatus()
                 .endStatus()
@@ -65,7 +69,7 @@ public class KafkaBridgeCrdOperatorIT extends AbstractCustomResourceOperatorIT<K
     protected KafkaBridge getResourceWithModifications(KafkaBridge resourceInCluster) {
         return new KafkaBridgeBuilder(resourceInCluster)
                 .editSpec()
-                .withLogging(new InlineLogging())
+                    .withLogging(new InlineLogging())
                 .endSpec()
                 .build();
     }

@@ -71,7 +71,17 @@ public class PodOperatorTest extends
                 .endMetadata()
                 .withNewSpec()
                     .withHostname("foo")
-                .endSpec().build();
+                .endSpec()
+                .build();
+    }
+
+    @Override
+    protected Pod modifiedResource() {
+        return new PodBuilder(resource())
+                .editSpec()
+                    .withHostname("bar")
+                .endSpec()
+                .build();
     }
 
     @Override

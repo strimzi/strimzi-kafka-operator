@@ -58,4 +58,14 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
                 .endMetadata()
             .build();
     }
+
+    @Override
+    protected ClusterRoleBinding modifiedResource() {
+        return new ClusterRoleBindingBuilder()
+                .withNewMetadata()
+                    .withName(RESOURCE_NAME)
+                    .withLabels(singletonMap("foo2", "bar2"))
+                .endMetadata()
+                .build();
+    }
 }

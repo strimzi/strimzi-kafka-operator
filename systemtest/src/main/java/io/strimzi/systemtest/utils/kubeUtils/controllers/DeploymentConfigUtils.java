@@ -113,20 +113,25 @@ public class DeploymentConfigUtils {
 
     /**
      * Wait until the given DeploymentConfig is ready.
+     * @param namespaceName Namespace name
      * @param depConfigName The name of the DeploymentConfig.
      */
-    public static Map<String, String> waitForDeploymentConfigAndPodsReady(String depConfigName, int expectPods) {
-        waitForDeploymentConfigReady(depConfigName);
+    public static Map<String, String> waitForDeploymentConfigAndPodsReady(String namespaceName, String depConfigName, int expectPods) {
+        waitForDeploymentConfigReady(namespaceName, depConfigName);
 
         LOGGER.info("Waiting for Pod(s) of DeploymentConfig {} to be ready", depConfigName);
 
         LabelSelector deploymentConfigSelector =
-            new LabelSelectorBuilder().addToMatchLabels(kubeClient().getDeploymentConfigSelectors(depConfigName)).build();
+            new LabelSelectorBuilder().addToMatchLabels(kubeClient(namespaceName).getDeploymentConfigSelectors(namespaceName, depConfigName)).build();
 
-        PodUtils.waitForPodsReady(deploymentConfigSelector, expectPods, true);
+        PodUtils.waitForPodsReady(namespaceName, deploymentConfigSelector, expectPods, true);
         LOGGER.info("DeploymentConfig {} is ready", depConfigName);
 
-        return depConfigSnapshot(depConfigName);
+        return depConfigSnapshot(namespaceName, depConfigName);
+    }
+
+    public static Map<String, String> waitForDeploymentConfigAndPodsReady(String depConfigName, int expectPods) {
+        return waitForDeploymentConfigAndPodsReady(kubeClient().getNamespace(), depConfigName, expectPods);
     }
 
     public static void waitForDeploymentConfigReady(String namespaceName, String depConfigName) {

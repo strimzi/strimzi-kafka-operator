@@ -526,28 +526,32 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void verifyLabelsForKafkaCluster(String clusterName, String appName) {
-        verifyLabelsForKafkaCluster(kubeClient().getNamespace(), clusterName, appName);
+        verifyLabelsForKafkaCluster(kubeClient().getNamespace(), kubeClient().getNamespace(), clusterName, appName);
     }
 
-    protected void verifyLabelsForKafkaCluster(String namespaceName, String clusterName, String appName) {
-        verifyLabelsOnPods(clusterName, "zookeeper", appName, Kafka.RESOURCE_KIND);
-        verifyLabelsOnPods(clusterName, "kafka", appName, Kafka.RESOURCE_KIND);
-        verifyLabelsOnCOPod();
-        verifyLabelsOnPods(clusterName, "entity-operator", appName, Kafka.RESOURCE_KIND);
-        verifyLabelsForCRDs();
-        verifyLabelsForKafkaAndZKServices(clusterName, appName);
-        verifyLabelsForSecrets(clusterName, appName);
-        verifyLabelsForConfigMaps(clusterName, appName, "");
-        verifyLabelsForRoleBindings(clusterName, appName);
-        verifyLabelsForServiceAccounts(clusterName, appName);
+    protected void verifyLabelsForKafkaCluster(String clusterOperatorNamespaceName, String componentsNamespaceName, String clusterName, String appName) {
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "zookeeper", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "kafka", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsOnCOPod(clusterOperatorNamespaceName, clusterName);
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "entity-operator", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsForCRDs(componentsNamespaceName);
+        verifyLabelsForKafkaAndZKServices(componentsNamespaceName, clusterName, appName);
+        verifyLabelsForSecrets(componentsNamespaceName, clusterName, appName);
+        verifyLabelsForConfigMaps(componentsNamespaceName, clusterName, appName, "");
+        verifyLabelsForRoleBindings(componentsNamespaceName, clusterName, appName);
+        verifyLabelsForServiceAccounts(componentsNamespaceName, clusterName, appName);
     }
 
-    void verifyLabelsOnCOPod() {
+    void verifyLabelsOnCOPod(String namespaceName, String clusterName) {
         LOGGER.info("Verifying labels for cluster-operator pod");
 
-        Map<String, String> coLabels = kubeClient().listPods("name", ResourceManager.getCoDeploymentName()).get(0).getMetadata().getLabels();
+        Map<String, String> coLabels = kubeClient(namespaceName).listPods(namespaceName, clusterName, "name", ResourceManager.getCoDeploymentName()).get(0).getMetadata().getLabels();
         assertThat(coLabels.get("name"), is(ResourceManager.getCoDeploymentName()));
         assertThat(coLabels.get(Labels.STRIMZI_KIND_LABEL), is("cluster-operator"));
+    }
+
+    void verifyLabelsOnCOPod(String clusterName) {
+        verifyLabelsOnCOPod(kubeClient().getNamespace(), clusterName);
     }
 
     protected void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
@@ -566,15 +570,15 @@ public abstract class AbstractST implements TestSeparator {
             });
     }
 
-    void verifyLabelsForCRDs() {
+    void verifyLabelsForCRDs(String namespaceName) {
         LOGGER.info("Verifying labels for CRDs");
-        String crds = cmdKubeClient().exec("get", "crds", "--selector=app=strimzi", "-o", "jsonpath='{.items[*].metadata.name}'").out();
+        String crds = cmdKubeClient(namespaceName).exec("get", "crds", "--selector=app=strimzi", "-o", "jsonpath='{.items[*].metadata.name}'").out();
         crds = crds.replace(" ", "\n").trim();
         assertThat(crds.split("\n").length, is(Crds.getNumCrds()));
 
     }
 
-    void verifyLabelsForKafkaAndZKServices(String clusterName, String appName) {
+    void verifyLabelsForKafkaAndZKServices(String namespaceName, String clusterName, String appName) {
         LOGGER.info("Verifying labels for Services");
         String kafkaServiceName = clusterName + "-kafka";
         String zookeeperServiceName = clusterName + "-zookeeper";
@@ -587,7 +591,7 @@ public abstract class AbstractST implements TestSeparator {
         servicesMap.put(zookeeperServiceName + "-client", zookeeperServiceName + "-client");
 
         for (String serviceName : servicesMap.keySet()) {
-            kubeClient().listServices().stream()
+            kubeClient(namespaceName).listServices(namespaceName).stream()
                 .filter(service -> service.getMetadata().getName().equals(serviceName))
                 .forEach(service -> {
                     LOGGER.info("Verifying labels for service {}", serviceName);
@@ -618,9 +622,9 @@ public abstract class AbstractST implements TestSeparator {
         );
     }
 
-    void verifyLabelsForSecrets(String clusterName, String appName) {
+    void verifyLabelsForSecrets(String namespaceName, String clusterName, String appName) {
         LOGGER.info("Verifying labels for secrets");
-        kubeClient().listSecrets().stream()
+        kubeClient(namespaceName).listSecrets(namespaceName).stream()
             .filter(p -> p.getMetadata().getName().matches("(" + clusterName + ")-(clients|cluster|(entity))(-operator)?(-ca)?(-certs?)?"))
             .forEach(p -> {
                 LOGGER.info("Verifying secret {}", p.getMetadata().getName());
@@ -672,7 +676,7 @@ public abstract class AbstractST implements TestSeparator {
     protected void verifyLabelsForServiceAccounts(String namespaceName, String clusterName, String appName) {
         LOGGER.info("Verifying labels for Service Accounts");
 
-        kubeClient(namespaceName).listServiceAccounts().stream()
+        kubeClient(namespaceName).listServiceAccounts(namespaceName).stream()
             .filter(sa -> sa.getMetadata().getName().equals("strimzi-cluster-operator"))
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
@@ -680,7 +684,7 @@ public abstract class AbstractST implements TestSeparator {
             }
         );
 
-        kubeClient(namespaceName).listServiceAccounts().stream()
+        kubeClient(namespaceName).listServiceAccounts(namespaceName).stream()
             .filter(sa -> sa.getMetadata().getName().startsWith(clusterName))
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
@@ -699,16 +703,16 @@ public abstract class AbstractST implements TestSeparator {
         );
     }
 
-    void verifyLabelsForRoleBindings(String clusterName, String appName) {
+    void verifyLabelsForRoleBindings(String namespaceName, String clusterName, String appName) {
         LOGGER.info("Verifying labels for Cluster Role bindings");
-        kubeClient().listRoleBindings().stream()
+        kubeClient(namespaceName).listRoleBindings(namespaceName).stream()
             .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-cluster-operator"))
             .forEach(rb -> {
                 LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
                 assertThat(rb.getMetadata().getLabels().get("app"), is("strimzi"));
             });
 
-        kubeClient().listRoleBindings().stream()
+        kubeClient(namespaceName).listRoleBindings(namespaceName).stream()
             .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-".concat(clusterName)))
             .forEach(rb -> {
                 LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
@@ -733,10 +737,14 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void assertNoCoErrorsLogged(long sinceSeconds) {
+    protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
         String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
+    }
+
+    protected void assertNoCoErrorsLogged(long sinceSeconds) {
+        assertNoCoErrorsLogged(kubeClient().getNamespace(), sinceSeconds);
     }
 
     protected void testDockerImagesForKafkaCluster(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName,

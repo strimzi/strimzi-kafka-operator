@@ -73,14 +73,14 @@ public class DeploymentUtils {
         logCurrentDeploymentStatus(deployment, kubeClient().getNamespace());
     }
 
-    public static void waitForNoRollingUpdate(String deploymentName, Map<String, String> pods) {
+    public static void waitForNoRollingUpdate(String namespaceName, String deploymentName, Map<String, String> pods) {
         // alternative to sync hassling AtomicInteger one could use an integer array instead
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
         TestUtils.waitFor("stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                if (!DeploymentUtils.depHasRolled(deploymentName, pods)) {
+                if (!DeploymentUtils.depHasRolled(namespaceName, deploymentName, pods)) {
                     LOGGER.info("{} pods not rolling waiting, remaining seconds for stability {}", pods.toString(),
                         Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
@@ -89,6 +89,10 @@ public class DeploymentUtils {
                 }
             }
         );
+    }
+
+    public static void waitForNoRollingUpdate(String deploymentName, Map<String, String> pods) {
+        waitForNoRollingUpdate(kubeClient().getNamespace(), deploymentName, pods);
     }
 
     /**
@@ -208,20 +212,25 @@ public class DeploymentUtils {
 
     /**
      * Wait until the given Deployment has been deleted.
+     * @param namespaceName Namespace name
      * @param name The name of the Deployment.
      */
-    public static void waitForDeploymentDeletion(String name) {
+    public static void waitForDeploymentDeletion(String namespaceName, String name) {
         LOGGER.debug("Waiting for Deployment {} deletion", name);
         TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
-                if (kubeClient().getDeployment(name) == null) {
+                if (kubeClient(namespaceName).getDeployment(namespaceName, name) == null) {
                     return true;
                 } else {
                     LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
-                    cmdKubeClient().deleteByName(Constants.DEPLOYMENT, name);
+                    cmdKubeClient(namespaceName).deleteByName(Constants.DEPLOYMENT, name);
                     return false;
                 }
             });
         LOGGER.debug("Deployment {} was deleted", name);
+    }
+
+    public static void waitForDeploymentDeletion(String name) {
+        waitForDeploymentDeletion(kubeClient().getNamespace(), name);
     }
 }

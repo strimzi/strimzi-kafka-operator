@@ -7,7 +7,7 @@ package io.strimzi.operator.common.operator.resource;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 
-public abstract class AbstractResourceDiff {
+public abstract class AbstractJsonDiff {
     protected static JsonNode lookupPath(JsonNode source, String path) {
         JsonNode s = source;
         for (String component : path.substring(1).split("/")) {

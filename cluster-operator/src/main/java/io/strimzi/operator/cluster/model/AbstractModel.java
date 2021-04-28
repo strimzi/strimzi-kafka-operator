@@ -894,6 +894,7 @@ public abstract class AbstractModel {
                     .endResources()
                     .withStorageClassName(storageClass)
                     .withSelector(storage.getSelector())
+                    .withVolumeMode("Filesystem")
                 .endSpec()
                 .build();
 

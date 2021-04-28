@@ -28,7 +28,23 @@ public class ImageStreamOperatorTest extends AbstractResourceOperatorTest<OpenSh
 
     @Override
     protected ImageStream resource() {
-        return new ImageStreamBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
+        return new ImageStreamBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .build();
+    }
+
+    @Override
+    protected ImageStream modifiedResource() {
+        return new ImageStreamBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                    .addToLabels("foo", "bar")
+                .endMetadata()
+                .build();
     }
 
     @Override

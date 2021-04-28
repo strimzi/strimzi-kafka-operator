@@ -53,6 +53,18 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
     }
 
     @Override
+    protected Role modifiedResource() {
+        PolicyRule rule = new PolicyRuleBuilder()
+                .withApiGroups("somegroup2")
+                .addNewVerb("someverb2")
+                .build();
+
+        return new RoleBuilder(resource())
+                .withRules(rule)
+                .build();
+    }
+
+    @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class);
         when(mockClient.rbac()).thenReturn(mockRbac);

@@ -83,7 +83,6 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "kafkarebalances";
     public static final String RESOURCE_SINGULAR = "kafkarebalance";
-    public static final String CRD_API_VERSION = Constants.V1BETA1_API_VERSION;
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kr";
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);

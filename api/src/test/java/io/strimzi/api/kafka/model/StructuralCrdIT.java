@@ -12,9 +12,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionCondition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionVersion;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionCondition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.VersionRange;
 import io.strimzi.test.TestUtils;
@@ -64,16 +64,53 @@ public class StructuralCrdIT extends AbstractCrdIT {
     private void assertApiVersionsAreStructural(String api, ApiVersion crdApiVersion, String crdYaml, VersionRange<ApiVersion> shouldBeStructural) {
         cluster.createCustomResources(crdYaml);
         try {
-            waitForCrd("crd", api);
-            assertApiVersionsAreStructural(api, crdApiVersion, shouldBeStructural);
+            cluster.waitForCustomResourceDefinition(api);
+
+            if (ApiVersion.V1.equals(crdApiVersion))    {
+                assertApiVersionsAreStructuralInApiextensionsV1(api, shouldBeStructural);
+            } else {
+                assertApiVersionsAreStructuralInApiextensionsV1beta1(api, shouldBeStructural);
+            }
         } finally {
             cluster.deleteCustomResources(crdYaml);
         }
     }
 
-    private void assertApiVersionsAreStructural(String api, ApiVersion crdApiVersion, VersionRange<ApiVersion> shouldBeStructural) {
+    private void assertApiVersionsAreStructuralInApiextensionsV1beta1(String api, VersionRange<ApiVersion> shouldBeStructural) {
         Pattern pattern = Pattern.compile("[^.]spec\\.versions\\[([0-9]+)\\]\\.[^,]*?");
-        CustomResourceDefinition crd = cluster.client().getClient().apiextensions().v1beta1().customResourceDefinitions().withName(api).get();
+        io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition crd = cluster.client().getClient().apiextensions().v1beta1().customResourceDefinitions().withName(api).get();
+        // We can't make the following assertion because the current version of fabric8 always requests
+        // the CRD using v1beta1 api version, so the apiserver just replaces it and serves it.
+        //assertEquals(crdApiVersion, ApiVersion.parse(crd.getApiVersion().replace("apiextensions.k8s.io/", "")));
+        Set<ApiVersion> presentCrdApiVersions = crd.getSpec().getVersions().stream().map(v -> ApiVersion.parse(v.getName())).collect(Collectors.toSet());
+        assertTrue(presentCrdApiVersions.contains(shouldBeStructural.lower()),
+                "CRD has versions " + presentCrdApiVersions + " which doesn't include " + shouldBeStructural.lower() + " which should be structural");
+        Map<Integer, ApiVersion> indexedVersions = new HashMap<>();
+        int i = 0;
+        for (io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionVersion version : crd.getSpec().getVersions()) {
+            indexedVersions.put(i, ApiVersion.parse(version.getName()));
+        }
+        Optional<io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionCondition> first = crd.getStatus().getConditions().stream()
+                .filter(cond ->
+                        "NonStructuralSchema".equals(cond.getType())
+                                && "True".equals(cond.getStatus()))
+                .findFirst();
+        if (first.isPresent()) {
+
+            Matcher matcher = pattern.matcher(first.get().getMessage());
+            while (matcher.find()) {
+                Integer index = Integer.valueOf(matcher.group(1));
+                ApiVersion nonStructuralVersion = indexedVersions.get(index);
+                if (shouldBeStructural.contains(nonStructuralVersion)) {
+                    fail(api + "/ " + nonStructuralVersion + " should be structural but there's a complaint about " + matcher.group());
+                }
+            }
+        }
+    }
+
+    private void assertApiVersionsAreStructuralInApiextensionsV1(String api, VersionRange<ApiVersion> shouldBeStructural) {
+        Pattern pattern = Pattern.compile("[^.]spec\\.versions\\[([0-9]+)\\]\\.[^,]*?");
+        CustomResourceDefinition crd = cluster.client().getClient().apiextensions().v1().customResourceDefinitions().withName(api).get();
         // We can't make the following assertion because the current version of fabric8 always requests
         // the CRD using v1beta1 api version, so the apiserver just replaces it and serves it.
         //assertEquals(crdApiVersion, ApiVersion.parse(crd.getApiVersion().replace("apiextensions.k8s.io/", "")));

@@ -28,7 +28,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.CruiseControlResources;
@@ -573,6 +572,7 @@ public class CruiseControl extends AbstractModel {
         NetworkPolicyIngressRule restApiRule = new NetworkPolicyIngressRuleBuilder()
                 .addNewPort()
                     .withNewPort(REST_API_PORT)
+                    .withNewProtocol("TCP")
                 .endPort()
                 .build();
 
@@ -588,11 +588,11 @@ public class CruiseControl extends AbstractModel {
         rules.add(restApiRule);
 
         if (isMetricsEnabled) {
-            NetworkPolicyPort metricsPort = new NetworkPolicyPort();
-            metricsPort.setPort(new IntOrString(METRICS_PORT));
-
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(metricsPort)
+                    .addNewPort()
+                        .withNewPort(METRICS_PORT)
+                        .withNewProtocol("TCP")
+                    .endPort()
                     .withFrom()
                     .build();
 

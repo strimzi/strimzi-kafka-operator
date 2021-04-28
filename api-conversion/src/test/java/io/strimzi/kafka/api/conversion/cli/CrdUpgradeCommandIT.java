@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.Kafka;
@@ -18,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.kafka.api.conversion.utils.LegacyCrds;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +61,7 @@ public class CrdUpgradeCommandIT {
      */
     @Test
     public void testCrdUpgradeWithConvertedResources() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA2.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()
@@ -175,7 +175,7 @@ public class CrdUpgradeCommandIT {
      */
     @Test
     public void testUpgradeWithUnconvertedResourcesFails() {
-        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = Crds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
+        MixedOperation<Kafka, KafkaList, Resource<Kafka>> op = LegacyCrds.kafkaOperation(client, ApiVersion.V1BETA1.toString());
 
         try {
             Kafka kafka1 = new KafkaBuilder()

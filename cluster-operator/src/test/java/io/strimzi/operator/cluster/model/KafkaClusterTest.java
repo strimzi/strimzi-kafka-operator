@@ -805,7 +805,7 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
         assertThat(ext.getSpec().getLoadBalancerIP(), is(nullValue()));
-        assertThat(ext.getSpec().getExternalTrafficPolicy(), is(nullValue()));
+        assertThat(ext.getSpec().getExternalTrafficPolicy(), is("Cluster"));
         assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
         checkOwnerReference(kc.createOwnerReference(), ext);
 
@@ -818,7 +818,7 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaCluster.kafkaPodName(cluster, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
             assertThat(srv.getSpec().getLoadBalancerIP(), is(nullValue()));
-            assertThat(srv.getSpec().getExternalTrafficPolicy(), is(nullValue()));
+            assertThat(srv.getSpec().getExternalTrafficPolicy(), is("Cluster"));
             assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
