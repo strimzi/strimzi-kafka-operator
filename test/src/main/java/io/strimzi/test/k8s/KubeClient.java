@@ -680,10 +680,6 @@ public class KubeClient {
         return client.secrets().inNamespace(namespaceName).list().getItems();
     }
 
-    public List<Secret> listSecrets(String namespaceName) {
-        return client.secrets().inNamespace(namespaceName).list().getItems();
-    }
-
     public List<Secret> listSecrets() {
         return listSecrets(getNamespace());
     }
