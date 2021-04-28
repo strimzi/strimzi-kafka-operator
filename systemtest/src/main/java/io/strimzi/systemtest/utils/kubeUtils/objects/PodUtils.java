@@ -275,20 +275,20 @@ public class PodUtils {
         waitUntilPodStabilityReplicasCount(kubeClient().getNamespace(), podNamePrefix, expectedPods);
     }
 
-    public static void waitUntilPodIsInCrashLoopBackOff(String podName) {
+    public static void waitUntilPodIsInCrashLoopBackOff(String namespaceName, String podName) {
         LOGGER.info("Wait until Pod {} is in CrashLoopBackOff state", podName);
         TestUtils.waitFor("Pod {} is in CrashLoopBackOff state",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().getPod(podName).getStatus().getContainerStatuses().get(0)
+            () -> kubeClient(namespaceName).getPod(namespaceName, podName).getStatus().getContainerStatuses().get(0)
                 .getState().getWaiting().getReason().equals("CrashLoopBackOff"));
         LOGGER.info("Pod {} is in CrashLoopBackOff state", podName);
     }
 
-    public static void waitUntilPodIsPresent(String podNamePrefix) {
+    public static void waitUntilPodIsPresent(String namespaceName, String podNamePrefix) {
         LOGGER.info("Wait until Pod {} is present", podNamePrefix);
         TestUtils.waitFor("Pod is present",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient().listPodsByPrefixInName(podNamePrefix).get(0) != null);
+            () -> kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix).get(0) != null);
         LOGGER.info("Pod {} is present", podNamePrefix);
     }
 

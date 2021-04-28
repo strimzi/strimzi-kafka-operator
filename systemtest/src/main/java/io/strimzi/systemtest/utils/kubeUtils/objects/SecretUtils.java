@@ -150,10 +150,10 @@ public class SecretUtils {
         waitForSecretReady(namespace, name, () -> { });
     }
 
-    public static void waitForCertToChange(String originalCert, String secretName) {
+    public static void waitForCertToChange(String namespaceName, String originalCert, String secretName) {
         LOGGER.info("Waiting for Secret {} certificate change", secretName);
         TestUtils.waitFor("Cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Secret secret = kubeClient().getSecret(secretName);
+            Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
                 boolean changed = !originalCert.equals(currentCert);
