@@ -8,7 +8,7 @@ When applied, the environment variables and volumes are available for use when d
 [id='property-kafka-connect-external-env-{context}']
 === `env`
 
-The `env` property is used to specify one or more environment variables.
+Use the `env` property to specify one or more environment variables.
 These variables can contain a value from either a ConfigMap or a Secret.
 
 .Example Secret containing values for environment variables
@@ -51,7 +51,8 @@ spec:
             key: awsSecretAccessKey
 ----
 
-A common use case for mounting Secrets to environment variables is when your connector needs to communicate with Amazon AWS and needs to read the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables with credentials.
+A common use case for mounting Secrets is for a connector to communicate with Amazon AWS.
+The connector needs to be able to read the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
 
 To mount a value from a ConfigMap to an environment variable, use `configMapKeyRef` in the `valueFrom` property as shown in the following example.
 
@@ -76,12 +77,21 @@ spec:
 [id='property-kafka-connect-external-volumes-{context}']
 === `volumes`
 
-You can also mount ConfigMaps or Secrets to a Kafka Connect pod as volumes.
+Use volumes to mount ConfigMaps or Secrets to a Kafka Connect pod.
 
 Using volumes instead of environment variables is useful in the following scenarios:
 
 * Mounting truststores or keystores with TLS certificates
 * Mounting a properties file that is used to configure Kafka Connect connectors
+
+Configuration providers load the values from mounted ConfigMaps or Secrets.
+
+* `FileConfigProvider` loads configuration values from properties in a file.
+* `DirectoryConfigProvider` loads configuration values from separate files within a directory structure.
++
+For example, a directory might contain the credentials for truststores and keystores in separate files.
+
+In this example, a Secret named `mysecret` contains connector properties that specify a database name and password.
 
 .Example Secret with properties
 [source,yaml,subs=attributes+]
@@ -99,10 +109,12 @@ stringData:
 <1> The connector configuration in properties file format.
 <2> Database username and password properties used in the configuration.
 
-In this example, a Secret named `mysecret` is mounted to a volume named `connector-config`.
-In the `config` property, a configuration provider (`FileConfigProvider`) is specified, which will load configuration values from external sources.
-The Kafka `FileConfigProvider` is given the alias `file`,
-and will read and extract database _username_ and _password_ property values from the file to use in the connector configuration.
+The Secret and a configuration provider are specified in the Kafka Connect configuration:
+
+* The Secret is mounted to a volume named `connector-config`.
+* `FileConfigProvider` is specified as the configuration provider and is given the alias `file`.
++
+`FileConfigProvider` reads and extracts the database _username_ and _password_ property values from the mounted Secret in connector configurations.
 
 .Example external volumes set to values from a Secret
 [source,yaml,subs="attributes+"]
@@ -127,10 +139,8 @@ spec:
 Use a comma-separated list if you want to add more than one provider.
 <2> The `FileConfigProvider` is the configuration provider that provides values from properties files.
 The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
-<3> The name of the volume containing the Secret. Each volume must specify a name in the `name` property and a reference to ConfigMap or Secret.
+<3> The name of the volume containing the Secret. Each volume must specify a name in the `name` property and a reference to a ConfigMap or Secret.
 <4> The name of the Secret.
 
 The volumes are mounted inside the Kafka Connect containers in the path `/opt/kafka/external-configuration/_<volume-name>_`.
-For example, the files from a volume named `connector-config` would appear in the directory `/opt/kafka/external-configuration/connector-config`.
-
-The `FileConfigProvider` is used to read the values from the mounted properties files in connector configurations.
+For example, the files from a volume named `connector-config` will appear in the directory `/opt/kafka/external-configuration/connector-config`.
