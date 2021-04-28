@@ -629,8 +629,24 @@ spec:
                           field allows to specify a different configuration for different
                           brokers.
                       selector:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                          matchLabels:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
                           such a volume.
@@ -688,8 +704,24 @@ spec:
                                 field allows to specify a different configuration
                                 for different brokers.
                             selector:
-                              x-kubernetes-preserve-unknown-fields: true
                               type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                matchLabels:
+                                  x-kubernetes-preserve-unknown-fields: true
+                                  type: object
                               description: Specifies a specific persistent volume
                                 to use. It contains key:value pairs representing labels
                                 for selecting such a volume.
@@ -1894,8 +1926,24 @@ spec:
                           field allows to specify a different configuration for different
                           brokers.
                       selector:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                          matchLabels:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
                           such a volume.

@@ -7,6 +7,7 @@ package io.strimzi.api.kafka.model.storage;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
@@ -14,7 +15,6 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Representation for persistent claim-based storage.
@@ -32,7 +32,7 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     private String size;
     private String storageClass;
-    private Map<String, String> selector;
+    private LabelSelector selector;
     private boolean deleteClaim;
     private List<PersistentClaimStorageOverride> overrides;
 
@@ -80,11 +80,11 @@ public class PersistentClaimStorage extends SingleVolumeStorage {
 
     @Description("Specifies a specific persistent volume to use. " +
             "It contains key:value pairs representing labels for selecting such a volume.")
-    public Map<String, String> getSelector() {
+    public LabelSelector getSelector() {
         return selector;
     }
 
-    public void setSelector(Map<String, String> selector) {
+    public void setSelector(LabelSelector selector) {
         this.selector = selector;
     }
 

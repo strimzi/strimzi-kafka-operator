@@ -426,7 +426,7 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |size         1.2+<.<a|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
 |string
 |selector     1.2+<.<a|Specifies a specific persistent volume to use. It contains key:value pairs representing labels for selecting such a volume.
-|map
+|xref:type-LabelSelector-{context}[`LabelSelector`]
 |deleteClaim  1.2+<.<a|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
 |boolean
 |class        1.2+<.<a|The storage class to use for dynamic volume allocation.
@@ -435,6 +435,38 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |integer
 |overrides    1.2+<.<a|Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
 |xref:type-PersistentClaimStorageOverride-{context}[`PersistentClaimStorageOverride`] array
+|====
+
+[id='type-LabelSelector-{context}']
+### `LabelSelector` schema reference
+
+Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
+
+
+[options="header"]
+|====
+|Property                 |Description
+|matchExpressions  1.2+<.<a|
+|xref:type-LabelSelectorRequirement-{context}[`LabelSelectorRequirement`] array
+|matchLabels       1.2+<.<a|
+|map
+|====
+
+[id='type-LabelSelectorRequirement-{context}']
+### `LabelSelectorRequirement` schema reference
+
+Used in: xref:type-LabelSelector-{context}[`LabelSelector`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|key       1.2+<.<a|
+|string
+|operator  1.2+<.<a|
+|string
+|values    1.2+<.<a|
+|string array
 |====
 
 [id='type-PersistentClaimStorageOverride-{context}']

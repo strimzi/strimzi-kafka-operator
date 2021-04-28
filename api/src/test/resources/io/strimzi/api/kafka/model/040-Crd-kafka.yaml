@@ -623,6 +623,22 @@ spec:
                           brokers.
                       selector:
                         type: object
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                          matchLabels:
+                            type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
                           such a volume.
@@ -681,6 +697,22 @@ spec:
                                 for different brokers.
                             selector:
                               type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                matchLabels:
+                                  type: object
                               description: Specifies a specific persistent volume
                                 to use. It contains key:value pairs representing labels
                                 for selecting such a volume.
@@ -1849,6 +1881,22 @@ spec:
                           brokers.
                       selector:
                         type: object
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                          matchLabels:
+                            type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
                           such a volume.
@@ -7448,6 +7496,22 @@ spec:
                           brokers.
                       selector:
                         type: object
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                          matchLabels:
+                            type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
                           such a volume.
@@ -7506,6 +7570,22 @@ spec:
                                 for different brokers.
                             selector:
                               type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                matchLabels:
+                                  type: object
                               description: Specifies a specific persistent volume
                                 to use. It contains key:value pairs representing labels
                                 for selecting such a volume.
@@ -9122,6 +9202,22 @@ spec:
                           brokers.
                       selector:
                         type: object
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                          matchLabels:
+                            type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
                           such a volume.
@@ -15854,6 +15950,22 @@ spec:
                           brokers.
                       selector:
                         type: object
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                          matchLabels:
+                            type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
                           such a volume.
@@ -15912,6 +16024,22 @@ spec:
                                 for different brokers.
                             selector:
                               type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                matchLabels:
+                                  type: object
                               description: Specifies a specific persistent volume
                                 to use. It contains key:value pairs representing labels
                                 for selecting such a volume.
@@ -17528,6 +17656,22 @@ spec:
                           brokers.
                       selector:
                         type: object
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                          matchLabels:
+                            type: object
                         description: Specifies a specific persistent volume to use.
                           It contains key:value pairs representing labels for selecting
                           such a volume.

@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -867,11 +866,6 @@ public abstract class AbstractModel {
         Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
 
-        LabelSelector selector = null;
-        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
-            selector = new LabelSelector(null, storage.getSelector());
-        }
-
         String storageClass = storage.getStorageClass();
         if (storage.getOverrides() != null) {
             storageClass = storage.getOverrides().stream()
@@ -899,7 +893,7 @@ public abstract class AbstractModel {
                         .withRequests(requests)
                     .endResources()
                     .withStorageClassName(storageClass)
-                    .withSelector(selector)
+                    .withSelector(storage.getSelector())
                 .endSpec()
                 .build();
 

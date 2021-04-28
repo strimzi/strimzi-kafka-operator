@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.KeyToPath;
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -212,11 +211,6 @@ public class VolumeUtils {
         Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
 
-        LabelSelector selector = null;
-        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
-            selector = new LabelSelector(null, storage.getSelector());
-        }
-
         return new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -227,7 +221,7 @@ public class VolumeUtils {
                         .withRequests(requests)
                     .endResources()
                     .withStorageClassName(storage.getStorageClass())
-                    .withSelector(selector)
+                    .withSelector(storage.getSelector())
                 .endSpec()
                 .build();
     }

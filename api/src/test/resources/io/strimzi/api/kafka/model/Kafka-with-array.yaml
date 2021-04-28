@@ -34,6 +34,15 @@ spec:
     storage:
       type: persistent-claim
       size: 500Gi
+      selector:
+        matchExpressions:
+          - key: app
+            operator: NotIn
+            values:
+              - nonkafka
+              - somevalue
+        matchLabels:
+          app: kafka
     config:
       min.insync.replicas: 3
     listeners:
@@ -110,4 +119,3 @@ spec:
     renewalDays: 20
     validityDays: 400
     generateCertificateAuthority: false
-

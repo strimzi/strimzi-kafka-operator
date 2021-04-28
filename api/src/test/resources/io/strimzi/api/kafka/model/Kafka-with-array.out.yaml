@@ -35,6 +35,15 @@ spec:
     storage:
       type: "persistent-claim"
       size: "500Gi"
+      selector:
+        matchExpressions:
+        - key: "app"
+          operator: "NotIn"
+          values:
+          - "nonkafka"
+          - "somevalue"
+        matchLabels:
+          app: "kafka"
     authorization:
       type: "simple"
       superUsers:
