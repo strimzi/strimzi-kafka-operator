@@ -80,8 +80,26 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     minikube addons enable default-storageclass
-	  minikube addons enable registry \
-	   --images="Registry=openshift/community-e2e-images@sha256:bac2d7050dc4826516650267fe7dc6627e9e11ad653daca0641437abdf18df27" --registries="Registry=quay.io"
+
+    # Add Docker hub credentials to Minikube
+    # template = username:password encoded in Base64
+
+    set +ex
+
+    if [ -n "$DOCKER_LOGIN" ]
+    then
+      docker exec "minikube" bash -c "echo '{
+        \"auths\": {
+          \"https://index.docker.io/v1/\": {
+            \"auth\": \"'$DOCKER_LOGIN'\"
+          }
+        }
+      }' | sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
+    fi
+
+    set -ex
+
+	  minikube addons enable registry
 	  minikube addons enable registry-aliases
 
 	  kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
