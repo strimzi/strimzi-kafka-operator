@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import org.junit.jupiter.api.Test;
 
 import java.io.InputStreamReader;
 import java.io.Reader;

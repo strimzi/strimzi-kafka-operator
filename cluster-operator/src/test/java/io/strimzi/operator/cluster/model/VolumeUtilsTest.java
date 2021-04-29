@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.Volume;
 

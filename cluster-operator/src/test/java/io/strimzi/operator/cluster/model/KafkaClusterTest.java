@@ -81,7 +81,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.security.cert.CertificateParsingException;

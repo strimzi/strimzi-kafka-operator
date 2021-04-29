@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

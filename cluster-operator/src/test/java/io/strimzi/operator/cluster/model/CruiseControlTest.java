@@ -54,7 +54,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;

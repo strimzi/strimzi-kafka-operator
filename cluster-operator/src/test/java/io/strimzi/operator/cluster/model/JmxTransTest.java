@@ -37,7 +37,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
