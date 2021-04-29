@@ -5,6 +5,8 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStreamReader;
@@ -19,6 +21,7 @@ import static org.hamcrest.number.OrderingComparison.greaterThan;
 import static org.hamcrest.number.OrderingComparison.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ParallelSuite
 public class KafkaVersionTest {
     private static final String KAFKA_VERSIONS_VALID_RESOURCE = "kafka-versions/kafka-versions-valid.yaml";
     private static final String KAFKA_VERSIONS_NODEFAULT_RESOURCE = "kafka-versions/kafka-versions-nodefault.yaml";
@@ -29,7 +32,7 @@ public class KafkaVersionTest {
         return new InputStreamReader(KafkaVersion.class.getResourceAsStream("/" + kafkaVersions), StandardCharsets.UTF_8);
     }
 
-    @Test
+    @ParallelTest
     public void parsingTest() throws Exception {
         Map<String, KafkaVersion> map = new HashMap<>();
         KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(getKafkaVersionsReader(KAFKA_VERSIONS_VALID_RESOURCE), map);
@@ -63,7 +66,7 @@ public class KafkaVersionTest {
         assertThat(map.get("1.0.0").isSupported(), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void duplicateVersionTest() {
         assertThrows(IllegalArgumentException.class, () -> {
             Map<String, KafkaVersion> map = new HashMap<>();
@@ -71,7 +74,7 @@ public class KafkaVersionTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void noDefaultTest() {
         assertThrows(RuntimeException.class, () -> {
             Map<String, KafkaVersion> map = new HashMap<>();
@@ -79,7 +82,7 @@ public class KafkaVersionTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void multipleDefaultTest() {
         assertThrows(IllegalArgumentException.class, () -> {
             Map<String, KafkaVersion> map = new HashMap<>();
@@ -87,17 +90,17 @@ public class KafkaVersionTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void compareEqualVersionTest() {
         assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION), is(0));
     }
 
-    @Test
+    @ParallelTest
     public void compareVersionLowerTest() {
         assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION), lessThan(0));
     }
 
-    @Test
+    @ParallelTest
     public void compareVersionHigherTest() {
         assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), greaterThan(0));
     }

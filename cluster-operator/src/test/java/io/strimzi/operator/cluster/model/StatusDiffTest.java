@@ -12,6 +12,8 @@ import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
@@ -21,8 +23,9 @@ import java.util.Date;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ParallelSuite
 public class StatusDiffTest {
-    @Test
+    @ParallelTest
     public void testStatusDiff()    {
         ListenerStatus ls1 = new ListenerStatusBuilder()
                 .withNewType("plain")
@@ -109,7 +112,7 @@ public class StatusDiffTest {
         assertThat(diff.isEmpty(), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testTimestampDiff() throws ParseException {
         ListenerStatus ls1 = new ListenerStatusBuilder()
                 .withNewType("plain")

@@ -19,6 +19,8 @@ import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ParallelSuite
 public class KafkaConnectBuildTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
@@ -52,7 +55,7 @@ public class KafkaConnectBuildTest {
             "--image-name-with-digest-file=/dev/termination-log",
             "--destination=my-image:latest");
 
-    @Test
+    @ParallelTest
     public void testFromCrd()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -75,7 +78,7 @@ public class KafkaConnectBuildTest {
         KafkaConnectBuild.fromCrd(kc, VERSIONS);
     }
 
-    @Test
+    @ParallelTest
     public void testValidationPluginsExist()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -98,7 +101,7 @@ public class KafkaConnectBuildTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testValidationArtifactsExist()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -122,7 +125,7 @@ public class KafkaConnectBuildTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testValidationUniqueNames()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -147,7 +150,7 @@ public class KafkaConnectBuildTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testDeployment()   {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
@@ -216,7 +219,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
     }
 
-    @Test
+    @ParallelTest
     public void testDeploymentWithoutPushSecret()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -251,7 +254,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/dockerfile"));
     }
 
-    @Test
+    @ParallelTest
     public void testConfigMap()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -283,7 +286,7 @@ public class KafkaConnectBuildTest {
         assertThat(cm.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
     }
 
-    @Test
+    @ParallelTest
     public void testBuildconfigWithDockerOutput()   {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
@@ -338,7 +341,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
     }
 
-    @Test
+    @ParallelTest
     public void testBuildconfigWithImageStreamOutput()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -380,7 +383,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
     }
 
-    @Test
+    @ParallelTest
     public void testTemplate()   {
         Map<String, String> buildPodLabels = TestUtils.map("l1", "v1", "l2", "v2");
         Map<String, String> buildPodAnnos = TestUtils.map("a1", "v1", "a2", "v2");
@@ -440,7 +443,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getMetadata().getAnnotations().entrySet().containsAll(buildConfigAnnos.entrySet()), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testValidKanikoOptions()   {
         List<String> expectedArgs = new ArrayList<>(defaultArgs);
         expectedArgs.add("--reproducible");
@@ -472,7 +475,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(expectedArgs));
     }
 
-    @Test
+    @ParallelTest
     public void testInvalidKanikoOptions()   {
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()

@@ -19,7 +19,8 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ParallelSuite
 public class EntityTopicOperatorTest {
 
     private final String namespace = "test";
@@ -117,12 +119,12 @@ public class EntityTopicOperatorTest {
         return expected;
     }
 
-    @Test
+    @ParallelTest
     public void testEnvVars()   {
         assertThat(entityTopicOperator.getEnvVars(), is(getExpectedEnvVars()));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrd() {
         assertThat(entityTopicOperator.namespace, is(namespace));
         assertThat(entityTopicOperator.cluster, is(cluster));
@@ -148,7 +150,7 @@ public class EntityTopicOperatorTest {
         assertThat(((InlineLogging) entityTopicOperator.getLogging()).getLoggers(), is(topicOperatorLogging.getLoggers()));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrdDefault() {
         EntityTopicOperatorSpec entityTopicOperatorSpec = new EntityTopicOperatorSpecBuilder()
                 .build();
@@ -178,7 +180,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.getLogging(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrdNoEntityOperator() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
@@ -186,7 +188,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrdNoTopicOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
         Kafka resource =
@@ -199,7 +201,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testGetContainers() {
         List<Container> containers = entityTopicOperator.getContainers(null);
         assertThat(containers.size(), is(1));
@@ -223,7 +225,7 @@ public class EntityTopicOperatorTest {
                 EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT)));
     }
 
-    @Test
+    @ParallelTest
     public void testRoleBindingInOtherNamespace()   {
         RoleBinding binding = entityTopicOperator.generateRoleBindingForRole(namespace, toWatchedNamespace);
 
@@ -235,7 +237,7 @@ public class EntityTopicOperatorTest {
         assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
     }
 
-    @Test
+    @ParallelTest
     public void testRoleBindingInTheSameNamespace()   {
         RoleBinding binding = entityTopicOperator.generateRoleBindingForRole(namespace, namespace);
 

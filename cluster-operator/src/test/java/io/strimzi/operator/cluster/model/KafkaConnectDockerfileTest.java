@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifactBuilder;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Test;
 
 import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderTest.IsEquivalent.isEquivalent;
@@ -18,6 +20,7 @@ import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ParallelSuite
 public class KafkaConnectDockerfileTest {
     private final Artifact jarArtifactNoChecksum = new JarArtifactBuilder()
             .withUrl("https://mydomain.tld/my.jar")
@@ -46,7 +49,7 @@ public class KafkaConnectDockerfileTest {
             .withSha512sum("sha-512-checksum")
             .build();
 
-    @Test
+    @ParallelTest
     public void testEmptyDockerfile()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(emptyList())
@@ -59,7 +62,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testNoArtifacts()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -75,7 +78,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testNoChecksumJarArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -93,7 +96,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testChecksumJarArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -114,7 +117,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testMultipleJarArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -137,7 +140,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testNoChecksumTgzArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -157,7 +160,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testNoChecksumZipArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -178,7 +181,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testChecksumZipArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -202,7 +205,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testChecksumTgzArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -225,7 +228,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testMultipleTgzArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -252,7 +255,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testMultipleZipArtifact()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -281,7 +284,7 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001"));
     }
 
-    @Test
+    @ParallelTest
     public void testDockerfileWithComments()   {
         Build connectBuild = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
