@@ -182,19 +182,19 @@ public class KafkaUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static void waitForClusterStability(String clusterName) {
+    public static void waitForClusterStability(String namespaceName, String clusterName) {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];
         Map<String, String>[] kafkaPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
         int[] count = {0};
-        zkPods[0] = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName));
-        kafkaPods[0] = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
-        eoPods[0] = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        zkPods[0] = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
+        kafkaPods[0] = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+        eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName));
-            Map<String, String> kafkaSnaptop = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
-            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+            Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
+            Map<String, String> kafkaSnaptop = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
@@ -219,6 +219,10 @@ public class KafkaUtils {
             count[0] = 0;
             return false;
         });
+    }
+
+    public static void waitForClusterStability(String clusterName) {
+        waitForClusterStability(kubeClient().getNamespace(), clusterName);
     }
 
     /**

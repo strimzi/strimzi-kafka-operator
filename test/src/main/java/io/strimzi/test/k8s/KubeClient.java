@@ -652,8 +652,12 @@ public class KubeClient {
         return client.secrets().inNamespace(getNamespace()).createOrReplace(secret);
     }
 
+    public Secret patchSecret(String namespaceName, String secretName, Secret secret) {
+        return client.secrets().inNamespace(namespaceName).withName(secretName).patch(secret);
+    }
+
     public Secret patchSecret(String secretName, Secret secret) {
-        return client.secrets().inNamespace(getNamespace()).withName(secretName).patch(secret);
+        return patchSecret(getNamespace(), secretName, secret);
     }
 
     public Secret getSecret(String namespaceName, String secretName) {
@@ -664,8 +668,12 @@ public class KubeClient {
         return getSecret(kubeClient().getNamespace(), secretName);
     }
 
+    public boolean deleteSecret(String namespaceName, String secretName) {
+        return client.secrets().inNamespace(namespaceName).withName(secretName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+    }
+
     public boolean deleteSecret(String secretName) {
-        return client.secrets().inNamespace(getNamespace()).withName(secretName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        return deleteSecret(kubeClient().getNamespace(), secretName);
     }
 
     public List<Secret> listSecrets(String namespaceName) {
