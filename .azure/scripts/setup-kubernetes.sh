@@ -84,10 +84,11 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     # Add Docker hub credentials to Minikube
     # template = username:password encoded in Base64
 
-    set +ex
+#    set +ex
 
     if [ -n "$DOCKER_LOGIN" ]
     then
+      echo "docker login not empty"
       docker exec "minikube" bash -c "echo '{
         \"auths\": {
           \"https://index.docker.io/v1/\": {
@@ -97,7 +98,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
       }' | sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
     fi
 
-    set -ex
+#    set -ex
 
 	  minikube addons enable registry
 	  minikube addons enable registry-aliases
