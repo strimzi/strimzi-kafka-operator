@@ -195,7 +195,7 @@ If you include the Topic Operator in the deployment, the Topic Operator will del
 
 . Delete the internal topic store topics from the Kafka cluster:
 +
-[source,shell]
+[source,shell,subs="+quotes,attributes"]
 ----
 kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
 ----
