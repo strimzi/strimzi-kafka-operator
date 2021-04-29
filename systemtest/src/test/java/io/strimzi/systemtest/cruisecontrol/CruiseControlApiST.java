@@ -51,7 +51,7 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString("RUNNING"));
         assertThat(response, containsString("NO_TASK_IN_PROGRESS"));
 
-        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent();
+        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(NAMESPACE);
 
         LOGGER.info("----> KAFKA REBALANCE <----");
 
