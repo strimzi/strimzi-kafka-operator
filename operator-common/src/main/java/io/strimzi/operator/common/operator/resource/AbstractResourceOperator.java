@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.regex.Pattern;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -43,6 +44,10 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
+
+    protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
+            "^(/metadata/managedFields" +
+                    "|/status)$");
 
     protected final Logger log = LogManager.getLogger(getClass());
     protected final Vertx vertx;
@@ -175,6 +180,39 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     /**
+     * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
+     */
+    protected Pattern ignorablePaths() {
+        return IGNORABLE_PATHS;
+    }
+
+    /**
+     * Returns the diff of the current and desired resources
+     *
+     * @param resourceName  Name of the resource used for logging
+     * @param current       Current resource
+     * @param desired       Desired resource
+     *
+     * @return              The ResourceDiff instance
+     */
+    protected ResourceDiff<T> diff(String resourceName, T current, T desired)  {
+        return new ResourceDiff<>(resourceKind, resourceName, current, desired, ignorablePaths());
+    }
+
+    /**
+     * Checks whether the current and desired resources differ and need to be patched in the Kubernetes API server.
+     *
+     * @param name      Name of the resource used for logging
+     * @param current   Current resource
+     * @param desired   Desired resource
+     *
+     * @return          True if the resources differ and need patching
+     */
+    protected boolean needsPatching(String name, T current, T desired)   {
+        return !diff(name, current, desired).isEmpty();
+    }
+
+    /**
      * Patches the resource with the given namespace and name to match the given desired resource
      * and completes the given future accordingly.
      */
@@ -183,13 +221,18 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     protected Future<ReconcileResult<T>> internalPatch(String namespace, String name, T current, T desired, boolean cascading) {
-        try {
-            T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
-            log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
-            return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
-        } catch (Exception e) {
-            log.debug("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
+        if (needsPatching(name, current, desired))  {
+            try {
+                T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
+                log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
+            } catch (Exception e) {
+                log.debug("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+                return Future.failedFuture(e);
+            }
+        } else {
+            log.debug("{} {} in namespace {} did not changed and doesn't need patching", resourceKind, name, namespace);
+            return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }
 

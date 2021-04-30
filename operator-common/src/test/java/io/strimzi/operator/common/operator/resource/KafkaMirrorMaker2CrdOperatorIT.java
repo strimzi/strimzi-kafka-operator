@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
+import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -31,12 +30,17 @@ public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperat
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, Crds.kafkaMirrorMaker2());
+        return new CrdOperator(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
     }
 
     @Override
-    protected CustomResourceDefinition getCrd() {
-        return Crds.kafkaMirrorMaker2();
+    protected String getCrd() {
+        return TestUtils.CRD_KAFKA_MIRROR_MAKER_2;
+    }
+
+    @Override
+    protected String getCrdName() {
+        return KafkaMirrorMaker2.CRD_NAME;
     }
 
     @Override
@@ -52,6 +56,7 @@ public class KafkaMirrorMaker2CrdOperatorIT extends AbstractCustomResourceOperat
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
+                    .withConnectCluster("target-cluster")
                 .endSpec()
                 .withNewStatus()
                 .endStatus()

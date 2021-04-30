@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -36,7 +35,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
@@ -774,7 +772,8 @@ public class KafkaConnectCluster extends AbstractModel {
             // Give CO access to the REST API
             NetworkPolicyIngressRule restApiRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
-                    .withNewPort(REST_API_PORT)
+                        .withNewPort(REST_API_PORT)
+                        .withNewProtocol("TCP")
                     .endPort()
                     .build();
 
@@ -808,11 +807,11 @@ public class KafkaConnectCluster extends AbstractModel {
 
             // If metrics are enabled, we have to open them as well. Otherwise they will be blocked.
             if (isMetricsEnabled) {
-                NetworkPolicyPort metricsPort = new NetworkPolicyPort();
-                metricsPort.setPort(new IntOrString(METRICS_PORT));
-
                 NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                        .withPorts(metricsPort)
+                        .addNewPort()
+                            .withNewPort(METRICS_PORT)
+                            .withNewProtocol("TCP")
+                        .endPort()
                         .withFrom()
                         .build();
 

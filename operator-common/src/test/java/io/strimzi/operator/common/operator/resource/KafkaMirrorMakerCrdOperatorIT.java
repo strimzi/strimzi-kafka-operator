@@ -4,13 +4,12 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
+import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -32,12 +31,17 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, Crds.kafkaMirrorMaker());
+        return new CrdOperator(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND);
     }
 
     @Override
-    protected CustomResourceDefinition getCrd() {
-        return Crds.kafkaMirrorMaker();
+    protected String getCrd() {
+        return TestUtils.CRD_KAFKA_MIRROR_MAKER;
+    }
+
+    @Override
+    protected String getCrdName() {
+        return KafkaMirrorMaker.CRD_NAME;
     }
 
     @Override
@@ -53,6 +57,14 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
+                    .withNewConsumer()
+                        .withBootstrapServers("localhost:9092")
+                        .withGroupId("my-group")
+                    .endConsumer()
+                    .withNewProducer()
+                        .withBootstrapServers("localhost:9092")
+                    .endProducer()
+                    .withWhitelist(".*")
                 .endSpec()
                 .withNewStatus()
                 .endStatus()

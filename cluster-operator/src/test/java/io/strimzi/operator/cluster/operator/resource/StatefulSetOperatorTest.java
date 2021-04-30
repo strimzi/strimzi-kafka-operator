@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
@@ -80,7 +81,25 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
                     .withReplicas(3)
                     .withNewTemplate()
                         .withNewMetadata()
+                            .addToAnnotations(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION, "1")
                         .endMetadata()
+                    .endTemplate()
+                .endSpec()
+                .build();
+    }
+
+    @Override
+    protected StatefulSet modifiedResource() {
+        return new StatefulSetBuilder(resource())
+                .editSpec()
+                    .withReplicas(5)
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .addToAnnotations(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION, "2")
+                        .endMetadata()
+                        .withNewSpec()
+                            .withHostname("new-hostname")
+                        .endSpec()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -103,7 +122,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
             @Override
             protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
-                return true;
+                return false;
             }
         };
     }
@@ -135,8 +154,14 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
     @Override
     @Test
-    public void testCreateWhenExistsIsAPatch(VertxTestContext context) {
-        createWhenExistsIsAPatch(context, false);
+    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
+        testCreateWhenExistsWithChangeIsAPatch(context, false);
+    }
+
+    @Override
+    @Test
+    public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context) {
+        testCreateWhenExistsWithoutChangeIsNotAPatch(context, false);
     }
 
     @Test

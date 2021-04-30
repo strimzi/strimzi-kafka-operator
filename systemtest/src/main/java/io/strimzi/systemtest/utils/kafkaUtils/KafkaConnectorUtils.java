@@ -70,7 +70,7 @@ public class KafkaConnectorUtils {
     }
 
     public static boolean waitForConnectorReady(String connectorName) {
-        return waitForConnectorStatus(kubeClient().getNamespace(), connectorName, Ready);
+        return waitForConnectorReady(kubeClient().getNamespace(), connectorName);
     }
 
     public static boolean waitForConnectorNotReady(String namespaceName, String connectorName) {

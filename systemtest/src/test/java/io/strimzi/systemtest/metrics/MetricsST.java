@@ -199,10 +199,6 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, topicName).build());
-
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
@@ -543,28 +539,34 @@ public class MetricsST extends AbstractST {
         LOGGER.info("Setting up Environment for MetricsST");
         installClusterOperator(extensionContext, NAMESPACE);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
-            .editOrNewSpec()
-                .editEntityOperator()
-                    .editUserOperator()
-                        .withReconciliationIntervalSeconds(30)
-                    .endUserOperator()
-                .endEntityOperator()
-            .endSpec()
-            .build());
+        final String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 
-        String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
+        // create resources without wait to deploy them simultaneously
+        resourceManager.createResource(extensionContext, false,
+            // kafka with cruise control and metrics
+            KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
+                .editOrNewSpec()
+                    .editEntityOperator()
+                        .editUserOperator()
+                            .withReconciliationIntervalSeconds(30)
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build(),
+            KafkaTemplates.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).build(),
+            KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build(),
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build(),
+            KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build()
+        );
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetrics(SECOND_CLUSTER, 1, 1).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithMetrics(metricsClusterName, 1).build());
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build());
-        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build());
+        // sync resources
+        resourceManager.synchronizeResources(extensionContext);
+
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, topicName, 7, 2).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, bridgeTopic).build());
-
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithMetrics(metricsClusterName, 1).build());
 
         kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 

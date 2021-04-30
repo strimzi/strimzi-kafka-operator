@@ -7,7 +7,6 @@ package io.strimzi.kafka.api.conversion.cli;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -18,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.kafka.api.conversion.utils.LegacyCrds;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,16 +64,16 @@ public abstract class AbstractCommand implements Runnable {
     // Versioned operations are used to write the converted resource using the target API
     @SuppressWarnings({"rawtypes"})
     protected final static Map<String, BiFunction<KubernetesClient, String, MixedOperation>> VERSIONED_OPERATIONS = Map.of(
-            "Kafka", Crds::kafkaOperation,
-            "KafkaConnect", Crds::kafkaConnectOperation,
-            "KafkaConnectS2I", Crds::kafkaConnectS2iOperation,
-            "KafkaMirrorMaker", Crds::mirrorMakerOperation,
-            "KafkaBridge", Crds::kafkaBridgeOperation,
-            "KafkaMirrorMaker2", Crds::kafkaMirrorMaker2Operation,
-            "KafkaTopic", Crds::topicOperation,
-            "KafkaUser", Crds::kafkaUserOperation,
-            "KafkaConnector", Crds::kafkaConnectorOperation,
-            "KafkaRebalance", Crds::kafkaRebalanceOperation
+            "Kafka", LegacyCrds::kafkaOperation,
+            "KafkaConnect", LegacyCrds::kafkaConnectOperation,
+            "KafkaConnectS2I", LegacyCrds::kafkaConnectS2iOperation,
+            "KafkaMirrorMaker", LegacyCrds::mirrorMakerOperation,
+            "KafkaBridge", LegacyCrds::kafkaBridgeOperation,
+            "KafkaMirrorMaker2", LegacyCrds::kafkaMirrorMaker2Operation,
+            "KafkaTopic", LegacyCrds::topicOperation,
+            "KafkaUser", LegacyCrds::kafkaUserOperation,
+            "KafkaConnector", LegacyCrds::kafkaConnectorOperation,
+            "KafkaRebalance", LegacyCrds::kafkaRebalanceOperation
     );
 
     @CommandLine.Spec

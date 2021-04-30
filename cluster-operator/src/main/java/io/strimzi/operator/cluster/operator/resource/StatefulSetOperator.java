@@ -42,7 +42,6 @@ import java.util.function.Function;
  * in addition to the usual operations.
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> {
-
     private static final int NO_GENERATION = -1;
     private static final int INIT_GENERATION = 0;
 

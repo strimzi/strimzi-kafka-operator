@@ -3,10 +3,9 @@
 
 ## 0.23.0
 
-* Add support for Kafka 2.8.0
+* Add support for Kafka 2.8.0 and 2.6.2, remove support for Kafka 2.5.x
 * Make it possible to configure maximum number of connections and maximum connection creation rate in listener configuration
 * Add support for configuring finalizers for `loadbalancer` type listeners
-* Remove support for Kafka 2.5.x
 * Use dedicated Service Account for Kafka Connect Build on Kubernetes 
 * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
 * Migrate to CRD v1 (required by Kubernetes 1.22+)
@@ -15,6 +14,7 @@
 * Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
 * Removed requirement for replicas and partitions KafkaTopic spec making these parameters optional
 * Allow disabling service links (environment variables describing Kubernetes services) in Pod template
+* Update Kaniko executor to 1.6.0
 
 ### Changes, deprecations and removals
 

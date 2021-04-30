@@ -344,12 +344,15 @@ public class ZookeeperCluster extends AbstractModel {
 
         NetworkPolicyPort clientsPort = new NetworkPolicyPort();
         clientsPort.setPort(new IntOrString(CLIENT_TLS_PORT));
+        clientsPort.setProtocol("TCP");
 
         NetworkPolicyPort clusteringPort = new NetworkPolicyPort();
         clusteringPort.setPort(new IntOrString(CLUSTERING_PORT));
+        clusteringPort.setProtocol("TCP");
 
         NetworkPolicyPort leaderElectionPort = new NetworkPolicyPort();
         leaderElectionPort.setPort(new IntOrString(LEADER_ELECTION_PORT));
+        leaderElectionPort.setProtocol("TCP");
 
         NetworkPolicyPeer zookeeperClusterPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector2 = new LabelSelector();
@@ -413,11 +416,11 @@ public class ZookeeperCluster extends AbstractModel {
         rules.add(clientsIngressRule);
 
         if (isMetricsEnabled) {
-            NetworkPolicyPort metricsPort = new NetworkPolicyPort();
-            metricsPort.setPort(new IntOrString(METRICS_PORT));
-
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(metricsPort)
+                    .addNewPort()
+                        .withNewPort(METRICS_PORT)
+                        .withNewProtocol("TCP")
+                    .endPort()
                     .withFrom()
                     .build();
 

@@ -41,6 +41,17 @@ public class IngressOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Override
+    protected Ingress modifiedResource() {
+        return new IngressBuilder()
+                .withNewMetadata()
+                    .withName(RESOURCE_NAME)
+                    .withNamespace(NAMESPACE)
+                    .withLabels(singletonMap("foo2", "bar2"))
+                .endMetadata()
+                .build();
+    }
+
+    @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         NetworkAPIGroupDSL network = mock(NetworkAPIGroupDSL.class);
         V1NetworkAPIGroupDSL v1 = mock(V1NetworkAPIGroupDSL.class);

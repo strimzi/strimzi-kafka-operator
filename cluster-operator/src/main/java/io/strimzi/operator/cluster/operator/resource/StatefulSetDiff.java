@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
+import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
-public class StatefulSetDiff extends AbstractResourceDiff {
+public class StatefulSetDiff extends AbstractJsonDiff {
 
     private static final Logger log = LogManager.getLogger(StatefulSetDiff.class.getName());
 

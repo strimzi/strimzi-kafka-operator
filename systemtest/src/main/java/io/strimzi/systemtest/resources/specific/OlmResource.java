@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources.specific;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
@@ -56,7 +57,7 @@ public class OlmResource implements SpecificResourceType {
 
     public void create(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(this::delete);
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(this::delete));
         this.clusterOperator(namespace, operationTimeout, reconciliationInterval);
     }
 

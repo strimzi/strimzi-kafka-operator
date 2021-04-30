@@ -63,17 +63,22 @@ public class SecretUtils {
         LOGGER.info("Secret {} deleted", secretName);
     }
 
-    public static void createSecret(String secretName, String dataKey, String dataValue) {
+    public static void createSecret(String namespaceName, String secretName, String dataKey, String dataValue) {
         LOGGER.info("Creating secret {}", secretName);
-        kubeClient().createSecret(new SecretBuilder()
-                .withNewApiVersion("v1")
-                .withNewKind("Secret")
-                .withNewMetadata()
-                    .withName(secretName)
-                .endMetadata()
-                .withNewType("Opaque")
-                    .withData(Collections.singletonMap(dataKey, dataValue))
-                .build());
+        kubeClient(namespaceName).createSecret(new SecretBuilder()
+            .withNewApiVersion("v1")
+            .withNewKind("Secret")
+            .withNewMetadata()
+                .withName(secretName)
+                .withNamespace(namespaceName)
+            .endMetadata()
+            .withNewType("Opaque")
+                .withData(Collections.singletonMap(dataKey, dataValue))
+            .build());
+    }
+
+    public static void createSecret(String secretName, String dataKey, String dataValue) {
+        createSecret(kubeClient().getNamespace(), secretName, dataKey, dataValue);
     }
 
     public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace) {
@@ -145,10 +150,10 @@ public class SecretUtils {
         waitForSecretReady(namespace, name, () -> { });
     }
 
-    public static void waitForCertToChange(String originalCert, String secretName) {
+    public static void waitForCertToChange(String namespaceName, String originalCert, String secretName) {
         LOGGER.info("Waiting for Secret {} certificate change", secretName);
         TestUtils.waitFor("Cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Secret secret = kubeClient().getSecret(secretName);
+            Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
                 boolean changed = !originalCert.equals(currentCert);

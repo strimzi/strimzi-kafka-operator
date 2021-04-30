@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefin
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
@@ -49,7 +50,6 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
     private static final Logger LOGGER = LogManager.getLogger(ApiEvolutionCrdIT.class);
 
     public static final String NAMESPACE = "api-evolution-it";
-    //public static final YAMLMapper YAML_MAPPER = new YAMLMapper();
 
     @Test
     public void kafkaApiEvolution() throws IOException, InterruptedException {
@@ -87,7 +87,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
                     new ArrayOrObjectKafkaListeners(instanceA.getSpec().getKafka().getListeners().newOrConverted()))
                     .endKafka().endSpec().build());
 
-            /* Strimzi 0.21
+            /* Strimzi 0.22
              * v1beta2 gets added, and v1beta2 is stored
              * users touch all instances, so there's nothing stored at v1beta1
              */
@@ -139,7 +139,7 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
             assertIsListListener(v1beta2Get(nameB));
             assertIsListListener(v1beta2Get(nameC));
 
-            // Strimzi 0.22
+            // Strimzi 0.23
 
             // Upgrade CRD so v1beta2 is stored, and v1beta1 is not served
             LOGGER.info("Phase 3 : Update CRD so v1beta2 is stored");
@@ -329,11 +329,22 @@ public class ApiEvolutionCrdIT extends AbstractCrdIT {
     }
 
     private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1beta1Op() {
-        return Crds.kafkaV1Beta1Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
+        io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition kafka = Crds.kafka();
+        CustomResourceDefinitionContext ctx = new CustomResourceDefinitionContext.Builder()
+                .withKind(kafka.getSpec().getNames().getKind())
+                .withName(kafka.getSpec().getNames().getSingular())
+                .withPlural(kafka.getSpec().getNames().getPlural())
+                .withScope(kafka.getSpec().getScope())
+                .withGroup(kafka.getSpec().getGroup())
+                .withVersion(Constants.V1BETA1)
+                .build();
+
+        return cluster.client().getClient().customResources(ctx, Kafka.class, KafkaList.class).inNamespace(NAMESPACE);
+        //return Crds.kafkaV1Beta1Operation(cluster.client().getClient())
     }
 
     private NonNamespaceOperation<Kafka, KafkaList, Resource<Kafka>> v1beta2Op() {
-        return Crds.kafkaV1Beta2Operation(cluster.client().getClient()).inNamespace(NAMESPACE);
+        return Crds.kafkaOperation(cluster.client().getClient()).inNamespace(NAMESPACE);
     }
 
     private GenericKafkaListener listListener() {

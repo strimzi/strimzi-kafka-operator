@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -39,7 +40,8 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
     }
     @Override
     public boolean waitForReadiness(KafkaTopic resource) {
-        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), resource, CustomResourceStatus.Ready);
+        return ResourceManager.waitForResourceStatus(kafkaTopicClient(), resource.getKind(), resource.getMetadata().getNamespace(),
+            resource.getMetadata().getName(), CustomResourceStatus.Ready, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()));
     }
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> kafkaTopicClient() {

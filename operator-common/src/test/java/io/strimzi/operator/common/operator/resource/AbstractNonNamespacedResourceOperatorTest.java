@@ -70,6 +70,11 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     protected abstract T resource();
 
     /**
+     * Get a modified test resource to test how are changes handled
+     */
+    protected abstract T modifiedResource();
+
+    /**
      * Configure the given {@code mockClient} to return the given {@code op}
      * that's appropriate for the kind of resource being tests.
      */
@@ -86,15 +91,43 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     }
 
     @Test
-    public void testCreateWhenExistsIsAPatch(VertxTestContext context) {
-        createWhenExistsIsAPatch(context, true);
-    }
-
-    public void createWhenExistsIsAPatch(VertxTestContext context, boolean cascade) {
+    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
+        when(mockResource.withPropagationPolicy(true ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
+        when(mockResource.patch(any())).thenReturn(resource);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+
+        Checkpoint async = context.checkpoint();
+        op.createOrUpdate(modifiedResource())
+                .onComplete(context.succeeding(ar -> {
+                    verify(mockResource).get();
+                    verify(mockResource).patch(any());
+                    verify(mockResource, never()).create(any());
+                    verify(mockResource, never()).create();
+                    verify(mockResource, never()).createOrReplace(any());
+                    verify(mockCms, never()).createOrReplace(any());
+                    async.flag();
+                }));
+    }
+
+    @Test
+    public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context) {
+        T resource = resource();
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(resource);
+        when(mockResource.withPropagationPolicy(true ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
         when(mockResource.patch(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -110,15 +143,15 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource())
-            .onComplete(context.succeeding(ar -> {
-                verify(mockResource).get();
-                verify(mockResource).patch(any());
-                verify(mockResource, never()).create(any());
-                verify(mockResource, never()).create();
-                verify(mockResource, never()).createOrReplace(any());
-                verify(mockCms, never()).createOrReplace(any());
-                async.flag();
-            }));
+                .onComplete(context.succeeding(ar -> {
+                    verify(mockResource).get();
+                    verify(mockResource, never()).patch(any());
+                    verify(mockResource, never()).create(any());
+                    verify(mockResource, never()).create();
+                    verify(mockResource, never()).createOrReplace(any());
+                    verify(mockCms, never()).createOrReplace(any());
+                    async.flag();
+                }));
     }
 
     @Test

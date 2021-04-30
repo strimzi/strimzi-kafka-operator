@@ -43,7 +43,8 @@ public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenSh
 
     @Override
     protected BuildConfig resource() {
-        return new BuildConfigBuilder().withNewMetadata()
+        return new BuildConfigBuilder()
+            .withNewMetadata()
                 .withNamespace(NAMESPACE)
                 .withName(RESOURCE_NAME)
             .endMetadata()
@@ -53,8 +54,17 @@ public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenSh
     }
 
     @Override
+    protected BuildConfig modifiedResource() {
+        return new BuildConfigBuilder(resource())
+                .editSpec()
+                    .withNewServiceAccount("service-account")
+                .endSpec()
+                .build();
+    }
+
+    @Override
     @Test
-    public void testCreateWhenExistsIsAPatch(VertxTestContext context) {
-        createWhenExistsIsAPatch(context, false);
+    public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
+        testCreateWhenExistsWithChangeIsAPatch(context, false);
     }
 }

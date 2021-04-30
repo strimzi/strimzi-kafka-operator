@@ -5,7 +5,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.zjsonpatch.JsonDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,16 +14,12 @@ import java.util.regex.Pattern;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
-class PodDisruptionBudgetDiff extends AbstractResourceDiff  {
-    private static final Logger log = LogManager.getLogger(PodDisruptionBudgetDiff.class.getName());
+class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
+    private static final Logger log = LogManager.getLogger(ResourceDiff.class.getName());
 
     private final boolean isEmpty;
 
-    private static final Pattern IGNORABLE_PATHS = Pattern.compile(
-            "^(/metadata/managedFields" +
-                    "|/status)$");
-
-    public PodDisruptionBudgetDiff(PodDisruptionBudget current, PodDisruptionBudget desired) {
+    public ResourceDiff(String resourceKind, String resourceName, T current, T desired, Pattern ignorableFields) {
         JsonNode source = patchMapper().valueToTree(current == null ? "{}" : current);
         JsonNode target = patchMapper().valueToTree(desired == null ? "{}" : desired);
         JsonNode diff = JsonDiff.asJson(source, target);
@@ -33,15 +29,15 @@ class PodDisruptionBudgetDiff extends AbstractResourceDiff  {
         for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
 
-            if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                log.debug("Ignoring PodDisruptionBudget diff {}", d);
+            if (ignorableFields.matcher(pathValue).matches()) {
+                log.debug("Ignoring {} {} diff {}", resourceKind, resourceName, d);
                 continue;
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("PodDisruptionBudget differs: {}", d);
-                log.debug("Current PodDisruptionBudget path {} has value {}", pathValue, lookupPath(source, pathValue));
-                log.debug("Desired PodDisruptionBudget path {} has value {}", pathValue, lookupPath(target, pathValue));
+                log.debug("{} {} differs: {}", resourceKind, resourceName, d);
+                log.debug("Current {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(source, pathValue));
+                log.debug("Desired {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(target, pathValue));
             }
 
             num++;

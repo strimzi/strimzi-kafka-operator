@@ -107,7 +107,7 @@ public class KafkaRollerST extends AbstractST {
 
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
+        assertNoCoErrorsLogged(NAMESPACE, timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
 
         // scale down
         final int scaledDownReplicas = 3;

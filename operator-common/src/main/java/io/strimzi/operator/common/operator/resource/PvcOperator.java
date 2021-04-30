@@ -12,10 +12,18 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
+import java.util.regex.Pattern;
+
 /**
  * Operations for {@code PersistentVolumeClaim}s.
  */
 public class PvcOperator extends AbstractResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
+    protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
+            "^(/metadata/managedFields" +
+                    "|/metadata/annotations/pv.kubernetes.io~1bind-completed" +
+                    "|/metadata/finalizers" +
+                    "|/status)$");
+
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -28,6 +36,14 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
     @Override
     protected MixedOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> operation() {
         return client.persistentVolumeClaims();
+    }
+
+    /**
+     * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
+     */
+    @Override
+    protected Pattern ignorablePaths() {
+        return IGNORABLE_PATHS;
     }
 
     /**
