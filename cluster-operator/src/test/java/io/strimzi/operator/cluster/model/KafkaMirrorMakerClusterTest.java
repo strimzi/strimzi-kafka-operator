@@ -534,6 +534,7 @@ public class KafkaMirrorMakerClusterTest {
                             .withNewPriorityClassName("top-priority")
                             .withNewSchedulerName("my-scheduler")
                             .withHostAliases(hostAlias1, hostAlias2)
+                            .withEnableServiceLinks(false)
                         .endPod()
                         .withNewPodDisruptionBudget()
                             .withNewMetadata()
@@ -559,6 +560,7 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();

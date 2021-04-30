@@ -238,6 +238,7 @@ public class JmxTransTest {
                                 .withNewSchedulerName("my-scheduler")
                                 .withAffinity(affinity)
                                 .withTolerations(tolerations)
+                                .withEnableServiceLinks(false)
                             .endPod()
                         .endTemplate()
                     .endJmxTrans()
@@ -257,6 +258,7 @@ public class JmxTransTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), hasEntries(podLabels));
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations(), hasEntries(podAnots));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
     }
 
     @Test

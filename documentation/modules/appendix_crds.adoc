@@ -882,10 +882,12 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 |string
 |schedulerName                  1.2+<.<a|The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used.
 |string
-|hostAliases                    1.2+<.<a|The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[external documentation for core/v1 HostAlias].
+|hostAliases                    1.2+<.<a|The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[external documentation for core/v1 HostAlias].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[HostAlias] array
+|enableServiceLinks             1.2+<.<a|Indicates whether information about services should be injected into Pod's environment variables.
+|boolean
 |topologySpreadConstraints      1.2+<.<a|The pod's topology spread constraints. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#topologyspreadconstraint-v1-core[external documentation for core/v1 topologyspreadconstraint].
 
 
