@@ -392,6 +392,7 @@ public class KafkaExporterTest {
                                 .withAffinity(affinity)
                                 .withTolerations(tolerations)
                                 .withTopologySpreadConstraints(tsc1, tsc2)
+                                .withEnableServiceLinks(false)
                             .endPod()
                             .withNewService()
                                 .withNewMetadata()
@@ -418,6 +419,7 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getAffinity(), is(affinity));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
     }
 
     @AfterAll

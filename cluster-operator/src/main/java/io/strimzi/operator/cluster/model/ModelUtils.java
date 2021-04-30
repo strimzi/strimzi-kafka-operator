@@ -258,6 +258,7 @@ public class ModelUtils {
             model.templatePodSchedulerName = pod.getSchedulerName();
             model.templatePodHostAliases = pod.getHostAliases();
             model.templatePodTopologySpreadConstraints = pod.getTopologySpreadConstraints();
+            model.templatePodEnableServiceLinks = pod.getEnableServiceLinks();
         }
     }
 

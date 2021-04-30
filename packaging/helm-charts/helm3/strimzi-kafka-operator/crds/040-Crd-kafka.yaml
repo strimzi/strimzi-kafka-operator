@@ -1081,7 +1081,10 @@ spec:
                                       type: string
                                   ip:
                                     type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -2016,7 +2019,10 @@ spec:
                                       type: string
                                   ip:
                                     type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -2925,7 +2931,10 @@ spec:
                                       type: string
                                   ip:
                                     type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -3772,7 +3781,10 @@ spec:
                                       type: string
                                   ip:
                                     type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -4455,7 +4467,10 @@ spec:
                                       type: string
                                   ip:
                                     type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:
@@ -4939,7 +4954,10 @@ spec:
                                       type: string
                                   ip:
                                     type: string
-                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified.
+                              description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            enableServiceLinks:
+                              type: boolean
+                              description: Indicates whether information about services should be injected into Pod's environment variables.
                             topologySpreadConstraints:
                               type: array
                               items:

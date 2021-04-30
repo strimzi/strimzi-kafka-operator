@@ -145,6 +145,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                             .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
                         .endMetadata()
                         .withNewSpec()
+                            .withEnableServiceLinks(templatePodEnableServiceLinks)
                             .withContainers(container)
                             .withVolumes(getVolumes(isOpenShift, true))
                             .withTolerations(getTolerations())
