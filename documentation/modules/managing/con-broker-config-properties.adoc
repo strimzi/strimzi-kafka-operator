@@ -345,9 +345,9 @@ log.cleaner.io.max.bytes.per.second= 1.7976931348623157E308
 == Handling large message sizes
 
 The default batch size for messages is 1MB, which is optimal for maximum throughput in most use cases.
-Kafka can handle larger batches at a reduced throughput, assuming adequate disk capacity.
+Kafka can accommodate larger batches at a reduced throughput, assuming adequate disk capacity.
 
-Larger messages are handled in four ways:
+Large message sizes are handled in four ways:
 
 . Reference-based messaging sends only a reference to data stored in some other system in the message’s value.
 . xref:optimizing_throughput_and_latency[Producer-side message compression] writes compressed messages to the log.
