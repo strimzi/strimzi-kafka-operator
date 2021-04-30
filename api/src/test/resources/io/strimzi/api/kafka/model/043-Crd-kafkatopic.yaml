@@ -112,4 +112,7 @@ spec:
               type: integer
               description: The generation of the CRD that was last reconciled by the
                 operator.
+            topicName:
+              type: string
+              description: Topic name.
           description: The status of the topic.

@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -40,7 +39,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
@@ -745,7 +743,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-        return createDiscoverableService("ClusterIP", getServicePorts(),
+        return createDiscoverableService("ClusterIP", getServicePorts(), templateServiceLabels,
                 Util.mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), templateServiceAnnotations));
     }
 
@@ -828,6 +826,8 @@ public class KafkaCluster extends AbstractModel {
                 ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
                 if (etp != null) {
                     service.getSpec().setExternalTrafficPolicy(etp.toValue());
+                } else {
+                    service.getSpec().setExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER.toValue());
                 }
             }
 
@@ -892,6 +892,8 @@ public class KafkaCluster extends AbstractModel {
                 ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
                 if (etp != null) {
                     service.getSpec().setExternalTrafficPolicy(etp.toValue());
+                } else {
+                    service.getSpec().setExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER.toValue());
                 }
             }
 
@@ -1712,6 +1714,7 @@ public class KafkaCluster extends AbstractModel {
         NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
                 .addNewPort()
                     .withNewPort(REPLICATION_PORT)
+                    .withNewProtocol("TCP")
                 .endPort()
                 .build();
 
@@ -1760,11 +1763,11 @@ public class KafkaCluster extends AbstractModel {
 
         // Free access to listener ports
         for (GenericKafkaListener listener : listeners) {
-            NetworkPolicyPort plainPort = new NetworkPolicyPort();
-            plainPort.setPort(new IntOrString(listener.getPort()));
-
             NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(plainPort)
+                    .addNewPort()
+                        .withNewPort(listener.getPort())
+                        .withNewProtocol("TCP")
+                    .endPort()
                     .withFrom(listener.getNetworkPolicyPeers())
                     .build();
 
@@ -1772,11 +1775,11 @@ public class KafkaCluster extends AbstractModel {
         }
 
         if (isMetricsEnabled) {
-            NetworkPolicyPort metricsPort = new NetworkPolicyPort();
-            metricsPort.setPort(new IntOrString(METRICS_PORT));
-
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(metricsPort)
+                    .addNewPort()
+                        .withNewPort(METRICS_PORT)
+                        .withNewProtocol("TCP")
+                    .endPort()
                     .withFrom()
                     .build();
 
@@ -1784,11 +1787,11 @@ public class KafkaCluster extends AbstractModel {
         }
 
         if (isJmxEnabled()) {
-            NetworkPolicyPort jmxPort = new NetworkPolicyPort();
-            jmxPort.setPort(new IntOrString(JMX_PORT));
-
             NetworkPolicyIngressRule jmxRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(jmxPort)
+                    .addNewPort()
+                        .withNewPort(JMX_PORT)
+                        .withNewProtocol("TCP")
+                    .endPort()
                     .withFrom()
                     .build();
 

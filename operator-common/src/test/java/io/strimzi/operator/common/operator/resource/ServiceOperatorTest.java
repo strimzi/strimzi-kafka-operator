@@ -37,7 +37,24 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
 
     @Override
     protected Service resource() {
-        return new ServiceBuilder().withNewMetadata().withNamespace(NAMESPACE).withName(RESOURCE_NAME).endMetadata().build();
+        return new ServiceBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewType("LoadBalancer")
+                .endSpec()
+                .build();
+    }
+
+    @Override
+    protected Service modifiedResource() {
+        return new ServiceBuilder(resource())
+                .editSpec()
+                    .withNewType("NodePort")
+                .endSpec()
+                .build();
     }
 
     @Override
@@ -200,7 +217,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                                     .withTargetPort(new IntOrString(5678))
                                     .build()
                     )
-                    .withNewIpFamily("IPv6")
+                    .withIpFamilies("IPv6")
                 .endSpec()
                 .build();
 
@@ -223,7 +240,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                                     .withTargetPort(new IntOrString(5678))
                                     .build()
                     )
-                    .withNewIpFamily("IPv6")
+                    .withIpFamilies("IPv6")
                 .endSpec()
                 .build();
 
@@ -252,7 +269,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
         ServiceOperator op = new ServiceOperator(vertx, client);
         op.patchIpFamily(current, desired);
 
-        assertThat(current.getSpec().getIpFamily(), is(desired.getSpec().getIpFamily()));
-        assertThat(current2.getSpec().getIpFamily(), is(desired.getSpec().getIpFamily()));
+        assertThat(current.getSpec().getIpFamilies(), is(desired.getSpec().getIpFamilies()));
+        assertThat(current2.getSpec().getIpFamilies(), is(desired.getSpec().getIpFamilies()));
     }
 }

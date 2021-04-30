@@ -35,7 +35,7 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
         kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
     }
     @Override
-    public void delete(KafkaRebalance resource) throws Exception {
+    public void delete(KafkaRebalance resource) {
         kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
@@ -50,5 +50,9 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
 
     public static void replaceKafkaRebalanceResource(String resourceName, Consumer<KafkaRebalance> editor) {
         ResourceManager.replaceCrdResource(KafkaRebalance.class, KafkaRebalanceList.class, resourceName, editor);
+    }
+
+    public static void replaceKafkaRebalanceResourceInSpecificNamespace(String resourceName, Consumer<KafkaRebalance> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(KafkaRebalance.class, KafkaRebalanceList.class, resourceName, editor, namespaceName);
     }
 }

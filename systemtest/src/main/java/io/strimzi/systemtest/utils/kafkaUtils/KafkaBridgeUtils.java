@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.templates.kubernetes.ServiceTemplates;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -69,19 +70,29 @@ public class KafkaBridgeUtils {
 
     /**
      * Wait until KafkaBridge is in desired state
+     * @param namespaceName Namespace name
      * @param clusterName name of KafkaBridge cluster
      * @param state desired state
      */
-    public static boolean waitForKafkaBridgeStatus(String clusterName, Enum<?> state) {
-        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
-        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge, state);
+    public static boolean waitForKafkaBridgeStatus(String namespaceName, String clusterName, Enum<?> state) {
+        KafkaBridge kafkaBridge = kafkaBridgeClient().inNamespace(namespaceName).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatus(kafkaBridgeClient(), kafkaBridge.getKind(), namespaceName,
+            kafkaBridge.getMetadata().getName(), state, ResourceOperation.getTimeoutForResourceReadiness(kafkaBridge.getKind()));
+    }
+
+    public static boolean waitForKafkaBridgeReady(String namespaceName, String clusterName) {
+        return waitForKafkaBridgeStatus(namespaceName, clusterName, Ready);
+    }
+
+    public static boolean waitForKafkaBridgeNotReady(String namespaceName, String clusterName) {
+        return waitForKafkaBridgeStatus(namespaceName, clusterName, NotReady);
     }
 
     public static boolean waitForKafkaBridgeReady(String clusterName) {
-        return waitForKafkaBridgeStatus(clusterName, Ready);
+        return waitForKafkaBridgeStatus(kubeClient().getNamespace(), clusterName, Ready);
     }
 
     public static boolean waitForKafkaBridgeNotReady(String clusterName) {
-        return waitForKafkaBridgeStatus(clusterName, NotReady);
+        return waitForKafkaBridgeStatus(kubeClient().getNamespace(), clusterName, NotReady);
     }
 }

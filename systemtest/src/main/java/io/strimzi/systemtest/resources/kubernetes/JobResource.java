@@ -23,7 +23,7 @@ public class JobResource implements ResourceType<Job> {
         ResourceManager.kubeClient().createJob(resource);
     }
     @Override
-    public void delete(Job resource) throws Exception {
+    public void delete(Job resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteJob(resource.getMetadata().getName());
     }
     @Override

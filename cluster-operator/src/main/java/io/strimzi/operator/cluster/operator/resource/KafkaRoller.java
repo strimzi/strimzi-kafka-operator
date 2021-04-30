@@ -214,7 +214,7 @@ public class KafkaRoller {
                     allClient.close(Duration.ofSeconds(30));
                 }
             } catch (RuntimeException e) {
-                log.debug("Exception closing the allClient", e);
+                log.debug("{}: Exception closing admin client", reconciliation, e);
             }
             vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
         });
@@ -360,7 +360,6 @@ public class KafkaRoller {
                             log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         } else {
-                            // TODO do we need some check here that the broker is still OK?
                             awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         }
                     } else {
@@ -703,7 +702,7 @@ public class KafkaRoller {
     }
 
     protected KafkaAvailability availability(Admin ac) {
-        return new KafkaAvailability(ac);
+        return new KafkaAvailability(ac, reconciliation);
     }
 
     String podName(int podId) {

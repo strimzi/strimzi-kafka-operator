@@ -4,12 +4,14 @@
  */
 package io.strimzi.test.k8s;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -186,6 +188,11 @@ public class KubeClusterResource {
         setNamespace(testNamespace);
     }
 
+    public void deleteNamespace(String namespaceName) {
+        kubeClient().deleteNamespace(namespaceName);
+        cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
+    }
+
     /**
      * Replaces custom resources for CO such as templates. Deletion is up to caller and can be managed
      * by calling {@link #deleteCustomResources()}
@@ -203,14 +210,58 @@ public class KubeClusterResource {
     /**
      * Creates custom resources for CO such as templates. Deletion is up to caller and can be managed
      * by calling {@link #deleteCustomResources()}
+     * @param extensionContext extension context of specific test case because of namespace name
+     * @param resources array of paths to yaml files with resources specifications
+     */
+    public void createCustomResources(ExtensionContext extensionContext, String... resources) {
+        final String namespaceName = !extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString().isEmpty() ?
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString() :
+            getNamespace();
+
+        for (String resource : resources) {
+            LOGGER.info("Creating resources {} in Namespace {}", resource, namespaceName);
+            deploymentResources.add(resource);
+            cmdKubeClient(namespaceName).create(resource);
+        }
+    }
+
+    /**
+     * Creates custom resources for CO such as templates. Deletion is up to caller and can be managed
+     * by calling {@link #deleteCustomResources()}
      * @param resources array of paths to yaml files with resources specifications
      */
     public void createCustomResources(String... resources) {
         for (String resource : resources) {
             LOGGER.info("Creating resources {} in Namespace {}", resource, getNamespace());
             deploymentResources.add(resource);
-            cmdKubeClient().namespace(getNamespace()).create(resource);
+            cmdKubeClient(getNamespace()).create(resource);
         }
+    }
+
+    /**
+     * Waits for a CRD resource to be ready
+     *
+     * @param name  Name of the CRD to wait for
+     */
+    public void waitForCustomResourceDefinition(String name) {
+        cmdKubeClient().waitFor("crd", name, crd -> {
+            JsonNode json = (JsonNode) crd;
+            if (json != null
+                    && json.hasNonNull("status")
+                    && json.get("status").hasNonNull("conditions")
+                    && json.get("status").get("conditions").isArray()) {
+                for (JsonNode condition : json.get("status").get("conditions")) {
+                    if ("Established".equals(condition.get("type").asText())
+                            && "True".equals(condition.get("status").asText()))   {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            return false;
+        });
     }
 
     /**
@@ -232,6 +283,18 @@ public class KubeClusterResource {
         for (String resource : resources) {
             LOGGER.info("Deleting resources {}", resource);
             cmdKubeClient().delete(resource);
+            deploymentResources.remove(resource);
+        }
+    }
+
+    public void deleteCustomResources(ExtensionContext extensionContext, String... resources) {
+        final String namespaceName = !extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString().isEmpty() ?
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get("NAMESPACE_NAME").toString() :
+            getNamespace();
+
+        for (String resource : resources) {
+            LOGGER.info("Deleting resources {}", resource);
+            cmdKubeClient(namespaceName).delete(resource);
             deploymentResources.remove(resource);
         }
     }

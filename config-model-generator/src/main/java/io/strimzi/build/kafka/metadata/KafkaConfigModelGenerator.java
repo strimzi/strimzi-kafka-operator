@@ -94,9 +94,14 @@ public class KafkaConfigModelGenerator {
                     versions.add(Pattern.quote(next.version()));
                 }
                 descriptor.setPattern(String.join("|", versions));
+            } else if (key.validator != null
+                    && "class org.apache.kafka.raft.RaftConfig$ControllerQuorumVotersValidator".equals(key.validator.getClass().toString()))   {
+                continue;
             } else if (key.validator != null) {
+                System.out.println(key.validator.getClass().toString());
                 throw new IllegalStateException(key.validator.getClass().toString());
             }
+
             result.put(configName, descriptor);
         }
         return result;
@@ -163,6 +168,22 @@ public class KafkaConfigModelGenerator {
         }
     }
 
+    private static Field getOneOfFields(Class<?> cls, String... alternativeFields) {
+        for (String field : alternativeFields)  {
+            try {
+                return getField(KafkaConfig$.class, field);
+            } catch (RuntimeException e)    {
+                if (e.getCause() instanceof NoSuchFieldException)   {
+                    continue;
+                } else {
+                    throw e;
+                }
+            }
+        }
+
+        throw new RuntimeException("None of the alternative fields were found.");
+    }
+
     private static Field getField(Class<?> cls, String fieldName) {
         return AccessController.doPrivileged(new PrivilegedAction<Field>() {
                 @Override
@@ -219,7 +240,7 @@ public class KafkaConfigModelGenerator {
         try {
             Field instance = getField(KafkaConfig$.class, "MODULE$");
             KafkaConfig$ x = (KafkaConfig$) instance.get(null);
-            Field config = getField(KafkaConfig$.class, "kafka$server$KafkaConfig$$configDef");
+            Field config = getOneOfFields(KafkaConfig$.class, "kafka$server$KafkaConfig$$configDef", "configDef");
             return (ConfigDef) config.get(x);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);

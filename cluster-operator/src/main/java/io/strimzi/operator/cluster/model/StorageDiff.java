@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.operator.common.operator.resource.AbstractResourceDiff;
+import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,7 +28,7 @@ import static java.util.Objects.isNull;
 /**
  * Class for diffing storage configuration
  */
-public class StorageDiff extends AbstractResourceDiff {
+public class StorageDiff extends AbstractJsonDiff {
     private static final Logger log = LogManager.getLogger(StorageDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(

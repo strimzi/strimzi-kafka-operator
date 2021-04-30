@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -64,15 +63,14 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     protected static KubernetesClient client;
     private static KubeClusterResource cluster;
 
-
     protected abstract CrdOperator<C, T, L> operator();
-    protected abstract CustomResourceDefinition getCrd();
+    protected abstract String getCrd();
+    protected abstract String getCrdName();
     protected abstract String getNamespace();
     protected abstract T getResource(String name);
     protected abstract T getResourceWithModifications(T resourceInCluster);
     protected abstract T getResourceWithNewReadyStatus(T resourceInCluster);
     protected abstract void assertReady(VertxTestContext context, T modifiedCustomResource);
-
 
     @BeforeAll
     public void before() {
@@ -95,7 +93,8 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         cmdKubeClient().waitForResourceCreation("Namespace", namespace);
 
         log.info("Creating CRD");
-        client.customResourceDefinitions().createOrReplace(getCrd());
+        cluster.createCustomResources(getCrd());
+        cluster.waitForCustomResourceDefinition(getCrdName());
         log.info("Created CRD");
     }
 

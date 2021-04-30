@@ -29,6 +29,7 @@ public class KafkaBasicExampleClients {
     protected String additionalConfig;
     protected String consumerGroup;
     protected long delayMs;
+    protected String namespaceName;
 
     public static class Builder {
         private String producerName;
@@ -40,6 +41,7 @@ public class KafkaBasicExampleClients {
         private String additionalConfig;
         private String consumerGroup;
         private long delayMs;
+        private String namespaceName;
 
         public Builder withProducerName(String producerName) {
             this.producerName = producerName;
@@ -86,6 +88,11 @@ public class KafkaBasicExampleClients {
             return this;
         }
 
+        public Builder withNamespaceName(String namespaceName) {
+            this.namespaceName = namespaceName;
+            return this;
+        }
+
         public KafkaBasicExampleClients build() {
             return new KafkaBasicExampleClients(this);
         }
@@ -101,8 +108,6 @@ public class KafkaBasicExampleClients {
         }
         if (builder.message == null || builder.message.isEmpty()) builder.message = "Hello-world";
 
-
-
         producerName = builder.producerName;
         consumerName = builder.consumerName;
         bootstrapAddress = builder.bootstrapAddress;
@@ -112,6 +117,7 @@ public class KafkaBasicExampleClients {
         additionalConfig = builder.additionalConfig;
         consumerGroup = builder.consumerGroup;
         delayMs = builder.delayMs;
+        namespaceName = builder.namespaceName;
     }
 
     public String getProducerName() {
@@ -150,6 +156,10 @@ public class KafkaBasicExampleClients {
         return delayMs;
     }
 
+    public String getNamespaceName() {
+        return namespaceName;
+    }
+
     protected Builder newBuilder() {
         return new Builder();
     }
@@ -164,7 +174,8 @@ public class KafkaBasicExampleClients {
             .withMessageCount(getMessageCount())
             .withProducerName(getProducerName())
             .withTopicName(getTopicName())
-            .withMessage(getMessage());
+            .withMessage(getMessage())
+            .withNamespaceName(getNamespaceName());
     }
 
     public Builder toBuilder() {
@@ -181,6 +192,10 @@ public class KafkaBasicExampleClients {
 
     public JobBuilder defaultProducerStrimzi() {
         if (producerName == null || producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");
+        if (namespaceName == null || namespaceName.isEmpty()) {
+            LOGGER.info("Deploying {} to namespace: {}", producerName, ResourceManager.kubeClient().getNamespace());
+            namespaceName = ResourceManager.kubeClient().getNamespace();
+        }
 
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
@@ -188,7 +203,7 @@ public class KafkaBasicExampleClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(namespaceName)
                 .withLabels(producerLabels)
                 .withName(producerName)
             .endMetadata()
@@ -197,7 +212,7 @@ public class KafkaBasicExampleClients {
                 .withNewTemplate()
                     .withNewMetadata()
                         .withName(producerName)
-                        .withNamespace(ResourceManager.kubeClient().getNamespace())
+                        .withNamespace(namespaceName)
                         .withLabels(producerLabels)
                     .endMetadata()
                     .withNewSpec()
@@ -251,6 +266,10 @@ public class KafkaBasicExampleClients {
 
     public JobBuilder defaultConsumerStrimzi() {
         if (consumerName == null || consumerName.isEmpty()) throw new InvalidParameterException("Consumer name is not set.");
+        if (namespaceName == null || namespaceName.isEmpty()) {
+            LOGGER.info("Deploying {} to namespace: {}", consumerName, ResourceManager.kubeClient().getNamespace());
+            namespaceName = ResourceManager.kubeClient().getNamespace();
+        }
 
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
@@ -258,7 +277,7 @@ public class KafkaBasicExampleClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(namespaceName)
                 .withLabels(consumerLabels)
                 .withName(consumerName)
             .endMetadata()
@@ -267,6 +286,8 @@ public class KafkaBasicExampleClients {
                 .withNewTemplate()
                     .withNewMetadata()
                         .withLabels(consumerLabels)
+                        .withNamespace(namespaceName)
+                        .withName(consumerName)
                     .endMetadata()
                     .withNewSpec()
                         .withRestartPolicy("Never")

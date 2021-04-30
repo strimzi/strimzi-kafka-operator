@@ -40,29 +40,30 @@ class HelmChartST extends AbstractST {
         resourceManager.createResource(extensionContext,
             KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
 
+        // Deploy Kafka and wait for readiness
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+
         resourceManager.createResource(extensionContext,
-            // Deploy Kafka and wait for readiness
-            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
-            KafkaTopicTemplates.topic(clusterName, TOPIC_NAME).build(),
+            KafkaTopicTemplates.topic(clusterName, topicName).build(),
             // Deploy KafkaConnect and wait for readiness
             KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1).editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata().build(),
-            KafkaConnectorTemplates.kafkaConnector(clusterName).build(),
             // Deploy KafkaBridge (different image than Kafka) and wait for readiness
             KafkaBridgeTemplates.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1).build());
+
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
-        helmResource.create();
+        helmResource.create(extensionContext);
     }
 
     @AfterAll
     protected void tearDownEnvironmentAfterAll() {
-        helmResource.delete();
         cluster.deleteNamespaces();
     }
 }

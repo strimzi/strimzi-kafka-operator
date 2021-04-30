@@ -21,11 +21,13 @@ import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
+import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -46,7 +48,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createNetworkPolicy(resource);
     }
     @Override
-    public void delete(NetworkPolicy resource) throws Exception {
+    public void delete(NetworkPolicy resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteNetworkPolicy(resource.getMetadata().getName());
     }
     @Override
@@ -157,8 +159,17 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
             .build();
 
-        if (kubeClient().listPods(labelSelector).size() == 0) {
-            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind());
+        final String namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ?
+            // if parallel namespace test use namespace from store
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString() :
+            // otherwise use resource namespace
+            resource.getMetadata().getNamespace();
+
+        if (kubeClient(namespaceName).listPods(namespaceName, labelSelector).size() == 0) {
+            List<String> pods = kubeClient(namespaceName).listPods(namespaceName).stream()
+                .map(pod -> pod.getMetadata().getName()).collect(Collectors.toList());
+            LOGGER.error("Pods inside {} namespace are {}", namespaceName, pods.toString());
+            throw new RuntimeException("You did not create the Kafka Client instance(pod) before using the " + resource.getKind() + " in namespace:" + namespaceName);
         }
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", deploymentName, labelSelector);
@@ -168,7 +179,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .withNewKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName(resource.getMetadata().getName() + "-allow")
-                .withNamespace(resource.getMetadata().getNamespace())
+                .withNamespace(namespaceName)
             .endMetadata()
             .withNewSpec()
                 .addNewIngress()
@@ -185,6 +196,10 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                     .endPort()
                     .addNewPort()
                         .withNewPort(8080)
+                        .withNewProtocol("TCP")
+                    .endPort()
+                    .addNewPort()
+                        .withNewPort(Constants.JMX_PORT)
                         .withNewProtocol("TCP")
                     .endPort()
                 .endIngress()

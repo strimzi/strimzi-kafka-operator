@@ -61,64 +61,89 @@ public class KafkaTopicUtils {
         return topicSnapshot(topicName);
     }
 
-    public static void waitForKafkaTopicCreation(String topicName) {
+    public static void waitForKafkaTopicCreation(String namespaceName, String topicName) {
         LOGGER.info("Waiting for KafkaTopic {} creation ", topicName);
         TestUtils.waitFor("KafkaTopic creation " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace())
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName)
                     .withName(topicName).get().getStatus().getConditions().get(0).getType().equals(Ready.toString()),
-            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
+            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get())
         );
     }
 
-    public static void waitForKafkaTopicCreationByNamePrefix(String topicNamePrefix) {
+    public static void waitForKafkaTopicCreation(String topicName) {
+        waitForKafkaTopicCreation(kubeClient().getNamespace(), topicName);
+    }
+
+    public static void waitForKafkaTopicCreationByNamePrefix(String namespaceName, String topicNamePrefix) {
         LOGGER.info("Waiting for KafkaTopic {} creation", topicNamePrefix);
         TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).list().getItems().stream()
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list().getItems().stream()
                     .filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix))
                     .findFirst().get().getStatus().getConditions().get(0).getType().equals(Ready.toString())
         );
     }
 
-    public static void waitForKafkaTopicDeletion(String topicName) {
+    public static void waitForKafkaTopicCreationByNamePrefix(String topicNamePrefix) {
+        waitForKafkaTopicCreationByNamePrefix(kubeClient().getNamespace(), topicNamePrefix);
+    }
+
+    public static void waitForKafkaTopicDeletion(String namespaceName, String topicName) {
         LOGGER.info("Waiting for KafkaTopic {} deletion", topicName);
         TestUtils.waitFor("KafkaTopic deletion " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get() == null) {
+                if (KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get() == null) {
                     return true;
                 } else {
                     LOGGER.warn("KafkaTopic {} is not deleted yet! Triggering force delete by cmd client!", topicName);
-                    cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
+                    cmdKubeClient(namespaceName).deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
                     return false;
                 }
             },
-            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
+            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get())
+        );
+    }
+
+    public static void waitForKafkaTopicDeletion(String topicName) {
+        waitForKafkaTopicDeletion(kubeClient().getNamespace(), topicName);
+    }
+
+    public static void waitForKafkaTopicPartitionChange(String namespaceName, String topicName, int partitions) {
+        LOGGER.info("Waiting for KafkaTopic change {}", topicName);
+        TestUtils.waitFor("KafkaTopic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getSpec().getPartitions() == partitions,
+            () -> LOGGER.info("Kafka Topic {} did not change partition", KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get())
         );
     }
 
     public static void waitForKafkaTopicPartitionChange(String topicName, int partitions) {
-        LOGGER.info("Waiting for KafkaTopic change {}", topicName);
-        TestUtils.waitFor("KafkaTopic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get().getSpec().getPartitions() == partitions,
-            () -> LOGGER.info(KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get())
-        );
+        waitForKafkaTopicPartitionChange(kubeClient().getNamespace(), topicName, partitions);
     }
 
     /**
      * Wait until KafkaTopic is in desired status
+     * @param namespaceName Namespace name
      * @param topicName name of KafkaTopic
      * @param state desired state
      */
-    public static boolean waitForKafkaTopicStatus(String topicName, Enum<?>  state) {
-        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(kubeClient().getNamespace()).withName(topicName).get();
+    public static boolean waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?>  state) {
+        KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get();
         return ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), kafkaTopic, state);
     }
 
+    public static boolean waitForKafkaTopicReady(String namespaceName, String topicName) {
+        return waitForKafkaTopicStatus(namespaceName, topicName, Ready);
+    }
+
     public static boolean waitForKafkaTopicReady(String topicName) {
-        return waitForKafkaTopicStatus(topicName, Ready);
+        return waitForKafkaTopicStatus(kubeClient().getNamespace(), topicName, Ready);
+    }
+
+    public static boolean waitForKafkaTopicNotReady(String namespaceName, String topicName) {
+        return waitForKafkaTopicStatus(namespaceName, topicName, NotReady);
     }
 
     public static boolean waitForKafkaTopicNotReady(String topicName) {
-        return waitForKafkaTopicStatus(topicName, NotReady);
+        return waitForKafkaTopicStatus(kubeClient().getNamespace(), topicName, NotReady);
     }
 
     public static void waitForKafkaTopicsCount(int topicCount, String clusterName) {

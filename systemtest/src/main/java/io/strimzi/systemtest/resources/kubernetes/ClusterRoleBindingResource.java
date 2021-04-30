@@ -31,7 +31,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createOrReplaceClusterRoleBinding(resource);
     }
     @Override
-    public void delete(ClusterRoleBinding resource) throws Exception {
+    public void delete(ClusterRoleBinding resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteClusterRoleBinding(resource);
     }
     @Override

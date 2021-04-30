@@ -85,9 +85,9 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
             "* `InternalIP`\n" +
             "* `Hostname`\n" +
             "\n" +
-            "This field can be used to select the address type which will be used as the preferred type and checked first. " +
-            "In case no address will be found for this address type, the other types will be used in the default order." +
-            "This field can be used only with `nodeport` type listener.")
+            "This field is used to select the preferred address type, which is checked first. " +
+            "If no address is found for this address type, the other types are checked in the default order. " +
+            "This field can only be used with `nodeport` type listener.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public NodeAddressType getPreferredNodePortAddressType() {
         return preferredNodePortAddressType;

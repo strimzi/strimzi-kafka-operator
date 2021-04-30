@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.olm;
 
 import io.strimzi.systemtest.resources.specific.OlmResource;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -78,18 +77,13 @@ public class AllNamespacesST extends OlmAbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup(ExtensionContext extensionContext) {
         cluster.setNamespace(cluster.getDefaultOlmNamespace());
 
         olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
-        olmResource.create();
+        olmResource.create(extensionContext);
 
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
-    }
-
-    @AfterAll
-    void tearDown() {
-        olmResource.delete();
     }
 }

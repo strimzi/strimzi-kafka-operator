@@ -107,6 +107,9 @@ spec:
                 type: integer
                 description: The generation of the CRD that was last reconciled by
                   the operator.
+              topicName:
+                type: string
+                description: Topic name.
             description: The status of the topic.
   - name: v1beta1
     served: true
@@ -195,6 +198,9 @@ spec:
                 type: integer
                 description: The generation of the CRD that was last reconciled by
                   the operator.
+              topicName:
+                type: string
+                description: Topic name.
             description: The status of the topic.
   - name: v1alpha1
     served: true
@@ -283,4 +289,7 @@ spec:
                 type: integer
                 description: The generation of the CRD that was last reconciled by
                   the operator.
+              topicName:
+                type: string
+                description: Topic name.
             description: The status of the topic.

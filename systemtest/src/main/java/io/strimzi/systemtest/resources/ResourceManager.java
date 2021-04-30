@@ -9,10 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -44,7 +44,7 @@ import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.time.TimeoutBudget;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
@@ -54,7 +54,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,7 +80,7 @@ public class ResourceManager {
     public static final String STRIMZI_PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
     public static final long CR_CREATION_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness();
 
-    public static final Map<String, Stack<ThrowableRunner>> STORED_RESOURCES = new LinkedHashMap<>();
+    public static final Map<String, Stack<ResourceItem>> STORED_RESOURCES = new LinkedHashMap<>();
 
     private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
     private static ResourceManager instance;
@@ -135,21 +134,25 @@ public class ResourceManager {
     public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
-            // Convenience for tests that create resources in non-existing namespaces. This will create and clean them up.
-            synchronized (this) {
-                if (resource.getMetadata().getNamespace() != null && !kubeClient().namespaceExists(resource.getMetadata().getNamespace())) {
-                    createResource(testContext, waitReady, new NamespaceBuilder().editOrNewMetadata().withName(resource.getMetadata().getNamespace()).endMetadata().build());
-                }
-            }
-
             LOGGER.info("Create/Update of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
+
+            // if it is parallel namespace test we are gonna replace resource a namespace
+            if (StUtils.isParallelNamespaceTest(testContext)) {
+                final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                LOGGER.info("Using namespace: {}", namespace);
+                resource.getMetadata().setNamespace(namespace);
+            }
 
             type.create(resource);
 
             synchronized (this) {
                 STORED_RESOURCES.computeIfAbsent(testContext.getDisplayName(), k -> new Stack<>());
-                STORED_RESOURCES.get(testContext.getDisplayName()).push(() -> deleteResource(resource));
+                STORED_RESOURCES.get(testContext.getDisplayName()).push(
+                    new ResourceItem<T>(
+                        () -> deleteResource(resource),
+                        resource
+                    ));
             }
         }
 
@@ -163,7 +166,7 @@ public class ResourceManager {
     }
 
     @SafeVarargs
-    public final <T extends HasMetadata> void deleteResource(T... resources) throws Exception {
+    public final <T extends HasMetadata> void deleteResource(T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
             if (type == null) {
@@ -179,38 +182,49 @@ public class ResourceManager {
                 String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
         }
     }
-
     public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition) {
-        return waitResourceCondition(resource, condition, TimeoutBudget.ofDuration(Duration.ofMinutes(5)));
-    }
-
-    public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition, TimeoutBudget timeout) {
         assertNotNull(resource);
         assertNotNull(resource.getMetadata());
         assertNotNull(resource.getMetadata().getName());
+
+        // cluster role binding does not need namespace...
+        if (!(resource instanceof ClusterRoleBinding)) {
+            assertNotNull(resource.getMetadata().getNamespace());
+        }
+
         ResourceType<T> type = findResourceType(resource);
         assertNotNull(type);
+        boolean[] resourceReady = new boolean[1];
 
-        while (!timeout.timeoutExpired()) {
-            T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-            if (condition.test(res)) {
-                LOGGER.info("Resource {} in namespace {} is {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
-                return true;
-            }
-            try {
-                Thread.sleep(Duration.ofSeconds(1).toMillis());
-            } catch (InterruptedException e) {
-                LOGGER.info("Resource {} in namespace {} is not {}!", resource.getMetadata().getName(), resource.getMetadata().getNamespace(), condition.toString());
-                Thread.currentThread().interrupt();
-                return false;
-            }
+        TestUtils.waitFor("Resource condition: " + condition + " is fulfilled for resource " + resource.getKind() + ":" + resource.getMetadata().getName(),
+            Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
+            () -> {
+                T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+                resourceReady[0] =  condition.test(res);
+                if (!resourceReady[0]) {
+                    type.delete(res);
+                }
+                return resourceReady[0];
+            });
+
+        return resourceReady[0];
+    }
+
+    /**
+     * Synchronizing all resources which are inside specific extension context.
+     * @param testContext context of the test case
+     * @param <T> type of the resource which inherits from HasMetadata f.e Kafka, KafkaConnect, Pod, Deployment etc..
+     */
+    @SuppressWarnings(value = "unchecked")
+    public final <T extends HasMetadata> void synchronizeResources(ExtensionContext testContext) {
+        Stack<ResourceItem> resources = STORED_RESOURCES.get(testContext.getDisplayName());
+
+        // sync all resources
+        for (ResourceItem resource : resources) {
+            ResourceType<T> type = findResourceType((T) resource.getResource());
+
+            waitResourceCondition((T) resource.getResource(), type::waitForReadiness);
         }
-        T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-        boolean pass = condition.test(res);
-        if (!pass) {
-            LOGGER.info("Resource {} with with type {} failed condition check: {}", resource.getMetadata().getName(), type, resourceToString(res));
-        }
-        return pass;
     }
 
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
@@ -225,6 +239,13 @@ public class ResourceManager {
             LOGGER.error("Resource {} is not convertible to YAML: {}", resource.getMetadata().getName(), e.getMessage());
             return "unknown";
         }
+    }
+
+    public static <T extends CustomResource, L extends CustomResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor, String namespace) {
+        Resource<T> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).withName(resourceName);
+        T resource = namedResource.get();
+        editor.accept(resource);
+        namedResource.replace(resource);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor) {
@@ -242,7 +263,7 @@ public class ResourceManager {
             LOGGER.info("In context {} is everything deleted.", testContext.getDisplayName());
         }
         while (STORED_RESOURCES.containsKey(testContext.getDisplayName()) && !STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
-            STORED_RESOURCES.get(testContext.getDisplayName()).pop().run();
+            STORED_RESOURCES.get(testContext.getDisplayName()).pop().getThrowableRunner().run();
         }
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         STORED_RESOURCES.remove(testContext.getDisplayName());
@@ -277,7 +298,7 @@ public class ResourceManager {
 
                     log.add("\nPods with conditions and messages:\n\n");
 
-                    for (Pod pod : kubeClient().listPodsByPrefixInName(name)) {
+                    for (Pod pod : kubeClient().namespace(customResource.getMetadata().getNamespace()).listPodsByPrefixInName(name)) {
                         log.add(pod.getMetadata().getName() + ":");
                         for (PodCondition podCondition : pod.getStatus().getConditions()) {
                             if (podCondition.getMessage() != null) {
@@ -320,7 +341,6 @@ public class ResourceManager {
         LOGGER.info("{}: {} is in desired state: {}", kind, name, status);
         return true;
     }
-
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> status) {
         long resourceTimeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());

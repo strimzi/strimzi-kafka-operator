@@ -225,7 +225,7 @@ class TopicDiff {
         Objects.requireNonNull(source.getTopicName());
         Objects.requireNonNull(target.getTopicName());
         if (!source.getTopicName().equals(target.getTopicName())) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.");
         }
         Map<String, Difference> differences = new HashMap<>();
         if (target.getNumPartitions() != -1 && source.getNumPartitions() != target.getNumPartitions()) {

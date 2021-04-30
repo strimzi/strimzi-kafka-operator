@@ -16,7 +16,7 @@ public class KafkaVersionUtilsTest {
 
     @ParallelTest
     public void parsingTest() {
-        List<TestKafkaVersion> versions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> versions = TestKafkaVersion.getSupportedKafkaVersions();
         assertTrue(versions.size() > 0);
     }
 }

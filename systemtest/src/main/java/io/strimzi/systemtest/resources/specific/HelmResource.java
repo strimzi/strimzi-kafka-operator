@@ -6,6 +6,7 @@ package io.strimzi.systemtest.resources.specific;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
@@ -13,12 +14,14 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Stack;
 import java.util.stream.Stream;
 
 import static io.strimzi.test.TestUtils.entry;
@@ -35,14 +38,17 @@ public class HelmResource implements SpecificResourceType {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    public void create() {
-        this.clusterOperator();
+    public void create(ExtensionContext extensionContext) {
+        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public void create(long operationTimeout, long reconciliationInterval) {
+    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval) {
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(this::delete));
         this.clusterOperator(operationTimeout, reconciliationInterval);
     }
 
+    @Override
     public void delete() {
         this.deleteClusterOperator();
     }
@@ -63,14 +69,36 @@ public class HelmResource implements SpecificResourceType {
                 entry("userOperator.image.registry", Environment.STRIMZI_REGISTRY),
                 entry("kafkaInit.image.registry", Environment.STRIMZI_REGISTRY),
                 entry("jmxTrans.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kanikoExecutor.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("tlsSidecarEntityOperator.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kafkaExporter.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("cruiseControl.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("tlsSidecarCruiseControl.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kafka.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kafkaConnect.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kafkaConnects2i.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kafkaMirrorMaker.image.registry", Environment.STRIMZI_REGISTRY),
+                entry("kafkaMirrorMaker2.image.registry", Environment.STRIMZI_REGISTRY),
                 entry("kafkaBridge.image.registry", Environment.STRIMZI_REGISTRY_DEFAULT),
+
                 // image repository config
                 entry("image.repository", Environment.STRIMZI_ORG),
                 entry("topicOperator.image.repository", Environment.STRIMZI_ORG),
                 entry("userOperator.image.repository", Environment.STRIMZI_ORG),
                 entry("kafkaInit.image.repository", Environment.STRIMZI_ORG),
                 entry("jmxTrans.image.repository", Environment.STRIMZI_ORG),
+                entry("kanikoExecutor.image.repository", Environment.STRIMZI_ORG),
+                entry("tlsSidecarEntityOperator.image.repository", Environment.STRIMZI_ORG),
+                entry("kafkaExporter.image.repository", Environment.STRIMZI_ORG),
+                entry("cruiseControl.image.repository", Environment.STRIMZI_ORG),
+                entry("tlsSidecarCruiseControl.image.repository", Environment.STRIMZI_ORG),
+                entry("kafka.image.repository", Environment.STRIMZI_ORG),
+                entry("kafkaConnect.image.repository", Environment.STRIMZI_ORG),
+                entry("kafkaConnects2i.image.repository", Environment.STRIMZI_ORG),
+                entry("kafkaMirrorMaker.image.repository", Environment.STRIMZI_ORG),
+                entry("kafkaMirrorMaker2.image.repository", Environment.STRIMZI_ORG),
                 entry("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT),
+
                 // image tags config
                 entry("image.tag", Environment.STRIMZI_TAG),
                 entry("topicOperator.image.tag", Environment.STRIMZI_TAG),
@@ -78,6 +106,7 @@ public class HelmResource implements SpecificResourceType {
                 entry("kafkaInit.image.tag", Environment.STRIMZI_TAG),
                 entry("jmxTrans.image.tag", Environment.STRIMZI_TAG),
                 entry("kafkaBridge.image.tag", Environment.useLatestReleasedBridge() ? "latest" : BridgeUtils.getBridgeVersion()),
+
                 // Additional config
                 entry("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
                 entry("resources.requests.memory", REQUESTS_MEMORY),

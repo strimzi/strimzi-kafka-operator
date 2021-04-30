@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.crdgenerator.Property.discriminator;
@@ -47,6 +48,7 @@ import static java.util.Collections.singletonList;
 public class DocGenerator {
 
     private static final String NL = System.lineSeparator();
+    private static final Pattern DOT_AT_THE_END = Pattern.compile(".*[.!?]$", Pattern.DOTALL);
 
     private final int headerDepth;
     private final Appendable out;
@@ -165,7 +167,7 @@ public class DocGenerator {
             appendRepeated(' ', maxLen - propertyName.length() - gunk.length());
             out.append(' ');
             out.append(gunk);
-            out.append("|");
+            out.append("a|");
 
             // Set warning message for deprecated fields
             addDeprecationWarning(property);
@@ -308,7 +310,7 @@ public class DocGenerator {
 
     static String getDescription(Description description) {
         String doc = description.value();
-        if (!doc.trim().matches(".*[.!?]$")) {
+        if (!DOT_AT_THE_END.matcher(doc.trim()).matches())  {
             doc = doc + ".";
         }
         doc = doc.replaceAll("[|]", "\\\\|");

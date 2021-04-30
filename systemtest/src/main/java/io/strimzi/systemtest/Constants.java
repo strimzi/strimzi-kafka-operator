@@ -89,6 +89,7 @@ public interface Constants {
     int USER_OPERATOR_METRICS_PORT = 8081;
     int TOPIC_OPERATOR_METRICS_PORT = 8080;
     int KAFKA_BRIDGE_METRICS_PORT = 8080;
+    int JMX_PORT = 9999;
 
     String DEPLOYMENT = "Deployment";
     String DEPLOYMENT_TYPE = "deployment-type";
@@ -295,6 +296,11 @@ public interface Constants {
     String OLM = "olm";
 
     /**
+     * Tag for tests which executing in parallel namespaces
+     */
+    String PARALLEL_NAMESPACE = "parallelnamespace";
+
+    /**
      * Cruise Control related parameters
      */
     String CRUISE_CONTROL_NAME = "Cruise Control";
@@ -315,4 +321,9 @@ public interface Constants {
      * Loadbalancer finalizer config
      */
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
+
+    /**
+     * Auxiliary variables for storing data across our tests
+     */
+    String NAMESPACE_KEY = "NAMESPACE_NAME";
 }

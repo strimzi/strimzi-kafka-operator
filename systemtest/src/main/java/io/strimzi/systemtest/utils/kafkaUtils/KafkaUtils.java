@@ -22,6 +22,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
@@ -61,34 +62,49 @@ public class KafkaUtils {
 
     private KafkaUtils() {}
 
-    public static void waitForKafkaReady(String clusterName) {
-        waitForKafkaStatus(clusterName, Ready);
+    public static boolean waitForKafkaReady(String namespaceName, String clusterName) {
+        return waitForKafkaStatus(namespaceName, clusterName, Ready);
     }
 
-    public static void waitForKafkaNotReady(String clusterName) {
-        waitForKafkaStatus(clusterName, NotReady);
+    public static boolean waitForKafkaReady(String clusterName) {
+        return waitForKafkaStatus(kubeClient().getNamespace(), clusterName, Ready);
     }
 
-    public static void waitForKafkaStatus(String clusterName, Enum<?>  state) {
-        String namespace = kubeClient().getNamespace();
-        Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get();
-        ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
+    public static boolean waitForKafkaNotReady(String namespaceName, String clusterName) {
+        return waitForKafkaStatus(namespaceName, clusterName, NotReady);
+    }
+
+    public static boolean waitForKafkaNotReady(String clusterName) {
+        return waitForKafkaStatus(kubeClient().getNamespace(), clusterName, NotReady);
+    }
+
+    public static boolean waitForKafkaStatus(String clusterName, Enum<?>  state) {
+        return waitForKafkaStatus(kubeClient().getNamespace(), clusterName, state);
+    }
+
+    public static boolean waitForKafkaStatus(String namespaceName, String clusterName, Enum<?>  state) {
+        Kafka kafka = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatus(KafkaResource.kafkaClient(), kafka, state);
     }
 
     /**
      * Waits for the Kafka Status to be updated after changed. It checks the generation and observed generation to
      * ensure the status is up to date.
      *
+     * @param namespaceName Namespace name
      * @param clusterName   Name of the Kafka cluster which should be checked
      */
-    public static void waitForKafkaStatusUpdate(String clusterName)   {
+    public static void waitForKafkaStatusUpdate(String namespaceName, String clusterName) {
         LOGGER.info("Waiting for Kafka status to be updated");
         TestUtils.waitFor("KafkaStatus update", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Kafka k = KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get();
+            Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
             return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
         });
     }
 
+    public static void waitForKafkaStatusUpdate(String clusterName) {
+        waitForKafkaStatusUpdate(kubeClient().getNamespace(), clusterName);
+    }
 
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message, long timeout) {
         TestUtils.waitFor("Kafka Status with message [" + message + "]",
@@ -108,7 +124,7 @@ public class KafkaUtils {
         waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, message, Constants.GLOBAL_STATUS_TIMEOUT);
     }
 
-    public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {
+    public static void waitForZkMntr(String namespaceName, String clusterName, Pattern pattern, int... podIndexes) {
         long timeoutMs = 120_000L;
         long pollMs = 1_000L;
 
@@ -117,7 +133,7 @@ public class KafkaUtils {
             String zookeeperPort = String.valueOf(12181);
             waitFor("mntr", pollMs, timeoutMs, () -> {
                     try {
-                        String output = cmdKubeClient().execInPod(zookeeperPod,
+                        String output = cmdKubeClient(namespaceName).execInPod(zookeeperPod,
                             "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out();
 
                         if (pattern.matcher(output).find()) {
@@ -131,9 +147,13 @@ public class KafkaUtils {
                 () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
                     pattern.pattern(),
                     System.lineSeparator(),
-                    indent(cmdKubeClient().execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
+                    indent(cmdKubeClient(namespaceName).execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
             );
         }
+    }
+
+    public static void waitForZkMntr(String clusterName, Pattern pattern, int... podIndexes) {
+        waitForZkMntr(kubeClient().getNamespace(), clusterName, pattern, podIndexes);
     }
 
     public static String getKafkaStatusCertificates(String listenerType, String namespace, String clusterName) {
@@ -148,29 +168,33 @@ public class KafkaUtils {
         return certs;
     }
 
-    public static String getKafkaSecretCertificates(String secretName, String certType) {
+    public static String getKafkaSecretCertificates(String namespaceName, String secretName, String certType) {
         String secretCerts = "";
-        secretCerts = kubeClient().getSecret(secretName).getData().get(certType);
+        secretCerts = kubeClient(namespaceName).getSecret(namespaceName, secretName).getData().get(certType);
         byte[] decodedBytes = Base64.getDecoder().decode(secretCerts);
         secretCerts = new String(decodedBytes, Charset.defaultCharset());
 
         return secretCerts;
     }
 
+    public static String getKafkaSecretCertificates(String secretName, String certType) {
+        return getKafkaSecretCertificates(kubeClient().getNamespace(), secretName, certType);
+    }
+
     @SuppressWarnings("unchecked")
-    public static void waitForClusterStability(String clusterName) {
+    public static void waitForClusterStability(String namespaceName, String clusterName) {
         LOGGER.info("Waiting for cluster stability");
         Map<String, String>[] zkPods = new Map[1];
         Map<String, String>[] kafkaPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
         int[] count = {0};
-        zkPods[0] = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName));
-        kafkaPods[0] = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
-        eoPods[0] = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        zkPods[0] = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
+        kafkaPods[0] = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+        eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName));
-            Map<String, String> kafkaSnaptop = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
-            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+            Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
+            Map<String, String> kafkaSnaptop = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
@@ -195,6 +219,10 @@ public class KafkaUtils {
             count[0] = 0;
             return false;
         });
+    }
+
+    public static void waitForClusterStability(String clusterName) {
+        waitForClusterStability(kubeClient().getNamespace(), clusterName);
     }
 
     /**
@@ -366,21 +394,25 @@ public class KafkaUtils {
         ).out().trim();
     }
 
-    public static void waitForKafkaDeletion(String kafkaClusterName) {
+    public static void waitForKafkaDeletion(String namespaceName, String kafkaClusterName) {
         LOGGER.info("Waiting for deletion of Kafka:{}", kafkaClusterName);
         TestUtils.waitFor("Kafka deletion " + kafkaClusterName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).get() == null &&
-                    kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(kafkaClusterName)) == null &&
-                    kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(kafkaClusterName)) == null &&
-                    kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
+                if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
+                    kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(kafkaClusterName)) == null &&
+                    kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.zookeeperStatefulSetName(kafkaClusterName)) == null &&
+                    kubeClient(namespaceName).getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(kafkaClusterName)) == null) {
                     return true;
                 } else {
-                    cmdKubeClient().deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
+                    cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, kafkaClusterName);
                     return false;
                 }
             },
-            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(kafkaClusterName).get()));
+            () -> LOGGER.info(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get()));
+    }
+
+    public static void waitForKafkaDeletion(String kafkaClusterName) {
+        waitForKafkaDeletion(kubeClient().getNamespace(), kafkaClusterName);
     }
 
     public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName, String listenerName) {
@@ -430,8 +462,8 @@ public class KafkaUtils {
                 ((ObjectNode) kafkaNode.get("config")).remove("inter.broker.protocol.version");
             } else if (!version.equals("")) {
                 kafkaNode.put("version", version);
-                ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", version.substring(0, 3));
-                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", version.substring(0, 3));
+                ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", TestKafkaVersion.getSpecificVersion(version).messageVersion());
+                ((ObjectNode) kafkaNode.get("config")).put("inter.broker.protocol.version", TestKafkaVersion.getSpecificVersion(version).protocolVersion());
             }
             if (logMessageFormat != null) {
                 ((ObjectNode) kafkaNode.get("config")).put("log.message.format.version", logMessageFormat);

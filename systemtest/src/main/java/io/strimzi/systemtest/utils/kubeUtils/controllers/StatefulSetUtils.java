@@ -32,22 +32,28 @@ public class StatefulSetUtils {
 
     /**
      * Returns a map of pod name to resource version for the pods currently in the given statefulset.
+     * @param namespaceName Namespace name
      * @param name  The StatefulSet name
      * @return A map of pod name to resource version for pods in the given StatefulSet.
      */
-    public static Map<String, String> ssSnapshot(String name) {
-        StatefulSet statefulSet = kubeClient().getStatefulSet(name);
+    public static Map<String, String> ssSnapshot(String namespaceName, String name) {
+        StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, name);
         LabelSelector selector = statefulSet.getSpec().getSelector();
-        return PodUtils.podSnapshot(selector);
+        return PodUtils.podSnapshot(namespaceName, selector);
+    }
+
+    public static Map<String, String> ssSnapshot(String name) {
+        return ssSnapshot(kubeClient().getNamespace(), name);
     }
 
     /**
      * Method to check that all pods for expected StatefulSet were rolled
+     * @param namespaceName Namespace name
      * @param name StatefulSet name
      * @param snapshot Snapshot of pods for StatefulSet before the rolling update
      * @return true when the pods for StatefulSet are recreated
      */
-    public static boolean ssHasRolled(String name, Map<String, String> snapshot) {
+    public static boolean ssHasRolled(String namespaceName, String name, Map<String, String> snapshot) {
         boolean log = true;
         if (log) {
             LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
@@ -55,7 +61,7 @@ public class StatefulSetUtils {
         LabelSelector selector = null;
         int times = 60;
         do {
-            selector = kubeClient().getStatefulSetSelectors(name);
+            selector = kubeClient(namespaceName).getStatefulSetSelectors(namespaceName, name);
             if (selector == null) {
                 if (times-- == 0) {
                     throw new RuntimeException("Retry failed");
@@ -68,7 +74,7 @@ public class StatefulSetUtils {
             }
         } while (selector == null);
 
-        Map<String, String> map = PodUtils.podSnapshot(selector);
+        Map<String, String> map = PodUtils.podSnapshot(namespaceName, selector);
         if (log) {
             LOGGER.debug("Current snapshot: {}", new TreeMap<>(map));
         }
@@ -94,58 +100,77 @@ public class StatefulSetUtils {
         return true;
     }
 
+    public static boolean ssHasRolled(String name, Map<String, String> snapshot) {
+        return ssHasRolled(kubeClient().getNamespace(), name, snapshot);
+    }
+
     /**
      *  Method to wait when StatefulSet will be recreated after rolling update
+     * @param namespaceName Namespace name
      * @param name StatefulSet name
      * @param snapshot Snapshot of pods for StatefulSet before the rolling update
      * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
      */
-    public static Map<String, String> waitTillSsHasRolled(String name, Map<String, String> snapshot) {
+    public static Map<String, String> waitTillSsHasRolled(String namespaceName, String name, Map<String, String> snapshot) {
         LOGGER.info("Waiting for StatefulSet {} rolling update", name);
         TestUtils.waitFor("StatefulSet " + name + " rolling update",
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
                 try {
-                    return ssHasRolled(name, snapshot);
+                    return ssHasRolled(namespaceName, name, snapshot);
                 } catch (Exception e) {
                     e.printStackTrace();
                     return false;
                 }
             });
         LOGGER.info("StatefulSet {} rolling update finished", name);
-        return ssSnapshot(name);
+        return ssSnapshot(namespaceName, name);
+    }
+
+    public static Map<String, String> waitTillSsHasRolled(String name, Map<String, String> snapshot) {
+        return waitTillSsHasRolled(kubeClient().getNamespace(), name, snapshot);
     }
 
     /**
      *  Method to wait when StatefulSet will be recreated after rolling update with wait for all pods ready
+     * @param namespaceName Namespace name
      * @param name StatefulSet name
      * @param expectedPods Expected number of pods
      * @param snapshot Snapshot of pods for StatefulSet before the rolling update
      * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
      */
+    public static Map<String, String> waitTillSsHasRolled(String namespaceName, String name, int expectedPods, Map<String, String> snapshot) {
+        waitTillSsHasRolled(namespaceName, name, snapshot);
+        waitForAllStatefulSetPodsReady(namespaceName, name, expectedPods, READINESS_TIMEOUT);
+        return ssSnapshot(namespaceName, name);
+    }
+
     public static Map<String, String> waitTillSsHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
-        waitTillSsHasRolled(name, snapshot);
-        waitForAllStatefulSetPodsReady(name, expectedPods);
-        return ssSnapshot(name);
+        return waitTillSsHasRolled(kubeClient().getNamespace(), name, expectedPods, snapshot);
     }
 
     /**
      * Wait until the STS is ready and all of its Pods are also ready with custom timeout.
      *
+     * @param namespaceName Namespace name
      * @param statefulSetName The name of the StatefulSet
      * @param expectPods The number of pods expected.
      */
-    public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods, long timeout) {
+    public static void waitForAllStatefulSetPodsReady(String namespaceName, String statefulSetName, int expectPods, long timeout) {
         String resourceName = statefulSetName.contains("-kafka") ? statefulSetName.replace("-kafka", "") : statefulSetName.replace("-zookeeper", "");
 
         LOGGER.info("Waiting for StatefulSet {} to be ready", statefulSetName);
         TestUtils.waitFor("StatefulSet " + statefulSetName + " to be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
-            () -> kubeClient().getStatefulSetStatus(statefulSetName),
-            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
+            () -> kubeClient(namespaceName).getStatefulSetStatus(namespaceName, statefulSetName),
+            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
 
         LOGGER.info("Waiting for {} Pod(s) of StatefulSet {} to be ready", expectPods, statefulSetName);
-        PodUtils.waitForPodsReady(kubeClient().getStatefulSetSelectors(statefulSetName), expectPods, true,
-            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get()));
+        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getStatefulSetSelectors(namespaceName, statefulSetName), expectPods, true,
+            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
         LOGGER.info("StatefulSet {} is ready", statefulSetName);
+    }
+
+    public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods, long timeout) {
+        waitForAllStatefulSetPodsReady(kubeClient().getNamespace(), statefulSetName, expectPods, timeout);
     }
 
     /**
@@ -160,21 +185,26 @@ public class StatefulSetUtils {
 
     /**
      * Wait until the given StatefulSet has been deleted.
+     * @param namespaceName Namespace name
      * @param name The name of the StatefulSet.
      */
-    public static void waitForStatefulSetDeletion(String name) {
+    public static void waitForStatefulSetDeletion(String namespaceName, String name) {
         LOGGER.debug("Waiting for StatefulSet {} deletion", name);
         TestUtils.waitFor("StatefulSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
-                if (kubeClient().getStatefulSet(name) == null) {
+                if (kubeClient(namespaceName).getStatefulSet(namespaceName, name) == null) {
                     return true;
                 } else {
                     LOGGER.warn("StatefulSet {} is not deleted yet! Triggering force delete by cmd client!", name);
-                    cmdKubeClient().deleteByName("statefulset", name);
+                    cmdKubeClient(namespaceName).deleteByName("statefulset", name);
                     return false;
                 }
             });
         LOGGER.debug("StatefulSet {} was deleted", name);
+    }
+
+    public static void waitForStatefulSetDeletion(String name) {
+        waitForStatefulSetDeletion(kubeClient().getNamespace(), name);
     }
 
     /**
@@ -188,7 +218,7 @@ public class StatefulSetUtils {
         LOGGER.info("StatefulSet {} was recovered", name);
     }
 
-    public static void waitForStatefulSetLabelsChange(String statefulSetName, Map<String, String> labels) {
+    public static void waitForStatefulSetLabelsChange(String namespaceName, String statefulSetName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
@@ -197,31 +227,35 @@ public class StatefulSetUtils {
                 LOGGER.info("Waiting for Stateful set label change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Waits for StatefulSet label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.GLOBAL_TIMEOUT, () ->
-                        kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                        kubeClient(namespaceName).getStatefulSet(namespaceName, statefulSetName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
         }
     }
 
-    public static void waitForStatefulSetLabelsDeletion(String statefulSetName, String... labelKeys) {
+    public static void waitForStatefulSetLabelsChange(String statefulSetName, Map<String, String> labels) {
+        waitForStatefulSetLabelsChange(kubeClient().getNamespace(), statefulSetName, labels);
+    }
+
+    public static void waitForStatefulSetLabelsDeletion(String namespaceName, String statefulSetName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for StatefulSet label {} change to {}", labelKey, null);
             TestUtils.waitFor("Waiting for StatefulSet label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
-                    kubeClient().getStatefulSet(statefulSetName).getMetadata().getLabels().get(labelKey) == null
+                    kubeClient(namespaceName).getStatefulSet(namespaceName, statefulSetName).getMetadata().getLabels().get(labelKey) == null
             );
             LOGGER.info("StatefulSet label {} change to {}", labelKey, null);
         }
     }
 
-    public static void waitForNoRollingUpdate(String statefulSetName, Map<String, String> pods) {
+    public static void waitForNoRollingUpdate(String namespaceName, String statefulSetName, Map<String, String> pods) {
         // alternative to sync hassling AtomicInteger one could use an integer array instead
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
         TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                if (!StatefulSetUtils.ssHasRolled(statefulSetName, pods)) {
+                if (!StatefulSetUtils.ssHasRolled(namespaceName, statefulSetName, pods)) {
                     LOGGER.info("{} pods didn't roll. Remaining seconds for stability: {}", pods.toString(),
                             Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
@@ -230,5 +264,9 @@ public class StatefulSetUtils {
                 }
             }
         );
+    }
+
+    public static void waitForNoRollingUpdate(String statefulSetName, Map<String, String> pods) {
+        waitForNoRollingUpdate(kubeClient().getNamespace(), statefulSetName, pods);
     }
 }

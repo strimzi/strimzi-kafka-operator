@@ -187,7 +187,7 @@ class ConnectRestException extends RuntimeException {
     }
 
     public ConnectRestException(HttpClientResponse response, String message) {
-        this(response.request().method().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message);
+        this(response.request().getMethod().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message);
     }
 
     ConnectRestException(String method, String path, int statusCode, String statusMessage, String message, Throwable cause) {
@@ -196,7 +196,7 @@ class ConnectRestException extends RuntimeException {
     }
 
     public ConnectRestException(HttpClientResponse response, String message, Throwable cause) {
-        this(response.request().method().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message, cause);
+        this(response.request().getMethod().toString(), response.request().path(), response.statusCode(), response.statusMessage(), message, cause);
     }
 
     public int getStatusCode() {

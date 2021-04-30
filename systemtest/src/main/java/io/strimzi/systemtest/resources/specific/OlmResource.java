@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources.specific;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
@@ -17,6 +18,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -27,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.resources.ResourceManager.CR_CREATION_TIMEOUT;
@@ -48,11 +51,13 @@ public class OlmResource implements SpecificResourceType {
     private String csvName;
 
     @Override
-    public void create() {
-        this.clusterOperator(namespace);
+    public void create(ExtensionContext extensionContext) {
+        this.create(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public void create(String namespace, long operationTimeout, long reconciliationInterval) {
+    public void create(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(this::delete));
         this.clusterOperator(namespace, operationTimeout, reconciliationInterval);
     }
 

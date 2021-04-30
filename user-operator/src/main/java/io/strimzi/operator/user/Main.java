@@ -78,7 +78,7 @@ public class Main {
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         SecretOperator secretOperations = new SecretOperator(vertx, client);
-        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, Crds.kafkaUser());
+        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> crdOperations = new CrdOperator<>(vertx, client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND);
         return createAdminClient(adminClientProvider, config, secretOperations)
                 .compose(adminClient -> {
                     SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, adminClient);

@@ -52,7 +52,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
     @IsolatedTest
     void testKafkaClusterUpgrade(ExtensionContext testContext) {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
         String producerName = clusterName + "-producer";
@@ -77,7 +77,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
     @IsolatedTest
     void testKafkaClusterDowngrade(ExtensionContext testContext) {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
         String producerName = clusterName + "-producer";
@@ -102,7 +102,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
     @IsolatedTest
     void testKafkaClusterDowngradeToOlderMessageFormat(ExtensionContext testContext) {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
         String producerName = clusterName + "-producer";
@@ -140,7 +140,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
     @Test
     void testUpgradeWithNoMessageAndProtocolVersionsSet(ExtensionContext testContext) {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getKafkaVersions();
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
         String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
         String producerName = clusterName + "-producer";

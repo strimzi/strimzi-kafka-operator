@@ -39,7 +39,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     @Override
-    public void delete(Kafka resource) throws Exception {
+    public void delete(Kafka resource) {
         kafkaClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
@@ -65,6 +65,10 @@ public class KafkaResource implements ResourceType<Kafka> {
 
     public static void replaceKafkaResource(String resourceName, Consumer<Kafka> editor) {
         ResourceManager.replaceCrdResource(Kafka.class, KafkaList.class, resourceName, editor);
+    }
+
+    public static void replaceKafkaResourceInSpecificNamespace(String resourceName, Consumer<Kafka> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(Kafka.class, KafkaList.class, resourceName, editor, namespaceName);
     }
 
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {

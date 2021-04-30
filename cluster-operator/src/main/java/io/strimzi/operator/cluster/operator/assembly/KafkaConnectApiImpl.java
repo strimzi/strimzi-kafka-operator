@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -16,8 +17,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -32,7 +33,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static java.util.Arrays.asList;
@@ -63,57 +63,42 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         Buffer data = configJson.toBuffer();
         String path = "/connectors/" + connectorName + "/config";
         log.debug("Making PUT request to {} with body {}", path, configJson);
-        return withHttpClient((httpClient, result) ->
-            httpClient.put(port, host, path, response -> {
-                response.exceptionHandler(result::tryFail);
-                if (response.statusCode() == 200 || response.statusCode() == 201) {
-                    response.bodyHandler(buffer -> {
-                        try {
-                            Map t = mapper.readValue(buffer.getBytes(), Map.class);
-                            log.debug("Got {} response to PUT request to {}: {}", response.statusCode(), path, t);
-                            result.complete(t);
-                        } catch (IOException e) {
-                            result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+            httpClient.request(HttpMethod.PUT, port, host, path, request -> {
+                if (request.succeeded()) {
+                    request.result().setFollowRedirects(true)
+                            .putHeader("Accept", "application/json")
+                            .putHeader("Content-Type", "application/json")
+                            .putHeader("Content-Length", String.valueOf(data.length()))
+                            .write(data);
+                    request.result().send(response -> {
+                        if (response.succeeded()) {
+                            if (response.result().statusCode() == 200 || response.result().statusCode() == 201) {
+                                response.result().bodyHandler(buffer -> {
+                                    try {
+                                        Map t = mapper.readValue(buffer.getBytes(), Map.class);
+                                        log.debug("Got {} response to PUT request to {}: {}", response.result().statusCode(), path, t);
+                                        result.complete(t);
+                                    } catch (IOException e) {
+                                        result.fail(new ConnectRestException(response.result(), "Could not deserialize response: " + e));
+                                    }
+                                });
+                            } else {
+                                // TODO Handle 409 (Conflict) indicating a rebalance in progress
+                                log.debug("Got {} response to PUT request to {}", response.result().statusCode(), path);
+                                response.result().bodyHandler(buffer -> {
+                                    JsonObject x = buffer.toJsonObject();
+                                    result.fail(new ConnectRestException(response.result(), x.getString("message")));
+                                });
+                            }
+                        } else {
+                            result.tryFail(response.cause());
                         }
                     });
                 } else {
-                    // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                    log.debug("Got {} response to PUT request to {}", response.statusCode(), path);
-                    response.bodyHandler(buffer -> {
-                        JsonObject x = buffer.toJsonObject();
-                        result.fail(new ConnectRestException(response, x.getString("message")));
-                    });
+                    result.fail(request.cause());
                 }
-            })
-            .exceptionHandler(result::tryFail)
-            .setFollowRedirects(true)
-            .putHeader("Accept", "application/json")
-            .putHeader("Content-Type", "application/json")
-            .putHeader("Content-Length", String.valueOf(data.length()))
-            .write(data)
-            .end());
-    }
-
-    /**
-     * Perform the given operation, which completes the promise, using an HTTP client instance,
-     * after which the client is closed and the future for the promise returned.
-     * @param operation The operation to perform.
-     * @param <T> The type of the result
-     * @return A future which is completed with the result performed by the operation
-     */
-    private <T> Future<T> withHttpClient(BiConsumer<HttpClient, Promise<T>> operation) {
-        HttpClient httpClient = vertx.createHttpClient(new HttpClientOptions().setLogActivity(true));
-        Promise<T> promise = Promise.promise();
-        operation.accept(httpClient, promise);
-        return promise.future().compose(
-            result -> {
-                httpClient.close();
-                return Future.succeededFuture(result);
-            },
-            error -> {
-                httpClient.close();
-                return Future.failedFuture(error);
-            });
+            }));
     }
 
     @Override
@@ -127,32 +112,39 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     private <T> Future<T> doGet(String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
         log.debug("Making GET request to {}", path);
-        return withHttpClient((httpClient, result) ->
-            httpClient.get(port, host, path, response -> {
-                response.exceptionHandler(result::tryFail);
-                if (okStatusCodes.contains(response.statusCode())) {
-                    response.bodyHandler(buffer -> {
-                        try {
-                            T t = mapper.readValue(buffer.getBytes(), type);
-                            log.debug("Got {} response to GET request to {}: {}", response.statusCode(), path, t);
-                            result.complete(t);
-                        } catch (IOException e) {
-                            result.fail(new ConnectRestException(response, "Could not deserialize response: " + e));
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+            httpClient.request(HttpMethod.GET, port, host, path, request -> {
+                if (request.succeeded()) {
+                    request.result().setFollowRedirects(true)
+                            .putHeader("Accept", "application/json");
+                    request.result().send(response -> {
+                        if (response.succeeded()) {
+                            if (okStatusCodes.contains(response.result().statusCode())) {
+                                response.result().bodyHandler(buffer -> {
+                                    try {
+                                        T t = mapper.readValue(buffer.getBytes(), type);
+                                        log.debug("Got {} response to GET request to {}: {}", response.result().statusCode(), path, t);
+                                        result.complete(t);
+                                    } catch (IOException e) {
+                                        result.fail(new ConnectRestException(response.result(), "Could not deserialize response: " + e));
+                                    }
+                                });
+                            } else {
+                                // TODO Handle 409 (Conflict) indicating a rebalance in progress
+                                log.debug("Got {} response to GET request to {}", response.result().statusCode(), path);
+                                response.result().bodyHandler(buffer -> {
+                                    JsonObject x = buffer.toJsonObject();
+                                    result.fail(new ConnectRestException(response.result(), x.getString("message")));
+                                });
+                            }
+                        } else {
+                            result.tryFail(response.cause());
                         }
                     });
                 } else {
-                    // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                    log.debug("Got {} response to GET request to {}", response.statusCode(), path);
-                    response.bodyHandler(buffer -> {
-                        JsonObject x = buffer.toJsonObject();
-                        result.fail(new ConnectRestException(response, x.getString("message")));
-                    });
+                    result.tryFail(request.cause());
                 }
-            })
-            .exceptionHandler(result::tryFail)
-            .setFollowRedirects(true)
-            .putHeader("Accept", "application/json")
-            .end());
+            }));
     }
 
     @Override
@@ -173,33 +165,40 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<Void> delete(String host, int port, String connectorName) {
         String path = "/connectors/" + connectorName;
-        return withHttpClient((httpClient, result) ->
-            httpClient.delete(port, host, path, response -> {
-                response.exceptionHandler(result::tryFail);
-                if (response.statusCode() == 204) {
-                    log.debug("Connector was deleted. Waiting for status deletion!");
-                    withBackoff(new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
-                        () -> status(host, port, connectorName, Collections.singleton(404)), "status")
-                        .onComplete(res -> {
-                            if (res.succeeded()) {
-                                result.complete();
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+            httpClient.request(HttpMethod.DELETE, port, host, path, request -> {
+                if (request.succeeded()) {
+                    request.result().setFollowRedirects(true)
+                            .putHeader("Accept", "application/json")
+                            .putHeader("Content-Type", "application/json");
+                    request.result().send(response -> {
+                        if (response.succeeded()) {
+                            if (response.result().statusCode() == 204) {
+                                log.debug("Connector was deleted. Waiting for status deletion!");
+                                withBackoff(new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
+                                    () -> status(host, port, connectorName, Collections.singleton(404)), "status")
+                                    .onComplete(res -> {
+                                        if (res.succeeded()) {
+                                            result.complete();
+                                        } else {
+                                            result.fail(res.cause());
+                                        }
+                                    });
                             } else {
-                                result.fail(res.cause());
+                                // TODO Handle 409 (Conflict) indicating a rebalance in progress
+                                response.result().bodyHandler(buffer -> {
+                                    JsonObject x = buffer.toJsonObject();
+                                    result.fail(new ConnectRestException(response.result(), x.getString("message")));
+                                });
                             }
-                        });
-                } else {
-                    // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                    response.bodyHandler(buffer -> {
-                        JsonObject x = buffer.toJsonObject();
-                        result.fail(new ConnectRestException(response, x.getString("message")));
+                        } else {
+                            result.tryFail(response.cause());
+                        }
                     });
+                } else {
+                    result.tryFail(request.cause());
                 }
-            })
-            .exceptionHandler(result::tryFail)
-            .setFollowRedirects(true)
-            .putHeader("Accept", "application/json")
-            .putHeader("Content-Type", "application/json")
-            .end());
+            }));
     }
 
     @Override
@@ -283,74 +282,96 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> pauseResume(String host, int port, String path) {
-        return withHttpClient((httpClient, result) -> httpClient
-                .put(port, host, path, response -> {
-                    response.exceptionHandler(result::tryFail);
-                    if (response.statusCode() == 202) {
-                        result.complete();
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.request(HttpMethod.PUT, port, host, path, request -> {
+                    if (request.succeeded()) {
+                        request.result().setFollowRedirects(true)
+                                .putHeader("Accept", "application/json");
+                        request.result().send(response -> {
+                            if (response.succeeded()) {
+                                if (response.result().statusCode() == 202) {
+                                    result.complete();
+                                } else {
+                                    result.fail("Unexpected status code " + response.result().statusCode()
+                                            + " for GET request to " + host + ":" + port + path);
+                                }
+                            } else {
+                                result.tryFail(response.cause());
+                            }
+                        });
                     } else {
-                        result.fail("Unexpected status code " + response.statusCode()
-                                + " for GET request to " + host + ":" + port + path);
+                        result.tryFail(request.cause());
                     }
-                })
-                .exceptionHandler(result::tryFail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .end());
+                }));
     }
 
     @Override
     public Future<List<String>> list(String host, int port) {
         String path = "/connectors";
-        return withHttpClient((httpClient, result) -> httpClient
-                .get(port, host, path, response -> {
-                    response.exceptionHandler(result::tryFail);
-                    if (response.statusCode() == 200) {
-                        response.bodyHandler(buffer -> {
-                            JsonArray objects = buffer.toJsonArray();
-                            List<String> list = new ArrayList<>(objects.size());
-                            for (Object o : objects) {
-                                if (o instanceof String) {
-                                    list.add((String) o);
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.request(HttpMethod.GET, port, host, path, request -> {
+
+                    if (request.succeeded()) {
+                        request.result().setFollowRedirects(true)
+                                .putHeader("Accept", "application/json");
+                        request.result().send(response -> {
+                            if (response.succeeded()) {
+                                if (response.result().statusCode() == 200) {
+                                    response.result().bodyHandler(buffer -> {
+                                        JsonArray objects = buffer.toJsonArray();
+                                        List<String> list = new ArrayList<>(objects.size());
+                                        for (Object o : objects) {
+                                            if (o instanceof String) {
+                                                list.add((String) o);
+                                            } else {
+                                                result.fail(o == null ? "null" : o.getClass().getName());
+                                            }
+                                        }
+                                        result.complete(list);
+                                    });
                                 } else {
-                                    result.fail(o == null ? "null" : o.getClass().getName());
+                                    result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
                                 }
+                            } else {
+                                result.tryFail(response.cause());
                             }
-                            result.complete(list);
                         });
                     } else {
-                        result.fail(new ConnectRestException(response, "Unexpected status code"));
+                        result.tryFail(request.cause());
                     }
-                })
-                .exceptionHandler(result::tryFail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .end());
+                }));
     }
 
     @Override
     public Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port) {
         String path = "/connector-plugins";
-        return withHttpClient((httpClient, result) -> httpClient
-                .get(port, host, path, response -> {
-                    response.exceptionHandler(result::tryFail);
-                    if (response.statusCode() == 200) {
-                        response.bodyHandler(buffer -> {
-                            try {
-                                result.complete(asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
-                            } catch (IOException e) {
-                                log.warn("Failed to parse list of connector plugins", e);
-                                result.fail(new ConnectRestException(response, "Failed to parse list of connector plugins", e));
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.request(HttpMethod.GET, port, host, path, request -> {
+                    if (request.succeeded()) {
+                        request.result().setFollowRedirects(true)
+                                .putHeader("Accept", "application/json");
+                        request.result().send(response -> {
+                            if (response.succeeded()) {
+                                if (response.result().statusCode() == 200) {
+                                    response.result().bodyHandler(buffer -> {
+                                        try {
+                                            result.complete(asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
+                                        } catch (IOException e) {
+                                            log.warn("Failed to parse list of connector plugins", e);
+                                            result.fail(new ConnectRestException(response.result(), "Failed to parse list of connector plugins", e));
+                                        }
+                                    });
+                                } else {
+                                    result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
+                                }
+                            } else {
+                                result.tryFail(response.cause());
                             }
                         });
                     } else {
-                        result.fail(new ConnectRestException(response, "Unexpected status code"));
+                        result.tryFail(request.cause());
                     }
-                })
-                .exceptionHandler(result::tryFail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .end());
+                }));
     }
 
     private Future<Void> updateConnectorLogger(String host, int port, String logger, String level) {
@@ -358,52 +379,68 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         JsonObject levelJO = new JsonObject();
         levelJO.put("level", level);
         log.debug("Making PUT request to {} with body {}", path, levelJO);
-        return withHttpClient((httpClient, result) -> {
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) -> {
             Buffer buffer = levelJO.toBuffer();
             httpClient
-                    .put(port, host, path, response -> {
-                        response.exceptionHandler(result::tryFail);
-                        response.bodyHandler(body -> {
-                        });
-                        if (response.statusCode() == 200) {
-                            log.debug("Logger {} updated to level {}", logger, level);
-                            result.complete();
+                    .request(HttpMethod.PUT, port, host, path, request -> {
+                        if (request.succeeded()) {
+                            request.result().putHeader("Content-Type", "application/json")
+                                    .setFollowRedirects(true)
+                                    .putHeader("Content-Length", Integer.toString(buffer.toString().length()))
+                                    .write(buffer.toString());
+                            request.result().send(response -> {
+                                if (response.succeeded()) {
+                                    response.result().bodyHandler(body -> {
+                                    });
+                                    if (response.result().statusCode() == 200) {
+                                        log.debug("Logger {} updated to level {}", logger, level);
+                                        result.complete();
+                                    } else {
+                                        log.debug("Logger {} did not update to level {} (http code {})", logger, level, response.result().statusCode());
+                                        result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
+                                    }
+                                } else {
+                                    result.tryFail(response.cause());
+                                }
+                            });
                         } else {
-                            log.debug("Logger {} did not update to level {} (http code {})", logger, level, response.statusCode());
-                            result.fail(new ConnectRestException(response, "Unexpected status code"));
+                            result.tryFail(request.cause());
                         }
-                    })
-                    .exceptionHandler(result::tryFail)
-                    .putHeader("Content-Type", "application/json")
-                    .setFollowRedirects(true)
-                    .end(buffer);
+                    });
         });
     }
 
     @Override
     public Future<Map<String, Map<String, String>>> listConnectLoggers(String host, int port) {
         String path = "/admin/loggers/";
-        return withHttpClient((httpClient, result) -> httpClient
-                .get(port, host, path, response -> {
-                    response.exceptionHandler(result::tryFail);
-                    if (response.statusCode() == 200) {
-                        response.bodyHandler(buffer -> {
-                            try {
-                                Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
-                                result.complete(fetchedLoggers);
-                            } catch (IOException e) {
-                                log.warn("Failed to get list of connector loggers", e);
-                                result.fail(new ConnectRestException(response, "Failed to get connector loggers", e));
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+                httpClient.request(HttpMethod.GET, port, host, path, request -> {
+                    if (request.succeeded()) {
+                        request.result().setFollowRedirects(true)
+                                .putHeader("Accept", "application/json");
+                        request.result().send(response -> {
+                            if (response.succeeded()) {
+                                if (response.result().statusCode() == 200) {
+                                    response.result().bodyHandler(buffer -> {
+                                        try {
+                                            Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
+                                            result.complete(fetchedLoggers);
+                                        } catch (IOException e) {
+                                            log.warn("Failed to get list of connector loggers", e);
+                                            result.fail(new ConnectRestException(response.result(), "Failed to get connector loggers", e));
+                                        }
+                                    });
+                                } else {
+                                    result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
+                                }
+                            } else {
+                                result.tryFail(response.cause());
                             }
                         });
                     } else {
-                        result.fail(new ConnectRestException(response, "Unexpected status code"));
+                        result.tryFail(request.cause());
                     }
-                })
-                .exceptionHandler(result::tryFail)
-                .setFollowRedirects(true)
-                .putHeader("Accept", "application/json")
-                .end());
+                }));
     }
 
     private Future<Void> updateLoggers(String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers, OrderedProperties defaultLogging) {
@@ -503,45 +540,63 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> restartConnectorOrTask(String host, int port, String path) {
-        return withHttpClient((httpClient, result) -> httpClient
-            .post(port, host, path, response -> {
-                response.exceptionHandler(result::tryFail);
-                if (response.statusCode() == 204) {
-                    result.complete();
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+            httpClient.request(HttpMethod.POST, port, host, path, request -> {
+                if (request.succeeded()) {
+                    request.result().setFollowRedirects(true)
+                            .putHeader("Accept", "application/json");
+                    request.result().send(response -> {
+                        if (response.succeeded()) {
+                            if (response.result().statusCode() == 204) {
+                                result.complete();
+                            } else {
+                                result.fail("Unexpected status code " + response.result().statusCode()
+                                        + " for POST request to " + host + ":" + port + path);
+                            }
+                        } else {
+                            result.tryFail(response.cause());
+                        }
+                    });
                 } else {
-                    result.fail("Unexpected status code " + response.statusCode()
-                        + " for POST request to " + host + ":" + port + path);
+                    result.tryFail(request.cause());
                 }
-            })
-            .exceptionHandler(result::tryFail)
-            .setFollowRedirects(true)
-            .putHeader("Accept", "application/json")
-            .end());
+            }));
     }
 
     @Override
     public Future<List<String>> getConnectorTopics(String host, int port, String connectorName) {
         String path = String.format("/connectors/%s/topics", connectorName);
-        return withHttpClient((httpClient, result) -> httpClient
-            .get(port, host, path, response -> {
-                response.exceptionHandler(result::tryFail);
-                if (response.statusCode() == 200) {
-                    response.bodyHandler(buffer -> {
-                        try {
-                            Map<String, Map<String, List<String>>> t = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_LIST_OF_STRING);
-                            result.complete(t.get(connectorName).get("topics"));
-                        } catch (IOException e) {
-                            log.warn("Failed to parse list of connector topics", e);
-                            result.fail(new ConnectRestException(response, "Failed to parse list of connector topics", e));
+        return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
+            httpClient.request(HttpMethod.GET, port, host, path, request -> {
+                if (request.succeeded()) {
+                    request.result().setFollowRedirects(true)
+                            .putHeader("Accept", "application/json");
+                } else {
+                    result.tryFail(request.cause());
+                }
+                if (request.succeeded()) {
+                    request.result().send(response -> {
+                        if (response.succeeded()) {
+                            if (response.result().statusCode() == 200) {
+                                response.result().bodyHandler(buffer -> {
+                                    try {
+                                        Map<String, Map<String, List<String>>> t = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_LIST_OF_STRING);
+                                        result.complete(t.get(connectorName).get("topics"));
+                                    } catch (IOException e) {
+                                        log.warn("Failed to parse list of connector topics", e);
+                                        result.fail(new ConnectRestException(response.result(), "Failed to parse list of connector topics", e));
+                                    }
+                                });
+                            } else {
+                                result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
+                            }
+                        } else {
+                            result.fail(response.cause());
                         }
                     });
                 } else {
-                    result.fail(new ConnectRestException(response, "Unexpected status code"));
+                    result.tryFail(request.cause());
                 }
-            })
-            .exceptionHandler(result::tryFail)
-            .setFollowRedirects(true)
-            .putHeader("Accept", "application/json")
-            .end());
+            }));
     }
 }

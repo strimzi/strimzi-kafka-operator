@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
+import io.strimzi.test.TestUtils;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -31,12 +30,17 @@ public class KafkaConnectorCrdOperatorIT extends AbstractCustomResourceOperatorI
 
     @Override
     protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaConnector.class, KafkaConnectorList.class, Crds.kafkaConnector());
+        return new CrdOperator(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND);
     }
 
     @Override
-    protected CustomResourceDefinition getCrd() {
-        return Crds.kafkaConnector();
+    protected String getCrd() {
+        return TestUtils.CRD_KAFKA_CONNECTOR;
+    }
+
+    @Override
+    protected String getCrdName() {
+        return KafkaConnector.CRD_NAME;
     }
 
     @Override

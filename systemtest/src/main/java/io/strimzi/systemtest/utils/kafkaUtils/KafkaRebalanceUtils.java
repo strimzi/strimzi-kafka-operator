@@ -49,17 +49,25 @@ public class KafkaRebalanceUtils {
         }
     }
 
-    public static boolean waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
-        KafkaRebalance kafkaRebalance = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get();
+    public static boolean waitForKafkaRebalanceCustomResourceState(String namespaceName, String resourceName, KafkaRebalanceState state) {
+        KafkaRebalance kafkaRebalance = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get();
         return ResourceManager.waitForResourceStatus(KafkaRebalanceResource.kafkaRebalanceClient(), kafkaRebalance, state, ResourceOperation.getTimeoutForKafkaRebalanceState(state));
     }
 
-    public static String annotateKafkaRebalanceResource(String resourceName, KafkaRebalanceAnnotation annotation) {
+    public static boolean waitForKafkaRebalanceCustomResourceState(String resourceName, KafkaRebalanceState state) {
+        return waitForKafkaRebalanceCustomResourceState(kubeClient().getNamespace(), resourceName, state);
+    }
+
+    public static String annotateKafkaRebalanceResource(String namespaceName, String resourceName, KafkaRebalanceAnnotation annotation) {
         LOGGER.info("Annotating KafkaRebalance:{} with annotation {}", resourceName, annotation.toString());
-        return ResourceManager.cmdKubeClient().namespace(kubeClient().getNamespace())
+        return ResourceManager.cmdKubeClient().namespace(namespaceName)
             .execInCurrentNamespace("annotate", "kafkarebalance", resourceName, Annotations.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation.toString())
             .out()
             .trim();
+    }
+
+    public static String annotateKafkaRebalanceResource(String resourceName, KafkaRebalanceAnnotation annotation) {
+        return annotateKafkaRebalanceResource(kubeClient().getNamespace(), resourceName, annotation);
     }
 
     public static void doRebalancingProcess(String rebalanceName) {
@@ -89,13 +97,13 @@ public class KafkaRebalanceUtils {
         waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.Ready);
     }
 
-    public static void waitForRebalanceStatusStability(String resourceName) {
+    public static void waitForRebalanceStatusStability(String namespaceName, String resourceName) {
         int[] stableCounter = {0};
 
-        KafkaRebalanceStatus oldStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get().getStatus();
+        KafkaRebalanceStatus oldStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get().getStatus();
 
         TestUtils.waitFor("KafkaRebalance status will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            if (KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get().getStatus().equals(oldStatus)) {
+            if (KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get().getStatus().equals(oldStatus)) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                     LOGGER.info("KafkaRebalance status is stable for {} polls intervals", stableCounter[0]);
@@ -109,5 +117,9 @@ public class KafkaRebalanceUtils {
             LOGGER.info("KafkaRebalance status gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
             return false;
         });
+    }
+
+    public static void waitForRebalanceStatusStability(String resourceName) {
+        waitForRebalanceStatusStability(kubeClient().getNamespace(), resourceName);
     }
 }

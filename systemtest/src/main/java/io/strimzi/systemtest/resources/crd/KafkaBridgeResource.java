@@ -33,7 +33,7 @@ public class KafkaBridgeResource implements ResourceType<KafkaBridge> {
         kafkaBridgeClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
     }
     @Override
-    public void delete(KafkaBridge resource) throws Exception {
+    public void delete(KafkaBridge resource) {
         kafkaBridgeClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
@@ -48,5 +48,9 @@ public class KafkaBridgeResource implements ResourceType<KafkaBridge> {
 
     public static void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
         ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, resourceName, editor);
+    }
+
+    public static void replaceBridgeResourceInSpecificNamespace(String resourceName, Consumer<KafkaBridge> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, resourceName, editor, namespaceName);
     }
 }

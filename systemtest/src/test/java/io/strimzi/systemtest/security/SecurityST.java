@@ -26,11 +26,9 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -93,9 +91,9 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.security.SystemTestCertManager.STRIMZI_INTERMEDIATE_CA;
 import static io.strimzi.systemtest.security.SystemTestCertManager.convertPrivateKeyToPKCS8File;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -118,9 +116,10 @@ class SecurityST extends AbstractST {
     static final String STRIMZI_TEST_CLUSTER_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClusterCA";
     static final String STRIMZI_TEST_CLIENTS_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClientsCA";
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testCertificates(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Running testCertificates {}", clusterName);
 
@@ -133,12 +132,12 @@ class SecurityST extends AbstractST {
                 .build());
 
         LOGGER.info("Check Kafka bootstrap certificate");
-        String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.tlsBootstrapAddress(clusterName), KafkaResources.bootstrapServiceName(clusterName),
+        String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.tlsBootstrapAddress(clusterName), KafkaResources.bootstrapServiceName(clusterName),
                 KafkaResources.kafkaPodName(clusterName, 0), "kafka", false);
         verifyCerts(clusterName, outputCertificate, "kafka");
 
         LOGGER.info("Check zookeeper client certificate");
-        outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.zookeeperServiceName(clusterName) + ":2181", KafkaResources.zookeeperServiceName(clusterName),
+        outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.zookeeperServiceName(clusterName) + ":2181", KafkaResources.zookeeperServiceName(clusterName),
                 KafkaResources.kafkaPodName(clusterName, 0), "kafka");
         verifyCerts(clusterName, outputCertificate, "zookeeper");
 
@@ -151,15 +150,15 @@ class SecurityST extends AbstractST {
             LOGGER.info("Checking certificates for podId {}", podId);
             for (String kafkaPort : kafkaPorts) {
                 LOGGER.info("Check kafka certificate for port {}", kafkaPort);
-                output = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.kafkaPodName(clusterName, podId),
-                        KafkaResources.brokersServiceName(clusterName), kafkaPort, "kafka", NAMESPACE);
+                output = SystemTestCertManager.generateOpenSslCommandByComponentUsingSvcHostname(namespaceName, KafkaResources.kafkaPodName(clusterName, podId),
+                        KafkaResources.brokersServiceName(clusterName), kafkaPort, "kafka");
                 verifyCerts(clusterName, output, "kafka");
             }
 
             for (String zkPort : zkPorts) {
                 LOGGER.info("Check zookeeper certificate for port {}", zkPort);
-                output = SystemTestCertManager.generateOpenSslCommandByComponent(KafkaResources.zookeeperPodName(clusterName, podId),
-                        KafkaResources.zookeeperHeadlessServiceName(clusterName), zkPort, "zookeeper", NAMESPACE);
+                output = SystemTestCertManager.generateOpenSslCommandByComponentUsingSvcHostname(namespaceName, KafkaResources.zookeeperPodName(clusterName, podId),
+                        KafkaResources.zookeeperHeadlessServiceName(clusterName), zkPort, "zookeeper");
                 verifyCerts(clusterName, output, "zookeeper");
             }
         });
@@ -177,7 +176,7 @@ class SecurityST extends AbstractST {
         assertThat(certificate, containsString(OPENSSL_RETURN_CODE));
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClusterCaCerts")
@@ -192,7 +191,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClientsCaCerts")
@@ -207,7 +206,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
@@ -226,6 +225,7 @@ class SecurityST extends AbstractST {
             boolean zkShouldRoll,
             boolean kafkaShouldRoll,
             boolean eoShouldRoll) {
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
         createKafkaCluster(extensionContext);
 
@@ -252,13 +252,12 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName, user).build());
 
-        String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        String defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -272,14 +271,14 @@ class SecurityST extends AbstractST {
         );
 
         // Get all pods, and their resource versions
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName));
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
-        Map<String, String> eoPod = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+        Map<String, String> eoPod = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaCerts = new HashMap<>();
         for (String secretName : secrets) {
-            Secret secret = kubeClient().getSecret(secretName);
+            Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             String value = secret.getData().get("ca.crt");
             assertThat("ca.crt in " + secretName + " should not be null", value, is(notNullValue()));
             initialCaCerts.put(secretName, value);
@@ -289,25 +288,25 @@ class SecurityST extends AbstractST {
                 .endMetadata()
                 .build();
             LOGGER.info("Patching secret {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW);
-            kubeClient().patchSecret(secretName, annotated);
+            kubeClient(namespaceName).patchSecret(namespaceName, secretName, annotated);
         }
 
         if (zkShouldRoll) {
             LOGGER.info("Wait for zk to rolling restart ...");
-            StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
+            StatefulSetUtils.waitTillSsHasRolled(namespaceName, zookeeperStatefulSetName(clusterName), 3, zkPods);
         }
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart ...");
-            StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), 3, kafkaPods);
+            StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
         }
         if (eoShouldRoll) {
             LOGGER.info("Wait for EO to rolling restart ...");
-            eoPod = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+            eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
-            Secret secret = kubeClient().getSecret(secretName);
+            Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             assertThat("Secret " + secretName + " should exist", secret, is(notNullValue()));
             assertThat("CA cert in " + secretName + " should have non-null 'data'", is(notNullValue()));
             String value = secret.getData().get("ca.crt");
@@ -332,10 +331,9 @@ class SecurityST extends AbstractST {
         user = KafkaUserTemplates.tlsUser(clusterName, bobUserName).build();
 
         resourceManager.createResource(extensionContext, user);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-tls", user).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName + "-tls", user).build());
 
-        defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-tls").get(0).getMetadata().getName();
+        defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName + "-tls").get(0).getMetadata().getName();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
@@ -352,17 +350,17 @@ class SecurityST extends AbstractST {
         );
 
         if (!zkShouldRoll) {
-            assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName)), is(zkPods));
+            assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName)), is(zkPods));
         }
         if (!kafkaShouldRoll) {
-            assertThat("Kafka pods should not roll, but did.", StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName)), is(kafkaPods));
+            assertThat("Kafka pods should not roll, but did.", StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName)), is(kafkaPods));
         }
         if (!eoShouldRoll) {
-            assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
+            assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
         }
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClusterCaKeys")
@@ -374,7 +372,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClientsCaKeys")
@@ -386,7 +384,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @ParallelTest
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("AllCaKeys")
@@ -403,10 +401,9 @@ class SecurityST extends AbstractST {
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll) {
-
-
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         List<String> secrets = null;
 
         // to make it parallel we need decision maker...
@@ -431,13 +428,12 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName, user).build());
 
-        String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        String defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -451,14 +447,14 @@ class SecurityST extends AbstractST {
         );
 
         // Get all pods, and their resource versions
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName));
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
-        Map<String, String> eoPod = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+        Map<String, String> eoPod = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaKeys = new HashMap<>();
         for (String secretName : secrets) {
-            Secret secret = kubeClient().getSecret(secretName);
+            Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             String value = secret.getData().get("ca.key");
             assertThat("ca.key in " + secretName + " should not be null", value, is(Matchers.notNullValue()));
             initialCaKeys.put(secretName, value);
@@ -468,39 +464,39 @@ class SecurityST extends AbstractST {
                     .endMetadata()
                     .build();
             LOGGER.info("Patching secret {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_REPLACE);
-            kubeClient().patchSecret(secretName, annotated);
+            kubeClient(namespaceName).patchSecret(namespaceName, secretName, annotated);
         }
 
         if (zkShouldRoll) {
             LOGGER.info("Wait for zk to rolling restart (1)...");
-            zkPods = StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
+            zkPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, zookeeperStatefulSetName(clusterName), 3, zkPods);
         }
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart (1)...");
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), kafkaPods);
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), kafkaPods);
         }
         if (eoShouldRoll) {
             LOGGER.info("Wait for EO to rolling restart (1)...");
-            eoPod = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+            eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
 
         if (zkShouldRoll) {
             LOGGER.info("Wait for zk to rolling restart (2)...");
-            zkPods = StatefulSetUtils.waitTillSsHasRolled(zookeeperStatefulSetName(clusterName), 3, zkPods);
+            zkPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, zookeeperStatefulSetName(clusterName), 3, zkPods);
         }
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart (2)...");
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), 3, kafkaPods);
+            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
         }
 
         if (eoShouldRoll) {
             LOGGER.info("Wait for EO to rolling restart (2)...");
-            eoPod = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+            eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
 
         LOGGER.info("Checking the certificates have been replaced");
         for (String secretName : secrets) {
-            Secret secret = kubeClient().getSecret(secretName);
+            Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             assertThat("Secret " + secretName + " should exist", secret, is(notNullValue()));
             assertThat("CA key in " + secretName + " should have non-null 'data'", secret.getData(), is(notNullValue()));
             String value = secret.getData().get("ca.key");
@@ -527,8 +523,7 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, user);
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-tls", user).build());
 
-        defaultKafkaClientsPodName =
-            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-tls").get(0).getMetadata().getName();
+        defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName + "-tls").get(0).getMetadata().getName();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withUsingPodName(defaultKafkaClientsPodName)
@@ -543,16 +538,16 @@ class SecurityST extends AbstractST {
         );
 
         if (!zkShouldRoll) {
-            assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(zookeeperStatefulSetName(clusterName)), is(zkPods));
+            assertThat("ZK pods should not roll, but did.", StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName)), is(zkPods));
         }
 
         if (!kafkaShouldRoll) {
-            assertThat("Kafka pods should not roll, but did.", StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName)), is(kafkaPods));
+            assertThat("Kafka pods should not roll, but did.", StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName)), is(kafkaPods));
 
         }
 
         if (!eoShouldRoll) {
-            assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
+            assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
         }
     }
 
@@ -595,9 +590,10 @@ class SecurityST extends AbstractST {
             .build());
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewCaCertsTriggerByExpiredCertificate(ExtensionContext extensionContext) {
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -605,7 +601,7 @@ class SecurityST extends AbstractST {
         // 1. Create the Secrets already, and a certificate that's already expired
         InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/expired-cluster-ca.crt");
         String clusterCaCert = TestUtils.readResource(secretInputStream);
-        SecretUtils.createSecret(clusterCaCertificateSecretName(clusterName), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
+        SecretUtils.createSecret(namespaceName, clusterCaCertificateSecretName(clusterName), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
 
         // 2. Now create a cluster
         createKafkaCluster(extensionContext);
@@ -616,13 +612,12 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
-        String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -635,10 +630,10 @@ class SecurityST extends AbstractST {
         );
 
         // Wait until the certificates have been replaced
-        SecretUtils.waitForCertToChange(clusterCaCert, clusterCaCertificateSecretName(clusterName));
+        SecretUtils.waitForCertToChange(namespaceName, clusterCaCert, clusterCaCertificateSecretName(clusterName));
 
         // Wait until the pods are all up and ready
-        KafkaUtils.waitForClusterStability(clusterName);
+        KafkaUtils.waitForClusterStability(namespaceName, clusterName);
 
         LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
 
@@ -648,19 +643,20 @@ class SecurityST extends AbstractST {
         );
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceWindow(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        String secretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String secretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
 
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
         long maintenanceWindowDuration = 14;
         maintenanceWindowStart = maintenanceWindowStart.plusMinutes(5);
-        long windowStartMin = maintenanceWindowStart.getMinute();
-        long windowStopMin = windowStartMin + maintenanceWindowDuration > 59
+        final long windowStartMin = maintenanceWindowStart.getMinute();
+        final long windowStopMin = windowStartMin + maintenanceWindowDuration > 59
                 ? windowStartMin + maintenanceWindowDuration - 60 : windowStartMin + maintenanceWindowDuration;
 
         String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
@@ -680,27 +676,26 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
-        String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(user.getMetadata().getName())
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
 
         LOGGER.info("Annotate secret {} with secret force-renew annotation", secretName);
-        Secret secret = new SecretBuilder(kubeClient().getSecret(secretName))
+        Secret secret = new SecretBuilder(kubeClient(namespaceName).getSecret(namespaceName, secretName))
             .editMetadata()
                 .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
             .endMetadata().build();
-        kubeClient().patchSecret(secretName, secret);
+        kubeClient(namespaceName).patchSecret(namespaceName, secretName, secret);
 
         LOGGER.info("Wait until maintenance windows starts");
         LocalDateTime finalMaintenanceWindowStart = maintenanceWindowStart;
@@ -710,10 +705,10 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Maintenance window starts");
 
-        assertThat("Rolling update was performed out of maintenance window!", kafkaPods, is(StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName))));
+        assertThat("Rolling update was performed out of maintenance window!", kafkaPods, is(StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName))));
 
         LOGGER.info("Wait until rolling update is triggered during maintenance window");
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
 
         assertThat("Rolling update wasn't performed in correct time", LocalDateTime.now().isAfter(maintenanceWindowStart));
 
@@ -725,16 +720,17 @@ class SecurityST extends AbstractST {
         );
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRegeneratedAfterInternalCAisDeleted(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
 
         KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
 
@@ -742,13 +738,12 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
-        String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
@@ -756,7 +751,7 @@ class SecurityST extends AbstractST {
             .build();
 
         // TODO
-        List<Secret> secrets = kubeClient().listSecrets().stream()
+        List<Secret> secrets = kubeClient(namespaceName).listSecrets(namespaceName).stream()
             .filter(secret ->
                 secret.getMetadata().getName().startsWith(clusterName) &&
                 secret.getMetadata().getName().endsWith("ca-cert"))
@@ -769,17 +764,17 @@ class SecurityST extends AbstractST {
 
         for (Secret s : secrets) {
             LOGGER.info("Deleting secret {}", s.getMetadata().getName());
-            kubeClient().deleteSecret(s.getMetadata().getName());
+            kubeClient(namespaceName).deleteSecret(namespaceName, s.getMetadata().getName());
         }
 
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
-        StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
 
         for (Secret s : secrets) {
-            SecretUtils.waitForSecretReady(s.getMetadata().getName());
+            SecretUtils.waitForSecretReady(namespaceName, s.getMetadata().getName(), () -> { });
         }
 
-        List<Secret> regeneratedSecrets = kubeClient().listSecrets().stream()
+        List<Secret> regeneratedSecrets = kubeClient(namespaceName).listSecrets(namespaceName).stream()
                 .filter(secret -> secret.getMetadata().getName().endsWith("ca-cert"))
                 .collect(Collectors.toList());
 
@@ -795,15 +790,16 @@ class SecurityST extends AbstractST {
         );
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testTlsHostnameVerificationWithKafkaConnect(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         LOGGER.info("Getting IP of the bootstrap service");
 
-        String ipOfBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(clusterName)).getSpec().getClusterIP();
+        String ipOfBootstrapService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(clusterName)).getSpec().getClusterIP();
 
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
@@ -822,41 +818,42 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitUntilPodIsPresent(clusterName + "-connect");
+        PodUtils.waitUntilPodIsPresent(namespaceName, clusterName + "-connect");
 
-        String kafkaConnectPodName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        PodUtils.waitUntilPodIsInCrashLoopBackOff(kafkaConnectPodName);
+        PodUtils.waitUntilPodIsInCrashLoopBackOff(namespaceName, kafkaConnectPodName);
 
-        assertThat("CrashLoopBackOff", is(kubeClient().getPod(kafkaConnectPodName).getStatus().getContainerStatuses()
+        assertThat("CrashLoopBackOff", is(kubeClient(namespaceName).getPod(namespaceName, kafkaConnectPodName).getStatus().getContainerStatuses()
                 .get(0).getState().getWaiting().getReason()));
 
-        KafkaConnectResource.replaceKafkaConnectResource(clusterName, kc -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> {
             kc.getSpec().getConfig().put("ssl.endpoint.identification.algorithm", "");
-        });
+        }, namespaceName);
 
         LOGGER.info("KafkaConnect with config {} will connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        KafkaConnectUtils.waitForConnectReady(clusterName);
+        KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
 
-        KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(clusterName));
+        KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testTlsHostnameVerificationWithMirrorMaker(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String sourceKafkaCluster = clusterName + "-source";
-        String targetKafkaCluster = clusterName + "-target";
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String sourceKafkaCluster = clusterName + "-source";
+        final String targetKafkaCluster = clusterName + "-target";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sourceKafkaCluster, 1, 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(targetKafkaCluster, 1, 1).build());
 
         LOGGER.info("Getting IP of the source bootstrap service for consumer");
-        String ipOfSourceBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(sourceKafkaCluster)).getSpec().getClusterIP();
+        String ipOfSourceBootstrapService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(sourceKafkaCluster)).getSpec().getClusterIP();
 
         LOGGER.info("Getting IP of the target bootstrap service for producer");
-        String ipOfTargetBootstrapService = kubeClient().getService(KafkaResources.bootstrapServiceName(targetKafkaCluster)).getSpec().getClusterIP();
+        String ipOfTargetBootstrapService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(targetKafkaCluster)).getSpec().getClusterIP();
 
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
@@ -885,36 +882,37 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitUntilPodIsPresent(clusterName + "-mirror-maker");
+        PodUtils.waitUntilPodIsPresent(namespaceName, clusterName + "-mirror-maker");
 
-        String kafkaMirrorMakerPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaMirrorMakerPodName = kubeClient(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        PodUtils.waitUntilPodIsInCrashLoopBackOff(kafkaMirrorMakerPodName);
+        PodUtils.waitUntilPodIsInCrashLoopBackOff(namespaceName, kafkaMirrorMakerPodName);
 
-        assertThat("CrashLoopBackOff", is(kubeClient().getPod(kafkaMirrorMakerPodName).getStatus().getContainerStatuses().get(0)
+        assertThat("CrashLoopBackOff", is(kubeClient(namespaceName).getPod(namespaceName, kafkaMirrorMakerPodName).getStatus().getContainerStatuses().get(0)
                 .getState().getWaiting().getReason()));
 
         LOGGER.info("KafkaMirrorMaker with config {} will connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("KafkaMirrorMaker with config {} will connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
         LOGGER.info("Adding configuration {} to the mirror maker...", "ssl.endpoint.identification.algorithm");
-        KafkaMirrorMakerResource.replaceMirrorMakerResource(clusterName, mm -> {
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(clusterName, mm -> {
             mm.getSpec().getConsumer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
             mm.getSpec().getProducer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
-        });
+        }, namespaceName);
 
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(clusterName);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(namespaceName, clusterName);
 
-        KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(NAMESPACE).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMakerResources.deploymentName(clusterName));
+        KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName));
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
         final int numberOfMessages = 500;
@@ -962,7 +960,7 @@ class SecurityST extends AbstractST {
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withKafkaUsername(kafkaUserWrite)
             .withMessageCount(numberOfMessages)
@@ -1010,13 +1008,14 @@ class SecurityST extends AbstractST {
         assertThrows(WaitException.class, newBasicExternalKafkaClient::sendMessagesTls);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclWithSuperUser(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -1061,7 +1060,7 @@ class SecurityST extends AbstractST {
 
         BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
@@ -1115,12 +1114,13 @@ class SecurityST extends AbstractST {
         assertThrows(WaitException.class, () -> newBasicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testCaRenewalBreakInMiddle(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
@@ -1137,13 +1137,12 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
 
-        String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        String defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
@@ -1159,15 +1158,15 @@ class SecurityST extends AbstractST {
             internalKafkaClient.receiveMessagesTls()
         );
 
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
-        Map<String, String> eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/expired-cluster-ca.crt");
         String clusterCaCert = TestUtils.readResource(secretInputStream);
-        SecretUtils.createSecret(clusterCaCertificateSecretName(clusterName), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
+        SecretUtils.createSecret(namespaceName, clusterCaCertificateSecretName(clusterName), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
 
-        KafkaResource.replaceKafkaResource(clusterName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
             k.getSpec()
                 .getZookeeper()
                 .setResources(new ResourceRequirementsBuilder()
@@ -1177,12 +1176,12 @@ class SecurityST extends AbstractST {
                 .withRenewalDays(4)
                 .withValidityDays(7)
                 .build());
-        });
+        }, namespaceName);
 
         TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> pendingPods = kubeClient().listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(clusterName))
+                List<Pod> pendingPods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName))
                     .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
                 if (pendingPods.isEmpty()) {
                     LOGGER.info("No pods of {} are in desired state", KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -1201,19 +1200,19 @@ class SecurityST extends AbstractST {
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
 
-        KafkaResource.replaceKafkaResource(clusterName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
             k.getSpec()
                 .getZookeeper()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("200m"))
                     .build());
-        });
+        }, namespaceName);
 
         // Wait until the certificates have been replaced
-        SecretUtils.waitForCertToChange(clusterCaCert, KafkaResources.clusterCaCertificateSecretName(clusterName));
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        SecretUtils.waitForCertToChange(namespaceName, clusterCaCert, KafkaResources.clusterCaCertificateSecretName(clusterName));
+        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
+        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
@@ -1239,11 +1238,12 @@ class SecurityST extends AbstractST {
         );
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testKafkaAndKafkaConnectTlsVersion(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-        Map<String, Object> configWithNewestVersionOfTls = new HashMap<>();
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final Map<String, Object> configWithNewestVersionOfTls = new HashMap<>();
 
         final String tlsVersion12 = "TLSv1.2";
         final String tlsVersion1 = "TLSv1";
@@ -1261,7 +1261,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig();
+        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig();
 
         LOGGER.info("Verifying that Kafka cluster has the accepted configuration:\n" +
                         "{} -> {}\n" +
@@ -1288,11 +1288,11 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different TLS version");
 
-        KafkaConnectUtils.waitForConnectStatus(clusterName, NotReady);
+        KafkaConnectUtils.waitForConnectNotReady(namespaceName, clusterName);
 
         LOGGER.info("Replacing Kafka Connect config to the newest(TLSv1.2) one same as the Kafka broker has.");
 
-        KafkaConnectResource.replaceKafkaConnectResource(clusterName, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithNewestVersionOfTls));
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithNewestVersionOfTls), namespaceName);
 
         LOGGER.info("Verifying that Kafka Connect has the accepted configuration:\n {} -> {}\n {} -> {}",
                 SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG,
@@ -1300,26 +1300,27 @@ class SecurityST extends AbstractST {
                 SslConfigs.SSL_PROTOCOL_CONFIG,
                 SslConfigs.DEFAULT_SSL_PROTOCOL);
 
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion12, NAMESPACE, clusterName);
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_PROTOCOL_CONFIG, SslConfigs.DEFAULT_SSL_PROTOCOL, NAMESPACE, clusterName);
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion12, namespaceName, clusterName);
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_PROTOCOL_CONFIG, SslConfigs.DEFAULT_SSL_PROTOCOL, namespaceName, clusterName);
 
         LOGGER.info("Verifying that Kafka Connect is stable");
 
-        PodUtils.verifyThatRunningPodsAreStable(KafkaConnectResources.deploymentName(clusterName));
+        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaConnectResources.deploymentName(clusterName));
 
         LOGGER.info("Verifying that Kafka Connect status is Ready because of same TLS version");
 
-        KafkaConnectUtils.waitForConnectReady(clusterName);
+        KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
 
-        KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(clusterName));
+        KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testKafkaAndKafkaConnectCipherSuites(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-        Map<String, Object> configWithCipherSuitesSha384 = new HashMap<>();
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final Map<String, Object> configWithCipherSuitesSha384 = new HashMap<>();
 
         final String cipherSuitesSha384 = "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384";
         final String cipherSuitesSha256 = "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256";
@@ -1336,7 +1337,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig();
+        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig();
 
         LOGGER.info("Verifying that Kafka Connect has the accepted configuration:\n {} -> {}",
                 SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
@@ -1357,35 +1358,36 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that Kafka Connect status is NotReady because of different cipher suites complexity of algorithm");
 
-        KafkaConnectUtils.waitForConnectNotReady(clusterName);
+        KafkaConnectUtils.waitForConnectNotReady(namespaceName, clusterName);
 
         LOGGER.info("Replacing Kafka Connect config to the cipher suites same as the Kafka broker has.");
 
-        KafkaConnectResource.replaceKafkaConnectResource(clusterName, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithCipherSuitesSha384));
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithCipherSuitesSha384), namespaceName);
 
         LOGGER.info("Verifying that Kafka Connect has the accepted configuration:\n {} -> {}",
                 SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
 
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384, NAMESPACE, clusterName);
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384, namespaceName, clusterName);
 
         LOGGER.info("Verifying that Kafka Connect is stable");
 
-        PodUtils.verifyThatRunningPodsAreStable(KafkaConnectResources.deploymentName(clusterName));
+        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaConnectResources.deploymentName(clusterName));
 
         LOGGER.info("Verifying that Kafka Connect status is Ready because of the same cipher suites complexity of algorithm");
 
-        KafkaConnectUtils.waitForConnectReady(clusterName);
+        KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
 
-        KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(KafkaConnectResources.deploymentName(clusterName));
+        KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testOwnerReferenceOfCASecrets(ExtensionContext extensionContext) {
         /* Different name for Kafka cluster to make the test quicker -> KafkaRoller is waiting for pods of "my-cluster" to become ready
          for 5 minutes -> this will prevent the waiting. */
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String secondClusterName = "my-second-cluster-" + clusterName;
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String secondClusterName = "my-second-cluster-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editOrNewSpec()
@@ -1399,21 +1401,21 @@ class SecurityST extends AbstractST {
             .build());
 
         LOGGER.info("Listing all cluster CAs for {}", clusterName);
-        List<Secret> caSecrets = kubeClient().listSecrets().stream()
+        List<Secret> caSecrets = kubeClient(namespaceName).listSecrets(namespaceName).stream()
             .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(clusterName)) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(clusterName))).collect(Collectors.toList());
 
         LOGGER.info("Deleting Kafka:{}", clusterName);
-        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaUtils.waitForKafkaDeletion(clusterName);
+        KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUtils.waitForKafkaDeletion(namespaceName, clusterName);
 
         LOGGER.info("Checking actual secrets after Kafka deletion");
         caSecrets.forEach(caSecret -> {
             String secretName = caSecret.getMetadata().getName();
             LOGGER.info("Checking that {} secret is still present", secretName);
-            assertNotNull(kubeClient().getSecret(secretName));
+            assertNotNull(kubeClient(namespaceName).getSecret(namespaceName, secretName));
 
             LOGGER.info("Deleting secret: {}", secretName);
-            kubeClient().deleteSecret(secretName);
+            kubeClient(namespaceName).deleteSecret(namespaceName, secretName);
         });
 
         LOGGER.info("Deploying Kafka with generateSecretOwnerReference set to true");
@@ -1428,12 +1430,12 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        caSecrets = kubeClient().listSecrets().stream()
+        caSecrets = kubeClient(namespaceName).listSecrets(namespaceName).stream()
             .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(secondClusterName)) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(secondClusterName))).collect(Collectors.toList());
 
         LOGGER.info("Deleting Kafka:{}", secondClusterName);
-        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(secondClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaUtils.waitForKafkaDeletion(secondClusterName);
+        KafkaResource.kafkaClient().inNamespace(namespaceName).withName(secondClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUtils.waitForKafkaDeletion(namespaceName, secondClusterName);
 
         LOGGER.info("Checking actual secrets after Kafka deletion");
         caSecrets.forEach(caSecret -> {
@@ -1443,22 +1445,23 @@ class SecurityST extends AbstractST {
         });
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testClusterCACertRenew(ExtensionContext extensionContext) {
         checkClusterCACertRenew(extensionContext, false);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testCustomClusterCACertRenew(ExtensionContext extensionContext) {
         checkClusterCACertRenew(extensionContext, true);
     }
 
     void checkClusterCACertRenew(ExtensionContext extensionContext, boolean customCA) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         if (customCA) {
-            generateAndDeployCustomStrimziCA(clusterName);
-            checkCustomCAsCorrectness(clusterName);
+            generateAndDeployCustomStrimziCA(namespaceName, clusterName);
+            checkCustomCAsCorrectness(namespaceName, clusterName);
             resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editOrNewSpec()
                     .withNewClusterCa()
@@ -1479,21 +1482,21 @@ class SecurityST extends AbstractST {
                 .build());
         }
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        Secret clusterCASecret = kubeClient().getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName));
+        Secret clusterCASecret = kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clusterCaCertificateSecretName(clusterName));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
         Date initialCertStartTime = cacert.getNotBefore();
         Date initialCertEndTime = cacert.getNotAfter();
 
         // Check Broker kafka certificate dates
-        Secret brokerCertCreationSecret = kubeClient().getSecret(clusterName + "-kafka-brokers");
+        Secret brokerCertCreationSecret = kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-kafka-brokers");
         X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, clusterName + "-kafka-0.crt");
         Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
         // Check Zookeeper certificate dates
-        Secret zkCertCreationSecret = kubeClient().getSecret(clusterName + "-zookeeper-nodes");
+        Secret zkCertCreationSecret = kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-zookeeper-nodes");
         X509Certificate zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, clusterName + "-zookeeper-0.crt");
         Date initialZkCertStartTime = zkBrokerCert.getNotBefore();
         Date initialZkCertEndTime = zkBrokerCert.getNotAfter();
@@ -1505,25 +1508,25 @@ class SecurityST extends AbstractST {
         if (customCA) {
             newClusterCA.setGenerateCertificateAuthority(false);
         }
-        KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().setClusterCa(newClusterCA));
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().setClusterCa(newClusterCA), namespaceName);
 
         // Wait for reconciliation and verify certs have been updated
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
 
         // Read renewed secret/certs again
-        clusterCASecret = kubeClient().getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName));
+        clusterCASecret = kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clusterCaCertificateSecretName(clusterName));
         cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
         Date changedCertStartTime = cacert.getNotBefore();
         Date changedCertEndTime = cacert.getNotAfter();
 
         // Check renewed Broker kafka certificate dates
-        brokerCertCreationSecret = kubeClient().getSecret(clusterName + "-kafka-brokers");
+        brokerCertCreationSecret = kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-kafka-brokers");
         kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, clusterName + "-kafka-0.crt");
         Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
         // Check renewed Zookeeper certificate dates
-        zkCertCreationSecret = kubeClient().getSecret(clusterName + "-zookeeper-nodes");
+        zkCertCreationSecret = kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-zookeeper-nodes");
         zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, clusterName + "-zookeeper-0.crt");
         Date changedZkCertStartTime = zkBrokerCert.getNotBefore();
         Date changedZkCertEndTime = zkBrokerCert.getNotAfter();
@@ -1553,22 +1556,23 @@ class SecurityST extends AbstractST {
                 initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testClientsCACertRenew(ExtensionContext extensionContext) {
         checkClientsCACertRenew(extensionContext, false);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testCustomClientsCACertRenew(ExtensionContext extensionContext) {
         checkClientsCACertRenew(extensionContext, true);
     }
 
     void checkClientsCACertRenew(ExtensionContext extensionContext, boolean customCA) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         if (customCA) {
-            generateAndDeployCustomStrimziCA(clusterName);
-            checkCustomCAsCorrectness(clusterName);
+            generateAndDeployCustomStrimziCA(namespaceName, clusterName);
+            checkCustomCAsCorrectness(namespaceName, clusterName);
             resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editOrNewSpec()
                     .withNewClientsCa()
@@ -1591,16 +1595,16 @@ class SecurityST extends AbstractST {
 
         String username = "strimzi-tls-user-" + new Random().nextInt(Integer.MAX_VALUE);
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, username).build());
-        Map<String, String> entityPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> entityPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Check initial clientsCA validity days
-        Secret clientsCASecret = kubeClient().getSecret(KafkaResources.clientsCaCertificateSecretName(clusterName));
+        Secret clientsCASecret = kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
         Date initialCertStartTime = cacert.getNotBefore();
         Date initialCertEndTime = cacert.getNotAfter();
 
         // Check initial kafkauser validity days
-        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(username), "user.crt");
+        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, username), "user.crt");
         Date initialKafkaUserCertStartTime = userCert.getNotBefore();
         Date initialKafkaUserCertEndTime = userCert.getNotAfter();
 
@@ -1611,18 +1615,18 @@ class SecurityST extends AbstractST {
         if (customCA) {
             newClientsCA.setGenerateCertificateAuthority(false);
         }
-        KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().setClientsCa(newClientsCA));
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().setClientsCa(newClientsCA), namespaceName);
 
         // Wait for reconciliation and verify certs have been updated
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, entityPods);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, entityPods);
 
         // Read renewed secret/certs again
-        clientsCASecret = kubeClient().getSecret(KafkaResources.clientsCaCertificateSecretName(clusterName));
+        clientsCASecret = kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName));
         cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
         Date changedCertStartTime = cacert.getNotBefore();
         Date changedCertEndTime = cacert.getNotAfter();
 
-        userCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(username), "user.crt");
+        userCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, username), "user.crt");
         Date changedKafkaUserCertStartTime = userCert.getNotBefore();
         Date changedKafkaUserCertEndTime = userCert.getNotAfter();
 
@@ -1645,14 +1649,15 @@ class SecurityST extends AbstractST {
                 initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testCustomClusterCAClientsCA(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
-        generateAndDeployCustomStrimziCA(clusterName);
-        checkCustomCAsCorrectness(clusterName);
+        generateAndDeployCustomStrimziCA(namespaceName, clusterName);
+        checkCustomCAsCorrectness(namespaceName, clusterName);
 
         LOGGER.info(" Deploy kafka with new certs/secrets.");
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
@@ -1685,11 +1690,11 @@ class SecurityST extends AbstractST {
             .build());
 
         LOGGER.info("Check Kafka(s) and Zookeeper(s) certificates.");
-        X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(clusterName + "-kafka-brokers"), clusterName + "-kafka-0.crt");
+        X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-kafka-brokers"), clusterName + "-kafka-0.crt");
         assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), STRIMZI_TEST_CLUSTER_CA));
 
-        X509Certificate zookeeperCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(clusterName + "-zookeeper-nodes"), clusterName + "-zookeeper-0.crt");
+        X509Certificate zookeeperCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-zookeeper-nodes"), clusterName + "-zookeeper-0.crt");
         assertThat("ZookeeperCert does not have expected test Subject: " + zookeeperCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(zookeeperCert.getIssuerX500Principal().getName(), STRIMZI_TEST_CLUSTER_CA));
 
@@ -1698,19 +1703,18 @@ class SecurityST extends AbstractST {
         LOGGER.info("Check KafkaUser certificate.");
         KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
         resourceManager.createResource(extensionContext, user);
-        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(userName), "user.crt");
+        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, userName), "user.crt");
         assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), STRIMZI_TEST_CLIENTS_CA));
 
         LOGGER.info("Send and receive messages over TLS.");
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
-        final String kafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
                 .withUsingPodName(kafkaClientsPodName)
                 .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
+                .withNamespaceName(namespaceName)
                 .withClusterName(clusterName)
                 .withKafkaUsername(userName)
                 .withMessageCount(MESSAGE_COUNT)
@@ -1718,18 +1722,18 @@ class SecurityST extends AbstractST {
                 .build();
 
         LOGGER.info("Check for certificates used within kafka pod internal clients (producer/consumer)");
-        List<VolumeMount> volumeMounts = ResourceManager.kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getSpec().getContainers().get(0).getVolumeMounts();
+        List<VolumeMount> volumeMounts = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getSpec().getContainers().get(0).getVolumeMounts();
         for (VolumeMount vm : volumeMounts) {
             if (vm.getMountPath().contains("user-secret-" + internalKafkaClient.getKafkaUsername())) {
-                assertThat("UserCert Issuer DN in clients pod is incorrect!", checkMountVolumeSecret(kafkaClientsPodName,
+                assertThat("UserCert Issuer DN in clients pod is incorrect!", checkMountVolumeSecret(namespaceName, kafkaClientsPodName,
                         vm, "issuer", STRIMZI_INTERMEDIATE_CA));
-                assertThat("UserCert Subject DN in clients pod is incorrect!", checkMountVolumeSecret(kafkaClientsPodName,
+                assertThat("UserCert Subject DN in clients pod is incorrect!", checkMountVolumeSecret(namespaceName, kafkaClientsPodName,
                         vm, "subject", STRIMZI_TEST_CLIENTS_CA));
 
             } else if (vm.getMountPath().contains("cluster-ca-" + internalKafkaClient.getKafkaUsername())) {
-                assertThat("ClusterCA Issuer DN in clients pod is incorrect!", checkMountVolumeSecret(kafkaClientsPodName,
+                assertThat("ClusterCA Issuer DN in clients pod is incorrect!", checkMountVolumeSecret(namespaceName, kafkaClientsPodName,
                         vm, "issuer", STRIMZI_INTERMEDIATE_CA));
-                assertThat("ClusterCA Subject DN in clients pod is incorrect!", checkMountVolumeSecret(kafkaClientsPodName,
+                assertThat("ClusterCA Subject DN in clients pod is incorrect!", checkMountVolumeSecret(namespaceName, kafkaClientsPodName,
                         vm, "subject", STRIMZI_TEST_CLUSTER_CA));
             }
         }
@@ -1741,10 +1745,10 @@ class SecurityST extends AbstractST {
         );
     }
 
-    void checkCustomCAsCorrectness(String clusterName) {
+    void checkCustomCAsCorrectness(String namespaceName, String clusterName) {
         LOGGER.info("Check ClusterCA and ClientsCA certificates.");
-        X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(KafkaResources.clientsCaCertificateSecretName(clusterName)), "ca.crt");
-        X509Certificate clusterCert = SecretUtils.getCertificateFromSecret(kubeClient().getSecret(KafkaResources.clusterCaCertificateSecretName(clusterName)), "ca.crt");
+        X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName)), "ca.crt");
+        X509Certificate clusterCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clusterCaCertificateSecretName(clusterName)), "ca.crt");
 
         assertThat("Generated ClientsCA does not have expected Issuer: " + clientsCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(clientsCert.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
@@ -1757,14 +1761,14 @@ class SecurityST extends AbstractST {
                 SystemTestCertManager.containsAllDN(clusterCert.getSubjectX500Principal().getName(), STRIMZI_TEST_CLUSTER_CA));
     }
 
-    boolean checkMountVolumeSecret(String podName, VolumeMount volumeMount, String principalDNType, String expectedPrincipal) {
-        String dn = ResourceManager.cmdKubeClient().execInPod(podName, "/bin/bash", "-c",
+    boolean checkMountVolumeSecret(String namespaceName, String podName, VolumeMount volumeMount, String principalDNType, String expectedPrincipal) {
+        String dn = cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
                 "openssl x509 -in " + volumeMount.getMountPath() + "/ca.crt -noout -" + principalDNType).out().strip();
         String certOutIssuer = dn.substring(principalDNType.length() + 3).replace("/", ",");
         return SystemTestCertManager.containsAllDN(certOutIssuer, expectedPrincipal);
     }
 
-    void generateAndDeployCustomStrimziCA(String clusterName) {
+    void generateAndDeployCustomStrimziCA(String namespaceName, String clusterName) {
         LOGGER.info("Generating custom RootCA, IntermediateCA, and ClusterCA, ClientsCA for Strimzi and PEM bundles.");
         SystemTestCertAndKey strimziRootCA = SystemTestCertManager.generateRootCaCertAndKey();
         SystemTestCertAndKey intermediateCA = SystemTestCertManager.generateIntermediateCaCertAndKey(strimziRootCA);
@@ -1782,21 +1786,21 @@ class SecurityST extends AbstractST {
         try {
             // Deploy ClusterCA secret
             LOGGER.info("Deploy all certificates and keys as secrets.");
-            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaCertificateSecretName(clusterName), NAMESPACE);
-            SecretUtils.createCustomSecret(KafkaResources.clusterCaCertificateSecretName(clusterName), clusterName, NAMESPACE, clusterBundle);
+            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaCertificateSecretName(clusterName), namespaceName);
+            SecretUtils.createCustomSecret(KafkaResources.clusterCaCertificateSecretName(clusterName), clusterName, namespaceName, clusterBundle);
 
 
-            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaKeySecretName(clusterName), NAMESPACE);
+            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaKeySecretName(clusterName), namespaceName);
             File strimziKeyPKCS8 = convertPrivateKeyToPKCS8File(stClusterCA.getPrivateKey());
-            SecretUtils.createSecretFromFile(strimziKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clusterCaKeySecretName(clusterName), NAMESPACE, secretLabels);
+            SecretUtils.createSecretFromFile(strimziKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clusterCaKeySecretName(clusterName), namespaceName, secretLabels);
 
             // ClientsCA secret part
-            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaCertificateSecretName(clusterName), NAMESPACE);
-            SecretUtils.createCustomSecret(KafkaResources.clientsCaCertificateSecretName(clusterName), clusterName, NAMESPACE, clientsBundle);
+            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaCertificateSecretName(clusterName), namespaceName);
+            SecretUtils.createCustomSecret(KafkaResources.clientsCaCertificateSecretName(clusterName), clusterName, namespaceName, clientsBundle);
 
-            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaKeySecretName(clusterName), NAMESPACE);
+            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaKeySecretName(clusterName), namespaceName);
             File clientsKeyPKCS8 = convertPrivateKeyToPKCS8File(stClientsCA.getPrivateKey());
-            SecretUtils.createSecretFromFile(clientsKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clientsCaKeySecretName(clusterName), NAMESPACE, secretLabels);
+            SecretUtils.createSecretFromFile(clientsKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clientsCaKeySecretName(clusterName), namespaceName, secretLabels);
 
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
             e.printStackTrace();
@@ -1806,6 +1810,6 @@ class SecurityST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        installClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT);
+        installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 }

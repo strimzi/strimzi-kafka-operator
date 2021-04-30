@@ -33,13 +33,13 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
         kafkaConnectClient().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).createOrReplace(resource);
     }
     @Override
-    public void delete(KafkaConnect resource) throws Exception {
+    public void delete(KafkaConnect resource)    {
         kafkaConnectClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
     @Override
     public boolean waitForReadiness(KafkaConnect resource) {
-        return KafkaConnectUtils.waitForConnectReady(resource.getMetadata().getName());
+        return KafkaConnectUtils.waitForConnectReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectClient() {
@@ -48,5 +48,9 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
 
     public static void replaceKafkaConnectResource(String resourceName, Consumer<KafkaConnect> editor) {
         ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, resourceName, editor);
+    }
+
+    public static void replaceKafkaConnectResourceInSpecificNamespace(String resourceName, Consumer<KafkaConnect> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(KafkaConnect.class, KafkaConnectList.class, resourceName, editor, namespaceName);
     }
 }

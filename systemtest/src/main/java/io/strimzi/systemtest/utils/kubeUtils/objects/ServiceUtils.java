@@ -25,7 +25,7 @@ public class ServiceUtils {
 
     private ServiceUtils() { }
 
-    public static void waitForServiceLabelsChange(String serviceName, Map<String, String> labels) {
+    public static void waitForServiceLabelsChange(String namespaceName, String serviceName, Map<String, String> labels) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
             boolean isK8sTag = entry.getKey().equals("controller-revision-hash") || entry.getKey().equals("statefulset.kubernetes.io/pod-name");
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
@@ -34,18 +34,22 @@ public class ServiceUtils {
                 LOGGER.info("Waiting for Service label change {} -> {}", entry.getKey(), entry.getValue());
                 TestUtils.waitFor("Service label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.GLOBAL_TIMEOUT, () ->
-                        kubeClient().getService(serviceName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
+                        kubeClient(namespaceName).getService(namespaceName, serviceName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
             }
         }
     }
 
-    public static void waitForServiceLabelsDeletion(String serviceName, String... labelKeys) {
+    public static void waitForServiceLabelsChange(String serviceName, Map<String, String> labels) {
+        waitForServiceLabelsChange(kubeClient().getNamespace(), serviceName, labels);
+    }
+
+    public static void waitForServiceLabelsDeletion(String namespaceName, String serviceName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Service label {} change to {}", labelKey, null);
             TestUtils.waitFor("Service label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
-                    kubeClient().getService(serviceName).getMetadata().getLabels().get(labelKey) == null
+                    kubeClient(namespaceName).getService(namespaceName, serviceName).getMetadata().getLabels().get(labelKey) == null
             );
         }
     }

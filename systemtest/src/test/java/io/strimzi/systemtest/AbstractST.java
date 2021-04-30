@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -22,6 +23,7 @@ import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.specific.HelmResource;
 import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -55,6 +57,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
@@ -98,6 +101,8 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
 
+    private AtomicInteger counterOfNamespaces = new AtomicInteger(0);
+
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
@@ -134,12 +139,12 @@ public abstract class AbstractST implements TestSeparator {
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
             olmResource = new OlmResource(namespace);
-            olmResource.create(namespace, operationTimeout, reconciliationInterval);
+            olmResource.create(extensionContext, namespace, operationTimeout, reconciliationInterval);
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             cluster.setNamespace(namespace);
             cluster.createNamespace(namespace);
-            helmResource.create(operationTimeout, reconciliationInterval);
+            helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
             prepareEnvForOperator(extensionContext,  namespace, bindingsNamespaces);
@@ -151,7 +156,7 @@ public abstract class AbstractST implements TestSeparator {
             }
             // 060-Deployment
             ResourceManager.setCoDeploymentName(clusterOperatorName);
-            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, namespace, operationTimeout, reconciliationInterval).build());
+            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, namespace, namespace, operationTimeout, reconciliationInterval).build());
         }
     }
 
@@ -173,6 +178,19 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void installClusterOperator(ExtensionContext extensionContext, String namespace) {
         installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+    }
+
+    public void installClusterWideClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
+        prepareEnvForOperator(extensionContext, namespace);
+        // Apply role bindings in CO namespace
+        applyBindings(extensionContext, namespace);
+
+        // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
+        List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespace);
+        clusterRoleBindingList.forEach(clusterRoleBinding ->
+            ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
+        // 060-Deployment
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(namespace, "*", operationTimeout, reconciliationInterval).build());
     }
 
     /**
@@ -331,9 +349,9 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
-        Pod po = kubeClient().getPod(podName);
+        Pod po = kubeClient(namespace).getPod(namespace, podName);
         assertThat("Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
-            kubeClient().listPods().stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), po, is(notNullValue()));
+            kubeClient(namespace).listPods(namespace).stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), po, is(notNullValue()));
 
         Optional optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
         assertThat("Not found an expected container " + containerName, optional.isPresent(), is(true));
@@ -354,9 +372,9 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    private List<List<String>> commandLines(String podName, String containerName, String cmd) {
+    private List<List<String>> commandLines(String namespaceName, String podName, String containerName, String cmd) {
         List<List<String>> result = new ArrayList<>();
-        String output = cmdKubeClient().execInPodContainer(podName, containerName, "/bin/bash", "-c",
+        String output = cmdKubeClient().namespace(namespaceName).execInPodContainer(podName, containerName, "/bin/bash", "-c",
             "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
         ).out();
         for (String cmdLine : output.split("\n")) {
@@ -366,7 +384,11 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void assertExpectedJavaOpts(String podName, String containerName, String expectedXmx, String expectedXms, String expectedXx) {
-        List<List<String>> cmdLines = commandLines(podName, containerName, "java");
+        assertExpectedJavaOpts(kubeClient().getNamespace(), podName, containerName, expectedXmx, expectedXms, expectedXx);
+    }
+
+    protected void assertExpectedJavaOpts(String namespaceName, String podName, String containerName, String expectedXmx, String expectedXms, String expectedXx) {
+        List<List<String>> cmdLines = commandLines(namespaceName, podName, containerName, "java");
         assertThat("Expected exactly 1 java process to be running", cmdLines.size(), is(1));
         List<String> cmd = cmdLines.get(0);
         int toIndex = cmd.indexOf("-jar");
@@ -384,10 +406,10 @@ public abstract class AbstractST implements TestSeparator {
             assertCmdOption(cmd, expectedXx);
     }
 
-    public Map<String, String> getImagesFromConfig() {
+    public Map<String, String> getImagesFromConfig(String namespaceName) {
         Map<String, String> images = new HashMap<>();
         LOGGER.info(ResourceManager.getCoDeploymentName());
-        for (Container c : kubeClient().getDeployment(ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
+        for (Container c : kubeClient(namespaceName).getDeployment(namespaceName, ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
             }
@@ -397,14 +419,15 @@ public abstract class AbstractST implements TestSeparator {
 
     /**
      * Verifies container configuration for specific component (kafka/zookeeper/bridge/mm) by environment key.
+     * @param namespaceName Namespace name where container is located
      * @param podNamePrefix Name of pod where container is located
      * @param containerName The container where verifying is expected
      * @param configKey Expected configuration key
      * @param config Expected component configuration
      */
-    protected void checkComponentConfiguration(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
+    protected void checkComponentConfiguration(String namespaceName, String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
         LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+        List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
             LOGGER.info("Testing configuration for container {}", containerName);
@@ -422,15 +445,20 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
+    protected void checkComponentConfiguration(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
+        checkComponentConfiguration(kubeClient().getNamespace(), podNamePrefix, containerName, configKey, config);
+    }
+
     /**
      * Verifies container environment variables passed as a map.
+     * @param namespaceName Namespace name where container is located
      * @param podNamePrefix Name of pod where container is located
      * @param containerName The container where verifying is expected
      * @param config Expected environment variables with values
      */
-    protected void checkSpecificVariablesInContainer(String podNamePrefix, String containerName, Map<String, String> config) {
+    protected void checkSpecificVariablesInContainer(String namespaceName, String podNamePrefix, String containerName, Map<String, String> config) {
         LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+        List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
             LOGGER.info("Testing EnvVars configuration for container {}", containerName);
@@ -446,8 +474,13 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
+    protected void checkSpecificVariablesInContainer(String podNamePrefix, String containerName, Map<String, String> config) {
+        checkSpecificVariablesInContainer(kubeClient().getNamespace(), podNamePrefix, containerName, config);
+    }
+
     /**
      * Verifies readinessProbe and livenessProbe properties in expected container
+     * @param namespaceName Namespace name where is container is located
      * @param podNamePrefix Prefix of pod name where container is located
      * @param containerName The container where verifying is expected
      * @param initialDelaySeconds expected value for property initialDelaySeconds
@@ -456,10 +489,10 @@ public abstract class AbstractST implements TestSeparator {
      * @param successThreshold expected value for property successThreshold
      * @param failureThreshold expected value for property failureThreshold
      */
-    protected void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
+    protected void checkReadinessLivenessProbe(String namespaceName, String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
                                                int periodSeconds, int successThreshold, int failureThreshold) {
         LOGGER.info("Getting pods by prefix {} in pod name", podNamePrefix);
-        List<Pod> pods = kubeClient().listPodsByPrefixInName(podNamePrefix);
+        List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
             LOGGER.info("Testing Readiness and Liveness configuration for container {}", containerName);
@@ -486,30 +519,48 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void verifyLabelsForKafkaCluster(String clusterName, String appName) {
-        verifyLabelsOnPods(clusterName, "zookeeper", appName, Kafka.RESOURCE_KIND);
-        verifyLabelsOnPods(clusterName, "kafka", appName, Kafka.RESOURCE_KIND);
-        verifyLabelsOnCOPod();
-        verifyLabelsOnPods(clusterName, "entity-operator", appName, Kafka.RESOURCE_KIND);
-        verifyLabelsForCRDs();
-        verifyLabelsForKafkaAndZKServices(clusterName, appName);
-        verifyLabelsForSecrets(clusterName, appName);
-        verifyLabelsForConfigMaps(clusterName, appName, "");
-        verifyLabelsForRoleBindings(clusterName, appName);
-        verifyLabelsForServiceAccounts(clusterName, appName);
+    protected void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
+                                               int periodSeconds, int successThreshold, int failureThreshold) {
+        checkReadinessLivenessProbe(kubeClient().getNamespace(), podNamePrefix, containerName, initialDelaySeconds,
+            timeoutSeconds, periodSeconds, successThreshold, failureThreshold);
     }
 
-    void verifyLabelsOnCOPod() {
+    protected void verifyLabelsForKafkaCluster(String clusterName, String appName) {
+        verifyLabelsForKafkaCluster(kubeClient().getNamespace(), kubeClient().getNamespace(), clusterName, appName);
+    }
+
+    protected void verifyLabelsForKafkaCluster(String clusterOperatorNamespaceName, String componentsNamespaceName, String clusterName, String appName) {
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "zookeeper", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "kafka", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsOnCOPod(clusterOperatorNamespaceName, clusterName);
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "entity-operator", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsForCRDs(componentsNamespaceName);
+        verifyLabelsForKafkaAndZKServices(componentsNamespaceName, clusterName, appName);
+        verifyLabelsForSecrets(componentsNamespaceName, clusterName, appName);
+        verifyLabelsForConfigMaps(componentsNamespaceName, clusterName, appName, "");
+        verifyLabelsForRoleBindings(componentsNamespaceName, clusterName, appName);
+        verifyLabelsForServiceAccounts(componentsNamespaceName, clusterName, appName);
+    }
+
+    void verifyLabelsOnCOPod(String namespaceName, String clusterName) {
         LOGGER.info("Verifying labels for cluster-operator pod");
 
-        Map<String, String> coLabels = kubeClient().listPods("name", ResourceManager.getCoDeploymentName()).get(0).getMetadata().getLabels();
+        Map<String, String> coLabels = kubeClient(namespaceName).listPods(namespaceName, clusterName, "name", ResourceManager.getCoDeploymentName()).get(0).getMetadata().getLabels();
         assertThat(coLabels.get("name"), is(ResourceManager.getCoDeploymentName()));
         assertThat(coLabels.get(Labels.STRIMZI_KIND_LABEL), is("cluster-operator"));
     }
 
+    void verifyLabelsOnCOPod(String clusterName) {
+        verifyLabelsOnCOPod(kubeClient().getNamespace(), clusterName);
+    }
+
     protected void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
+        verifyLabelsOnPods(kubeClient().getNamespace(), clusterName, podType, appName, kind);
+    }
+
+    protected void verifyLabelsOnPods(String namespaceName, String clusterName, String podType, String appName, String kind) {
         LOGGER.info("Verifying labels on pod type {}", podType);
-        kubeClient().listPods().stream()
+        kubeClient(namespaceName).listPods().stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
             .forEach(pod -> {
                 LOGGER.info("Verifying labels for pod: " + pod.getMetadata().getName());
@@ -519,15 +570,15 @@ public abstract class AbstractST implements TestSeparator {
             });
     }
 
-    void verifyLabelsForCRDs() {
+    void verifyLabelsForCRDs(String namespaceName) {
         LOGGER.info("Verifying labels for CRDs");
-        String crds = cmdKubeClient().exec("get", "crds", "--selector=app=strimzi", "-o", "jsonpath='{.items[*].metadata.name}'").out();
+        String crds = cmdKubeClient(namespaceName).exec("get", "crds", "--selector=app=strimzi", "-o", "jsonpath='{.items[*].metadata.name}'").out();
         crds = crds.replace(" ", "\n").trim();
         assertThat(crds.split("\n").length, is(Crds.getNumCrds()));
 
     }
 
-    void verifyLabelsForKafkaAndZKServices(String clusterName, String appName) {
+    void verifyLabelsForKafkaAndZKServices(String namespaceName, String clusterName, String appName) {
         LOGGER.info("Verifying labels for Services");
         String kafkaServiceName = clusterName + "-kafka";
         String zookeeperServiceName = clusterName + "-zookeeper";
@@ -540,7 +591,7 @@ public abstract class AbstractST implements TestSeparator {
         servicesMap.put(zookeeperServiceName + "-client", zookeeperServiceName + "-client");
 
         for (String serviceName : servicesMap.keySet()) {
-            kubeClient().listServices().stream()
+            kubeClient(namespaceName).listServices(namespaceName).stream()
                 .filter(service -> service.getMetadata().getName().equals(serviceName))
                 .forEach(service -> {
                     LOGGER.info("Verifying labels for service {}", serviceName);
@@ -553,10 +604,14 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void verifyLabelsForService(String clusterName, String serviceToTest, String kind) {
+        verifyLabelsForConfigMaps(kubeClient().getNamespace(), clusterName, serviceToTest, kind);
+    }
+
+    protected void verifyLabelsForService(String namespaceName, String clusterName, String serviceToTest, String kind) {
         LOGGER.info("Verifying labels for Kafka Connect Services");
 
         String serviceName = clusterName.concat("-").concat(serviceToTest);
-        kubeClient().listServices().stream()
+        kubeClient(namespaceName).listServices().stream()
             .filter(service -> service.getMetadata().getName().equals(serviceName))
             .forEach(service -> {
                 LOGGER.info("Verifying labels for service {}", service.getMetadata().getName());
@@ -567,9 +622,9 @@ public abstract class AbstractST implements TestSeparator {
         );
     }
 
-    void verifyLabelsForSecrets(String clusterName, String appName) {
+    void verifyLabelsForSecrets(String namespaceName, String clusterName, String appName) {
         LOGGER.info("Verifying labels for secrets");
-        kubeClient().listSecrets().stream()
+        kubeClient(namespaceName).listSecrets(namespaceName).stream()
             .filter(p -> p.getMetadata().getName().matches("(" + clusterName + ")-(clients|cluster|(entity))(-operator)?(-ca)?(-certs?)?"))
             .forEach(p -> {
                 LOGGER.info("Verifying secret {}", p.getMetadata().getName());
@@ -581,9 +636,13 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void verifyLabelsForConfigMaps(String clusterName, String appName, String additionalClusterName) {
+        verifyLabelsForConfigMaps(kubeClient().getNamespace(), clusterName, appName, additionalClusterName);
+    }
+
+    protected void verifyLabelsForConfigMaps(String namespaceName, String clusterName, String appName, String additionalClusterName) {
         LOGGER.info("Verifying labels for Config maps");
 
-        kubeClient().listConfigMaps()
+        kubeClient(namespaceName).listConfigMaps()
             .forEach(cm -> {
                 LOGGER.info("Verifying labels for CM {}", cm.getMetadata().getName());
                 if (cm.getMetadata().getName().equals(clusterName.concat("-connect-config"))) {
@@ -611,9 +670,13 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void verifyLabelsForServiceAccounts(String clusterName, String appName) {
+        verifyLabelsForServiceAccounts(kubeClient().getNamespace(), clusterName, appName);
+    }
+
+    protected void verifyLabelsForServiceAccounts(String namespaceName, String clusterName, String appName) {
         LOGGER.info("Verifying labels for Service Accounts");
 
-        kubeClient().listServiceAccounts().stream()
+        kubeClient(namespaceName).listServiceAccounts(namespaceName).stream()
             .filter(sa -> sa.getMetadata().getName().equals("strimzi-cluster-operator"))
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
@@ -621,7 +684,7 @@ public abstract class AbstractST implements TestSeparator {
             }
         );
 
-        kubeClient().listServiceAccounts().stream()
+        kubeClient(namespaceName).listServiceAccounts(namespaceName).stream()
             .filter(sa -> sa.getMetadata().getName().startsWith(clusterName))
             .forEach(sa -> {
                 LOGGER.info("Verifying labels for service account {}", sa.getMetadata().getName());
@@ -640,16 +703,16 @@ public abstract class AbstractST implements TestSeparator {
         );
     }
 
-    void verifyLabelsForRoleBindings(String clusterName, String appName) {
+    void verifyLabelsForRoleBindings(String namespaceName, String clusterName, String appName) {
         LOGGER.info("Verifying labels for Cluster Role bindings");
-        kubeClient().listRoleBindings().stream()
+        kubeClient(namespaceName).listRoleBindings(namespaceName).stream()
             .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-cluster-operator"))
             .forEach(rb -> {
                 LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
                 assertThat(rb.getMetadata().getLabels().get("app"), is("strimzi"));
             });
 
-        kubeClient().listRoleBindings().stream()
+        kubeClient(namespaceName).listRoleBindings(namespaceName).stream()
             .filter(rb -> rb.getMetadata().getName().startsWith("strimzi-".concat(clusterName)))
             .forEach(rb -> {
                 LOGGER.info("Verifying labels for cluster role {}", rb.getMetadata().getName());
@@ -674,32 +737,37 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void assertNoCoErrorsLogged(long sinceSeconds) {
+    protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
         String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
-    protected void testDockerImagesForKafkaCluster(String clusterName, String namespace, int kafkaPods, int zkPods, boolean rackAwareEnabled) {
+    protected void assertNoCoErrorsLogged(long sinceSeconds) {
+        assertNoCoErrorsLogged(kubeClient().getNamespace(), sinceSeconds);
+    }
+
+    protected void testDockerImagesForKafkaCluster(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName,
+                                                   int kafkaPods, int zkPods, boolean rackAwareEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
 
-        Map<String, String> imgFromDeplConf = getImagesFromConfig();
+        Map<String, String> imgFromDeplConf = getImagesFromConfig(clusterOperatorNamespaceName);
 
-        String kafkaVersion = Crds.kafkaOperation(kubeClient().getClient()).inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getVersion();
+        String kafkaVersion = Crds.kafkaOperation(kubeClient(kafkaNamespaceName).getClient()).inNamespace(kafkaNamespaceName).withName(clusterName).get().getSpec().getKafka().getVersion();
         if (kafkaVersion == null) {
             kafkaVersion = Environment.ST_KAFKA_VERSION;
         }
 
         //Verifying docker image for zookeeper pods
         for (int i = 0; i < zkPods; i++) {
-            String imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
+            String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
             assertThat("Zookeeper pod " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
         }
 
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
-            String imgFromPod = PodUtils.getContainerImageNameFromPod(KafkaResources.kafkaPodName(clusterName, i), "kafka");
+            String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.kafkaPodName(clusterName, i), "kafka");
             assertThat("Kafka pod " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
             if (rackAwareEnabled) {
                 String initContainerImage = PodUtils.getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));
@@ -708,20 +776,35 @@ public abstract class AbstractST implements TestSeparator {
         }
 
         //Verifying docker image for entity-operator
-        String entityOperatorPodName = cmdKubeClient().listResourcesByLabel("pod",
+        String entityOperatorPodName = cmdKubeClient(kafkaNamespaceName).listResourcesByLabel("pod",
                 Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
-        String imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "topic-operator");
+        String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "topic-operator");
         assertThat(imgFromPod, containsString(imgFromDeplConf.get(TO_IMAGE)));
-        imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "user-operator");
+        imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "user-operator");
         assertThat(imgFromPod, containsString(imgFromDeplConf.get(UO_IMAGE)));
-        imgFromPod = PodUtils.getContainerImageNameFromPod(entityOperatorPodName, "tls-sidecar");
+        imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "tls-sidecar");
         assertThat(imgFromPod, containsString(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
 
         LOGGER.info("Docker images verified");
     }
+
+    protected void testDockerImagesForKafkaCluster(String clusterName, String namespaceName,
+                                                   int kafkaPods, int zkPods, boolean rackAwareEnabled) {
+        testDockerImagesForKafkaCluster(clusterName, namespaceName, namespaceName, kafkaPods, zkPods, rackAwareEnabled);
+    }
+
     protected void afterEachMayOverride(ExtensionContext testContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(testContext);
+
+            // if 'parallel namespace test' we are gonna delete namespace
+            if (StUtils.isParallelNamespaceTest(testContext)) {
+
+                final String namespaceToDelete = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+
+                LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, testContext.getDisplayName());
+                cluster.deleteNamespace(namespaceToDelete);
+            }
         }
     }
 
@@ -760,6 +843,18 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.debug("USERS_NAME_MAP: \n{}", mapWithTestUsers);
             LOGGER.debug("TOPIC_NAMES_MAP: \n{}", mapWithTestTopics);
             LOGGER.debug("============THIS IS CLIENTS MAP:\n{}", mapWithKafkaClientNames);
+
+            // if 'parallel namespace test' we are gonna create
+            if (StUtils.isParallelNamespaceTest(extensionContext)) {
+                final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
+
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
+                // create namespace by
+                LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testName);
+
+                cluster.createNamespace(namespaceTestCase);
+                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
+            }
         }
     }
 

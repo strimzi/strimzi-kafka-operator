@@ -122,7 +122,7 @@ public class SpecificST extends AbstractST {
         assertThat(brokerRack.contains("broker.rack=zone"), is(true));
 
         String uid = kubeClient().getPodUid(KafkaResources.kafkaPodName(clusterName, 0));
-        List<Event> events = kubeClient().listEvents(uid);
+        List<Event> events = kubeClient().listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
         KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
@@ -262,6 +262,10 @@ public class SpecificST extends AbstractST {
             .endSpec()
             .build());
 
+        // we should create topic before KafkaConnect - topic is recreated if we delete it before KafkaConnect
+        String topicName = "rw-" + KafkaTopicUtils.generateRandomNameOfTopic();
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
@@ -283,25 +287,19 @@ public class SpecificST extends AbstractST {
 
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kc, KafkaConnectResources.deploymentName(clusterName));
 
-        String topicName = "topic-test-rack-aware";
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        String connectPodName = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0);
 
-        List<String> connectPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-        for (String connectPodName : connectPods) {
-            Affinity connectPodSpecAffinity = kubeClient().getDeployment(KafkaConnectResources.deploymentName(clusterName)).getSpec().getTemplate().getSpec().getAffinity();
-            NodeSelectorRequirement connectPodNodeSelectorRequirement = connectPodSpecAffinity.getNodeAffinity()
-                    .getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
-            Pod connectPod = kubeClient().getPod(connectPodName);
-            NodeAffinity nodeAffinity = connectPod.getSpec().getAffinity().getNodeAffinity();
+        Affinity connectPodSpecAffinity = kubeClient().getDeployment(KafkaConnectResources.deploymentName(clusterName)).getSpec().getTemplate().getSpec().getAffinity();
+        NodeSelectorRequirement connectPodNodeSelectorRequirement = connectPodSpecAffinity.getNodeAffinity()
+                .getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
+        Pod connectPod = kubeClient().getPod(connectPodName);
+        NodeAffinity nodeAffinity = connectPod.getSpec().getAffinity().getNodeAffinity();
 
-            LOGGER.info("PodName: {}\nNodeAffinity: {}", connectPodName, nodeAffinity);
-            assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
-            assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
+        LOGGER.info("PodName: {}\nNodeAffinity: {}", connectPodName, nodeAffinity);
+        assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
+        assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
-            topicName = "rw-" + KafkaTopicUtils.generateRandomNameOfTopic();
-            resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-            KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
-        }
+        KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
         resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());

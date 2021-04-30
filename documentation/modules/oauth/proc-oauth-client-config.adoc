@@ -24,7 +24,7 @@ Add a client callback plugin to your _pom.xml_ file, and configure the system pr
 <dependency>
  <groupId>io.strimzi</groupId>
  <artifactId>kafka-oauth-client</artifactId>
- <version>{oauth-artifact-version}</version>
+ <version>{oauth-version}</version>
 </dependency>
 ----
 

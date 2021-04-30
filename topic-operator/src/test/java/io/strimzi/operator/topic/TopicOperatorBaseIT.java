@@ -185,7 +185,7 @@ public abstract class TopicOperatorBaseIT {
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those
-        preExistingEvents = kubeClient.events().inNamespace(NAMESPACE).withLabels(labels.labels()).list().
+        preExistingEvents = kubeClient.v1().events().inNamespace(NAMESPACE).withLabels(labels.labels()).list().
                 getItems().stream().
                 map(evt -> evt.getMetadata().getUid()).
                 collect(Collectors.toSet());
@@ -580,7 +580,7 @@ public abstract class TopicOperatorBaseIT {
 
     protected void waitForEvent(KafkaTopic kafkaTopic, String expectedMessage, TopicOperator.EventType expectedType) throws InterruptedException, ExecutionException, TimeoutException {
         waitFor(() -> {
-            List<Event> items = kubeClient.events().inNamespace(NAMESPACE).withLabels(labels.labels()).list().getItems();
+            List<Event> items = kubeClient.v1().events().inNamespace(NAMESPACE).withLabels(labels.labels()).list().getItems();
             List<Event> filtered = items.stream().
                     filter(evt -> !preExistingEvents.contains(evt.getMetadata().getUid())
                             && "KafkaTopic".equals(evt.getInvolvedObject().getKind())

@@ -7,7 +7,6 @@ package io.strimzi.systemtest.olm;
 import io.strimzi.systemtest.resources.specific.OlmResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -81,16 +80,11 @@ public class SingleNamespaceST extends OlmAbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup(ExtensionContext extensionContext) {
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
 
         olmResource = new OlmResource(NAMESPACE);
-        olmResource.create();
-    }
-
-    @AfterAll
-    void tearDown() {
-        olmResource.delete();
+        olmResource.create(extensionContext);
     }
 }

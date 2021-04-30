@@ -38,7 +38,7 @@ public class KafkaUserResource implements ResourceType<KafkaUser> {
     }
 
     @Override
-    public void delete(KafkaUser resource) throws Exception {
+    public void delete(KafkaUser resource) {
         kafkaUserClient().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
@@ -53,5 +53,9 @@ public class KafkaUserResource implements ResourceType<KafkaUser> {
 
     public static void replaceUserResource(String resourceName, Consumer<KafkaUser> editor) {
         ResourceManager.replaceCrdResource(KafkaUser.class, KafkaUserList.class, resourceName, editor);
+    }
+
+    public static void replaceUserResourceInSpecificNamespace(String resourceName, Consumer<KafkaUser> editor, String namespaceName) {
+        ResourceManager.replaceCrdResource(KafkaUser.class, KafkaUserList.class, resourceName, editor, namespaceName);
     }
 }

@@ -15,11 +15,7 @@
       "topicOperator": "strimzi/operator:0.22.0",
       "userOperator": "strimzi/operator:0.22.0"
     },
-    "proceduresBeforeOperatorDowngrade": {
-      "kafkaVersion": "",
-      "logMessageVersion": "",
-      "interBrokerProtocolVersion": ""
-    },
+    "deployKafkaVersion": "2.7.0",
     "client": {
       "continuousClientsMessages": 500
     },

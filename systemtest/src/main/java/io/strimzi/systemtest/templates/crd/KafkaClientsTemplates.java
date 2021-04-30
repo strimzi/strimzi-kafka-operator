@@ -60,6 +60,16 @@ public class KafkaClientsTemplates {
     }
 
     public static DeploymentBuilder kafkaClients(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
+                                                 String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
+        return kafkaClients(ResourceManager.kubeClient().getNamespace(), tlsListener, kafkaClientsName, hostnameVerification,
+            listenerName, secretPrefix, kafkaUsers);
+    }
+
+    public static DeploymentBuilder kafkaClients(String namespaceName, boolean tlsListener, String kafkaClientsName, KafkaUser... kafkaUsers) {
+        return kafkaClients(namespaceName, tlsListener, kafkaClientsName, true,  null, null, kafkaUsers);
+    }
+
+    public static DeploymentBuilder kafkaClients(String namespaceName, boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
                                           String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
         Map<String, String> label = new HashMap<>();
 
@@ -70,7 +80,7 @@ public class KafkaClientsTemplates {
             .withNewMetadata()
                 .withName(kafkaClientsName)
                 .withLabels(label)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(namespaceName)
             .endMetadata()
             .withNewSpec()
                 .withNewSelector()
@@ -83,14 +93,14 @@ public class KafkaClientsTemplates {
                         .addToLabels("app", kafkaClientsName)
                         .addToLabels(label)
                     .endMetadata()
-                    .withSpec(createClientSpec(tlsListener, kafkaClientsName, hostnameVerification, listenerName, secretPrefix, kafkaUsers))
+                    .withSpec(createClientSpec(namespaceName, tlsListener, kafkaClientsName, hostnameVerification, listenerName, secretPrefix, kafkaUsers))
                 .endTemplate()
             .endSpec();
 
         return kafkaClient;
     }
 
-    private static PodSpec createClientSpec(boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
+    private static PodSpec createClientSpec(String namespaceName, boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
                                             String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
         ContainerBuilder containerBuilder = new ContainerBuilder()
@@ -122,9 +132,9 @@ public class KafkaClientsTemplates {
                 if (tlsListener) {
                     if (scramShaUser) {
                         producerConfiguration += "security.protocol=SASL_SSL\n";
-                        producerConfiguration += saslConfigs(kafkaUser, secretPrefix);
+                        producerConfiguration += saslConfigs(namespaceName, kafkaUser, secretPrefix);
                         consumerConfiguration += "security.protocol=SASL_SSL\n";
-                        consumerConfiguration += saslConfigs(kafkaUser, secretPrefix);
+                        consumerConfiguration += saslConfigs(namespaceName, kafkaUser, secretPrefix);
                     } else {
                         producerConfiguration += "security.protocol=SSL\n";
                         consumerConfiguration += "security.protocol=SSL\n";
@@ -138,9 +148,9 @@ public class KafkaClientsTemplates {
                 } else {
                     if (scramShaUser) {
                         producerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                        producerConfiguration += saslConfigs(kafkaUser, secretPrefix);
+                        producerConfiguration += saslConfigs(namespaceName, kafkaUser, secretPrefix);
                         consumerConfiguration += "security.protocol=SASL_PLAINTEXT\n";
-                        consumerConfiguration += saslConfigs(kafkaUser, secretPrefix);
+                        consumerConfiguration += saslConfigs(namespaceName, kafkaUser, secretPrefix);
                     } else {
                         producerConfiguration += "security.protocol=PLAINTEXT\n";
                         consumerConfiguration += "security.protocol=PLAINTEXT\n";
@@ -233,9 +243,9 @@ public class KafkaClientsTemplates {
         return podSpecBuilder.withContainers(containerBuilder.build()).build();
     }
 
-    static String saslConfigs(KafkaUser kafkaUser, String secretPrefix) {
+    static String saslConfigs(String namespaceName, KafkaUser kafkaUser, String secretPrefix) {
         String secretName = secretPrefix == null ? kafkaUser.getMetadata().getName() : secretPrefix + kafkaUser.getMetadata().getName();
-        Secret secret = ResourceManager.kubeClient().getSecret(secretName);
+        Secret secret = ResourceManager.kubeClient().namespace(namespaceName).getSecret(secretName);
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")), Charset.forName("UTF-8"));
         if (password.isEmpty()) {

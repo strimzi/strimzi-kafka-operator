@@ -20,8 +20,8 @@
       "userOperator": "strimzi/operator:latest"
     },
     "imagesAfterKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.7.0",
-      "kafka": "strimzi/kafka:latest-kafka-2.7.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-2.8.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.8.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },

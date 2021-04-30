@@ -51,18 +51,17 @@ public class SystemTestCertManager {
         ));
     }
 
-    public static String generateOpenSslCommandByComponent(String podName, String hostname, String port, String component, String namespace) {
-        return generateOpenSslCommandByComponent(podName + "." + hostname + ":" + port,
-                podName + "." + hostname + "." + namespace + ".svc.cluster.local", podName, component, true);
+    public static String generateOpenSslCommandByComponentUsingSvcHostname(String namespaceName, String podName, String hostname, String port, String component) {
+        return generateOpenSslCommandByComponent(namespaceName, podName + "." + hostname + ":" + port,
+                podName + "." + hostname + "." + namespaceName + ".svc.cluster.local", podName, component, true);
     }
 
-    public static String generateOpenSslCommandByComponent(String server, String hostname, String podName, String component) {
-        return generateOpenSslCommandByComponent(server, hostname, podName, component, true);
+    public static String generateOpenSslCommandByComponent(String namespaceName, String server, String hostname, String podName, String component) {
+        return generateOpenSslCommandByComponent(namespaceName, server, hostname, podName, component, true);
     }
 
-    public static String generateOpenSslCommandByComponent(String server, String hostname, String podName, String component, boolean withCertAndKey) {
+    public static String generateOpenSslCommandByComponent(String namespaceName, String server, String hostname, String podName, String component, boolean withCertAndKey) {
         String path = component.equals("kafka") ? KAFKA_CERT_FILE_PATH : ZK_CERT_FILE_PATH;
-
         List<String> cmd = generateBaseSSLCommand(server, CA_FILE_PATH, hostname);
 
         if (withCertAndKey) {
@@ -71,10 +70,9 @@ public class SystemTestCertManager {
         }
 
         if (component.equals("kafka")) {
-            return cmdKubeClient().execInPod(podName, "/bin/bash", "-c", String.join(" ", cmd)).out();
+            return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c", String.join(" ", cmd)).out();
         } else {
-            return cmdKubeClient().execInPod(podName,  "/bin/bash", "-c",
-                    String.join(" ", cmd)).out();
+            return cmdKubeClient(namespaceName).execInPod(podName,  "/bin/bash", "-c", String.join(" ", cmd)).out();
         }
     }
 
