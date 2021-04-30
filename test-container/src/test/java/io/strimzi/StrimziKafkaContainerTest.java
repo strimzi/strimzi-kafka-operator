@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,32 +42,43 @@ public class StrimziKafkaContainerTest {
     }
 
     @Test
-    void testLatestKafkaVersion() {
+    void testVersions() {
         assumeDocker();
         systemUnderTest = new StrimziKafkaContainer();
 
-        List<String> supportedKafkaVersions = new ArrayList<>(3);
+        List<String> supportedKafkaVersions = new ArrayList<>();
 
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(new File("src/main/resources/kafka-versions.txt")))) {
 
+        // Read Kafka versions
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader("src/main/resources/kafka-versions.txt"))) {
             String kafkaVersion;
 
             while ((kafkaVersion = bufferedReader.readLine()) != null) {
                 supportedKafkaVersions.add(kafkaVersion);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        LOGGER.info("This is all supported Kafka versions {}", supportedKafkaVersions.toString());
-
         // sort kafka version from low to high
         Collections.sort(supportedKafkaVersions);
 
-        LOGGER.info("Verifying that {} is latest kafka version", supportedKafkaVersions.get(supportedKafkaVersions.size() - 1));
+        LOGGER.info("This is all supported Kafka versions {}", supportedKafkaVersions.toString());
+        assertThat(supportedKafkaVersions, is(StrimziKafkaContainer.getSupportedKafkaVersions()));
 
+        LOGGER.info("Verifying that {} is latest kafka version", supportedKafkaVersions.get(supportedKafkaVersions.size() - 1));
         assertThat(supportedKafkaVersions.get(supportedKafkaVersions.size() - 1), is(StrimziKafkaContainer.getLatestKafkaVersion()));
+
+        // Read Strimzi version
+        String strimziVersion = null;
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader("src/main/resources/strimzi-version.txt"))) {
+            strimziVersion = bufferedReader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        LOGGER.info("Asserting Strimzi version: {}", strimziVersion);
+        assertThat(strimziVersion, is(StrimziKafkaContainer.getStrimziVersion()));
     }
 
     @Test

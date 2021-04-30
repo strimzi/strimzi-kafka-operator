@@ -30,38 +30,47 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     private static final int KAFKA_PORT = 9092;
     private static final int ZOOKEEPER_PORT = 2181;
     private static final String LATEST_KAFKA_VERSION;
+    private static final List<String> SUPPORTED_KAFKA_VERSIONS = new ArrayList<>(5);
+    private static final String STRIMZI_VERSION;
 
     private int kafkaExposedPort;
-    private StringBuilder advertisedListeners;
-    private static List<String> supportedKafkaVersions = new ArrayList<>(3);
 
     static {
-        InputStream inputStream = StrimziKafkaContainer.class.getResourceAsStream("/kafka-versions.txt");
-        InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-        BufferedReader bufferedReader = new BufferedReader(streamReader);
+        // Reads the kafka-versions.txt for the supported Kafka versions
+        InputStream kafkaVersionsInputStream = StrimziKafkaContainer.class.getResourceAsStream("/kafka-versions.txt");
 
-        String kafkaVersion;
-
-        try {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(kafkaVersionsInputStream, StandardCharsets.UTF_8))) {
+            String kafkaVersion;
             while ((kafkaVersion = bufferedReader.readLine()) != null) {
-                supportedKafkaVersions.add(kafkaVersion);
+                SUPPORTED_KAFKA_VERSIONS.add(kafkaVersion);
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                bufferedReader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
 
-        LOGGER.info("This is all supported Kafka versions {}", supportedKafkaVersions.toString());
+        LOGGER.info("Supported Kafka versions: {}", SUPPORTED_KAFKA_VERSIONS);
 
         // sort kafka version from low to high
-        Collections.sort(supportedKafkaVersions);
+        Collections.sort(SUPPORTED_KAFKA_VERSIONS);
 
-        LATEST_KAFKA_VERSION = supportedKafkaVersions.get(supportedKafkaVersions.size() - 1);
+        LATEST_KAFKA_VERSION = SUPPORTED_KAFKA_VERSIONS.get(SUPPORTED_KAFKA_VERSIONS.size() - 1);
+
+        // Reads the strimzi-version.txt for the Strimzi version which should be used
+        InputStream strimziVersionsInputStream = StrimziKafkaContainer.class.getResourceAsStream("/strimzi-version.txt");
+        String strimziVersion = null;
+
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(strimziVersionsInputStream, StandardCharsets.UTF_8))) {
+            strimziVersion = bufferedReader.readLine();
+
+            if (strimziVersion == null)    {
+                throw new RuntimeException("Failed to read Strimzi version");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        STRIMZI_VERSION = strimziVersion;
+        LOGGER.info("Supported Strimzi version: {}", STRIMZI_VERSION);
     }
 
     public StrimziKafkaContainer(final String version) {
@@ -75,7 +84,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     }
 
     public StrimziKafkaContainer() {
-        this("latest-kafka-" + LATEST_KAFKA_VERSION);
+        this(STRIMZI_VERSION + "-kafka-" + LATEST_KAFKA_VERSION);
     }
 
     @Override
@@ -93,7 +102,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
 
         LOGGER.info("This is mapped port {}", kafkaExposedPort);
 
-        advertisedListeners = new StringBuilder(getBootstrapServers());
+        StringBuilder advertisedListeners = new StringBuilder(getBootstrapServers());
 
         Collection<ContainerNetwork> cns = containerInfo.getNetworkSettings().getNetworks().values();
 
@@ -103,7 +112,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         for (ContainerNetwork cn : cns) {
             // must be always unique
             final String advertisedName = "BROKER" + advertisedListenerNumber;
-            advertisedListeners.append("," + advertisedName + "://").append(cn.getIpAddress()).append(":9093");
+            advertisedListeners.append(",").append(advertisedName).append("://").append(cn.getIpAddress()).append(":9093");
             advertisedListenersNames.add(advertisedName);
             advertisedListenerNumber++;
         }
@@ -126,10 +135,10 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
 
         String command = "#!/bin/bash \n";
         command += "bin/zookeeper-server-start.sh config/zookeeper.properties &\n";
-        command += "bin/kafka-server-start.sh config/server.properties --override listeners=" + kafkaListeners.toString() + "PLAINTEXT://0.0.0.0:" + KAFKA_PORT +
-            " --override advertised.listeners=" + advertisedListeners.toString() +
+        command += "bin/kafka-server-start.sh config/server.properties --override listeners=" + kafkaListeners + "PLAINTEXT://0.0.0.0:" + KAFKA_PORT +
+            " --override advertised.listeners=" + advertisedListeners +
             " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT +
-            " --override listener.security.protocol.map=" + kafkaListenerSecurityProtocol.toString() + "PLAINTEXT:PLAINTEXT" +
+            " --override listener.security.protocol.map=" + kafkaListenerSecurityProtocol + "PLAINTEXT:PLAINTEXT" +
             " --override inter.broker.listener.name=BROKER1\n";
 
         LOGGER.info("Copying command to 'STARTER_SCRIPT' script.");
@@ -145,11 +154,15 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     }
 
     public static List<String> getSupportedKafkaVersions() {
-        return supportedKafkaVersions;
+        return SUPPORTED_KAFKA_VERSIONS;
     }
 
     public static String getLatestKafkaVersion() {
         return LATEST_KAFKA_VERSION;
+    }
+
+    public static String getStrimziVersion() {
+        return STRIMZI_VERSION;
     }
 
     @Override
