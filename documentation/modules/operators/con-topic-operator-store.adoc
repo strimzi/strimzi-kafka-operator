@@ -41,7 +41,7 @@ then downgrade Kafka brokers and client applications to the previous Kafka versi
 However, you must also delete the topics that were created for the topic store using a `kafka-admin` command, specifying the bootstrap address of the Kafka cluster.
 For example:
 
-[source,shell,subs="+quotes,attributes"]
+[source,shell,subs="+attributes"]
 ----
 kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
 ----

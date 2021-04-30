@@ -49,7 +49,7 @@ kubectl describe _KIND-OF-CUSTOM-RESOURCE_ _NAME-OF-CUSTOM-RESOURCE_
 The `type` condition changes to `ReconciliationPaused` at the `lastTransitionTime`.
 +
 .Example custom resource with a paused reconciliation condition type
-[source,shell,subs="+quotes,attributes"]
+[source,shell,subs="+attributes"]
 ----
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
