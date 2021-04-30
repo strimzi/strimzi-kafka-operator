@@ -33,7 +33,7 @@ For this example, we use the kubernetes deployment scripts available at {oauth-k
 
 [source,yaml,subs="attributes"]
 ----
-export ROOT=https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-artifact-version}
+export ROOT=https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-version}
 ----
 
 .Deploy the Postgres database for Keycloak
@@ -344,10 +344,10 @@ The following scripts are downloaded to `/tmp` dir and made executable:
 
 [source,shell,subs="attributes"]
 ----
-curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-artifact-version}/examples/docker/kafka-oauth-strimzi/kafka/oauth.sh -s > /tmp/oauth.sh
+curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-version}/examples/docker/kafka-oauth-strimzi/kafka/oauth.sh -s > /tmp/oauth.sh
    chmod +x /tmp/oauth.sh
 
-curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-artifact-version}/examples/docker/kafka-oauth-strimzi/kafka/jwt.sh -s > /tmp/jwt.sh
+curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-oauth/{oauth-version}/examples/docker/kafka-oauth-strimzi/kafka/jwt.sh -s > /tmp/jwt.sh
    chmod +x /tmp/jwt.sh
 ----
 
