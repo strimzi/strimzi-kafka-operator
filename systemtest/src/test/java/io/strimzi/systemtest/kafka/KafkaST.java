@@ -1517,7 +1517,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Check if Kubernetes labels are applied");
         Map<String, String> actualStatefulSetLabels = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getMetadata().getLabels();
         assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
-        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is(not("some-app")));
+        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is("some-app"));
         LOGGER.info("Kubernetes labels are correctly set and present");
 
         List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims().stream().filter(
