@@ -30,6 +30,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -39,7 +40,6 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
@@ -136,7 +136,7 @@ public class JbodStorageTest {
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
     }
 
-    @Test
+    @ParallelTest
     public void testJbodStorageCreatesPersistentVolumeClaimsMatchingKafkaVolumes(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME))
@@ -170,7 +170,7 @@ public class JbodStorageTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileWithNewVolumeAddedToJbodStorage(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
 
@@ -213,7 +213,7 @@ public class JbodStorageTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileWithVolumeRemovedFromJbodStorage(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
 
@@ -251,7 +251,7 @@ public class JbodStorageTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileWithUpdateVolumeIdJbod(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
 

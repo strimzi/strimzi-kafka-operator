@@ -28,6 +28,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -77,7 +78,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         vertx.close();
     }
 
-    @Test
+    @ParallelTest
     public void testNoManualRollingUpdate(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -145,7 +146,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testStatefulSetManualRollingUpdate(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -231,7 +232,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testPodManualRollingUpdate(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()

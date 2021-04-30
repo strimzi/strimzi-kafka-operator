@@ -49,6 +49,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.ParallelParametrizedTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -60,7 +61,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
@@ -338,7 +338,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     /** Create a cluster from a Kafka */
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcile(Params params, VertxTestContext context) {
         init(params);
@@ -350,7 +350,7 @@ public class KafkaAssemblyOperatorMockTest {
             .onComplete(context.succeeding(v -> async.flag()));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileReplacesAllDeletedSecrets(Params params, VertxTestContext context) {
         init(params);
@@ -414,7 +414,7 @@ public class KafkaAssemblyOperatorMockTest {
             })));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileReplacesDeletedZookeeperServices(Params params, VertxTestContext context) {
         init(params);
@@ -424,7 +424,7 @@ public class KafkaAssemblyOperatorMockTest {
                 ZookeeperCluster.headlessServiceName(CLUSTER_NAME));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileReplacesDeletedKafkaServices(Params params, VertxTestContext context) {
         init(params);
@@ -434,7 +434,7 @@ public class KafkaAssemblyOperatorMockTest {
                 KafkaCluster.headlessServiceName(CLUSTER_NAME));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileReplacesDeletedZookeeperStatefulSet(Params params, VertxTestContext context) {
         init(params);
@@ -443,7 +443,7 @@ public class KafkaAssemblyOperatorMockTest {
         initialReconcileThenDeleteStatefulSetsThenReconcile(context, statefulSet);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileReplacesDeletedKafkaStatefulSet(Params params, VertxTestContext context) {
         init(params);
@@ -471,7 +471,7 @@ public class KafkaAssemblyOperatorMockTest {
             })));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileUpdatesKafkaPersistentVolumes(Params params, VertxTestContext context) {
         init(params);
@@ -526,7 +526,7 @@ public class KafkaAssemblyOperatorMockTest {
         });
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileUpdatesKafkaStorageType(Params params, VertxTestContext context) {
         init(params);
@@ -629,7 +629,7 @@ public class KafkaAssemblyOperatorMockTest {
 
 
     /** Test that we can change the deleteClaim flag, and that it's honoured */
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileUpdatesKafkaWithChangedDeleteClaim(Params params, VertxTestContext context) {
         init(params);
@@ -692,7 +692,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     /** Create a cluster from a Kafka Cluster CM */
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileKafkaScaleDown(Params params, VertxTestContext context) {
         init(params);
@@ -744,7 +744,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     /** Create a cluster from a Kafka Cluster CM */
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileKafkaScaleUp(Params params, VertxTestContext context) {
         init(params);
@@ -791,7 +791,7 @@ public class KafkaAssemblyOperatorMockTest {
             })));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileResumePartialRoll(Params params, VertxTestContext context) {
         init(params);
@@ -838,7 +838,7 @@ public class KafkaAssemblyOperatorMockTest {
             })));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileZookeeperUpgradeFromPreviousToLatest(Params params, VertxTestContext context) {
         init(params);
@@ -850,7 +850,7 @@ public class KafkaAssemblyOperatorMockTest {
         reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testReconcileZookeeperDowngradeFromLatestToPrevious(Params params, VertxTestContext context) {
         init(params);

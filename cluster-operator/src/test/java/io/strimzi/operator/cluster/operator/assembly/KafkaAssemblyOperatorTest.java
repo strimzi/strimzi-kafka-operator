@@ -86,6 +86,7 @@ import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelParametrizedTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -95,7 +96,6 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
@@ -333,7 +333,7 @@ public class KafkaAssemblyOperatorTest {
 
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testCreateCluster(Params params, VertxTestContext context) {
         setFields(params);
@@ -341,7 +341,7 @@ public class KafkaAssemblyOperatorTest {
                 emptyList());
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testCreateClusterWithJmxEnabled(Params params, VertxTestContext context) {
         setFields(params);
@@ -360,7 +360,7 @@ public class KafkaAssemblyOperatorTest {
                 )); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testCreateClusterWithJmxTrans(Params params, VertxTestContext context) {
         setFields(params);
@@ -793,14 +793,14 @@ public class KafkaAssemblyOperatorTest {
         return new HashSet<>(captor.getAllValues());
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateClusterNoop(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateKafkaClusterChangeImage(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -808,7 +808,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateZookeeperClusterChangeImage(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -816,7 +816,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateKafkaClusterScaleUp(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -824,7 +824,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateKafkaClusterScaleDown(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -832,7 +832,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateZookeeperClusterScaleUp(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -840,7 +840,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateZookeeperClusterScaleDown(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -848,7 +848,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateClusterMetricsConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -858,7 +858,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateClusterAuthenticationTrue(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -869,7 +869,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateClusterLogConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -879,7 +879,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateZkClusterMetricsConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -888,7 +888,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     public void testUpdateZkClusterLogConfig(Params params, VertxTestContext context) {
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -898,7 +898,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    private void updateCluster(VertxTestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
+    private synchronized void updateCluster(VertxTestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(originalAssembly, VERSIONS);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(updatedAssembly, VERSIONS);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(originalAssembly, VERSIONS);
@@ -1305,7 +1305,7 @@ public class KafkaAssemblyOperatorTest {
             })));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
     public void testReconcile(Params params, VertxTestContext context) {
@@ -1398,7 +1398,7 @@ public class KafkaAssemblyOperatorTest {
         ops.reconcileAll("test", kafkaNamespace, context.succeeding(v -> async.flag()));
     }
 
-    @ParameterizedTest
+    @ParallelParametrizedTest
     @MethodSource("data")
     @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
     public void testReconcileAllNamespaces(Params params, VertxTestContext context) {

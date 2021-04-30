@@ -36,6 +36,7 @@ import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -94,7 +95,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         vertx.close();
     }
 
-    @Test
+    @ParallelTest
     public void testCustomLabelsAndAnnotations(VertxTestContext context) {
         Map<String, String> labels = new HashMap<>(2);
         labels.put("label1", "value1");
@@ -179,7 +180,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testClusterCASecretsWithoutOwnerReference(VertxTestContext context) {
         OwnerReference ownerReference = new OwnerReferenceBuilder()
                         .withKind("Kafka")
@@ -253,7 +254,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testClientsCASecretsWithoutOwnerReference(VertxTestContext context) {
         OwnerReference ownerReference = new OwnerReferenceBuilder()
                         .withKind("Kafka")
@@ -327,7 +328,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testDeleteClusterRoleBindings(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
@@ -349,7 +350,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testSelectorLabels(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -418,7 +419,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testIngressV1Beta1(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -509,7 +510,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testIngressV1(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
