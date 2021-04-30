@@ -37,6 +37,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -228,7 +229,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 .build();
     }
 
-    @Test
+    @ParallelTest
     public void testPodToRestartIsEmptyWhenCustomCertAnnotationsHaveMatchingThumbprints(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
@@ -243,7 +244,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testPodToRestartNonemptyWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
@@ -269,7 +270,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testPodToRestartTrueWhenCustomCertExternalListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
@@ -296,7 +297,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testPodToRestartIsEmptyAndNoCustomCertAnnotationsWhenNoCustomCertificates(VertxTestContext context) {
         kafka = new KafkaBuilder(createKafka())
                 .editSpec()

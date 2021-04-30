@@ -36,6 +36,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -100,7 +101,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         vertx.close();
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateCreatesCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
@@ -188,7 +189,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateWithNoDiffCausesNoChanges(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
@@ -268,7 +269,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateUpdatesCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
@@ -387,7 +388,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateThrowsWhenCreateServiceThrows(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
@@ -451,7 +452,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             .onComplete(context.failing(e -> async.flag()));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateWithReplicasScaleUpToOne(VertxTestContext context) {
         final int scaleTo = 1;
 
@@ -505,7 +506,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateWithScaleDown(VertxTestContext context) {
         int scaleTo = 1;
 
@@ -565,7 +566,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileCallsCreateOrUpdate(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
@@ -638,7 +639,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testCreateClusterStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;
@@ -688,7 +689,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateBridgeZeroReplica(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockBridgeOps = supplier.kafkaBridgeOperator;

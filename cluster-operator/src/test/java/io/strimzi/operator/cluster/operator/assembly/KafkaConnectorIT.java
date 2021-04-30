@@ -21,6 +21,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -110,7 +111,7 @@ public class KafkaConnectorIT {
         }
     }
 
-    @Test
+    @ParallelTest
     public void test(VertxTestContext context) {
         KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
 

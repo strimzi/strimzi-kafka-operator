@@ -48,6 +48,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -234,7 +235,7 @@ public class KafkaConnectAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateClusterWithoutConnectorOperator(VertxTestContext context) {
         String kcName = "foo";
         String kcNamespace = "test";
@@ -243,7 +244,7 @@ public class KafkaConnectAssemblyOperatorTest {
         createKafkaConnectCluster(context, kc, false);
     }
 
-    @Test
+    @ParallelTest
     public void testCreateClusterWithConnectorOperator(VertxTestContext context) {
         String kcName = "foo";
         String kcNamespace = "test";
@@ -253,7 +254,7 @@ public class KafkaConnectAssemblyOperatorTest {
         createKafkaConnectCluster(context, kc, true);
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateDoesNotUpdateWithNoDiff(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
@@ -352,7 +353,7 @@ public class KafkaConnectAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateUpdatesCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
@@ -489,7 +490,7 @@ public class KafkaConnectAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateFailsWhenDeploymentUpdateFails(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
@@ -551,7 +552,7 @@ public class KafkaConnectAssemblyOperatorTest {
             .onComplete(context.failing(v -> async.flag()));
     }
 
-    @Test
+    @ParallelTest
     public void testUpdateClusterScaleUp(VertxTestContext context) {
         final int scaleTo = 4;
 
@@ -625,7 +626,7 @@ public class KafkaConnectAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testUpdateClusterScaleDown(VertxTestContext context) {
         int scaleTo = 2;
 
@@ -701,7 +702,7 @@ public class KafkaConnectAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testReconcile(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
@@ -765,7 +766,7 @@ public class KafkaConnectAssemblyOperatorTest {
         })));
     }
 
-    @Test
+    @ParallelTest
     public void testUpdateClusterWithFailedScaleDownSetsStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
@@ -946,7 +947,7 @@ public class KafkaConnectAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateClusterWitDuplicateOlderConnectWithoutConnectorOperator(VertxTestContext context) {
         String kcName = "foo";
         String kcNamespace = "test";
@@ -955,7 +956,7 @@ public class KafkaConnectAssemblyOperatorTest {
         assertCreateClusterWithDuplicateOlderConnect(context, kc, false);
     }
 
-    @Test
+    @ParallelTest
     public void testCreateClusterWitDuplicateOlderConnectWithConnectorOperator(VertxTestContext context) {
         String kcName = "foo";
         String kcNamespace = "test";
@@ -965,7 +966,7 @@ public class KafkaConnectAssemblyOperatorTest {
         assertCreateClusterWithDuplicateOlderConnect(context, kc, true);
     }
 
-    @Test
+    @ParallelTest
     public void testCreateClusterWitDuplicateNeverConnectHasNotReadyStatus(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
@@ -1007,7 +1008,7 @@ public class KafkaConnectAssemblyOperatorTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testIsOlderOrAlone()    {
         KafkaConnectS2I conflictingConnectS2I = ResourceUtils.createEmptyKafkaConnectS2I("foo", "bar");
         conflictingConnectS2I.getMetadata().setCreationTimestamp("2020-01-27T19:31:13Z");
@@ -1018,7 +1019,7 @@ public class KafkaConnectAssemblyOperatorTest {
         assertThat(AbstractConnectOperator.isOlderOrAlone("2020-01-27T19:31:14Z", conflictingConnectS2I), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdateFailsWhenClusterRoleBindingRightsAreMissingButRequired(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
@@ -1069,7 +1070,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 }));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateOrUpdatePassesWhenClusterRoleBindingRightsAreMissingAndNotRequired(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
@@ -1122,7 +1123,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 }));
     }
 
-    @Test
+    @ParallelTest
     public void testDeleteClusterRoleBindings(VertxTestContext context) {
         String kcName = "foo";
         String kcNamespace = "test";
@@ -1151,7 +1152,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 })));
     }
 
-    @Test
+    @ParallelTest
     public void testCreateClusterWithJmxEnabled(VertxTestContext context) {
         String kcName = "foo";
         String kcNamespace = "test";

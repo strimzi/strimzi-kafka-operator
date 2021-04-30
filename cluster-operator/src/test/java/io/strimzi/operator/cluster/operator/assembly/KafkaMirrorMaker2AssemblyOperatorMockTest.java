@@ -28,6 +28,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -148,7 +149,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         return created.future();
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileUpdate(VertxTestContext context) {
         setMirrorMaker2Resource(new KafkaMirrorMaker2Builder()
                 .withMetadata(new ObjectMetaBuilder()
@@ -174,7 +175,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
             .onComplete(context.succeeding(v -> async.flag()));
     }
 
-    @Test
+    @ParallelTest
     public void testPauseReconcile(VertxTestContext context) {
         setMirrorMaker2Resource(new KafkaMirrorMaker2Builder()
                 .withMetadata(new ObjectMetaBuilder()

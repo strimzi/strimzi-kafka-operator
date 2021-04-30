@@ -31,6 +31,7 @@ import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -144,7 +145,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         return created.future();
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileCreateAndUpdate(VertxTestContext context) {
         setConnectResource(new KafkaConnectBuilder()
                 .withMetadata(new ObjectMetaBuilder()
@@ -171,7 +172,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testPauseReconcileUnpause(VertxTestContext context) {
         setConnectResource(new KafkaConnectBuilder()
                 .withMetadata(new ObjectMetaBuilder()

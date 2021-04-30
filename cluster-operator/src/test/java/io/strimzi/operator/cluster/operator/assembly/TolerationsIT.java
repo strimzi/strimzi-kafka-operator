@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
+import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -46,7 +47,7 @@ public class TolerationsIT {
         cluster.deleteNamespaces();
     }
 
-    @Test
+    @ParallelTest
     public void testEmptyStringValueIntoleration(VertxTestContext context) {
         Toleration t1 = new TolerationBuilder()
                 .withEffect("NoSchedule")
