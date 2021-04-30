@@ -13,6 +13,7 @@
 * Changed Reconciliation interval for Topic Operator from 90 to 120 seconds (to keep it the same as for other operators)
 * Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
 * Removed requirement for replicas and partitions KafkaTopic spec making these parameters optional
+* Update Kaniko executor to 1.6.0
 
 ### Changes, deprecations and removals
 
