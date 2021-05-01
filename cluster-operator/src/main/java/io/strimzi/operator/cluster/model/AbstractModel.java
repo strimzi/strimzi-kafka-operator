@@ -224,7 +224,6 @@ public abstract class AbstractModel {
     protected static final String METRICS_PORT_NAME = "tcp-prometheus";
     protected static final int METRICS_PORT = 9404;
     protected static final String METRICS_PATH = "/metrics";
-    protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected MetricsConfig metricsConfigInCm;
     protected String ancillaryConfigMapName;
     protected String logAndMetricsConfigMountPath;
@@ -554,7 +553,7 @@ public abstract class AbstractModel {
     public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> data = new HashMap<>(2);
         data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), metricsAndLogging.getLoggingCm()));
-        if (getMetricsConfigInCm() != null || (isMetricsEnabled() && getMetricsConfig() != null)) {
+        if (getMetricsConfigInCm() != null) {
             String parseResult = parseMetrics(metricsAndLogging.getMetricsCm());
             if (parseResult != null) {
                 this.setMetricsEnabled(true);
@@ -596,22 +595,8 @@ public abstract class AbstractModel {
                 log.warn("Unknown type of metrics {}.", getMetricsConfigInCm().getClass());
                 throw new InvalidResourceException("Unknown type of metrics " + getMetricsConfigInCm().getClass() + ".");
             }
-        } else if (isMetricsEnabled() && getMetricsConfig() != null) {
-            HashMap<String, Object> m = new HashMap<>();
-            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
-                m.put(entry.getKey(), entry.getValue());
-            }
-            return new JsonObject(m).toString();
         }
         return null;
-    }
-
-    protected Iterable<Map.Entry<String, Object>> getMetricsConfig() {
-        return metricsConfig;
-    }
-
-    protected void setMetricsConfig(Iterable<Map.Entry<String, Object>> metricsConfig) {
-        this.metricsConfig = metricsConfig;
     }
 
     protected void setMetricsConfigInCm(MetricsConfig metricsConfigInCm) {

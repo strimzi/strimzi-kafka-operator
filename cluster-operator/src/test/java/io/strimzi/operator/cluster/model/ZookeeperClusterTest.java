@@ -1144,7 +1144,6 @@ public class ZookeeperClusterTest {
 
         assertThat(zc.isMetricsEnabled(), is(true));
         assertThat(zc.getMetricsConfigInCm(), is(metrics));
-        assertThat(zc.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1154,6 +1153,5 @@ public class ZookeeperClusterTest {
 
         assertThat(zc.isMetricsEnabled(), is(false));
         assertThat(zc.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(zc.getMetricsConfig(), is(nullValue()));
     }
 }

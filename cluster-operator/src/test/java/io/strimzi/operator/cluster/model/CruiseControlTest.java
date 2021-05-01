@@ -926,7 +926,6 @@ public class CruiseControlTest {
 
         assertThat(cc.isMetricsEnabled(), is(true));
         assertThat(cc.getMetricsConfigInCm(), is(metrics));
-        assertThat(cc.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -943,7 +942,6 @@ public class CruiseControlTest {
 
         assertThat(cc.isMetricsEnabled(), is(false));
         assertThat(cc.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(cc.getMetricsConfig(), is(nullValue()));
     }
 
     @AfterAll

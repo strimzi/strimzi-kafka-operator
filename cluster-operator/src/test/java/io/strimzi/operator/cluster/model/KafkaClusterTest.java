@@ -3655,7 +3655,6 @@ public class KafkaClusterTest {
 
         assertThat(kc.isMetricsEnabled(), is(true));
         assertThat(kc.getMetricsConfigInCm(), is(metrics));
-        assertThat(kc.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -3665,6 +3664,5 @@ public class KafkaClusterTest {
 
         assertThat(kc.isMetricsEnabled(), is(false));
         assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(kc.getMetricsConfig(), is(nullValue()));
     }
 }

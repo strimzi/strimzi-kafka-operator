@@ -1574,7 +1574,6 @@ public class KafkaMirrorMaker2ClusterTest {
 
         assertThat(kmm.isMetricsEnabled(), is(true));
         assertThat(kmm.getMetricsConfigInCm(), is(metrics));
-        assertThat(kmm.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1583,6 +1582,5 @@ public class KafkaMirrorMaker2ClusterTest {
 
         assertThat(kmm.isMetricsEnabled(), is(false));
         assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(kmm.getMetricsConfig(), is(nullValue()));
     }
 }
