@@ -139,7 +139,7 @@ class ConnectBuilderST extends AbstractST {
             .build());
 
         KafkaConnectUtils.waitForConnectNotReady(connectClusterName);
-        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(connectClusterName, NAMESPACE, "The Kafka Connect build (.*)?failed");
+        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(connectClusterName, NAMESPACE, "The Kafka Connect build failed(.*)?");
 
         LOGGER.info("Checking if KafkaConnect status condition contains message about build failure");
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(connectClusterName).get();
@@ -149,7 +149,7 @@ class ConnectBuilderST extends AbstractST {
 
         Condition connectCondition = kafkaConnect.getStatus().getConditions().stream().findFirst().get();
 
-        assertTrue(connectCondition.getMessage().matches("The Kafka Connect build (.*)?failed"));
+        assertTrue(connectCondition.getMessage().matches("The Kafka Connect build failed(.*)?"));
         assertThat(connectCondition.getType(), is(NotReady.toString()));
 
         LOGGER.info("Replacing plugin's checksum with right one");
