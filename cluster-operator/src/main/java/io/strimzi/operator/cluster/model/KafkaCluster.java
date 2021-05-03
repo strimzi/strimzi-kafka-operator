@@ -115,15 +115,12 @@ public class KafkaCluster extends AbstractModel {
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
     // This helps Istio to avoid using a wildcard listener and instead present IP:PORT pairs which effects
     // proper listener, routing and metrics configuration sent to Envoy
-    protected static final int CLIENT_PORT = 9092;
-
     public static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "tcp-replication";
+    public static final int CONTROLPLANE_PORT = 9090;
+    protected static final String CONTROLPLANE_PORT_NAME = "tcp-ctrlplane"; // port name is up to 15 characters
 
-    protected static final int CLIENT_TLS_PORT = 9093;
-
-    protected static final int EXTERNAL_PORT = 9094;
-
+    // Ingress and Route listeners advertise port 443 regardless what port is used in Kafka, so we store them here
     protected static final int ROUTE_PORT = 443;
     protected static final int INGRESS_PORT = 443;
 
@@ -723,7 +720,8 @@ public class KafkaCluster extends AbstractModel {
     private List<ServicePort> getHeadlessServicePorts() {
         List<GenericKafkaListener> internalListeners = ListenersUtils.internalListeners(listeners);
 
-        List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 2);
+        List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 3);
+        ports.add(createServicePort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, CONTROLPLANE_PORT, "TCP"));
         ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
 
         for (GenericKafkaListener listener : internalListeners) {
@@ -1321,7 +1319,8 @@ public class KafkaCluster extends AbstractModel {
     }
 
     private List<ContainerPort> getContainerPortList() {
-        List<ContainerPort> ports = new ArrayList<>(listeners.size() + 2);
+        List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
+        ports.add(createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, "TCP"));
         ports.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
 
         for (GenericKafkaListener listener : listeners) {
@@ -1333,27 +1332,6 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return ports;
-    }
-
-    /**
-     * @return The port of the plain listener.
-     */
-    public int getClientPort() {
-        return this.CLIENT_PORT;
-    }
-
-    /**
-     * @return The port of the tls listener
-     */
-    public int getClientTlsPort() {
-        return this.CLIENT_TLS_PORT;
-    }
-
-    /**
-     * @return The port of loadbalancer for the external listener.
-     */
-    public int getLoadbalancerPort() {
-        return this.EXTERNAL_PORT;
     }
 
     /**
@@ -1696,7 +1674,7 @@ public class KafkaCluster extends AbstractModel {
      * @param cluster The name of the cluster.
      * @return The name of the network policy.
      */
-    public static String policyName(String cluster) {
+    public static String networkPolicyName(String cluster) {
         return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
     }
 
@@ -1709,59 +1687,68 @@ public class KafkaCluster extends AbstractModel {
      * @return The network policy.
      */
     public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
-        List<NetworkPolicyIngressRule> rules = new ArrayList<>(5);
-
-        NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
-                .addNewPort()
-                    .withNewPort(REPLICATION_PORT)
-                    .withNewProtocol("TCP")
-                .endPort()
-                .build();
-
-        // Restrict access to 9091 / replication port
+        // Internal peers => Strimzi components which need access
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // cluster operator
+                .withNewPodSelector() // Cluster Operator
                      .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
                 .endPodSelector()
                     .build();
         ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
         NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // kafka cluster
+                .withNewPodSelector() // Kafka cluster
                      .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
                 .endPodSelector()
                 .build();
 
         NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // entity operator
+                .withNewPodSelector() // Entity Operator
                      .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
                 .endPodSelector()
                 .build();
 
         NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // kafka exporter
+                .withNewPodSelector() // Kafka Exporter
                      .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
                 .endPodSelector()
                 .build();
 
         NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // cruise control
+                .withNewPodSelector() // Cruise Control
                      .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster))
                 .endPodSelector()
                 .build();
 
-        List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(5);
-        clientsPortPeers.add(clusterOperatorPeer);
-        clientsPortPeers.add(kafkaClusterPeer);
-        clientsPortPeers.add(entityOperatorPeer);
-        clientsPortPeers.add(kafkaExporterPeer);
-        clientsPortPeers.add(cruiseControlPeer);
+        // List of network policy rules for all ports
+        // Default size is number of listeners configured by the user + 4 (Control Plane listener, replication listener, metrics and JMX)
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>(listeners.size() + 4);
 
-        replicationRule.setFrom(clientsPortPeers);
-        
+        // Control Plane rule covers the control plane listener.
+        // Control plane listener is used by Kafka for internal coordination only
+        NetworkPolicyIngressRule controlPlaneRule = new NetworkPolicyIngressRuleBuilder()
+                .addNewPort()
+                .withNewPort(CONTROLPLANE_PORT)
+                .withNewProtocol("TCP")
+                .endPort()
+                .build();
+
+        controlPlaneRule.setFrom(List.of(kafkaClusterPeer));
+        rules.add(controlPlaneRule);
+
+        // Replication rule covers the replication listener.
+        // Replication listener is used by Kafka but also by our own tools => Operators, Cruise Control, and Kafka Exporter
+        NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
+                .addNewPort()
+                .withNewPort(REPLICATION_PORT)
+                .withNewProtocol("TCP")
+                .endPort()
+                .build();
+
+        replicationRule.setFrom(List.of(clusterOperatorPeer, kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer, cruiseControlPeer));
         rules.add(replicationRule);
 
-        // Free access to listener ports
+        // User-configured listeners are by default open for all.
+        // But users can pass peers in the Kafka CR
         for (GenericKafkaListener listener : listeners) {
             NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
@@ -1774,6 +1761,7 @@ public class KafkaCluster extends AbstractModel {
             rules.add(plainRule);
         }
 
+        // The Metrics port (if enabled) is opened to all by default
         if (isMetricsEnabled) {
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
@@ -1786,6 +1774,7 @@ public class KafkaCluster extends AbstractModel {
             rules.add(metricsRule);
         }
 
+        // The JMX port (if enabled) is opened to all by default
         if (isJmxEnabled()) {
             NetworkPolicyIngressRule jmxRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
@@ -1798,9 +1787,10 @@ public class KafkaCluster extends AbstractModel {
             rules.add(jmxRule);
         }
 
+        // Build the final network policy with all rules covering all the ports
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
-                    .withName(policyName(cluster))
+                    .withName(networkPolicyName(cluster))
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
                     .withOwnerReferences(createOwnerReference())
@@ -1987,7 +1977,7 @@ public class KafkaCluster extends AbstractModel {
                 .withRackId(rack)
                 .withZookeeper(cluster)
                 .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
-                .withListeners(cluster, namespace, listeners)
+                .withListeners(cluster, namespace, listeners, true)
                 .withAuthorization(cluster, authorization)
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                 .withUserConfiguration(configuration)
