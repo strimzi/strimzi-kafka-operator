@@ -504,9 +504,6 @@ public class ModelUtils {
         if (resourceWithMetrics.getMetricsConfig() != null)    {
             model.setMetricsEnabled(true);
             model.setMetricsConfigInCm(resourceWithMetrics.getMetricsConfig());
-        } else if (resourceWithMetrics.getMetrics() != null) {
-            model.setMetricsEnabled(true);
-            model.setMetricsConfig(resourceWithMetrics.getMetrics().entrySet());
         }
     }
 }
