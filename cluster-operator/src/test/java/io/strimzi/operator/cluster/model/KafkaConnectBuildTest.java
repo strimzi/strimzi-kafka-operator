@@ -411,6 +411,7 @@ public class KafkaConnectBuildTest {
                             .endMetadata()
                             .withNewPriorityClassName("top-priority")
                             .withNewSchedulerName("my-scheduler")
+                            .withEnableServiceLinks(false)
                         .endBuildPod()
                         .withNewBuildContainer()
                             .withEnv(new ContainerEnvVarBuilder().withName("TEST_ENV_VAR").withValue("testValue").build())
@@ -432,6 +433,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(buildPodAnnos.entrySet()), is(true));
         assertThat(pod.getSpec().getPriorityClassName(), is("top-priority"));
         assertThat(pod.getSpec().getSchedulerName(), is("my-scheduler"));
+        assertThat(pod.getSpec().getEnableServiceLinks(), is(false));
         assertThat(pod.getSpec().getContainers().get(0).getEnv().stream().filter(env -> "TEST_ENV_VAR".equals(env.getName())).findFirst().get().getValue(), is("testValue"));
 
         KafkaConnectDockerfile dockerfile = new KafkaConnectDockerfile("my-image:latest", kc.getSpec().getBuild());

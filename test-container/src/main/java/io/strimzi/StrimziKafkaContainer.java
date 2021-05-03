@@ -97,19 +97,40 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
 
         Collection<ContainerNetwork> cns = containerInfo.getNetworkSettings().getNetworks().values();
 
+        int advertisedListenerNumber = 1;
+        List<String> advertisedListenersNames = new ArrayList<>();
+
         for (ContainerNetwork cn : cns) {
-            advertisedListeners.append("," + "BROKER://").append(cn.getIpAddress()).append(":9093");
+            // must be always unique
+            final String advertisedName = "BROKER" + advertisedListenerNumber;
+            advertisedListeners.append("," + advertisedName + "://").append(cn.getIpAddress()).append(":9093");
+            advertisedListenersNames.add(advertisedName);
+            advertisedListenerNumber++;
         }
 
         LOGGER.info("This is all advertised listeners for Kafka {}", advertisedListeners.toString());
 
+        StringBuilder kafkaListeners = new StringBuilder();
+        StringBuilder kafkaListenerSecurityProtocol = new StringBuilder();
+
+        advertisedListenersNames.forEach(name -> {
+            // listeners
+            kafkaListeners.append(name);
+            kafkaListeners.append("://0.0.0.0:9093");
+            kafkaListeners.append(",");
+            // listener.security.protocol.map
+            kafkaListenerSecurityProtocol.append(name);
+            kafkaListenerSecurityProtocol.append(":PLAINTEXT");
+            kafkaListenerSecurityProtocol.append(",");
+        });
+
         String command = "#!/bin/bash \n";
         command += "bin/zookeeper-server-start.sh config/zookeeper.properties &\n";
-        command += "bin/kafka-server-start.sh config/server.properties --override listeners=BROKER://0.0.0.0:9093,PLAINTEXT://0.0.0.0:" + KAFKA_PORT +
+        command += "bin/kafka-server-start.sh config/server.properties --override listeners=" + kafkaListeners.toString() + "PLAINTEXT://0.0.0.0:" + KAFKA_PORT +
             " --override advertised.listeners=" + advertisedListeners.toString() +
             " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT +
-            " --override listener.security.protocol.map=BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT" +
-            " --override inter.broker.listener.name=BROKER\n";
+            " --override listener.security.protocol.map=" + kafkaListenerSecurityProtocol.toString() + "PLAINTEXT:PLAINTEXT" +
+            " --override inter.broker.listener.name=BROKER1\n";
 
         LOGGER.info("Copying command to 'STARTER_SCRIPT' script.");
 

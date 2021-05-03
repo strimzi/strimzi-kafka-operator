@@ -598,6 +598,7 @@ public class KafkaConnectClusterTest {
                             .withNewSchedulerName("my-scheduler")
                             .withHostAliases(hostAlias1, hostAlias2)
                             .withTopologySpreadConstraints(tsc1, tsc2)
+                            .withEnableServiceLinks(false)
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -636,6 +637,7 @@ public class KafkaConnectClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
 
         // Check Service
         Service svc = kc.generateService();

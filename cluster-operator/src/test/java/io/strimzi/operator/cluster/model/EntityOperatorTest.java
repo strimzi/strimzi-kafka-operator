@@ -223,6 +223,7 @@ public class EntityOperatorTest {
                                         .withNewSchedulerName("my-scheduler")
                                         .withTolerations(singletonList(toleration))
                                         .withTopologySpreadConstraints(tsc1, tsc2)
+                                        .withEnableServiceLinks(false)
                                     .endPod()
                                 .endTemplate()
                             .endEntityOperator()
@@ -241,6 +242,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
+        assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
 
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(assertToleration)));
     }
