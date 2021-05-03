@@ -145,16 +145,6 @@ public class KafkaConnectS2IClusterTest {
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resourceWithMetrics, VERSIONS);
 
     @ParallelTest
-    @Deprecated
-    public void testMetricsConfigMapDeprecatedMetrics() {
-        KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, null, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
-        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null));
-        checkMetricsConfigMap(metricsCm);
-    }
-
-    @ParallelTest
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
@@ -1470,23 +1460,6 @@ public class KafkaConnectS2IClusterTest {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
 
         assertThat(kc.generateNetworkPolicy(false, null, null), is(nullValue()));
-    }
-
-    @ParallelTest
-    public void testMetricsParsingInline() {
-        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
-
-        KafkaConnectS2I kafkaConnect = new KafkaConnectS2IBuilder(this.resource)
-                .editSpec()
-                    .withMetrics(dummyMetrics)
-                .endSpec()
-                .build();
-
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(kafkaConnect, VERSIONS);
-
-        assertThat(kc.isMetricsEnabled(), is(true));
-        assertThat(kc.getMetricsConfig(), is(dummyMetrics.entrySet()));
-        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
     }
 
     @ParallelTest

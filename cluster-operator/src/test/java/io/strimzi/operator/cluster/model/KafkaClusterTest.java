@@ -159,26 +159,6 @@ public class KafkaClusterTest {
         assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
     }
 
-    @Deprecated
-    @ParallelTest
-    public void testMetricsConfigMapDeprecatedMetrics() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, null, configuration, kafkaLog, zooLog))
-                .editSpec()
-                .editKafka()
-                .withNewJvmOptions()
-                .addAllToJavaSystemProperties(javaSystemProperties)
-                .endJvmOptions()
-                .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null));
-        checkMetricsConfigMap(metricsCm);
-        checkOwnerReference(kc.createOwnerReference(), metricsCm);
-    }
-
     @ParallelTest
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
@@ -3652,26 +3632,6 @@ public class KafkaClusterTest {
                 .build();
 
         assertThrows(IllegalArgumentException.class, () -> KafkaCluster.fromCrd(kafkaAssembly, VERSIONS));
-    }
-
-    @ParallelTest
-    public void testMetricsParsingInline() {
-        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout))
-                .editSpec()
-                    .editKafka()
-                        .withMetrics(dummyMetrics)
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        assertThat(kc.isMetricsEnabled(), is(true));
-        assertThat(kc.getMetricsConfig(), is(dummyMetrics.entrySet()));
-        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
     }
 
     @ParallelTest
