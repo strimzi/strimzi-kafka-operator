@@ -4,6 +4,7 @@ set -xe
 rm -rf ~/.kube
 
 KUBE_VERSION=${KUBE_VERSION:-1.16.0}
+COPY_DOCKER_LOGIN=${1:-"false"}
 
 DEFAULT_MINIKUBE_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
 DEFAULT_MINIKUBE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
@@ -86,15 +87,9 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
 
     set +ex
 
-    if [ -n "$DOCKER_LOGIN" ]
+    if [ "$COPY_DOCKER_LOGIN" = "true" ]
     then
-      docker exec "minikube" bash -c "echo '{
-        \"auths\": {
-          \"https://index.docker.io/v1/\": {
-            \"auth\": \"'$DOCKER_LOGIN'\"
-          }
-        }
-      }' | sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
+      scp -i $(minikube ssh-key) $HOME/.docker/config.json docker@$(minikube ip):/var/lib/kubelet/config.json
     fi
 
     set -ex

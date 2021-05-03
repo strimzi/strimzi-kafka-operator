@@ -31,7 +31,7 @@ pipeline {
         TEST_HELM2_VERSION = "v2.17.0"
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
-        DOCKER_LOGIN = credentials('strimziqe-dockerhub-login')
+        COPY_DOCKER_LOGIN = "true"
     }
     stages {
         stage('Clean WS') {
