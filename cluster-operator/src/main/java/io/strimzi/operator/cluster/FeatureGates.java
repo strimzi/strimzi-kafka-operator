@@ -80,7 +80,7 @@ public class FeatureGates {
     /**
      * Feature gate class represents individual feature fate
      */
-    class FeatureGate {
+    static class FeatureGate {
         private final String name;
         private final boolean defaultValue;
         private Boolean value = null;
