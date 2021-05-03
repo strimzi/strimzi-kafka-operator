@@ -16,6 +16,7 @@ logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
+featureGates: ""
 
 tolerations: []
 affinity: {}

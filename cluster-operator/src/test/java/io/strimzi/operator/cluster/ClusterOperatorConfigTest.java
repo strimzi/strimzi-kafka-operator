@@ -43,6 +43,7 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE, "operator-namespace");
+        envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "+ControlPlaneListener");
     }
 
     @Test
@@ -51,6 +52,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
         envVars.remove(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS);
         envVars.remove(ClusterOperatorConfig.STRIMZI_CONNECT_BUILD_TIMEOUT_MS);
+        envVars.remove(ClusterOperatorConfig.STRIMZI_FEATURE_GATES);
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
@@ -60,6 +62,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getConnectBuildTimeoutMs(), is(ClusterOperatorConfig.DEFAULT_CONNECT_BUILD_TIMEOUT_MS));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
+        assertThat(config.featureGates().controlPlaneListenerEnabled(), is(false));
     }
 
     @Test
@@ -76,7 +79,8 @@ public class ClusterOperatorConfigTest {
                 null,
                 null,
                 ClusterOperatorConfig.RbacScope.CLUSTER,
-                null);
+                null,
+                "");
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));
@@ -93,6 +97,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
         assertThat(config.getConnectBuildTimeoutMs(), is(40_000L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
+        assertThat(config.featureGates().controlPlaneListenerEnabled(), is(true));
     }
 
     @Test
@@ -302,6 +307,15 @@ public class ClusterOperatorConfigTest {
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
         assertThat(e.getMessage(), containsString("Failed to parse labels from STRIMZI_OPERATOR_NAMESPACE_LABELS"));
+    }
+
+    @Test
+    public void testInvalidFeatureGate() {
+        Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.envVars);
+        envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "-NonExistingGate");
+
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
+        assertThat(e.getMessage(), containsString("Unknown feature gate NonExistingGate found in the configuration"));
     }
 
     @Test

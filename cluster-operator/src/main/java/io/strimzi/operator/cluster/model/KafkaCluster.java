@@ -1971,13 +1971,13 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
-    private String generateBrokerConfiguration()   {
+    private String generateBrokerConfiguration(boolean controlPlaneListener)   {
         return new KafkaBrokerConfigurationBuilder()
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper(cluster)
                 .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
-                .withListeners(cluster, namespace, listeners, true)
+                .withListeners(cluster, namespace, listeners, controlPlaneListener)
                 .withAuthorization(cluster, authorization)
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                 .withUserConfiguration(configuration)
@@ -1988,10 +1988,10 @@ public class KafkaCluster extends AbstractModel {
         return this.brokersConfiguration;
     }
 
-    public ConfigMap generateAncillaryConfigMap(MetricsAndLogging metricsAndLogging, Set<String> advertisedHostnames, Set<String> advertisedPorts)   {
+    public ConfigMap generateAncillaryConfigMap(MetricsAndLogging metricsAndLogging, Set<String> advertisedHostnames, Set<String> advertisedPorts, boolean controlPlaneListener)   {
         ConfigMap cm = generateMetricsAndLogConfigMap(metricsAndLogging);
 
-        this.brokersConfiguration = generateBrokerConfiguration();
+        this.brokersConfiguration = generateBrokerConfiguration(controlPlaneListener);
 
         cm.getData().put(BROKER_CONFIGURATION_FILENAME, this.brokersConfiguration);
         cm.getData().put(BROKER_ADVERTISED_HOSTNAMES_FILENAME, String.join(" ", advertisedHostnames));
