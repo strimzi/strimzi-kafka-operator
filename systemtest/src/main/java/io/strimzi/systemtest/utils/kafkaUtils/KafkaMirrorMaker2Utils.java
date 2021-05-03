@@ -53,11 +53,13 @@ public class KafkaMirrorMaker2Utils {
         return waitForKafkaMirrorMaker2Status(clusterName, NotReady);
     }
 
+    @SuppressWarnings("unchecked")
     public static void waitForKafkaMirrorMaker2ConnectorReadiness(String namespaceName, String clusterName) {
         TestUtils.waitFor("KafkaMirrorMaker2 connectors readiness", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             KafkaMirrorMaker2Status kafkaMirrorMaker2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus();
             for (Map<String, Object> connector : kafkaMirrorMaker2Status.getConnectors()) {
-                if (!((Map<String, String>) connector.get("connector")).get("state").equals("RUNNING")) {
+                Map<String, String> status = (Map<String, String>) connector.get("connector");
+                if (!status.get("state").equals("RUNNING")) {
                     return false;
                 }
             }

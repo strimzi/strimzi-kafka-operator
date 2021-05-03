@@ -420,6 +420,7 @@ class CustomResourceStatusST extends AbstractST {
         // Wait for pods stability and check that pods weren't rolled
         PodUtils.verifyThatRunningPodsAreStable(NAMESPACE, KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
         assertKafkaMirrorMaker2Status(3, mm2Url, mirrorMaker2Name);
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(NAMESPACE, mirrorMaker2Name);
     }
 
     @ParallelTest
