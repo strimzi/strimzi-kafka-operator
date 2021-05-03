@@ -242,7 +242,7 @@ public class ZookeeperScaler implements AutoCloseable {
     private void closeConnection(ZooKeeperAdmin zkAdmin) {
         if (zkAdmin != null)    {
             try {
-                zkAdmin.close();
+                zkAdmin.close((int) operationTimeoutMs);
             } catch (Exception e) {
                 log.debug("Failed to close the ZooKeeperAdmin", e);
             }
@@ -265,6 +265,7 @@ public class ZookeeperScaler implements AutoCloseable {
         clientConfig.setProperty("zookeeper.ssl.keyStore.location", keyStoreFile.getAbsolutePath());
         clientConfig.setProperty("zookeeper.ssl.keyStore.password", keyStorePassword);
         clientConfig.setProperty("zookeeper.ssl.keyStore.type", "PKCS12");
+        clientConfig.setProperty("zookeeper.request.timeout", String.valueOf(operationTimeoutMs));
 
         return clientConfig;
     }
