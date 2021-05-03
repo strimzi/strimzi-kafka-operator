@@ -52,19 +52,19 @@ To build this project you must first install several command line utilities and 
 
 In order to use `make` these all need to be available on your `$PATH`.
 
-### Mac OS
+### macOS
 
 The `make` build is using GNU versions of `find`, `sed` and other utilities and is not compatible with the BSD versions
-available on Mac OS. When using Mac OS, you have to install the GNU versions of `find` and `sed`. When using `brew`, you
+available on macOS. When using macOS, you have to install the GNU versions of `find` and `sed`. When using `brew`, you
 can do `brew install gnu-sed findutils grep coreutils`. This command will install the GNU versions as `gcp`, `ggrep`
 , `gsed` and `gfind` and our `make` build will automatically pick them up and use them.
 
-The build requires `bash` version 4+ which is not shipped Mac OS but can be installed via homebrew. You can
+The build requires `bash` version 4+ which is not shipped macOS but can be installed via homebrew. You can
 run `brew install bash` to install a compatible version of `bash`. If you wish to change the default shell to the
 updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`
 
-The `mvn` tool might install the latest version of openJDK during the brew install. For builds on Mac OS to succeed,
-openJDK version 11 needs to be installed. This can be done by running `brew install openjdk@11`. For maven to read the
+The `mvn` tool might install the latest version of OpenJDK during the brew install. For builds on macOS to succeed,
+OpenJDK version 11 needs to be installed. This can be done by running `brew install openjdk@11`. For maven to read the
 new Java version, you will need to edit the `~/.mavenrc` file and paste the following
 line `export JAVA_HOME=/Library/Java/JavaVirtualMachines/openjdk-11.jdk/Contents/Home`.
 
@@ -73,7 +73,7 @@ command `sudo ln -sfn /usr/local/opt/openjdk@11/libexec/openjdk.jdk /Library/Jav
 If this throws an error that it cannot find the file or directory, navigate into `/Library/Java/` (or how ever deep you
 can) and create a new folder named `JavaVirtualMachines` followed by creating a file named `openjdk-11.jdk`. The folder
 structure after everything is said and done should look like `/Library/Java/JavaVirtualMachines/openjdk-11.jdk`. After
-doing that run the command at the beginning again and this should link the file and allow you to use maven with openJDK
+doing that run the command at the beginning again and this should link the file and allow you to use maven with OpenJDK
 version 11.
 
 ### Kubernetes or OpenShift Cluster
