@@ -53,7 +53,8 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 
 import java.io.IOException;
 import java.security.cert.CertificateParsingException;
@@ -82,6 +83,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
+@ParallelSuite
 public class ZookeeperClusterTest {
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -113,7 +115,7 @@ public class ZookeeperClusterTest {
     private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
     @Deprecated
-    @Test
+    @ParallelTest
     public void testMetricsConfigMapDeprecatedMetrics() {
         Kafka ka = ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, null, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson, null, null);
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
@@ -124,7 +126,7 @@ public class ZookeeperClusterTest {
     }
 
 
-    @Test
+    @ParallelTest
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLogging(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
@@ -150,7 +152,7 @@ public class ZookeeperClusterTest {
             Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateService() {
         Service headful = zc.generateService();
 
@@ -165,7 +167,7 @@ public class ZookeeperClusterTest {
         checkOwnerReference(zc.createOwnerReference(), headful);
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateServiceWithoutMetrics() {
         Kafka kafka = new KafkaBuilder(ka)
                 .editSpec()
@@ -189,7 +191,7 @@ public class ZookeeperClusterTest {
         checkOwnerReference(zc.createOwnerReference(), headful);
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateHeadlessService() {
         Service headless = zc.generateHeadlessService();
         checkHeadlessService(headless);
@@ -211,7 +213,7 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
@@ -219,7 +221,7 @@ public class ZookeeperClusterTest {
         checkOwnerReference(zc.createOwnerReference(), sts);
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateStatefulSetWithPodManagementPolicy() {
         Kafka editZooAssembly = new KafkaBuilder(ka)
                         .editSpec()
@@ -236,7 +238,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testInvalidVersion() {
         assertThrows(InvalidResourceException.class, () -> {
             Kafka ka = new KafkaBuilder(this.ka)
@@ -298,7 +300,7 @@ public class ZookeeperClusterTest {
 
     // TODO test volume claim templates
 
-    @Test
+    @ParallelTest
     public void testPodNames() {
 
         for (int i = 0; i < replicas; i++) {
@@ -306,7 +308,7 @@ public class ZookeeperClusterTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testPvcNames() {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
@@ -325,13 +327,13 @@ public class ZookeeperClusterTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void withAffinity() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, ZookeeperCluster::fromCrd, this.getClass().getSimpleName() + ".withAffinity");
         resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
-    @Test
+    @ParallelTest
     public void withTolerations() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, ZookeeperCluster::fromCrd, this.getClass().getSimpleName() + ".withTolerations");
         resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
@@ -350,7 +352,7 @@ public class ZookeeperClusterTest {
         return zc.generateNodesSecret();
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         Secret secret = generateNodeSecret();
         assertThat(secret.getData().keySet(), is(set(
@@ -373,7 +375,7 @@ public class ZookeeperClusterTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testTemplate() {
         Map<String, String> ssLabels = TestUtils.map("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
@@ -493,7 +495,7 @@ public class ZookeeperClusterTest {
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testGracePeriod() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
@@ -513,7 +515,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
     }
 
-    @Test
+    @ParallelTest
     public void testDefaultGracePeriod() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
@@ -524,7 +526,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullSecrets() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -549,7 +551,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullSecretsFromCO() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -568,7 +570,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullSecretsFromBoth() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -593,7 +595,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testDefaultImagePullSecrets() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
@@ -604,7 +606,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testSecurityContext() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
@@ -627,7 +629,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
     }
 
-    @Test
+    @ParallelTest
     public void testDefaultSecurityContext() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
@@ -638,7 +640,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testPodDisruptionBudget() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
@@ -658,7 +660,7 @@ public class ZookeeperClusterTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
     }
 
-    @Test
+    @ParallelTest
     public void testDefaultPodDisruptionBudget() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
@@ -669,7 +671,7 @@ public class ZookeeperClusterTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullPolicy() {
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap());
@@ -683,7 +685,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
-    @Test
+    @ParallelTest
     public void testNetworkPolicyNewKubernetesVersions() {
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap());
@@ -765,7 +767,7 @@ public class ZookeeperClusterTest {
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(namespaceSelector).build()));
     }
 
-    @Test
+    @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithClaimDeletion() {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
@@ -794,7 +796,7 @@ public class ZookeeperClusterTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
@@ -823,7 +825,7 @@ public class ZookeeperClusterTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
@@ -868,7 +870,7 @@ public class ZookeeperClusterTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testGeneratePersistentVolumeClaimsWithTemplate() {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
@@ -904,7 +906,7 @@ public class ZookeeperClusterTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testGeneratePersistentVolumeClaimsEphemeral()    {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
@@ -925,7 +927,7 @@ public class ZookeeperClusterTest {
         assertThat(pvcs.size(), is(0));
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateSTSWithPersistentVolumeEphemeral()    {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
@@ -940,7 +942,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateSTSWithPersistentVolumeEphemeralWithSizeLimit()    {
         String sizeLimit = "1Gi";
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
@@ -956,7 +958,7 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
-    @Test
+    @ParallelTest
     public void testStorageReverting() {
         SingleVolumeStorage ephemeral = new EphemeralStorageBuilder().build();
         SingleVolumeStorage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
@@ -990,7 +992,7 @@ public class ZookeeperClusterTest {
         assertThat(zc.getWarningConditions().get(0).getReason(), is("ZooKeeperStorage"));
     }
 
-    @Test
+    @ParallelTest
     public void testStorageValidationAfterInitialDeployment() {
         assertThrows(InvalidResourceException.class, () -> {
             Storage oldStorage = new PersistentClaimStorageBuilder()
@@ -1009,7 +1011,7 @@ public class ZookeeperClusterTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testZookeeperContainerEnvVars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
@@ -1054,7 +1056,7 @@ public class ZookeeperClusterTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testZookeeperContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED;
@@ -1097,7 +1099,7 @@ public class ZookeeperClusterTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testZookeeperContainerSecurityContext() {
 
         SecurityContext securityContext = new SecurityContextBuilder()
@@ -1133,7 +1135,7 @@ public class ZookeeperClusterTest {
                 )));
     }
 
-    @Test
+    @ParallelTest
     public void testMetricsParsingInline() {
         Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
 
@@ -1153,7 +1155,7 @@ public class ZookeeperClusterTest {
         assertThat(zc.getMetricsConfigInCm(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -1177,7 +1179,7 @@ public class ZookeeperClusterTest {
         assertThat(zc.getMetricsConfig(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testMetricsParsingNoMetrics() {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout), VERSIONS);

@@ -10,7 +10,8 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +26,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ParallelSuite
 public class ListenersUtilsTest {
     private GenericKafkaListener oldPlain = new GenericKafkaListenerBuilder()
             .withName("plain")
@@ -286,14 +288,14 @@ public class ListenersUtilsTest {
     List<GenericKafkaListener> allListeners = asList(oldPlain, oldTls, oldExternal, newPlain, newTls, newRoute,
             newNodePort, newNodePort2, newNodePort3, newLoadBalancer, newLoadBalancer2, newIngress, newIngress2);
 
-    @Test
+    @ParallelTest
     public void testInternalListeners()    {
         assertThat(ListenersUtils.internalListeners(allListeners), hasSize(4));
         assertThat(ListenersUtils.internalListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
                 containsInAnyOrder("plain", "tls", "plain2", "tls2"));
     }
 
-    @Test
+    @ParallelTest
     public void testExternalListeners()    {
         assertThat(ListenersUtils.externalListeners(allListeners), hasSize(9));
         assertThat(ListenersUtils.externalListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
@@ -304,7 +306,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.hasExternalListener(internalListeners), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testLoadBalancerListeners()    {
         assertThat(ListenersUtils.loadBalancerListeners(allListeners), hasSize(2));
         assertThat(ListenersUtils.loadBalancerListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
@@ -315,7 +317,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.hasLoadBalancerListener(internalListeners), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testNodePortListeners()    {
         assertThat(ListenersUtils.nodePortListeners(allListeners), hasSize(3));
         assertThat(ListenersUtils.nodePortListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
@@ -326,7 +328,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.hasNodePortListener(internalListeners), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testIngressListeners()    {
         assertThat(ListenersUtils.ingressListeners(allListeners), hasSize(2));
         assertThat(ListenersUtils.ingressListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
@@ -337,7 +339,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.hasIngressListener(internalListeners), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testRouteListeners()    {
         assertThat(ListenersUtils.routeListeners(allListeners), hasSize(2));
         assertThat(ListenersUtils.routeListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
@@ -348,7 +350,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.hasRouteListener(internalListeners), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testAlternativeNames()  {
         assertThat(ListenersUtils.alternativeNames(simpleListeners), hasSize(0));
 
@@ -357,17 +359,17 @@ public class ListenersUtilsTest {
                 containsInAnyOrder("my-name-1", "my-name-2", "my-lb-1", "my-lb-2", "my-route-1", "my-route-2", "my-np-1", "my-np-2", "my-ing-1", "my-ing-2"));
     }
 
-    @Test
+    @ParallelTest
     public void testIdentifier()    {
         assertThat(ListenersUtils.identifier(oldPlain), is("plain-9092"));
     }
 
-    @Test
+    @ParallelTest
     public void testEnvVarIdentifier()    {
         assertThat(ListenersUtils.envVarIdentifier(oldPlain), is("PLAIN_9092"));
     }
 
-    @Test
+    @ParallelTest
     public void testBackwardsCompatiblePortName()    {
         assertThat(ListenersUtils.backwardsCompatiblePortName(oldPlain), is("tcp-clients"));
         assertThat(ListenersUtils.backwardsCompatiblePortName(oldTls), is("tcp-clientstls"));
@@ -377,7 +379,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.backwardsCompatiblePortName(newLoadBalancer), is("tcp-lb1"));
     }
 
-    @Test
+    @ParallelTest
     public void testBackwardsCompatibleServiceNames()    {
         String clusterName = "my-cluster";
 
@@ -390,7 +392,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.backwardsCompatibleBootstrapServiceName(clusterName, newNodePort), is(clusterName + "-kafka-np1-bootstrap"));
     }
 
-    @Test
+    @ParallelTest
     public void testBackwardsCompatibleBootstrapRouteOrIngressName()    {
         String clusterName = "my-cluster";
 
@@ -404,7 +406,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(clusterName, newRoute), is(clusterName + "-kafka-route-bootstrap"));
     }
 
-    @Test
+    @ParallelTest
     public void testBackwardsCompatibleBrokerServiceName()    {
         String clusterName = "my-cluster";
 
@@ -418,7 +420,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, newRoute), is(clusterName + "-kafka-route-1"));
     }
 
-    @Test
+    @ParallelTest
     public void testBootstrapNodePort() {
         assertThat(ListenersUtils.bootstrapNodePort(newNodePort), is(nullValue()));
         assertThat(ListenersUtils.bootstrapNodePort(newNodePort2), is(32189));
@@ -428,7 +430,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.bootstrapNodePort(newLoadBalancer), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testBrokerNodePort() {
         assertThat(ListenersUtils.brokerNodePort(newNodePort, 1), is(nullValue()));
         assertThat(ListenersUtils.brokerNodePort(newNodePort2, 0), is(32190));
@@ -440,7 +442,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerNodePort(newLoadBalancer, 1), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testBootstrapLoadBalancerIP() {
         assertThat(ListenersUtils.bootstrapLoadBalancerIP(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.bootstrapLoadBalancerIP(newLoadBalancer2), is("130.211.204.1"));
@@ -450,7 +452,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.bootstrapLoadBalancerIP(newNodePort3), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testBrokerLoadBalancerIP() {
         assertThat(ListenersUtils.brokerLoadBalancerIP(newLoadBalancer, 1), is(nullValue()));
         assertThat(ListenersUtils.brokerLoadBalancerIP(newLoadBalancer2, 0), is("130.211.204.1"));
@@ -462,7 +464,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerLoadBalancerIP(newNodePort3, 1), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testBootstrapLabelsAndAnnotations() {
         assertThat(ListenersUtils.bootstrapAnnotations(newLoadBalancer), is(emptyMap()));
         assertThat(ListenersUtils.bootstrapAnnotations(newLoadBalancer2), is(Collections.singletonMap("dns-anno", "dns-value")));
@@ -479,7 +481,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.bootstrapLabels(newNodePort3), is(emptyMap()));
     }
 
-    @Test
+    @ParallelTest
     public void testBrokerLabelsAndAnnotations() {
         assertThat(ListenersUtils.brokerAnnotations(newLoadBalancer, 1), is(emptyMap()));
         assertThat(ListenersUtils.brokerAnnotations(newLoadBalancer2, 0), is(Collections.singletonMap("dns-anno-1", "dns-value")));
@@ -500,7 +502,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerLabels(newNodePort3, 1), is(emptyMap()));
     }
 
-    @Test
+    @ParallelTest
     public void testBootstrapHost() {
         assertThat(ListenersUtils.bootstrapHost(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.bootstrapHost(oldExternal), is(nullValue()));
@@ -513,7 +515,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.bootstrapHost(newNodePort3), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testBrokerHost() {
         assertThat(ListenersUtils.brokerHost(newLoadBalancer, 1), is(nullValue()));
         assertThat(ListenersUtils.brokerHost(oldExternal, 0), is(nullValue()));
@@ -529,7 +531,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerHost(newNodePort3, 1), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testBrokerAdvertisedHost() {
         assertThat(ListenersUtils.brokerAdvertisedHost(newLoadBalancer, 1), is(nullValue()));
         assertThat(ListenersUtils.brokerAdvertisedHost(oldExternal, 0), is(nullValue()));
@@ -542,7 +544,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerAdvertisedHost(newNodePort3, 1), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testBrokerAdvertisedPort() {
         assertThat(ListenersUtils.brokerAdvertisedPort(newLoadBalancer, 1), is(nullValue()));
         assertThat(ListenersUtils.brokerAdvertisedPort(oldExternal, 0), is(nullValue()));
@@ -555,7 +557,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerAdvertisedPort(newNodePort3, 1), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testLoadBalancerSourceRanges() {
         assertThat(ListenersUtils.loadBalancerSourceRanges(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.loadBalancerSourceRanges(oldExternal), is(nullValue()));
@@ -567,7 +569,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.loadBalancerSourceRanges(newNodePort3), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testFinalizers() {
         assertThat(ListenersUtils.finalizers(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.finalizers(oldExternal), is(nullValue()));
@@ -579,7 +581,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.finalizers(newNodePort3), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testExternalTrafficPolicy() {
         assertThat(ListenersUtils.externalTrafficPolicy(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.externalTrafficPolicy(oldExternal), is(nullValue()));
@@ -592,7 +594,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.externalTrafficPolicy(newNodePort3), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testPreferredNodeAddressType() {
         assertThat(ListenersUtils.preferredNodeAddressType(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.preferredNodeAddressType(oldExternal), is(nullValue()));
@@ -605,7 +607,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.preferredNodeAddressType(newNodePort3), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testIngressClass() {
         assertThat(ListenersUtils.ingressClass(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.ingressClass(oldExternal), is(nullValue()));
@@ -617,7 +619,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.ingressClass(newNodePort3), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testServiceType() {
         assertThat(ListenersUtils.serviceType(oldPlain), is("ClusterIP"));
         assertThat(ListenersUtils.serviceType(newTls), is("ClusterIP"));

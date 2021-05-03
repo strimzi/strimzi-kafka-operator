@@ -36,8 +36,9 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +53,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
+@ParallelSuite
 public class KafkaExporterTest {
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -135,7 +137,7 @@ public class KafkaExporterTest {
         return expected;
     }
 
-    @Test
+    @ParallelTest
     public void testFromConfigMapDefaultConfig() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, null,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
@@ -148,7 +150,7 @@ public class KafkaExporterTest {
         assertThat(ke.saramaLoggingEnabled, is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testFromConfigMap() {
         assertThat(ke.namespace, is(namespace));
         assertThat(ke.cluster, is(cluster));
@@ -159,7 +161,7 @@ public class KafkaExporterTest {
         assertThat(ke.saramaLoggingEnabled, is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateDeployment() {
         Deployment dep = ke.generateDeployment(true, null, null);
 
@@ -214,12 +216,12 @@ public class KafkaExporterTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testEnvVars()   {
         assertThat(ke.getEnvVars(), is(getExpectedEnvVars()));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullPolicy() {
         Deployment dep = ke.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
@@ -228,7 +230,7 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
-    @Test
+    @ParallelTest
     public void testContainerTemplateEnvVars() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -264,7 +266,7 @@ public class KafkaExporterTest {
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvTwoValue));
     }
 
-    @Test
+    @ParallelTest
     public void testContainerTemplateEnvVarsWithKeyConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -300,7 +302,7 @@ public class KafkaExporterTest {
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(groupRegex));
     }
 
-    @Test
+    @ParallelTest
     public void testExporterNotDeployed() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
@@ -311,7 +313,7 @@ public class KafkaExporterTest {
         assertThat(ke.generateSecret(null, true), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateDeploymentWhenDisabled()   {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
@@ -321,7 +323,7 @@ public class KafkaExporterTest {
         assertThat(ke.generateDeployment(true, null, null), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testTemplate() {
         Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",

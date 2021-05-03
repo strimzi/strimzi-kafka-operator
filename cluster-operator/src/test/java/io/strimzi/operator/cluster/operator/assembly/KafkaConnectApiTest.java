@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -23,7 +24,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
@@ -113,7 +113,7 @@ public class KafkaConnectApiTest {
         vertx.close();
     }
 
-    @Test
+    @IsolatedTest
     @SuppressWarnings({"unchecked", "checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     public void test(VertxTestContext context) {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
@@ -258,7 +258,7 @@ public class KafkaConnectApiTest {
             }));
     }
 
-    @Test
+    @IsolatedTest
     public void testChangeLoggers(VertxTestContext context) throws InterruptedException {
         String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
                 "log4j.logger.org.apache.zookeeper=WARN\n" +

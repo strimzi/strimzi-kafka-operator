@@ -39,8 +39,9 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,6 +64,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 
+@ParallelSuite
 public class EntityOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -104,7 +106,7 @@ public class EntityOperatorTest {
 
     private final EntityOperator entityOperator = EntityOperator.fromCrd(resource, VERSIONS);
 
-    @Test
+    @ParallelTest
     public void testGenerateDeployment() {
 
         Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null);
@@ -136,14 +138,14 @@ public class EntityOperatorTest {
         assertThat(tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(tlsHealthTimeout)));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrd() {
         assertThat(entityOperator.namespace, is(namespace));
         assertThat(entityOperator.cluster, is(cluster));
         assertThat(entityOperator.getZookeeperConnect(), is(EntityOperator.defaultZookeeperConnect(cluster)));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrdNoTopicAndUserOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
         Kafka resource =
@@ -158,14 +160,14 @@ public class EntityOperatorTest {
         assertThat(entityOperator.getUserOperator(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void withAffinityAndTolerations() throws IOException {
         ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, EntityOperator::fromCrd, this.getClass().getSimpleName() + ".withAffinityAndTolerations");
         helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
         helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
-    @Test
+    @ParallelTest
     public void testTemplate() {
         Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
@@ -247,7 +249,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(assertToleration)));
     }
 
-    @Test
+    @ParallelTest
     public void testGracePeriod() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -270,7 +272,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testDefaultGracePeriod() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -288,7 +290,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullSecrets() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -314,7 +316,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullSecretsFromCo() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -339,7 +341,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullSecretsFromBoth() {
         LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
@@ -365,7 +367,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testDefaultImagePullSecrets() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -381,7 +383,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testSecurityContext() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -405,7 +407,7 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
     }
 
-    @Test
+    @ParallelTest
     public void testDefaultSecurityContext() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -427,7 +429,7 @@ public class EntityOperatorTest {
      * <li>Kafka.spec.kafka.image</li>
      * <li>image for default version of Kafka</li></ul>
      */
-    @Test
+    @ParallelTest
     public void testStunnelImage() {
         Kafka kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -488,7 +490,7 @@ public class EntityOperatorTest {
         assertThat(EntityOperator.fromCrd(kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullPolicy() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -516,7 +518,7 @@ public class EntityOperatorTest {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 
-    @Test
+    @ParallelTest
     public void testTopicOperatorContainerEnvVars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
@@ -563,7 +565,7 @@ public class EntityOperatorTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testTopicOperatorContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = EntityTopicOperator.ENV_VAR_RESOURCE_LABELS;
@@ -607,7 +609,7 @@ public class EntityOperatorTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testUserOperatorContainerEnvVars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
@@ -653,7 +655,7 @@ public class EntityOperatorTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testUserOperatorContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = EntityUserOperator.ENV_VAR_ZOOKEEPER_CONNECT;
@@ -696,7 +698,7 @@ public class EntityOperatorTest {
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testTlsSideCarContainerEnvVars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
@@ -742,7 +744,7 @@ public class EntityOperatorTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testTlsSidecarContainerEnvVarsConflict() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
@@ -777,7 +779,7 @@ public class EntityOperatorTest {
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testUserOperatorContainerSecurityContext() {
 
         SecurityContext securityContext = new SecurityContextBuilder()
@@ -814,7 +816,7 @@ public class EntityOperatorTest {
                 )));
     }
 
-    @Test
+    @ParallelTest
     public void testTopicOperatorContainerSecurityContext() {
 
         SecurityContext securityContext = new SecurityContextBuilder()
@@ -851,7 +853,7 @@ public class EntityOperatorTest {
                 )));
     }
 
-    @Test
+    @ParallelTest
     public void testTlsSidecarContainerSecurityContext() {
 
         SecurityContext securityContext = new SecurityContextBuilder()
@@ -888,7 +890,7 @@ public class EntityOperatorTest {
                 )));
     }
 
-    @Test
+    @ParallelTest
     public void testRole() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -922,7 +924,7 @@ public class EntityOperatorTest {
         assertThat(role.getRules(), is(rules));
     }
 
-    @Test
+    @ParallelTest
     public void testRoleInDifferentNamespace() {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()

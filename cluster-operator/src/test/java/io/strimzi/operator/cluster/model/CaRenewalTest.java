@@ -8,8 +8,9 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.Subject;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.junit5.VertxExtension;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
@@ -23,9 +24,10 @@ import java.util.function.Function;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ParallelSuite
 @ExtendWith(VertxExtension.class)
 public class CaRenewalTest {
-    @Test
+    @ParallelTest
     public void renewalOfStatefulSetCertificatesWithNullSecret() throws IOException {
         Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
@@ -82,7 +84,7 @@ public class CaRenewalTest {
         assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
     }
 
-    @Test
+    @ParallelTest
     public void renewalOfStatefulSetCertificatesWithCaRenewal() throws IOException {
         Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
@@ -157,7 +159,7 @@ public class CaRenewalTest {
         assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
     }
 
-    @Test
+    @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalInWindow() throws IOException {
         Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
@@ -242,7 +244,7 @@ public class CaRenewalTest {
         assertThat(newCerts.get("pod2").storePassword(), is("new-password2"));
     }
 
-    @Test
+    @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalOutsideWindow() throws IOException {
         Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);

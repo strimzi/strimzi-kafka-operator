@@ -17,7 +17,8 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ParallelSuite
 public class AbstractModelTest {
 
     // Implement AbstractModel to test the abstract class
@@ -54,7 +56,7 @@ public class AbstractModelTest {
         return result;
     }
 
-    @Test
+    @ParallelTest
     public void testJvmMemoryOptionsExplicit() {
         Map<String, String> env = getStringStringMap("4", "4",
                 0.5, 4_000_000_000L, null);
@@ -78,7 +80,7 @@ public class AbstractModelTest {
         return envVars.stream().collect(Collectors.toMap(e -> e.getName(), e -> e.getValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testJvmMemoryOptionsXmsOnly() {
         Map<String, String> env = getStringStringMap(null, "4",
                 0.5, 5_000_000_000L, null);
@@ -87,7 +89,7 @@ public class AbstractModelTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testJvmMemoryOptionsXmxOnly() {
         Map<String, String> env = getStringStringMap("4", null,
                 0.5, 5_000_000_000L, null);
@@ -97,7 +99,7 @@ public class AbstractModelTest {
     }
 
 
-    @Test
+    @ParallelTest
     public void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
         Map<String, String> env = getStringStringMap(null, null,
                 0.5, 5_000_000_000L, null);
@@ -111,7 +113,7 @@ public class AbstractModelTest {
                 .addToRequests("memory", new Quantity("16000000000")).build();
     }
 
-    @Test
+    @ParallelTest
     public void testJvmMemoryOptionsDefaultWithMemoryLimit() {
         Map<String, String> env = getStringStringMap(null, "4",
                 0.5, 5_000_000_000L, getResourceRequest());
@@ -120,7 +122,7 @@ public class AbstractModelTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("5000000000"));
     }
 
-    @Test
+    @ParallelTest
     public void testJvmMemoryOptionsMemoryRequest() {
         Map<String, String> env = getStringStringMap(null, null,
                 0.7, 10_000_000_000L, getResourceRequest());
@@ -129,7 +131,7 @@ public class AbstractModelTest {
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));
     }
 
-    @Test
+    @ParallelTest
     public void testJvmPerformanceOptions() {
         JvmOptions opts = TestUtils.fromJson("{}", JvmOptions.class);
 
@@ -166,7 +168,7 @@ public class AbstractModelTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testOwnerReference() {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -187,7 +189,7 @@ public class AbstractModelTest {
         assertThat(ref.getUid(), is(kafka.getMetadata().getUid()));
     }
 
-    @Test
+    @ParallelTest
     public void testDetermineImagePullPolicy()  {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()

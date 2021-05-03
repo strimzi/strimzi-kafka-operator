@@ -22,7 +22,8 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ParallelSuite
 public class EntityUserOperatorTest {
 
     private final String namespace = "test";
@@ -139,12 +141,12 @@ public class EntityUserOperatorTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testEnvVars()   {
         checkEnvVars(getExpectedEnvVars(), entityUserOperator.getEnvVars());
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrd() {
         assertThat(entityUserOperator.namespace, is(namespace));
         assertThat(entityUserOperator.cluster, is(cluster));
@@ -169,7 +171,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.getSecretPrefix(), is(secretPrefix));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrdDefault() {
         EntityUserOperatorSpec entityUserOperatorSpec = new EntityUserOperatorSpecBuilder()
                 .build();
@@ -198,7 +200,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.getSecretPrefix(), is(EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrdNoEntityOperator() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
@@ -206,7 +208,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator, is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrdNoUserOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
         Kafka resource =
@@ -219,7 +221,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator, is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testGetContainers() {
         List<Container> containers = entityUserOperator.getContainers(null);
         assertThat(containers.size(), is(1));
@@ -243,7 +245,7 @@ public class EntityUserOperatorTest {
                 EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT)));
     }
 
-    @Test
+    @ParallelTest
     public void testFromCrdCaValidityAndRenewal() {
         EntityUserOperatorSpec entityUserOperatorSpec = new EntityUserOperatorSpecBuilder()
                 .build();
@@ -276,7 +278,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator2.getClientsCaRenewalDays(), is(Long.valueOf(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS)));
     }
 
-    @Test
+    @ParallelTest
     public void testEntityUserOperatorEnvVarValidityAndRenewal() {
         int validity = 100;
         int renewal = 42;
@@ -301,7 +303,7 @@ public class EntityUserOperatorTest {
         assertThat(Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().get().getValue()), is(renewal));
     }
 
-    @Test
+    @ParallelTest
     public void testRoleBindingInOtherNamespace()   {
         RoleBinding binding = entityUserOperator.generateRoleBindingForRole(namespace, uoWatchedNamespace);
 
@@ -313,7 +315,7 @@ public class EntityUserOperatorTest {
         assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
     }
 
-    @Test
+    @ParallelTest
     public void testRoleBindingInTheSameNamespace() {
         RoleBinding binding = entityUserOperator.generateRoleBindingForRole(namespace, namespace);
 

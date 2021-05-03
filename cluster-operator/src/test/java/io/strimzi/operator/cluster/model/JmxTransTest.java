@@ -34,8 +34,9 @@ import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.json.JsonObject;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +54,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
 
+@ParallelSuite
 public class JmxTransTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
@@ -93,7 +95,7 @@ public class JmxTransTest {
 
     private final JmxTrans jmxTrans = JmxTrans.fromCrd(kafkaAssembly, VERSIONS);
 
-    @Test
+    @ParallelTest
     public void testOutputDefinitionWriterDeserialization() {
         JmxTransOutputWriter outputWriter = new JmxTransOutputWriter();
 
@@ -114,7 +116,7 @@ public class JmxTransTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testServersDeserialization() {
         JmxTransServer server = new JmxTransServer();
 
@@ -133,7 +135,7 @@ public class JmxTransTest {
         assertThat(targetJson.getJsonArray("queries").getList().size(), is(0));
     }
 
-    @Test
+    @ParallelTest
     public void testQueriesDeserialization() {
         JmxTransOutputWriter outputWriter = new JmxTransOutputWriter();
 
@@ -165,7 +167,7 @@ public class JmxTransTest {
         assertThat(outputWriterJson.getJsonArray("typeNames").getList().get(0), is("SingleType"));
     }
 
-    @Test
+    @ParallelTest
     public void testConfigMapOnScaleUp() throws JsonProcessingException  {
         ConfigMap originalCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 1);
         ConfigMap scaledCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 2);
@@ -175,7 +177,7 @@ public class JmxTransTest {
                 is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testConfigMapOnScaleDown() throws JsonProcessingException  {
         ConfigMap originalCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 2);
         ConfigMap scaledCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 1);
@@ -185,7 +187,7 @@ public class JmxTransTest {
                 is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testTemplate() {
         Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
@@ -261,7 +263,7 @@ public class JmxTransTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testContainerEnvVars() {
 
         ContainerEnvVar envVar1 = new ContainerEnvVar();
@@ -304,7 +306,7 @@ public class JmxTransTest {
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = JmxTrans.ENV_VAR_JMXTRANS_LOGGING_LEVEL;
@@ -336,7 +338,7 @@ public class JmxTransTest {
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testContainerSecurityContext() {
 
         SecurityContext securityContext = new SecurityContextBuilder()

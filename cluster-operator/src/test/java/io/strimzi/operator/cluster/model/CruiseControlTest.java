@@ -51,8 +51,9 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,6 +90,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
         "checkstyle:ClassDataAbstractionCoupling",
         "checkstyle:ClassFanOutComplexity"
 })
+@ParallelSuite
 public class CruiseControlTest {
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -188,7 +190,7 @@ public class CruiseControlTest {
         return ccEnvVars.stream().filter(var -> envVar.equals(var.getName())).map(EnvVar::getValue).findFirst().get();
     }
 
-    @Test
+    @ParallelTest
     public void testBrokerCapacities() {
         // Test user defined capacities
         BrokerCapacity userDefinedBrokerCapacity = new BrokerCapacity();
@@ -245,14 +247,14 @@ public class CruiseControlTest {
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_BROKER_DISK_MIB_CAPACITY), is(Double.toString(generatedCapacity.getDiskMiB())));
     }
 
-    @Test
+    @ParallelTest
     public void testFromConfigMap() {
         assertThat(cc.namespace, is(namespace));
         assertThat(cc.cluster, is(cluster));
         assertThat(cc.getImage(), is(ccImage));
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateDeployment() {
         Deployment dep = cc.generateDeployment(true, null, null, null);
 
@@ -340,12 +342,12 @@ public class CruiseControlTest {
         assertThat(volumeMount.getMountPath(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
     }
 
-    @Test
+    @ParallelTest
     public void testEnvVars()   {
         assertThat(cc.getEnvVars(), is(getExpectedEnvVars()));
     }
 
-    @Test
+    @ParallelTest
     public void testImagePullPolicy() {
         Deployment dep = cc.generateDeployment(true, null, ImagePullPolicy.ALWAYS, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
@@ -358,7 +360,7 @@ public class CruiseControlTest {
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
-    @Test
+    @ParallelTest
     public void testContainerTemplateEnvVars() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -392,7 +394,7 @@ public class CruiseControlTest {
         assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, testEnvTwoValue, null)));
     }
 
-    @Test
+    @ParallelTest
     public void testContainerTemplateEnvVarsWithKeyConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
@@ -426,7 +428,7 @@ public class CruiseControlTest {
         assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, testEnvTwoValue, null)));
     }
 
-    @Test
+    @ParallelTest
     public void testCruiseControlNotDeployed() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
@@ -442,7 +444,7 @@ public class CruiseControlTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateService()   {
         Service svc = cc.generateService();
 
@@ -457,7 +459,7 @@ public class CruiseControlTest {
         TestUtils.checkOwnerReference(cc.createOwnerReference(), svc);
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateServiceWhenDisabled()   {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
@@ -467,7 +469,7 @@ public class CruiseControlTest {
         assertThrows(NullPointerException.class, () -> cc.generateService());
     }
 
-    @Test
+    @ParallelTest
     public void testTemplate() {
         Map<String, String> depLabels = TestUtils.map("l1", "v1", "l2", "v2");
         Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
@@ -566,7 +568,7 @@ public class CruiseControlTest {
         assertThat(svc.getMetadata().getAnnotations(),  is(svcAnots));
     }
 
-    @Test
+    @ParallelTest
     public void testPodDisruptionBudget() {
         int maxUnavailable = 2;
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
@@ -597,7 +599,7 @@ public class CruiseControlTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(maxUnavailable)));
     }
 
-    @Test
+    @ParallelTest
     public void testResources() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
@@ -631,7 +633,7 @@ public class CruiseControlTest {
         assertThat(ccContainer.getResources().getRequests(), is(requests));
     }
 
-    @Test
+    @ParallelTest
     public void testProbeConfiguration()   {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
@@ -668,7 +670,7 @@ public class CruiseControlTest {
         assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
     }
 
-    @Test
+    @ParallelTest
     public void testSecurityContext() {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
@@ -699,13 +701,13 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
     }
 
-    @Test
+    @ParallelTest
     public void testDefaultSecurityContext() {
         Deployment dep = cc.generateDeployment(true, null, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testCruiseControlContainerSecurityContext() {
         SecurityContext securityContext = new SecurityContextBuilder()
                 .withPrivileged(false)
@@ -748,7 +750,7 @@ public class CruiseControlTest {
                 )));
     }
 
-    @Test
+    @ParallelTest
     public void testTlsSidecarContainerSecurityContext() {
         SecurityContext securityContext = new SecurityContextBuilder()
                 .withPrivileged(false)
@@ -791,7 +793,7 @@ public class CruiseControlTest {
                 )));
     }
 
-    @Test
+    @ParallelTest
     public void testRestApiPortNetworkPolicy() {
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
@@ -810,7 +812,7 @@ public class CruiseControlTest {
         assertThat(rules.contains(clusterOperatorPeer), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testRestApiPortNetworkPolicyInTheSameNamespace() {
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
@@ -828,7 +830,7 @@ public class CruiseControlTest {
         assertThat(rules.contains(clusterOperatorPeer), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testRestApiPortNetworkPolicyWithNamespaceLabels() {
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
@@ -849,7 +851,7 @@ public class CruiseControlTest {
         assertThat(rules.contains(clusterOperatorPeer), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testGoalsCheck() {
 
         String customGoals = "com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal," +
@@ -883,7 +885,7 @@ public class CruiseControlTest {
         assertThat(anomalyDetectionGoals, is(customGoals));
     }
 
-    @Test
+    @ParallelTest
     public void testMetricsParsingInline() {
         Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
 
@@ -903,7 +905,7 @@ public class CruiseControlTest {
         assertThat(cc.getMetricsConfigInCm(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -927,7 +929,7 @@ public class CruiseControlTest {
         assertThat(cc.getMetricsConfig(), is(nullValue()));
     }
 
-    @Test
+    @ParallelTest
     public void testMetricsParsingNoMetrics() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout))

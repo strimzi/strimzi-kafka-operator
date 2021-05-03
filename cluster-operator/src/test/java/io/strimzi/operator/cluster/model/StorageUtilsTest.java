@@ -9,13 +9,15 @@ import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.test.annotations.ParallelTest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ParallelSuite
 public class StorageUtilsTest {
-    @Test
+    @ParallelTest
     public void testSizeConversion() {
         assertThat(StorageUtils.parseMemory("100Gi"), is(100L * 1_024L * 1_024L * 1_024L));
         assertThat(StorageUtils.parseMemory("100G"), is(100L * 1_000L * 1_000L * 1_000L));
@@ -35,7 +37,7 @@ public class StorageUtilsTest {
         assertThat(StorageUtils.parseMemory("1000G") == StorageUtils.parseMemory("1T"), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testQuantityConversion()    {
         assertThat(StorageUtils.parseMemory(new Quantity("1000G")), is(1_000L * 1_000L * 1_000L * 1_000L));
         assertThat(StorageUtils.parseMemory(new Quantity("100Gi")), is(100L * 1_024L * 1_024L * 1_024L));
@@ -44,7 +46,7 @@ public class StorageUtilsTest {
         assertThat(StorageUtils.parseMemory(size), is(100L * 1_024L * 1_024L * 1_024L));
     }
 
-    @Test
+    @ParallelTest
     public void testEphemeralStorage() {
         Storage notEphemeral = new PersistentClaimStorageBuilder().build();
         Storage isEphemeral = new EphemeralStorageBuilder().build();
