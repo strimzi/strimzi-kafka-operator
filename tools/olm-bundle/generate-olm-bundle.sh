@@ -3,8 +3,11 @@
 # Generates OLM bundle using existing CRDs
 #
 #
+source ../multi-platform-support.sh
+
 PACKAGE_NAME=strimzi-cluster-operator
 VERSION=$1
+
 CHANNELS=latest
 PREVIOUS_BUNDLE_VERSION=$(curl -s https://raw.githubusercontent.com/operator-framework/community-operators/master/community-operators/strimzi-kafka-operator/strimzi-kafka-operator.package.yaml | yq e '.channels[0].currentCSV' -)
 
@@ -17,16 +20,34 @@ CSV_FILE=${MANIFESTS}/${PACKAGE_NAME}.clusterserviceversion.yaml
 
 if [ -z "$1" ]; 
 then
-    echo "No <BUNDLE_VERSION> argument supplied"
-    echo "Try running:"
-    echo "   ./generate-olm-bundle.sh <BUNDLE_VERSION>"
-    echo "e.g:"
-    echo "   ./generate-olm-bundle.sh 2.3.0"
-    exit 1
+  echo "No <BUNDLE_VERSION> argument supplied"
+  echo "Try running:"
+  echo "   ./generate-olm-bundle.sh <BUNDLE_VERSION>"
+  echo "e.g:"
+  echo "   ./generate-olm-bundle.sh 2.3.0"
+  exit 1
+fi
+
+# In order for the operator-sdk to correctly generate a CSV file the CSV_TEMPLATE file
+# must have the format ${CSV_TEMPLATE_DIR}/bases/${PACKAGE_NAME}.clusterserviceversion.yaml
+if [ ! -f $CSV_TEMPLATE ]; 
+then
+  echo "ERROR: CSV_TEMPLATE does not follow the format ${CSV_TEMPLATE_DIR}/bases/${PACKAGE_NAME}.clusterserviceversion.yaml"
+  exit 1
+fi
+
+# In order for the operator-sdk to correctly generate a CSV file the CSV_TEMPLATE file
+# metadata.name must of be the format "${PACKAGE_NAME}.v"
+CSV_TEMPLATE_METADATA_NAME=$(yq ea '.metadata.name' ${CSV_TEMPLATE} )
+if [[ $CSV_TEMPLATE_METADATA_NAME != ${PACKAGE_NAME}.v* ]];
+then
+  echo "ERROR: CSV_TEMPLATE metadata.name is not of the format ${PACKAGE_NAME}.v"
+  exit 1 
 fi
 
 # Generates bundle from existing CRDs
-generate_olm_bundle() {
+generate_olm_bundle() { 
+  rm -rf .bundle
   # To generate a bundle from existing CRDs using the operator-sdk we must:
   #   1.) Specify package name "--package" and bundle version "--version"
   #   2.) Set `--input-dir` to the directory containing CRDs
@@ -54,7 +75,7 @@ generate_olm_bundle() {
   yq ea -i ".spec.replaces = \"${PREVIOUS_BUNDLE_VERSION}\" | .spec.replaces style=\"\"" ${CSV_FILE}
   
   # Copy Strimzi client roles
-  cp ${CRD_DIR}/033-ClusterRole-strimzi-kafka-client.yaml ${MANIFESTS}/strimzi-kafka-client_rbac.authorization.k8s.io_v1_clusterrole.yaml
+  $CP ${CRD_DIR}/033-ClusterRole-strimzi-kafka-client.yaml ${MANIFESTS}/strimzi-kafka-client_rbac.authorization.k8s.io_v1_clusterrole.yaml
   
   generate_related_images
   generate_image_digests
@@ -112,7 +133,7 @@ generate_image_digests() {
     digest="$(curl -s -H "Accept: application/vnd.docker.distribution.manifest.v2+json" https://${registry}/v2/${org}/${repo}/manifests/${tag} | sha256sum | head -c 64)";
     
     image_digest="${image}@sha256:${digest}"
-    sed -i "s|${image_tag}|${image_digest}|g" ${CSV_FILE};
+    $SED -i "s|${image_tag}|${image_digest}|g" ${CSV_FILE};
   done
 }
 
