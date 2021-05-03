@@ -114,18 +114,6 @@ public class ZookeeperClusterTest {
 
     private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
 
-    @Deprecated
-    @ParallelTest
-    public void testMetricsConfigMapDeprecatedMetrics() {
-        Kafka ka = ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, null, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson, null, null);
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
-
-        ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLogging(null, null));
-        checkMetricsConfigMap(metricsCm);
-        checkOwnerReference(zc.createOwnerReference(), metricsCm);
-    }
-
-
     @ParallelTest
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLogging(metricsCM, null));
@@ -1136,26 +1124,6 @@ public class ZookeeperClusterTest {
     }
 
     @ParallelTest
-    public void testMetricsParsingInline() {
-        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout))
-                .editSpec()
-                    .editZookeeper()
-                        .withMetrics(dummyMetrics)
-                    .endZookeeper()
-                .endSpec()
-                .build();
-
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
-
-        assertThat(zc.isMetricsEnabled(), is(true));
-        assertThat(zc.getMetricsConfig(), is(dummyMetrics.entrySet()));
-        assertThat(zc.getMetricsConfigInCm(), is(nullValue()));
-    }
-
-    @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -1176,7 +1144,6 @@ public class ZookeeperClusterTest {
 
         assertThat(zc.isMetricsEnabled(), is(true));
         assertThat(zc.getMetricsConfigInCm(), is(metrics));
-        assertThat(zc.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1186,6 +1153,5 @@ public class ZookeeperClusterTest {
 
         assertThat(zc.isMetricsEnabled(), is(false));
         assertThat(zc.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(zc.getMetricsConfig(), is(nullValue()));
     }
 }

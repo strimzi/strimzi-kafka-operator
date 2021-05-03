@@ -886,26 +886,6 @@ public class CruiseControlTest {
     }
 
     @ParallelTest
-    public void testMetricsParsingInline() {
-        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout))
-                .editSpec()
-                    .withNewCruiseControl()
-                        .withMetrics(dummyMetrics)
-                    .endCruiseControl()
-                .endSpec()
-                .build();
-
-        CruiseControl cc = CruiseControl.fromCrd(kafkaAssembly, VERSIONS);
-
-        assertThat(cc.isMetricsEnabled(), is(true));
-        assertThat(cc.getMetricsConfig(), is(dummyMetrics.entrySet()));
-        assertThat(cc.getMetricsConfigInCm(), is(nullValue()));
-    }
-
-    @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -926,7 +906,6 @@ public class CruiseControlTest {
 
         assertThat(cc.isMetricsEnabled(), is(true));
         assertThat(cc.getMetricsConfigInCm(), is(metrics));
-        assertThat(cc.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -943,7 +922,6 @@ public class CruiseControlTest {
 
         assertThat(cc.isMetricsEnabled(), is(false));
         assertThat(cc.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(cc.getMetricsConfig(), is(nullValue()));
     }
 
     @AfterAll

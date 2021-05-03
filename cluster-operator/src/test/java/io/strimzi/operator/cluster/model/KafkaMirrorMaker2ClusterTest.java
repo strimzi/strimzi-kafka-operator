@@ -141,28 +141,6 @@ public class KafkaMirrorMaker2ClusterTest {
         kmm2.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
     }
 
-    @Deprecated
-    @ParallelTest
-    public void testMetricsConfigMapDeprecatedMetrics() {
-        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
-                .withNewSpec()
-                    .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-                    .withMetricsConfig(null)
-                    .withImage(image)
-                    .withReplicas(replicas)
-                    .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                    .withLivenessProbe(new Probe(healthDelay, healthTimeout))
-                    .withConnectCluster(targetClusterAlias)
-                    .withClusters(targetCluster)
-                .endSpec()
-                .build();
-
-        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(resource, VERSIONS);
-
-        ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null));
-        checkMetricsConfigMap(metricsCm);
-    }
-
     @ParallelTest
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = kmm2.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
@@ -1577,23 +1555,6 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
     }
-    
-    @ParallelTest
-    public void testMetricsParsingInline() {
-        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
-
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(this.resource)
-                .editSpec()
-                    .withMetrics(dummyMetrics)
-                .endSpec()
-                .build();
-
-        KafkaMirrorMaker2Cluster kmm = KafkaMirrorMaker2Cluster.fromCrd(kafkaMirrorMaker2, VERSIONS);
-
-        assertThat(kmm.isMetricsEnabled(), is(true));
-        assertThat(kmm.getMetricsConfig(), is(dummyMetrics.entrySet()));
-        assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
-    }
 
     @ParallelTest
     public void testMetricsParsingFromConfigMap() {
@@ -1613,7 +1574,6 @@ public class KafkaMirrorMaker2ClusterTest {
 
         assertThat(kmm.isMetricsEnabled(), is(true));
         assertThat(kmm.getMetricsConfigInCm(), is(metrics));
-        assertThat(kmm.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1622,6 +1582,5 @@ public class KafkaMirrorMaker2ClusterTest {
 
         assertThat(kmm.isMetricsEnabled(), is(false));
         assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(kmm.getMetricsConfig(), is(nullValue()));
     }
 }

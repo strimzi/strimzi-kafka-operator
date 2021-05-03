@@ -57,7 +57,6 @@ import java.util.Map;
 import static io.strimzi.test.TestUtils.LINE_SEPARATOR;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -123,26 +122,6 @@ public class KafkaMirrorMakerClusterTest {
             .build();
 
     private final KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resourceWithMetrics, VERSIONS);
-
-    @Deprecated
-    @ParallelTest
-    public void testMetricsConfigMapDeprecatedMetrics() {
-        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))
-                .withNewSpec()
-                .withImage(image)
-                .withReplicas(replicas)
-                .withProducer(producer)
-                .withConsumer(consumer)
-                .withWhitelist(whitelist)
-                .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-                .withMetricsConfig(null)
-                .endSpec()
-                .build();
-
-        KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
-        ConfigMap metricsCm = mm.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null));
-        checkMetricsConfigMap(metricsCm);
-    }
 
     @ParallelTest
     public void testMetricsConfigMap() {
@@ -1464,23 +1443,6 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     @ParallelTest
-    public void testMetricsParsingInline() {
-        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
-
-        KafkaMirrorMaker mirrorMaker = new KafkaMirrorMakerBuilder(this.resource)
-                .editSpec()
-                    .withMetrics(dummyMetrics)
-                .endSpec()
-                .build();
-
-        KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(mirrorMaker, VERSIONS);
-
-        assertThat(kmm.isMetricsEnabled(), is(true));
-        assertThat(kmm.getMetricsConfig(), is(dummyMetrics.entrySet()));
-        assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
-    }
-
-    @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -1498,7 +1460,6 @@ public class KafkaMirrorMakerClusterTest {
 
         assertThat(kmm.isMetricsEnabled(), is(true));
         assertThat(kmm.getMetricsConfigInCm(), is(metrics));
-        assertThat(kmm.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1507,6 +1468,5 @@ public class KafkaMirrorMakerClusterTest {
 
         assertThat(kmm.isMetricsEnabled(), is(false));
         assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(kmm.getMetricsConfig(), is(nullValue()));
     }
 }

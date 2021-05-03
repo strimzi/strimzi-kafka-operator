@@ -137,26 +137,6 @@ public class KafkaConnectClusterTest {
 
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resourceWithMetrics, VERSIONS);
 
-    @Deprecated
-    @ParallelTest
-    public void testMetricsConfigMapDeprecatedMetrics() {
-        KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, cluster))
-                .withNewSpec()
-                    .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
-                    .withMetricsConfig(null)
-                    .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
-                    .withImage(image)
-                    .withReplicas(replicas)
-                    .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                    .withLivenessProbe(new Probe(healthDelay, healthTimeout))
-                    .withBootstrapServers(bootstrapServers)
-                .endSpec()
-                .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(resource, VERSIONS);
-        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null));
-        checkMetricsConfigMap(metricsCm);
-    }
-
     @ParallelTest
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
@@ -1619,23 +1599,6 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
-    public void testMetricsParsingInline() {
-        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
-
-        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
-                .editSpec()
-                    .withMetrics(dummyMetrics)
-                .endSpec()
-                .build();
-
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(kafkaConnect, VERSIONS);
-
-        assertThat(kc.isMetricsEnabled(), is(true));
-        assertThat(kc.getMetricsConfig(), is(dummyMetrics.entrySet()));
-        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
-    }
-
-    @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -1653,7 +1616,6 @@ public class KafkaConnectClusterTest {
 
         assertThat(kc.isMetricsEnabled(), is(true));
         assertThat(kc.getMetricsConfigInCm(), is(metrics));
-        assertThat(kc.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1662,6 +1624,5 @@ public class KafkaConnectClusterTest {
 
         assertThat(kc.isMetricsEnabled(), is(false));
         assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(kc.getMetricsConfig(), is(nullValue()));
     }
 }

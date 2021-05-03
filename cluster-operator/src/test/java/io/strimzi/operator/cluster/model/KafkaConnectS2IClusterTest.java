@@ -145,16 +145,6 @@ public class KafkaConnectS2IClusterTest {
     private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resourceWithMetrics, VERSIONS);
 
     @ParallelTest
-    @Deprecated
-    public void testMetricsConfigMapDeprecatedMetrics() {
-        KafkaConnectS2I resource = ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, null, metricsCmJson, configurationJson, insecureSourceRepo, bootstrapServers, buildResourceRequirements);
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(resource, VERSIONS);
-        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null));
-        checkMetricsConfigMap(metricsCm);
-    }
-
-    @ParallelTest
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
@@ -1473,23 +1463,6 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @ParallelTest
-    public void testMetricsParsingInline() {
-        Map<String, Object> dummyMetrics = singletonMap("dummy", "metrics");
-
-        KafkaConnectS2I kafkaConnect = new KafkaConnectS2IBuilder(this.resource)
-                .editSpec()
-                    .withMetrics(dummyMetrics)
-                .endSpec()
-                .build();
-
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(kafkaConnect, VERSIONS);
-
-        assertThat(kc.isMetricsEnabled(), is(true));
-        assertThat(kc.getMetricsConfig(), is(dummyMetrics.entrySet()));
-        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
-    }
-
-    @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -1507,7 +1480,6 @@ public class KafkaConnectS2IClusterTest {
 
         assertThat(kc.isMetricsEnabled(), is(true));
         assertThat(kc.getMetricsConfigInCm(), is(metrics));
-        assertThat(kc.getMetricsConfig(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1516,6 +1488,5 @@ public class KafkaConnectS2IClusterTest {
 
         assertThat(kc.isMetricsEnabled(), is(false));
         assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
-        assertThat(kc.getMetricsConfig(), is(nullValue()));
     }
 }
