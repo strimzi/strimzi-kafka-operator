@@ -59,7 +59,7 @@ authentication:
 .TLS
 Accessing the OAuth server using the HTTPS protocol does not require any additional configuration as long as the TLS certificates used by it are signed by a trusted certification authority and its hostname is listed in the certificate.
 
-If your OAuth server is using certificates which are self-signed or are signed by a certification authority which is not trusted, you can configure a list of trusted certificates in the custom resoruce.
+If your OAuth server is using certificates which are self-signed or are signed by a certification authority which is not trusted, you can configure a list of trusted certificates in the custom resource.
 The `tlsTrustedCertificates` property contains a list of secrets with key names under which the certificates are stored.
 The certificates must be stored in X509 format.
 
