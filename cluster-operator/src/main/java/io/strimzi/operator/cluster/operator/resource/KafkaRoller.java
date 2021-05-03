@@ -460,7 +460,7 @@ public class KafkaRoller {
             throw new FatalProblem("Pod is unschedulable");
         }
         // Unless the annotation is present, check the pod is at least ready.
-        boolean needsRestart = reasonToRestartPod != null && !reasonToRestartPod.isEmpty();
+        boolean needsRestart = !reasonToRestartPod.isEmpty();
         KafkaBrokerConfigurationDiff diff = null;
         KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
         boolean needsReconfig = false;

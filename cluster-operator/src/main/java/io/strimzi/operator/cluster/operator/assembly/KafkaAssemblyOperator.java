@@ -789,7 +789,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     log.debug("{}: Rolling Kafka pod {} due to manual rolling update annotation on a pod", reconciliation, pod.getMetadata().getName());
                                     return singletonList("manual rolling update annotation on a pod");
                                 } else {
-                                    return null;
+                                    return emptyList();
                                 }
                             });
                         } else {
@@ -2580,7 +2580,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (pod != null && pod.getMetadata().getName().endsWith("-" + podToRoll))    {
                         return podNeedsRestart.apply(pod);
                     } else {
-                        return null;
+                        return emptyList();
                     }
                 }, false)
                         .compose(ignore -> maybeRollKafkaInSequence(sts, podNeedsRestart, nextPod + 1, lastPod));
@@ -3405,7 +3405,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (pod == null)    {
                 // When the Pod doesn't exist, it doesn't need to be restarted.
                 // It will be created with new configuration.
-                return null;
+                return emptyList();
             }
 
             boolean isPodUpToDate = isPodUpToDate(sts, pod);
