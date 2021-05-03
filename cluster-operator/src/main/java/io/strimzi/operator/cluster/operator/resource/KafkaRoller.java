@@ -544,9 +544,15 @@ public class KafkaRoller {
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
         KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
         await(Util.kafkaFutureToVertxFuture(vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
-            error -> new ForceableProblem("Error doing dynamic update", error));
+            error -> {
+                log.error("Error doing dynamic config update", error);
+                return new ForceableProblem("Error doing dynamic update", error);
+            });
         await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
-            error -> new ForceableProblem("Error performing dynamic logging update for pod " + podId, error));
+            error -> {
+                log.error("Error performing dynamic logging update for pod {}", podId, error);
+                return new ForceableProblem("Error performing dynamic logging update for pod " + podId, error);
+            });
 
         log.info("{}: Dynamic reconfiguration for broker {} was successful.", reconciliation, podId);
     }
