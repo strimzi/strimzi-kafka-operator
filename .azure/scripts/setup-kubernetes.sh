@@ -83,13 +83,13 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     minikube addons enable default-storageclass
 
     # Add Docker hub credentials to Minikube
-    # template = username:password encoded in Base64
 
     set +ex
 
     if [ "$COPY_DOCKER_LOGIN" = "true" ]
     then
       scp -i $(minikube ssh-key) $HOME/.docker/config.json docker@$(minikube ip):/var/lib/kubelet/config.json
+      docker exec "minikube" bash -c "sudo systemctl restart kubelet"
     fi
 
     set -ex
