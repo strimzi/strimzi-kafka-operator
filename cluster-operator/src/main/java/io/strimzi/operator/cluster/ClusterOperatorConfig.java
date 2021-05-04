@@ -43,6 +43,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_OPERATOR_NAMESPACE = "STRIMZI_OPERATOR_NAMESPACE";
     public static final String STRIMZI_OPERATOR_NAMESPACE_LABELS = "STRIMZI_OPERATOR_NAMESPACE_LABELS";
     public static final String STRIMZI_CUSTOM_RESOURCE_SELECTOR = "STRIMZI_CUSTOM_RESOURCE_SELECTOR";
+    public static final String STRIMZI_FEATURE_GATES = "STRIMZI_FEATURE_GATES";
 
     // Feature Flags
     public static final String STRIMZI_RBAC_SCOPE = "STRIMZI_RBAC_SCOPE";
@@ -83,6 +84,7 @@ public class ClusterOperatorConfig {
     private final Labels operatorNamespaceLabels;
     private final RbacScope rbacScope;
     private final Labels customResourceSelector;
+    private final FeatureGates featureGates;
 
     /**
      * Constructor
@@ -99,6 +101,7 @@ public class ClusterOperatorConfig {
      * @param operatorNamespaceLabels Labels of the namespace in which the operator is running (used for network policies)
      * @param rbacScope true to use Roles where possible instead of ClusterRoles
      * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
+     * @param featureGates Configuration string with feature gates settings
      */
     public ClusterOperatorConfig(
             Set<String> namespaces,
@@ -112,8 +115,8 @@ public class ClusterOperatorConfig {
             String operatorNamespace,
             Labels operatorNamespaceLabels,
             RbacScope rbacScope,
-            Labels customResourceSelector
-    ) {
+            Labels customResourceSelector,
+            String featureGates) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -126,6 +129,7 @@ public class ClusterOperatorConfig {
         this.operatorNamespaceLabels = operatorNamespaceLabels;
         this.rbacScope = rbacScope;
         this.customResourceSelector = customResourceSelector;
+        this.featureGates = new FeatureGates(featureGates);
     }
 
     /**
@@ -172,6 +176,7 @@ public class ClusterOperatorConfig {
         Labels operatorNamespaceLabels = parseLabels(map, STRIMZI_OPERATOR_NAMESPACE_LABELS);
         RbacScope rbacScope = parseRbacScope(map.get(STRIMZI_RBAC_SCOPE));
         Labels customResourceSelector = parseLabels(map, STRIMZI_CUSTOM_RESOURCE_SELECTOR);
+        String featureGates = map.getOrDefault(STRIMZI_FEATURE_GATES, "");
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -185,7 +190,8 @@ public class ClusterOperatorConfig {
                 operatorNamespace,
                 operatorNamespaceLabels,
                 rbacScope,
-                customResourceSelector);
+                customResourceSelector,
+                featureGates);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -447,6 +453,10 @@ public class ClusterOperatorConfig {
         return customResourceSelector;
     }
 
+    public FeatureGates featureGates()  {
+        return featureGates;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -462,6 +472,7 @@ public class ClusterOperatorConfig {
                 ",operatorNamespaceLabels=" + operatorNamespaceLabels +
                 ",rbacScope=" + rbacScope +
                 ",customResourceSelector=" + customResourceSelector +
+                ",featureGates=" + featureGates +
                 ")";
     }
 }

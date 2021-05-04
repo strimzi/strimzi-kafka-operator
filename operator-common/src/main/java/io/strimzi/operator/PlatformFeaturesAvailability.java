@@ -259,7 +259,7 @@ public class PlatformFeaturesAvailability {
 
     @Override
     public String toString() {
-        return "ClusterOperatorConfig(" +
+        return "PlatformFeaturesAvailability(" +
                 "KubernetesVersion=" + kubernetesVersion +
                 ",OpenShiftRoutes=" + routes +
                 ",OpenShiftBuilds=" + builds +

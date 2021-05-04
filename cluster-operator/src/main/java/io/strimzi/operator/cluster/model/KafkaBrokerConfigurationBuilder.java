@@ -152,16 +152,28 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the listeners based on the listeners enabled by the users in the Kafka CR.
      *
-     * @param clusterName     Name of the cluster (important for the advertised hostnames)
-     * @param namespace       Namespace (important for generating the advertised hostname)
-     * @param kafkaListeners  The listeners configuration from the Kafka CR
+     * @param clusterName                   Name of the cluster (important for the advertised hostnames)
+     * @param namespace                     Namespace (important for generating the advertised hostname)
+     * @param kafkaListeners                The listeners configuration from the Kafka CR
+     * @param controlPlaneListenerActive    Activates the control plane listener (the listener is always configured,
+     *                                      but this flag tells Kafka to use it for control plane communication)
      *
      * @return  Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withListeners(String clusterName, String namespace, List<GenericKafkaListener> kafkaListeners)  {
+    public KafkaBrokerConfigurationBuilder withListeners(String clusterName, String namespace, List<GenericKafkaListener> kafkaListeners, boolean controlPlaneListenerActive)  {
         List<String> listeners = new ArrayList<>();
         List<String> advertisedListeners = new ArrayList<>();
         List<String> securityProtocol = new ArrayList<>();
+
+        // Control Plane listener
+        listeners.add("CONTROLPLANE-9090://0.0.0.0:9090");
+        advertisedListeners.add(String.format("CONTROLPLANE-9090://%s:9090",
+                // Pod name constructed to be templatable for each individual ordinal
+                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
+                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}")
+        ));
+        securityProtocol.add("CONTROLPLANE-9090:SSL");
+        configureControlPlaneListener();
 
         // Replication listener
         listeners.add("REPLICATION-9091://0.0.0.0:9091");
@@ -203,6 +215,11 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("listeners=" + String.join(",", listeners));
         writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
+
+        if (controlPlaneListenerActive) {
+            writer.println("control.plane.listener.name=CONTROLPLANE-9090");
+        }
+
         writer.println("inter.broker.listener.name=REPLICATION-9091");
         writer.println("sasl.enabled.mechanisms=");
         writer.println("ssl.secure.random.implementation=SHA1PRNG");
@@ -220,6 +237,22 @@ public class KafkaBrokerConfigurationBuilder {
                 return;
             }
         }
+    }
+
+    /**
+     * Internal method which configures the control plane listener. The control plane listener configuration is currently
+     * rather static, it always uses TLS with TLS client auth.
+     */
+    private void configureControlPlaneListener() {
+        printSectionHeader("Control Plane listener");
+        writer.println("listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("listener.name.controlplane-9090.ssl.keystore.type=PKCS12");
+        writer.println("listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("listener.name.controlplane-9090.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("listener.name.controlplane-9090.ssl.truststore.type=PKCS12");
+        writer.println("listener.name.controlplane-9090.ssl.client.auth=required");
+        writer.println();
     }
 
     /**

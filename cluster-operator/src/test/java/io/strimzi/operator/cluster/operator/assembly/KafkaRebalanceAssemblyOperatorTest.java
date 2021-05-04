@@ -833,7 +833,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 null,
                 null,
                 ClusterOperatorConfig.RbacScope.CLUSTER,
-                Labels.fromMap(Map.of("selectorLabel", "value")));
+                Labels.fromMap(Map.of("selectorLabel", "value")),
+                "");
 
         kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), pfa, supplier, config);
 
