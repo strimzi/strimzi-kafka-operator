@@ -88,8 +88,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
 
     if [ "$COPY_DOCKER_LOGIN" = "true" ]
     then
-      scp -i $(minikube ssh-key) $HOME/.docker/config.json docker@$(minikube ip):/var/lib/kubelet/config.json
-      docker exec "minikube" bash -c "sudo systemctl restart kubelet"
+      docker exec "minikube" bash -c "echo '$(cat $HOME/.docker/config.json)'| sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
     fi
 
     set -ex
