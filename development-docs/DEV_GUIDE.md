@@ -7,7 +7,7 @@ This document gives a detailed breakdown of the various build processes and opti
 - [Developer Quick Start](#developer-quick-start)
 - [Build Pre-Requisites](#build-pre-requisites)
 - [Build and deploy Strimzi from source](#build-and-deploy-from-source)
-- [Build details](#customizing-the-build)
+- [Build details](#build-details)
    - [Make targets](#make-targets)
    - [Java versions](#java-versions)
    - [Building Docker images](#building-docker-images)
@@ -25,7 +25,7 @@ This document gives a detailed breakdown of the various build processes and opti
 
 ## Developer Quick Start
 
-To build Strimzi from a source you need a Kubernetes or OpenShift cluster available. If you do not have existing
+To build Strimzi from a source you need a Kubernetes or OpenShift cluster available. If you do not have an existing
 Kubernetes cluster, you can install [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) to have access
 to a cluster on your local machine.
 
@@ -45,7 +45,7 @@ To build this project you must first install several command line utilities and 
     - Use `gem` to install the latest version for your platform.
 - [`yq`](https://github.com/mikefarah/yq) - (version 4.2.1 and above) YAML manipulation tool.
     - **Warning:** There are several different `yq` YAML projects in the wild.
-      Use [this one](https://github.com/mikefarah/yq). You need version 4 or above.
+      Use [this one](https://github.com/mikefarah/yq). You need version 4.2.1 or above.
 - [`docker`](https://docs.docker.com/install/) - Docker command line client
 - [`shellcheck`](https://github.com/koalaman/shellcheck) - ShellCheck is a GPLv3 tool that gives warnings and
   suggestions for bash/sh shell scripts.
@@ -54,12 +54,12 @@ In order to use `make` these all need to be available on your `$PATH`.
 
 ### macOS
 
-The `make` build is using GNU versions of `find`, `sed` and other utilities and is not compatible with the BSD versions
+The `make` build uses GNU versions of `find`, `sed` and other utilities and is not compatible with the BSD versions
 available on macOS. When using macOS, you have to install the GNU versions of `find` and `sed`. When using `brew`, you
-can do `brew install gnu-sed findutils grep coreutils`. This command will install the GNU versions as `gcp`, `ggrep`
-, `gsed` and `gfind` and our `make` build will automatically pick them up and use them.
+can do `brew install gnu-sed findutils grep coreutils`. 
+This command will install the GNU versions as `gcp`, `ggrep`, `gsed` and `gfind` and our `make` build will automatically pick them up and use them.
 
-The build requires `bash` version 4+ which is not shipped macOS but can be installed via homebrew. You can
+The build requires `bash` version 4+ which is not shipped with macOS but can be installed via homebrew. You can
 run `brew install bash` to install a compatible version of `bash`. If you wish to change the default shell to the
 updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`
 
@@ -68,9 +68,9 @@ OpenJDK version 11 needs to be installed. This can be done by running `brew inst
 new Java version, you will need to edit the `~/.mavenrc` file and paste the following
 line `export JAVA_HOME=/Library/Java/JavaVirtualMachines/openjdk-11.jdk/Contents/Home`.
 
-You may come across an issue of linking from the above step. To solve this run this
-command `sudo ln -sfn /usr/local/opt/openjdk@11/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-11.jdk`.
-If this throws an error that it cannot find the file or directory, navigate into `/Library/Java/` (or how ever deep you
+You may come across an issue of linking from the above step. To solve this run this command: 
+`sudo ln -sfn /usr/local/opt/openjdk@11/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-11.jdk`.
+If this throws an error that it cannot find the file or directory, navigate into `/Library/Java/` (or however deep you
 can) and create a new folder named `JavaVirtualMachines` followed by creating a file named `openjdk-11.jdk`. The folder
 structure after everything is said and done should look like `/Library/Java/JavaVirtualMachines/openjdk-11.jdk`. After
 doing that run the command at the beginning again and this should link the file and allow you to use maven with OpenJDK
@@ -79,7 +79,7 @@ version 11.
 ### Kubernetes or OpenShift Cluster
 
 In order to run the integration tests and test any changes made to the operators you will need a functioning Kubernetes
-or OpenShift cluster. This can be a remote cluster or a local development cluster.
+or OpenShift cluster. This can be a remote cluster, or a local development cluster.
 
 #### Minikube
 
@@ -93,18 +93,18 @@ before running the `make` commands.
 
 ## Build and deploy from source
 
-To build Strimzi from a source the operator and Kafka code needs to be compiled into Docker container images and placed
+To build Strimzi from a source the operator and Kafka code needs to be compiled into container images and placed
 in a location accessible to the Kubernetes/OpenShift nodes. The easiest way to make your personal Strimzi builds
-accessible, is to place them on the [Docker Hub](https://hub.docker.com/). The instructions below use this method,
+accessible, is to place them on [Docker Hub](https://hub.docker.com/) or [Quay.io](https://quay.io). The instructions below use Docker Hub,
 however other build options (including options for limited or no network access) are available in the sections below
 this quick start guide.
 
-1. If you don't have one already, create an account on the [Docker Hub](https://hub.docker.com/). Then log your local
-   Docker client into the Hub using:
+1. If you don't have one already, create an account on [Docker Hub](https://hub.docker.com/). Then log your local
+   Docker client into Docker Hub using:
 
         docker login
 
-   This sets the Hub as the `docker push` registry target.
+   This sets Docker Hub as the `docker push` registry target.
 
 
 2. Make sure that the `DOCKER_ORG` and `DOCKER_REGISTRY` environment variables are set to the same value as your
@@ -285,7 +285,7 @@ Other build options:
 
 #### Kafka versions
 
-As part of the Docker image build several different versions of Kafka will be built, which can increase build times.
+As part of the Docker image build several versions of Kafka will be built, which can increase build times.
 Which Kafka versions are to be built are defined in
 the [kafka-versions.yaml](https://github.com/strimzi/strimzi-kafka-operator/blob/main/kafka-versions.yaml) file.
 Unwanted versions can be commented out to speed up the build process.
