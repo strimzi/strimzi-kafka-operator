@@ -92,10 +92,10 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
       set -ex
     fi
 
-	  minikube addons enable registry
-	  minikube addons enable registry-aliases
+    minikube addons enable registry
+    minikube addons enable registry-aliases
 
-	  kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 else
     echo "Unsupported TEST_CLUSTER '$TEST_CLUSTER'"
     exit 1
