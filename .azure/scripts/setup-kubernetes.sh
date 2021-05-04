@@ -4,6 +4,7 @@ set -xe
 rm -rf ~/.kube
 
 KUBE_VERSION=${KUBE_VERSION:-1.16.0}
+COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
 DEFAULT_MINIKUBE_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
 DEFAULT_MINIKUBE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
@@ -80,10 +81,21 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     minikube addons enable default-storageclass
-	  minikube addons enable registry
-	  minikube addons enable registry-aliases
 
-	  kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+    # Add Docker hub credentials to Minikube
+    if [ "$COPY_DOCKER_LOGIN" = "true" ]
+    then
+      set +ex
+
+      docker exec "minikube" bash -c "echo '$(cat $HOME/.docker/config.json)'| sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
+
+      set -ex
+    fi
+
+    minikube addons enable registry
+    minikube addons enable registry-aliases
+
+    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 else
     echo "Unsupported TEST_CLUSTER '$TEST_CLUSTER'"
     exit 1
