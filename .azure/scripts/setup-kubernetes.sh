@@ -83,15 +83,14 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     minikube addons enable default-storageclass
 
     # Add Docker hub credentials to Minikube
-
-    set +ex
-
     if [ "$COPY_DOCKER_LOGIN" = "true" ]
     then
-      docker exec "minikube" bash -c "echo '$(cat $HOME/.docker/config.json)'| sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
-    fi
+      set +ex
 
-    set -ex
+      docker exec "minikube" bash -c "echo '$(cat $HOME/.docker/config.json)'| sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
+
+      set -ex
+    fi
 
 	  minikube addons enable registry
 	  minikube addons enable registry-aliases
