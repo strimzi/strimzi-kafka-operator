@@ -24,7 +24,7 @@ public class FeatureGates {
      * @param featureGateConfig String with comma separated list of enabled or disabled feature gates
      */
     public FeatureGates(String featureGateConfig) {
-        if (featureGateConfig != null && !featureGateConfig.trim().isEmpty())   {
+        if (featureGateConfig != null && !featureGateConfig.trim().isEmpty()) {
             List<String> featureGates;
 
             if (featureGateConfig.matches("(\\s*[+-][a-zA-Z0-9]+\\s*,)*\\s*[+-][a-zA-Z0-9]+\\s*")) {
@@ -37,7 +37,7 @@ public class FeatureGates {
                 boolean value = '+' == featureGate.charAt(0);
                 featureGate = featureGate.substring(1);
 
-                switch (featureGate)    {
+                switch (featureGate) {
                     case CONTROL_PLANE_LISTENER:
                         setValueOnlyOnce(controlPlaneListener, value);
                         break;
@@ -55,8 +55,8 @@ public class FeatureGates {
      * @param gate  Feature gate which is being configured
      * @param value Value which should be set
      */
-    private void setValueOnlyOnce(FeatureGate gate, boolean value)   {
-        if (gate.isSet())   {
+    private void setValueOnlyOnce(FeatureGate gate, boolean value) {
+        if (gate.isSet()) {
             throw new InvalidConfigurationException("Feature gate " + gate.getName() + " is configured multiple times");
         }
 
@@ -66,7 +66,7 @@ public class FeatureGates {
     /**
      * @return  Returns true when the ControlPlaneListener feature gate is enabled
      */
-    public boolean controlPlaneListenerEnabled()    {
+    public boolean controlPlaneListenerEnabled() {
         return controlPlaneListener.isEnabled();
     }
 
@@ -91,7 +91,7 @@ public class FeatureGates {
          * @param name          Name of the feature gate
          * @param defaultValue  Default value of the feature gate
          */
-        FeatureGate(String name, boolean defaultValue)   {
+        FeatureGate(String name, boolean defaultValue) {
             this.name = name;
             this.defaultValue = defaultValue;
         }
@@ -106,7 +106,7 @@ public class FeatureGates {
         /**
          * @return  Returns true if the value for this feature gate is already set or false if it is still null
          */
-        public boolean isSet()  {
+        public boolean isSet() {
             return value != null;
         }
 
@@ -122,7 +122,7 @@ public class FeatureGates {
         /**
          * @return  True if the feature gate is enabled. False otherwise.
          */
-        public boolean isEnabled()  {
+        public boolean isEnabled() {
             return value == null ? defaultValue : value;
         }
     }

@@ -392,7 +392,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testWithControlPlaneListenerActive()  {
+    public void testWithControlPlaneListenerActive() {
         String configuration = new KafkaBrokerConfigurationBuilder()
                 .withListeners("my-cluster", "my-namespace", emptyList(), true)
                 .build();
@@ -422,7 +422,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testWithNoListeners()  {
+    public void testWithNoListeners() {
         String configuration = new KafkaBrokerConfigurationBuilder()
                 .withListeners("my-cluster", "my-namespace", emptyList(), false)
                 .build();

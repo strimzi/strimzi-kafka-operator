@@ -16,14 +16,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ParallelSuite
 public class FeatureGatesTest {
     @ParallelTest
-    public void testFeatureGates()  {
+    public void testFeatureGates() {
         assertThat(new FeatureGates("+ControlPlaneListener").controlPlaneListenerEnabled(), is(true));
         assertThat(new FeatureGates("  +ControlPlaneListener    ").controlPlaneListenerEnabled(), is(true));
         assertThat(new FeatureGates("-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
     }
 
     @ParallelTest
-    public void testEmptyFeatureGates()  {
+    public void testEmptyFeatureGates() {
         assertThat(new FeatureGates(null).controlPlaneListenerEnabled(), is(false));
         assertThat(new FeatureGates("").controlPlaneListenerEnabled(), is(false));
         assertThat(new FeatureGates(" ").controlPlaneListenerEnabled(), is(false));
@@ -31,8 +31,14 @@ public class FeatureGatesTest {
     }
 
     @ParallelTest
-    public void testDuplicateFeatureGate() {
+    public void testDuplicateFeatureGateWithSameValue() {
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ControlPlaneListener,+ControlPlaneListener"));
+        assertThat(e.getMessage(), containsString("Feature gate ControlPlaneListener is configured multiple times"));
+    }
+
+    @ParallelTest
+    public void testDuplicateFeatureGateWithDifferentValue() {
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ControlPlaneListener,-ControlPlaneListener"));
         assertThat(e.getMessage(), containsString("Feature gate ControlPlaneListener is configured multiple times"));
     }
 
