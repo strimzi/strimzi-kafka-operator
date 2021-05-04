@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -341,6 +342,7 @@ public class DocGenerator {
         return maxLen;
     }
 
+    @SuppressWarnings("unchecked")
     private void appendPropertyType(Crd crd, Appendable out, PropertyType propertyType, String externalUrl) throws IOException {
         Class<?> propertyClass = propertyType.isArray() ? propertyType.arrayBase() : propertyType.getType();
         out.append(NL).append("|");
@@ -357,7 +359,22 @@ public class DocGenerator {
                 }
             }
             out.append("string (one of " + strings + ")");
+        } else if (propertyType.isArray() && propertyType.arrayBase().isEnum()) {
+            try {
+                Set<String> strings = new HashSet<>();
+                Method valuesMethod = propertyType.arrayBase().getMethod("values");
 
+                for (JsonNode n : Schema.enumCases((Enum[]) valuesMethod.invoke(null))) {
+                    if (n.isTextual()) {
+                        strings.add(n.asText());
+                    } else {
+                        throw new RuntimeException("Enum case is not a string");
+                    }
+                }
+                out.append("string (one or more of " + strings + ")");
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             typeLink(crd, out, propertyClass);
         }

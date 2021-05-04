@@ -33,7 +33,7 @@ public class CruiseControlTemplate implements Serializable, UnknownPropertyPrese
 
     private ResourceTemplate deployment;
     private PodTemplate pod;
-    private ResourceTemplate apiService;
+    private InternalServiceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate cruiseControlContainer;
     private ContainerTemplate tlsSidecarContainer;
@@ -61,11 +61,11 @@ public class CruiseControlTemplate implements Serializable, UnknownPropertyPrese
 
     @Description("Template for Cruise Control API `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getApiService() {
+    public InternalServiceTemplate getApiService() {
         return apiService;
     }
 
-    public void setApiService(ResourceTemplate apiService) {
+    public void setApiService(InternalServiceTemplate apiService) {
         this.apiService = apiService;
     }
 

@@ -78,6 +78,8 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Annotations;
@@ -259,8 +261,12 @@ public abstract class AbstractModel {
     protected Map<String, String> templatePodAnnotations;
     protected Map<String, String> templateServiceLabels;
     protected Map<String, String> templateServiceAnnotations;
+    protected IpFamilyPolicy templateServiceIpFamilyPolicy;
+    protected List<IpFamily> templateServiceIpFamilies;
     protected Map<String, String> templateHeadlessServiceLabels;
     protected Map<String, String> templateHeadlessServiceAnnotations;
+    protected IpFamilyPolicy templateHeadlessServiceIpFamilyPolicy;
+    protected List<IpFamily> templateHeadlessServiceIpFamilies;
     protected List<LocalObjectReference> templateImagePullSecrets;
     protected PodSecurityContext templateSecurityContext;
     protected int templateTerminationGracePeriodSeconds = 30;
@@ -915,14 +921,14 @@ public abstract class AbstractModel {
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
         return createService(serviceName, type, ports, getLabelsWithStrimziName(serviceName, templateServiceLabels),
-                getSelectorLabels(), annotations);
+                getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
     }
 
     protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, labels), getSelectorLabels(), annotations);
+        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, labels), getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
     }
 
-    protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations) {
+    protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations, IpFamilyPolicy ipFamilyPolicy, List<IpFamily> ipFamilies) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -937,6 +943,15 @@ public abstract class AbstractModel {
                     .withPorts(ports)
                 .endSpec()
                 .build();
+
+        if (ipFamilyPolicy != null) {
+            service.getSpec().setIpFamilyPolicy(ipFamilyPolicy.toValue());
+        }
+
+        if (ipFamilies != null && !ipFamilies.isEmpty()) {
+            service.getSpec().setIpFamilies(ipFamilies.stream().map(IpFamily::toValue).collect(Collectors.toList()));
+        }
+
         log.trace("Created service {}", service);
         return service;
     }
@@ -965,6 +980,15 @@ public abstract class AbstractModel {
                     .withPublishNotReadyAddresses(true)
                 .endSpec()
                 .build();
+
+        if (templateHeadlessServiceIpFamilyPolicy != null) {
+            service.getSpec().setIpFamilyPolicy(templateHeadlessServiceIpFamilyPolicy.toValue());
+        }
+
+        if (templateHeadlessServiceIpFamilies != null && !templateHeadlessServiceIpFamilies.isEmpty()) {
+            service.getSpec().setIpFamilies(templateHeadlessServiceIpFamilies.stream().map(IpFamily::toValue).collect(Collectors.toList()));
+        }
+
         log.trace("Created headless service {}", service);
         return service;
     }

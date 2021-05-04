@@ -19,6 +19,8 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.listener.arraylistener.ListenersConvertor;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -237,6 +239,8 @@ public class ListenersValidatorTest {
                     .withIngressClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                    .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                    .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
@@ -288,7 +292,9 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
-                "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener"
+                "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
+                "listener " + name + " cannot configure ipFamilyPolicy because it is not internal listener",
+                "listener " + name + " cannot configure ipFamilies because it is not internal listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -306,6 +312,8 @@ public class ListenersValidatorTest {
                     .withIngressClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                    .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                    .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
@@ -364,6 +372,8 @@ public class ListenersValidatorTest {
                     .withIngressClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                    .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                    .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
@@ -444,6 +454,8 @@ public class ListenersValidatorTest {
                     .withIngressClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                    .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                    .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
@@ -542,6 +554,8 @@ public class ListenersValidatorTest {
                     .withIngressClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                    .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                    .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                     .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
                     .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))

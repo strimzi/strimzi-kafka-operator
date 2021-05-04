@@ -30,6 +30,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
@@ -259,6 +260,42 @@ public class ModelUtils {
             model.templatePodHostAliases = pod.getHostAliases();
             model.templatePodTopologySpreadConstraints = pod.getTopologySpreadConstraints();
             model.templatePodEnableServiceLinks = pod.getEnableServiceLinks();
+        }
+    }
+
+    /**
+     * Parses the values from the InternalServiceTemplate in CRD model into the component model
+     *
+     * @param model AbstractModel class where the values from the PodTemplate should be set
+     * @param service InternalServiceTemplate with the values form the CRD
+     */
+    public static void parseInternalServiceTemplate(AbstractModel model, InternalServiceTemplate service)   {
+        if (service != null)  {
+            if (service.getMetadata() != null) {
+                model.templateServiceLabels = service.getMetadata().getLabels();
+                model.templateServiceAnnotations = service.getMetadata().getAnnotations();
+            }
+
+            model.templateServiceIpFamilyPolicy = service.getIpFamilyPolicy();
+            model.templateServiceIpFamilies = service.getIpFamilies();
+        }
+    }
+
+    /**
+     * Parses the values from the InternalServiceTemplate of a headless service in CRD model into the component model
+     *
+     * @param model AbstractModel class where the values from the PodTemplate should be set
+     * @param service InternalServiceTemplate with the values form the CRD
+     */
+    public static void parseInternalHeadlessServiceTemplate(AbstractModel model, InternalServiceTemplate service)   {
+        if (service != null)  {
+            if (service.getMetadata() != null) {
+                model.templateHeadlessServiceLabels = service.getMetadata().getLabels();
+                model.templateHeadlessServiceAnnotations = service.getMetadata().getAnnotations();
+            }
+
+            model.templateHeadlessServiceIpFamilyPolicy = service.getIpFamilyPolicy();
+            model.templateHeadlessServiceIpFamilies = service.getIpFamilies();
         }
     }
 

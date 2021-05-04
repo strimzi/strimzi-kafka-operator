@@ -32,6 +32,11 @@ spec:
     storage:
       type: ephemeral
     version: 2.8.0
+    template:
+      bootstrapService:
+        ipFamilies:
+          - IPv4
+          - IPv6
     tlsSidecar: {}
   topicOperator: {}
   zookeeper:

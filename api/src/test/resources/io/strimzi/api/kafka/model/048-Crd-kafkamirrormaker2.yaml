@@ -939,6 +939,32 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
+                      ipFamilyPolicy:
+                        type: string
+                        enum:
+                        - SingleStack
+                        - PreferDualStack
+                        - RequireDualStack
+                        description: Specifies which IP Family Policy should be used
+                          by this service. Available options are `SingleStack` (a
+                          single IP family), `PreferDualStack` (two IP families on
+                          dual-stack configured clusters or a single IP family on
+                          single-stack clusters), and `RequireDualStack` (two IP families
+                          on dual-stack configured clusters, otherwise fail). If unspecified,
+                          Kubernetes will choose the default value based on the service
+                          type. Available on Kubernetes 1.20 and newer.
+                      ipFamilies:
+                        type: array
+                        items:
+                          type: string
+                          enum:
+                          - IPv4
+                          - IPv6
+                        description: Specifies which IP Families should be used by
+                          this service. Available options are `IPv4` and `IPv6. If
+                          unspecified, Kubernetes will choose the default value based
+                          on the `ipFamilyPolicy` setting. Available on Kubernetes
+                          1.20 and newer.
                     description: Template for Kafka Connect API `Service`.
                   buildConfig:
                     type: object

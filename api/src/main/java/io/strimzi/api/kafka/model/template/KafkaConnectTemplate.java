@@ -33,7 +33,7 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
     private DeploymentTemplate deployment;
     private PodTemplate pod;
     private PodTemplate buildPod;
-    private ResourceTemplate apiService;
+    private InternalServiceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate connectContainer;
     private ContainerTemplate initContainer;
@@ -75,11 +75,11 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
 
     @Description("Template for Kafka Connect API `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getApiService() {
+    public InternalServiceTemplate getApiService() {
         return apiService;
     }
 
-    public void setApiService(ResourceTemplate apiService) {
+    public void setApiService(InternalServiceTemplate apiService) {
         this.apiService = apiService;
     }
 

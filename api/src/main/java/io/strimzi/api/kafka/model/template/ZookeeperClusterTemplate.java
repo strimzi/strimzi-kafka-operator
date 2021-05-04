@@ -35,8 +35,8 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
 
     private StatefulSetTemplate statefulset;
     private PodTemplate pod;
-    private ResourceTemplate clientService;
-    private ResourceTemplate nodesService;
+    private InternalServiceTemplate clientService;
+    private InternalServiceTemplate nodesService;
     private ResourceTemplate persistentVolumeClaim;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate zookeeperContainer;
@@ -65,21 +65,21 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
 
     @Description("Template for ZooKeeper client `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getClientService() {
+    public InternalServiceTemplate getClientService() {
         return clientService;
     }
 
-    public void setClientService(ResourceTemplate clientService) {
+    public void setClientService(InternalServiceTemplate clientService) {
         this.clientService = clientService;
     }
 
     @Description("Template for ZooKeeper nodes `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getNodesService() {
+    public InternalServiceTemplate getNodesService() {
         return nodesService;
     }
 
-    public void setNodesService(ResourceTemplate nodesService) {
+    public void setNodesService(InternalServiceTemplate nodesService) {
         this.nodesService = nodesService;
     }
 

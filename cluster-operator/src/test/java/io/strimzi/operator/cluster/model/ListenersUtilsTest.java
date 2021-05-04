@@ -10,6 +10,8 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -22,6 +24,7 @@ import static java.util.Collections.emptyMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -144,6 +147,8 @@ public class ListenersUtilsTest {
             .withTls(true)
             .withNewConfiguration()
                 .withExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER)
+                .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                 .withNewBootstrap()
                     .withAlternativeNames(asList("my-np-1", "my-np-2"))
@@ -191,6 +196,8 @@ public class ListenersUtilsTest {
             .withTls(true)
             .withNewConfiguration()
                 .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
                 .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
                 .withNewBootstrap()
@@ -592,6 +599,32 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.externalTrafficPolicy(newNodePort), is(nullValue()));
         assertThat(ListenersUtils.externalTrafficPolicy(newNodePort2), is(ExternalTrafficPolicy.CLUSTER));
         assertThat(ListenersUtils.externalTrafficPolicy(newNodePort3), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testIpFamilyPolicy() {
+        assertThat(ListenersUtils.ipFamilyPolicy(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilyPolicy(oldExternal), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilyPolicy(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilyPolicy(newLoadBalancer2), is(IpFamilyPolicy.REQUIRE_DUAL_STACK));
+        assertThat(ListenersUtils.ipFamilyPolicy(oldPlain), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilyPolicy(newTls), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilyPolicy(newNodePort), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilyPolicy(newNodePort2), is(IpFamilyPolicy.REQUIRE_DUAL_STACK));
+        assertThat(ListenersUtils.ipFamilyPolicy(newNodePort3), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testIpFamilies() {
+        assertThat(ListenersUtils.ipFamilies(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilies(oldExternal), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilies(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilies(newLoadBalancer2), contains(IpFamily.IPV6, IpFamily.IPV4));
+        assertThat(ListenersUtils.ipFamilies(oldPlain), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilies(newTls), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilies(newNodePort), is(nullValue()));
+        assertThat(ListenersUtils.ipFamilies(newNodePort2), contains(IpFamily.IPV6, IpFamily.IPV4));
+        assertThat(ListenersUtils.ipFamilies(newNodePort3), is(nullValue()));
     }
 
     @ParallelTest

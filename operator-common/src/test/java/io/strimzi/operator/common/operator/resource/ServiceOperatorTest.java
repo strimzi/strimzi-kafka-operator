@@ -267,7 +267,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                 .build();
 
         ServiceOperator op = new ServiceOperator(vertx, client);
-        op.patchIpFamily(current, desired);
+        op.patchDualStackNetworking(current, desired);
 
         assertThat(current.getSpec().getIpFamilies(), is(desired.getSpec().getIpFamilies()));
         assertThat(current2.getSpec().getIpFamilies(), is(desired.getSpec().getIpFamilies()));

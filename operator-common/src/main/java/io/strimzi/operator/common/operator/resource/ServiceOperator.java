@@ -31,8 +31,8 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                     "|/spec/sessionAffinity" +
                     "|/spec/clusterIP" +
                     "|/spec/clusterIPs" +
-                    "|/spec/ipFamilies" +
-                    "|/spec/ipFamilyPolicy" +
+                    "|/spec/ipFamily" + // Legacy field from Kube 1.19 and earlier. We just ignore it, it is not configurable.
+                    "|/spec/ipFamilies" + // Immutable field
                     "|/status)$");
 
     private final EndpointOperator endpointOperations;
@@ -84,7 +84,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                     patchAnnotations(current, desired);
                 }
 
-                patchIpFamily(current, desired);
+                patchDualStackNetworking(current, desired);
             }
 
             return super.internalPatch(namespace, name, current, desired);
@@ -156,15 +156,21 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
 
     /**
      * DualStack Kubernetes clusters (https://kubernetes.io/docs/concepts/services-networking/dual-stack/) specify
-     * ipFamily field of the Service spec section. This field indicates whether IPv4 or IPv6 should be used. This field
+     * ipFamilyPolicy and ipFamilies fields of the Service spec section. This fields indicates whether IPv4 or IPv6
+     * should be used. Kubernetes have different defaults for these fields depending on the environment. So when they
+     * are not set by us / Strimzi user, we just copy the default set by Kubernetes. In addition, the ipFamilies field
      * is immutable and cannot be changed. This method is used to patch the service and set the value from the current
      * resource in the desired to allow to patch / reconcile the Service. Without this the reconciliation would fail.
      *
      * @param current   Current Service
      * @param desired   Desired Service
      */
-    protected void patchIpFamily(Service current, Service desired) {
+    protected void patchDualStackNetworking(Service current, Service desired) {
         desired.getSpec().setIpFamilies(current.getSpec().getIpFamilies());
+
+        if (desired.getSpec().getIpFamilyPolicy() == null) {
+            desired.getSpec().setIpFamilyPolicy(current.getSpec().getIpFamilyPolicy());
+        }
     }
 
     /**
