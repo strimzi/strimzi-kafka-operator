@@ -21,6 +21,7 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     private final Consumer<WatcherException> onClose;
     private Operator operator;
     private static final Logger log = LogManager.getLogger(OperatorWatcher.class);
+    private final LoggerWrapper loggerWrapper = new LoggerWrapper(log);
 
     OperatorWatcher(Operator operator, String namespace, Consumer<WatcherException> onClose) {
         this.namespace = namespace;
@@ -37,7 +38,7 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
             case DELETED:
             case MODIFIED:
                 Reconciliation reconciliation = new Reconciliation("watch", operator.kind(), namespace, name);
-                log.info("{}: {} {} in namespace {} was {}", reconciliation, operator.kind(), name, namespace, action);
+                loggerWrapper.info("{}: {} {} in namespace {} was {}", reconciliation, operator.kind(), name, namespace, action);
                 operator.reconcile(reconciliation);
                 break;
             case ERROR:

@@ -19,7 +19,7 @@ public class ZkTopicWatcher extends ZkWatcher {
 
     @Override
     protected void notifyOperator(String child) {
-        LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "=" + child);
+        LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "=" + child, topicOperator.getNamespace(), child);
         log.info("{}: Partitions change", logContext);
         topicOperator.onTopicPartitionsChanged(logContext,
             new TopicName(child)).onComplete(ar -> {

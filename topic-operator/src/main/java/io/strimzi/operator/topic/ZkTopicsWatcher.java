@@ -129,7 +129,7 @@ class ZkTopicsWatcher {
                 for (String topicName : deleted) {
                     tcw.removeChild(topicName);
                     tw.removeChild(topicName);
-                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":-" + topicName);
+                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":-" + topicName, topicOperator.getNamespace(), topicName);
                     topicOperator.onTopicDeleted(logContext, new TopicName(topicName)).onComplete(ar -> {
                         if (ar.succeeded()) {
                             LOGGER.debug("{}: Success responding to deletion of topic {}", logContext, topicName);
@@ -145,7 +145,7 @@ class ZkTopicsWatcher {
                 for (String topicName : created) {
                     tcw.addChild(topicName);
                     tw.addChild(topicName);
-                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":+" + topicName);
+                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":+" + topicName, topicOperator.getNamespace(), topicName);
                     topicOperator.onTopicCreated(logContext, new TopicName(topicName)).onComplete(ar -> {
                         if (ar.succeeded()) {
                             LOGGER.debug("{}: Success responding to creation of topic {}", logContext, topicName);

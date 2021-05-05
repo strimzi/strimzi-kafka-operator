@@ -19,10 +19,10 @@ class TopicConfigsWatcher extends ZkWatcher {
 
     @Override
     protected void notifyOperator(String child) {
-        LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child);
-        log.info("{}: Topic config change", logContext);
+        LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child, topicOperator.getNamespace(), child);
+        loggerWrapper.info("{}: Topic config change", logContext);
         topicOperator.onTopicConfigChanged(logContext, new TopicName(child)).onComplete(ar2 -> {
-            log.info("{}: Reconciliation result due to topic config change on topic {}: {}", logContext, child, ar2);
+            loggerWrapper.info("{}: Reconciliation result due to topic config change on topic {}: {}", logContext, child, ar2);
         });
     }
 }

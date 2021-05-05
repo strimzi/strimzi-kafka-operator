@@ -20,6 +20,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.LoggerWrapper;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
@@ -44,6 +45,7 @@ import java.util.Collections;
  */
 public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>, KafkaBridgeSpec, KafkaBridgeStatus> {
     private static final Logger log = LogManager.getLogger(KafkaBridgeAssemblyOperator.class.getName());
+    private final LoggerWrapper loggerWrapper = new LoggerWrapper(log);
 
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
@@ -82,7 +84,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 
         boolean bridgeHasZeroReplicas = bridge.getReplicas() == 0;
-        log.debug("{}: Updating Kafka Bridge cluster", reconciliation);
+        loggerWrapper.debug("{}: Updating Kafka Bridge cluster", reconciliation);
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))

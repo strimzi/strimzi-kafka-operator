@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class ZkWatcher {
 
     protected Logger log = LogManager.getLogger(getClass());
+    protected LoggerWrapper loggerWrapper = new LoggerWrapper(log);
 
     protected final TopicOperator topicOperator;
     private volatile ZkWatcherState state = ZkWatcherState.NOT_STARTED;
