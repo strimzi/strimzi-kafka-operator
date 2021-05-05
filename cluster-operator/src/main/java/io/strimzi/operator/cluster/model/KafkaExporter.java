@@ -73,7 +73,6 @@ public class KafkaExporter extends AbstractModel {
     protected KafkaExporter(HasMetadata resource) {
         super(resource, APPLICATION_NAME);
         this.name = KafkaExporterResources.deploymentName(cluster);
-        this.serviceName = KafkaExporterResources.serviceName(cluster);
         this.replicas = 1;
         this.readinessPath = "/metrics";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
@@ -124,11 +123,6 @@ public class KafkaExporter extends AbstractModel {
                 if (template.getDeployment() != null && template.getDeployment().getMetadata() != null) {
                     kafkaExporter.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
                     kafkaExporter.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
-                }
-
-                if (template.getService() != null && template.getService().getMetadata() != null)  {
-                    kafkaExporter.templateServiceLabels = template.getService().getMetadata().getLabels();
-                    kafkaExporter.templateServiceAnnotations = template.getService().getMetadata().getAnnotations();
                 }
 
                 if (template.getContainer() != null && template.getContainer().getEnv() != null) {

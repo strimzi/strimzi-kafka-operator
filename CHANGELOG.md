@@ -25,7 +25,8 @@
   * `operator.strimzi.io/generation` (used internally only - replaced by `strimzi.io/generation`)
   * `operator.strimzi.io/delete-pod-and-pvc` (use `strimzi.io/delete-pod-and-pvc` instead)
   * `operator.strimzi.io/manual-rolling-update` (use `strimzi.io/manual-rolling-update` instead)
-* When the `class` field is configured in the `configuration` section of an Ingress-type listener, Strimzi will not automatically set the deprecated `kubernetes.io/ingress.class` annotation anymore. In case you still need this annotation, you can set it manually in the listener configuration using the [`annotations` field](https://strimzi.io/docs/operators/latest/full/using.html#property-listener-config-annotations-reference) or in the [`.spec.kafka.template` section](https://strimzi.io/docs/operators/latest/full/using.html#type-KafkaClusterTemplate-reference).  
+* When the `class` field is configured in the `configuration` section of an Ingress-type listener, Strimzi will not automatically set the deprecated `kubernetes.io/ingress.class` annotation anymore. In case you still need this annotation, you can set it manually in the listener configuration using the [`annotations` field](https://strimzi.io/docs/operators/latest/full/using.html#property-listener-config-annotations-reference) or in the [`.spec.kafka.template` section](https://strimzi.io/docs/operators/latest/full/using.html#type-KafkaClusterTemplate-reference).
+* The `.spec.kafkaExporter.template.service` section in the `Kafka` custom resource has been deprecated and will be removed in the next API version (the service itself was removed several releases ago).
 
 ## 0.22.0
 

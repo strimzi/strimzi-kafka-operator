@@ -6,9 +6,11 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -57,6 +59,9 @@ public class KafkaExporterTemplate implements Serializable, UnknownPropertyPrese
     }
 
     @Description("Template for Kafka Exporter `Service`.")
+    @DeprecatedProperty(description = "The Kafka Exporter service has been removed.")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getService() {
         return service;
