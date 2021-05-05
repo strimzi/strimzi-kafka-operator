@@ -436,6 +436,82 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
+     * Tests the transition from 'New' to 'ProposalReady'
+     * The rebalance proposal is approved and the resource moves to 'Rebalancing' and finally to 'Ready'
+     * Then the Ready KafkaRebalance is refreshed and a moved to 'ProposalReady' again.
+     *
+     * 1. A new KafkaRebalance resource is created; it is in the 'New' state
+     * 2. The operator requests a rebalance proposal through the Cruise Control REST API
+     * 3. The rebalance proposal is ready on the first call
+     * 4. The KafkaRebalance resource transitions to the 'ProposalReady' state
+     * 5. The KafkaRebalance resource is annotated with 'strimzi.io/rebalance=approve'
+     * 6. The operator requests the rebalance operation through the Cruise Control REST API
+     * 7. The rebalance operation is not done immediately; the operator starts polling the Cruise Control REST API
+     * 8. The KafkaRebalance resource moves to the 'Rebalancing' state
+     * 9. The rebalance operation is done
+     * 10. The KafkaRebalance resource moves to the 'Ready' state
+     * 11. The KafkaRebalance resource is annotated with 'strimzi.io/rebalance=refresh'
+     * 12. The KafkaRebalance resource moves to the 'ProposalReady' state
+     */
+    @Test
+    public void testNewToProposalReadyToRebalancingToReadyThenRefreshRebalance(VertxTestContext context) throws IOException, URISyntaxException {
+
+        // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
+
+        KafkaRebalance kr =
+                createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
+
+        Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).create(kr);
+
+        when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
+        mockRebalanceOperator(mockRebalanceOps, CLUSTER_NAMESPACE, RESOURCE_NAME, kubernetesClient);
+
+        Checkpoint checkpoint = context.checkpoint();
+        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME), kr)
+                // the resource moved from 'New' to 'ProposalReady' directly (no pending calls in the Mock server)
+                .onComplete(context.succeeding(v ->
+                        assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady)))
+                .compose(v -> {
+                    // apply the "approve" annotation to the resource in the ProposalReady state
+                    KafkaRebalance approvedKr = annotate(kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.approve);
+
+                    return kcrao.reconcileRebalance(
+                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                            approvedKr);
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from ProposalReady to Rebalancing on approval
+                    assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
+                }))
+                .compose(v -> {
+                    // trigger another reconcile to process the Rebalancing state
+                    KafkaRebalance kr4 = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
+
+                    return kcrao.reconcileRebalance(
+                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                            kr4);
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from Rebalancing to Ready
+                    assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Ready);
+                }))
+                .compose(v -> {
+                    // apply the "refresh" annotation to the resource in the ProposalReady state
+                    KafkaRebalance refreshKr = annotate(kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.refresh);
+
+                    return kcrao.reconcileRebalance(
+                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                            refreshKr);
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource moved from Ready to PropsalPending
+                    assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                    checkpoint.flag();
+                }));
+    }
+    /**
      * Tests the transition from 'New' to 'NotReady' due to "missing hard goals" error
      *
      * 1. A new KafkaRebalance resource is created with some specified not hard goals; it is in the 'New' state
