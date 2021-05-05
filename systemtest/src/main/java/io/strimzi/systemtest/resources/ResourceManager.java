@@ -60,10 +60,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Stack;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -159,7 +157,7 @@ public class ResourceManager {
         if (waitReady) {
             for (T resource : resources) {
                 ResourceType<T> type = findResourceType(resource);
-                assertTrue(waitResourceCondition(resource, type::waitForReadiness),
+                assertTrue(waitResourceCondition(resource, ResourceCondition.readiness(type)),
                     String.format("Timed out waiting for %s %s in namespace %s to be ready", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
             }
         }
@@ -178,11 +176,11 @@ public class ResourceManager {
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 
             type.delete(resource);
-            assertTrue(waitResourceCondition(resource, Objects::isNull),
+            assertTrue(waitResourceCondition(resource, ResourceCondition.deletion()),
                 String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
         }
     }
-    public final <T extends HasMetadata> boolean waitResourceCondition(T resource, Predicate<T> condition) {
+    public final <T extends HasMetadata> boolean waitResourceCondition(T resource, ResourceCondition<T> condition) {
         assertNotNull(resource);
         assertNotNull(resource.getMetadata());
         assertNotNull(resource.getMetadata().getName());
@@ -196,11 +194,11 @@ public class ResourceManager {
         assertNotNull(type);
         boolean[] resourceReady = new boolean[1];
 
-        TestUtils.waitFor("Resource condition: " + condition + " is fulfilled for resource " + resource.getKind() + ":" + resource.getMetadata().getName(),
+        TestUtils.waitFor("Resource condition: " + condition.getConditionName() + " is fulfilled for resource " + resource.getKind() + ":" + resource.getMetadata().getName(),
             Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
             () -> {
                 T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-                resourceReady[0] =  condition.test(res);
+                resourceReady[0] =  condition.getPredicate().test(res);
                 if (!resourceReady[0]) {
                     type.delete(res);
                 }
@@ -223,7 +221,7 @@ public class ResourceManager {
         for (ResourceItem resource : resources) {
             ResourceType<T> type = findResourceType((T) resource.getResource());
 
-            waitResourceCondition((T) resource.getResource(), type::waitForReadiness);
+            waitResourceCondition((T) resource.getResource(), ResourceCondition.readiness(type));
         }
     }
 
