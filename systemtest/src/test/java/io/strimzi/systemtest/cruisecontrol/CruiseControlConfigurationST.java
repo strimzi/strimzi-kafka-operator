@@ -15,6 +15,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -55,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+@ParallelSuite
 public class CruiseControlConfigurationST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);

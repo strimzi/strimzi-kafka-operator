@@ -7,6 +7,7 @@ package io.strimzi.systemtest.cruisecontrol;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -26,6 +27,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+@ParallelSuite
 public class CruiseControlApiST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
