@@ -69,6 +69,8 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -107,6 +109,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -209,6 +212,8 @@ public class KafkaClusterTest {
         assertThat(headful.getSpec().getPorts().get(2).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_TLS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(2).getPort(), is(9093));
         assertThat(headful.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
+        assertThat(headful.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(headful.getSpec().getIpFamilies(), is(emptyList()));
 
         assertThat(headful.getMetadata().getAnnotations(), is(Util.mergeLabelsOrAnnotations(kc.getInternalDiscoveryAnnotation())));
 
@@ -314,6 +319,8 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getPorts().get(3).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_TLS_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(3).getPort(), is(9093));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
     }
@@ -1514,12 +1521,16 @@ public class KafkaClusterTest {
                                     .withLabels(svcLabels)
                                     .withAnnotations(svcAnots)
                                 .endMetadata()
+                                .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                             .endBootstrapService()
                             .withNewBrokersService()
                                 .withNewMetadata()
                                     .withLabels(hSvcLabels)
                                     .withAnnotations(hSvcAnots)
                                 .endMetadata()
+                                .withIpFamilyPolicy(IpFamilyPolicy.SINGLE_STACK)
+                                .withIpFamilies(IpFamily.IPV6)
                             .endBrokersService()
                             .withNewExternalBootstrapService()
                                 .withNewMetadata()
@@ -1581,11 +1592,15 @@ public class KafkaClusterTest {
         Service svc = kc.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
+        assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
 
         // Check Headless Service
         svc = kc.generateHeadlessService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()), is(true));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is("SingleStack"));
+        assertThat(svc.getSpec().getIpFamilies(), contains("IPv6"));
 
         // Check External Bootstrap service
         svc = kc.generateExternalBootstrapServices().get(0);
@@ -2037,6 +2052,52 @@ public class KafkaClusterTest {
         sts = kc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getInitContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+    }
+
+    @ParallelTest
+    public void testExternalServiceWithDualStackNetworking() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewListeners()
+                            .addNewGenericKafkaListener()
+                                .withName("np")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                                    .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
+                                .endConfiguration()
+                            .endGenericKafkaListener()
+                            .addNewGenericKafkaListener()
+                                .withName("lb")
+                                .withPort(9095)
+                                .withType(KafkaListenerType.LOADBALANCER)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                                    .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
+                                .endConfiguration()
+                            .endGenericKafkaListener()
+                        .endListeners()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+
+        List<Service> services = new ArrayList<>();
+        services.addAll(kc.generateExternalBootstrapServices());
+        services.addAll(kc.generateExternalServices(0));
+        services.addAll(kc.generateExternalServices(1));
+        services.addAll(kc.generateExternalServices(2));
+
+        for (Service svc : services)    {
+            assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
+            assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
+        }
     }
 
     @ParallelTest

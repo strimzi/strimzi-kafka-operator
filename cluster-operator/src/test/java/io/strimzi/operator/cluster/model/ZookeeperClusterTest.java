@@ -44,6 +44,8 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -68,6 +70,7 @@ import java.util.Map;
 
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -78,6 +81,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -150,6 +154,8 @@ public class ZookeeperClusterTest {
         assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
         assertThat(headful.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(ZookeeperCluster.CLIENT_TLS_PORT)));
         assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(headful.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(headful.getSpec().getIpFamilies(), is(emptyList()));
         assertThat(headful.getMetadata().getAnnotations(), is(nullValue()));
 
         checkOwnerReference(zc.createOwnerReference(), headful);
@@ -199,6 +205,8 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(ZookeeperCluster.LEADER_ELECTION_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(ZookeeperCluster.LEADER_ELECTION_PORT)));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
     }
 
     @ParallelTest
@@ -434,12 +442,16 @@ public class ZookeeperClusterTest {
                                     .withLabels(svcLabels)
                                     .withAnnotations(svcAnots)
                                 .endMetadata()
+                                .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                             .endClientService()
                             .withNewNodesService()
                                 .withNewMetadata()
                                     .withLabels(hSvcLabels)
                                     .withAnnotations(hSvcAnots)
                                 .endMetadata()
+                                .withIpFamilyPolicy(IpFamilyPolicy.SINGLE_STACK)
+                                .withIpFamilies(IpFamily.IPV6)
                             .endNodesService()
                             .withNewPodDisruptionBudget()
                                 .withNewMetadata()
@@ -471,11 +483,15 @@ public class ZookeeperClusterTest {
         Service svc = zc.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
+        assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
 
         // Check Headless Service
         svc = zc.generateHeadlessService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()), is(true));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is("SingleStack"));
+        assertThat(svc.getSpec().getIpFamilies(), contains("IPv6"));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
