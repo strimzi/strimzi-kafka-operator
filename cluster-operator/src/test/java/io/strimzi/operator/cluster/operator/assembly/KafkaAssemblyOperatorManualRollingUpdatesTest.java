@@ -317,7 +317,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
                     assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(Collections.singletonList("manual rolling update annotation on a pod")));
                     assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(Collections.singletonList("manual rolling update annotation on a pod")));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(nullValue()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(Collections.emptyList()));
 
                     async.flag();
                 })));
