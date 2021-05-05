@@ -84,7 +84,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 
         boolean bridgeHasZeroReplicas = bridge.getReplicas() == 0;
-        loggerWrapper.debug("{}: Updating Kafka Bridge cluster", reconciliation);
+        loggerWrapper.debug("Updating Kafka Bridge cluster", reconciliation);
         kafkaBridgeServiceAccount(namespace, bridge)
             .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))

@@ -152,7 +152,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
             return Future.failedFuture(new ReconciliationException(userStatus, e));
         }
 
-        loggerWrapper.debug("{}: Updating User {} in namespace {}", reconciliation, userName, namespace);
+        loggerWrapper.debug("Updating User {} in namespace {}", reconciliation, userName, namespace);
         Secret desired = user.generateSecret();
         String password = null;
 
@@ -220,7 +220,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
-        loggerWrapper.debug("{}: Deleting User {} from namespace {}", reconciliation, user, namespace);
+        loggerWrapper.debug("Deleting User {} from namespace {}", reconciliation, user, namespace);
         return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(secretPrefix, user), null),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),

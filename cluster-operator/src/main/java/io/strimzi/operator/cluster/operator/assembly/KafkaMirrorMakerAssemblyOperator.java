@@ -87,7 +87,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
         boolean mirrorHasZeroReplicas = mirror.getReplicas() == 0;
 
-        loggerWrapper.debug("{}: Updating Kafka Mirror Maker cluster", reconciliation);
+        loggerWrapper.debug("Updating Kafka Mirror Maker cluster", reconciliation);
         mirrorMakerServiceAccount(namespace, mirror)
                 .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, mirror.getLogging(), mirror.getMetricsConfigInCm()))

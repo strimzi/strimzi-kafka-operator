@@ -51,8 +51,8 @@ class KafkaAvailability {
         Future<Set<String>> topicNames = topicNames();
         // 2. Get topic descriptions
         descriptions = topicNames.compose(names -> {
-            loggerWrapper.debug("{}: Got {} topic names", reconciliation, names.size());
-            loggerWrapper.trace("{}: Topic names {}", reconciliation, names);
+            loggerWrapper.debug("Got {} topic names", reconciliation, names.size());
+            loggerWrapper.trace("Topic names {}", reconciliation, names);
             return describeTopics(names);
         });
     }
@@ -62,17 +62,17 @@ class KafkaAvailability {
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
     Future<Boolean> canRoll(int podId) {
-        loggerWrapper.debug("{}: Determining whether broker {} can be rolled", reconciliation, podId);
+        loggerWrapper.debug("Determining whether broker {} can be rolled", reconciliation, podId);
         return canRollBroker(descriptions, podId);
     }
 
     private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId) {
         Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .compose(topicDescriptions -> {
-                    loggerWrapper.debug("{}: Got {} topic descriptions", reconciliation, topicDescriptions.size());
+                    loggerWrapper.debug("Got {} topic descriptions", reconciliation, topicDescriptions.size());
                     return Future.succeededFuture(groupTopicsByBroker(topicDescriptions, podId));
                 }).recover(error -> {
-                    loggerWrapper.warn("{}: failed to get topic descriptions", reconciliation, error);
+                    loggerWrapper.warn("failed to get topic descriptions", reconciliation, error);
                     return Future.failedFuture(error);
                 });
 
@@ -86,11 +86,11 @@ class KafkaAvailability {
             boolean canRoll = tds.stream().noneMatch(
                 td -> wouldAffectAvailability(podId, topicNameToConfig, td));
             if (!canRoll) {
-                loggerWrapper.debug("{}: Restart pod {} would remove it from ISR, stalling producers with acks=all", reconciliation, podId);
+                loggerWrapper.debug("Restart pod {} would remove it from ISR, stalling producers with acks=all", reconciliation, podId);
             }
             return canRoll;
         }).recover(error -> {
-            loggerWrapper.warn("{}: Error determining whether it is safe to restart pod {}", reconciliation, podId, error);
+            loggerWrapper.warn("Error determining whether it is safe to restart pod {}", reconciliation, podId, error);
             return Future.failedFuture(error);
         });
     }
@@ -101,23 +101,23 @@ class KafkaAvailability {
         int minIsr;
         if (minIsrConfig != null && minIsrConfig.value() != null) {
             minIsr = parseInt(minIsrConfig.value());
-            loggerWrapper.debug("{}: {} has {}={}.", reconciliation, td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr);
+            loggerWrapper.debug("{} has {}={}.", reconciliation, td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr);
         } else {
             minIsr = -1;
-            loggerWrapper.debug("{}: {} lacks {}.", reconciliation, td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
+            loggerWrapper.debug("{} lacks {}.", reconciliation, td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
         }
 
         for (TopicPartitionInfo pi : td.partitions()) {
             List<Node> isr = pi.isr();
             if (minIsr >= 0) {
                 if (pi.replicas().size() <= minIsr) {
-                    loggerWrapper.debug("{}: {}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
+                    loggerWrapper.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
                             reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                             pi.replicas().size());
                 } else if (isr.size() < minIsr
                         && contains(pi.replicas(), broker)) {
                     logIsrReplicas(td, pi, isr);
-                    loggerWrapper.info("{}: {}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
+                    loggerWrapper.info("{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
                                     "so should not be restarted right now (it might be first to catch up).",
                             reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                     return true;
@@ -125,11 +125,11 @@ class KafkaAvailability {
                         && contains(isr, broker)) {
                     if (minIsr < pi.replicas().size()) {
                         logIsrReplicas(td, pi, isr);
-                        loggerWrapper.info("{}: {}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
+                        loggerWrapper.info("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
                                 reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                         return true;
                     } else {
-                        loggerWrapper.debug("{}: {}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
+                        loggerWrapper.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
                                 reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                                 pi.replicas().size());
                     }
@@ -141,7 +141,7 @@ class KafkaAvailability {
 
     private void logIsrReplicas(TopicDescription td, TopicPartitionInfo pi, List<Node> isr) {
         if (log.isDebugEnabled()) {
-            loggerWrapper.debug("{}: {}/{} has ISR={}, replicas={}", reconciliation, td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
+            loggerWrapper.debug("{}/{} has ISR={}, replicas={}", reconciliation, td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
         }
     }
 
@@ -154,7 +154,7 @@ class KafkaAvailability {
     }
 
     private Future<Map<String, Config>> topicConfigs(Collection<String> topicNames) {
-        loggerWrapper.debug("{}: Getting topic configs for {} topics", reconciliation, topicNames.size());
+        loggerWrapper.debug("Getting topic configs for {} topics", reconciliation, topicNames.size());
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
@@ -163,7 +163,7 @@ class KafkaAvailability {
             if (error != null) {
                 promise.fail(error);
             } else {
-                loggerWrapper.debug("{}: Got topic configs for {} topics", reconciliation, topicNames.size());
+                loggerWrapper.debug("Got topic configs for {} topics", reconciliation, topicNames.size());
                 promise.complete(topicNameToConfig.entrySet().stream()
                         .collect(Collectors.toMap(
                             entry -> entry.getKey().name(),
@@ -176,7 +176,7 @@ class KafkaAvailability {
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
         Set<TopicDescription> topicPartitionInfos = new HashSet<>();
         for (TopicDescription td : tds) {
-            loggerWrapper.trace("{}: {}", reconciliation, td);
+            loggerWrapper.trace("{}", reconciliation, td);
             for (TopicPartitionInfo pd : td.partitions()) {
                 for (Node broker : pd.replicas()) {
                     if (podId == broker.id()) {
@@ -195,7 +195,7 @@ class KafkaAvailability {
                     if (error != null) {
                         descPromise.fail(error);
                     } else {
-                        loggerWrapper.debug("{}: Got topic descriptions for {} topics", reconciliation, tds.size());
+                        loggerWrapper.debug("Got topic descriptions for {} topics", reconciliation, tds.size());
                         descPromise.complete(tds.values());
                     }
                 });
@@ -209,7 +209,7 @@ class KafkaAvailability {
                     if (error != null) {
                         namesPromise.fail(error);
                     } else {
-                        loggerWrapper.debug("{}: Got {} topic names", reconciliation, names.size());
+                        loggerWrapper.debug("Got {} topic names", reconciliation, names.size());
                         namesPromise.complete(names);
                     }
                 });
