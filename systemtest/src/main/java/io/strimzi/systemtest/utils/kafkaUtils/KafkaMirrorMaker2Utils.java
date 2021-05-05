@@ -5,8 +5,13 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
+import io.strimzi.test.TestUtils;
+
+import java.util.Map;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -46,5 +51,23 @@ public class KafkaMirrorMaker2Utils {
 
     public static boolean waitForKafkaMirrorMaker2NotReady(String clusterName) {
         return waitForKafkaMirrorMaker2Status(clusterName, NotReady);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void waitForKafkaMirrorMaker2ConnectorReadiness(String namespaceName, String clusterName) {
+        TestUtils.waitFor("KafkaMirrorMaker2 connectors readiness", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            KafkaMirrorMaker2Status kafkaMirrorMaker2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus();
+            // There should be only three connectors in the status of MM2
+            if (kafkaMirrorMaker2Status.getConnectors().size() != 3) {
+                return false;
+            }
+            for (Map<String, Object> connector : kafkaMirrorMaker2Status.getConnectors()) {
+                Map<String, String> status = (Map<String, String>) connector.get("connector");
+                if (!status.get("state").equals("RUNNING")) {
+                    return false;
+                }
+            }
+            return true;
+        });
     }
 }

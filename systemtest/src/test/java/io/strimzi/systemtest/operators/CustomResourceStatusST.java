@@ -67,6 +67,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -401,6 +402,7 @@ class CustomResourceStatusST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(targetClusterName, 1, 1).build());
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMaker2Name, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, targetClusterName, 1, false).build());
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(mirrorMaker2Name);
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(NAMESPACE, mirrorMaker2Name);
         assertKafkaMirrorMaker2Status(1, mm2Url, mirrorMaker2Name);
 
         // Corrupt Mirror Maker pods
@@ -413,7 +415,12 @@ class CustomResourceStatusST extends AbstractST {
                 .addToRequests("cpu", new Quantity("100m"))
                 .build()));
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(mirrorMaker2Name);
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(NAMESPACE, mirrorMaker2Name);
         assertKafkaMirrorMaker2Status(3, mm2Url, mirrorMaker2Name);
+        // Wait for pods stability and check that pods weren't rolled
+        PodUtils.verifyThatRunningPodsAreStable(NAMESPACE, KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
+        assertKafkaMirrorMaker2Status(3, mm2Url, mirrorMaker2Name);
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(NAMESPACE, mirrorMaker2Name);
     }
 
     @ParallelTest
@@ -558,6 +565,9 @@ class CustomResourceStatusST extends AbstractST {
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(NAMESPACE).withName(mirrorMaker2Name).get().getStatus();
         assertThat("Kafka MirrorMaker2 cluster status has incorrect Observed Generation", kafkaMirrorMaker2Status.getObservedGeneration(), is(expectedObservedGeneration));
         assertThat("Kafka MirrorMaker2 cluster status has incorrect URL", kafkaMirrorMaker2Status.getUrl(), is(apiUrl));
+        for (Map<String, Object> connector : kafkaMirrorMaker2Status.getConnectors()) {
+            assertThat("One of the connectors is not RUNNING:\n" + connector.toString(), ((Map<String, String>) connector.get("connector")).get("state"), is("RUNNING"));
+        }
     }
 
     void assertKafkaBridgeStatus(long expectedObservedGeneration, String bridgeAddress) {
