@@ -242,10 +242,10 @@ public class ZookeeperScaler implements AutoCloseable {
             vertx.executeBlocking(promise -> {
                 try {
                     zkAdmin.close((int) operationTimeoutMs);
-                    closePromise.complete();
+                    promise.complete();
                 } catch (Exception e) {
                     log.debug("Failed to close the ZooKeeperAdmin", e);
-                    closePromise.fail(e);
+                    promise.fail(e);
                 }
             }, false, closePromise);
         } else {
@@ -300,7 +300,7 @@ public class ZookeeperScaler implements AutoCloseable {
     /*test*/ static List<String> serversMapToList(Map<String, String> servers)  {
         List<String> serversList = new ArrayList<>(servers.size());
 
-        for (Map.Entry<String, String> entry : servers.entrySet())  {
+        for (var entry : servers.entrySet())  {
             serversList.add(String.format("%s=%s", entry.getKey(), entry.getValue()));
         }
 
