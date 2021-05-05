@@ -28,5 +28,5 @@ All other CSV fields must be updated manually in the template CSV file, `./csv-t
 ```
 for example:
 ```
-/generate-olm-bundle.sh 2.3.0
+/generate-olm-bundle.sh 0.22.1
 ```
