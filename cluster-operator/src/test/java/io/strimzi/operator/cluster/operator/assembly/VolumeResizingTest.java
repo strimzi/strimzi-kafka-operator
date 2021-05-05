@@ -27,6 +27,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -44,6 +45,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+@ParallelSuite
 public class VolumeResizingTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
     private final MockCertManager certManager = new MockCertManager();

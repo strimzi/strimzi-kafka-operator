@@ -27,7 +27,7 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.Header.header;
 
-public class MockCruiseControl {
+public class MockCruiseControlUtils {
 
     private static final String CC_JSON_ROOT = "io/strimzi/operator/cluster/operator/assembly/CruiseControlJSON/";
 
@@ -75,7 +75,7 @@ public class MockCruiseControl {
 
     private static JsonBody getJsonFromResource(String resource) throws URISyntaxException, IOException {
 
-        URI jsonURI = Objects.requireNonNull(MockCruiseControl.class.getClassLoader().getResource(CC_JSON_ROOT + resource))
+        URI jsonURI = Objects.requireNonNull(MockCruiseControlUtils.class.getClassLoader().getResource(CC_JSON_ROOT + resource))
                 .toURI();
 
         Optional<String> json = Files.lines(Paths.get(jsonURI), UTF_8)

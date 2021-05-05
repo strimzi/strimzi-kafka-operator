@@ -28,6 +28,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -42,7 +43,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.vertx.core.Future.failedFuture;
@@ -96,7 +96,7 @@ public class KafkaRollerTest {
         return podId -> null;
     }
 
-    @Test
+    @ParallelTest
     public void testRollWithNoController(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -106,7 +106,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 2, 3, 4));
     }
 
-    @Test
+    @ParallelTest
     public void testRollWithPod2AsController(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -116,7 +116,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 3, 4, 2));
     }
 
-    @Test
+    @ParallelTest
     public void tesRollWithtAControllerChange(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -126,7 +126,7 @@ public class KafkaRollerTest {
                 asList(2, 3, 4, 0, 1));
     }
 
-    @Test
+    @ParallelTest
     public void pod0NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
             podId == 0 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
@@ -141,7 +141,7 @@ public class KafkaRollerTest {
         // TODO assert subsequent rolls
     }
 
-    @Test
+    @ParallelTest
     public void pod1NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
                 podId == 1 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
@@ -162,7 +162,7 @@ public class KafkaRollerTest {
                 emptyList());
     }
 
-    @Test
+    @ParallelTest
     public void pod3NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
                 podId == 3 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
@@ -183,7 +183,7 @@ public class KafkaRollerTest {
                 emptyList());
     }
 
-    @Test
+    @ParallelTest
     public void controllerNotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
                 podId == 2 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
@@ -204,7 +204,7 @@ public class KafkaRollerTest {
                 singletonList(2));
     }
 
-    @Test
+    @ParallelTest
     public void testRollHandlesErrorWhenOpeningAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -220,7 +220,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 3, 4, 2));
     }
 
-    @Test
+    @ParallelTest
     public void testRollHandlesErrorWhenGettingControllerFromNonController(VertxTestContext testContext) {
         int controller = 2;
         int nonController = 1;
@@ -238,7 +238,7 @@ public class KafkaRollerTest {
                 asList(0, 3, 4, nonController, controller));
     }
 
-    @Test
+    @ParallelTest
     public void testRollHandlesErrorWhenGettingControllerFromController(VertxTestContext testContext) {
         int controller = 2;
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
@@ -255,7 +255,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 3, 4, controller));
     }
 
-    @Test
+    @ParallelTest
     public void testRollHandlesErrorWhenClosingAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -271,7 +271,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 3, 4, 2));
     }
 
-    @Test
+    @ParallelTest
     public void testNonControllerNotInitiallyRollable(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -289,7 +289,7 @@ public class KafkaRollerTest {
 
     private static final Logger log = LogManager.getLogger(KafkaRollerTest.class);
 
-    @Test
+    @ParallelTest
     public void testControllerNotInitiallyRollable(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -311,7 +311,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 3, 4, 2));
     }
 
-    @Test
+    @ParallelTest
     public void testNonControllerNeverRollable(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -339,7 +339,7 @@ public class KafkaRollerTest {
                 emptyList());
     }
 
-    @Test
+    @ParallelTest
     public void testControllerNeverRollable(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -368,7 +368,7 @@ public class KafkaRollerTest {
                 emptyList());
     }
 
-    @Test
+    @ParallelTest
     public void testRollHandlesErrorWhenGettingConfigFromNonController(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -382,7 +382,7 @@ public class KafkaRollerTest {
                 asList(0, 3, 4, 1, 2));
     }
 
-    @Test
+    @ParallelTest
     public void testRollHandlesErrorWhenGettingConfigFromController(VertxTestContext testContext) {
         int controller = 2;
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
@@ -397,7 +397,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 3, 4, controller));
     }
 
-    @Test
+    @ParallelTest
     public void testRollHandlesErrorWhenAlteringConfig(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -411,7 +411,7 @@ public class KafkaRollerTest {
                 asList(0, 1, 3, 4, 2));
     }
 
-    @Test
+    @ParallelTest
     public void testSuccessfulAlteringConfigNotRoll(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();
@@ -424,7 +424,7 @@ public class KafkaRollerTest {
                 emptyList());
     }
 
-    @Test
+    @ParallelTest
     public void testControllerAndOneMoreNeverRollable(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         StatefulSet sts = buildStatefulSet();

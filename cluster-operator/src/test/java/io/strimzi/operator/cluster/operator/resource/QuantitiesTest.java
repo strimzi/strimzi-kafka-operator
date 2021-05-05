@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelTest;
 
 import static io.strimzi.operator.cluster.operator.resource.Quantities.formatMemory;
 import static io.strimzi.operator.cluster.operator.resource.Quantities.formatMilliCpu;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class QuantitiesTest {
 
-    @Test
+    @ParallelTest
     public void testParseMemory() {
         assertThat(parseMemory("1234"), is(1234L));
         assertThat(parseMemory("0"), is(0L));
@@ -80,7 +80,7 @@ public class QuantitiesTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testFormatMemory() {
         assertThat(formatMemory(0), is("0"));
         assertThat(formatMemory(1), is("1"));
@@ -99,7 +99,7 @@ public class QuantitiesTest {
         assertThat(formatMemory(524288000L), is("524288000"));
     }
 
-    @Test
+    @ParallelTest
     public void testNormalizeMemory() {
         assertThat(normalizeMemory("1K"), is("1000"));
         assertThat(normalizeMemory("1Ki"), is("1024"));
@@ -111,7 +111,7 @@ public class QuantitiesTest {
         assertThat(normalizeMemory("1.2Gi"), is("1288490188"));
     }
 
-    @Test
+    @ParallelTest
     public void testParse() {
         assertThat(parseCpuAsMilliCpus("100000"), is(100000000));
         assertThat(parseCpuAsMilliCpus("1"), is(1000));
@@ -133,21 +133,21 @@ public class QuantitiesTest {
         } catch (IllegalArgumentException e) { }
     }
 
-    @Test
+    @ParallelTest
     public void testFormat() {
         assertThat(formatMilliCpu(1000), is("1"));
         assertThat(formatMilliCpu(500), is("500m"));
         assertThat(formatMilliCpu(1), is("1m"));
     }
 
-    @Test
+    @ParallelTest
     public void testRt() {
         assertThat(formatMilliCpu(parseCpuAsMilliCpus("1")), is("1"));
         assertThat(formatMilliCpu(parseCpuAsMilliCpus("500m")), is("500m"));
         assertThat(formatMilliCpu(parseCpuAsMilliCpus("1m")), is("1m"));
     }
 
-    @Test
+    @ParallelTest
     public void testNormalizeCpu() {
         assertThat(normalizeCpu("1"), is("1"));
         assertThat(normalizeCpu("1000m"), is("1"));

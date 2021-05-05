@@ -28,6 +28,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
+@ParallelSuite
 public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
     private final MockCertManager certManager = new MockCertManager();

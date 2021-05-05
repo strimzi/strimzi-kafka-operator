@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.test.annotations.ParallelTest;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -50,13 +51,13 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
         return new Config(entryList);
     }
 
-    @Test
+    @ParallelTest
     public void testReplaceRootLogger() {
         KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), brokerId);
         assertThat(klcd.getDiffSize(), is(0));
     }
 
-    @Test
+    @ParallelTest
     public void testDiffUsingLoggerInheritance() {
         // Prepare desiredConfig
         String desiredConfig = getRealisticDesiredConfig();
@@ -142,7 +143,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
         return new AlterConfigOp(new ConfigEntry(category, level), AlterConfigOp.OpType.SET);
     }
 
-    @Test
+    @ParallelTest
     public void testExpansion() {
         String input = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +

@@ -36,6 +36,7 @@ import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -153,18 +154,18 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     }
 
     @Override
-    @Test
+    @ParallelTest
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
         testCreateWhenExistsWithChangeIsAPatch(context, false);
     }
 
     @Override
-    @Test
+    @ParallelTest
     public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context) {
         testCreateWhenExistsWithoutChangeIsNotAPatch(context, false);
     }
 
-    @Test
+    @ParallelTest
     public void testRollingUpdateSuccess(VertxTestContext context) {
         StatefulSet resource = resource();
         Resource mockResource = mock(resourceType());
@@ -209,7 +210,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             .onComplete(context.succeeding(v -> a.flag()));
     }
 
-    @Test
+    @ParallelTest
     public void testRollingUpdateDeletionTimeout(VertxTestContext context) {
         StatefulSet resource = resource();
         Resource mockResource = mock(resourceType());
@@ -263,7 +264,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testRollingUpdateReadinessTimeout(VertxTestContext context) {
         StatefulSet resource = resource();
         Resource mockResource = mock(resourceType());
@@ -309,7 +310,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         })));
     }
 
-    @Test
+    @ParallelTest
     public void testRollingUpdateReconcileFailed(VertxTestContext context) {
         StatefulSet resource = resource();
         Resource mockResource = mock(resourceType());
@@ -355,7 +356,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testInternalReplace(VertxTestContext context)   {
         StatefulSet sts1 = new StatefulSetBuilder()
                 .withNewMetadata()
@@ -457,7 +458,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }));
     }
 
-    @Test
+    @ParallelTest
     public void testCascadingDeleteAsync(VertxTestContext context)   {
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
@@ -502,7 +503,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testNonCascadingDeleteAsync(VertxTestContext context)   {
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
@@ -547,7 +548,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testDeleteAsyncNotDeleted(VertxTestContext context)   {
         EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
         when(mockERPD.delete()).thenReturn(Boolean.FALSE);
@@ -584,7 +585,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             .onComplete(context.failing(e -> a.flag()));
     }
 
-    @Test
+    @ParallelTest
     public void testDeleteAsyncFailing(VertxTestContext context)   {
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenThrow(new MockitoException("Something failed"));

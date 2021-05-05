@@ -16,7 +16,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,14 +43,14 @@ public class KafkaSpecCheckerTest {
         return new KafkaSpecChecker(kafka.getSpec(), versions, kafkaCluster, zkCluster);
     }
 
-    @Test
+    @ParallelTest
     public void checkEmptyWarnings() {
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
         assertThat(checker.run(), empty());
     }
 
-    @Test
+    @ParallelTest
     public void checkKafkaStorage() {
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             emptyMap(), null, emptyMap(), emptyMap(),
@@ -70,7 +70,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
     }
 
-    @Test
+    @ParallelTest
     public void checkKafkaJbodStorage() {
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             emptyMap(), null, emptyMap(), emptyMap(),
@@ -92,7 +92,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
     }
 
-    @Test
+    @ParallelTest
     public void checkZookeeperStorage() {
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
             emptyMap(), null, emptyMap(), emptyMap(),
@@ -112,7 +112,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
     }
 
-    @Test
+    @ParallelTest
     public void checkZookeeperReplicas() {
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 2, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
@@ -124,7 +124,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("Running ZooKeeper with two nodes is not advisable as both replicas will be needed to avoid downtime. It is recommended that a minimum of three replicas are used."));
     }
 
-    @Test
+    @ParallelTest
     public void checkZookeeperEvenReplicas() {
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 4, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT);
         KafkaSpecChecker checker = generateChecker(kafka);
@@ -136,7 +136,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("Running ZooKeeper with an odd number of replicas is recommended."));
     }
 
-    @Test
+    @ParallelTest
     public void checkLogMessageFormatVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
@@ -158,7 +158,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
     }
 
-    @Test
+    @ParallelTest
     public void checkLogMessageFormatWithoutVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
@@ -176,7 +176,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("log.message.format.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
     }
 
-    @Test
+    @ParallelTest
     public void checkLogMessageFormatWithRightVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_FORMAT_VERSION);
@@ -190,7 +190,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(0));
     }
 
-    @Test
+    @ParallelTest
     public void checkLogMessageFormatWithRightLongVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_FORMAT_VERSION + "-IV0");
@@ -204,7 +204,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(0));
     }
 
-    @Test
+    @ParallelTest
     public void checkInterBrokerProtocolVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
@@ -226,7 +226,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
     }
 
-    @Test
+    @ParallelTest
     public void checkInterBrokerProtocolWithoutVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
@@ -244,7 +244,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warning.getMessage(), is("inter.broker.protocol.version does not match the Kafka cluster version, which suggests that an upgrade is incomplete."));
     }
 
-    @Test
+    @ParallelTest
     public void checkInterBrokerProtocolWithCorrectVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
@@ -258,7 +258,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(0));
     }
 
-    @Test
+    @ParallelTest
     public void checkInterBrokerProtocolWithCorrectLongVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
         kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION + "-IV0");
@@ -272,7 +272,7 @@ public class KafkaSpecCheckerTest {
         assertThat(warnings, hasSize(0));
     }
 
-    @Test
+    @ParallelTest
     public void checkMultipleWarnings() {
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 1, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
                 emptyMap(), null, emptyMap(), emptyMap(),

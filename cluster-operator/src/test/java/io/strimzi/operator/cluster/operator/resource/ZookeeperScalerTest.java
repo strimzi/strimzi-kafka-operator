@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -21,7 +22,6 @@ import org.apache.zookeeper.client.ZKClientConfig;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
@@ -75,7 +75,7 @@ public class ZookeeperScalerTest {
         vertx.close();
     }
 
-    @Test
+    @ParallelTest
     public void testIsNotDifferent()   {
         Map<String, String> current = new HashMap<>(3);
         current.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
@@ -97,7 +97,7 @@ public class ZookeeperScalerTest {
         assertThat(ZookeeperScaler.isDifferent(current, desired2), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testIsDifferent()   {
         Map<String, String> current = new HashMap<>(3);
         current.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
@@ -125,7 +125,7 @@ public class ZookeeperScalerTest {
         assertThat(ZookeeperScaler.isDifferent(current, desired3), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateConfigOneNode() {
         Map<String, String> expected = new HashMap<>(3);
         expected.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
@@ -133,7 +133,7 @@ public class ZookeeperScalerTest {
         assertThat(ZookeeperScaler.generateConfig(1, zkNodeAddress), is(expected));
     }
 
-    @Test
+    @ParallelTest
     public void testGenerateConfigThreeNodes() {
         Map<String, String> expected = new HashMap<>(3);
         expected.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
@@ -143,7 +143,7 @@ public class ZookeeperScalerTest {
         assertThat(ZookeeperScaler.generateConfig(3, zkNodeAddress), is(expected));
     }
 
-    @Test
+    @ParallelTest
     public void testParseConfig() {
         String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                         "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
@@ -158,7 +158,7 @@ public class ZookeeperScalerTest {
         assertThat(ZookeeperScaler.parseConfig(config.getBytes(StandardCharsets.US_ASCII)), is(expected));
     }
 
-    @Test
+    @ParallelTest
     public void testMapToList() {
         Map<String, String> servers = new HashMap<>(3);
         servers.put("server.1", "my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181");
@@ -173,7 +173,7 @@ public class ZookeeperScalerTest {
         assertThat(ZookeeperScaler.serversMapToList(servers), containsInAnyOrder(expected.toArray()));
     }
 
-    @Test
+    @ParallelTest
     public void testConnectionTimeout(VertxTestContext context)  {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.NOT_CONNECTED);
@@ -194,7 +194,7 @@ public class ZookeeperScalerTest {
         })));
     }
 
-    @Test
+    @ParallelTest
     public void testNoChange(VertxTestContext context) throws KeeperException, InterruptedException {
         String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "version=100000000b";
@@ -220,7 +220,7 @@ public class ZookeeperScalerTest {
         })));
     }
 
-    @Test
+    @ParallelTest
     public void testWithChange(VertxTestContext context) throws KeeperException, InterruptedException {
         String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
@@ -251,7 +251,7 @@ public class ZookeeperScalerTest {
         })));
     }
 
-    @Test
+    @ParallelTest
     public void testWhenThrows(VertxTestContext context) throws KeeperException, InterruptedException {
         String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
@@ -279,7 +279,7 @@ public class ZookeeperScalerTest {
         })));
     }
 
-    @Test
+    @ParallelTest
     public void testConnectionToNonExistingHost(VertxTestContext context)  {
         ZookeeperScaler scaler = new ZookeeperScaler(vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyCaSecret, dummyCoSecret, 2_000);
 

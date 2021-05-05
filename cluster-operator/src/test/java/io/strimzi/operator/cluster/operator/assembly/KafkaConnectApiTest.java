@@ -10,6 +10,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.IsolatedTest;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -48,6 +49,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
+@ParallelSuite
 public class KafkaConnectApiTest {
 
     private KafkaCluster cluster;

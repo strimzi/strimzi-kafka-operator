@@ -29,6 +29,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.annotations.IsolatedTest;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -49,6 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 
 @ExtendWith(VertxExtension.class)
+@ParallelSuite
 public class KafkaUpgradeDowngradeMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeMockTest.class);
 

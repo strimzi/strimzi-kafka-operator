@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -23,7 +24,6 @@ import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
@@ -270,7 +270,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testBelowMinIsr(VertxTestContext context) {
         KSB ksb = new KSB()
             .addNewTopic("A", false)
@@ -309,7 +309,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testAtMinIsr(VertxTestContext context) {
         KSB ksb = new KSB()
             .addNewTopic("A", false)
@@ -348,7 +348,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testAboveMinIsr(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)
@@ -382,7 +382,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testMinIsrEqualsReplicas(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)
@@ -409,7 +409,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testMinIsrEqualsReplicasWithOfflineReplicas(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)
@@ -436,7 +436,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testMinIsrMoreThanReplicas(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)
@@ -462,7 +462,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testNoLeader(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)
@@ -501,7 +501,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testNoMinIsr(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)
@@ -534,7 +534,7 @@ public class KafkaAvailabilityTest {
     }
 
     // TODO when AC throws various exceptions (e.g. UnknownTopicOrPartitionException)
-    @Test
+    @ParallelTest
     public void testCanRollThrowsTimeoutExceptionWhenTopicsListThrowsException(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)
@@ -568,7 +568,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testCanRollThrowsExceptionWhenTopicDescribeThrows(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)
@@ -602,7 +602,7 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    @Test
+    @ParallelTest
     public void testCanRollThrowsExceptionWhenDescribeConfigsThrows(VertxTestContext context) {
         KSB ksb = new KSB()
                 .addNewTopic("A", false)

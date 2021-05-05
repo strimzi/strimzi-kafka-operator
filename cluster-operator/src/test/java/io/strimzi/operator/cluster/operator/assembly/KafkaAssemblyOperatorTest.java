@@ -87,6 +87,7 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelParametrizedTest;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -137,6 +138,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
+@ParallelSuite
 public class KafkaAssemblyOperatorTest {
 
     public static final Map<String, Object> METRICS_CONFIG = new HashMap<>();

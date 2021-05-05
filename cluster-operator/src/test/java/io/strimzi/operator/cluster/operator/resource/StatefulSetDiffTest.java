@@ -12,14 +12,14 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelTest;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StatefulSetDiffTest {
-    @Test
+    @ParallelTest
     public void testSpecVolumesIgnored() {
         StatefulSet ss1 = new StatefulSetBuilder()
             .withNewMetadata()
@@ -88,7 +88,7 @@ public class StatefulSetDiffTest {
         return new StatefulSetDiff(ss1, ss2);
     }
 
-    @Test
+    @ParallelTest
     public void testCpuResources() {
         assertThat(testCpuResources(
                 new ResourceRequirementsBuilder()
@@ -139,7 +139,7 @@ public class StatefulSetDiffTest {
                 null).isEmpty(), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testPvcSizeChangeIgnored() {
         StatefulSet ss1 = new StatefulSetBuilder()
                 .withNewMetadata()
@@ -189,7 +189,7 @@ public class StatefulSetDiffTest {
         assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testPvcSizeUnitChangeIgnored() {
         StatefulSet ss1 = new StatefulSetBuilder()
                 .withNewMetadata()
@@ -239,7 +239,7 @@ public class StatefulSetDiffTest {
         assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testNewPvcNotIgnored() {
         StatefulSet ss1 = new StatefulSetBuilder()
                 .withNewMetadata()

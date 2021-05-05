@@ -50,6 +50,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.annotations.ParallelParametrizedTest;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -88,6 +89,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @ExtendWith(VertxExtension.class)
+@ParallelSuite
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class KafkaAssemblyOperatorMockTest {
 

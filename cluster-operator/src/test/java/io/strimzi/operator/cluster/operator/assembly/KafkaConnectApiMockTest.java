@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -21,6 +22,7 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
 @ExtendWith(VertxExtension.class)
+@ParallelSuite
 public class KafkaConnectApiMockTest {
     private static Vertx vertx;
     private BackOff backOff = new BackOff(1L, 2, 3);

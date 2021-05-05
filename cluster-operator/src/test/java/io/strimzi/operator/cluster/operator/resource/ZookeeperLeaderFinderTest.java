@@ -15,6 +15,7 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -30,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 
@@ -212,7 +212,7 @@ public class ZookeeperLeaderFinderTest {
         return new BackOff(50, 2, MAX_ATTEMPTS);
     }
 
-    @Test
+    @ParallelTest
     public void test0PodsClusterReturnsUnknowLeader(VertxTestContext context) {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         Checkpoint a = context.checkpoint();
@@ -223,7 +223,7 @@ public class ZookeeperLeaderFinderTest {
             }));
     }
 
-    @Test
+    @ParallelTest
     public void test1PodClusterReturnsOnlyPodAsLeader(VertxTestContext context) {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         Checkpoint a = context.checkpoint();
@@ -235,7 +235,7 @@ public class ZookeeperLeaderFinderTest {
             }));
     }
 
-    @Test
+    @ParallelTest
     public void testSecretWithMissingClusterOperatorKeyThrowsException(VertxTestContext context) {
         SecretOperator mock = mock(SecretOperator.class);
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, mock, this::backoff);
@@ -271,7 +271,7 @@ public class ZookeeperLeaderFinderTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testSecretsCorrupted(VertxTestContext context) {
         SecretOperator mock = mock(SecretOperator.class);
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, mock, this::backoff);
@@ -308,7 +308,7 @@ public class ZookeeperLeaderFinderTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testReturnUnknownLeaderWhenMaxAttemptsExceeded(VertxTestContext context) throws InterruptedException {
         String coSecretName = ClusterOperator.secretName(CLUSTER);
         when(mock.getAsync(eq(NAMESPACE), eq(coSecretName)))
@@ -349,7 +349,7 @@ public class ZookeeperLeaderFinderTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testReturnUnknownLeaderDuringNetworkExceptions(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
                 .thenReturn(Future.succeededFuture(
@@ -389,7 +389,7 @@ public class ZookeeperLeaderFinderTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testFinderHandlesFailureByLeaderFoundOnThirdAttempt(VertxTestContext context) throws InterruptedException {
         int desiredLeaderId = 1;
         int succeedOnAttempt = 2;
@@ -428,7 +428,7 @@ public class ZookeeperLeaderFinderTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testLeaderFoundFirstAttempt(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
         int leader = 1;
         when(mock.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER))))
@@ -474,7 +474,7 @@ public class ZookeeperLeaderFinderTest {
                 .build();
     }
 
-    @Test
+    @ParallelTest
     public void testGetHostReturnsCorrectHostForGivenPod() {
         Pod pod = new PodBuilder()
                 .withNewMetadata()

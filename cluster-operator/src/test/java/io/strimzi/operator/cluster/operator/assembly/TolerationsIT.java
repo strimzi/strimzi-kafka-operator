@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.junit5.Checkpoint;
@@ -31,6 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @ExtendWith(VertxExtension.class)
+@ParallelSuite
 public class TolerationsIT {
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();

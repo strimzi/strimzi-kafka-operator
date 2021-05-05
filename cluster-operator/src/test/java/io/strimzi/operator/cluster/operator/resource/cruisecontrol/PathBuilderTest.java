@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelTest;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -48,7 +48,7 @@ public class PathBuilderTest {
 
         return expectedQuery.toString();
     }
-    @Test
+    @ParallelTest
     public void testQueryStringPair() {
 
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
@@ -61,7 +61,7 @@ public class PathBuilderTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testQueryStringList() throws UnsupportedEncodingException {
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
@@ -78,7 +78,7 @@ public class PathBuilderTest {
 
     }
 
-    @Test
+    @ParallelTest
     public void testQueryRebalanceOptions() throws UnsupportedEncodingException {
 
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()

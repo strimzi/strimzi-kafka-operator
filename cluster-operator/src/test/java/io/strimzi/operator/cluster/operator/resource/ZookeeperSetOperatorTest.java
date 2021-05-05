@@ -10,8 +10,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,16 +23,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ZookeeperSetOperatorTest {
 
-    private StatefulSet a;
-    private StatefulSet b;
-
-    @BeforeEach
-    public void before() {
-        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-        a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
-        b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
-    }
-
     private Kafka getResource() {
         String kafkaName = "foo";
         String kafkaNamespace = "test";
@@ -44,63 +33,95 @@ public class ZookeeperSetOperatorTest {
         return ResourceUtils.createKafka(kafkaNamespace, kafkaName, replicas, image, healthDelay, healthTimeout);
     }
 
-    private StatefulSetDiff diff() {
+    private StatefulSetDiff diff(StatefulSet a, StatefulSet b) {
         return new StatefulSetDiff(a, b);
     }
 
-    @Test
+    @ParallelTest
     public void testNotNeedsRollingUpdateIdentical() {
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(false));
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        StatefulSet a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        StatefulSet b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff(a, b)), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testNotNeedsRollingUpdateReplicas() {
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        StatefulSet a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        StatefulSet b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+
         a.getSpec().setReplicas(b.getSpec().getReplicas() + 1);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(false));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff(a, b)), is(false));
     }
 
-    @Test
+    @ParallelTest
     public void testNeedsRollingUpdateLabels() {
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        StatefulSet a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        StatefulSet b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+
         Map<String, String> labels = new HashMap<>(b.getMetadata().getLabels());
         labels.put("foo", "bar");
         a.getMetadata().setLabels(labels);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff(a, b)), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testNeedsRollingUpdateImage() {
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        StatefulSet a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        StatefulSet b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+
         a.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo");
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff(a, b)), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testNeedsRollingUpdateReadinessDelay() {
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        StatefulSet a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        StatefulSet b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setInitialDelaySeconds(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds() + 1);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff(a, b)), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testNeedsRollingUpdateReadinessTimeout() {
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        StatefulSet a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        StatefulSet b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff(a, b)), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testNeedsRollingUpdateEnvZkMetricsEnabled() {
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        StatefulSet a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        StatefulSet b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
         String envVar = ENV_VAR_ZOOKEEPER_METRICS_ENABLED;
+
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff(a, b)), is(true));
     }
 
-    @Test
+    @ParallelTest
     public void testNeedsRollingUpdateEnvSomeOtherThing() {
+        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
+        StatefulSet a = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+        StatefulSet b = ZookeeperCluster.fromCrd(getResource(), versions).generateStatefulSet(true, null, null);
+
         String envVar = "SOME_RANDOM_ENV";
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(diff(a, b)), is(true));
     }
 }

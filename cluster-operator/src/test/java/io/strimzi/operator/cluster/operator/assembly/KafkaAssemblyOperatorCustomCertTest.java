@@ -37,6 +37,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
@@ -59,6 +60,7 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 
 @ExtendWith(VertxExtension.class)
+@ParallelSuite
 public class KafkaAssemblyOperatorCustomCertTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
     private final MockCertManager certManager = new MockCertManager();

@@ -4,15 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 
@@ -23,35 +20,16 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
-public class MockCruiseControlTest {
-
-    private static final int PORT = 1080;
-    private static final String HOST = "localhost";
-
-    private static ClientAndServer ccServer;
-
-    @BeforeAll
-    public static void startUp() throws IOException, URISyntaxException {
-        ccServer = MockCruiseControl.server(PORT);
-    }
-
-    @BeforeEach
-    public void resetServer() {
-        ccServer.reset();
-    }
-
-    @AfterAll
-    public static void stop() {
-        ccServer.stop();
-    }
+public class MockCruiseControlTest extends CruiseControlBase {
 
     private void runTest(Vertx vertx, VertxTestContext context, String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
+        ClientAndServer ccServer = MockCruiseControlUtils.server(PORT_NUMBERS.getUniqueNumber());
 
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls);
+        MockCruiseControlUtils.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls);
 
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
 
         Checkpoint checkpoint = context.checkpoint(pendingCalls + 1);
 
@@ -62,7 +40,7 @@ public class MockCruiseControlTest {
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 checkpoint.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
             });
         }
 
@@ -72,44 +50,45 @@ public class MockCruiseControlTest {
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
             checkpoint.flag();
+            ccServer.stop();
             return Future.succeededFuture(response);
         });
     }
 
-    @Test
+    @ParallelTest
     public void testCCUserTaskNoDelay(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 0);
+        runTest(vertx, context, MockCruiseControlUtils.REBALANCE_NO_GOALS_RESPONSE_UTID, 0);
     }
 
-    @Test
+    @ParallelTest
     public void testCCUserTaskNoDelayVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 0);
+        runTest(vertx, context, MockCruiseControlUtils.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 0);
     }
 
-    @Test
+    @ParallelTest
     public void testCCUserTaskDelay(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID, 3);
+        runTest(vertx, context, MockCruiseControlUtils.REBALANCE_NO_GOALS_RESPONSE_UTID, 3);
     }
 
-    @Test
+    @ParallelTest
     public void testCCUserTaskDelayVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        runTest(vertx, context, MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 3);
+        runTest(vertx, context, MockCruiseControlUtils.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID, 3);
     }
 
-    @Test
+    @ParallelTest
     public void testMockCCServerPendingCallsOverride(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-
+        ClientAndServer ccServer = MockCruiseControlUtils.server(PORT_NUMBERS.getUniqueNumber());
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
-        String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
+        String userTaskID = MockCruiseControlUtils.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
         int pendingCalls1 = 2;
         Checkpoint firstPending = context.checkpoint(pendingCalls1);
         int pendingCalls2 = 4;
         Checkpoint secondPending = context.checkpoint(pendingCalls2);
 
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls1);
+        MockCruiseControlUtils.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls1);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
 
         for (int i = 1; i <= pendingCalls1; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -118,7 +97,7 @@ public class MockCruiseControlTest {
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 firstPending.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
             });
         }
 
@@ -133,7 +112,7 @@ public class MockCruiseControlTest {
         statusFuture = statusFuture.compose(response -> {
             try {
                 ccServer.reset();
-                MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls2);
+                MockCruiseControlUtils.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls2);
             } catch (IOException e) {
                 return Future.failedFuture(e);
             } catch (URISyntaxException e) {
@@ -142,7 +121,7 @@ public class MockCruiseControlTest {
             return Future.succeededFuture();
         });
 
-        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(HOST, PORT, userTaskID));
+        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID));
 
         for (int i = 1; i <= pendingCalls2; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -151,7 +130,7 @@ public class MockCruiseControlTest {
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 secondPending.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
             });
         }
 
@@ -162,6 +141,7 @@ public class MockCruiseControlTest {
             );
             return Future.succeededFuture(response);
         }).onComplete(context.succeeding(result -> {
+            ccServer.stop();
             context.completeNow();
         }));
     }
