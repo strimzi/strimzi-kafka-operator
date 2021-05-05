@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Representation of a template for Strimzi external services.
- * It contains additional values applicable to load balancer or node port type services.
+ * Representation of a template for Strimzi internal services.
+ * It contains additional values applicable to internal services..
  */
 @Buildable(
         editableEnabled = false,

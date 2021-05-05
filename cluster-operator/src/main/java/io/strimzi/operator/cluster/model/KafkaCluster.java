@@ -791,7 +791,8 @@ public class KafkaCluster extends AbstractModel {
                     getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapServiceLabels, ListenersUtils.bootstrapLabels(listener))),
                     getSelectorLabels(),
                     Util.mergeLabelsOrAnnotations(ListenersUtils.bootstrapAnnotations(listener), templateExternalBootstrapServiceAnnotations),
-                    ListenersUtils.ipFamilyPolicy(listener), ListenersUtils.ipFamilies(listener)
+                    ListenersUtils.ipFamilyPolicy(listener),
+                    ListenersUtils.ipFamilies(listener)
             );
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
@@ -858,7 +859,8 @@ public class KafkaCluster extends AbstractModel {
                     getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodServiceLabels, ListenersUtils.brokerLabels(listener, pod))),
                     selector,
                     Util.mergeLabelsOrAnnotations(ListenersUtils.brokerAnnotations(listener, pod), templatePerPodServiceAnnotations),
-                    ListenersUtils.ipFamilyPolicy(listener), ListenersUtils.ipFamilies(listener)
+                    ListenersUtils.ipFamilyPolicy(listener),
+                    ListenersUtils.ipFamilies(listener)
             );
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
