@@ -194,29 +194,32 @@ public class KafkaRoller {
      */
     public Future<Void> rollingRestart(Function<Pod, List<String>> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
-        List<Future> futures = new ArrayList<>(numPods);
-        List<Integer> podIds = new ArrayList<>(numPods);
 
-        for (int podId = 0; podId < numPods; podId++) {
-            // Order the podIds unready first otherwise repeated reconciliations might each restart a pod
-            // only for it not to become ready and thus drive the cluster to a worse state.
-            podIds.add(podOperations.isReady(namespace, podName(podId)) ? podIds.size() : 0, podId);
-        }
-        log.debug("{}: Initial order for rolling restart {}", reconciliation, podIds);
-        for (Integer podId: podIds) {
-            futures.add(schedule(podId, 0, TimeUnit.MILLISECONDS));
-        }
         Promise<Void> result = Promise.promise();
-        CompositeFuture.join(futures).onComplete(ar -> {
-            singleExecutor.shutdown();
-            try {
-                if (allClient != null) {
-                    allClient.close(Duration.ofSeconds(30));
-                }
-            } catch (RuntimeException e) {
-                log.debug("{}: Exception closing admin client", reconciliation, e);
+        singleExecutor.submit(() -> {
+            List<Integer> podIds = new ArrayList<>(numPods);
+
+            for (int podId = 0; podId < numPods; podId++) {
+                // Order the podIds unready first otherwise repeated reconciliations might each restart a pod
+                // only for it not to become ready and thus drive the cluster to a worse state.
+                podIds.add(podOperations.isReady(namespace, podName(podId)) ? podIds.size() : 0, podId);
             }
-            vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
+            log.debug("{}: Initial order for rolling restart {}", reconciliation, podIds);
+            List<Future> futures = new ArrayList<>(numPods);
+            for (Integer podId: podIds) {
+                futures.add(schedule(podId, 0, TimeUnit.MILLISECONDS));
+            }
+            CompositeFuture.join(futures).onComplete(ar -> {
+                singleExecutor.shutdown();
+                try {
+                    if (allClient != null) {
+                        allClient.close(Duration.ofSeconds(30));
+                    }
+                } catch (RuntimeException e) {
+                    log.debug("{}: Exception closing admin client", reconciliation, e);
+                }
+                vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
+            });
         });
         return result.future();
     }
