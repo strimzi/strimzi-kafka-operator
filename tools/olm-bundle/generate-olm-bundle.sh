@@ -3,7 +3,7 @@
 # Generates OLM bundle using existing CRDs
 #
 #
-source ../multi-platform-support.sh
+source $(dirname $(realpath $0))/../multi-platform-support.sh
 
 PACKAGE_NAME=strimzi-cluster-operator
 VERSION=$1
@@ -11,12 +11,13 @@ VERSION=$1
 CHANNELS=latest
 PREVIOUS_BUNDLE_VERSION=$(curl -s https://raw.githubusercontent.com/operator-framework/community-operators/master/community-operators/strimzi-kafka-operator/strimzi-kafka-operator.package.yaml | yq e '.channels[0].currentCSV' -)
 
-CSV_TEMPLATE_DIR=./csv-template
+CSV_TEMPLATE_DIR=$(dirname $(realpath $0))/csv-template
 CSV_TEMPLATE=${CSV_TEMPLATE_DIR}/bases/${PACKAGE_NAME}.clusterserviceversion.yaml
 
-CRD_DIR=../../packaging/install/cluster-operator
-MANIFESTS=./bundle/manifests
-CSV_FILE=${MANIFESTS}/${PACKAGE_NAME}.clusterserviceversion.yaml
+CRD_DIR=$(dirname $(realpath $0))/../../packaging/install/cluster-operator
+BUNDLE=$(dirname $(realpath $0))/bundle
+MANIFESTS=${BUNDLE}/manifests
+CSV_FILE=${MANIFESTS}/${PACKAGE_NAME}.v${VERSION}.clusterserviceversion.yaml
 
 if [ -z "$1" ]; 
 then
@@ -47,7 +48,7 @@ fi
 
 # Generates bundle from existing CRDs
 generate_olm_bundle() { 
-  rm -rf .bundle
+  rm -rf ${BUNDLE}
   # To generate a bundle from existing CRDs using the operator-sdk we must:
   #   1.) Specify package name "--package" and bundle version "--version"
   #   2.) Set `--input-dir` to the directory containing CRDs
@@ -56,11 +57,40 @@ generate_olm_bundle() {
   # *Note* the package name must match the name used in the CSV template
   operator-sdk generate bundle \
 	  --input-dir=$CRD_DIR \
+	  --output-dir=$BUNDLE \
 	  --kustomize-dir=$CSV_TEMPLATE_DIR \
 	  --package=$PACKAGE_NAME \
 	  --version=$VERSION \
 	  --channels=$CHANNELS
+ 
+  # Copy missing files not added by operator-sdk
+  $CP ${CRD_DIR}/030-ClusterRole-strimzi-kafka-broker.yaml ${MANIFESTS}/strimzikafkabroker.clusterrole.yaml
+  $CP ${CRD_DIR}/033-ClusterRole-strimzi-kafka-client.yaml ${MANIFESTS}/strimzikafkaclient.clusterrole.yaml
   
+  # Remove extra files added by operator-sdk
+  rm ${MANIFESTS}/strimzi-cluster-operator_v1_serviceaccount.yaml
+  rm ${MANIFESTS}/strimzi-cluster-operator-namespaced_rbac.authorization.k8s.io_v1_clusterrole.yaml
+  
+  # Update CSV filename to name traditionally used for OperatorHub
+  mv ${MANIFESTS}/*.clusterserviceversion.yaml ${CSV_FILE}
+
+  # Change the copied CRD names to the names traditionally used for OperatorHub
+  for file in $MANIFESTS/*; do
+    name=$(yq ea '.metadata.name' ${file})
+    kind=$(yq ea '.kind' ${file})
+    if [ "$kind" = "CustomResourceDefinition" ] || [ "$kind" = "ConfigMap" ] ||  [ "$kind" = "ClusterRole" ]; then
+      if [ "$kind" = "CustomResourceDefinition" ]; then
+        kind="crd"
+      else
+	name=$(echo "$name" | sed 's/-//g')
+        kind=$(echo "$kind" | tr '[:upper:]' '[:lower:]')
+      fi
+      dest="${MANIFESTS}/${name}.${kind}.yaml"
+      echo "Update CRD filename $file -> $dest"
+      mv $file $dest
+    fi
+  done
+
   # Update annotations
   yq ea -i 'select(fi==0).metadata.annotations = select(fi==1).metadata.annotations | select(fi==0)' ${CSV_FILE} ${CSV_TEMPLATE}
   # Update creation timestamp
@@ -74,14 +104,10 @@ generate_olm_bundle() {
    
   yq ea -i ".spec.replaces = \"${PREVIOUS_BUNDLE_VERSION}\" | .spec.replaces style=\"\"" ${CSV_FILE}
   
-  # Copy Strimzi client roles
-  $CP ${CRD_DIR}/033-ClusterRole-strimzi-kafka-client.yaml ${MANIFESTS}/strimzi-kafka-client_rbac.authorization.k8s.io_v1_clusterrole.yaml
-  
   generate_related_images
   generate_image_digests
 
   rm bundle.Dockerfile
-  rm ${MANIFESTS}/strimzi-cluster-operator_v1_serviceaccount.yaml
 }
 
 validate_olm_bundle() {
