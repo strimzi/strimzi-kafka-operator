@@ -6,8 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
@@ -160,11 +158,15 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
-                                .withNewPlain()
-                                .endPlain()
-                                .build()))
-                        .withNewEphemeralStorage()
+                        .withNewListeners()
+                        .addNewGenericKafkaListener()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                        .endGenericKafkaListener()
+                    .endListeners()
+                .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()
                     .withNewZookeeper()
