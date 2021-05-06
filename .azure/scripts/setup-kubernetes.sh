@@ -72,7 +72,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     # We can allow NP after Strimzi#4092 which should fix some issues on STs side
     minikube start --vm-driver=docker --kubernetes-version=${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
-      --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY}
+      --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY} --extra-config apiserver.runtime-config=admissionregistration.k8s.io/v1beta1=false,apiextensions.k8s.io/v1beta1=false,apiregistration.k8s.io/v1beta1=false,authentication.k8s.io/v1beta1=false,authorization.k8s.io/v1beta1=false,certificates.k8s.io/v1beta1=false,coordination.k8s.io/v1beta1=false,extensions/v1beta1=false,networking.k8s.io/v1beta1=false,rbac.authorization.k8s.io/v1beta1=false,scheduling.k8s.io/v1beta1=false,storage.k8s.io/v1beta1=false
 
     if [ $? -ne 0 ]
     then
