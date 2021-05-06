@@ -15,8 +15,6 @@ spec:
         port: 9093
         type: internal
         tls: true
-    authorization:
-      type: simple    
     config:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
