@@ -348,8 +348,10 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void testCustomBridgeLabelsAreProperlySet(ExtensionContext extensionContext) {
         final String bridgeName = "bridge-" + mapWithClusterNames.get(extensionContext.getDisplayName());
         final Map<String, String> exceptedKafkaBridgeCustomLabels = new HashMap<>(1);
+        final Map<String, String> exceptedKafkaBridgeCustomAnnotations = new HashMap<>(1);
 
         exceptedKafkaBridgeCustomLabels.put("app", "bar");
+        exceptedKafkaBridgeCustomAnnotations.put("app", "bar");
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editSpec()
@@ -357,6 +359,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                     .withNewApiService()
                         .withNewMetadata()
                             .withLabels(exceptedKafkaBridgeCustomLabels)
+                            .withAnnotations(exceptedKafkaBridgeCustomAnnotations)
                         .endMetadata()
                     .endApiService()
                 .endTemplate()
@@ -372,9 +375,16 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .filter(item -> item.getKey().equals("app") && item.getValue().equals("bar"))
                 .collect(Collectors.toMap(item -> item.getKey(), item -> item.getValue()));
 
-        // verify phase: that inside KafkaBridge we can find 'exceptedKafkaBridgeCustomLabels' previously defined
-        assertThat(exceptedKafkaBridgeCustomLabels.size(), is(filteredActualKafkaBridgeCustomLabels.size()));
-        assertThat(exceptedKafkaBridgeCustomLabels, is(filteredActualKafkaBridgeCustomLabels));
+        final Map<String, String> filteredActualKafkaBridgeCustomAnnotations =
+            kafkaBridgeService.getMetadata().getAnnotations().entrySet().stream()
+                .filter(item -> item.getKey().equals("app") && item.getValue().equals("bar"))
+                .collect(Collectors.toMap(item -> item.getKey(), item -> item.getValue()));
+
+        // verify phase: that inside KafkaBridge we can find 'exceptedKafkaBridgeCustomLabels' and 'exceptedKafkaBridgeCustomAnnotations' previously defined
+        assertThat(filteredActualKafkaBridgeCustomLabels.size(), is(exceptedKafkaBridgeCustomLabels.size()));
+        assertThat(filteredActualKafkaBridgeCustomAnnotations.size(), is(exceptedKafkaBridgeCustomAnnotations.size()));
+        assertThat(filteredActualKafkaBridgeCustomLabels, is(exceptedKafkaBridgeCustomLabels));
+        assertThat(filteredActualKafkaBridgeCustomAnnotations, is(exceptedKafkaBridgeCustomAnnotations));
     }
 
     @BeforeAll
