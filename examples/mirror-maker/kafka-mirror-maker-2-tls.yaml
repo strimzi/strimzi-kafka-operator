@@ -3,7 +3,7 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker-2
 spec:
-  version: 2.7.0
+  version: 2.8.0
   replicas: 1
   connectCluster: "my-target-cluster"
   clusters:
@@ -20,9 +20,10 @@ spec:
         - secretName: my-target-cluster-cluster-ca-cert
           certificate: ca.crt
     config:
-      config.storage.replication.factor: 1
-      offset.storage.replication.factor: 1
-      status.storage.replication.factor: 1
+      # -1 means it will use the default replication factor configured in the broker
+      config.storage.replication.factor: -1
+      offset.storage.replication.factor: -1
+      status.storage.replication.factor: -1
   mirrors:
   - sourceCluster: "my-source-cluster"
     targetCluster: "my-target-cluster"
