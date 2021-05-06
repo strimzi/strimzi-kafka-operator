@@ -133,7 +133,7 @@ public final class TestUtils {
                 result = ready.getAsBoolean();
             } catch (Exception e) {
                 exceptionMessage = e.getMessage();
-                if (++exceptionCount == 1) {
+                if (++exceptionCount == 1 && exceptionMessage != null) {
                     // Log the first exception as soon as it occurs
                     LOGGER.error("Exception waiting for {}, {}", description, exceptionMessage);
                     // log the stacktrace
@@ -148,8 +148,11 @@ public final class TestUtils {
             if (timeLeft <= 0) {
                 if (exceptionCount > 1) {
                     LOGGER.error("Exception waiting for {}, {}", description, exceptionMessage);
-                    // printing handled stacktrace
-                    LOGGER.error(stackTraceError.toString());
+
+                    if (!stackTraceError.toString().isEmpty()) {
+                        // printing handled stacktrace
+                        LOGGER.error(stackTraceError.toString());
+                    }
                 }
                 onTimeout.run();
                 WaitException waitException = new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);
