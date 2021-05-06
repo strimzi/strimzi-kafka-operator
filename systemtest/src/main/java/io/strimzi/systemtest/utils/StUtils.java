@@ -34,10 +34,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
-import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -374,16 +372,5 @@ public class StUtils {
             annotation -> annotation.annotationType().getName()
                 .toLowerCase(Locale.ENGLISH)
                 .contains(PARALLEL_NAMESPACE)).count() == 1;
-    }
-
-    /**
-     * Check if there is Cluster Operator present
-     * @return true if cluster operator is already deployed otherwise false
-     */
-    public static boolean isClusterOperatorAlreadyDeployed(String namespaceName) {
-        return kubeClient(namespaceName).listPods(namespaceName).stream()
-            .filter(pod -> pod.getMetadata().getName().contains(STRIMZI_DEPLOYMENT_NAME))
-            .collect(Collectors.toList())
-            .size() == 1;
     }
 }
