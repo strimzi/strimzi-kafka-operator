@@ -13,6 +13,7 @@
 * Changed Reconciliation interval for Topic Operator from 90 to 120 seconds (to keep it the same as for other operators)
 * Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
 * Removed requirement for replicas and partitions KafkaTopic spec making these parameters optional
+* Support to configure a custom filter for parent CR's labels propagation into subresources 
 * Allow disabling service links (environment variables describing Kubernetes services) in Pod template
 * Update Kaniko executor to 1.6.0
 * Add support for separate control plane listener (disabled by default, available via the `ControlPlaneListener` feature gate)

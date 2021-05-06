@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -94,6 +95,12 @@ public class Labels {
     public static final String KUBERNETES_STATEFULSET_POD_LABEL = "statefulset.kubernetes.io/pod-name";
 
     /**
+     * Used to exclude parent CR's labels from being assigned to provisioned subresources
+     */
+    public static final Pattern STRIMZI_LABELS_EXCLUSION_PATTERN = Pattern.compile(System.getenv()
+            .getOrDefault("STRIMZI_LABELS_EXCLUSION_PATTERN", "^app.kubernetes.io/(?!part-of).*"));
+
+    /**
      * The empty set of labels.
      */
     public static final Labels EMPTY = new Labels(emptyMap());
@@ -135,16 +142,7 @@ public class Labels {
             throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
         }
 
-        // Remove Kubernetes Domain specific labels
-        // Exceptions app.kubernetes.io/part-of
-        Map<String, String> filteredLabels = additionalLabels
-                .entrySet()
-                .stream()
-                .filter(entryset ->
-                        !entryset.getKey().startsWith(Labels.KUBERNETES_DOMAIN) || entryset.getKey().equals(KUBERNETES_PART_OF_LABEL))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        return new Labels(filteredLabels);
+        return new Labels(additionalLabels);
     }
 
     /**
@@ -160,11 +158,21 @@ public class Labels {
     }
 
     /**
-     * @param resource The resource to get the labels of
-     * @return the labels of the given {@code resource}.
+     * @param resource The resource to get the labels of.
+     * @return A new instance with filtered labels added from the given {@code resource}.
      */
     public static Labels fromResource(HasMetadata resource) {
-        return resource.getMetadata().getLabels() != null ? additionalLabels(resource.getMetadata().getLabels()) : EMPTY;
+        Map<String, String> additionalLabels = resource.getMetadata().getLabels();
+
+        if (additionalLabels != null) {
+            additionalLabels = additionalLabels
+                    .entrySet()
+                    .stream()
+                    .filter(entryset -> !STRIMZI_LABELS_EXCLUSION_PATTERN.matcher(entryset.getKey()).matches())
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+
+        return additionalLabels(additionalLabels);
     }
 
     /**
