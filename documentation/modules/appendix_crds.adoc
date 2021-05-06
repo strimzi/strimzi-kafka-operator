@@ -289,9 +289,9 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |xref:type-GenericKafkaListenerConfigurationBootstrap-{context}[`GenericKafkaListenerConfigurationBootstrap`]
 |brokers                       1.2+<.<a|Per-broker configurations.
 |xref:type-GenericKafkaListenerConfigurationBroker-{context}[`GenericKafkaListenerConfigurationBroker`] array
-|ipFamilyPolicy                1.2+<.<a|Specifies which IP Family Policy should be used by this service. Available options are `SingleStack` (a single IP family), `PreferDualStack` (two IP families on dual-stack configured clusters or a single IP family on single-stack clusters), and `RequireDualStack` (two IP families on dual-stack configured clusters, otherwise fail). If unspecified, Kubernetes will choose the default value based on the service type. Available on Kubernetes 1.20 and newer.
+|ipFamilyPolicy                1.2+<.<a|Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type. Available on Kubernetes 1.20 and newer.
 |string (one of [RequireDualStack, SingleStack, PreferDualStack])
-|ipFamilies                    1.2+<.<a|Specifies which IP Families should be used by this service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
+|ipFamilies                    1.2+<.<a|Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
 |string (one or more of [IPv6, IPv4]) array
 |class                         1.2+<.<a|Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used.
 |string
@@ -909,9 +909,9 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 |Property               |Description
 |metadata        1.2+<.<a|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|ipFamilyPolicy  1.2+<.<a|Specifies which IP Family Policy should be used by this service. Available options are `SingleStack` (a single IP family), `PreferDualStack` (two IP families on dual-stack configured clusters or a single IP family on single-stack clusters), and `RequireDualStack` (two IP families on dual-stack configured clusters, otherwise fail). If unspecified, Kubernetes will choose the default value based on the service type. Available on Kubernetes 1.20 and newer.
+|ipFamilyPolicy  1.2+<.<a|Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type. Available on Kubernetes 1.20 and newer.
 |string (one of [RequireDualStack, SingleStack, PreferDualStack])
-|ipFamilies      1.2+<.<a|Specifies which IP Families should be used by this service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
+|ipFamilies      1.2+<.<a|Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
 |string (one or more of [IPv6, IPv4]) array
 |====
 

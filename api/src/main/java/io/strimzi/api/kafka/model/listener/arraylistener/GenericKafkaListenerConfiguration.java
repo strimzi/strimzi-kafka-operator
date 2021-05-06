@@ -199,10 +199,11 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
         this.maxConnectionCreationRate = maxConnectionCreationRate;
     }
 
-    @Description("Specifies which IP Family Policy should be used by this service. " +
-            "Available options are `SingleStack` (a single IP family), " +
-            "`PreferDualStack` (two IP families on dual-stack configured clusters or a single IP family on single-stack clusters), " +
-            "and `RequireDualStack` (two IP families on dual-stack configured clusters, otherwise fail). " +
+    @Description("Specifies the IP Family Policy used by the service. " +
+            "Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. " +
+            "`SingleStack` is for a single IP family. " +
+            "`PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. " +
+            "`RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. " +
             "If unspecified, Kubernetes will choose the default value based on the service type. " +
             "Available on Kubernetes 1.20 and newer.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -215,7 +216,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
         this.ipFamilyPolicy = ipFamilyPolicy;
     }
 
-    @Description("Specifies which IP Families should be used by this service. " +
+    @Description("Specifies the IP Families used by the service. " +
             "Available options are `IPv4` and `IPv6. " +
             "If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. " +
             "Available on Kubernetes 1.20 and newer.")
