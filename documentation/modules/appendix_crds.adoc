@@ -1432,7 +1432,7 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod         1.2+<.<a|Template for Kafka Exporter `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|service     1.2+<.<a|Template for Kafka Exporter `Service`.
+|service     1.2+<.<a|*The `service` property has been deprecated.* The Kafka Exporter service has been removed. Template for Kafka Exporter `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |container   1.2+<.<a|Template for the Kafka Exporter container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
