@@ -7,6 +7,7 @@ package io.strimzi.systemtest.bridge;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -18,10 +19,13 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
+import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
@@ -347,24 +351,8 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     @ParallelTest
     void testCustomBridgeLabelsAreProperlySet(ExtensionContext extensionContext) {
         final String bridgeName = "bridge-" + mapWithClusterNames.get(extensionContext.getDisplayName());
-        final Map<String, String> exceptedKafkaBridgeCustomLabels = new HashMap<>(1);
-        final Map<String, String> exceptedKafkaBridgeCustomAnnotations = new HashMap<>(1);
 
-        exceptedKafkaBridgeCustomLabels.put("app", "bar");
-        exceptedKafkaBridgeCustomAnnotations.put("app", "bar");
-
-        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
-            .editSpec()
-                .editOrNewTemplate()
-                    .withNewApiService()
-                        .withNewMetadata()
-                            .withLabels(exceptedKafkaBridgeCustomLabels)
-                            .withAnnotations(exceptedKafkaBridgeCustomAnnotations)
-                        .endMetadata()
-                    .endApiService()
-                .endTemplate()
-            .endSpec()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1).build());
 
         // get service with custom labels
         final Service kafkaBridgeService = kubeClient().getService(NAMESPACE, KafkaBridgeResources.serviceName(bridgeName));
@@ -380,17 +368,46 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .filter(item -> item.getKey().equals("app") && item.getValue().equals("bar"))
                 .collect(Collectors.toMap(item -> item.getKey(), item -> item.getValue()));
 
+        final Map<String, String> exceptedKafkaBridgeCustomLabels = new HashMap<>(1);
+        final Map<String, String> exceptedKafkaBridgeCustomAnnotations = new HashMap<>(1);
+
         // verify phase: that inside KafkaBridge we can find 'exceptedKafkaBridgeCustomLabels' and 'exceptedKafkaBridgeCustomAnnotations' previously defined
-        assertThat(filteredActualKafkaBridgeCustomLabels.size(), is(exceptedKafkaBridgeCustomLabels.size()));
-        assertThat(filteredActualKafkaBridgeCustomAnnotations.size(), is(exceptedKafkaBridgeCustomAnnotations.size()));
-        assertThat(filteredActualKafkaBridgeCustomLabels, is(exceptedKafkaBridgeCustomLabels));
-        assertThat(filteredActualKafkaBridgeCustomAnnotations, is(exceptedKafkaBridgeCustomAnnotations));
+        assertThat(filteredActualKafkaBridgeCustomLabels.size(), is(Collections.singletonMap("app", "bar").size()));
+        assertThat(filteredActualKafkaBridgeCustomAnnotations.size(), is(Collections.singletonMap("bar", "app").size()));
+        assertThat(filteredActualKafkaBridgeCustomLabels, is(Collections.singletonMap("app", "bar")));
+        assertThat(filteredActualKafkaBridgeCustomAnnotations, is(Collections.singletonMap("bar", "app")));
     }
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
+        prepareEnvForOperator(extensionContext, NAMESPACE);
+        // Apply role bindings in CO namespace
+        applyBindings(extensionContext, NAMESPACE);
 
-        installClusterOperator(extensionContext, NAMESPACE);
+        // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
+        List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(NAMESPACE);
+        clusterRoleBindingList.forEach(clusterRoleBinding ->
+            ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
+        // deploy CO with service labels and annotations envs
+        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL)
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addNewEnv()
+                                .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS")
+                                .withValue("app=bar")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS")
+                                .withValue("bar=app")
+                            .endEnv()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build());
+
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 
