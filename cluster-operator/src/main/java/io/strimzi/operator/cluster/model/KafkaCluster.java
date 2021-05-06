@@ -63,7 +63,6 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -456,14 +455,12 @@ public class KafkaCluster extends AbstractModel {
 
         result.setResources(kafkaClusterSpec.getResources());
 
-        // Configure listeners => including conversion from old format and validation
-        ArrayOrObjectKafkaListeners specListeners = kafkaClusterSpec.getListeners();
-        if (specListeners == null)  {
+        // Configure listeners
+        if (kafkaClusterSpec.getListeners() == null || kafkaClusterSpec.getListeners().getGenericKafkaListeners() == null) {
             log.error("The required field .spec.kafka.listeners is missing");
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
-
-        List<GenericKafkaListener> listeners = specListeners.newOrConverted();
+        List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners().getGenericKafkaListeners();
         ListenersValidator.validate(kafkaClusterSpec.getReplicas(), listeners);
         result.setListeners(listeners);
 
