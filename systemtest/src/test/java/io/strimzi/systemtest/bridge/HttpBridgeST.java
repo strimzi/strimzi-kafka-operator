@@ -365,7 +365,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
         final Map<String, String> filteredActualKafkaBridgeCustomAnnotations =
             kafkaBridgeService.getMetadata().getAnnotations().entrySet().stream()
-                .filter(item -> item.getKey().equals("app") && item.getValue().equals("bar"))
+                .filter(item -> item.getKey().equals("bar") && item.getValue().equals("app"))
                 .collect(Collectors.toMap(item -> item.getKey(), item -> item.getValue()));
 
         final Map<String, String> exceptedKafkaBridgeCustomLabels = new HashMap<>(1);
