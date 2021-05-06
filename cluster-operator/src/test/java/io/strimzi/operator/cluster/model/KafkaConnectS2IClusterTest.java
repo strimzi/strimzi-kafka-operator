@@ -55,6 +55,8 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSourceBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -74,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -82,6 +85,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -229,6 +233,8 @@ public class KafkaConnectS2IClusterTest {
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaConnectCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(svc.getMetadata().getAnnotations().size(), is(0));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
 
         checkOwnerReference(kc.createOwnerReference(), svc);
     }
@@ -576,6 +582,8 @@ public class KafkaConnectS2IClusterTest {
                                 .withLabels(svcLabels)
                                 .withAnnotations(svcAnots)
                             .endMetadata()
+                            .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                            .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                         .endApiService()
                         .withNewPodDisruptionBudget()
                             .withNewMetadata()
@@ -614,6 +622,8 @@ public class KafkaConnectS2IClusterTest {
         Service svc = kc.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
+        assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();

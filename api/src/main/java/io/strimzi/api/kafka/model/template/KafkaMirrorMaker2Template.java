@@ -32,7 +32,7 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
 
     private DeploymentTemplate deployment;
     private PodTemplate pod;
-    private ResourceTemplate apiService;
+    private InternalServiceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate mirrorMaker2Container;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -59,11 +59,11 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
 
     @Description("Template for Kafka MirrorMaker 2.0 API `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getApiService() {
+    public InternalServiceTemplate getApiService() {
         return apiService;
     }
 
-    public void setApiService(ResourceTemplate apiService) {
+    public void setApiService(InternalServiceTemplate apiService) {
         this.apiService = apiService;
     }
 

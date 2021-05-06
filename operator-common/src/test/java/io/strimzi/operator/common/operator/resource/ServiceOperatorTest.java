@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -195,7 +196,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Test
-    public void testIpFamilyPatching()  {
+    public void testDualStackNetworkingPatching()  {
         KubernetesClient client = mock(KubernetesClient.class);
 
         Service current = new ServiceBuilder()
@@ -217,6 +218,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                                     .withTargetPort(new IntOrString(5678))
                                     .build()
                     )
+                    .withIpFamilyPolicy("SingleStack")
                     .withIpFamilies("IPv6")
                 .endSpec()
                 .build();
@@ -240,36 +242,73 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                                     .withTargetPort(new IntOrString(5678))
                                     .build()
                     )
-                    .withIpFamilies("IPv6")
+                    .withIpFamilyPolicy("PreferDualStack")
+                    .withIpFamilies("IPv4", "IPv6")
                 .endSpec()
                 .build();
 
         Service desired = new ServiceBuilder()
                 .withNewMetadata()
-                .withNamespace(NAMESPACE)
-                .withName(RESOURCE_NAME)
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
                 .endMetadata()
                 .withNewSpec()
-                .withType("NodePort")
-                .withPorts(
-                        new ServicePortBuilder()
-                                .withName("port2")
-                                .withPort(5678)
-                                .withTargetPort(new IntOrString(5678))
-                                .build(),
-                        new ServicePortBuilder()
-                                .withName("port1")
-                                .withPort(1234)
-                                .withTargetPort(new IntOrString(1234))
-                                .build()
-                )
+                    .withType("NodePort")
+                    .withPorts(
+                            new ServicePortBuilder()
+                                    .withName("port2")
+                                    .withPort(5678)
+                                    .withTargetPort(new IntOrString(5678))
+                                    .build(),
+                            new ServicePortBuilder()
+                                    .withName("port1")
+                                    .withPort(1234)
+                                    .withTargetPort(new IntOrString(1234))
+                                    .build()
+                    )
+                .endSpec()
+                .build();
+
+        Service desired2 = new ServiceBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withType("NodePort")
+                    .withPorts(
+                            new ServicePortBuilder()
+                                    .withName("port2")
+                                    .withPort(5678)
+                                    .withTargetPort(new IntOrString(5678))
+                                    .build(),
+                            new ServicePortBuilder()
+                                    .withName("port1")
+                                    .withPort(1234)
+                                    .withTargetPort(new IntOrString(1234))
+                                    .build()
+                    )
+                    .withIpFamilyPolicy("RequireDualStack")
+                    .withIpFamilies("IPv4", "IPv6")
                 .endSpec()
                 .build();
 
         ServiceOperator op = new ServiceOperator(vertx, client);
-        op.patchIpFamily(current, desired);
 
+        op.patchDualStackNetworking(current, desired);
+        assertThat(current.getSpec().getIpFamilyPolicy(), is(desired.getSpec().getIpFamilyPolicy()));
         assertThat(current.getSpec().getIpFamilies(), is(desired.getSpec().getIpFamilies()));
+
+        op.patchDualStackNetworking(current2, desired);
+        assertThat(current2.getSpec().getIpFamilyPolicy(), is(not(desired.getSpec().getIpFamilyPolicy())));
         assertThat(current2.getSpec().getIpFamilies(), is(desired.getSpec().getIpFamilies()));
+
+        op.patchDualStackNetworking(current, desired2);
+        assertThat(current.getSpec().getIpFamilyPolicy(), is(not(desired2.getSpec().getIpFamilyPolicy())));
+        assertThat(current.getSpec().getIpFamilies(), is(desired2.getSpec().getIpFamilies()));
+
+        op.patchDualStackNetworking(current2, desired2);
+        assertThat(current2.getSpec().getIpFamilyPolicy(), is(not(desired2.getSpec().getIpFamilyPolicy())));
+        assertThat(current2.getSpec().getIpFamilies(), is(desired2.getSpec().getIpFamilies()));
     }
 }

@@ -72,6 +72,8 @@ public class ListenersValidator {
 
             if (listener.getConfiguration() != null)    {
                 validateServiceDnsDomain(errors, listener);
+                validateIpFamilyPolicy(errors, listener);
+                validateIpFamilies(errors, listener);
                 validateIngressClass(errors, listener);
                 validateExternalTrafficPolicy(errors, listener);
                 validateLoadBalancerSourceRanges(errors, listener);
@@ -190,6 +192,32 @@ public class ListenersValidator {
         if (KafkaListenerType.INTERNAL != listener.getType()
                 && listener.getConfiguration().getUseServiceDnsDomain() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure useServiceDnsDomain because it is not internal listener");
+        }
+    }
+
+    /**
+     * Validates that ipFamilyPolicy is used only with external listeners
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validateIpFamilyPolicy(Set<String> errors, GenericKafkaListener listener) {
+        if (KafkaListenerType.INTERNAL == listener.getType()
+                && listener.getConfiguration().getIpFamilyPolicy() != null)    {
+            errors.add("listener " + listener.getName() + " cannot configure ipFamilyPolicy because it is not internal listener");
+        }
+    }
+
+    /**
+     * Validates that ipFamilies is used only with external listeners
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validateIpFamilies(Set<String> errors, GenericKafkaListener listener) {
+        if (KafkaListenerType.INTERNAL == listener.getType()
+                && listener.getConfiguration().getIpFamilies() != null)    {
+            errors.add("listener " + listener.getName() + " cannot configure ipFamilies because it is not internal listener");
         }
     }
 

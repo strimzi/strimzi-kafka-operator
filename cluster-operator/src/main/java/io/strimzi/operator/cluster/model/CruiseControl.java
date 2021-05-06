@@ -295,15 +295,11 @@ public class CruiseControl extends AbstractModel {
             CruiseControlTemplate template = spec.getTemplate();
 
             ModelUtils.parsePodTemplate(cruiseControl, template.getPod());
+            ModelUtils.parseInternalServiceTemplate(cruiseControl, template.getApiService());
 
             if (template.getDeployment() != null && template.getDeployment().getMetadata() != null) {
                 cruiseControl.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
                 cruiseControl.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
-            }
-
-            if (template.getApiService() != null && template.getApiService().getMetadata() != null) {
-                cruiseControl.templateServiceLabels = template.getApiService().getMetadata().getLabels();
-                cruiseControl.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
             }
 
             if (template.getCruiseControlContainer() != null && template.getCruiseControlContainer().getEnv() != null) {

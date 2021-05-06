@@ -36,8 +36,8 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     private StatefulSetTemplate statefulset;
     private PodTemplate pod;
-    private ResourceTemplate bootstrapService;
-    private ResourceTemplate brokersService;
+    private InternalServiceTemplate bootstrapService;
+    private InternalServiceTemplate brokersService;
     private ExternalServiceTemplate externalBootstrapService;
     private ExternalServiceTemplate perPodService;
     private ResourceTemplate externalBootstrapRoute;
@@ -75,21 +75,21 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     @Description("Template for Kafka bootstrap `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getBootstrapService() {
+    public InternalServiceTemplate getBootstrapService() {
         return bootstrapService;
     }
 
-    public void setBootstrapService(ResourceTemplate bootstrapService) {
+    public void setBootstrapService(InternalServiceTemplate bootstrapService) {
         this.bootstrapService = bootstrapService;
     }
 
     @Description("Template for Kafka broker `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getBrokersService() {
+    public InternalServiceTemplate getBrokersService() {
         return brokersService;
     }
 
-    public void setBrokersService(ResourceTemplate brokersService) {
+    public void setBrokersService(InternalServiceTemplate brokersService) {
         this.brokersService = brokersService;
     }
 

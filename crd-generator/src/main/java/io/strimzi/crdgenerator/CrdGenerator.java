@@ -846,6 +846,7 @@ public class CrdGenerator {
         return schema;
     }
 
+    @SuppressWarnings("unchecked")
     private ObjectNode buildArraySchema(ApiVersion crApiVersion, Property property, PropertyType propertyType, boolean description) {
         int arrayDimension = propertyType.arrayDimension();
         ObjectNode result = nf.objectNode();
@@ -869,6 +870,15 @@ public class CrdGenerator {
         } else if (Map.class.equals(elementType)) {
             preserveUnknownFields(itemResult);
             itemResult.put("type", "object");
+        } else if (elementType.isEnum()) {
+            itemResult.put("type", "string");
+
+            try {
+                Method valuesMethod = elementType.getMethod("values");
+                itemResult.set("enum", enumCaseArray((Enum[]) valuesMethod.invoke(null)));
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
         } else  {
             buildObjectSchema(crApiVersion, itemResult, elementType, true, description);
         }

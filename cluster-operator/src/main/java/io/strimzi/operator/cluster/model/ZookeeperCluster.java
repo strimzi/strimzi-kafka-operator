@@ -289,16 +289,8 @@ public class ZookeeperCluster extends AbstractModel {
             }
 
             ModelUtils.parsePodTemplate(zk, template.getPod());
-
-            if (template.getClientService() != null && template.getClientService().getMetadata() != null)  {
-                zk.templateServiceLabels = template.getClientService().getMetadata().getLabels();
-                zk.templateServiceAnnotations = template.getClientService().getMetadata().getAnnotations();
-            }
-
-            if (template.getNodesService() != null && template.getNodesService().getMetadata() != null)  {
-                zk.templateHeadlessServiceLabels = template.getNodesService().getMetadata().getLabels();
-                zk.templateHeadlessServiceAnnotations = template.getNodesService().getMetadata().getAnnotations();
-            }
+            ModelUtils.parseInternalServiceTemplate(zk, template.getClientService());
+            ModelUtils.parseInternalHeadlessServiceTemplate(zk, template.getNodesService());
 
             if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
                 zk.templatePersistentVolumeClaimLabels = Util.mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),

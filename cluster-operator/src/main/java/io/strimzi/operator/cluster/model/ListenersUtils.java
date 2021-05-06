@@ -10,6 +10,8 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 
 import java.util.Collections;
 import java.util.List;
@@ -562,6 +564,34 @@ public class ListenersUtils {
     public static ExternalTrafficPolicy externalTrafficPolicy(GenericKafkaListener listener)    {
         if (listener.getConfiguration() != null) {
             return listener.getConfiguration().getExternalTrafficPolicy();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Finds IP family policy
+     *
+     * @param listener  Listener for which the IP family policy should be found
+     * @return          IP family policy or null if not specified
+     */
+    public static IpFamilyPolicy ipFamilyPolicy(GenericKafkaListener listener)    {
+        if (listener.getConfiguration() != null) {
+            return listener.getConfiguration().getIpFamilyPolicy();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Finds IP families
+     *
+     * @param listener  Listener for which the IP families should be found
+     * @return          IP families or null if not specified
+     */
+    public static List<IpFamily> ipFamilies(GenericKafkaListener listener)    {
+        if (listener.getConfiguration() != null) {
+            return listener.getConfiguration().getIpFamilies();
         } else {
             return null;
         }

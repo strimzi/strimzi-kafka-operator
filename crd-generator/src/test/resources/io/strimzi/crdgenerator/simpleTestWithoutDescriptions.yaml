@@ -312,6 +312,13 @@ spec:
           items:
             type: "object"
             properties: {}
+        listOfCustomizedEnum:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+            - "one"
+            - "two"
         listOfInts:
           type: "array"
           items:
@@ -326,6 +333,13 @@ spec:
           type: "array"
           items:
             type: "object"
+        listOfNormalEnum:
+          type: "array"
+          items:
+            type: "string"
+            enum:
+            - "FOO"
+            - "BAR"
         listOfObjects:
           type: "array"
           items:

@@ -16,6 +16,7 @@
 * Allow disabling service links (environment variables describing Kubernetes services) in Pod template
 * Update Kaniko executor to 1.6.0
 * Add support for separate control plane listener (disabled by default, available via the `ControlPlaneListener` feature gate)
+* Support for Dual Stack networking
 
 ### Changes, deprecations and removals
 

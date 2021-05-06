@@ -110,6 +110,10 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     public List<? extends List<? extends U>> listOfWildcardTypeVar4;
 
+    public List<CustomisedEnum> listOfCustomizedEnum;
+
+    public List<NormalEnum> listOfNormalEnum;
+
     public List<Map<String, Object>> listOfMaps;
 
     private String either;

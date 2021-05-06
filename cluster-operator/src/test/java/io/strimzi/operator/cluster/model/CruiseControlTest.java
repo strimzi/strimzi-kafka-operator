@@ -46,6 +46,8 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
@@ -71,6 +73,7 @@ import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_B
 import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_DISK_MIB_CAPACITY;
 import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
 import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -80,6 +83,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasItems;
@@ -455,6 +459,8 @@ public class CruiseControlTest {
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(CruiseControl.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(CruiseControl.REST_API_PORT)));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
 
         TestUtils.checkOwnerReference(cc.createOwnerReference(), svc);
     }
@@ -537,6 +543,8 @@ public class CruiseControlTest {
                                     .withLabels(svcLabels)
                                     .withAnnotations(svcAnots)
                                 .endMetadata()
+                                .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                             .endApiService()
                         .endTemplate()
                     .endCruiseControl()
@@ -566,6 +574,8 @@ public class CruiseControlTest {
         Service svc = cc.generateService();
         assertThat(svc.getMetadata().getLabels(), is(svcLabels));
         assertThat(svc.getMetadata().getAnnotations(),  is(svcAnots));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
+        assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
     }
 
     @ParallelTest

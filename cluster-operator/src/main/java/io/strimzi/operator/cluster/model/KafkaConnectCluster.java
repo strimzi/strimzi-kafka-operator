@@ -254,11 +254,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             ModelUtils.parseDeploymentTemplate(kafkaConnect, template.getDeployment());
             ModelUtils.parsePodTemplate(kafkaConnect, template.getPod());
-
-            if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
-                kafkaConnect.templateServiceLabels = template.getApiService().getMetadata().getLabels();
-                kafkaConnect.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
-            }
+            ModelUtils.parseInternalServiceTemplate(kafkaConnect, template.getApiService());
 
             if (template.getClusterRoleBinding() != null && template.getClusterRoleBinding().getMetadata() != null) {
                 kafkaConnect.templateClusterRoleBindingLabels = template.getClusterRoleBinding().getMetadata().getLabels();

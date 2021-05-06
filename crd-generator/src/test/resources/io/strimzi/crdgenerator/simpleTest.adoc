@@ -39,12 +39,16 @@
 |xref:type-Number-{context}[`Number`] array
 |listOfBoundTypeVar2     1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array
+|listOfCustomizedEnum    1.2+<.<a|
+|string (one or more of [one, two]) array
 |listOfInts              1.2+<.<a|
 |integer array
 |listOfInts2             1.2+<.<a|
 |integer array of dimension 2
 |listOfMaps              1.2+<.<a|
 |map array
+|listOfNormalEnum        1.2+<.<a|
+|string (one or more of [BAR, FOO]) array
 |listOfObjects           1.2+<.<a|
 |xref:type-ObjectProperty-{context}[`ObjectProperty`] array
 |listOfPolymorphic       1.2+<.<a|

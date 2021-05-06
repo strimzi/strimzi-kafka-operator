@@ -460,6 +460,34 @@ spec:
                                 required:
                                 - broker
                               description: Per-broker configurations.
+                            ipFamilyPolicy:
+                              type: string
+                              enum:
+                              - SingleStack
+                              - PreferDualStack
+                              - RequireDualStack
+                              description: Specifies the IP Family Policy used by
+                                the service. Available options are `SingleStack`,
+                                `PreferDualStack` and `RequireDualStack`. `SingleStack`
+                                is for a single IP family. `PreferDualStack` is for
+                                two IP families on dual-stack configured clusters
+                                or a single IP family on single-stack clusters. `RequireDualStack`
+                                fails unless there are two IP families on dual-stack
+                                configured clusters. If unspecified, Kubernetes will
+                                choose the default value based on the service type.
+                                Available on Kubernetes 1.20 and newer.
+                            ipFamilies:
+                              type: array
+                              items:
+                                type: string
+                                enum:
+                                - IPv4
+                                - IPv6
+                              description: Specifies the IP Families used by the service.
+                                Available options are `IPv4` and `IPv6. If unspecified,
+                                Kubernetes will choose the default value based on
+                                the `ipFamilyPolicy` setting. Available on Kubernetes
+                                1.20 and newer.
                             class:
                               type: string
                               description: Configures the `Ingress` class that defines
@@ -1444,6 +1472,34 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
+                          ipFamilyPolicy:
+                            type: string
+                            enum:
+                            - SingleStack
+                            - PreferDualStack
+                            - RequireDualStack
+                            description: Specifies the IP Family Policy used by the
+                              service. Available options are `SingleStack`, `PreferDualStack`
+                              and `RequireDualStack`. `SingleStack` is for a single
+                              IP family. `PreferDualStack` is for two IP families
+                              on dual-stack configured clusters or a single IP family
+                              on single-stack clusters. `RequireDualStack` fails unless
+                              there are two IP families on dual-stack configured clusters.
+                              If unspecified, Kubernetes will choose the default value
+                              based on the service type. Available on Kubernetes 1.20
+                              and newer.
+                          ipFamilies:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                              - IPv4
+                              - IPv6
+                            description: Specifies the IP Families used by the service.
+                              Available options are `IPv4` and `IPv6. If unspecified,
+                              Kubernetes will choose the default value based on the
+                              `ipFamilyPolicy` setting. Available on Kubernetes 1.20
+                              and newer.
                         description: Template for Kafka bootstrap `Service`.
                       brokersService:
                         type: object
@@ -1462,6 +1518,34 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
+                          ipFamilyPolicy:
+                            type: string
+                            enum:
+                            - SingleStack
+                            - PreferDualStack
+                            - RequireDualStack
+                            description: Specifies the IP Family Policy used by the
+                              service. Available options are `SingleStack`, `PreferDualStack`
+                              and `RequireDualStack`. `SingleStack` is for a single
+                              IP family. `PreferDualStack` is for two IP families
+                              on dual-stack configured clusters or a single IP family
+                              on single-stack clusters. `RequireDualStack` fails unless
+                              there are two IP families on dual-stack configured clusters.
+                              If unspecified, Kubernetes will choose the default value
+                              based on the service type. Available on Kubernetes 1.20
+                              and newer.
+                          ipFamilies:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                              - IPv4
+                              - IPv6
+                            description: Specifies the IP Families used by the service.
+                              Available options are `IPv4` and `IPv6. If unspecified,
+                              Kubernetes will choose the default value based on the
+                              `ipFamilyPolicy` setting. Available on Kubernetes 1.20
+                              and newer.
                         description: Template for Kafka broker `Service`.
                       externalBootstrapService:
                         type: object
@@ -2478,6 +2562,34 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
+                          ipFamilyPolicy:
+                            type: string
+                            enum:
+                            - SingleStack
+                            - PreferDualStack
+                            - RequireDualStack
+                            description: Specifies the IP Family Policy used by the
+                              service. Available options are `SingleStack`, `PreferDualStack`
+                              and `RequireDualStack`. `SingleStack` is for a single
+                              IP family. `PreferDualStack` is for two IP families
+                              on dual-stack configured clusters or a single IP family
+                              on single-stack clusters. `RequireDualStack` fails unless
+                              there are two IP families on dual-stack configured clusters.
+                              If unspecified, Kubernetes will choose the default value
+                              based on the service type. Available on Kubernetes 1.20
+                              and newer.
+                          ipFamilies:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                              - IPv4
+                              - IPv6
+                            description: Specifies the IP Families used by the service.
+                              Available options are `IPv4` and `IPv6. If unspecified,
+                              Kubernetes will choose the default value based on the
+                              `ipFamilyPolicy` setting. Available on Kubernetes 1.20
+                              and newer.
                         description: Template for ZooKeeper client `Service`.
                       nodesService:
                         type: object
@@ -2496,6 +2608,34 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
+                          ipFamilyPolicy:
+                            type: string
+                            enum:
+                            - SingleStack
+                            - PreferDualStack
+                            - RequireDualStack
+                            description: Specifies the IP Family Policy used by the
+                              service. Available options are `SingleStack`, `PreferDualStack`
+                              and `RequireDualStack`. `SingleStack` is for a single
+                              IP family. `PreferDualStack` is for two IP families
+                              on dual-stack configured clusters or a single IP family
+                              on single-stack clusters. `RequireDualStack` fails unless
+                              there are two IP families on dual-stack configured clusters.
+                              If unspecified, Kubernetes will choose the default value
+                              based on the service type. Available on Kubernetes 1.20
+                              and newer.
+                          ipFamilies:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                              - IPv4
+                              - IPv6
+                            description: Specifies the IP Families used by the service.
+                              Available options are `IPv4` and `IPv6. If unspecified,
+                              Kubernetes will choose the default value based on the
+                              `ipFamilyPolicy` setting. Available on Kubernetes 1.20
+                              and newer.
                         description: Template for ZooKeeper nodes `Service`.
                       persistentVolumeClaim:
                         type: object
@@ -4428,6 +4568,34 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
+                          ipFamilyPolicy:
+                            type: string
+                            enum:
+                            - SingleStack
+                            - PreferDualStack
+                            - RequireDualStack
+                            description: Specifies the IP Family Policy used by the
+                              service. Available options are `SingleStack`, `PreferDualStack`
+                              and `RequireDualStack`. `SingleStack` is for a single
+                              IP family. `PreferDualStack` is for two IP families
+                              on dual-stack configured clusters or a single IP family
+                              on single-stack clusters. `RequireDualStack` fails unless
+                              there are two IP families on dual-stack configured clusters.
+                              If unspecified, Kubernetes will choose the default value
+                              based on the service type. Available on Kubernetes 1.20
+                              and newer.
+                          ipFamilies:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                              - IPv4
+                              - IPv6
+                            description: Specifies the IP Families used by the service.
+                              Available options are `IPv4` and `IPv6. If unspecified,
+                              Kubernetes will choose the default value based on the
+                              `ipFamilyPolicy` setting. Available on Kubernetes 1.20
+                              and newer.
                         description: Template for Cruise Control API `Service`.
                       podDisruptionBudget:
                         type: object

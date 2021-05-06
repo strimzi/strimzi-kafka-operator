@@ -29,6 +29,10 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentTemplateBuilder;
+import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
+import io.strimzi.api.kafka.model.template.InternalServiceTemplateBuilder;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
@@ -47,6 +51,7 @@ import static io.strimzi.operator.common.Util.parseMap;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -252,6 +257,96 @@ public class ModelUtilsTest {
         assertThat(model.templateDeploymentAnnotations, is(nullValue()));
         assertThat(model.templateDeploymentLabels, is(nullValue()));
         assertThat(model.templateDeploymentStrategy, is(DeploymentStrategy.ROLLING_UPDATE));
+    }
+
+    @Test
+    public void testParseInternalServiceTemplate()  {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        InternalServiceTemplate template = new InternalServiceTemplateBuilder()
+                .withNewMetadata()
+                    .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
+                    .withLabels(Collections.singletonMap("labelKey", "labelValue"))
+                .endMetadata()
+                .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
+                .build();
+
+        Model model = new Model(kafka);
+
+        ModelUtils.parseInternalServiceTemplate(model, template);
+        assertThat(model.templateServiceLabels, is(Collections.singletonMap("labelKey", "labelValue")));
+        assertThat(model.templateServiceAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
+        assertThat(model.templateServiceIpFamilies, contains(IpFamily.IPV6, IpFamily.IPV4));
+        assertThat(model.templateServiceIpFamilyPolicy, is(IpFamilyPolicy.REQUIRE_DUAL_STACK));
+    }
+
+    @Test
+    public void testParseNullInternalServiceTemplate()  {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        Model model = new Model(kafka);
+
+        ModelUtils.parseInternalServiceTemplate(model, null);
+        assertThat(model.templateServiceLabels, is(nullValue()));
+        assertThat(model.templateServiceAnnotations, is(nullValue()));
+        assertThat(model.templateServiceIpFamilies, is(nullValue()));
+        assertThat(model.templateServiceIpFamilyPolicy, is(nullValue()));
+    }
+
+    @Test
+    public void testParseInternalHeadlessServiceTemplate()  {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                .withName("my-cluster")
+                .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        InternalServiceTemplate template = new InternalServiceTemplateBuilder()
+                .withNewMetadata()
+                    .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
+                    .withLabels(Collections.singletonMap("labelKey", "labelValue"))
+                .endMetadata()
+                .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
+                .build();
+
+        Model model = new Model(kafka);
+
+        ModelUtils.parseInternalHeadlessServiceTemplate(model, template);
+        assertThat(model.templateHeadlessServiceLabels, is(Collections.singletonMap("labelKey", "labelValue")));
+        assertThat(model.templateHeadlessServiceAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
+        assertThat(model.templateHeadlessServiceIpFamilies, contains(IpFamily.IPV6, IpFamily.IPV4));
+        assertThat(model.templateHeadlessServiceIpFamilyPolicy, is(IpFamilyPolicy.REQUIRE_DUAL_STACK));
+    }
+
+    @Test
+    public void testParseNullInternalHeadlessServiceTemplate()  {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                .withName("my-cluster")
+                .withNamespace("my-namespace")
+                .endMetadata()
+                .build();
+
+        Model model = new Model(kafka);
+
+        ModelUtils.parseInternalHeadlessServiceTemplate(model, null);
+        assertThat(model.templateHeadlessServiceLabels, is(nullValue()));
+        assertThat(model.templateHeadlessServiceAnnotations, is(nullValue()));
+        assertThat(model.templateHeadlessServiceIpFamilies, is(nullValue()));
+        assertThat(model.templateHeadlessServiceIpFamilyPolicy, is(nullValue()));
     }
 
     private class Model extends AbstractModel   {

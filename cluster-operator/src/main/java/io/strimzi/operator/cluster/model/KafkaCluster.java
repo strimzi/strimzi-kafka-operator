@@ -497,16 +497,8 @@ public class KafkaCluster extends AbstractModel {
             }
 
             ModelUtils.parsePodTemplate(result, template.getPod());
-
-            if (template.getBootstrapService() != null && template.getBootstrapService().getMetadata() != null) {
-                result.templateServiceLabels = template.getBootstrapService().getMetadata().getLabels();
-                result.templateServiceAnnotations = template.getBootstrapService().getMetadata().getAnnotations();
-            }
-
-            if (template.getBrokersService() != null && template.getBrokersService().getMetadata() != null) {
-                result.templateHeadlessServiceLabels = template.getBrokersService().getMetadata().getLabels();
-                result.templateHeadlessServiceAnnotations = template.getBrokersService().getMetadata().getAnnotations();
-            }
+            ModelUtils.parseInternalServiceTemplate(result, template.getBootstrapService());
+            ModelUtils.parseInternalHeadlessServiceTemplate(result, template.getBrokersService());
 
             if (template.getExternalBootstrapService() != null) {
                 if (template.getExternalBootstrapService().getMetadata() != null) {
@@ -798,7 +790,9 @@ public class KafkaCluster extends AbstractModel {
                     ports,
                     getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapServiceLabels, ListenersUtils.bootstrapLabels(listener))),
                     getSelectorLabels(),
-                    Util.mergeLabelsOrAnnotations(ListenersUtils.bootstrapAnnotations(listener), templateExternalBootstrapServiceAnnotations)
+                    Util.mergeLabelsOrAnnotations(ListenersUtils.bootstrapAnnotations(listener), templateExternalBootstrapServiceAnnotations),
+                    ListenersUtils.ipFamilyPolicy(listener),
+                    ListenersUtils.ipFamilies(listener)
             );
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {
@@ -864,7 +858,9 @@ public class KafkaCluster extends AbstractModel {
                     ports,
                     getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodServiceLabels, ListenersUtils.brokerLabels(listener, pod))),
                     selector,
-                    Util.mergeLabelsOrAnnotations(ListenersUtils.brokerAnnotations(listener, pod), templatePerPodServiceAnnotations)
+                    Util.mergeLabelsOrAnnotations(ListenersUtils.brokerAnnotations(listener, pod), templatePerPodServiceAnnotations),
+                    ListenersUtils.ipFamilyPolicy(listener),
+                    ListenersUtils.ipFamilies(listener)
             );
 
             if (KafkaListenerType.LOADBALANCER == listener.getType()) {

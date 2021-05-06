@@ -289,6 +289,10 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |xref:type-GenericKafkaListenerConfigurationBootstrap-{context}[`GenericKafkaListenerConfigurationBootstrap`]
 |brokers                       1.2+<.<a|Per-broker configurations.
 |xref:type-GenericKafkaListenerConfigurationBroker-{context}[`GenericKafkaListenerConfigurationBroker`] array
+|ipFamilyPolicy                1.2+<.<a|Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type. Available on Kubernetes 1.20 and newer.
+|string (one of [RequireDualStack, SingleStack, PreferDualStack])
+|ipFamilies                    1.2+<.<a|Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
+|string (one or more of [IPv6, IPv4]) array
 |class                         1.2+<.<a|Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used.
 |string
 |finalizers                    1.2+<.<a|A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. This field can be used only with `loadbalancer` type listeners.
@@ -776,9 +780,9 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |pod                       1.2+<.<a|Template for Kafka `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |bootstrapService          1.2+<.<a|Template for Kafka bootstrap `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |brokersService            1.2+<.<a|Template for Kafka broker `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |externalBootstrapService  1.2+<.<a|Template for Kafka external bootstrap `Service`.
 |xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`]
 |perPodService             1.2+<.<a|Template for Kafka per-pod `Services` used for access from outside of Kubernetes.
@@ -823,7 +827,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
+Used in: xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 
 xref:type-MetadataTemplate-schema-{context}[Full list of `MetadataTemplate` schema properties]
 
@@ -894,17 +898,21 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#topologyspreadconstraint-v1-core[TopologySpreadConstraint] array
 |====
 
-[id='type-ResourceTemplate-{context}']
-### `ResourceTemplate` schema reference
+[id='type-InternalServiceTemplate-{context}']
+### `InternalServiceTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
 |====
-|Property         |Description
-|metadata  1.2+<.<a|Metadata applied to the resource.
+|Property               |Description
+|metadata        1.2+<.<a|Metadata applied to the resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|ipFamilyPolicy  1.2+<.<a|Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type. Available on Kubernetes 1.20 and newer.
+|string (one of [RequireDualStack, SingleStack, PreferDualStack])
+|ipFamilies      1.2+<.<a|Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
+|string (one or more of [IPv6, IPv4]) array
 |====
 
 [id='type-ExternalServiceTemplate-{context}']
@@ -918,6 +926,19 @@ include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc
 
 [id='type-ExternalServiceTemplate-schema-{context}']
 ==== `ExternalServiceTemplate` schema properties
+
+
+[options="header"]
+|====
+|Property         |Description
+|metadata  1.2+<.<a|Metadata applied to the resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|====
+
+[id='type-ResourceTemplate-{context}']
+### `ResourceTemplate` schema reference
+
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -1044,9 +1065,9 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |pod                    1.2+<.<a|Template for ZooKeeper `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |clientService          1.2+<.<a|Template for ZooKeeper client `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |nodesService           1.2+<.<a|Template for ZooKeeper nodes `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |persistentVolumeClaim  1.2+<.<a|Template for all ZooKeeper `PersistentVolumeClaims`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |podDisruptionBudget    1.2+<.<a|Template for ZooKeeper `PodDisruptionBudget`.
@@ -1278,7 +1299,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |pod                     1.2+<.<a|Template for Cruise Control `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService              1.2+<.<a|Template for Cruise Control API `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |podDisruptionBudget     1.2+<.<a|Template for Cruise Control `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |cruiseControlContainer  1.2+<.<a|Template for the Cruise Control container.
@@ -1767,7 +1788,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |pod                  1.2+<.<a|Template for Kafka Connect `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService           1.2+<.<a|Template for Kafka Connect API `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |buildConfig          1.2+<.<a|Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |buildContainer       1.2+<.<a|Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
@@ -2790,7 +2811,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 |pod                  1.2+<.<a|Template for Kafka Bridge `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService           1.2+<.<a|Template for Kafka Bridge API `Service`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |bridgeContainer      1.2+<.<a|Template for the Kafka Bridge container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |podDisruptionBudget  1.2+<.<a|Template for Kafka Bridge `PodDisruptionBudget`.

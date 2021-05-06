@@ -12,8 +12,11 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.template.IpFamily;
+import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,7 +31,8 @@ import static java.util.Collections.emptyMap;
  * Configures Kafka listeners
  */
 @DescriptionFile
-@JsonPropertyOrder({"brokerCertChainAndKey", "ingressClass", "preferredAddressType", "externalTrafficPolicy", "loadBalancerSourceRanges", "bootstrap", "brokers"})
+@JsonPropertyOrder({"brokerCertChainAndKey", "ingressClass", "preferredAddressType", "externalTrafficPolicy",
+        "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -49,6 +53,8 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     private List<GenericKafkaListenerConfigurationBroker> brokers;
     private Integer maxConnections;
     private Integer maxConnectionCreationRate;
+    private IpFamilyPolicy ipFamilyPolicy;
+    private List<IpFamily> ipFamilies;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -191,6 +197,37 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
 
     public void setMaxConnectionCreationRate(Integer maxConnectionCreationRate) {
         this.maxConnectionCreationRate = maxConnectionCreationRate;
+    }
+
+    @Description("Specifies the IP Family Policy used by the service. " +
+            "Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. " +
+            "`SingleStack` is for a single IP family. " +
+            "`PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. " +
+            "`RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. " +
+            "If unspecified, Kubernetes will choose the default value based on the service type. " +
+            "Available on Kubernetes 1.20 and newer.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @PresentInVersions("v1beta2+")
+    public IpFamilyPolicy getIpFamilyPolicy() {
+        return ipFamilyPolicy;
+    }
+
+    public void setIpFamilyPolicy(IpFamilyPolicy ipFamilyPolicy) {
+        this.ipFamilyPolicy = ipFamilyPolicy;
+    }
+
+    @Description("Specifies the IP Families used by the service. " +
+            "Available options are `IPv4` and `IPv6. " +
+            "If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. " +
+            "Available on Kubernetes 1.20 and newer.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @PresentInVersions("v1beta2+")
+    public List<IpFamily> getIpFamilies() {
+        return ipFamilies;
+    }
+
+    public void setIpFamilies(List<IpFamily> ipFamilies) {
+        this.ipFamilies = ipFamilies;
     }
 
     @Override
