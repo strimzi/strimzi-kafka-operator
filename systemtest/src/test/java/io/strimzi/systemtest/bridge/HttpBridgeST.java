@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -301,7 +302,6 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-
         String bridgeName = "example-bridge";
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
@@ -342,6 +342,39 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(2L));
         assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("another=label"));
         assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
+    }
+
+    @ParallelTest
+    void testCustomBridgeLabelsAreProperlySet(ExtensionContext extensionContext) {
+        final String bridgeName = "bridge-" + mapWithClusterNames.get(extensionContext.getDisplayName());
+        final Map<String, String> exceptedKafkaBridgeCustomLabels = new HashMap<>(1);
+
+        exceptedKafkaBridgeCustomLabels.put("app", "bar");
+
+        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
+            .editSpec()
+                .editOrNewTemplate()
+                    .withNewApiService()
+                        .withNewMetadata()
+                            .withLabels(exceptedKafkaBridgeCustomLabels)
+                        .endMetadata()
+                    .endApiService()
+                .endTemplate()
+            .endSpec()
+            .build());
+
+        // get service with custom labels
+        final Service kafkaBridgeService = kubeClient().getService(NAMESPACE, KafkaBridgeResources.serviceName(bridgeName));
+
+        // filter only app-bar service
+        final Map<String, String> filteredActualKafkaBridgeCustomLabels =
+            kafkaBridgeService.getMetadata().getLabels().entrySet().stream()
+                .filter(item -> item.getKey().equals("app") && item.getValue().equals("bar"))
+                .collect(Collectors.toMap(item -> item.getKey(), item -> item.getValue()));
+
+        // verify phase: that inside KafkaBridge we can find 'exceptedKafkaBridgeCustomLabels' previously defined
+        assertThat(exceptedKafkaBridgeCustomLabels.size(), is(filteredActualKafkaBridgeCustomLabels.size()));
+        assertThat(exceptedKafkaBridgeCustomLabels, is(filteredActualKafkaBridgeCustomLabels));
     }
 
     @BeforeAll
