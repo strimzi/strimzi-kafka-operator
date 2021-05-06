@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.HostAlias;
-import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;

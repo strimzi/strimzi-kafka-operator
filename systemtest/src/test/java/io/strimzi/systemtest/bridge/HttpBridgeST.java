@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.fabric8.kubernetes.api.model.HostAlias;
-import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;

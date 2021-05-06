@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.mirrormaker;
 
-import io.fabric8.kubernetes.api.model.HostAlias;
-import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;

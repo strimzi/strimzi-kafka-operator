@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.fabric8.kubernetes.api.model.HostAlias;
-import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
