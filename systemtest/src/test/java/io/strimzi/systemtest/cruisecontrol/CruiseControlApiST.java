@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.systemtest.annotations.ParallelSuite;
@@ -13,7 +12,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -28,16 +26,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @ParallelSuite
-public class CruiseControlApiST extends AbstractST {
+public class CruiseControlApiST extends CruiseControlBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
-    private static final String NAMESPACE = "cruise-control-api-test";
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
     private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
     @Tag(ACCEPTANCE)
     @ParallelTest
-    void testCruiseControlBasicAPIRequests()  {
+    void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
+
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
 
         String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STATE);
@@ -112,12 +111,5 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString(CruiseControlEndpoints.REBALANCE.toString()));
         assertThat(response, containsString(CruiseControlEndpoints.STOP.toString()));
         assertThat(response, containsString(CruiseControlUserTaskStatus.COMPLETED.toString()));
-    }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) throws Exception {
-        installClusterOperator(extensionContext, NAMESPACE);
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
     }
 }

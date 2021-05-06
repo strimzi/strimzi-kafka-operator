@@ -176,16 +176,19 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     public void installClusterWideClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
-        prepareEnvForOperator(extensionContext, namespace);
-        // Apply role bindings in CO namespace
-        applyBindings(extensionContext, namespace);
+        // deploy cluster operator only once for parallel STs
+        if (StUtils.isClusterOperatorAlreadyDeployed(namespace)) {
+            prepareEnvForOperator(extensionContext, namespace);
+            // Apply role bindings in CO namespace
+            applyBindings(extensionContext, namespace);
 
-        // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-        List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespace);
-        clusterRoleBindingList.forEach(clusterRoleBinding ->
-            ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
-        // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(namespace, "*", operationTimeout, reconciliationInterval).build());
+            // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
+            List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespace);
+            clusterRoleBindingList.forEach(clusterRoleBinding ->
+                ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
+            // 060-Deployment
+            resourceManager.createResource(extensionContext, BundleResource.clusterOperator(namespace, "*", operationTimeout, reconciliationInterval).build());
+        }
     }
 
     /**

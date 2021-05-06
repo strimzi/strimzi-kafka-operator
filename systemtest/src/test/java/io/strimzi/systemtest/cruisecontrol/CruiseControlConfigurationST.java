@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
@@ -26,7 +25,6 @@ import io.strimzi.test.WaitException;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -57,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @ParallelSuite
-public class CruiseControlConfigurationST extends AbstractST {
+public class CruiseControlConfigurationST extends CruiseControlBaseST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
     private static final String NAMESPACE = "cruise-control-configuration-test";
@@ -298,10 +296,5 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying Cruise control performance options are set in Kafka CR");
         performanceTuningOpts.forEach((key, value) ->
                 assertThat(containerConfiguration, hasEntry(key, value.toString())));
-    }
-    
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) throws Exception {
-        installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 }
