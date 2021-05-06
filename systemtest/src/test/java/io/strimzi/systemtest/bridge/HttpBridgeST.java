@@ -273,33 +273,6 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     }
 
     @ParallelTest
-    void testHostAliases(ExtensionContext extensionContext) {
-
-        String bridgeName = "bridge-with-hosts";
-
-        HostAlias hostAlias = new HostAliasBuilder()
-            .withIp(aliasIp)
-            .withHostnames(aliasHostname)
-            .build();
-
-        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
-            .editSpec()
-                .withNewTemplate()
-                    .withNewPod()
-                        .withHostAliases(hostAlias)
-                    .endPod()
-                .endTemplate()
-            .endSpec()
-            .build());
-
-        String bridgePodName = kubeClient().listPods(Labels.STRIMZI_CLUSTER_LABEL, bridgeName).get(0).getMetadata().getName();
-
-        LOGGER.info("Checking the /etc/hosts file");
-        String output = cmdKubeClient().execInPod(bridgePodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString(etcHostsData));
-    }
-
-    @ParallelTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
 
         String bridgeName = "example-bridge";

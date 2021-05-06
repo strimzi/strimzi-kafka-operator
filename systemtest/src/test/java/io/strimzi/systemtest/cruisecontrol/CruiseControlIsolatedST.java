@@ -203,34 +203,6 @@ public class CruiseControlIsolatedST extends AbstractST {
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testHostAliases(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        HostAlias hostAlias = new HostAliasBuilder()
-            .withIp(aliasIp)
-            .withHostnames(aliasHostname)
-            .build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
-            .editSpec()
-                .editCruiseControl()
-                    .withNewTemplate()
-                        .withNewPod()
-                            .withHostAliases(hostAlias)
-                        .endPod()
-                    .endTemplate()
-                .endCruiseControl()
-            .endSpec()
-            .build());
-
-        String ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
-
-        LOGGER.info("Checking the /etc/hosts file");
-        String output = cmdKubeClient().execInPod(ccPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString(etcHostsData));
-    }
-
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         installClusterOperator(extensionContext, NAMESPACE);

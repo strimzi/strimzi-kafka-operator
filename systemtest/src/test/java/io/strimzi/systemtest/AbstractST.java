@@ -122,11 +122,6 @@ public abstract class AbstractST implements TestSeparator {
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
 
-    // Constants for host aliases tests
-    protected final String aliasIp = "34.89.152.196";
-    protected final String aliasHostname = "strimzi";
-    protected final String etcHostsData = "# Entries added by HostAliases.\n" + aliasIp + "\t" + aliasHostname;
-
     /**
      * This method install Strimzi Cluster Operator based on environment variable configuration.
      * It can install operator by classic way (apply bundle yamls) or use OLM. For OLM you need to set all other OLM env variables.

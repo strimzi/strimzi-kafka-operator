@@ -749,40 +749,6 @@ public class MirrorMakerST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testHostAliases(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClusterSourceName = clusterName + "-source";
-        String kafkaClusterTargetName = clusterName + "-target";
-
-        HostAlias hostAlias = new HostAliasBuilder()
-            .withIp(aliasIp)
-            .withHostnames(aliasHostname)
-            .build();
-
-        LOGGER.info("Creating kafka source cluster {}", kafkaClusterSourceName);
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
-        LOGGER.info("Creating kafka target cluster {}", kafkaClusterTargetName);
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
-
-        resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, ClientUtils.generateRandomConsumerGroup(), 3, false)
-            .editSpec()
-                .withNewTemplate()
-                    .withNewPod()
-                        .withHostAliases(hostAlias)
-                    .endPod()
-                .endTemplate()
-            .endSpec()
-            .build());
-
-        String mmPodName = kubeClient(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
-
-        LOGGER.info("Checking the /etc/hosts file");
-        String output = cmdKubeClient().namespace(namespaceName).execInPod(mmPodName, "cat", "/etc/hosts").out();
-        assertThat(output, Matchers.containsString(etcHostsData));
-    }
-
-    @ParallelNamespaceTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

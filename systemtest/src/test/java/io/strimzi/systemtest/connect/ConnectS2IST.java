@@ -834,38 +834,6 @@ class ConnectS2IST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testHostAliases(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String connectS2IClusterName = clusterName + "connect-s2i";
-        final String kafkaClientsName =  mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-
-        HostAlias hostAlias = new HostAliasBuilder()
-            .withIp(aliasIp)
-            .withHostnames(aliasHostname)
-            .build();
-
-        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, clusterName, clusterName, 1)
-            .editSpec()
-                .withNewTemplate()
-                    .withNewPod()
-                        .withHostAliases(hostAlias)
-                    .endPod()
-                .endTemplate()
-            .endSpec()
-            .build());
-
-        String connectS2IPodName = kubeClient(namespaceName).listKafkaConnectS2IPods(namespaceName, clusterName).get(0).getMetadata().getName();
-
-        LOGGER.info("Checking the /etc/hosts file");
-        String output = cmdKubeClient(namespaceName).execInPod(connectS2IPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString(etcHostsData));
-    }
-
-    @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars(ExtensionContext extensionContext) {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();

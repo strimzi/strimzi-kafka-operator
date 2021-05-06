@@ -1299,37 +1299,6 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testHostAliases(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-
-        HostAlias hostAlias = new HostAliasBuilder()
-            .withIp(aliasIp)
-            .withHostnames(aliasHostname)
-            .build();
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
-            .editSpec()
-                .withNewTemplate()
-                    .withNewPod()
-                        .withHostAliases(hostAlias)
-                    .endPod()
-                .endTemplate()
-            .endSpec()
-            .build());
-
-        String connectPodName = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
-
-        LOGGER.info("Checking the /etc/hosts file");
-        String output = cmdKubeClient(namespaceName).execInPod(connectPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString(etcHostsData));
-    }
-
-    @ParallelNamespaceTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
