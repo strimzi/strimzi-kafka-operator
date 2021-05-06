@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -448,7 +449,8 @@ public class KafkaRoller {
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
     private RestartPlan restartPlan(int podId, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
-        List<String> reasonToRestartPod = podNeedsRestart.apply(pod);
+
+        List<String> reasonToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
         boolean podStuck = pod != null
                 && pod.getStatus() != null
                 && "Pending".equals(pod.getStatus().getPhase())
@@ -463,7 +465,7 @@ public class KafkaRoller {
             throw new FatalProblem("Pod is unschedulable");
         }
         // Unless the annotation is present, check the pod is at least ready.
-        boolean needsRestart = reasonToRestartPod != null && !reasonToRestartPod.isEmpty();
+        boolean needsRestart = !reasonToRestartPod.isEmpty();
         KafkaBrokerConfigurationDiff diff = null;
         KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
         boolean needsReconfig = false;
