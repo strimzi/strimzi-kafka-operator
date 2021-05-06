@@ -796,6 +796,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateClusterNoop(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
@@ -803,6 +804,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateKafkaClusterChangeImage(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setImage("a-changed-image");
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
@@ -811,6 +813,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateZookeeperClusterChangeImage(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setImage("a-changed-image");
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
@@ -819,6 +822,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateKafkaClusterScaleUp(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(4);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
@@ -827,6 +831,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateKafkaClusterScaleDown(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(2);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
@@ -835,6 +840,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateZookeeperClusterScaleUp(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(4);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
@@ -843,6 +849,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateZookeeperClusterScaleDown(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(2);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
@@ -851,6 +858,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateClusterMetricsConfig(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setMetrics(singletonMap("something", "changed"));
         JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, differentMetricsCMName);
@@ -861,6 +869,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateClusterAuthenticationTrue(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         KafkaJmxOptions kafkaJmxOptions = new KafkaJmxOptionsBuilder().withAuthentication(
                  new KafkaJmxAuthenticationPasswordBuilder().build())
@@ -872,6 +881,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateClusterLogConfig(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
         logger.setLoggers(singletonMap("kafka.root.logger.level", "DEBUG"));
@@ -882,6 +892,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateZkClusterMetricsConfig(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, differentMetricsCMName);
         kafkaAssembly.getSpec().getKafka().setMetricsConfig(jmxMetricsConfig);
@@ -891,6 +902,7 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testUpdateZkClusterLogConfig(Params params, VertxTestContext context) {
+        setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
         logger.setLoggers(singletonMap("zookeeper.root.logger", "DEBUG"));
