@@ -290,7 +290,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         request.result().send(response -> {
                             if (response.succeeded()) {
                                 if (response.result().statusCode() == 202) {
-                                    result.complete();
+                                    response.result().bodyHandler(body -> {
+                                        result.complete();
+                                    });
                                 } else {
                                     result.fail("Unexpected status code " + response.result().statusCode()
                                             + " for GET request to " + host + ":" + port + path);
@@ -390,11 +392,11 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                     .write(buffer.toString());
                             request.result().send(response -> {
                                 if (response.succeeded()) {
-                                    response.result().bodyHandler(body -> {
-                                    });
                                     if (response.result().statusCode() == 200) {
-                                        log.debug("Logger {} updated to level {}", logger, level);
-                                        result.complete();
+                                        response.result().bodyHandler(body -> {
+                                            log.debug("Logger {} updated to level {}", logger, level);
+                                            result.complete();
+                                        });
                                     } else {
                                         log.debug("Logger {} did not update to level {} (http code {})", logger, level, response.result().statusCode());
                                         result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
@@ -548,7 +550,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     request.result().send(response -> {
                         if (response.succeeded()) {
                             if (response.result().statusCode() == 204) {
-                                result.complete();
+                                response.result().bodyHandler(body -> {
+                                    result.complete();
+                                });
                             } else {
                                 result.fail("Unexpected status code " + response.result().statusCode()
                                         + " for POST request to " + host + ":" + port + path);
