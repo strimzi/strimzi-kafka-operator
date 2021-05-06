@@ -92,8 +92,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
 @ParallelSuite
+@ExtendWith(VertxExtension.class)
+@SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class KafkaConnectAssemblyOperatorTest {
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
