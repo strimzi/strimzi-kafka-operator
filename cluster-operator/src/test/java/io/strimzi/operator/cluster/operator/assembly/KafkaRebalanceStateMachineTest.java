@@ -504,6 +504,72 @@ public class KafkaRebalanceStateMachineTest {
 
     }
 
+    @Test
+    public void testReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 1);
+        checkTransition(vertx, context,
+                KafkaRebalanceState.Ready, KafkaRebalanceState.PendingProposal,
+                KafkaRebalanceAnnotation.refresh, null, null)
+                .onComplete(result -> checkOptimizationResults(result, context, true));
+
+    }
+
+    @Test
+    public void testReadyRefreshToProposalReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        checkTransition(vertx, context,
+                KafkaRebalanceState.Ready, KafkaRebalanceState.ProposalReady,
+                KafkaRebalanceAnnotation.refresh, null, null)
+                .onComplete(result -> checkOptimizationResults(result, context, false));
+
+    }
+
+    @Test
+    public void testReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+
+        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
+        checkTransition(vertx, context,
+                KafkaRebalanceState.Ready, KafkaRebalanceState.PendingProposal,
+                KafkaRebalanceAnnotation.refresh, null, null)
+                .onComplete(result -> checkOptimizationResults(result, context, true));
+
+    }
+
+    @Test
+    public void testNotReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 1);
+        checkTransition(vertx, context,
+                KafkaRebalanceState.NotReady, KafkaRebalanceState.PendingProposal,
+                KafkaRebalanceAnnotation.refresh, null, null)
+                .onComplete(result -> checkOptimizationResults(result, context, true));
+
+    }
+
+    @Test
+    public void testNotReadyRefreshToProposalReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        checkTransition(vertx, context,
+                KafkaRebalanceState.NotReady, KafkaRebalanceState.ProposalReady,
+                KafkaRebalanceAnnotation.refresh, null, null)
+                .onComplete(result -> checkOptimizationResults(result, context, false));
+
+    }
+
+    @Test
+    public void testNotReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+
+        MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
+        checkTransition(vertx, context,
+                KafkaRebalanceState.NotReady, KafkaRebalanceState.PendingProposal,
+                KafkaRebalanceAnnotation.refresh, null, null)
+                .onComplete(result -> checkOptimizationResults(result, context, true));
+
+    }
+
     private static class StateMatchers extends AbstractResourceStateMatchers {
 
     }

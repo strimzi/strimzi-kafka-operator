@@ -68,7 +68,9 @@ kubectl describe kafkarebalance _rebalance-cr-name_
 
 ** Rebalancing: The cluster rebalance operation is in progress. 
 
-** Ready: The cluster rebalancing operation completed successfully. The `KafkaRebalance` custom resource cannot be reused.
+** Ready: The cluster rebalancing operation completed successfully.
+To use the same `KafkaRebalance` custom resource to generate another optimization proposal, apply the `refresh` annotation to the custom resource.
+This moves the custom resource to the `PendingProposal` or `ProposalReady` state. You can then review the optimization proposal and approve it, if desired.
 
 ** NotReady: An error occurred--see xref:proc-fixing-problems-with-kafkarebalance-{context}[].  
 

@@ -420,7 +420,7 @@ public class KafkaRebalanceAssemblyOperator
                 return onStop(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
             case Ready:
                 // Rebalance Complete
-                return Future.succeededFuture(buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), validate(kafkaRebalance)));
+                return onReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
             case NotReady:
                 // Error case
                 return onNotReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
@@ -783,6 +783,32 @@ public class KafkaRebalanceAssemblyOperator
         } else {
             log.warn("{}: Ignore annotation {}={}", reconciliation, ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotation);
             return Future.succeededFuture(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, validate(kafkaRebalance)));
+        }
+    }
+
+    /**
+     * This method handles the transition from {@code Ready} state.
+     * If the user set strimzi.io/rebalance=refresh annotation, it calls the Cruise Control API for requesting a new rebalance proposal.
+     * If the proposal is immediately ready, the next state is {@code ProposalReady}.
+     * If the proposal is not ready yet and Cruise Control is still taking care of processing it, the next state is {@code PendingProposal}.
+     * If the user sets any other values for the strimzi.io/rebalance, it is just ignored.
+     *
+     * @param reconciliation Reconciliation information
+     * @param host Cruise Control service to which sending the rebalance proposal request
+     * @param apiClient Cruise Control REST API client instance
+     * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
+     * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
+     * @return a Future with the next {@code KafkaRebalanceStatus} bringing the state
+     */
+    private Future<KafkaRebalanceStatus> onReady(Reconciliation reconciliation,
+                                                 String host, CruiseControlApi apiClient,
+                                                 KafkaRebalance kafkaRebalance, KafkaRebalanceAnnotation rebalanceAnnotation,
+                                                 RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
+        if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
+            return requestRebalance(reconciliation, host, apiClient, true, rebalanceOptionsBuilder, kafkaRebalance);
+        } else {
+            log.warn("{}: Ignore annotation {}={}", reconciliation, ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotation);
+            return Future.succeededFuture(buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), validate(kafkaRebalance)));
         }
     }
 
