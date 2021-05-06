@@ -7,6 +7,11 @@ def setupKubernetes() {
     sh(script: "${workspace}/.azure/scripts/setup-kubernetes.sh")
 }
 
+def setupShellheck() {
+    // setup shellcheck
+    sh(script: "${workspace}/.azure/scripts/setup_shellcheck.sh")
+}
+
 def clearImages() {
     sh(script: "docker rmi -f \$(docker images -q) 2>/dev/null || echo 'No more images to remove.'")
 }
