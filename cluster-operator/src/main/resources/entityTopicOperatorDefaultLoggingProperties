@@ -4,10 +4,6 @@ appender.console.type = Console
 appender.console.name = STDOUT
 appender.console.layout.type = PatternLayout
 appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss,nnnnn} %-5p [%t] %c{1}:%L - %m%n
-appender.console.filter.filter1.type = MarkerFilter
-appender.console.filter.filter1.onMatch = ACCEPT
-appender.console.filter.filter1.onMismatch = NEUTRAL
-appender.console.filter.filter1.marker = KafkaTopic(namespace/name)
 
 rootLogger.level = INFO
 rootLogger.appenderRefs = stdout

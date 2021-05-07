@@ -31,7 +31,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectDockerfile;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.LoggerWrapper;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
@@ -64,7 +64,7 @@ import java.util.function.Function;
 @SuppressWarnings("deprecation")
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
     private static final Logger log = LogManager.getLogger(KafkaConnectAssemblyOperator.class.getName());
-    private final LoggerWrapper loggerWrapper = new LoggerWrapper(log);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodOperator podOperator;
@@ -127,7 +127,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         Map<String, String> annotations = new HashMap<>(2);
 
-        loggerWrapper.debug("Updating Kafka Connect cluster", reconciliation);
+        RECONCILIATION_LOGGER.debug(reconciliation, "Updating Kafka Connect cluster");
 
         Future<KafkaConnectS2I> connectS2ICheck;
         if (connectS2IOperations != null)   {

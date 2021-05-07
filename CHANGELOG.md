@@ -11,6 +11,7 @@
 * Support pausing reconciliation of KafkaTopic CR with annotation `strimzi.io/pause-reconciliation`
 * Update cruise control to 2.5.55
 * Support for broker load information added to the rebalance optimization proposal. Information on the load difference, before and after a rebalance is stored in a ConfigMap
+* Add support for selectively changing the verbosity of logging for individual CRs, using markers.
 
 ### Changes, deprecations and removals
 

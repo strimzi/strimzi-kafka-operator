@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.common.LoggerWrapper;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -36,7 +36,7 @@ import static java.lang.Integer.parseInt;
 class KafkaAvailability {
 
     private static final Logger log = LogManager.getLogger(KafkaAvailability.class.getName());
-    private final LoggerWrapper loggerWrapper = new LoggerWrapper(log);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
 
     private final Admin ac;
 
@@ -51,8 +51,8 @@ class KafkaAvailability {
         Future<Set<String>> topicNames = topicNames();
         // 2. Get topic descriptions
         descriptions = topicNames.compose(names -> {
-            loggerWrapper.debug("Got {} topic names", reconciliation, names.size());
-            loggerWrapper.trace("Topic names {}", reconciliation, names);
+            RECONCILIATION_LOGGER.debug(reconciliation, "Got {} topic names", names.size());
+            RECONCILIATION_LOGGER.trace(reconciliation, "Topic names {}", names);
             return describeTopics(names);
         });
     }
@@ -62,17 +62,17 @@ class KafkaAvailability {
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
     Future<Boolean> canRoll(int podId) {
-        loggerWrapper.debug("Determining whether broker {} can be rolled", reconciliation, podId);
+        RECONCILIATION_LOGGER.debug(reconciliation, "Determining whether broker {} can be rolled", podId);
         return canRollBroker(descriptions, podId);
     }
 
     private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId) {
         Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .compose(topicDescriptions -> {
-                    loggerWrapper.debug("Got {} topic descriptions", reconciliation, topicDescriptions.size());
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Got {} topic descriptions", topicDescriptions.size());
                     return Future.succeededFuture(groupTopicsByBroker(topicDescriptions, podId));
                 }).recover(error -> {
-                    loggerWrapper.warn("failed to get topic descriptions", reconciliation, error);
+                    RECONCILIATION_LOGGER.warn(reconciliation, "failed to get topic descriptions", error);
                     return Future.failedFuture(error);
                 });
 
@@ -86,11 +86,11 @@ class KafkaAvailability {
             boolean canRoll = tds.stream().noneMatch(
                 td -> wouldAffectAvailability(podId, topicNameToConfig, td));
             if (!canRoll) {
-                loggerWrapper.debug("Restart pod {} would remove it from ISR, stalling producers with acks=all", reconciliation, podId);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Restart pod {} would remove it from ISR, stalling producers with acks=all", podId);
             }
             return canRoll;
         }).recover(error -> {
-            loggerWrapper.warn("Error determining whether it is safe to restart pod {}", reconciliation, podId, error);
+            RECONCILIATION_LOGGER.warn(reconciliation, "Error determining whether it is safe to restart pod {}", podId, error);
             return Future.failedFuture(error);
         });
     }
@@ -101,36 +101,36 @@ class KafkaAvailability {
         int minIsr;
         if (minIsrConfig != null && minIsrConfig.value() != null) {
             minIsr = parseInt(minIsrConfig.value());
-            loggerWrapper.debug("{} has {}={}.", reconciliation, td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr);
+            RECONCILIATION_LOGGER.debug(reconciliation, "{} has {}={}.", td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr);
         } else {
             minIsr = -1;
-            loggerWrapper.debug("{} lacks {}.", reconciliation, td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
+            RECONCILIATION_LOGGER.debug(reconciliation, "{} lacks {}.", td.name(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
         }
 
         for (TopicPartitionInfo pi : td.partitions()) {
             List<Node> isr = pi.isr();
             if (minIsr >= 0) {
                 if (pi.replicas().size() <= minIsr) {
-                    loggerWrapper.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
-                            reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                    RECONCILIATION_LOGGER.debug(reconciliation, "{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
+                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                             pi.replicas().size());
                 } else if (isr.size() < minIsr
                         && contains(pi.replicas(), broker)) {
                     logIsrReplicas(td, pi, isr);
-                    loggerWrapper.info("{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
+                    RECONCILIATION_LOGGER.info(reconciliation, "{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
                                     "so should not be restarted right now (it might be first to catch up).",
-                            reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                     return true;
                 } else if (isr.size() == minIsr
                         && contains(isr, broker)) {
                     if (minIsr < pi.replicas().size()) {
                         logIsrReplicas(td, pi, isr);
-                        loggerWrapper.info("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
-                                reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                        RECONCILIATION_LOGGER.info(reconciliation, "{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
+                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                         return true;
                     } else {
-                        loggerWrapper.debug("{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
-                                reconciliation, td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                        RECONCILIATION_LOGGER.debug(reconciliation, "{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
+                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                                 pi.replicas().size());
                     }
                 }
@@ -141,7 +141,7 @@ class KafkaAvailability {
 
     private void logIsrReplicas(TopicDescription td, TopicPartitionInfo pi, List<Node> isr) {
         if (log.isDebugEnabled()) {
-            loggerWrapper.debug("{}/{} has ISR={}, replicas={}", reconciliation, td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
+            RECONCILIATION_LOGGER.debug(reconciliation, "{}/{} has ISR={}, replicas={}", td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
         }
     }
 
@@ -154,7 +154,7 @@ class KafkaAvailability {
     }
 
     private Future<Map<String, Config>> topicConfigs(Collection<String> topicNames) {
-        loggerWrapper.debug("Getting topic configs for {} topics", reconciliation, topicNames.size());
+        RECONCILIATION_LOGGER.debug(reconciliation, "Getting topic configs for {} topics", topicNames.size());
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
@@ -163,7 +163,7 @@ class KafkaAvailability {
             if (error != null) {
                 promise.fail(error);
             } else {
-                loggerWrapper.debug("Got topic configs for {} topics", reconciliation, topicNames.size());
+                RECONCILIATION_LOGGER.debug(reconciliation, "Got topic configs for {} topics", topicNames.size());
                 promise.complete(topicNameToConfig.entrySet().stream()
                         .collect(Collectors.toMap(
                             entry -> entry.getKey().name(),
@@ -176,7 +176,7 @@ class KafkaAvailability {
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
         Set<TopicDescription> topicPartitionInfos = new HashSet<>();
         for (TopicDescription td : tds) {
-            loggerWrapper.trace("{}", reconciliation, td);
+            RECONCILIATION_LOGGER.trace(reconciliation, "{}", td);
             for (TopicPartitionInfo pd : td.partitions()) {
                 for (Node broker : pd.replicas()) {
                     if (podId == broker.id()) {
@@ -195,7 +195,7 @@ class KafkaAvailability {
                     if (error != null) {
                         descPromise.fail(error);
                     } else {
-                        loggerWrapper.debug("Got topic descriptions for {} topics", reconciliation, tds.size());
+                        RECONCILIATION_LOGGER.debug(reconciliation, "Got topic descriptions for {} topics", tds.size());
                         descPromise.complete(tds.values());
                     }
                 });
@@ -209,7 +209,7 @@ class KafkaAvailability {
                     if (error != null) {
                         namesPromise.fail(error);
                     } else {
-                        loggerWrapper.debug("Got {} topic names", reconciliation, names.size());
+                        RECONCILIATION_LOGGER.debug(reconciliation, "Got {} topic names", names.size());
                         namesPromise.complete(names);
                     }
                 });

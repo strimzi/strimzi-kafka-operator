@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.AbstractOperator;
-import io.strimzi.operator.common.LoggerWrapper;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec, KafkaUserStatus,
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList>> {
     private static final Logger log = LogManager.getLogger(KafkaUserOperator.class.getName());
-    private final LoggerWrapper loggerWrapper = new LoggerWrapper(log);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
 
     private final SecretOperator secretOperations;
     private final SimpleAclOperator aclOperations;
@@ -152,7 +152,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
             return Future.failedFuture(new ReconciliationException(userStatus, e));
         }
 
-        loggerWrapper.debug("Updating User {} in namespace {}", reconciliation, userName, namespace);
+        RECONCILIATION_LOGGER.debug(reconciliation, "Updating User {} in namespace {}", userName, namespace);
         Secret desired = user.generateSecret();
         String password = null;
 
@@ -220,7 +220,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
-        loggerWrapper.debug("Deleting User {} from namespace {}", reconciliation, user, namespace);
+        RECONCILIATION_LOGGER.debug(reconciliation, "Deleting User {} from namespace {}", user, namespace);
         return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(secretPrefix, user), null),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),

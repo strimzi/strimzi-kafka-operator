@@ -25,7 +25,7 @@ public class Reconciliation {
     private final String namespace;
     private final String name;
     private final int id;
-    private Marker marker;
+    private final Marker marker;
 
     public Reconciliation(String trigger, String kind, String namespace, String assemblyName) {
         this.trigger = trigger;

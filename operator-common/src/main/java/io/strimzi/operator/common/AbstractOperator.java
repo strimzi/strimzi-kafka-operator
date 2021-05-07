@@ -74,7 +74,7 @@ public abstract class AbstractOperator<
             implements Operator {
 
     private static final Logger log = LogManager.getLogger(AbstractOperator.class);
-    private final LoggerWrapper loggerWrapper = new LoggerWrapper(log);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
 
     private static final long PROGRESS_WARNING = 60_000L;
     protected static final int LOCK_TIMEOUT_MS = 10000;
@@ -207,7 +207,7 @@ public abstract class AbstractOperator<
                     // and might not be really deleted. We have to filter these situations out and ignore the
                     // reconciliation because such resource might be already operated by another instance (where the
                     // same change triggered ADDED event).
-                    loggerWrapper.debug("{} {} in namespace {} does not match label selector {} and will be ignored", reconciliation, kind(), name, namespace, selector().get().getMatchLabels());
+                    RECONCILIATION_LOGGER.debug(reconciliation, "{} {} in namespace {} does not match label selector {} and will be ignored", kind(), name, namespace, selector().get().getMatchLabels());
                     return Future.succeededFuture();
                 }
 
@@ -227,7 +227,7 @@ public abstract class AbstractOperator<
                         }
                     });
                     getPausedResourceCounter().getAndIncrement();
-                    loggerWrapper.debug("Reconciliation of {} {} is paused", reconciliation, kind, name);
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Reconciliation of {} {} is paused", kind, name);
                     return createOrUpdate.future();
                 } else if (cr.getSpec() == null) {
                     InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
@@ -243,7 +243,7 @@ public abstract class AbstractOperator<
                     status.setObservedGeneration(cr.getMetadata().getGeneration());
                     status.addCondition(errorCondition);
 
-                    loggerWrapper.error("{} spec cannot be null", reconciliation, cr.getMetadata().getName());
+                    RECONCILIATION_LOGGER.error(reconciliation, "{} spec cannot be null", cr.getMetadata().getName());
                     updateStatus(reconciliation, status).onComplete(notUsed -> {
                         createOrUpdate.fail(exception);
                     });
@@ -253,7 +253,7 @@ public abstract class AbstractOperator<
 
                 Set<Condition> unknownAndDeprecatedConditions = validate(cr);
 
-                loggerWrapper.info("{} {} will be checked for creation or modification", reconciliation, kind, name);
+                RECONCILIATION_LOGGER.info(reconciliation, "{} {} will be checked for creation or modification", kind, name);
 
                 createOrUpdate(reconciliation, cr)
                         .onComplete(res -> {
@@ -274,13 +274,13 @@ public abstract class AbstractOperator<
                                     Status status = e.getStatus();
                                     addWarningsToStatus(status, unknownAndDeprecatedConditions);
 
-                                    loggerWrapper.error("createOrUpdate failed", reconciliation, e.getCause());
+                                    RECONCILIATION_LOGGER.error(reconciliation, "createOrUpdate failed", e.getCause());
 
                                     updateStatus(reconciliation, (S) status).onComplete(statusResult -> {
                                         createOrUpdate.fail(e.getCause());
                                     });
                                 } else {
-                                    loggerWrapper.error("createOrUpdate failed", reconciliation, res.cause());
+                                    RECONCILIATION_LOGGER.error(reconciliation, "createOrUpdate failed", res.cause());
                                     createOrUpdate.fail(res.cause());
                                 }
                             }
@@ -288,16 +288,16 @@ public abstract class AbstractOperator<
 
                 return createOrUpdate.future();
             } else {
-                loggerWrapper.info("{} {} should be deleted", reconciliation, kind, name);
+                RECONCILIATION_LOGGER.info(reconciliation, "{} {} should be deleted", kind, name);
                 return delete(reconciliation).map(deleteResult -> {
                     if (deleteResult) {
-                        loggerWrapper.info("{} {} deleted", reconciliation, kind, name);
+                        RECONCILIATION_LOGGER.info(reconciliation, "{} {} deleted", kind, name);
                     } else {
-                        loggerWrapper.info("Assembly {} or some parts of it will be deleted by garbage collection", reconciliation, name);
+                        RECONCILIATION_LOGGER.info(reconciliation, "Assembly {} or some parts of it will be deleted by garbage collection", name);
                     }
                     return (Void) null;
                 }).recover(deleteResult -> {
-                    loggerWrapper.error("Deletion of {} {} failed", reconciliation, kind, name, deleteResult);
+                    RECONCILIATION_LOGGER.error(reconciliation, "Deletion of {} {} failed", kind, name, deleteResult);
                     return Future.failedFuture(deleteResult);
                 });
             }
@@ -329,7 +329,7 @@ public abstract class AbstractOperator<
      */
     Future<Void> updateStatus(Reconciliation reconciliation, S desiredStatus) {
         if (desiredStatus == null)  {
-            loggerWrapper.debug("Desired status is null - status will not be updated", reconciliation);
+            RECONCILIATION_LOGGER.debug(reconciliation, "Desired status is null - status will not be updated");
             return Future.succeededFuture();
         }
 
@@ -347,22 +347,22 @@ public abstract class AbstractOperator<
 
                             return resourceOperator.updateStatusAsync(res)
                                     .compose(notUsed -> {
-                                        loggerWrapper.debug("Completed status update", reconciliation);
+                                        RECONCILIATION_LOGGER.debug(reconciliation, "Completed status update");
                                         return Future.succeededFuture();
                                     }, error -> {
-                                            loggerWrapper.error("Failed to update status", reconciliation, error);
+                                            RECONCILIATION_LOGGER.error(reconciliation, "Failed to update status", error);
                                             return Future.failedFuture(error);
                                         });
                         } else {
-                            loggerWrapper.debug("Status did not change", reconciliation);
+                            RECONCILIATION_LOGGER.debug(reconciliation, "Status did not change");
                             return Future.succeededFuture();
                         }
                     } else {
-                        loggerWrapper.error("Current {} resource not found", reconciliation, reconciliation.kind());
+                        RECONCILIATION_LOGGER.error(reconciliation, "Current {} resource not found", reconciliation.kind());
                         return Future.failedFuture("Current " + reconciliation.kind() + " resource with name " + name + " not found");
                     }
                 }, error -> {
-                        loggerWrapper.error("Failed to get the current {} resource and its status", reconciliation, reconciliation.kind(), error);
+                        RECONCILIATION_LOGGER.error(reconciliation, "Failed to get the current {} resource and its status", reconciliation.kind(), error);
                         return Future.failedFuture(error);
                     });
     }
@@ -390,14 +390,14 @@ public abstract class AbstractOperator<
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
         final String lockName = getLockName(namespace, name);
-        loggerWrapper.debug("Try to acquire lock {}", reconciliation, lockName);
+        RECONCILIATION_LOGGER.debug(reconciliation, "Try to acquire lock {}", lockName);
         vertx.sharedData().getLockWithTimeout(lockName, lockTimeoutMs, res -> {
             if (res.succeeded()) {
-                loggerWrapper.debug("Lock {} acquired", reconciliation, lockName);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Lock {} acquired", lockName);
 
                 Lock lock = res.result();
                 long timerId = vertx.setPeriodic(PROGRESS_WARNING, timer -> {
-                    loggerWrapper.info("Reconciliation is in progress", reconciliation);
+                    RECONCILIATION_LOGGER.info(reconciliation, "Reconciliation is in progress");
                 });
 
                 try {
@@ -410,17 +410,17 @@ public abstract class AbstractOperator<
 
                         vertx.cancelTimer(timerId);
                         lock.release();
-                        loggerWrapper.debug("Lock {} released", reconciliation, lockName);
+                        RECONCILIATION_LOGGER.debug(reconciliation, "Lock {} released", lockName);
                     });
                 } catch (Throwable ex) {
                     vertx.cancelTimer(timerId);
                     lock.release();
-                    loggerWrapper.debug("Lock {} released", reconciliation, lockName);
-                    loggerWrapper.error("Reconciliation failed", reconciliation, ex);
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Lock {} released", lockName);
+                    RECONCILIATION_LOGGER.error(reconciliation, "Reconciliation failed", ex);
                     handler.fail(ex);
                 }
             } else {
-                loggerWrapper.debug("Failed to acquire lock {} within {}ms.", reconciliation, lockName, lockTimeoutMs);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Failed to acquire lock {} within {}ms.", lockName, lockTimeoutMs);
                 handler.fail(new UnableToAcquireLockException());
             }
         });
@@ -499,7 +499,7 @@ public abstract class AbstractOperator<
             updateResourceState(reconciliation, true, null);
             successfulReconciliationsCounter.increment();
             reconciliationTimerSample.stop(reconciliationsTimer);
-            loggerWrapper.info("reconciled", reconciliation);
+            RECONCILIATION_LOGGER.info(reconciliation, "reconciled");
         } else {
             Throwable cause = result.cause();
 
@@ -507,14 +507,14 @@ public abstract class AbstractOperator<
                 updateResourceState(reconciliation, false, cause);
                 failedReconciliationsCounter.increment();
                 reconciliationTimerSample.stop(reconciliationsTimer);
-                loggerWrapper.warn("Failed to reconcile {}", reconciliation, cause.getMessage());
+                RECONCILIATION_LOGGER.warn(reconciliation, "Failed to reconcile {}", cause.getMessage());
             } else if (cause instanceof UnableToAcquireLockException) {
                 lockedReconciliationsCounter.increment();
             } else  {
                 updateResourceState(reconciliation, false, cause);
                 failedReconciliationsCounter.increment();
                 reconciliationTimerSample.stop(reconciliationsTimer);
-                loggerWrapper.warn("Failed to reconcile", reconciliation, cause);
+                RECONCILIATION_LOGGER.warn(reconciliation, "Failed to reconcile", cause);
             }
         }
     }
@@ -561,7 +561,7 @@ public abstract class AbstractOperator<
             // remove metric so it can be re-added with new tags
             metrics.meterRegistry().remove(metric.get().getId());
             resourcesStateCounter.remove(key);
-            loggerWrapper.debug("Removed metric " + METRICS_PREFIX + "resource.state{}", reconciliation, key);
+            RECONCILIATION_LOGGER.debug(reconciliation, "Removed metric " + METRICS_PREFIX + "resource.state{}", key);
         }
 
         if (cr != null) {
@@ -569,7 +569,7 @@ public abstract class AbstractOperator<
                     metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
             );
             resourcesStateCounter.get(key).set(ready ? 1 : 0);
-            loggerWrapper.debug("Updated metric " + METRICS_PREFIX + "resource.state{} = {}", reconciliation, metricTags, ready ? 1 : 0);
+            RECONCILIATION_LOGGER.debug(reconciliation, "Updated metric " + METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);
         }
     }
 

@@ -26,7 +26,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.LoggerWrapper;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
@@ -60,7 +60,7 @@ import java.util.function.Function;
 @SuppressWarnings("deprecation")
 public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> {
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
-    private final LoggerWrapper loggerWrapper = new LoggerWrapper(log);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
 
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
@@ -119,7 +119,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
 
-        loggerWrapper.debug("Updating Kafka Connect S2I cluster", reconciliation);
+        RECONCILIATION_LOGGER.debug(reconciliation, "Updating Kafka Connect S2I cluster");
 
         connectOperations.getAsync(kafkaConnectS2I.getMetadata().getNamespace(), kafkaConnectS2I.getMetadata().getName())
                 .compose(otherConnect -> {
@@ -206,7 +206,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
                 if (connect != null) {
                     if (StatusUtils.isResourceV1alpha1(connect)) {
-                        loggerWrapper.warn("The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", reconciliation, connect.getApiVersion());
+                        RECONCILIATION_LOGGER.warn(reconciliation, "The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", connect.getApiVersion());
                         updateStatusPromise.complete();
                     } else {
                         KafkaConnectS2IStatus currentStatus = connect.getStatus();
@@ -218,24 +218,24 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
                             ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
-                                    loggerWrapper.debug("Completed status update", reconciliation);
+                                    RECONCILIATION_LOGGER.debug(reconciliation, "Completed status update");
                                     updateStatusPromise.complete();
                                 } else {
-                                    loggerWrapper.error("Failed to update status", reconciliation, updateRes.cause());
+                                    RECONCILIATION_LOGGER.error(reconciliation, "Failed to update status", updateRes.cause());
                                     updateStatusPromise.fail(updateRes.cause());
                                 }
                             });
                         } else {
-                            loggerWrapper.debug("Status did not change", reconciliation);
+                            RECONCILIATION_LOGGER.debug(reconciliation, "Status did not change");
                             updateStatusPromise.complete();
                         }
                     }
                 } else {
-                    loggerWrapper.error("Current Kafka ConnectS2I resource not found", reconciliation);
+                    RECONCILIATION_LOGGER.error(reconciliation, "Current Kafka ConnectS2I resource not found");
                     updateStatusPromise.fail("Current Kafka ConnectS2I resource not found");
                 }
             } else {
-                loggerWrapper.error("Failed to get the current Kafka ConnectS2I resource and its status", reconciliation, getRes.cause());
+                RECONCILIATION_LOGGER.error(reconciliation, "Failed to get the current Kafka ConnectS2I resource and its status", getRes.cause());
                 updateStatusPromise.fail(getRes.cause());
             }
         });
