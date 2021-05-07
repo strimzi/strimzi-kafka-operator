@@ -194,6 +194,22 @@ GA features might also become features that are always enabled.
 In this case, the feature gate is removed and it will not be possible to disable the feature.
 Alpha and beta features are removed if they do not prove to be useful.
 
+.List of supported feature gates and Strimzi versions when they moved into the alpha, beta, or GA stage
+[cols="4*",options="header",stripes="none",separator=¦]
+|===
+
+¦Feature gate
+¦Alpha
+¦Beta
+¦GA
+
+¦`ControlPlaneListener`
+¦0.23.0
+¦
+¦
+
+|===
+
 You configure feature gates using the environment variable `STRIMZI_FEATURE_GATES`.
 The configuration contains a comma-separated list of the feature gate names.
 A prefix of `+` enables the feature gate. A prefix of `-`  disables the feature gate.
@@ -206,14 +222,14 @@ env:
     value: +FeatureGate1,-FeatureGate2
 ----
 
-
 === Control Plane listener feature gate
 
 When enabled, the `ControlPlaneListener` feature gate configures Kafka brokers to use a separate listener for controller connections and for data connections (replication).
 This feature gate is currently in the alpha phase and is disabled by default.
 To enable it, use `+ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 This feature gate has to be disabled when upgrading from Strimzi 0.22 and earlier or when downgrading to Strimzi 0.22 and earlier.
-This feature is introduced in Strimzi 0.23 and is expected to remain in the alpha phase for four releases before moving to the beta phase and be enabled by default.
+
+NOTE: The `ControlPlaneListener` feature gate was introduced in Strimzi 0.23.0 and is expected to remain in the alpha phase for a number of releases before it moves to the beta phase and is enabled by default.
 
 == Logging configuration by ConfigMap
 
