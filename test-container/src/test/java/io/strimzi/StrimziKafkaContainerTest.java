@@ -7,6 +7,7 @@ package io.strimzi;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.images.PullPolicy;
 
@@ -83,6 +84,7 @@ public class StrimziKafkaContainerTest {
     }
 
     @Test
+    @Disabled
     void testStartContainer() {
         assumeDocker();
         systemUnderTest = new StrimziKafkaContainer();
