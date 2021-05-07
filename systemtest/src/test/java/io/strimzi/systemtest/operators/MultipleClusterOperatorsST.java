@@ -175,7 +175,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName)).size(), is(scaleTo));
 
-        KafkaRebalanceUtils.doRebalancingProcess(DEFAULT_NAMESPACE, DEFAULT_NAMESPACE);
+        KafkaRebalanceUtils.doRebalancingProcess(DEFAULT_NAMESPACE, clusterName);
     }
 
     void deployCOInNamespace(ExtensionContext extensionContext, String coName, String coNamespace, EnvVar selectorEnv, boolean multipleNamespaces) {
