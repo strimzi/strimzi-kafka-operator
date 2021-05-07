@@ -138,19 +138,6 @@ kubectl get kafka _KAFKA-CLUSTER-NAME_ -o jsonpath='{.status.listeners[?(@.type=
 +
 Use the bootstrap address in your Kafka client to connect to the Kafka cluster.
 
-. Extract the public cluster CA certificate and password from the generated `_KAFKA-CLUSTER-NAME_-cluster-ca-cert` Secret.
-+
-[source,shell,subs="+quotes"]
-kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.p12}' | base64 -d > ca.p12
-+
-[source,shell,subs="+quotes"]
-kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 -d > ca.password
-+
-Use the certificate and password in your Kafka client to connect to the Kafka cluster with TLS encryption.
-+
-NOTE: Cluster CA certificates renew automatically by default. If you are using your own Kafka listener certificates,
-you will need to link:{BookURLUsing}#renewing-your-own-ca-certificates-str[renew the certificates manually^].
-
 . Create or modify a user representing the client that requires access to the Kafka cluster.
 +
 * Specify the same authentication type as the `Kafka` listener.
@@ -221,16 +208,29 @@ data:
   user.password: _PASSWORD-PROTECTING-P12-ARCHIVE_
 ----
 
-. Configure your client to connect to the Kafka cluster with the properties required to make a secure connection to the Kafka cluster.
-
-.. Add the authentication details for the public cluster certificates:
+. Extract the public cluster CA certificate in PKCS #12 format:
 +
-[source,env,subs="+quotes,attributes"]
+[source,shell,subs="+quotes"]
 ----
-security.protocol: SSL <1>
-ssl.truststore.location: _PATH-TO/ssl/keys/truststore_ <2>
-ssl.truststore.password: _CLUSTER-CA-CERT-PASSWORD_ <3>
-ssl.truststore.type=PKCS12 <4>
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.p12}' | base64 -d > ca.p12
+----
+
+. Extract the password from the password file:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 -d > ca.password
+----
+
+. Configure your client with the authentication details for the public cluster certificates:
++
+.Sample client code
+[source,java,subs="+quotes,attributes+"]
+----
+properties.put("security.protocol","SSL"); <1>
+properties.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG,"/path/to/ca.p12"); <2>
+properties.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG,_CA-PASSWORD_); <3>
+properties.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG,"PKCS12"); <4>
 ----
 <1> Enables TLS encryption (with or without TLS client authentication).
 <2> Specifies the truststore location where the certificates were imported.
@@ -239,24 +239,39 @@ ssl.truststore.type=PKCS12 <4>
 +
 NOTE: Use `security.protocol: SASL_SSL` when using SCRAM-SHA authentication over TLS.
 
-.. Add the bootstrap address and port for connecting to the Kafka cluster:
+. Extract the user CA certificate from the user Secret in PKCS #12 format:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get secret _USER-NAME_ -o jsonpath='{.data.user\.p12}' | base64 -d > user.p12
+----
+
+. Extract the password from the password file:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get secret _USER-NAME_ -o jsonpath='{.data.user\.password}' | base64 -d > user.password
+----
+
+. Configure your client with the authentication details for the user CA certificate:
++
+.Sample client code
+[source,java,subs="+quotes,attributes+"]
+----
+properties.put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG,"/path/to/user.p12"); <1>
+properties.put(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG,"<user.password>"); <2>
+properties.put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG,"PKCS12"); <3>
+----
+<1> Specifies the keystore location where the certificates were imported.
+<2> Specifies the password for accessing the keystore. This property can be omitted if it is not needed by the keystore. The public user certificate is signed by the client CA when it is created.
+<3> Identifies the keystore type.
+
+. Add the bootstrap address and port for connecting to the Kafka cluster:
 +
 [source,env,subs="+quotes,attributes"]
 ----
 bootstrap.servers: _BOOTSTRAP-ADDRESS:PORT_
 ----
-
-.. Add the authentication details for the public user certificates:
-+
-[source,env,subs="+quotes,attributes"]
-----
-ssl.keystore.location: _PATH-TO/ssl/keys/user1.keystore_ <1>
-ssl.keystore.password: _USER-CERT-PASSWORD_ <2>
-----
-<1> Specifies the keystore location where the certificates were imported.
-<2> Specifies the password for accessing the keystore. This property can be omitted if it is not needed by the keystore.
-+
-The public user certificate is signed by the client CA when it is created.
 
 [role="_additional-resources"]
 .Additional resources
