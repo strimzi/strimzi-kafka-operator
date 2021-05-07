@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.fabric8.kubernetes.api.model.HostAlias;
-import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
@@ -201,34 +199,6 @@ public class CruiseControlIsolatedST extends AbstractST {
         ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
         ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
-    }
-
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
-    void testHostAliases(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        HostAlias hostAlias = new HostAliasBuilder()
-            .withIp(aliasIp)
-            .withHostnames(aliasHostname)
-            .build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
-            .editSpec()
-                .editCruiseControl()
-                    .withNewTemplate()
-                        .withNewPod()
-                            .withHostAliases(hostAlias)
-                        .endPod()
-                    .endTemplate()
-                .endCruiseControl()
-            .endSpec()
-            .build());
-
-        String ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
-
-        LOGGER.info("Checking the /etc/hosts file");
-        String output = cmdKubeClient().execInPod(ccPodName, "cat", "/etc/hosts").out();
-        assertThat(output, containsString(etcHostsData));
     }
 
     @BeforeAll

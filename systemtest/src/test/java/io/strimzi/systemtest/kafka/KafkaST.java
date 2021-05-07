@@ -6,8 +6,6 @@ package io.strimzi.systemtest.kafka;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.HostAlias;
-import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -1593,47 +1591,6 @@ class KafkaST extends AbstractST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName,
             "Kafka configuration option .* should be set to " + 3 + " or less because 'spec.kafka.replicas' is " + 3);
-    }
-
-    @ParallelNamespaceTest
-    void testHostAliases(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        HostAlias hostAlias = new HostAliasBuilder()
-            .withIp(aliasIp)
-            .withHostnames(aliasHostname)
-            .build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-            .editSpec()
-                .editKafka()
-                    .withNewTemplate()
-                        .withNewPod()
-                            .withHostAliases(hostAlias)
-                        .endPod()
-                    .endTemplate()
-                .endKafka()
-                .editZookeeper()
-                    .withNewTemplate()
-                        .withNewPod()
-                            .withHostAliases(hostAlias)
-                        .endPod()
-                    .endTemplate()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
-        List<String> pods = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, clusterName, Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-
-        for (String podName : pods) {
-            if (!podName.contains("entity-operator")) {
-                String containerName = podName.contains("kafka") ? "kafka" : "zookeeper";
-                LOGGER.info("Checking the /etc/hosts file");
-                String output = cmdKubeClient(namespaceName).execInPodContainer(false, podName, containerName, "cat", "/etc/hosts").out();
-                assertThat(output, containsString(etcHostsData));
-            }
-        }
     }
 
     @ParallelNamespaceTest
