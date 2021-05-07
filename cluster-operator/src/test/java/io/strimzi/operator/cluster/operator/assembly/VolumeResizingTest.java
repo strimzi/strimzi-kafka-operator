@@ -27,11 +27,11 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
@@ -103,7 +103,7 @@ public class VolumeResizingTest {
                 .build();
     }
 
-    @Test
+    @ParallelTest
     public void testNoExistingVolumes()  {
         Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
@@ -150,7 +150,7 @@ public class VolumeResizingTest {
                 });
     }
 
-    @Test
+    @ParallelTest
     public void testNotBoundVolumes()  {
         Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
@@ -198,7 +198,7 @@ public class VolumeResizingTest {
                 });
     }
 
-    @Test
+    @ParallelTest
     public void testVolumesBoundExpandableStorageClass()  {
         Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
@@ -255,7 +255,7 @@ public class VolumeResizingTest {
                 });
     }
 
-    @Test
+    @ParallelTest
     public void testVolumesBoundNonExpandableStorageClass()  {
         Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
@@ -312,7 +312,7 @@ public class VolumeResizingTest {
                 });
     }
 
-    @Test
+    @ParallelTest
     public void testVolumesResizing()  {
         Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
@@ -372,7 +372,7 @@ public class VolumeResizingTest {
                 });
     }
 
-    @Test
+    @ParallelTest
     public void testVolumesWaitingForRestart()  {
         Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
@@ -438,7 +438,7 @@ public class VolumeResizingTest {
                 });
     }
 
-    @Test
+    @ParallelTest
     public void testVolumesResized()  {
         Kafka kafka = getKafkaCrd();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);

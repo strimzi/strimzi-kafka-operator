@@ -29,6 +29,7 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -39,7 +40,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
@@ -202,7 +202,7 @@ public class PartialRollingUpdateTest {
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileOfPartiallyRolledKafkaCluster(VertxTestContext context) {
         kafkaSts.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         kafkaPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
@@ -228,7 +228,7 @@ public class PartialRollingUpdateTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileOfPartiallyRolledZookeeperCluster(VertxTestContext context) {
         zkSts.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         zkPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
@@ -253,7 +253,7 @@ public class PartialRollingUpdateTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileOfPartiallyRolledClusterForClusterCaCertificate(VertxTestContext context) {
         clusterCaCert.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
         zkPod0.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "3");
@@ -289,7 +289,7 @@ public class PartialRollingUpdateTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileOfPartiallyRolledClusterForClientsCaCertificate(VertxTestContext context) {
         clientsCaCert.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
         kafkaPod0.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "3");

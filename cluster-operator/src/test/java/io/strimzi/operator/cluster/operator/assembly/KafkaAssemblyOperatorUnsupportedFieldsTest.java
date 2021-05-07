@@ -21,6 +21,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -28,7 +29,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
@@ -67,7 +67,7 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
      * This test checks that when the unsupported spec.topicOperator is not configured in the Kafka CR, no warning about
      * it will be in the status.
      */
-    @Test
+    @ParallelTest
     public void testNoTopicOperatorWarnings(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -147,7 +147,7 @@ public class KafkaAssemblyOperatorUnsupportedFieldsTest {
      * This test checks that when the unsupported spec.topicOperator is configured in the KAfka CR, a warning about it
      * will be in the status.
      */
-    @Test
+    @ParallelTest
     public void testTopicOperatorWarnings(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
