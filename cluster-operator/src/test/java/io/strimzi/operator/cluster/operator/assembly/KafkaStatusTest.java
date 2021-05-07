@@ -45,6 +45,7 @@ import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -52,7 +53,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
@@ -132,7 +132,7 @@ public class KafkaStatusTest {
                 .build();
     }
 
-    @Test
+    @ParallelTest
     public void testStatusAfterSuccessfulReconciliationWithPreviousFailure(VertxTestContext context) throws ParseException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -180,7 +180,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testPauseReconciliationsStatus(VertxTestContext context) throws ParseException {
         Kafka kafka = getKafkaCrd();
         kafka.getMetadata().setAnnotations(singletonMap("strimzi.io/pause-reconciliation", Boolean.toString(true)));
@@ -217,7 +217,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testStatusAfterSuccessfulReconciliationWithPreviousSuccess(VertxTestContext context) throws ParseException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -269,12 +269,12 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testStatusAfterFailedReconciliationWithPreviousFailure(VertxTestContext context) throws ParseException {
         testStatusAfterFailedReconciliationWithPreviousFailure(context, new RuntimeException("Something went wrong"));
     }
 
-    @Test
+    @ParallelTest
     public void testStatusAfterFailedReconciliationWithPreviousFailure_NPE(VertxTestContext context) throws ParseException {
         testStatusAfterFailedReconciliationWithPreviousFailure(context, new NullPointerException());
     }
@@ -326,7 +326,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testStatusAfterFailedReconciliationWithPreviousSuccess(VertxTestContext context) throws ParseException {
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -455,7 +455,7 @@ public class KafkaStatusTest {
         return nodes;
     }
 
-    @Test
+    @ParallelTest
     public void testKafkaListenerNodePortAddressInStatus(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
@@ -561,7 +561,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testKafkaListenerNodePortAddressInStatusWithOverrides(VertxTestContext context) throws ParseException {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
@@ -680,7 +680,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testKafkaListenerNodePortAddressWithPreferred(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
@@ -789,7 +789,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testKafkaListenerNodePortAddressSameNode(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
@@ -893,7 +893,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testKafkaListenerNodePortAddressMissingNodes(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder(getKafkaCrd())
                 .editOrNewSpec()
@@ -975,7 +975,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testInitialStatusOnNewResource() throws ParseException {
         Kafka kafka = getKafkaCrd();
         kafka.setStatus(null);
@@ -1014,7 +1014,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testInitialStatusOnOldResource() throws ParseException {
         Kafka kafka = getKafkaCrd();
 
@@ -1042,7 +1042,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testKafkaClusterIdInStatus(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder(getKafkaCrd()).build();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, VERSIONS);
@@ -1084,7 +1084,7 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
+    @ParallelTest
     public void testModelWarnings(VertxTestContext context) throws ParseException {
         Kafka kafka = getKafkaCrd();
         Kafka oldKafka = new KafkaBuilder(getKafkaCrd())

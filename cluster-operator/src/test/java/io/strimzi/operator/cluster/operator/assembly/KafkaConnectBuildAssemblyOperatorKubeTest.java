@@ -43,6 +43,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -50,7 +51,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
@@ -93,7 +93,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
+    @ParallelTest
     public void testBuildOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -250,7 +250,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testBuildFailureOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -371,7 +371,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
+    @ParallelTest
     public void testUpdateWithRebuildOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -537,7 +537,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
+    @ParallelTest
     public void testContinueWithPreviousBuildOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -711,7 +711,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
+    @ParallelTest
     public void testRestartPreviousBuildOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -889,7 +889,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @Test
+    @ParallelTest
     public void testRestartPreviousBuildDueToFailureOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -1068,7 +1068,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testUpdateWithoutRebuildOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -1198,7 +1198,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
             })));
     }
 
-    @Test
+    @ParallelTest
     public void testUpdateWithForcedRebuildOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")

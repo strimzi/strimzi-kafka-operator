@@ -28,6 +28,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -40,7 +41,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
@@ -148,7 +148,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         return created.future();
     }
 
-    @Test
+    @ParallelTest
     public void testReconcileUpdate(VertxTestContext context) {
         setMirrorMaker2Resource(new KafkaMirrorMaker2Builder()
                 .withMetadata(new ObjectMetaBuilder()
@@ -174,7 +174,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
             .onComplete(context.succeeding(v -> async.flag()));
     }
 
-    @Test
+    @ParallelTest
     public void testPauseReconcile(VertxTestContext context) {
         setMirrorMaker2Resource(new KafkaMirrorMaker2Builder()
                 .withMetadata(new ObjectMetaBuilder()
