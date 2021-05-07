@@ -108,6 +108,7 @@
 :OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 :external-cors-link: https://www.w3.org/TR/cors/
+:HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Helm - Custom Resource Definitions^]
 
 // Container image names and repositories
 :DockerOrg: quay.io/strimzi

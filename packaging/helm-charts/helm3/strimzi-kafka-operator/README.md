@@ -1,8 +1,16 @@
-# Strimzi: Kafka as a Service
+# Strimzi: Apache Kafka on Kubernetes
 
 Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on 
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
 See our [website](https://strimzi.io) for more details about the project.
+
+## CRD Upgrades
+
+**!!! IMPORTANT !!!** 
+Strimzi 0.23 and newer supports only the API version `v1beta2` of all Strimzi custom resources. 
+This is a required as part of the migration to `apiextensionsk8s.io/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions.k8s.io/v1beta1`. 
+Migration to `v1beta2` needs to be completed for all Strimzi CRDs and CRs before the upgrade to 0.23 or newer.
+For more details about the CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.22.1/deploying.html#assembly-upgrade-resources-str).
 
 ## Introduction
 
@@ -17,11 +25,17 @@ cluster using the [Helm](https://helm.sh) package manager.
 * **Topic Management** - Creates and manages Kafka Topics within the cluster.
 * **User Management** - Creates and manages Kafka Users within the cluster.
 * **Connector Management** - Creates and manages Kafka Connect connectors.
-* **Includes Kafka Mirror Maker** - Allows for mirroring data between different Apache Kafka® clusters.
+* **Includes Kafka Mirror Maker 1 and 2** - Allows for mirroring data between different Apache Kafka® clusters.
 * **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via the HTTP protocol.
 * **Includes Cruise Control** - Automates the process of balancing partitions across an Apache Kafka® cluster.
+* **Prometheus monitoring** - Built-in support for monitoring using Prometheus.
 
 ### Upgrading your Clusters
+
+To upgrade the Strimzi operator, you can use the `helm upgrade` command.
+`helm upgrade` at this time does not support upgrading the custom resource definitions (for more details, see [Custom Resource Definitions](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/)).
+So after upgrading the Strimzi operator, you have to manually install the new CRDs.
+You can find them on our [GitHub release page](https://github.com/strimzi/strimzi-kafka-operator/releases) or in the `crd` subdirectory inside the Helm Chart.
 
 The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
 When specifying a new version in your config, check to make sure you aren't using any features that may have been removed.
@@ -43,7 +57,7 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 
 ## Prerequisites
 
-- Kubernetes 1.11+
+- Kubernetes 1.16+
 
 ## Installing the Chart
 

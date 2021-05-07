@@ -31,3 +31,10 @@ helm install {ChartReleaseCoordinate}
 +
 [source,shell]
 helm ls
+
+== Upgrading the Cluster Operator using Helm Chart
+
+To upgrade the Strimzi operator, you can use the `helm upgrade` command.
+`helm upgrade` at this time does not support upgrading the custom resource definitions (for more details, see {HelmCustomResourceDefinitions}).
+So after upgrading the Strimzi operator, you have to manually install the new CRDs.
+You can find them on our {ReleaseDownload} or in the `crd` subdirectory inside the Helm Chart.
