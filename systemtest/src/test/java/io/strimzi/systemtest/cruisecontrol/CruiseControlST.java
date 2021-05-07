@@ -219,9 +219,4 @@ public class CruiseControlST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) throws Exception {
-        installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
 }
