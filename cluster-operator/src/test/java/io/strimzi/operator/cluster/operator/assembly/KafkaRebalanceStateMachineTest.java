@@ -504,7 +504,7 @@ public class KafkaRebalanceStateMachineTest {
 
     }
 
-    @Test
+    @IsolatedTest
     public void testReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 1);
@@ -515,7 +515,7 @@ public class KafkaRebalanceStateMachineTest {
 
     }
 
-    @Test
+    @IsolatedTest
     public void testReadyRefreshToProposalReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
@@ -526,7 +526,7 @@ public class KafkaRebalanceStateMachineTest {
 
     }
 
-    @Test
+    @IsolatedTest
     public void testReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);
@@ -537,7 +537,7 @@ public class KafkaRebalanceStateMachineTest {
 
     }
 
-    @Test
+    @IsolatedTest
     public void testNotReadyRefreshToPendingProposal(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 1);
@@ -548,7 +548,7 @@ public class KafkaRebalanceStateMachineTest {
 
     }
 
-    @Test
+    @IsolatedTest
     public void testNotReadyRefreshToProposalReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
@@ -559,7 +559,7 @@ public class KafkaRebalanceStateMachineTest {
 
     }
 
-    @Test
+    @IsolatedTest
     public void testNotReadyRefreshToPendingProposalNotEnoughData(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCRebalanceNotEnoughDataError(ccServer);

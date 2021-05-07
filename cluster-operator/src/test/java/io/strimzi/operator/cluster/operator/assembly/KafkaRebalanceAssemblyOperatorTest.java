@@ -453,7 +453,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 11. The KafkaRebalance resource is annotated with 'strimzi.io/rebalance=refresh'
      * 12. The KafkaRebalance resource moves to the 'ProposalReady' state
      */
-    @Test
+    @IsolatedTest
     public void testNewToProposalReadyToRebalancingToReadyThenRefreshRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
