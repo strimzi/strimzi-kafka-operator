@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.images.PullPolicy;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -85,6 +86,7 @@ public class StrimziKafkaContainerTest {
     void testStartContainer() {
         assumeDocker();
         systemUnderTest = new StrimziKafkaContainer();
+        systemUnderTest.withImagePullPolicy(PullPolicy.defaultPolicy());
 
         systemUnderTest.start();
 
