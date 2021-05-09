@@ -2575,6 +2575,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return maybeResizeReconcilePvcs(pvcs, kafkaCluster);
         }
 
+        /**
+         * Normally, the rolling update of Kafka brokers is done in the sequence best for Kafka (controller is rolled
+         * last etc.). This method does a rolling update of Kafka brokers in sequence based on the pod index number.
+         * This is needed in some special situation such as storage configuration changes.
+         *
+         * This method is using the regular rolling update mechanism. But in order to achieve the sequential rolling
+         * update it calls it recursively with only subset of the pods being considered for rolling update. Thanks to
+         * this, it achieves the right order regardless who is controller but still makes sure that the replicas are
+         * in-sync.
+         *
+         * @param sts               StatefulSet which should be rolled
+         * @param podNeedsRestart   Function to tell the rolling restart mechanism if given broker pod needs restart or not
+         * @param nextPod           The sequence number of the next pod which should be considered for rolling
+         * @param lastPod           Index of the last pod which should be considered for restart
+         *
+         * @return
+         */
         Future<ReconciliationState> maybeRollKafkaInSequence(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, int nextPod, int lastPod) {
             if (nextPod <= lastPod)  {
                 final int podToRoll = nextPod;
@@ -2593,6 +2610,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
+        /**
+         * Checks if any Kafka broker needs rolling update to add or remove JBOD volumes. If it does, we trigger a
+         * sequential rolling update because the pods need to be rolled in sequence to add or remove volumes.
+         *
+         * @return
+         */
         Future<ReconciliationState> kafkaRollToAddOrRemoveVolumes() {
             Storage storage = kafkaCluster.getStorage();
 
@@ -2600,21 +2623,48 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (storage instanceof JbodStorage) {
                 JbodStorage jbodStorage = (JbodStorage) storage;
 
-                return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
-                        .compose(sts -> {
-                            if (sts != null) {
-                                int lastPodIndex = Math.min(kafkaCurrentReplicas, kafkaCluster.getReplicas()) - 1;
-                                return maybeRollKafkaInSequence(sts, pod -> needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, kafkaCurrentReplicas, kafkaCluster.getReplicas()), 0, lastPodIndex);
-                            } else {
-                                // STS does not exist => nothing to roll
-                                return withVoid(Future.succeededFuture());
+                // We first check if any broker actually needs the rolling update. Only if at least one of them needs it,
+                // we trigger it. This check helps to not go through the rolling update if not needed.
+                return podOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                        .compose(pods -> {
+                            for (Pod pod : pods) {
+                                if (!needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, kafkaCurrentReplicas, kafkaCluster.getReplicas()).isEmpty())   {
+                                    // At least one broker needs rolling update => we can trigger it without checking the other brokers
+                                    log.debug("{}: Kafka brokers needs rolling update to add or remove JBOD volumes", reconciliation);
+
+                                    return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                                            .compose(sts -> {
+                                                if (sts != null) {
+                                                    int lastPodIndex = Math.min(kafkaCurrentReplicas, kafkaCluster.getReplicas()) - 1;
+                                                    return maybeRollKafkaInSequence(sts, podToCheck -> needsRestartBecauseAddedOrRemovedJbodVolumes(podToCheck, jbodStorage, kafkaCurrentReplicas, kafkaCluster.getReplicas()), 0, lastPodIndex);
+                                                } else {
+                                                    // STS does not exist => nothing to roll
+                                                    return withVoid(Future.succeededFuture());
+                                                }
+                                            });
+                                }
                             }
+
+                            log.debug("{}: No rolling update of Kafka brokers due to added or removed JBOD volumes is needed", reconciliation);
+                            return withVoid(Future.succeededFuture());
                         });
             } else {
                 return withVoid(Future.succeededFuture());
             }
         }
 
+        /**
+         * Checks whether the particular pod needs restart because of added or removed JBOD volumes. This method returns
+         * a list instead of boolean so that it can be used directly in the rolling update procedure and log proper
+         * reasons for the restart.
+         *
+         * @param pod               Broker pod which should be considered for restart
+         * @param desiredStorage    Desired storage configuration
+         * @param currentReplicas   Number of Kafka replicas before this reconciliation
+         * @param desiredReplicas   Number of desired Kafka replicas
+         *
+         * @return  Empty list when no restart is needed. List containing the restart reason if the restart is needed.
+         */
         private List<String> needsRestartBecauseAddedOrRemovedJbodVolumes(Pod pod, JbodStorage desiredStorage, int currentReplicas, int desiredReplicas)  {
             if (pod != null
                     && pod.getMetadata() != null) {
