@@ -107,8 +107,8 @@ import static java.util.Collections.singletonList;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ParameterNumber"})
 public class KafkaRoller {
 
-    private static final Logger log = LogManager.getLogger(KafkaRoller.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaRoller.class);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
@@ -552,12 +552,12 @@ public class KafkaRoller {
         KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
         await(Util.kafkaFutureToVertxFuture(vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                log.error("Error doing dynamic config update", error);
+                LOGGER.error("Error doing dynamic config update", error);
                 return new ForceableProblem("Error doing dynamic update", error);
             });
         await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                log.error("Error performing dynamic logging update for pod {}", podId, error);
+                LOGGER.error("Error performing dynamic logging update for pod {}", podId, error);
                 return new ForceableProblem("Error performing dynamic logging update for pod " + podId, error);
             });
 

@@ -26,7 +26,7 @@ import java.util.function.Function;
  */
 public class ZookeeperSetOperator extends StatefulSetOperator {
 
-    private static final Logger log = LogManager.getLogger(ZookeeperSetOperator.class);
+    private static final Logger LOGGER = LogManager.getLogger(ZookeeperSetOperator.class);
     private final ZookeeperLeaderFinder leaderFinder;
 
     /**
@@ -49,19 +49,19 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
 
     public static boolean needsRollingUpdate(StatefulSetDiff diff) {
         if (diff.changesLabels()) {
-            log.debug("Changed labels => needs rolling update");
+            LOGGER.debug("Changed labels => needs rolling update");
             return true;
         }
         if (diff.changesSpecTemplate()) {
-            log.debug("Changed template spec => needs rolling update");
+            LOGGER.debug("Changed template spec => needs rolling update");
             return true;
         }
         if (diff.changesVolumeClaimTemplates()) {
-            log.debug("Changed volume claim template => needs rolling update");
+            LOGGER.debug("Changed volume claim template => needs rolling update");
             return true;
         }
         if (diff.changesVolumeSize()) {
-            log.debug("Changed size of the volume claim template => no need for rolling update");
+            LOGGER.debug("Changed size of the volume claim template => no need for rolling update");
             return false;
         }
         return false;
@@ -72,7 +72,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         final int replicas = sts.getSpec().getReplicas();
-        log.debug("Considering rolling update of {}/{}", namespace, name);
+        LOGGER.debug("Considering rolling update of {}/{}", namespace, name);
 
         boolean zkRoll = false;
         ArrayList<Pod> pods = new ArrayList<>(replicas);
@@ -91,18 +91,18 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             rollFuture = promise.future();
             Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(cluster, namespace, pods, coKeySecret);
             leaderFuture.compose(leader -> {
-                log.debug("Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
+                LOGGER.debug("Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
                 Future<Void> fut = Future.succeededFuture();
                 // Then roll each non-leader pod
                 for (int i = 0; i < replicas; i++) {
                     String podName = KafkaResources.zookeeperPodName(cluster, i);
                     if (i != leader) {
-                        log.debug("Possibly restarting non-leader pod {}", podName);
+                        LOGGER.debug("Possibly restarting non-leader pod {}", podName);
                         // roll the pod and wait until it is ready
                         // this prevents rolling into faulty state (note: this applies just for ZK pods)
                         fut = fut.compose(ignore -> maybeRestartPod(sts, podName, podRestart));
                     } else {
-                        log.debug("Deferring restart of leader {}", podName);
+                        LOGGER.debug("Deferring restart of leader {}", podName);
                     }
                 }
                 if (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER) {
@@ -111,7 +111,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                     // Finally roll the leader pod
                     return fut.compose(ar -> {
                         // the leader is rolled as the last
-                        log.debug("Possibly restarting leader pod (previously deferred) {}", leader);
+                        LOGGER.debug("Possibly restarting leader pod (previously deferred) {}", leader);
                         return maybeRestartPod(sts, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
                     });
                 }

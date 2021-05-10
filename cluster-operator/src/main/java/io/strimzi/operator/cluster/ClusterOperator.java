@@ -42,7 +42,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
  */
 public class ClusterOperator extends AbstractVerticle {
 
-    private static final Logger log = LogManager.getLogger(ClusterOperator.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(ClusterOperator.class.getName());
 
     public static final String STRIMZI_CLUSTER_OPERATOR_DOMAIN = "cluster.operator.strimzi.io";
     private static final String NAME_SUFFIX = "-cluster-operator";
@@ -78,7 +78,7 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator,
                            KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator,
                            MetricsProvider metricsProvider) {
-        log.info("Creating ClusterOperator for namespace {}", namespace);
+        LOGGER.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.config = config;
         this.client = client;
@@ -95,7 +95,7 @@ public class ClusterOperator extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> start) {
-        log.info("Starting ClusterOperator for namespace {}", namespace);
+        LOGGER.info("Starting ClusterOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
@@ -109,7 +109,7 @@ public class ClusterOperator extends AbstractVerticle {
         }
         for (AbstractOperator<?, ?, ?, ?> operator : operators) {
             watchFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
-                log.info("Opened watch for {} operator", operator.kind());
+                LOGGER.info("Opened watch for {} operator", operator.kind());
                 watchByKind.put(operator.kind(), w);
                 return Future.succeededFuture();
             }));
@@ -120,9 +120,9 @@ public class ClusterOperator extends AbstractVerticle {
 
         CompositeFuture.join(watchFutures)
                 .compose(f -> {
-                    log.info("Setting up periodic reconciliation for namespace {}", namespace);
+                    LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
                     this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), res2 -> {
-                        log.info("Triggering periodic reconciliation for namespace {}...", namespace);
+                        LOGGER.info("Triggering periodic reconciliation for namespace {}...", namespace);
                         reconcileAll("timer");
                     });
                     return startHealthServer().map((Void) null);
@@ -133,7 +133,7 @@ public class ClusterOperator extends AbstractVerticle {
 
     @Override
     public void stop(Promise<Void> stop) {
-        log.info("Stopping ClusterOperator for namespace {}", namespace);
+        LOGGER.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
         for (Watch watch : watchByKind.values()) {
             if (watch != null) {
@@ -182,9 +182,9 @@ public class ClusterOperator extends AbstractVerticle {
                 })
                 .listen(HEALTH_SERVER_PORT, ar -> {
                     if (ar.succeeded()) {
-                        log.info("ClusterOperator is now ready (health server listening on {})", HEALTH_SERVER_PORT);
+                        LOGGER.info("ClusterOperator is now ready (health server listening on {})", HEALTH_SERVER_PORT);
                     } else {
-                        log.error("Unable to bind health server on {}", HEALTH_SERVER_PORT, ar.cause());
+                        LOGGER.error("Unable to bind health server on {}", HEALTH_SERVER_PORT, ar.cause());
                     }
                     result.handle(ar);
                 });

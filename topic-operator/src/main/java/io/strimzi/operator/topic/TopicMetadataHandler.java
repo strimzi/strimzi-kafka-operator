@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicMetadata>> {
 
-    private static final Logger log = LogManager.getLogger(TopicMetadataHandler.class);
+    private static final Logger LOGGER = LogManager.getLogger(TopicMetadataHandler.class);
 
     private final BackOff backOff;
 
@@ -63,9 +63,9 @@ public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicM
         long delay;
         try {
             delay = backOff.delayMs();
-            log.debug("Backing off for {}ms on getting metadata for {}", delay, topicName);
+            LOGGER.debug("Backing off for {}ms on getting metadata for {}", delay, topicName);
         } catch (MaxAttemptsExceededException e) {
-            log.info("Max attempts reached on getting metadata for {} after {}ms, giving up for now", topicName, backOff.totalDelayMs());
+            LOGGER.info("Max attempts reached on getting metadata for {} after {}ms, giving up for now", topicName, backOff.totalDelayMs());
             this.onMaxAttemptsExceeded(e);
             return;
         }

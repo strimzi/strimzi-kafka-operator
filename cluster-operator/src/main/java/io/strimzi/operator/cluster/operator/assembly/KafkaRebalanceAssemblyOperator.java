@@ -139,8 +139,8 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 public class KafkaRebalanceAssemblyOperator
         extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>>> {
 
-    private static final Logger log = LogManager.getLogger(KafkaRebalanceAssemblyOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaRebalanceAssemblyOperator.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private static final long REBALANCE_POLLING_TIMER_MS = 5_000;
     private static final int MAX_API_RETRIES = 5;
@@ -1003,7 +1003,7 @@ public class KafkaRebalanceAssemblyOperator
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
             return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
         } else {
-            log.warn("{}: Ignore annotation {}={}", reconciliation, ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotation);
+            LOGGER.warn("{}: Ignore annotation {}={}", reconciliation, ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotation);
             return Future.succeededFuture(new MapAndStatus<>(null, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), validate(kafkaRebalance))));
         }
     }
@@ -1142,7 +1142,7 @@ public class KafkaRebalanceAssemblyOperator
                     KafkaRebalanceAnnotation.none : KafkaRebalanceAnnotation.valueOf(rebalanceAnnotationValue);
         } catch (IllegalArgumentException e) {
             rebalanceAnnotation = KafkaRebalanceAnnotation.unknown;
-            log.warn("Wrong annotation value {}={} on {}/{}",
+            LOGGER.warn("Wrong annotation value {}={} on {}/{}",
                     ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotationValue,
                     kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
         }

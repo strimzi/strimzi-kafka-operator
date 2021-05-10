@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static Vertx vertx;
-    private static final Logger log = LogManager.getLogger(ClusterOperatorTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
 
     private static Map<String, String> buildEnv(String namespaces) {
         Map<String, String> env = new HashMap<>();
@@ -176,7 +176,7 @@ public class ClusterOperatorTest {
                 for (String deploymentId: vertx.deploymentIDs()) {
                     vertx.undeploy(deploymentId, asyncResult -> {
                         if (asyncResult.failed()) {
-                            log.error("Failed to undeploy {}", deploymentId);
+                            LOGGER.error("Failed to undeploy {}", deploymentId);
                             context.failNow(asyncResult.cause());
                         }
                         latch.countDown();
@@ -251,7 +251,7 @@ public class ClusterOperatorTest {
                 for (String deploymentId: vertx.deploymentIDs()) {
                     vertx.undeploy(deploymentId, asyncResult -> {
                         if (asyncResult.failed()) {
-                            log.error("Failed to undeploy {}", deploymentId);
+                            LOGGER.error("Failed to undeploy {}", deploymentId);
                             context.failNow(asyncResult.cause());
                         }
                         latch.countDown();

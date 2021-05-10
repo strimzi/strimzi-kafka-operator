@@ -371,7 +371,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             if (name != null) {
                 if (volume.getConfigMap() != null && volume.getSecret() != null) {
-                    log.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                    LOGGER.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
                 } else  {
                     if (volume.getConfigMap() != null) {
                         ConfigMapVolumeSource source = volume.getConfigMap();
@@ -443,7 +443,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             if (name != null)   {
                 if (volume.getConfigMap() != null && volume.getSecret() != null) {
-                    log.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                    LOGGER.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
                 } else  if (volume.getConfigMap() != null || volume.getSecret() != null) {
                     VolumeMount volumeMount = new VolumeMountBuilder()
                             .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
@@ -628,7 +628,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
                 if (valueFrom != null)  {
                     if (valueFrom.getConfigMapKeyRef() != null && valueFrom.getSecretKeyRef() != null) {
-                        log.warn("Environment variable {} with external Kafka Connect configuration has to contain exactly one reference to either ConfigMap or Secret", name);
+                        LOGGER.warn("Environment variable {} with external Kafka Connect configuration has to contain exactly one reference to either ConfigMap or Secret", name);
                     } else {
                         if (valueFrom.getConfigMapKeyRef() != null) {
                             EnvVarSource envVarSource = new EnvVarSourceBuilder()
@@ -646,7 +646,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     }
                 }
             } else {
-                log.warn("Name of an environment variable with external Kafka Connect configuration cannot start with `KAFKA_` or `STRIMZI`.");
+                LOGGER.warn("Name of an environment variable with external Kafka Connect configuration cannot start with `KAFKA_` or `STRIMZI`.");
             }
         }
 
@@ -834,7 +834,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     .endSpec()
                     .build();
 
-            log.trace("Created network policy {}", networkPolicy);
+            LOGGER.trace("Created network policy {}", networkPolicy);
             return networkPolicy;
         } else {
             return null;

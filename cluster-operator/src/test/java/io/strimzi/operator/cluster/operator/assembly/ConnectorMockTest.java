@@ -87,7 +87,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ConnectorMockTest {
 
-    private static final Logger log = LogManager.getLogger(ConnectorMockTest.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(ConnectorMockTest.class.getName());
 
     private static final String NAMESPACE = "ns";
 
@@ -238,9 +238,9 @@ public class ConnectorMockTest {
                     "tasks", emptyMap()));
         });
         when(api.createOrUpdatePutRequest(any(), anyInt(), anyString(), any())).thenAnswer(invocation -> {
-            log.info((String) invocation.getArgument(0) + invocation.getArgument(1) + invocation.getArgument(2) + invocation.getArgument(3));
+            LOGGER.info((String) invocation.getArgument(0) + invocation.getArgument(1) + invocation.getArgument(2) + invocation.getArgument(3));
             String host = invocation.getArgument(0);
-            log.info("###### create " + host);
+            LOGGER.info("###### create " + host);
             String connectorName = invocation.getArgument(2);
             JsonObject connectorConfig = invocation.getArgument(3);
             runningConnectors.putIfAbsent(key(host, connectorName), new ConnectorState(false, connectorConfig));
@@ -248,20 +248,20 @@ public class ConnectorMockTest {
         });
         when(api.delete(any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(0);
-            log.info("###### delete " + host);
+            LOGGER.info("###### delete " + host);
             String connectorName = invocation.getArgument(2);
             ConnectorState remove = runningConnectors.remove(key(host, connectorName));
             return remove != null ? Future.succeededFuture() : Future.failedFuture("No such connector " + connectorName);
         });
         when(api.statusWithBackOff(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
-            log.info("###### status " + host);
+            LOGGER.info("###### status " + host);
             String connectorName = invocation.getArgument(3);
             return kafkaConnectApiStatusMock(host, connectorName);
         });
         when(api.status(any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(0);
-            log.info("###### status " + host);
+            LOGGER.info("###### status " + host);
             String connectorName = invocation.getArgument(2);
             return kafkaConnectApiStatusMock(host, connectorName);
         });

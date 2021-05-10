@@ -39,7 +39,7 @@ import static java.util.Arrays.asList;
 
 @SuppressWarnings({"deprecation"})
 class KafkaConnectApiImpl implements KafkaConnectApi {
-    private static final Logger log = LogManager.getLogger(KafkaConnectApiImpl.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectApiImpl.class);
     public static final TypeReference<Map<String, Object>> TREE_TYPE = new TypeReference<Map<String, Object>>() {
     };
     public static final TypeReference<Map<String, String>> MAP_OF_STRINGS = new TypeReference<Map<String, String>>() {
@@ -62,7 +62,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             String connectorName, JsonObject configJson) {
         Buffer data = configJson.toBuffer();
         String path = "/connectors/" + connectorName + "/config";
-        log.debug("Making PUT request to {} with body {}", path, configJson);
+        LOGGER.debug("Making PUT request to {} with body {}", path, configJson);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
             httpClient.request(HttpMethod.PUT, port, host, path, request -> {
                 if (request.succeeded()) {
@@ -77,7 +77,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 response.result().bodyHandler(buffer -> {
                                     try {
                                         Map t = mapper.readValue(buffer.getBytes(), Map.class);
-                                        log.debug("Got {} response to PUT request to {}: {}", response.result().statusCode(), path, t);
+                                        LOGGER.debug("Got {} response to PUT request to {}: {}", response.result().statusCode(), path, t);
                                         result.complete(t);
                                     } catch (IOException e) {
                                         result.fail(new ConnectRestException(response.result(), "Could not deserialize response: " + e));
@@ -85,7 +85,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 });
                             } else {
                                 // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                                log.debug("Got {} response to PUT request to {}", response.result().statusCode(), path);
+                                LOGGER.debug("Got {} response to PUT request to {}", response.result().statusCode(), path);
                                 response.result().bodyHandler(buffer -> {
                                     JsonObject x = buffer.toJsonObject();
                                     result.fail(new ConnectRestException(response.result(), x.getString("message")));
@@ -111,7 +111,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private <T> Future<T> doGet(String host, int port, String path, Set<Integer> okStatusCodes, TypeReference<T> type) {
-        log.debug("Making GET request to {}", path);
+        LOGGER.debug("Making GET request to {}", path);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
             httpClient.request(HttpMethod.GET, port, host, path, request -> {
                 if (request.succeeded()) {
@@ -123,7 +123,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 response.result().bodyHandler(buffer -> {
                                     try {
                                         T t = mapper.readValue(buffer.getBytes(), type);
-                                        log.debug("Got {} response to GET request to {}: {}", response.result().statusCode(), path, t);
+                                        LOGGER.debug("Got {} response to GET request to {}: {}", response.result().statusCode(), path, t);
                                         result.complete(t);
                                     } catch (IOException e) {
                                         result.fail(new ConnectRestException(response.result(), "Could not deserialize response: " + e));
@@ -131,7 +131,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 });
                             } else {
                                 // TODO Handle 409 (Conflict) indicating a rebalance in progress
-                                log.debug("Got {} response to GET request to {}", response.result().statusCode(), path);
+                                LOGGER.debug("Got {} response to GET request to {}", response.result().statusCode(), path);
                                 response.result().bodyHandler(buffer -> {
                                     JsonObject x = buffer.toJsonObject();
                                     result.fail(new ConnectRestException(response.result(), x.getString("message")));
@@ -174,7 +174,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     request.result().send(response -> {
                         if (response.succeeded()) {
                             if (response.result().statusCode() == 204) {
-                                log.debug("Connector was deleted. Waiting for status deletion!");
+                                LOGGER.debug("Connector was deleted. Waiting for status deletion!");
                                 withBackoff(new BackOff(200L, 2, 10), connectorName, Collections.singleton(200),
                                     () -> status(host, port, connectorName, Collections.singleton(404)), "status")
                                     .onComplete(res -> {
@@ -224,10 +224,10 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                         if (cause instanceof ConnectRestException
                                 && retriableStatusCodes.contains(((ConnectRestException) cause).getStatusCode())) {
                             if (backOff.done()) {
-                                log.debug("Connector {} {} returned HTTP {} and we run out of back off time", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
+                                LOGGER.debug("Connector {} {} returned HTTP {} and we run out of back off time", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
                                 result.fail(cause);
                             } else {
-                                log.debug("Connector {} {} returned HTTP {} - backing off", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
+                                LOGGER.debug("Connector {} {} returned HTTP {} - backing off", connectorName, attribute, ((ConnectRestException) cause).getStatusCode());
                                 rescheduleOrComplete(tid);
                             }
                         } else {
@@ -239,12 +239,12 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
             void rescheduleOrComplete(Long tid) {
                 if (backOff.done()) {
-                    log.warn("Giving up waiting for status of connector {} after {} attempts taking {}ms",
+                    LOGGER.warn("Giving up waiting for status of connector {} after {} attempts taking {}ms",
                             connectorName, backOff.maxAttempts(), backOff.totalDelayMs());
                 } else {
                     // Schedule ourselves to run again
                     long delay = backOff.delayMs();
-                    log.debug("Status for connector {} not found; " +
+                    LOGGER.debug("Status for connector {} not found; " +
                                     "backing off for {}ms (cumulative {}ms)",
                             connectorName, delay, backOff.cumulativeDelayMs());
                     if (delay < 1) {
@@ -359,7 +359,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                         try {
                                             result.complete(asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
                                         } catch (IOException e) {
-                                            log.warn("Failed to parse list of connector plugins", e);
+                                            LOGGER.warn("Failed to parse list of connector plugins", e);
                                             result.fail(new ConnectRestException(response.result(), "Failed to parse list of connector plugins", e));
                                         }
                                     });
@@ -380,7 +380,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         String path = "/admin/loggers/" + logger;
         JsonObject levelJO = new JsonObject();
         levelJO.put("level", level);
-        log.debug("Making PUT request to {} with body {}", path, levelJO);
+        LOGGER.debug("Making PUT request to {} with body {}", path, levelJO);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) -> {
             Buffer buffer = levelJO.toBuffer();
             httpClient
@@ -394,11 +394,11 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 if (response.succeeded()) {
                                     if (response.result().statusCode() == 200) {
                                         response.result().bodyHandler(body -> {
-                                            log.debug("Logger {} updated to level {}", logger, level);
+                                            LOGGER.debug("Logger {} updated to level {}", logger, level);
                                             result.complete();
                                         });
                                     } else {
-                                        log.debug("Logger {} did not update to level {} (http code {})", logger, level, response.result().statusCode());
+                                        LOGGER.debug("Logger {} did not update to level {} (http code {})", logger, level, response.result().statusCode());
                                         result.fail(new ConnectRestException(response.result(), "Unexpected status code"));
                                     }
                                 } else {
@@ -428,7 +428,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                             Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
                                             result.complete(fetchedLoggers);
                                         } catch (IOException e) {
-                                            log.warn("Failed to get list of connector loggers", e);
+                                            LOGGER.warn("Failed to get list of connector loggers", e);
                                             result.fail(new ConnectRestException(response.result(), "Failed to get connector loggers", e));
                                         }
                                     });
@@ -587,7 +587,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                         Map<String, Map<String, List<String>>> t = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_LIST_OF_STRING);
                                         result.complete(t.get(connectorName).get("topics"));
                                     } catch (IOException e) {
-                                        log.warn("Failed to parse list of connector topics", e);
+                                        LOGGER.warn("Failed to parse list of connector topics", e);
                                         result.fail(new ConnectRestException(response.result(), "Failed to parse list of connector topics", e));
                                     }
                                 });

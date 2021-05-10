@@ -57,7 +57,7 @@ public class OpenSslCertManager implements CertManager {
             .appendOffsetId().toFormatter();
     public static final int MAXIMUM_CN_LENGTH = 64;
 
-    private static final Logger log = LogManager.getLogger(OpenSslCertManager.class);
+    private static final Logger LOGGER = LogManager.getLogger(OpenSslCertManager.class);
     public static final ZoneId UTC = ZoneId.of("UTC");
 
     public OpenSslCertManager() {}

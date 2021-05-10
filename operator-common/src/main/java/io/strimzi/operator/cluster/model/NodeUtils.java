@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class NodeUtils {
-    private static final Logger log = LogManager.getLogger(NodeUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(NodeUtils.class);
 
     /**
      * Tries to find the right address of the node. The different addresses has different prioprities:
@@ -36,7 +36,7 @@ public class NodeUtils {
 
         Map<String, String> addressMap = addresses.stream()
                 .collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress, (address1, address2) -> {
-                    log.warn("Found multiple addresses with the same type. Only the first address '{}' will be used.", address1);
+                    LOGGER.warn("Found multiple addresses with the same type. Only the first address '{}' will be used.", address1);
                     return address1;
                 }));
 

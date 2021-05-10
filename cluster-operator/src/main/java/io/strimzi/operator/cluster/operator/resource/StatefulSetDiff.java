@@ -21,7 +21,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class StatefulSetDiff extends AbstractJsonDiff {
 
-    private static final Logger log = LogManager.getLogger(StatefulSetDiff.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(StatefulSetDiff.class.getName());
 
     private static final String SHORTENED_STRIMZI_DOMAIN = Annotations.STRIMZI_DOMAIN.substring(0, Annotations.STRIMZI_DOMAIN.length() - 1);
 
@@ -83,7 +83,7 @@ public class StatefulSetDiff extends AbstractJsonDiff {
             String pathValue = d.get("path").asText();
             if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
                 ObjectMeta md = current.getMetadata();
-                log.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                LOGGER.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                 continue;
             }
             Matcher resourceMatchers = RESOURCE_PATH.matcher(pathValue);
@@ -92,16 +92,16 @@ public class StatefulSetDiff extends AbstractJsonDiff {
                     boolean same = compareMemoryAndCpuResources(source, target, pathValue, resourceMatchers);
                     if (same) {
                         ObjectMeta md = current.getMetadata();
-                        log.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                        LOGGER.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                         continue;
                     }
                 }
             }
-            if (log.isDebugEnabled()) {
+            if (LOGGER.isDebugEnabled()) {
                 ObjectMeta md = current.getMetadata();
-                log.debug("StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
-                log.debug("Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
-                log.debug("Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
+                LOGGER.debug("StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
+                LOGGER.debug("Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
+                LOGGER.debug("Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;

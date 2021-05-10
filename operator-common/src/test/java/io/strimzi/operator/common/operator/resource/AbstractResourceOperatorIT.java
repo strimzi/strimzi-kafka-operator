@@ -45,7 +45,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
-    protected static final Logger log = LogManager.getLogger(AbstractResourceOperatorIT.class);
+    protected static final Logger LOGGER = LogManager.getLogger(AbstractResourceOperatorIT.class);
     public static final String RESOURCE_NAME = "my-test-resource";
     protected String resourceName;
     protected static Vertx vertx;
@@ -69,12 +69,12 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
         client = new DefaultKubernetesClient();
 
         if (cluster.getTestNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
-            log.warn("Namespace {} is already created, going to delete it", namespace);
+            LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }
 
-        log.info("Creating namespace: {}", namespace);
+        LOGGER.info("Creating namespace: {}", namespace);
         kubeClient().createNamespace(namespace);
         cmdKubeClient().waitForResourceCreation("Namespace", namespace);
     }
@@ -83,7 +83,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
     public static void after() {
         vertx.close();
         if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
-            log.warn("Deleting namespace {} after tests run", namespace);
+            LOGGER.warn("Deleting namespace {} after tests run", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
         }

@@ -19,7 +19,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class StatusDiff extends AbstractJsonDiff {
 
-    private static final Logger log = LogManager.getLogger(StatusDiff.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(StatusDiff.class.getName());
 
     // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
     public static final ObjectMapper PATCH_MAPPER = patchMapper().copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
@@ -40,14 +40,14 @@ public class StatusDiff extends AbstractJsonDiff {
             String pathValue = d.get("path").asText();
 
             if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                log.debug("Ignoring Status diff {}", d);
+                LOGGER.debug("Ignoring Status diff {}", d);
                 continue;
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("Status differs: {}", d);
-                log.debug("Current Status path {} has value {}", pathValue, lookupPath(source, pathValue));
-                log.debug("Desired Status path {} has value {}", pathValue, lookupPath(target, pathValue));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Status differs: {}", d);
+                LOGGER.debug("Current Status path {} has value {}", pathValue, lookupPath(source, pathValue));
+                LOGGER.debug("Desired Status path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;

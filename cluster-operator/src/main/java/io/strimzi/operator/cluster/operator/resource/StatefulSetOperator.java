@@ -45,7 +45,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     private static final int NO_GENERATION = -1;
     private static final int INIT_GENERATION = 0;
 
-    private static final Logger log = LogManager.getLogger(StatefulSetOperator.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(StatefulSetOperator.class.getName());
     protected final PodOperator podOperations;
     private final PvcOperator pvcOperations;
     protected final long operationTimeoutMs;
@@ -154,14 +154,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             Future<Void> fut;
             List<String> reasons = podNeedsRestart.apply(pod);
             if (reasons != null && !reasons.isEmpty()) {
-                log.debug("Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons);
+                LOGGER.debug("Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons);
                 fut = restartPod(sts, pod);
             } else {
-                log.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
+                LOGGER.debug("Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
                 fut = Future.succeededFuture();
             }
             return fut.compose(ignored -> {
-                log.debug("Rolling update of {}/{}: wait for pod {} readiness", namespace, name, podName);
+                LOGGER.debug("Rolling update of {}/{}: wait for pod {} readiness", namespace, name, podName);
                 return podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs);
             });
         });
@@ -289,10 +289,10 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
         // Don't scale via patch
         desired.getSpec().setReplicas(current.getSpec().getReplicas());
-        if (log.isTraceEnabled()) {
-            log.trace("Patching {} {}/{} to match desired state {}", resourceKind, namespace, name, desired);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("Patching {} {}/{} to match desired state {}", resourceKind, namespace, name, desired);
         } else {
-            log.debug("Patching {} {}/{}", resourceKind, namespace, name);
+            LOGGER.debug("Patching {} {}/{}", resourceKind, namespace, name);
         }
 
         if (diff.changesVolumeClaimTemplates() || diff.changesVolumeSize()) {
@@ -328,14 +328,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
             Future<Void> deletedFut = waitFor(namespace, name, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                 StatefulSet sts = get(namespace, name);
-                log.trace("Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
+                LOGGER.trace("Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
                 return sts == null;
             });
 
             deletedFut.onComplete(res -> {
                 if (res.succeeded())    {
                     StatefulSet result = operation().inNamespace(namespace).withName(name).create(desired);
-                    log.debug("{} {} in namespace {} has been replaced", resourceKind, name, namespace);
+                    LOGGER.debug("{} {} in namespace {} has been replaced", resourceKind, name, namespace);
                     promise.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
                 } else {
                     promise.fail(res.cause());
@@ -344,7 +344,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
             return promise.future();
         } catch (Exception e) {
-            log.debug("Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
+            LOGGER.debug("Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }
@@ -366,14 +366,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                     Boolean deleted = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
 
                     if (deleted) {
-                        log.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
+                        LOGGER.debug("{} {} in namespace {} has been deleted", resourceKind, name, namespace);
                         future.complete();
                     } else  {
-                        log.debug("{} {} in namespace {} has been not been deleted", resourceKind, name, namespace);
+                        LOGGER.debug("{} {} in namespace {} has been not been deleted", resourceKind, name, namespace);
                         future.fail(resourceKind + " " + name + " in namespace " + namespace + " has been not been deleted");
                     }
                 } catch (Exception e) {
-                    log.debug("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
+                    LOGGER.debug("Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
                     future.fail(e);
                 }
             }, true, result

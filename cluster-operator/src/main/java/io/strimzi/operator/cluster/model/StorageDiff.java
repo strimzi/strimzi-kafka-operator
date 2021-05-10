@@ -29,7 +29,7 @@ import static java.util.Objects.isNull;
  * Class for diffing storage configuration
  */
 public class StorageDiff extends AbstractJsonDiff {
-    private static final Logger log = LogManager.getLogger(StorageDiff.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(StorageDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/deleteClaim|/)$");
@@ -104,7 +104,7 @@ public class StorageDiff extends AbstractJsonDiff {
                 String pathValue = d.get("path").asText();
 
                 if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                    log.debug("Ignoring Storage {}diff {}", volumeDesc, d);
+                    LOGGER.debug("Ignoring Storage {}diff {}", volumeDesc, d);
                     continue;
                 }
 
@@ -133,10 +133,10 @@ public class StorageDiff extends AbstractJsonDiff {
                     }
                 }
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Storage {}differs: {}", volumeDesc, d);
-                    log.debug("Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
-                    log.debug("Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Storage {}differs: {}", volumeDesc, d);
+                    LOGGER.debug("Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
+                    LOGGER.debug("Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
                 }
 
                 num++;

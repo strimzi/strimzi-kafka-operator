@@ -24,7 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public class KafkaUserQuotasOperator {
-    private static final Logger log = LogManager.getLogger(KafkaUserQuotasOperator.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(KafkaUserQuotasOperator.class.getName());
 
     private final Vertx vertx;
     private final Admin adminClient;
@@ -72,15 +72,15 @@ public class KafkaUserQuotasOperator {
     public void createOrUpdate(String username, KafkaUserQuotas quotas) throws Exception {
         KafkaUserQuotas current = describeUserQuotas(username);
         if (current != null) {
-            log.debug("Checking quota updates for user {}", username);
+            LOGGER.debug("Checking quota updates for user {}", username);
             if (!quotasEquals(current, quotas)) {
-                log.debug("Updating quotas for user {}", username);
+                LOGGER.debug("Updating quotas for user {}", username);
                 alterUserQuotas(username, toClientQuotaAlterationOps(quotas));
             } else {
-                log.debug("Nothing to update in quotas for user {}", username);
+                LOGGER.debug("Nothing to update in quotas for user {}", username);
             }
         } else {
-            log.debug("Creating quotas for user {}", username);
+            LOGGER.debug("Creating quotas for user {}", username);
             alterUserQuotas(username, toClientQuotaAlterationOps(quotas));
         }
     }
@@ -106,13 +106,13 @@ public class KafkaUserQuotasOperator {
     public void delete(String username) throws Exception {
         KafkaUserQuotas current = describeUserQuotas(username);
         if (current != null) {
-            log.debug("Deleting quotas for user {}", username);
+            LOGGER.debug("Deleting quotas for user {}", username);
             current.setProducerByteRate(null);
             current.setConsumerByteRate(null);
             current.setRequestPercentage(null);
             alterUserQuotas(username, toClientQuotaAlterationOps(current));
         } else {
-            log.warn("Quotas for user {} already don't exist", username);
+            LOGGER.warn("Quotas for user {} already don't exist", username);
         }
     }
 
@@ -122,7 +122,7 @@ public class KafkaUserQuotasOperator {
         try {
             adminClient.alterClientQuotas(Collections.singleton(cqa)).all().get();
         } catch (Exception e) {
-            log.error("Creating/Altering quotas for user {} failed", username, e);
+            LOGGER.error("Creating/Altering quotas for user {} failed", username, e);
             throw e;
         }
     }
@@ -138,7 +138,7 @@ public class KafkaUserQuotasOperator {
                 current = fromClientQuota(map.get(cqe));
             }
         } catch (Exception e) {
-            log.error("Getting quotas for user {} failed", username, e);
+            LOGGER.error("Getting quotas for user {} failed", username, e);
             throw e;
         }
         return current;

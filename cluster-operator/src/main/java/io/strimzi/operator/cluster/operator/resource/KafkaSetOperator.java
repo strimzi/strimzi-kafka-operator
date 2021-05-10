@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class KafkaSetOperator extends StatefulSetOperator {
 
-    private static final Logger log = LogManager.getLogger(KafkaSetOperator.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaSetOperator.class);
 
     private final AdminClientProvider adminClientProvider;
 
@@ -47,19 +47,19 @@ public class KafkaSetOperator extends StatefulSetOperator {
 
     public static boolean needsRollingUpdate(StatefulSetDiff diff) {
         if (diff.changesLabels()) {
-            log.debug("Changed labels => needs rolling update");
+            LOGGER.debug("Changed labels => needs rolling update");
             return true;
         }
         if (diff.changesSpecTemplate()) {
-            log.debug("Changed template spec => needs rolling update");
+            LOGGER.debug("Changed template spec => needs rolling update");
             return true;
         }
         if (diff.changesVolumeClaimTemplates()) {
-            log.debug("Changed volume claim template => needs rolling update");
+            LOGGER.debug("Changed volume claim template => needs rolling update");
             return true;
         }
         if (diff.changesVolumeSize()) {
-            log.debug("Changed size of the volume claim template => no need for rolling update");
+            LOGGER.debug("Changed size of the volume claim template => no need for rolling update");
             return false;
         }
         return false;

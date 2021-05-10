@@ -428,12 +428,12 @@ public class KafkaCluster extends AbstractModel {
             StorageDiff diff = new StorageDiff(oldStorage, newStorage, oldReplicas, kafkaClusterSpec.getReplicas());
 
             if (!diff.isEmpty()) {
-                log.warn("Only the following changes to Kafka storage are allowed: " +
+                LOGGER.warn("Only the following changes to Kafka storage are allowed: " +
                         "changing the deleteClaim flag, " +
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
                         "changing overrides to nodes which do not exist yet" +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                log.warn("The desired Kafka storage configuration in the custom resource {}/{} contains changes which are not allowed. As a " +
+                LOGGER.warn("The desired Kafka storage configuration in the custom resource {}/{} contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
@@ -457,7 +457,7 @@ public class KafkaCluster extends AbstractModel {
 
         // Configure listeners
         if (kafkaClusterSpec.getListeners() == null || kafkaClusterSpec.getListeners().getGenericKafkaListeners() == null) {
-            log.error("The required field .spec.kafka.listeners is missing");
+            LOGGER.error("The required field .spec.kafka.listeners is missing");
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
         List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners().getGenericKafkaListeners();
@@ -471,7 +471,7 @@ public class KafkaCluster extends AbstractModel {
             } else {
                 KafkaAuthorizationKeycloak authorizationKeycloak = (KafkaAuthorizationKeycloak) kafkaClusterSpec.getAuthorization();
                 if (authorizationKeycloak.getClientId() == null || authorizationKeycloak.getTokenEndpointUri() == null) {
-                    log.error("Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                    LOGGER.error("Keycloak Authorization: Token Endpoint URI and clientId are both required");
                     throw new InvalidResourceException("Keycloak Authorization: Token Endpoint URI and clientId are both required");
                 }
             }
@@ -635,7 +635,7 @@ public class KafkaCluster extends AbstractModel {
 
         if (!errorsInConfig.isEmpty()) {
             for (String error : errorsInConfig) {
-                log.warn("Kafka {}/{} has invalid spec.kafka.config: {}",
+                LOGGER.warn("Kafka {}/{} has invalid spec.kafka.config: {}",
                         kafkaAssembly.getMetadata().getNamespace(),
                         kafkaAssembly.getMetadata().getName(),
                         error);
@@ -674,15 +674,15 @@ public class KafkaCluster extends AbstractModel {
      */
     public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName,
             Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
-        log.debug("Generating certificates");
+        LOGGER.debug("Generating certificates");
 
         try {
             brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
-            log.warn("Error while generating certificates", e);
+            LOGGER.warn("Error while generating certificates", e);
         }
 
-        log.debug("End generating certificates");
+        LOGGER.debug("End generating certificates");
     }
 
     /**
@@ -1801,7 +1801,7 @@ public class KafkaCluster extends AbstractModel {
                 .endSpec()
                 .build();
 
-        log.trace("Created network policy {}", networkPolicy);
+        LOGGER.trace("Created network policy {}", networkPolicy);
         return networkPolicy;
     }
 

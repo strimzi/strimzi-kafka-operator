@@ -60,7 +60,7 @@ public class ModelUtils {
 
     private ModelUtils() {}
 
-    protected static final Logger log = LogManager.getLogger(ModelUtils.class.getName());
+    protected static final Logger LOGGER = LogManager.getLogger(ModelUtils.class.getName());
     public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**
@@ -146,15 +146,15 @@ public class ModelUtils {
         }
 
         if (shouldBeRegenerated) {
-            log.debug("Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
+            LOGGER.debug("Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
 
             try {
                 certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
             } catch (IOException e) {
-                log.warn("Error while generating certificates", e);
+                LOGGER.warn("Error while generating certificates", e);
             }
 
-            log.debug("End generating certificates");
+            LOGGER.debug("End generating certificates");
         } else {
             if (secret.getData().get(keyCertName + ".p12") != null &&
                     !secret.getData().get(keyCertName + ".p12").isEmpty() &&
@@ -174,7 +174,7 @@ public class ModelUtils {
                             decodeFromSecret(secret, keyCertName + ".key"),
                             decodeFromSecret(secret, keyCertName + ".crt"));
                 } catch (IOException e) {
-                    log.error("Error generating the keystore for {}", keyCertName, e);
+                    LOGGER.error("Error generating the keystore for {}", keyCertName, e);
                 }
             }
         }

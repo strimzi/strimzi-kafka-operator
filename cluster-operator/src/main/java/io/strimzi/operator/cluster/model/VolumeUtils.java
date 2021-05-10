@@ -43,7 +43,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
  * Shared methods for working with Volume
  */
 public class VolumeUtils {
-    protected static final Logger log = LogManager.getLogger(VolumeUtils.class.getName());
+    protected static final Logger LOGGER = LogManager.getLogger(VolumeUtils.class.getName());
     private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
 
     /**
@@ -78,7 +78,7 @@ public class VolumeUtils {
                 .withConfigMap(configMapVolumeSource)
                 .build();
 
-        log.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+        LOGGER.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
 
         return volume;
     }
@@ -102,7 +102,7 @@ public class VolumeUtils {
                 .withConfigMap(configMapVolumeSource)
                 .build();
 
-        log.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+        LOGGER.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
 
         return volume;
     }
@@ -145,7 +145,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
+        LOGGER.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -174,7 +174,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        log.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
+        LOGGER.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -197,7 +197,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withEmptyDir(emptyDirVolumeSource)
                 .build();
-        log.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
+        LOGGER.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
         return volume;
     }
 
@@ -246,7 +246,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withMountPath(path)
                 .build();
-        log.trace("Created volume mount {} for volume {}", volumeMount, validName);
+        LOGGER.trace("Created volume mount {} for volume {}", volumeMount, validName);
         return volumeMount;
     }
 

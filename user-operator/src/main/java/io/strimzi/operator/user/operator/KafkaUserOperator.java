@@ -46,8 +46,8 @@ import java.util.stream.Collectors;
  */
 public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec, KafkaUserStatus,
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList>> {
-    private static final Logger log = LogManager.getLogger(KafkaUserOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaUserOperator.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final SecretOperator secretOperations;
     private final SimpleAclOperator aclOperations;

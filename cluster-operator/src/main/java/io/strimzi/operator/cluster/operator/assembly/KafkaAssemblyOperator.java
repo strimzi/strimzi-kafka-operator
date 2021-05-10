@@ -158,8 +158,8 @@ import static java.util.Collections.emptyMap;
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, Resource<Kafka>, KafkaSpec, KafkaStatus> {
-    private static final Logger log = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final long operationTimeoutMs;
     private final String operatorNamespace;
@@ -907,7 +907,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkVersionChange() {
             if (versionChange.isNoop()) {
-                log.debug("Kafka.spec.kafka.version is unchanged therefore no change to Zookeeper is required");
+                LOGGER.debug("Kafka.spec.kafka.version is unchanged therefore no change to Zookeeper is required");
             } else {
                 String versionChangeType;
 
@@ -918,7 +918,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 if (versionChange.requiresZookeeperChange()) {
-                    log.info("Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
+                    LOGGER.info("Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
                             versionChangeType,
                             versionChange.from().version(),
                             versionChange.to().version(),
@@ -926,7 +926,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             versionChange.from().zookeeperVersion(),
                             versionChange.to().zookeeperVersion());
                 } else {
-                    log.info("Kafka {} from {} to {} requires no change in Zookeeper version",
+                    LOGGER.info("Kafka {} from {} to {} requires no change in Zookeeper version",
                             versionChangeType,
                             versionChange.from().version(),
                             versionChange.to().version());
@@ -935,7 +935,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
                 String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
-                log.debug("Setting new Zookeeper image: " + newZkImage);
+                LOGGER.debug("Setting new Zookeeper image: " + newZkImage);
                 this.zkCluster.setImage(newZkImage);
             }
 
@@ -954,7 +954,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         boolean notUpToDate = !isPodUpToDate(sts, pod);
                         List<String> reason = emptyList();
                         if (notUpToDate) {
-                            log.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
+                            LOGGER.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
                             reason = singletonList("upgrade quiescence");
                         }
                         return reason;
@@ -975,7 +975,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> prepareVersionChange() {
             if (versionChange.isNoop()) {
-                log.debug("{}: No Kafka version change", reconciliation);
+                LOGGER.debug("{}: No Kafka version change", reconciliation);
 
                 if (kafkaCluster.getInterBrokerProtocolVersion() == null) {
                     // When IBPV is not set, we set it to current Kafka version
@@ -1007,13 +1007,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return Future.succeededFuture(this);
             } else {
                 if (versionChange.isUpgrade()) {
-                    log.info("Kafka is upgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
+                    LOGGER.info("Kafka is upgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
 
                     // We make sure that the highest log.message.format.version or inter.broker.protocol.version version
                     // used by any of the brokers is not higher than the broker version we upgrade from.
                     if ((highestLogMessageFormatVersion != null && compareDottedVersions(versionChange.from().messageVersion(), highestLogMessageFormatVersion) < 0)
                             || (highestInterBrokerProtocolVersion != null && compareDottedVersions(versionChange.from().protocolVersion(), highestInterBrokerProtocolVersion) < 0)) {
-                        log.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be lower or equal to the Kafka broker version we upgrade from ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.from().version());
+                        LOGGER.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be lower or equal to the Kafka broker version we upgrade from ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.from().version());
                         throw new KafkaUpgradeException("log.message.format.version (" + highestLogMessageFormatVersion + ") and inter.broker.protocol.version (" + highestInterBrokerProtocolVersion + ") used by the brokers have to be lower or equal to the Kafka broker version we upgrade from (" + versionChange.from().version() + ")");
                     }
 
@@ -1037,7 +1037,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     }
                 } else {
                     // Has to be a downgrade
-                    log.info("Kafka is downgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
+                    LOGGER.info("Kafka is downgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
 
                     // The currently used log.message.format.version and inter.broker.protocol.version cannot be higher
                     // than the version we are downgrading to. If it is we fail the reconciliation. If they are not set,
@@ -1047,7 +1047,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             || compareDottedVersions(versionChange.to().messageVersion(), highestLogMessageFormatVersion) < 0
                             || highestInterBrokerProtocolVersion == null
                             || compareDottedVersions(versionChange.to().protocolVersion(), highestInterBrokerProtocolVersion) < 0) {
-                        log.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
+                        LOGGER.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
                         throw new KafkaUpgradeException("log.message.format.version (" + highestLogMessageFormatVersion + ") and inter.broker.protocol.version (" + highestInterBrokerProtocolVersion + ") used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to (" + versionChange.to().version() + ")");
                     }
 
@@ -1071,7 +1071,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // validation. But we still double check it as safety.
                     if (compareDottedVersions(versionChange.to().messageVersion(), desiredLogMessageFormat) < 0
                             || compareDottedVersions(versionChange.to().protocolVersion(), desiredInterBrokerProtocol) < 0) {
-                        log.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
+                        LOGGER.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
                         throw new KafkaUpgradeException("log.message.format.version and inter.broker.protocol.version used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to");
                     }
                 }
@@ -1413,7 +1413,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (res.succeeded())    {
                                 scalingPromise.complete(this);
                             } else {
-                                log.warn("{}: Failed to verify Zookeeper configuration", res.cause());
+                                LOGGER.warn("{}: Failed to verify Zookeeper configuration", res.cause());
                                 scalingPromise.fail(res.cause());
                             }
                         });
@@ -1524,7 +1524,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 // Either Pods or StatefulSet already exist. But none of them contains the version
                                 // annotation. This suggests they are not created by the current versions of Strimzi.
                                 // Without the annotation, we cannot detect the Kafka version and decide on upgrade.
-                                log.warn("Kafka Pods or StatefulSet exist, but do not contain the {} annotation to detect their version. Kafka upgrade cannot be detected.", ANNO_STRIMZI_IO_KAFKA_VERSION);
+                                LOGGER.warn("Kafka Pods or StatefulSet exist, but do not contain the {} annotation to detect their version. Kafka upgrade cannot be detected.", ANNO_STRIMZI_IO_KAFKA_VERSION);
                                 throw new KafkaUpgradeException("Kafka Pods or StatefulSet exist, but do not contain the " + ANNO_STRIMZI_IO_KAFKA_VERSION + " annotation to detect their version. Kafka upgrade cannot be detected.");
                             }
                         } else if (lowestKafkaVersion.equals(highestKafkaVersion)) {
@@ -2345,7 +2345,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .map(listener -> listener.getConfiguration().getBrokerCertChainAndKey().getSecretName())
                     .distinct()
                     .collect(Collectors.toList());
-            log.debug("Validating secret {} with custom TLS listener certificates", secretNames);
+            LOGGER.debug("Validating secret {} with custom TLS listener certificates", secretNames);
 
             List<Future> secretFutures = new ArrayList<>(secretNames.size());
             Map<String, Secret> customSecrets = new HashMap<>(secretNames.size());
@@ -2355,7 +2355,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(secret -> {
                             if (secret != null) {
                                 customSecrets.put(secretName, secret);
-                                log.debug("Found secrets {} with custom TLS listener certificate", secretName);
+                                LOGGER.debug("Found secrets {} with custom TLS listener certificate", secretName);
                             }
 
                             return Future.succeededFuture();
@@ -2939,7 +2939,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         Future<Void> waitForDeletion = podOperations.waitFor(namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                             Pod deletion = podOperations.get(namespace, podName);
-                            log.trace("Checking if Pod {} in namespace {} has been deleted or recreated", podName, namespace);
+                            LOGGER.trace("Checking if Pod {} in namespace {} has been deleted or recreated", podName, namespace);
                             return deletion == null;
                         });
 
@@ -2958,7 +2958,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             Future<Void> waitForDeletion = pvcOperations.waitFor(namespace, pvcName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                                 PersistentVolumeClaim deletion = pvcOperations.get(namespace, pvcName);
-                                log.trace("Checking if {} {} in namespace {} has been deleted", pvc.getKind(), pvcName, namespace);
+                                LOGGER.trace("Checking if {} {} in namespace {} has been deleted", pvc.getKind(), pvcName, namespace);
                                 return deletion == null || (deletion.getMetadata() != null && !uid.equals(deletion.getMetadata().getUid()));
                             });
 
@@ -3193,7 +3193,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // or if the topic operator needs to watch a different namespace
             if (!isEntityOperatorDeployed()
                     || entityOperator.getTopicOperator() == null) {
-                log.debug("entityOperatorTopicOpRoleBindingForRole not required");
+                LOGGER.debug("entityOperatorTopicOpRoleBindingForRole not required");
                 return withVoid(roleBindingOperations.reconcile(
                         namespace,
                         EntityTopicOperator.roleBindingForRoleName(name),
@@ -3235,7 +3235,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // or if the user operator needs to watch a different namespace
             if (!isEntityOperatorDeployed()
                     || entityOperator.getUserOperator() == null) {
-                log.debug("entityOperatorUserOpRoleBindingForRole not required");
+                LOGGER.debug("entityOperatorUserOpRoleBindingForRole not required");
                 return withVoid(roleBindingOperations.reconcile(
                         namespace,
                         EntityUserOperator.roleBindingForRoleName(name),
@@ -3342,7 +3342,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isPodUpToDate(StatefulSet sts, Pod pod) {
             final int stsGeneration = StatefulSetOperator.getStsGeneration(sts);
             final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
-            log.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
+            LOGGER.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
                     sts.getMetadata().getNamespace(), sts.getMetadata().getName(), pod.getMetadata().getName(),
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, podGeneration,
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, stsGeneration);
@@ -3447,7 +3447,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isCustomCertUpToDate(StatefulSet sts, Pod pod, String annotation) {
             final String stsThumbprint = Annotations.stringAnnotation(sts.getSpec().getTemplate(), annotation, "");
             final String podThumbprint = Annotations.stringAnnotation(pod, annotation, "");
-            log.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
+            LOGGER.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
                     sts.getMetadata().getNamespace(), sts.getMetadata().getName(), pod.getMetadata().getName(),
                     annotation, podThumbprint,
                     annotation, stsThumbprint);
@@ -3524,7 +3524,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 return isSatisfiedBy;
             } catch (ParseException e) {
-                log.warn("The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
+                LOGGER.warn("The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
                 return false;
             }
         }
@@ -3605,7 +3605,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaCustomCertificatesToStatus() {
             for (GenericKafkaListener listener : kafkaCluster.getListeners())   {
                 if (listener.isTls())   {
-                    log.debug("Adding certificate to status for listener: {}", listener.getName());
+                    LOGGER.debug("Adding certificate to status for listener: {}", listener.getName());
                     addCertificateToListener(listener.getName(), customListenerCertificates.get(listener.getName()));
                 }
             }

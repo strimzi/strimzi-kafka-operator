@@ -73,8 +73,8 @@ public abstract class AbstractOperator<
         O extends AbstractWatchableStatusedResourceOperator<?, T, ?, ?>>
             implements Operator {
 
-    private static final Logger log = LogManager.getLogger(AbstractOperator.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractOperator.class);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private static final long PROGRESS_WARNING = 60_000L;
     protected static final int LOCK_TIMEOUT_MS = 10000;
@@ -439,7 +439,7 @@ public abstract class AbstractOperator<
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0);
 
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, warningConditions));
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, LOGGER, warningConditions));
 
             return warningConditions;
         }
@@ -481,10 +481,10 @@ public abstract class AbstractOperator<
             @Override
             public void accept(WatcherException e) {
                 if (e != null) {
-                    log.error("Watcher closed with exception in namespace {}", namespace, e);
+                    LOGGER.error("Watcher closed with exception in namespace {}", namespace, e);
                     createWatch(namespace, this);
                 } else {
-                    log.info("Watcher closed in namespace {}", namespace);
+                    LOGGER.info("Watcher closed in namespace {}", namespace);
                 }
             }
         };
@@ -589,7 +589,7 @@ public abstract class AbstractOperator<
                 if (desired == null
                         && e.getMessage() != null
                         && e.getMessage().contains("Message: Forbidden!")) {
-                    log.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
+                    LOGGER.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
                     return Future.succeededFuture();
                 }
                 return Future.failedFuture(e.getMessage());

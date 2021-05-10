@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
-    private static final Logger log = LogManager.getLogger(ResourceDiff.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(ResourceDiff.class.getName());
 
     private final boolean isEmpty;
 
@@ -30,14 +30,14 @@ class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
             String pathValue = d.get("path").asText();
 
             if (ignorableFields.matcher(pathValue).matches()) {
-                log.debug("Ignoring {} {} diff {}", resourceKind, resourceName, d);
+                LOGGER.debug("Ignoring {} {} diff {}", resourceKind, resourceName, d);
                 continue;
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("{} {} differs: {}", resourceKind, resourceName, d);
-                log.debug("Current {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(source, pathValue));
-                log.debug("Desired {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(target, pathValue));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("{} {} differs: {}", resourceKind, resourceName, d);
+                LOGGER.debug("Current {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(source, pathValue));
+                LOGGER.debug("Desired {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(target, pathValue));
             }
 
             num++;

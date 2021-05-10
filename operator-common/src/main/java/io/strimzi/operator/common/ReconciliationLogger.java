@@ -86,6 +86,10 @@ public class ReconciliationLogger {
         this.log4j2Logger.warn(r.getMarker(), "{}: " + msg, r, arg);
     }
 
+    public void warn(Reconciliation r, Object arg) {
+        this.log4j2Logger.warn(r.getMarker(), "{}: {}", r, arg);
+    }
+
     public void warn(Reconciliation r, String msg, Object arg1, Object arg2) {
         this.log4j2Logger.warn(r.getMarker(), "{}: " + msg, r, arg1, arg2);
     }
@@ -135,6 +139,10 @@ public class ReconciliationLogger {
 
     public void trace(Reconciliation r, String msg, Object arg) {
         this.log4j2Logger.trace(r.getMarker(), "{}: " + msg, r, arg);
+    }
+
+    public void trace(Reconciliation r, Object arg) {
+        this.log4j2Logger.trace(r.getMarker(), "{}: {}", r, arg);
     }
 
     public void trace(Reconciliation r, String msg, Object arg1, Object arg2) {

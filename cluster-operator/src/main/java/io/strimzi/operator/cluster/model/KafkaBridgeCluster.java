@@ -207,7 +207,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.setHttpEnabled(true);
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
         } else {
-            log.warn("No protocol specified.");
+            LOGGER.warn("No protocol specified.");
             throw new InvalidResourceException("No protocol for communication with Bridge specified. Use HTTP.");
         }
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);

@@ -35,8 +35,8 @@ import static java.lang.Integer.parseInt;
  */
 class KafkaAvailability {
 
-    private static final Logger log = LogManager.getLogger(KafkaAvailability.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaAvailability.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final Admin ac;
 
@@ -140,7 +140,7 @@ class KafkaAvailability {
     }
 
     private void logIsrReplicas(TopicDescription td, TopicPartitionInfo pi, List<Node> isr) {
-        if (log.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             RECONCILIATION_LOGGER.debug(reconciliation, "{}/{} has ISR={}, replicas={}", td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
         }
     }
@@ -176,7 +176,7 @@ class KafkaAvailability {
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
         Set<TopicDescription> topicPartitionInfos = new HashSet<>();
         for (TopicDescription td : tds) {
-            RECONCILIATION_LOGGER.trace(reconciliation, "{}", td);
+            RECONCILIATION_LOGGER.trace(reconciliation, td);
             for (TopicPartitionInfo pd : td.partitions()) {
                 for (Node broker : pd.replicas()) {
                     if (podId == broker.id()) {

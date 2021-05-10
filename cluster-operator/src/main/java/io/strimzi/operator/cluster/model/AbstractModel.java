@@ -109,7 +109,7 @@ public abstract class AbstractModel {
 
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
 
-    protected static final Logger log = LogManager.getLogger(AbstractModel.class.getName());
+    protected static final Logger LOGGER = LogManager.getLogger(AbstractModel.class.getName());
     protected static final String LOG4J2_MONITOR_INTERVAL = "30";
 
     protected static final String DEFAULT_JVM_XMS = "128M";
@@ -418,17 +418,17 @@ public abstract class AbstractModel {
         OrderedProperties properties = new OrderedProperties();
         InputStream is = AbstractModel.class.getResourceAsStream("/" + configFileName);
         if (is == null) {
-            log.warn("Cannot find resource '{}'", configFileName);
+            LOGGER.warn("Cannot find resource '{}'", configFileName);
         } else {
             try {
                 properties.addStringPairs(is);
             } catch (IOException e) {
-                log.warn("Unable to read default log config from '{}'", configFileName);
+                LOGGER.warn("Unable to read default log config from '{}'", configFileName);
             } finally {
                 try {
                     is.close();
                 } catch (IOException e) {
-                    log.error("Failed to close stream. Reason: " + e.getMessage());
+                    LOGGER.error("Failed to close stream. Reason: " + e.getMessage());
                 }
             }
         }
@@ -484,7 +484,7 @@ public abstract class AbstractModel {
 
                     if (newRootLogger != null && !rootAppenderName.isEmpty() && !newRootLogger.contains(",")) {
                         // this should never happen as appender name is added in default configuration
-                        log.debug("Newly set rootLogger does not contain appender. Setting appender to {}.", rootAppenderName);
+                        LOGGER.debug("Newly set rootLogger does not contain appender. Setting appender to {}.", rootAppenderName);
                         String level = newSettings.asMap().get("log4j.rootLogger");
                         newSettings.addPair("log4j.rootLogger", level + ", " + rootAppenderName);
                     }
@@ -510,7 +510,7 @@ public abstract class AbstractModel {
                 throw new InvalidResourceException("Property logging.valueFrom has to be specified when using external logging.");
             }
         } else {
-            log.debug("logging is not set, using default loggers");
+            LOGGER.debug("logging is not set, using default loggers");
             return createLog4jProperties(getDefaultLogConfig());
         }
     }
@@ -523,10 +523,10 @@ public abstract class AbstractModel {
             if (tmp.length == 2) {
                 appenderName = tmp[1].trim();
             } else {
-                log.warn("Logging configuration for root logger does not contain appender.");
+                LOGGER.warn("Logging configuration for root logger does not contain appender.");
             }
         } else {
-            log.warn("Logger log4j.rootLogger not set.");
+            LOGGER.warn("Logger log4j.rootLogger not set.");
         }
         return appenderName;
     }
@@ -574,13 +574,13 @@ public abstract class AbstractModel {
         if (getMetricsConfigInCm() != null) {
             if (getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
                 if (externalCm == null) {
-                    log.warn("ConfigMap {} does not exist. Metrics disabled.",
+                    LOGGER.warn("ConfigMap {} does not exist. Metrics disabled.",
                             ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
                     throw new InvalidResourceException("ConfigMap " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName() + " does not exist.");
                 } else {
                     String data = externalCm.getData().get(((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
                     if (data == null) {
-                        log.warn("ConfigMap {} does not contain specified key {}. Metrics disabled.", ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName(),
+                        LOGGER.warn("ConfigMap {} does not contain specified key {}. Metrics disabled.", ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName(),
                                 ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
                         throw new InvalidResourceException("ConfigMap " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName()
                                 + " does not contain specified key " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey() + ".");
@@ -599,7 +599,7 @@ public abstract class AbstractModel {
                     }
                 }
             } else {
-                log.warn("Unknown type of metrics {}.", getMetricsConfigInCm().getClass());
+                LOGGER.warn("Unknown type of metrics {}.", getMetricsConfigInCm().getClass());
                 throw new InvalidResourceException("Unknown type of metrics " + getMetricsConfigInCm().getClass() + ".");
             }
         }
@@ -822,13 +822,13 @@ public abstract class AbstractModel {
                 .withProtocol(protocol)
                 .withContainerPort(port)
                 .build();
-        log.trace("Created container port {}", containerPort);
+        LOGGER.trace("Created container port {}", containerPort);
         return containerPort;
     }
 
     protected ServicePort createServicePort(String name, int port, int targetPort, String protocol) {
         ServicePort servicePort = createServicePort(name, port, targetPort, null, protocol);
-        log.trace("Created service port {}", servicePort);
+        LOGGER.trace("Created service port {}", servicePort);
         return servicePort;
     }
 
@@ -842,7 +842,7 @@ public abstract class AbstractModel {
             builder.withNodePort(nodePort);
         }
         ServicePort servicePort = builder.build();
-        log.trace("Created service port {}", servicePort);
+        LOGGER.trace("Created service port {}", servicePort);
         return servicePort;
     }
 
@@ -954,7 +954,7 @@ public abstract class AbstractModel {
             service.getSpec().setIpFamilies(ipFamilies.stream().map(IpFamily::toValue).collect(Collectors.toList()));
         }
 
-        log.trace("Created service {}", service);
+        LOGGER.trace("Created service {}", service);
         return service;
     }
 
@@ -991,7 +991,7 @@ public abstract class AbstractModel {
             service.getSpec().setIpFamilies(templateHeadlessServiceIpFamilies.stream().map(IpFamily::toValue).collect(Collectors.toList()));
         }
 
-        log.trace("Created headless service {}", service);
+        LOGGER.trace("Created headless service {}", service);
         return service;
     }
 
@@ -1516,7 +1516,7 @@ public abstract class AbstractModel {
             // Set custom env vars from the user defined template
             for (ContainerEnvVar containerEnvVar : containerEnvs) {
                 if (predefinedEnvs.contains(containerEnvVar.getName())) {
-                    log.warn("User defined container template environment variable {} is already in use and will be ignored",  containerEnvVar.getName());
+                    LOGGER.warn("User defined container template environment variable {} is already in use and will be ignored",  containerEnvVar.getName());
                 } else {
                     existingEnvs.add(buildEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
                 }

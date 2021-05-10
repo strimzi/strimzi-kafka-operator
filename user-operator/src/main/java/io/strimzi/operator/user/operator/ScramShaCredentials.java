@@ -23,7 +23,7 @@ import java.util.List;
  * Utility class for managing Scram credentials
  */
 public class ScramShaCredentials {
-    private static final Logger log = LogManager.getLogger(ScramShaCredentials.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(ScramShaCredentials.class.getName());
 
     private final static int ITERATIONS = 4096;
     private final static int CONNECTION_TIMEOUT = 30_000;
@@ -45,10 +45,10 @@ public class ScramShaCredentials {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
-            log.debug("Updating {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debug("Updating {} credentials for user {}", mechanism.mechanismName(), username);
             zkClient.writeData("/config/users/" + username, updateUserJson(data, password));
         } else {
-            log.debug("Creating {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debug("Creating {} credentials for user {}", mechanism.mechanismName(), username);
             ensurePath("/config/users");
             zkClient.createPersistent("/config/users/" + username, createUserJson(password));
         }
@@ -72,7 +72,7 @@ public class ScramShaCredentials {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
-            log.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
             JsonObject deletedJson = removeScramCredentialsFromUserJson(data);
             if (configJsonIsEmpty(deletedJson)) {
                 zkClient.deleteRecursive("/config/users/" + username);
@@ -81,7 +81,7 @@ public class ScramShaCredentials {
             }
             notifyChanges(username);
         } else {
-            log.warn("Credentials for user {} already don't exist", username);
+            LOGGER.warn("Credentials for user {} already don't exist", username);
         }
     }
 
@@ -109,7 +109,7 @@ public class ScramShaCredentials {
                         ScramCredentialUtils.credentialFromString(scramCredentials);
                         return true;
                     } catch (IllegalArgumentException e) {
-                        log.warn("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
+                        LOGGER.warn("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
                     }
                 }
             }
@@ -145,7 +145,7 @@ public class ScramShaCredentials {
      * @param username  Name of the user whose configuration changed
      */
     private void notifyChanges(String username) {
-        log.debug("Notifying changes for user {}", username);
+        LOGGER.debug("Notifying changes for user {}", username);
 
         ensurePath("/config/changes");
 

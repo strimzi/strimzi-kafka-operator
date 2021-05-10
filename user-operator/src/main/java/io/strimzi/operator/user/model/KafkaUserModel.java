@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class KafkaUserModel {
-    private static final Logger log = LogManager.getLogger(KafkaUserModel.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(KafkaUserModel.class.getName());
 
     public static final String KEY_PASSWORD = "password";
     public static final String KEY_SASL_JAAS_CONFIG = "sasl.jaas.config";
@@ -231,7 +231,7 @@ public class KafkaUserModel {
                                     decodeFromSecret(userSecret, "user.key"),
                                     decodeFromSecret(userSecret, "user.crt"));
                         } catch (IOException e) {
-                            log.error("Error generating the keystore for user {}", name, e);
+                            LOGGER.error("Error generating the keystore for user {}", name, e);
                         }
                     }
                     return;
@@ -241,7 +241,7 @@ public class KafkaUserModel {
             try {
                 this.userCertAndKey = clientsCa.generateSignedCert(name);
             } catch (IOException e) {
-                log.error("Error generating signed certificate for user {}", name, e);
+                LOGGER.error("Error generating signed certificate for user {}", name, e);
             }
 
         }
@@ -260,7 +260,7 @@ public class KafkaUserModel {
                 return;
             }
         }
-        log.debug("Generating user password");
+        LOGGER.debug("Generating user password");
         this.scramSha512Password = generator.generate();
 
     }

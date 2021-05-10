@@ -24,7 +24,7 @@ import java.util.Map;
 
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
-    private static final Logger log = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
 
     public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
@@ -73,13 +73,13 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
             try {
                 desiredLevel = levelResolver.resolveLevel(entry.name());
             } catch (IllegalArgumentException e) {
-                log.warn("Skipping {} - it is configured with an unsupported value (\"{}\")", entry.name(), e.getMessage());
+                LOGGER.warn("Skipping {} - it is configured with an unsupported value (\"{}\")", entry.name(), e.getMessage());
                 continue;
             }
 
             if (!desiredLevel.name().equals(entry.value())) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(entry.name(), desiredLevel.name()), AlterConfigOp.OpType.SET));
-                log.trace("{} has an outdated value. Setting to {}", entry.name(), desiredLevel.name());
+                LOGGER.trace("{} has an outdated value. Setting to {}", entry.name(), desiredLevel.name());
             }
         }
 
@@ -89,7 +89,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
             if (configEntry == null) {
                 String level = LoggingLevel.nameOrDefault(LoggingLevel.ofLog4jConfig(ent.getValue()), LoggingLevel.WARN);
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(name, level), AlterConfigOp.OpType.SET));
-                log.trace("{} not set. Setting to {}", name, level);
+                LOGGER.trace("{} not set. Setting to {}", name, level);
             }
         }
 
@@ -121,12 +121,12 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     } else {
                         env.put(line.trim(), "");
                     }
-                    log.debug("Treating the line as ENV var declaration: {}", line);
+                    LOGGER.debug("Treating the line as ENV var declaration: {}", line);
                     continue;
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to parse logging configuration: " + config, e);
+            LOGGER.error("Failed to parse logging configuration: " + config, e);
             return Collections.emptyMap();
         }
 
@@ -145,7 +145,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     int startIdx = "log4j.logger.".length();
                     int endIdx = line.indexOf("=", startIdx);
                     if (endIdx == -1) {
-                        log.debug("Skipping log4j.logger.* declaration without level: {}", line);
+                        LOGGER.debug("Skipping log4j.logger.* declaration without level: {}", line);
                         continue;
                     }
                     String name = line.substring(startIdx, endIdx).trim();
@@ -159,11 +159,11 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     parsed.put("root", Util.expandVar(line.substring(startIdx).split(",")[0].trim(), env));
 
                 } else {
-                    log.debug("Skipping log4j line: {}", line);
+                    LOGGER.debug("Skipping log4j line: {}", line);
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to parse logging configuration: " + config, e);
+            LOGGER.error("Failed to parse logging configuration: " + config, e);
             return Collections.emptyMap();
         }
         return parsed;
@@ -265,7 +265,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     try {
                         return valueOf(v);
                     } catch (RuntimeException e) {
-                        log.warn("Invalid logging level: {}. Using WARN as a failover.", v);
+                        LOGGER.warn("Invalid logging level: {}. Using WARN as a failover.", v);
                     }
                 }
             }

@@ -285,7 +285,7 @@ public class CruiseControl extends AbstractModel {
             // If the anomaly detection goals contain goals which are not in the default goals then the CC startup
             // checks will fail, so we make the anomaly goals match the default goals
             configuration.setConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.toString(), defaultGoalsString);
-            log.warn("Anomaly goals contained goals which are not in the configured default goals. Anomaly goals have " +
+            LOGGER.warn("Anomaly goals contained goals which are not in the configured default goals. Anomaly goals have " +
                     "been changed to match the specified default goals.");
         }
     }
@@ -615,7 +615,7 @@ public class CruiseControl extends AbstractModel {
                 .endSpec()
                 .build();
 
-        log.trace("Created network policy {}", networkPolicy);
+        LOGGER.trace("Created network policy {}", networkPolicy);
         return networkPolicy;
     }
 

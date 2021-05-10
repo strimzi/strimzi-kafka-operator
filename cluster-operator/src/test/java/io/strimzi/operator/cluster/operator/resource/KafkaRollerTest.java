@@ -63,6 +63,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaRollerTest {
 
+    private static final Logger LOGGER = LogManager.getLogger(KafkaRollerTest.class);
+
     private static Vertx vertx;
     private List<String> restarted;
 
@@ -287,8 +289,6 @@ public class KafkaRollerTest {
                 asList(0, 3, 4, 1, 2));
     }
 
-    private static final Logger log = LogManager.getLogger(KafkaRollerTest.class);
-
     @Test
     public void testControllerNotInitiallyRollable(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
@@ -299,7 +299,7 @@ public class KafkaRollerTest {
             brokerId -> {
                 if (brokerId == 2) {
                     boolean b = count.getAndDecrement() == 0;
-                    log.info("Can broker {} be rolled now ? {}", brokerId, b);
+                    LOGGER.info("Can broker {} be rolled now ? {}", brokerId, b);
                     return succeededFuture(b);
                 } else {
                     return succeededFuture(true);

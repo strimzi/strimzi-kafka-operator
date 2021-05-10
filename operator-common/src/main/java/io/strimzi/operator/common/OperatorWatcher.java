@@ -20,8 +20,8 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     private final String namespace;
     private final Consumer<WatcherException> onClose;
     private Operator operator;
-    private static final Logger log = LogManager.getLogger(OperatorWatcher.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(OperatorWatcher.class);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     OperatorWatcher(Operator operator, String namespace, Consumer<WatcherException> onClose) {
         this.namespace = namespace;
@@ -42,11 +42,11 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
                 operator.reconcile(reconciliation);
                 break;
             case ERROR:
-                log.error("Failed {} {} in namespace{} ", operator.kind(), name, namespace);
+                LOGGER.error("Failed {} {} in namespace{} ", operator.kind(), name, namespace);
                 operator.reconcileAll("watch error", namespace, ignored -> { });
                 break;
             default:
-                log.error("Unknown action: {} in namespace {}", name, namespace);
+                LOGGER.error("Unknown action: {} in namespace {}", name, namespace);
                 operator.reconcileAll("watch unknown", namespace, ignored -> { });
         }
     }

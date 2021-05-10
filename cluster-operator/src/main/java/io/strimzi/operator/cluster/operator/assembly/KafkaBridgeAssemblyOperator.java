@@ -44,8 +44,8 @@ import java.util.Collections;
  * </ul>
  */
 public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>, KafkaBridgeSpec, KafkaBridgeStatus> {
-    private static final Logger log = LogManager.getLogger(KafkaBridgeAssemblyOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeAssemblyOperator.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;

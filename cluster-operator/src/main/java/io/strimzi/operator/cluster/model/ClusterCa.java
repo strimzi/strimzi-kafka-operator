@@ -143,7 +143,7 @@ public class ClusterCa extends Ca {
             return subject;
         };
 
-        log.debug("{}: Reconciling zookeeper certificates", this);
+        LOGGER.debug("{}: Reconciling zookeeper certificates", this);
         return maybeCopyOrGenerateCerts(
             kafka.getSpec().getZookeeper().getReplicas(),
             subjectFn,
@@ -202,7 +202,7 @@ public class ClusterCa extends Ca {
 
             return subject;
         };
-        log.debug("{}: Reconciling kafka broker certificates", this);
+        LOGGER.debug("{}: Reconciling kafka broker certificates", this);
         return maybeCopyOrGenerateCerts(
             kafka.getSpec().getKafka().getReplicas(),
             subjectFn,

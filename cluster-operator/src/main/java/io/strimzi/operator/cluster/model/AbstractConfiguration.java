@@ -20,7 +20,7 @@ import static java.util.Arrays.asList;
  * Abstract class for processing and generating configuration passed by the user.
  */
 public abstract class AbstractConfiguration {
-    private static final Logger log = LogManager.getLogger(AbstractConfiguration.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(AbstractConfiguration.class.getName());
 
     private final OrderedProperties options = new OrderedProperties();
 
@@ -127,9 +127,9 @@ public abstract class AbstractConfiguration {
                     forbidden = false;
             }
             if (forbidden) {
-                log.warn("Configuration option \"{}\" is forbidden and will be ignored", k);
+                LOGGER.warn("Configuration option \"{}\" is forbidden and will be ignored", k);
             } else {
-                log.trace("Configuration option \"{}\" is allowed and will be passed to the assembly", k);
+                LOGGER.trace("Configuration option \"{}\" is allowed and will be passed to the assembly", k);
             }
             return forbidden;
         }));

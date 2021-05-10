@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ZookeeperLeaderFinderTest {
 
-    private static final Logger log = LogManager.getLogger(ZookeeperLeaderFinderTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(ZookeeperLeaderFinderTest.class);
 
     public static final String NAMESPACE = "testns";
     public static final String CLUSTER = "testcluster";
@@ -137,17 +137,17 @@ public class ZookeeperLeaderFinderTest {
             try {
                 countDownLatch.await(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                log.error("Failed to close zk instance {}", e);
+                LOGGER.error("Failed to close zk instance {}", e);
             }
         }
 
         public Future<Integer> start() {
             Promise<Integer> promise = Promise.promise();
 
-            netServer.exceptionHandler(ex -> log.error(ex))
+            netServer.exceptionHandler(ex -> LOGGER.error(ex))
                 .connectHandler(socket -> {
-                    log.debug("ZK {}: client connection to {}, from {}", id, socket.localAddress(), socket.remoteAddress());
-                    socket.exceptionHandler(ex -> log.error(ex));
+                    LOGGER.debug("ZK {}: client connection to {}, from {}", id, socket.localAddress(), socket.remoteAddress());
+                    socket.exceptionHandler(ex -> LOGGER.error(ex));
                     StringBuffer sb = new StringBuffer();
                     socket.handler(buf -> {
                         sb.append(buf.toString());
@@ -155,14 +155,14 @@ public class ZookeeperLeaderFinderTest {
                             socket.write("vesvsebserb\n");
                             int attempt = attempts.getAndIncrement();
                             if (isLeader.apply(attempt)) {
-                                log.debug("ZK {}: is leader on attempt {}", id, attempt);
+                                LOGGER.debug("ZK {}: is leader on attempt {}", id, attempt);
                                 socket.write("Mode: ");
                                 socket.write("leader\n");
                             } else {
-                                log.debug("ZK {}: is not leader on attempt {}", id, attempt);
+                                LOGGER.debug("ZK {}: is not leader on attempt {}", id, attempt);
                             }
                             socket.write("vesvsebserb\n");
-                            log.debug("ZK {}: Sent response, closing", id);
+                            LOGGER.debug("ZK {}: Sent response, closing", id);
                             socket.close();
                         }
                     });
@@ -186,7 +186,7 @@ public class ZookeeperLeaderFinderTest {
             FakeZk zk = new FakeZk(id, attempt -> fn.apply(id, attempt));
             zks.add(zk);
             zk.start().onComplete(context.succeeding(port -> {
-                log.debug("ZK {} listening on port {}", id, port);
+                LOGGER.debug("ZK {} listening on port {}", id, port);
                 result[id] = port;
                 async.countDown();
             }));

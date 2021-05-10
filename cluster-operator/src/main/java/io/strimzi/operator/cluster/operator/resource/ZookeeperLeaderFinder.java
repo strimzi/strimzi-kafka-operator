@@ -43,7 +43,7 @@ import static java.lang.Integer.parseInt;
  */
 public class ZookeeperLeaderFinder {
 
-    private static final Logger log = LogManager.getLogger(ZookeeperLeaderFinder.class);
+    private static final Logger LOGGER = LogManager.getLogger(ZookeeperLeaderFinder.class);
 
     private static final Pattern LEADER_MODE_PATTERN = Pattern.compile("^Mode: leader$", Pattern.MULTILINE);
 
@@ -89,7 +89,7 @@ public class ZookeeperLeaderFinder {
         for (Map.Entry<String, String> entry : clusterCaCertificateSecret.getData().entrySet()) {
             String entryName = entry.getKey();
             if (entryName.endsWith(".crt")) {
-                log.info("Trusting certificate {} from Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
+                LOGGER.info("Trusting certificate {} from Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
                 byte[] certBytes = decoder.decode(entry.getValue());
                 try {
                     x509.generateCertificate(new ByteArrayInputStream(certBytes));
@@ -98,7 +98,7 @@ public class ZookeeperLeaderFinder {
                 }
                 pto.addCertValue(Buffer.buffer(certBytes));
             } else {
-                log.warn("Ignoring non-certificate {} in Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
+                LOGGER.warn("Ignoring non-certificate {} in Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
             }
         }
         return pto;
@@ -170,7 +170,7 @@ public class ZookeeperLeaderFinder {
                             rescheduleOrComplete(tid);
                         }
                     } else {
-                        log.debug("Ignoring error", leader.cause());
+                        LOGGER.debug("Ignoring error", leader.cause());
                         if (backOff.done()) {
                             result.complete(UNKNOWN_LEADER);
                         } else {
@@ -182,13 +182,13 @@ public class ZookeeperLeaderFinder {
 
             void rescheduleOrComplete(Long tid) {
                 if (backOff.done()) {
-                    log.warn("Giving up trying to find the leader of {}/{} after {} attempts taking {}ms",
+                    LOGGER.warn("Giving up trying to find the leader of {}/{} after {} attempts taking {}ms",
                             namespace, cluster, backOff.maxAttempts(), backOff.totalDelayMs());
                     result.complete(UNKNOWN_LEADER);
                 } else {
                     // Schedule ourselves to run again
                     long delay = backOff.delayMs();
-                    log.info("No leader found for cluster {} in namespace {}; " +
+                    LOGGER.info("No leader found for cluster {} in namespace {}; " +
                                     "backing off for {}ms (cumulative {}ms)",
                             cluster, namespace, delay, backOff.cumulativeDelayMs());
                     if (delay < 1) {
@@ -216,13 +216,13 @@ public class ZookeeperLeaderFinder {
                 String podName = pod.getMetadata().getName();
                 f = f.compose(leader -> {
                     if (leader == UNKNOWN_LEADER) {
-                        log.debug("Checker whether {} is leader", podName);
+                        LOGGER.debug("Checker whether {} is leader", podName);
                         return isLeader(pod, netClientOptions).map(isLeader -> {
                             if (isLeader != null && isLeader) {
-                                log.info("Pod {} is leader", podName);
+                                LOGGER.info("Pod {} is leader", podName);
                                 return podNum;
                             } else {
-                                log.info("Pod {} is not a leader", podName);
+                                LOGGER.info("Pod {} is not a leader", podName);
                                 return UNKNOWN_LEADER;
                             }
                         });
@@ -245,18 +245,18 @@ public class ZookeeperLeaderFinder {
         Promise<Boolean> promise = Promise.promise();
         String host = host(pod);
         int port = port(pod);
-        log.debug("Connecting to zookeeper on {}:{}", host, port);
+        LOGGER.debug("Connecting to zookeeper on {}:{}", host, port);
         vertx.createNetClient(netClientOptions)
             .connect(port, host, ar -> {
                 if (ar.failed()) {
-                    log.warn("ZK {}:{}: failed to connect to zookeeper:", host, port, ar.cause().getMessage());
+                    LOGGER.warn("ZK {}:{}: failed to connect to zookeeper:", host, port, ar.cause().getMessage());
                     promise.fail(ar.cause());
                 } else {
-                    log.debug("ZK {}:{}: connected", host, port);
+                    LOGGER.debug("ZK {}:{}: connected", host, port);
                     NetSocket socket = ar.result();
                     socket.exceptionHandler(ex -> {
                         if (!promise.tryFail(ex)) {
-                            log.debug("ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
+                            LOGGER.debug("ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
                                     host, port, pod.getMetadata().getName(), ex);
                         }
                     });
@@ -264,7 +264,7 @@ public class ZookeeperLeaderFinder {
                     // We could use socket idle timeout, but this times out even if the server just responds
                     // very slowly
                     long timerId = vertx.setTimer(10_000, tid -> {
-                        log.debug("ZK {}:{}: Timeout waiting for Zookeeper {} to close socket",
+                        LOGGER.debug("ZK {}:{}: Timeout waiting for Zookeeper {} to close socket",
                                 host, port, socket.remoteAddress());
                         socket.close();
                     });
@@ -272,24 +272,24 @@ public class ZookeeperLeaderFinder {
                         vertx.cancelTimer(timerId);
                         Matcher matcher = LEADER_MODE_PATTERN.matcher(sb);
                         boolean isLeader = matcher.find();
-                        log.debug("ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
+                        LOGGER.debug("ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
                         if (!promise.tryComplete(isLeader)) {
-                            log.debug("ZK {}:{}: Ignoring leader result: Future is already complete",
+                            LOGGER.debug("ZK {}:{}: Ignoring leader result: Future is already complete",
                                     host, port);
                         }
                     });
-                    log.debug("ZK {}:{}: upgrading to TLS", host, port);
+                    LOGGER.debug("ZK {}:{}: upgrading to TLS", host, port);
                     socket.handler(buffer -> {
-                        log.trace("buffer: {}", buffer);
+                        LOGGER.trace("buffer: {}", buffer);
                         sb.append(buffer.toString());
                     });
-                    log.debug("ZK {}:{}: sending stat", host, port);
+                    LOGGER.debug("ZK {}:{}: sending stat", host, port);
                     socket.write("stat");
                 }
 
             });
         return promise.future().recover(error -> {
-            log.debug("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
+            LOGGER.debug("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
             return Future.succeededFuture(Boolean.FALSE);
         });
     }

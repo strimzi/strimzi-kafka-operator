@@ -101,8 +101,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         L extends CustomResourceList<T>, R extends Resource<T>, P extends AbstractKafkaConnectSpec, S extends KafkaConnectStatus>
         extends AbstractOperator<T, P, S, CrdOperator<C, T, L>> {
 
-    private static final Logger log = LogManager.getLogger(AbstractConnectOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(AbstractConnectOperator.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
@@ -235,7 +235,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             KafkaConnectS2I connectS2i = cf.resultAt(1);
                                             KafkaConnectApi apiClient = connectOperator.connectClientProvider.apply(connectOperator.vertx);
                                             if (connect == null && connectS2i == null) {
-                                                log.info("{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
+                                                LOGGER.info("{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                 updateStatus(noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                 return Future.succeededFuture();
                                             } else if (connect != null && isOlderOrAlone(connect.getMetadata().getCreationTimestamp(), connectS2i)) {
@@ -301,10 +301,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
                             break;
                         case ERROR:
-                            log.error("Failed {} {} in namespace {} ", connectorKind, connectorName, connectorNamespace);
+                            LOGGER.error("Failed {} {} in namespace {} ", connectorKind, connectorName, connectorNamespace);
                             break;
                         default:
-                            log.error("Unknown action: {} {} in namespace {}", connectorKind, connectorName, connectorNamespace);
+                            LOGGER.error("Unknown action: {} {} in namespace {}", connectorKind, connectorName, connectorNamespace);
                     }
                 }
 
@@ -557,7 +557,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         for (Map.Entry<String, Object> entry : connectorSpec.getConfig().entrySet()) {
             desired.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
         }
-        if (log.isDebugEnabled()) {
+        if (LOGGER.isDebugEnabled()) {
             RECONCILIATION_LOGGER.debug(reconciliation, "Desired: {}", new TreeMap<>(desired));
             RECONCILIATION_LOGGER.debug(reconciliation, "Actual:  {}", new TreeMap<>(actual));
         }
@@ -601,7 +601,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         throwable -> {
                             // Ignore restart failures - add a warning and try again on the next reconcile
                             String message = "Failed to restart connector " + connectorName + ". " + throwable.getMessage();
-                            RECONCILIATION_LOGGER.warn(reconciliation, "{}", message);
+                            RECONCILIATION_LOGGER.warn(reconciliation, message);
                             conditions.add(StatusUtils.buildWarningCondition("RestartConnector", message));
                             return Future.succeededFuture(conditions);
                         });
@@ -620,7 +620,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         throwable -> {
                             // Ignore restart failures - add a warning and try again on the next reconcile
                             String message = "Failed to restart connector task " + connectorName + ":" + taskID + ". " + throwable.getMessage();
-                            RECONCILIATION_LOGGER.warn(reconciliation, "{}", message);
+                            RECONCILIATION_LOGGER.warn(reconciliation, message);
                             conditions.add(StatusUtils.buildWarningCondition("RestartConnectorTask", message));
                             return Future.succeededFuture(conditions);
                         });
@@ -733,7 +733,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0);
 
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, warningConditions));
+            ResourceVisitor.visit(resource, new ValidationVisitor(resource, LOGGER, warningConditions));
 
             return warningConditions;
         }
@@ -807,7 +807,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 if ("connector.class".equals(name)
                         || "tasks.max".equals(name)) {
                     // TODO include resource namespace and name in this message
-                    log.warn("Configuration parameter {} in KafkaConnector.spec.config will be ignored and the value from KafkaConnector.spec will be used instead",
+                    LOGGER.warn("Configuration parameter {} in KafkaConnector.spec.config will be ignored and the value from KafkaConnector.spec will be used instead",
                             name);
                 }
                 connectorConfigJson.put(name, cf.getValue());

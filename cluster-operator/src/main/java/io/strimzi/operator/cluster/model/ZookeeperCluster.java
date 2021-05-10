@@ -206,7 +206,7 @@ public class ZookeeperCluster extends AbstractModel {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
         if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
-            log.warn("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
+            LOGGER.warn("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
         zk.setReplicas(replicas);
 
@@ -246,11 +246,11 @@ public class ZookeeperCluster extends AbstractModel {
             StorageDiff diff = new StorageDiff(oldStorage, newStorage, oldReplicas, zookeeperClusterSpec.getReplicas());
 
             if (!diff.isEmpty()) {
-                log.warn("Only the following changes to Zookeeper storage are allowed: " +
+                LOGGER.warn("Only the following changes to Zookeeper storage are allowed: " +
                         "changing the deleteClaim flag, " +
                         "changing overrides to nodes which do not exist yet " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                log.warn("The desired ZooKeeper storage configuration in the custom resource {}/{} contains changes which are not allowed. As " +
+                LOGGER.warn("The desired ZooKeeper storage configuration in the custom resource {}/{} contains changes which are not allowed. As " +
                         "a result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
@@ -437,7 +437,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .endSpec()
                 .build();
 
-        log.trace("Created network policy {}", networkPolicy);
+        LOGGER.trace("Created network policy {}", networkPolicy);
         return networkPolicy;
     }
 
@@ -468,13 +468,13 @@ public class ZookeeperCluster extends AbstractModel {
      *                                          This is used for certificate renewals
      */
     public void generateCertificates(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        log.debug("Generating certificates");
+        LOGGER.debug("Generating certificates");
         try {
             nodeCerts = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
-            log.warn("Error while generating certificates", e);
+            LOGGER.warn("Error while generating certificates", e);
         }
-        log.debug("End generating certificates");
+        LOGGER.debug("End generating certificates");
     }
 
     /**

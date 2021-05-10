@@ -29,7 +29,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 public class AuthenticationUtils {
-    protected static final Logger log = LogManager.getLogger(AuthenticationUtils.class.getName());
+    protected static final Logger LOGGER = LogManager.getLogger(AuthenticationUtils.class.getName());
 
     public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
     public static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
@@ -51,22 +51,22 @@ public class AuthenticationUtils {
                 KafkaClientAuthenticationTls auth = (KafkaClientAuthenticationTls) authentication;
                 if (auth.getCertificateAndKey() != null) {
                     if (!tls) {
-                        log.warn("TLS configuration missing: related TLS client authentication will not work properly");
+                        LOGGER.warn("TLS configuration missing: related TLS client authentication will not work properly");
                     }
                 } else {
-                    log.warn("TLS Client authentication selected, but no certificate and key configured.");
+                    LOGGER.warn("TLS Client authentication selected, but no certificate and key configured.");
                     throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512)    {
                 KafkaClientAuthenticationScramSha512 auth = (KafkaClientAuthenticationScramSha512) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    log.warn("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
+                    LOGGER.warn("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                     throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain auth = (KafkaClientAuthenticationPlain) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    log.warn("PLAIN authentication selected, but username or password configuration is missing.");
+                    LOGGER.warn("PLAIN authentication selected, but username or password configuration is missing.");
                     throw new InvalidResourceException("PLAIN authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
@@ -78,7 +78,7 @@ public class AuthenticationUtils {
                     // Valid options, lets just pass it through.
                     // This way the condition is easier to read and understand.
                 } else {
-                    log.warn("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
+                    LOGGER.warn("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
                     throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
                 }
             }

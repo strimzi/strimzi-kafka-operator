@@ -38,19 +38,19 @@ import java.security.Security;
 @SuppressFBWarnings("DM_EXIT")
 @SuppressWarnings("deprecation")
 public class Main {
-    private static final Logger log = LogManager.getLogger(Main.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
 
     static {
         try {
             Crds.registerCustomKinds();
         } catch (Error | RuntimeException t) {
-            log.error("Failed to register CRDs", t);
+            LOGGER.error("Failed to register CRDs", t);
             throw t;
         }
     }
 
     public static void main(String[] args) {
-        log.info("UserOperator {} is starting", Main.class.getPackage().getImplementationVersion());
+        LOGGER.info("UserOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
         //Setup Micrometer metrics options
         VertxOptions options = new VertxOptions().setMetricsOptions(
@@ -65,7 +65,7 @@ public class Main {
 
         run(vertx, client, adminClientProvider, config).onComplete(ar -> {
             if (ar.failed()) {
-                log.error("Unable to start operator", ar.cause());
+                LOGGER.error("Unable to start operator", ar.cause());
                 System.exit(1);
             }
         });
@@ -100,9 +100,9 @@ public class Main {
                     vertx.deployVerticle(operator,
                         res -> {
                             if (res.succeeded()) {
-                                log.info("User Operator verticle started in namespace {}", config.getNamespace());
+                                LOGGER.info("User Operator verticle started in namespace {}", config.getNamespace());
                             } else {
-                                log.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
+                                LOGGER.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
                                 System.exit(1);
                             }
                             promise.handle(res);

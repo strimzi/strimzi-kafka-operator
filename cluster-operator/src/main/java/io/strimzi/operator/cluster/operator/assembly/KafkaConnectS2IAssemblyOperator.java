@@ -59,8 +59,8 @@ import java.util.function.Function;
 // Deprecation is suppressed because of KafkaConnectS2I
 @SuppressWarnings("deprecation")
 public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> {
-    private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(log);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
