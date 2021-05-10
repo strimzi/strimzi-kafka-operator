@@ -33,9 +33,9 @@ cluster using the [Helm](https://helm.sh) package manager.
 ### Upgrading your Clusters
 
 To upgrade the Strimzi operator, you can use the `helm upgrade` command.
-`helm upgrade` at this time does not support upgrading the custom resource definitions (for more details, see [Custom Resource Definitions](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/)).
-So after upgrading the Strimzi operator, you have to manually install the new CRDs.
-You can find them on our [GitHub release page](https://github.com/strimzi/strimzi-kafka-operator/releases) or in the `crd` subdirectory inside the Helm Chart.
+The `helm upgrade` command does not upgrade the [Custom Resource Definitions](https://helm.sh/docs/chart_best_practices/custom_resource_definitions/).
+Install the new CRDs manually after upgrading the Cluster Operator.
+You can access the CRDs from our [GitHub release page](https://github.com/strimzi/strimzi-kafka-operator/releases) or find them in the `crd` subdirectory inside the Helm Chart.
 
 The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
 When specifying a new version in your config, check to make sure you aren't using any features that may have been removed.
