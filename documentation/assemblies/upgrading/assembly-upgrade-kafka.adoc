@@ -23,6 +23,12 @@ Depending on your chosen upgrade strategy, after updating the channel, either:
 ** A manual upgrade will require approval before the installation begins
 +
 For more information on using {OperatorHub} to upgrade Operators, see the {OLMOperatorDocs}.
++
+* If you deployed the Cluster Operator using a Helm chart, use `helm upgrade`.
++
+The `helm upgrade` command does not upgrade the {HelmCustomResourceDefinitions}.
+Install the new CRDs manually after upgrading the Cluster Operator.
+You can access the CRDs from {ReleaseDownload} or find them in the `crd` subdirectory inside the Helm Chart.
 
 . Upgrade all Kafka brokers and client applications to the latest supported Kafka version.
 +
