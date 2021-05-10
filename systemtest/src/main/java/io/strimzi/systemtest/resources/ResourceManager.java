@@ -219,6 +219,9 @@ public class ResourceManager {
 
         // sync all resources
         for (ResourceItem resource : resources) {
+            if (resource.getResource() == null) {
+                continue;
+            }
             ResourceType<T> type = findResourceType((T) resource.getResource());
 
             waitResourceCondition((T) resource.getResource(), ResourceCondition.readiness(type));
