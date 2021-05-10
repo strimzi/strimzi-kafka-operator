@@ -95,11 +95,18 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+        return kafkaWithMetrics(name, kubeClient().getNamespace(), kafkaReplicas, zookeeperReplicas);
+    }
+
+    public static KafkaBuilder kafkaWithMetrics(String name, String namespace, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(PATH_TO_KAFKA_METRICS_CONFIG);
 
         ConfigMap metricsCm = TestUtils.configMapFromYaml(PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespace).createOrReplace(metricsCm);
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+            .editOrNewMetadata()
+                .withNamespace(namespace)
+            .endMetadata()
             .editSpec()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
