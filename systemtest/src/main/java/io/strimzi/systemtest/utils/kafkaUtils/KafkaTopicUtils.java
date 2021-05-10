@@ -115,6 +115,14 @@ public class KafkaTopicUtils {
         );
     }
 
+    public static void waitForKafkaTopicReplicasChange(String namespaceName, String topicName, int replicas) {
+        LOGGER.info("Waiting for KafkaTopic change {}", topicName);
+        TestUtils.waitFor("KafkaTopic change " + topicName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getSpec().getReplicas() == replicas,
+            () -> LOGGER.info("Kafka Topic {} did not change replicas", KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get())
+        );
+    }
+
     public static void waitForKafkaTopicPartitionChange(String topicName, int partitions) {
         waitForKafkaTopicPartitionChange(kubeClient().getNamespace(), topicName, partitions);
     }
