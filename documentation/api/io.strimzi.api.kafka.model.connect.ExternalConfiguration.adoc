@@ -84,17 +84,17 @@ Using volumes instead of environment variables is useful in the following scenar
 * Mounting a properties file that is used to configure Kafka Connect connectors
 * Mounting truststores or keystores with TLS certificates
 
-Configuration providers load the values from mounted ConfigMaps or Secrets.
-
-Volumes are mounted inside the Kafka Connect containers in the path `/opt/kafka/external-configuration/_<volume-name>_`.
+Volumes are mounted inside the Kafka Connect containers on the path `/opt/kafka/external-configuration/_<volume-name>_`.
 For example, the files from a volume named `connector-config` will appear in the directory `/opt/kafka/external-configuration/connector-config`.
 
-Use a _provider_ mechanism to avoid passing restricted information over the Kafka Connect REST interface.
+Configuration _providers_ load values from outside the configuration.
+Use a provider mechanism to avoid passing restricted information over the Kafka Connect REST interface.
 
 * `FileConfigProvider` loads configuration values from properties in a file.
 * `DirectoryConfigProvider` loads configuration values from separate files within a directory structure.
 
-Use a comma-separated list if you want to add more than one provider.
+Use a comma-separated list if you want to add more than one provider, including custom providers.
+You can use custom providers to load values from other file locations.
 
 .Using `FileConfigProvider` to load property values
 
