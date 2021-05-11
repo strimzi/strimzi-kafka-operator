@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.Annotations;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -75,8 +76,16 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     }
 
     public boolean shouldReconcile(KafkaTopic kafkaTopic, ObjectMeta metadata) {
+        boolean pausedByAnno = Annotations.isReconciliationPausedWithAnnotation(kafkaTopic.getMetadata());
+        boolean pausedInStatus = kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getConditions().stream().filter(condition -> "ReconciliationPaused".equals(condition.getType())).findAny().isPresent();
         return kafkaTopic.getStatus() == null // Not status => new KafkaTopic
-                || !Objects.equals(metadata.getGeneration(), kafkaTopic.getStatus().getObservedGeneration()); // KT has changed
+                // KT has changed
+                || !Objects.equals(metadata.getGeneration(), kafkaTopic.getStatus().getObservedGeneration())
+                // changing just annotations does not increase the generation of resource, thus we need to check them
+                // unpaused -> paused
+                || (pausedByAnno && !pausedInStatus)
+                // paused -> unpaused
+                || (!pausedByAnno && pausedInStatus);
     }
 
     @Override

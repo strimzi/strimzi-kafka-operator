@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
@@ -50,6 +51,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.disjoint;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 class TopicOperator {
@@ -73,6 +75,7 @@ class TopicOperator {
     private Counter successfulReconciliationsCounter;
     private Counter lockedReconciliationsCounter;
     private AtomicInteger topicCounter;
+    private AtomicInteger pausedTopicCounter;
     protected Timer reconciliationsTimer;
 
     enum EventType {
@@ -419,6 +422,10 @@ class TopicOperator {
                     "The time the reconciliation takes to complete",
                     metricTags);
 
+            pausedTopicCounter = metrics.gauge(METRICS_PREFIX + "resources.paused",
+                    "Number of topics the operator sees but does not reconcile due to paused reconciliations",
+                    metricTags);
+
             lockedReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.locked",
                     "Number of reconciliations skipped because another reconciliation for the same topic was still running",
                     metricTags);
@@ -564,7 +571,10 @@ class TopicOperator {
             TopicName topicName = k8sTopic != null ? k8sTopic.getTopicName() : kafkaTopic != null ? kafkaTopic.getTopicName() : privateTopic != null ? privateTopic.getTopicName() : null;
             LOGGER.info("{}: Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", logContext, topicName, k8sTopic == null ? "null" : "nonnull", kafkaTopic == null ? "null" : "nonnull", privateTopic == null ? "null" : "nonnull");
         }
-        if (privateTopic == null) {
+        if (k8sTopic != null && Annotations.isReconciliationPausedWithAnnotation(k8sTopic.getMetadata())) {
+            LOGGER.debug("{}: Reconciliation paused, not applying changes.", logContext);
+            reconciliationResultHandler = Future.succeededFuture();
+        } else if (privateTopic == null) {
             if (k8sTopic == null) {
                 if (kafkaTopic == null) {
                     // All three null: This happens reentrantly when a topic or KafkaTopic is deleted
@@ -1045,6 +1055,10 @@ class TopicOperator {
                         kts.setTopicName(topic.getStatus().getTopicName());
                     }
 
+                    if (Annotations.isReconciliationPausedWithAnnotation(topic)) {
+                        kts.setConditions(singletonList(StatusUtils.getPausedCondition()));
+                    }
+
                     StatusDiff ksDiff = new StatusDiff(topic.getStatus(), kts);
                     if (!ksDiff.isEmpty()) {
                         Promise<Void> promise = Promise.promise();
@@ -1309,8 +1323,12 @@ class TopicOperator {
             });
         }).compose(reconcileState -> {
             List<Future> futs = new ArrayList<>();
+            pausedTopicCounter.set(0);
             topicCounter.set(reconcileState.ktList.size());
             for (KafkaTopic kt : reconcileState.ktList) {
+                if (Annotations.isReconciliationPausedWithAnnotation(kt)) {
+                    pausedTopicCounter.getAndIncrement();
+                }
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName()).withKubeTopic(kt);
                 Topic topic = TopicSerialization.fromTopicResource(kt);
                 TopicName topicName = topic.getTopicName();
