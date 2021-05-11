@@ -36,7 +36,7 @@ num.partitions=1
 default.replication.factor=3
 offsets.topic.replication.factor=3
 transaction.state.log.replication.factor=3
-transaction.state.log.min.isr=1
+transaction.state.log.min.isr=2
 log.retention.hours=168
 log.segment.bytes=1073741824
 log.retention.check.interval.ms=300000
@@ -66,15 +66,15 @@ replica.fetch.max.bytes=1048576
 # ...
 ----
 
-The `auto.create.topics.enable` property is enabled by default so that topics that do not currently exist are created automatically when needed by producers and consumers.
-If you are using automatic topic creation, it is advisable to set `num.partitions` to equal the number of brokers in the cluster so that writes are distributed.
+The `auto.create.topics.enable` property is enabled by default so that topics that do not already exist are created automatically when needed by producers and consumers.
+If you are using automatic topic creation, you can set the default number of partitions for topics using `num.partitions`.
 Generally, however, this property is disabled so that more control is provided over topics through explicit topic creation
 For example, you can use the Strimzi `KafkaTopic` resource or applications to create topics.
 
 For high availability environments, it is advisable to increase the replication factor to at least 3 for topics and set the minimum number of in-sync replicas required to 1 less than the replication factor.
 For topics created using the `KafkaTopic` resource, the replication factor is set using `spec.replicas`.
 
-For data durability, you should also set `min.insync.replicas` in your topic configuration and message delivery acknowledgments using `acks=all` in your producer configuration.
+For xref:data_durability[data durability], you should also set `min.insync.replicas` in your topic configuration and message delivery acknowledgments using `acks=all` in your producer configuration.
 
 Use `replica.fetch.max.bytes` to set the maximum size, in bytes, of messages fetched by each follower that replicates the leader partition.
 Change this value according to the average message size and throughput. When considering the total memory allocation required for read/write buffering, the memory available must also be able to accommodate the maximum replicated message size when multiplied by all followers. The size must also be greater than `message.max.bytes`, so that all messages can be replicated.
@@ -103,19 +103,17 @@ transaction.state.log.min.isr=2
 # ...
 ----
 
-Similarly, the internal  `__consumer_offsets` topic, which stores partition offset commits, has default settings for the number of partitions, replication factor, and acknowledgments.
-Acknowledgments defaults to -1, which means that messages are not acknowledged until replicas for the topic are in sync.
+Similarly, the internal `__consumer_offsets` topic, which stores consumer state, has default settings for the number of partitions and replication factor.
 
 [source,env]
 ----
 # ...
 offsets.topic.num.partitions=50
 offsets.topic.replication.factor=3
-offsets.commit.required.acks=-1
 # ...
 ----
 
-*Do not reduce these settings in production, or override the commit acknowledgment.*
+*Do not reduce these settings in production.*
 You can increase the settings in production.
 If you are testing in a single broker environment, you might want to reduce the settings as an exception.
 
@@ -125,11 +123,13 @@ Network threads handle requests to the Kafka cluster, such as produce and fetch 
 Produce requests are placed in a request queue. Responses are placed in a response queue.
 
 The number of network threads should reflect the replication factor and the levels of activity from client producers and consumers interacting with the Kafka cluster.
-If you are going to have a lot of requests, you can increase the number of threads. To reduce congestion and regulate the request traffic, you can limit the number of requests allowed in the request queue before the network thread is blocked.
+If you are going to have a lot of requests, you can increase the number of threads, using the amount of time threads are idle to determine when to add more threads.
+
+To reduce congestion and regulate the request traffic, you can limit the number of requests allowed in the request queue before the network thread is blocked.
 
 I/O threads pick up requests from the request queue to process them.
 Adding more threads can improve throughput, but the number of CPU cores/and disk bandwidth imposes a practical upper limit.
-The number of threads should be at least the number of disks.
+At a minimum, the number of I/O threads should equal the number of storage volumes.
 
 [source,env]
 ----
@@ -147,7 +147,7 @@ num.recovery.threads.per.data.dir=1 <4>
 
 NOTE: Kafka broker metrics can help with working out the number of threads required.
 For example, metrics for the average time network threads are idle (`kafka.network:type=SocketServer,name=NetworkProcessorAvgIdlePercent`) indicate the percentage of resources used.
-If there is 0% idle time, all resources are in use, which means that more threads would be beneficial.
+If there is 0% idle time, all resources are in use, which means that adding more threads might be beneficial.
 
 If threads are slow or limited due to the number of disks, you can try increasing the size of the buffers for network requests to improve throughput:
 
@@ -170,7 +170,7 @@ socket.request.max.bytes=104857600
 == Increasing bandwidth for high latency connections
 
 Kafka batches data to achieve reasonable throughput over high-latency connections from Kafka to clients, such as connections between datacenters.
-However, if you are experiencing levels of latency that are impairing performance unduly, you can increase the size of the buffers for sending and receiving messages.
+However, if high latency is a problem, you can increase the size of the buffers for sending and receiving messages.
 
 [source,env]
 ----
@@ -180,87 +180,17 @@ socket.receive.buffer.bytes=1048576
 # ...
 ----
 
-You can work out the optimal size of your buffers using a _bandwidth-delay_ product calculation,
-which multiplies the bandwidth capacity with the round-trip delay to give the data volume.
-
-== Removing log data with cleanup policies
-
-The method of removing older log data is determined by the _log cleaner_ configuration.
-
-The log cleaner is enabled by  default:
-
-[source,env]
-----
-# ...
-log.cleaner.enable=true
-# ...
-----
-
-If you use the log cleaner, cleanup policy to compact logs is applied by default.
-If the log cleaner is enabled and log retention limits are set, compaction is applied and older segments are deleted.
-Otherwise, if the log cleaner is not set and there are no log retention limits, the log will continue to grow.
-
-When log compaction is enabled, the _head_ of the log operates as a standard Kafka log, with writes appended in order.
-Records in the tail are compacted.
-
-.Log showing key value writes with offset positions before compaction
-image::tuning/broker-tuning-compaction-before.png[Image of compaction showing key value writes]
-
-Using keys to identify messages, Kafka compaction keeps the last message for a specific message key, discarding earlier messages that have the same key.
-In other words, the message in its latest state is always available and any out-of-date records of that particular message are removed. Messages without payloads are also deleted.
-This is a useful approach when the previous state of a record does not need to be retained, but can be restored if necessary. If your message structure does not use keys, compaction will not work.
-
-After the log has been cleaned up, records retain their original offset.
-
-.Log after compaction
-image::tuning/broker-tuning-compaction-after.png[Image of compaction after log cleanup]
-
-You can change cleanup policy from compacting logs to deleting logs.
-Or you can choose to compact _and_ delete logs.
-If you choose only a compact policy, your log can still become very large.
-
-[source,env]
-----
-# ...
-log.cleanup.policy=compact,delete
-# ...
-----
-
-.Log retention point and compaction point
-image::tuning/broker-tuning-compaction-retention.png[Image of compaction with retention point]
-
-You set the frequency the log is checked for cleanup in milliseconds:
-
-[source,env]
-----
-# ...
-log.retention.check.interval.ms=300000
-# ...
-----
-
-The log retention check interval defaults to 5 minutes. You should adjust this setting in relation to the log retention settings. Smaller retention sizes might require more frequent checks.
-
-You can also set a time in milliseconds to put the cleaner on standby if there are no logs to clean:
-
-[source,env]
-----
-# ...
-log.cleaner.backoff.ms=15000
-# ...
-----
-
-If you choose to delete older log data, you can set a period in milliseconds to retain the deleted data before it is purged:
-
-[source,env]
-----
-# ...
-log.cleaner.delete.retention.ms=86400000
-# ...
-----
+You can estimate the optimal size of your buffers using a _bandwidth-delay product_ calculation,
+which multiplies the maximum bandwidth of the link (in bytes/s) with the round-trip delay (in seconds) to give an estimate of how large a buffer is required to sustain maximum throughput.
 
 == Managing logs with data retention policies
 
-Kafka uses logs to store message data. Logs are a series of segments. You can set the maximum size of a log segment:
+Kafka uses logs to store message data. Logs are a series of segments.
+Data is written to an _active_ segment, which receives new messages and is never deleted.
+Periodically, a new active segment is _rolled_.
+Older segments are retained until they are eligible for deletion.
+
+You can set the maximum size of a log segment:
 
 [source,env]
 ----
@@ -270,7 +200,7 @@ log.segment.bytes=1073741824
 ----
 
 Whether you need to lower or raise this value depends on the policy for segment deletion.
-A larger size means the _active_ segment, which receives new messages and is never deleted, keeps messages longer.
+A larger size means the _active_ segment keeps messages longer.
 Additionally, new segments are rolled out less often.
 
 You can set time-based or size-based log retention and cleanup policies so that logs are kept manageable.
@@ -291,7 +221,9 @@ log.retention.ms=1680000
 
 The retention period is based on the time messages were appended to the segment.
 
-The milliseconds configuration has priority over minutes, which has priority over hours. The minutes and milliseconds configuration is null by default, but the three options provide a substantial level of control over the data you wish to retain. Preference should be given to the milliseconds configuration, as it is the only one of the three properties that is dynamically updateable. If  `log.retention.ms` is set to -1, no time limit is applied to log retention, so all logs are retained.  Disk usage should always be monitored, but the -1 setting is not generally recommended as it can lead to issues with full disks, which can be hard to rectify.
+The milliseconds configuration has priority over minutes, which has priority over hours. The minutes and milliseconds configuration is null by default, but the three options provide a substantial level of control over the data you wish to retain. Preference should be given to the milliseconds configuration, as it is the only one of the three properties that is dynamically updateable.
+If  `log.retention.ms` is set to -1, no time limit is applied to log retention, so all logs are retained.
+Disk usage should always be monitored, but the -1 setting is not generally recommended as it can lead to issues with full disks, which can be hard to rectify.
 
 For size-based log retention, you set a maximum log size in bytes:
 
@@ -305,8 +237,103 @@ log.retention.bytes=1073741824
 When the maximum log size is reached, older segments are removed.
 
 A potential issue with using a maximum log size is that it does not take into account the time messages were appended to a segment.
-You can use time-based and size-based log retention policy to get the balance you need.
+You can use time-based and size-based log retention for your cleanup policy to get the balance you need.
 Whichever threshold is reached first triggers the cleanup.
+
+== Removing log data with cleanup policies
+
+The method of removing older log data is determined by the _log cleaner_ configuration.
+
+The log cleaner is enabled for the broker by default:
+
+[source,env]
+----
+# ...
+log.cleaner.enable=true
+# ...
+----
+
+You can set the cleanup policy at the topic or broker level.
+Broker-level configuration is the default for topics that do not have policy set.
+You can set policy to delete logs, compact logs, or do both.
+
+[source,env]
+----
+# ...
+log.cleanup.policy=compact,delete
+# ...
+----
+
+Log deletion is suitable where messages values do not change and do not need to be retained after a period.
+Log compaction is suitable where message values are changeable, and you want to retain the latest update.
+
+In a Kafka log, new messages are appended to the active _head_ of the log.
+The _tail_ of the log has the older messages that are deleted or compacted according to policy.
+
+If cleanup policy is set to delete logs, older segments are deleted based on log retention limits.
+Otherwise, if the log cleaner is not enabled, and there are no log retention limits, the log will continue to grow.
+
+If cleanup policy is set for log compaction, the head of the log operates as a standard Kafka log, with writes appended in order.
+Records in the tail are compacted.
+
+.Log showing key value writes with offset positions before compaction
+image::tuning/broker-tuning-compaction-before.png[Image of compaction showing key value writes]
+
+Using keys to identify messages, Kafka compaction keeps the last message for a specific message key, discarding earlier messages that have the same key.
+In other words, the message in its latest state is always available and any out-of-date records of that particular message are removed.
+Messages without values are also deleted.
+This is a useful approach when the previous state of a record does not need to be retained, but can be restored if necessary.
+If your message structure does not use keys, compaction will not work.
+
+After the log has been cleaned up, records retain their original offset.
+
+.Log after compaction
+image::tuning/broker-tuning-compaction-after.png[Image of compaction after log cleanup]
+
+If you choose only a compact policy, your log can still become very large.
+In which case, you can set policy to compact _and_ delete logs.
+If you choose to compact and delete, first the log data is compacted, removing records with a key in the head of the log.
+After which, data that falls before the log retention threshold is deleted.
+
+.Log retention point and compaction point
+image::tuning/broker-tuning-compaction-retention.png[Image of compaction with retention point]
+
+You set the frequency the log is checked for cleanup in milliseconds:
+
+[source,env]
+----
+# ...
+log.retention.check.interval.ms=300000
+# ...
+----
+
+Adjust the log retention check interval in relation to the log retention settings.
+Smaller retention sizes might require more frequent checks.
+
+The frequency of cleanup should be often enough to manage the disk space, but not so often it affects performance on a topic.
+
+You can also set a time in milliseconds to put the cleaner on standby if there are no logs to clean:
+
+[source,env]
+----
+# ...
+log.cleaner.backoff.ms=15000
+# ...
+----
+
+If you choose to delete older log data, you can set a period in milliseconds to retain the deleted data before it is purged:
+
+[source,env]
+----
+# ...
+log.cleaner.delete.retention.ms=86400000
+# ...
+----
+
+To delete all messages related to a specific key, a producer can send a _tombstone_ message.
+A _tombstone_ has a null value and acts as a marker to tell a consumer the value is deleted.
+After compaction, only the tombstone is retained, which must be for a long enough period for the consumer to know that the message is deleted.
+When older messages are deleted, having no value, the tombstone key is also deleted from the partition.
 
 == Managing disk utilization
 
@@ -349,27 +376,13 @@ Kafka can accommodate larger batches at a reduced throughput, assuming adequate 
 
 Large message sizes are handled in four ways:
 
-. Reference-based messaging sends only a reference to data stored in some other system in the message’s value.
 . xref:optimizing_throughput_and_latency[Producer-side message compression] writes compressed messages to the log.
+. Reference-based messaging sends only a reference to data stored in some other system in the message’s value.
 . Inline messaging splits messages into chunks that use the same key, which are then combined on output using a stream-processor like Kafka Streams.
 . Broker and producer/consumer client application configuration built to handle larger message sizes.
 
 The reference-based messaging and message compression options are recommended and cover most situations.
-With any of theses options, care must be take to avoid introducing performance issues.
-
-.Reference-based messaging
-
-Reference-based messaging is useful for data replication when you do not know how big a message will be.
-The external data store must be fast, durable, and highly available for this configuration to work.
-Data is written to the data store and a reference to the data is returned.
-The producer sends the reference to Kafka.
-The consumer uses the reference to fetch the data from the data store.
-
-.Reference-based messaging flow
-image::tuning/broker-tuning-messaging-reference.png[Image of reference-based messaging flow]
-
-As the message passing requires more trips, end-to-end latency will increase.
-A hybrid approach would be to only send large messages to the data store and process standard-sized messages directly.
+With any of these options, care must be take to avoid introducing performance issues.
 
 .Producer-side compression
 
@@ -380,13 +393,28 @@ Compression adds additional processing overhead on the producer and decompressio
 Combine producer-side compression with fine-tuning of the batch size to facilitate optimum throughput.
 Using metrics helps to gauge the average batch size needed.
 
+.Reference-based messaging
+
+Reference-based messaging is useful for data replication when you do not know how big a message will be.
+The external data store must be fast, durable, and highly available for this configuration to work.
+Data is written to the data store and a reference to the data is returned.
+The producer sends a message containing the reference to Kafka.
+The consumer gets the reference from the message and uses it to fetch the data from the data store.
+
+.Reference-based messaging flow
+image::tuning/broker-tuning-messaging-reference.png[Image of reference-based messaging flow]
+
+As the message passing requires more trips, end-to-end latency will increase.
+Another significant drawback of this approach is there is no automatic clean up of the data in the external system when the Kafka message gets cleaned up.
+A hybrid approach would be to only send large messages to the data store and process standard-sized messages directly.
+
 .Inline messaging
 
-Inline messaging is complex, but it does does not have the overhead of depending on external systems like reference-based messaging.
+Inline messaging is complex, but it does not have the overhead of depending on external systems like reference-based messaging.
 
 The client application has to serialize and then chunk the data if the message is too big.
 The producer then uses the Kafka `ByteArraySerializer` or similar to serialize each chunk again before sending it.
-The consumer receives the chunks, which are assembled before deserialization. Offsets are made for each chunk.
+The consumer receives the chunks, which are assembled before deserialization.
 The consumer tracks messages and buffers chunks until it has a complete message.
 Complete messages are delivered in order according to the offset of the first or last chunk for each set of chunked messages.
 Successful delivery of the complete message is checked against offset metadata to avoid duplicates during a rebalance.
@@ -400,9 +428,9 @@ For this reason, the buffering is usually supported by persisting message chunks
 
 .Configuration to handle larger messages
 
-If larger messages cannot be avoided, and to avoid blocks at any point of the message flow, you can increase the message limits with broker configuration.
-
-Use `message.max.bytes` to set the maximum record batch size (which can also be set in topic configuration using `max.message.bytes`).
+If larger messages cannot be avoided, and to avoid blocks at any point of the message flow, you can increase message limits.
+To do this, configure `message.max.bytes` at the topic level to set the maximum record batch size for individual topics.
+If you set `message.max.bytes` at the broker level, larger messages are allowed for all topics.
 
 The broker will reject any message that is greater than the limit set with `message.max.bytes`.
 The buffer size for the producers (`max.request.size`) and consumers (`message.max.bytes`) must be able to accommodate the larger messages.
@@ -429,42 +457,49 @@ log.flush.interval.messages=100000
 # ...
 ----
 
-To improve latency, you can increase the frequency of log flushes, so that message data is made available to consumers more quickly.
-The wait between flushes includes the time to make the check and the specified interval before the flush is carried out. Increasing the frequency of flushes can affect throughput.
+The wait between flushes includes the time to make the check and the specified interval before the flush is carried out.
+Increasing the frequency of flushes can affect throughput.
 
-Generally, the recommendation is to not set explicit flush thresholds and use the default flush settings performed by the operating system.
-Broker replication provides greater data durability than writes to disk as a failed broker can recover from its in-sync replicas.
+Generally, the recommendation is to not set explicit flush thresholds and let the operating system perform background flush using its default settings.
+Partition replication provides greater data durability than writes to any single disk as a failed broker can recover from its in-sync replicas.
 
-Setting lower flush thresholds might also be appropriate if you are looking at ways to decrease latency or you are using faster disks.
+If you are using application flush management, setting lower flush thresholds might be appropriate if you are looking at ways to decrease latency or you are using faster disks.
 
 == Partition rebalancing for availability
 
-Partitions are replicated across brokers for fault tolerance.
-A partition leader on one broker is elected to handle all producer requests for a topic.
+Partitions can be replicated across brokers for fault tolerance.
+For a given partition, one broker is elected leader and handles all producer requests (writes to the log).
 Partition followers on other brokers replicate the partition data of the partition leader for data reliability in the event of the leader failing.
 
-Followers do not normally serve clients, though xref:type-Rack-reference[`rack` configuration] allows a consumer to consume messages from the closest replica when a Kafka cluster spans multiple datacenters. Followers operate only to replicate messages from the partition leader and allow recovery should the leader fail. Recovery requires an in-sync follower. Followers stay in sync by sending fetch requests to the leader, which returns messages to the follower in order. The follower is considered to be in sync if it has caught up with the most recently committed message on the leader. Conversely, if a follower fails, which means it has not made a fetch request or caught up with the latest message within a specified lag time, it is out of sync. The leader checks this by looking at the last offset requested by the follower. An out-of-sync follower is usually not eligible as a leader should the current leader fail, unless xref:con-broker-config-properties-unclean-{context}[unclean leader election is allowed].
+Followers do not normally serve clients, though xref:type-Rack-reference[`rack` configuration] allows a consumer to consume messages from the closest replica when a Kafka cluster spans multiple datacenters.
+Followers operate only to replicate messages from the partition leader and allow recovery should the leader fail.
+Recovery requires an in-sync follower. Followers stay in sync by sending fetch requests to the leader, which returns messages to the follower in order.
+The follower is considered to be in sync if it has caught up with the most recently committed message on the leader.
+The leader checks this by looking at the last offset requested by the follower.
+An out-of-sync follower is usually not eligible as a leader should the current leader fail, unless xref:con-broker-config-properties-unclean-{context}[unclean leader election is allowed].
 
 You can adjust the lag time before a follower is considered out of sync:
 
 [source,env]
 ----
 # ...
-replica.lag.time.max.ms
+replica.lag.time.max.ms=30000
 # ...
 ----
 
-This is the latency you will accept between the leader and followers that are considered in sync. You can decrease the time to reduce the lag, but by doing so you might increase the number of followers that fall out of sync. The right value depends on both network latency and broker disk bandwidth.
+Lag time puts an upper limit on the time to replicate a message to all in-sync replicas and how long a follower can remain in sync.
+If a follower fails to make a fetch request and catch up with the latest message within the specified lag time, it is removed from in-sync replicas.
+You can reduce the lag time to detect failed replicas sooner, but by doing so you might increase the number of followers that fall out of sync needlessly.
+The right lag time value depends on both network latency and broker disk bandwidth.
 
-NOTE: With a high lag time data might be lost in certain circumstances.
-Suppose your partition leader fails and followers have not caught up with the latest messages.
-Messages not flushed in the period between a follower sending its next request for messages (while it is still considered in sync) and transition to a new leader might be lost.
+When a leader partition is no longer available, one of the in-sync replicas is chosen as the new leader.
 
-When the leader partition is no longer available, one of the in-sync replicas is chosen as the new leader.
+The first broker in a partition’s list of replicas is known as the preferred replica.
+Kafka tries to ensure that, on average, each broker is the _preferred_ replica for a similar number of partitions.
+If a leader fails, this affects the balance of a Kafka cluster (as does the assignment of partition replicas to brokers).
 
-The first broker in a partition’s list of replicas is known as the preferred replica.  Kafka tries to ensure that, on average, each broker is the _preferred_ replica for a similar number of partitions.   If a leader fails, this affects the balance of a Kafka cluster (as does the assignment of partition replicas to brokers).
-
-By default, Kafka is enabled for automatic partition leader rebalancing based on a periodic check of leader distribution. That is, Kafka checks to see if the preferred leader is the current leader.
+By default, Kafka is enabled for automatic partition leader rebalancing based on a periodic check of leader distribution.
+That is, Kafka checks to see if the preferred leader is the current leader.
 A rebalance ensures that leaders are evenly distributed across brokers and brokers are not overloaded.
 You can control the frequency, in seconds, of the rebalance check and the maximum percentage of imbalance allowed for a broker before a rebalance is triggered.
 
@@ -477,9 +512,10 @@ leader.imbalance.per.broker.percentage=10
 #...
 ----
 
-The percentage imbalance for a broker is the gap between the current number of partition leaders it holds and the number of partitions which are preferred leaders. You can set the percentage to zero to ensure that preferred leaders are always elected.
+The percentage imbalance for a broker is the gap between the current number of partition leaders it holds and the number of partitions which are preferred leaders.
+You can set the percentage to zero to ensure that preferred leaders are always elected.
 
-If the checks for automated rebalances need more control, you can disable it. You can then choose to trigger a rebalance.
+If the checks for rebalances need more control, you can disable automated rebalances. You can then choose when to trigger a rebalance using the `kafka-leader-election.sh` command line tool.
 Alternatively, you can xref:cruise-control-concepts-str[use Cruise Control for Strimzi] to change partition leadership and rebalance replicas across your Kafka cluster in a more intelligent way.
 
 NOTE: The Grafana dashboards provided with Strimzi show metrics for under-replicated partitions and partitions that do not have an active leader.
@@ -503,11 +539,14 @@ unclean.leader.election.enable=false
 Unclean leader election is disabled by default, which means that out-of-sync replicas cannot become leaders.
 Kafka waits until the original leader is back online before messages are picked up again.
 Unclean leader election means out-of-sync replicas can become leaders, but you risk losing messages.
-The choice you make depends on whether your requirements favor availability or durability. If you cannot afford the risk of data loss, then leave the default configuration.
+The choice you make depends on whether your requirements favor availability or durability.
+
+You can override the default configuration for specific topics at the topic level.
+If you cannot afford the risk of data loss, then leave the default configuration.
 
 == Avoiding unnecessary consumer group rebalances
 
-If new consumers are joining a consumer group that is making requests on a broker, you can add a delay so that unnecessary rebalances to the broker are avoided:
+If new consumers are joining a consumer group, you can add a delay so that unnecessary rebalances to the broker are avoided:
 
 [source,env]
 ----
@@ -516,5 +555,6 @@ group.initial.rebalance.delay.ms=3000
 # ...
 ----
 
-Essentially, the delay is the amount of time the Kafka group coordinator waits for new consumers to join a group.
-If a longer delay is added, you might experience fewer rebalances, but processing is also delayed.
+When creating or rebalancing a group, the delay is the amount of time that the coordinator waits for members to join. The longer the delay,
+the more likely it is that all the members will join in time and avoid a rebalance.
+But the delay also prevents the group from consuming until the period has ended.
