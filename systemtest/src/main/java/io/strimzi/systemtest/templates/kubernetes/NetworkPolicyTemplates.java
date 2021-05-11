@@ -13,14 +13,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
-
 public class NetworkPolicyTemplates {
 
     private static final Logger LOGGER = LogManager.getLogger(NetworkPolicyTemplates.class);
 
-    public static NetworkPolicyBuilder networkPolicyBuilder(String name) {
-        return networkPolicyBuilder(name, null)
+    public static NetworkPolicyBuilder networkPolicyBuilder(String name, String namespace) {
+        return networkPolicyBuilder(namespace, name, null)
             .withNewSpec()
                 .withNewPodSelector()
                 .endPodSelector()
@@ -28,13 +26,13 @@ public class NetworkPolicyTemplates {
             .endSpec();
     }
 
-    public static NetworkPolicyBuilder networkPolicyBuilder(String name, LabelSelector labelSelector) {
+    public static NetworkPolicyBuilder networkPolicyBuilder(String namespace, String name, LabelSelector labelSelector) {
         return new NetworkPolicyBuilder()
             .withNewApiVersion("networking.k8s.io/v1")
                 .withNewKind(Constants.NETWORK_POLICY)
                     .withNewMetadata()
                         .withName(name + "-allow")
-                        .withNamespace(kubeClient().getNamespace())
+                        .withNamespace(namespace)
                     .endMetadata()
                     .withNewSpec()
                         .addNewIngress()

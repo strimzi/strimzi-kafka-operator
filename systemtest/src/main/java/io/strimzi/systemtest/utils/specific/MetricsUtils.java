@@ -44,7 +44,7 @@ public class MetricsUtils {
      */
     public static String collectMetrics(String namespaceName, String scraperPodName, String metricsPodIp, int port, String metricsPath) throws InterruptedException, ExecutionException, IOException {
         List<String> executableCommand = Arrays.asList(cmdKubeClient(namespaceName).toString(), "exec", scraperPodName,
-                "-n", kubeClient().getNamespace(),
+                "-n", namespaceName,
                 "--", "curl", metricsPodIp + ":" + port + metricsPath);
 
         Exec exec = new Exec();

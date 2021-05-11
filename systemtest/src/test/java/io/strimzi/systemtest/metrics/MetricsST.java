@@ -32,6 +32,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -87,6 +88,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 @Tag(METRICS)
@@ -491,6 +493,62 @@ public class MetricsST extends AbstractST {
         assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
     }
 
+    @IsolatedTest
+    void testReconcileStateMetricInTopicOperator(ExtensionContext extensionContext) {
+        cluster.setNamespace(SECOND_NAMESPACE);
+
+        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        int initialReplicas = 1;
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(SECOND_CLUSTER, topicName, 1, initialReplicas).build());
+
+        String secondClientsPodName = kubeClient(SECOND_NAMESPACE).listPodsByPrefixInName(SECOND_NAMESPACE + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        HashMap<String, String> toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        String reasonMessage = "none";
+
+        LOGGER.info("Checking if resource state metric reason message is \"none\" and KafkaTopic is ready");
+        assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 1.0, toMetrics);
+
+        LOGGER.info("Changing topic name in spec.topicName");
+        KafkaTopicResource.replaceTopicResource(topicName, kafkaTopic -> kafkaTopic.getSpec().setTopicName("some-other-name"));
+        KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
+
+        toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        reasonMessage = "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.";
+        assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 0.0, toMetrics);
+
+        LOGGER.info("Changing back to it's original name and scaling replicas to be higher number");
+        KafkaTopicResource.replaceTopicResource(topicName, kafkaTopic -> {
+            kafkaTopic.getSpec().setTopicName(topicName);
+            kafkaTopic.getSpec().setReplicas(12);
+        });
+
+        KafkaTopicUtils.waitForKafkaTopicReplicasChange(SECOND_NAMESPACE, topicName, 12);
+
+        toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        reasonMessage = "Changing 'spec.replicas' is not supported. .*";
+        assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 0.0, toMetrics);
+
+        LOGGER.info("Scaling replicas to be higher than before");
+        KafkaTopicResource.replaceTopicResource(topicName, kafkaTopic -> kafkaTopic.getSpec().setReplicas(24));
+
+        KafkaTopicUtils.waitForKafkaTopicReplicasChange(SECOND_NAMESPACE, topicName, 24);
+
+        toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 0.0, toMetrics);
+
+        LOGGER.info("Changing KafkaTopic's spec to correct state");
+        KafkaTopicResource.replaceTopicResource(topicName, kafkaTopic -> kafkaTopic.getSpec().setReplicas(initialReplicas));
+        KafkaTopicUtils.waitForKafkaTopicReady(topicName);
+
+        toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        reasonMessage = "none";
+        assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 1.0, toMetrics);
+
+        cluster.setNamespace(FIRST_NAMESPACE);
+    }
+
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {
         ArrayList<String> command = new ArrayList<>();
         command.add("cat");
@@ -509,6 +567,14 @@ public class MetricsST extends AbstractST {
 
         assertThat("Collected metrics should not be empty", exec.out(), not(emptyString()));
         return exec.out();
+    }
+
+    private void assertResourceStateMetricInTopicOperator(String topicName, String reasonMessage, Double resultValue, HashMap<String, String> data) {
+        Pattern reconcileStateMetric =
+            Pattern.compile("strimzi_resource_state\\{kind=\"KafkaTopic\",name=\"" + topicName + "\",reason=\"" + reasonMessage + "\",resource_namespace=\"" + SECOND_NAMESPACE + "\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
+        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(reconcileStateMetric, data);
+        assertEquals(1, values.size());
+        assertEquals(values.get(0), resultValue);
     }
 
     private void assertCoMetricNotNull(String metric, String kind, HashMap<String, String> data) {
@@ -545,7 +611,8 @@ public class MetricsST extends AbstractST {
 
         cluster.setNamespace(FIRST_NAMESPACE);
 
-        final String kafkaClientsName = FIRST_NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
+        final String firstKafkaClientsName = FIRST_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
+        final String secondKafkaClientsName = SECOND_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
 
         // create resources without wait to deploy them simultaneously
         resourceManager.createResource(extensionContext, false,
@@ -560,7 +627,8 @@ public class MetricsST extends AbstractST {
                 .endSpec()
                 .build(),
             KafkaTemplates.kafkaWithMetrics(SECOND_CLUSTER, SECOND_NAMESPACE, 1, 1).build(),
-            KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build(),
+            KafkaClientsTemplates.kafkaClients(FIRST_NAMESPACE, false, firstKafkaClientsName).build(),
+            KafkaClientsTemplates.kafkaClients(SECOND_NAMESPACE, false, secondKafkaClientsName).build(),
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build(),
             KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build()
         );
@@ -574,15 +642,15 @@ public class MetricsST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithMetrics(metricsClusterName, 1).build());
 
-        kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(firstKafkaClientsName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
         NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext);
         NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, metricsClusterName);
-        NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, SECOND_CLUSTER);
+        NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, SECOND_CLUSTER, SECOND_NAMESPACE);
         // Allow connections from clients to KafkaExporter when NetworkPolicies are set to denied by default
         NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, metricsClusterName);
-        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, SECOND_CLUSTER);
+        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, SECOND_CLUSTER, SECOND_NAMESPACE);
 
         // Wait for Metrics refresh/values change
         Thread.sleep(100_000);

@@ -60,6 +60,10 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
      * Method for allowing network policies for ClusterOperator
      */
     public static void allowNetworkPolicySettingsForClusterOperator(ExtensionContext extensionContext) {
+        allowNetworkPolicySettingsForClusterOperator(extensionContext, kubeClient().getNamespace());
+    }
+
+    public static void allowNetworkPolicySettingsForClusterOperator(ExtensionContext extensionContext, String namespace) {
         String clusterOperatorKind = "cluster-operator";
         LabelSelector labelSelector = new LabelSelectorBuilder()
             .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
@@ -67,7 +71,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", clusterOperatorKind, labelSelector);
 
-        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(clusterOperatorKind, labelSelector)
+        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, clusterOperatorKind, labelSelector)
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
@@ -87,6 +91,10 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     }
 
     public static void allowNetworkPolicySettingsForEntityOperator(ExtensionContext extensionContext, String clusterName) {
+        allowNetworkPolicySettingsForEntityOperator(extensionContext, clusterName, kubeClient().getNamespace());
+    }
+
+    public static void allowNetworkPolicySettingsForEntityOperator(ExtensionContext extensionContext, String clusterName, String namespace) {
         LabelSelector labelSelector = new LabelSelectorBuilder()
                 .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
                 .build();
@@ -95,7 +103,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", eoDeploymentName, labelSelector);
 
-        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(eoDeploymentName, labelSelector)
+        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, eoDeploymentName, labelSelector)
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
@@ -121,6 +129,10 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     }
 
     public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName) {
+        allowNetworkPolicySettingsForKafkaExporter(extensionContext, clusterName, kubeClient().getNamespace());
+    }
+
+    public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName, String namespace) {
         String kafkaExporterDeploymentName = KafkaExporterResources.deploymentName(clusterName);
         LabelSelector labelSelector = new LabelSelectorBuilder()
                 .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
@@ -128,7 +140,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
         LOGGER.info("Apply NetworkPolicy access to {} from pods with LabelSelector {}", kafkaExporterDeploymentName, labelSelector);
 
-        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(kafkaExporterDeploymentName, labelSelector)
+        NetworkPolicy networkPolicy = NetworkPolicyTemplates.networkPolicyBuilder(namespace, kafkaExporterDeploymentName, labelSelector)
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
