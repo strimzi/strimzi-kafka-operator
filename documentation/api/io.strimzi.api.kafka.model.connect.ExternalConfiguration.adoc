@@ -8,7 +8,7 @@ When applied, the environment variables and volumes are available for use when d
 [id='property-kafka-connect-external-env-{context}']
 === `env`
 
-The `env` property is used to specify one or more environment variables.
+Use the `env` property to specify one or more environment variables.
 These variables can contain a value from either a ConfigMap or a Secret.
 
 .Example Secret containing values for environment variables
@@ -51,7 +51,8 @@ spec:
             key: awsSecretAccessKey
 ----
 
-A common use case for mounting Secrets to environment variables is when your connector needs to communicate with Amazon AWS and needs to read the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables with credentials.
+A common use case for mounting Secrets is for a connector to communicate with Amazon AWS.
+The connector needs to be able to read the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
 
 To mount a value from a ConfigMap to an environment variable, use `configMapKeyRef` in the `valueFrom` property as shown in the following example.
 
@@ -76,14 +77,30 @@ spec:
 [id='property-kafka-connect-external-volumes-{context}']
 === `volumes`
 
-You can also mount ConfigMaps or Secrets to a Kafka Connect pod as volumes.
+Use volumes to mount ConfigMaps or Secrets to a Kafka Connect pod.
 
 Using volumes instead of environment variables is useful in the following scenarios:
 
-* Mounting truststores or keystores with TLS certificates
 * Mounting a properties file that is used to configure Kafka Connect connectors
+* Mounting truststores or keystores with TLS certificates
 
-.Example Secret with properties
+Volumes are mounted inside the Kafka Connect containers on the path `/opt/kafka/external-configuration/_<volume-name>_`.
+For example, the files from a volume named `connector-config` will appear in the directory `/opt/kafka/external-configuration/connector-config`.
+
+Configuration _providers_ load values from outside the configuration.
+Use a provider mechanism to avoid passing restricted information over the Kafka Connect REST interface.
+
+* `FileConfigProvider` loads configuration values from properties in a file.
+* `DirectoryConfigProvider` loads configuration values from separate files within a directory structure.
+
+Use a comma-separated list if you want to add more than one provider, including custom providers.
+You can use custom providers to load values from other file locations.
+
+.Using `FileConfigProvider` to load property values
+
+In this example, a Secret named `mysecret` contains connector properties that specify a database name and password:
+
+.Example Secret with database properties
 [source,yaml,subs=attributes+]
 ----
 apiVersion: v1
@@ -93,16 +110,16 @@ metadata:
 type: Opaque
 stringData:
   connector.properties: |- <1>
-    dbUsername: my-user <2>
+    dbUsername: my-username <2>
     dbPassword: my-password
 ----
 <1> The connector configuration in properties file format.
 <2> Database username and password properties used in the configuration.
 
-In this example, a Secret named `mysecret` is mounted to a volume named `connector-config`.
-In the `config` property, a configuration provider (`FileConfigProvider`) is specified, which will load configuration values from external sources.
-The Kafka `FileConfigProvider` is given the alias `file`,
-and will read and extract database _username_ and _password_ property values from the file to use in the connector configuration.
+The Secret and the `FileConfigProvider` configuration provider are specified in the Kafka Connect configuration.
+
+* The Secret is mounted to a volume named `connector-config`.
+* `FileConfigProvider` is given the alias `file`.
 
 .Example external volumes set to values from a Secret
 [source,yaml,subs="attributes+"]
@@ -123,14 +140,108 @@ spec:
         secret:
           secretName: mysecret <4>
 ----
-<1> The alias for the configuration provider, which is used to define other configuration parameters.
-Use a comma-separated list if you want to add more than one provider.
-<2> The `FileConfigProvider` is the configuration provider that provides values from properties files.
+<1> The alias for the configuration provider is used to define other configuration parameters.
+<2> `FileConfigProvider` provides values from properties files.
 The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
-<3> The name of the volume containing the Secret. Each volume must specify a name in the `name` property and a reference to ConfigMap or Secret.
+<3> The name of the volume containing the Secret. Each volume must specify a name in the `name` property and a reference to a ConfigMap or Secret.
 <4> The name of the Secret.
 
-The volumes are mounted inside the Kafka Connect containers in the path `/opt/kafka/external-configuration/_<volume-name>_`.
-For example, the files from a volume named `connector-config` would appear in the directory `/opt/kafka/external-configuration/connector-config`.
+Placeholders for the property values in the Secret are referenced in the connector configuration.
+The placeholder structure is `file:__PATH-AND-FILE-NAME__:__PROPERTY-VALUE__`.
+`FileConfigProvider` reads and extracts the database _username_ and _password_ property values from the mounted Secret in connector configurations.
 
-The `FileConfigProvider` is used to read the values from the mounted properties files in connector configurations.
+.Example connector configuration showing placeholders for external values
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  class: io.debezium.connector.mysql.MySqlConnector
+  tasksMax: 2
+  config:
+    database.hostname: 192.168.99.1
+    database.port: "3306"
+    database.user: "${file:/opt/kafka/external-configuration/connector-config/mysecret:my-username}"
+    database.password: "${file:/opt/kafka/external-configuration/connector-config/mysecret:my-password}"
+    database.server.id: "184054"
+    #...
+----
+
+.Using `DirectoryConfigProvider` to load property values from separate files
+
+In this example, a `Secret` contains TLS truststore and keystore user credentials in separate files.
+
+.Example Secret with user credentials
+[source,yaml,subs="attributes+"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret
+  labels:
+    strimzi.io/kind: KafkaUser
+    strimzi.io/cluster: my-cluster
+type: Opaque
+data: <1>
+  ca.crt: # Public key of the client CA
+  user.crt: # User certificate that contains the public key of the user
+  user.key: # Private key of the user
+  user.p12: # PKCS #12 archive file for storing certificates and keys
+  user.password: # Password for protecting the PKCS #12 archive file
+----
+
+The Secret and the `DirectoryConfigProvider` configuration provider are specified in the Kafka Connect configuration.
+
+* The Secret is mounted to a volume named `connector-config`.
+* `DirectoryConfigProvider` is given the alias `directory`.
+
+.Example external volumes set for user credentials files
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    config.providers: directory
+    config.providers.directory.class: org.apache.kafka.common.config.provider.DirectoryConfigProvider <1>
+  #...
+  externalConfiguration:
+    volumes:
+      - name: connector-config
+        secret:
+          secretName: mysecret
+----
+<1> The `DirectoryConfigProvider` provides values from files in a directory.
+The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
+
+Placeholders for the credentials are referenced in the connector configuration.
+The placeholder structure is `directory:__PATH__:__FILE-NAME__`.
+`DirectoryConfigProvider` reads and extracts the credentials from the mounted Secret in connector configurations.
+
+.Example connector configuration showing placeholders for external values
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  class: io.debezium.connector.mysql.MySqlConnector
+  tasksMax: 2
+  config:
+    security.protocol: SSL
+    ssl.truststore.type: PEM
+    ssl.truststore.location: "${directory:/opt/kafka/external-configuration/connector-config:ca.crt}"
+    ssl.keystore.type: PEM
+    ssl.keystore.location: ${directory:/opt/kafka/external-configuration/connector-config:user.key}"
+    #...
+----
