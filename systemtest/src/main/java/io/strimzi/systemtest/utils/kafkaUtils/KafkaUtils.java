@@ -199,20 +199,22 @@ public class KafkaUtils {
             boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
             if (!zkSameAsLast) {
-                LOGGER.info("ZK Cluster not stable");
+                LOGGER.warn("ZK Cluster not stable");
             }
             if (!kafkaSameAsLast) {
-                LOGGER.info("Kafka Cluster not stable");
+                LOGGER.warn("Kafka Cluster not stable");
             }
             if (!eoSameAsLast) {
-                LOGGER.info("EO not stable");
+                LOGGER.warn("EO not stable");
             }
-            if (zkSameAsLast
-                    && kafkaSameAsLast
-                    && eoSameAsLast) {
+            if (zkSameAsLast && kafkaSameAsLast && eoSameAsLast) {
                 int c = count[0]++;
-                LOGGER.info("All stable for {} polls", c);
-                return c > 60;
+                LOGGER.debug("All stable after {} polls", c);
+                if (c > 60) {
+                    LOGGER.info("Kafka cluster is stable after {} polls.", c);
+                    return true;
+                }
+                return false;
             }
             zkPods[0] = zkSnapshot;
             kafkaPods[0] = kafkaSnaptop;
@@ -259,7 +261,7 @@ public class KafkaUtils {
      * @param value value of specific property
      */
     public static boolean verifyCrDynamicConfiguration(String clusterName, String brokerConfigName, Object value) {
-        LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and excepted is {}={}",
+        LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and expected is {}={}",
             brokerConfigName,
             KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
             brokerConfigName,
@@ -330,9 +332,9 @@ public class KafkaUtils {
 
         Map<String, ConfigModel> configs = KafkaUtils.readConfigModel(kafkaVersion);
 
-        LOGGER.info("This is configs {}", configs.toString());
+        LOGGER.info("Kafka config {}", configs.toString());
 
-        LOGGER.info("This is all kafka configs with size {}", configs.size());
+        LOGGER.info("Number of all kafka configs {}", configs.size());
 
         Map<String, ConfigModel> dynamicConfigs = configs
             .entrySet()
@@ -352,7 +354,7 @@ public class KafkaUtils {
             })
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        LOGGER.info("This is dynamic-configs size {}", dynamicConfigs.size());
+        LOGGER.info("Number of dynamic-configs {}", dynamicConfigs.size());
 
         Map<String, ConfigModel> forbiddenExceptionsConfigs = configs
             .entrySet()
@@ -360,16 +362,16 @@ public class KafkaUtils {
             .filter(a -> FORBIDDEN_PREFIX_EXCEPTIONS.contains(a.getKey()))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        LOGGER.info("This is size of forbidden-exception-configs size {}", forbiddenExceptionsConfigs.size());
+        LOGGER.info("Number of forbidden-exception-configs {}", forbiddenExceptionsConfigs.size());
 
         Map<String, ConfigModel> dynamicConfigsWithExceptions = new HashMap<>();
 
         dynamicConfigsWithExceptions.putAll(dynamicConfigs);
         dynamicConfigsWithExceptions.putAll(forbiddenExceptionsConfigs);
 
-        LOGGER.info("This is dynamic-configs with forbidden-exception-configs size {}", dynamicConfigsWithExceptions.size());
+        LOGGER.info("Size of dynamic-configs with forbidden-exception-configs {}", dynamicConfigsWithExceptions.size());
 
-        dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info(key + " -> "  + value));
+        dynamicConfigsWithExceptions.forEach((key, value) -> LOGGER.info(key + " -> "  + value.getScope() + ":" + value.getType()));
 
         return dynamicConfigsWithExceptions;
     }
