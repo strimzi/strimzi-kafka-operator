@@ -558,10 +558,15 @@ public class CruiseControl extends AbstractModel {
      *
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param networkPolicyGenerationEnabled                Activates the generation of Network Policies.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels, boolean networkPolicyGenerationEnabled) {
+        if(!networkPolicyGenerationEnabled){
+            return null;
+        }
+
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(1);
 
         // CO can access the REST API

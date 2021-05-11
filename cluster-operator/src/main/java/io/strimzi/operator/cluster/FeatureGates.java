@@ -15,8 +15,10 @@ import static java.util.Arrays.asList;
  */
 public class FeatureGates {
     private static final String CONTROL_PLANE_LISTENER = "ControlPlaneListener";
+    private static final String NETWORK_POLICY_GENERATION = "NetworkPolicyGeneration";
 
     private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, false);
+    private final FeatureGate networkPolicyGeneration = new FeatureGate(NETWORK_POLICY_GENERATION, true);
 
     /**
      * Constructs the feature gates configuration.
@@ -40,6 +42,9 @@ public class FeatureGates {
                 switch (featureGate) {
                     case CONTROL_PLANE_LISTENER:
                         setValueOnlyOnce(controlPlaneListener, value);
+                        break;
+                    case NETWORK_POLICY_GENERATION:
+                        setValueOnlyOnce(networkPolicyGeneration, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -70,10 +75,18 @@ public class FeatureGates {
         return controlPlaneListener.isEnabled();
     }
 
+    /**
+     * @return  Returns true when the NetworkPolicyGeneration feature gate is enabled
+     */
+    public boolean networkPolicyGenerationEnabled() {
+        return networkPolicyGeneration.isEnabled();
+    }
+
     @Override
     public String toString() {
         return "FeatureGates(" +
-                "controlPlaneListener=" + controlPlaneListener.isEnabled() +
+                "controlPlaneListener=" + controlPlaneListener.isEnabled() + "," +
+                "networkPolicyGeneration=" + networkPolicyGeneration.isEnabled() +
                 ")";
     }
 

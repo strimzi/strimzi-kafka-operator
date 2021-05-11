@@ -1676,10 +1676,15 @@ public class KafkaCluster extends AbstractModel {
      *
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param networkPolicyGenerationEnabled                Activates the generation of Network Policies.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels, boolean networkPolicyGenerationEnabled) {
+        if(!networkPolicyGenerationEnabled){
+            return null;
+        }
+
         // Internal peers => Strimzi components which need access
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector() // Cluster Operator

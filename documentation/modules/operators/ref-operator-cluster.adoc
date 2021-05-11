@@ -208,6 +208,11 @@ Alpha and beta features are removed if they do not prove to be useful.
 ¦
 ¦
 
+¦`NetworkPolicyGeneration`
+¦
+¦0.23.0
+¦
+
 |===
 
 You configure feature gates using the environment variable `STRIMZI_FEATURE_GATES`.
@@ -230,6 +235,12 @@ To enable it, use `+ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environ
 This feature gate has to be disabled when upgrading from Strimzi 0.22 and earlier or when downgrading to Strimzi 0.22 and earlier.
 
 NOTE: The `ControlPlaneListener` feature gate was introduced in Strimzi 0.23.0 and is expected to remain in the alpha phase for a number of releases before it moves to the beta phase and is enabled by default.
+
+=== Network Policy Generation feature gate
+
+When enabled, the `NetworkPolicyGeneration` feature gate enables Strimzi to create default Network Policies for the services it creates.
+This feature gate is currently in the beta phase and is enabled by default.
+To disable it, use `-NetworkPolicyGeneration` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 == Logging configuration by ConfigMap
 
