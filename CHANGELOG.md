@@ -20,6 +20,7 @@
 * Update Kaniko executor to 1.6.0
 * Add support for separate control plane listener (disabled by default, available via the `ControlPlaneListener` feature gate)
 * Support for Dual Stack networking
+* Add support for disabling generation of network policies (Available via the `NetworkPolicyGeneration` feature gate, disabling this will disable network policies)
 
 ### Changes, deprecations and removals
 

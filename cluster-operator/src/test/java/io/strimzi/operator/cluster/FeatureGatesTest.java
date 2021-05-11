@@ -20,6 +20,9 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("+ControlPlaneListener").controlPlaneListenerEnabled(), is(true));
         assertThat(new FeatureGates("  +ControlPlaneListener    ").controlPlaneListenerEnabled(), is(true));
         assertThat(new FeatureGates("-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
+        assertThat(new FeatureGates("+NetworkPolicyGeneration").networkPolicyGenerationEnabled(), is(true));
+        assertThat(new FeatureGates("  +NetworkPolicyGeneration    ").networkPolicyGenerationEnabled(), is(true));
+        assertThat(new FeatureGates("-NetworkPolicyGeneration").networkPolicyGenerationEnabled(), is(false));
     }
 
     @ParallelTest
@@ -28,6 +31,10 @@ public class FeatureGatesTest {
         assertThat(new FeatureGates("").controlPlaneListenerEnabled(), is(false));
         assertThat(new FeatureGates(" ").controlPlaneListenerEnabled(), is(false));
         assertThat(new FeatureGates("    ").controlPlaneListenerEnabled(), is(false));
+        assertThat(new FeatureGates(null).networkPolicyGenerationEnabled(), is(true));
+        assertThat(new FeatureGates("").networkPolicyGenerationEnabled(), is(true));
+        assertThat(new FeatureGates(" ").networkPolicyGenerationEnabled(), is(true));
+        assertThat(new FeatureGates("    ").networkPolicyGenerationEnabled(), is(true));
     }
 
     @ParallelTest
