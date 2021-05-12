@@ -37,7 +37,6 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -45,6 +44,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
@@ -95,7 +95,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         vertx.close();
     }
 
-    @ParallelTest
+    @Test
     public void testCreateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
@@ -184,7 +184,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateClusterNoDiff(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
@@ -265,7 +265,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
@@ -386,7 +386,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateClusterWithFailingDeploymentFailure(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
@@ -446,7 +446,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             .onComplete(context.failing(v -> async.flag()));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateClusterScaleUp(VertxTestContext context) {
         final int scaleTo = 4;
 
@@ -505,7 +505,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateClusterScaleDown(VertxTestContext context) {
         int scaleTo = 2;
 
@@ -563,7 +563,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testReconcile(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
@@ -620,7 +620,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
@@ -669,7 +669,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     }
 
 
-    @ParallelTest
+    @Test
     public void testCreateClusterWithZeroReplicas(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
@@ -755,7 +755,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 })));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterWithJmxEnabled(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;

@@ -44,7 +44,6 @@ import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -52,6 +51,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
@@ -92,7 +92,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         vertx.close();
     }
 
-    @ParallelTest
+    @Test
     public void testBuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -241,7 +241,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testBuildFailureOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -361,7 +361,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @ParallelTest
+    @Test
     public void testUpdateWithRebuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -531,7 +531,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateWithoutRebuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -656,7 +656,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateWithForcedRebuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -809,7 +809,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @ParallelTest
+    @Test
     public void testContinueWithPreviousBuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -1001,7 +1001,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @ParallelTest
+    @Test
     public void testRestartPreviousBuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -1195,7 +1195,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    @ParallelTest
+    @Test
     public void testRestartPreviousBuildDueToFailureOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
