@@ -563,7 +563,7 @@ public class CruiseControl extends AbstractModel {
      * @return The network policy.
      */
     public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels, boolean networkPolicyGenerationEnabled) {
-        if(!networkPolicyGenerationEnabled){
+        if (!networkPolicyGenerationEnabled) {
             return null;
         }
 
