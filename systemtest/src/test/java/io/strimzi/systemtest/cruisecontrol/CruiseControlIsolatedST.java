@@ -95,12 +95,19 @@ public class CruiseControlIsolatedST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
-    void testCruiseControlWithRebalanceResource(ExtensionContext extensionContext) {
-        String clusterName = "what-about-this";
+    void testCruiseControlWithRebalanceResourceAndRefreshAnnotation(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
 
+        KafkaRebalanceUtils.doRebalancingProcess(clusterName);
+
+        LOGGER.info("Annotating KafkaRebalance: {} with 'refresh' anno", clusterName);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.refresh);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
+
+        LOGGER.info("Trying rebalancing process again");
         KafkaRebalanceUtils.doRebalancingProcess(clusterName);
     }
 
