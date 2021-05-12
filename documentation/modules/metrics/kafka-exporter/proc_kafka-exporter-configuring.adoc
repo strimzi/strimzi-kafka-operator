@@ -33,7 +33,7 @@ metadata:
 spec:
   # ...
   kafkaExporter:
-    image: my-org/my-image:latest <1>
+    image: my-registry.io/my-org/my-exporter-cluster:latest <1>
     groupRegex: ".*" <2>
     topicRegex: ".*" <3>
     resources: <4>
