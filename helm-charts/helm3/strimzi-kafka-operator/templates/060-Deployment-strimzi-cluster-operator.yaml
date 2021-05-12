@@ -105,6 +105,8 @@ spec:
             {{- end }}
             {{ if ne .Values.kubernetesServiceDnsDomain "cluster.local" }}- name: KUBERNETES_SERVICE_DNS_DOMAIN
               value: {{ .Values.kubernetesServiceDnsDomain | quote }}{{ end }}
+            - name: STRIMZI_FEATURE_GATES
+              value: {{ .Values.featureGates | quote }}
           livenessProbe:
             httpGet:
               path: /healthy

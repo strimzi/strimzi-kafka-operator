@@ -17,7 +17,7 @@ spec:
       serviceAccountName: strimzi-user-operator
       containers:
         - name: strimzi-user-operator
-          image: quay.io/strimzi/operator:0.22.1
+          image: quay.io/strimzi/operator:0.23.0
           args:
           - /opt/strimzi/bin/user_operator_run.sh
           env:
@@ -36,7 +36,7 @@ spec:
             - name: STRIMZI_ZOOKEEPER_CONNECT
               value: my-cluster-zookeeper-client:2181
             - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
-              value: "20000"
+              value: "18000"
             - name: STRIMZI_LOG_LEVEL
               value: INFO
             - name: STRIMZI_GC_LOG_ENABLED

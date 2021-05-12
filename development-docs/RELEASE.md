@@ -37,7 +37,7 @@ The release process should normally look like this:
 
 12. _(only for GA, not for RCs)_ On the `main` git branch of the operators repository:
   * Copy the `packaging/helm-charts/index.yaml` from the `release` branch to `main`
-  * Update the `ProductVersion` variable in `documentation/using/shared/attributes.doc`
+  * Update the `ProductVersion` variable in `documentation/using/shared/attributes.adoc`
   * Update the `install`, `examples` and `helm-chart` directories in the `main` branch with the newly released files
 
 13. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
