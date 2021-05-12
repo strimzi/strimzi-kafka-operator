@@ -30,34 +30,6 @@ entries:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.23.0/strimzi-kafka-operator-helm-3-chart-0.23.0.tgz
     version: 0.23.0
   - apiVersion: v2
-    appVersion: 0.23.0-rc1
-    created: "2021-05-07T01:10:16.185385+02:00"
-    description: 'Strimzi: Apache Kafka running on Kubernetes'
-    digest: 46f7e18f6f5c6e37e906b8128bf7c431e8d4dde28c44af4d96ca30e0efd3e359
-    home: https://strimzi.io/
-    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
-    keywords:
-    - kafka
-    - queue
-    - stream
-    - event
-    - messaging
-    - datastore
-    - topic
-    maintainers:
-    - name: Frawless
-    - name: ppatierno
-    - name: samuel-hawker
-    - name: scholzj
-    - name: tombentley
-    - name: sknot-rh
-    name: strimzi-kafka-operator
-    sources:
-    - https://github.com/strimzi/strimzi-kafka-operator
-    urls:
-    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.23.0-rc1/strimzi-kafka-operator-helm-3-chart-0.23.0-rc1.tgz
-    version: 0.23.0-rc1
-  - apiVersion: v2
     appVersion: 0.22.1
     created: "2021-03-22T13:20:34.785253+01:00"
     description: 'Strimzi: Apache Kafka running on Kubernetes'
