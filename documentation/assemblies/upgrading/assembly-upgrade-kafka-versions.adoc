@@ -19,8 +19,8 @@ The Cluster Operator initiates rolling updates based on the Kafka cluster config
 ¦The Cluster Operator initiates...
 
 ¦Both the `inter.broker.protocol.version` and the `log.message.format.version`.
-¦A single rolling update. After the update, the `inter.broker.protocol.version` must be updated manually, followed by `log.message.format.version`,
-which triggers two more rolling updates.
+¦A single rolling update. After the update, the `inter.broker.protocol.version` must be updated manually, followed by `log.message.format.version`.
+Changing each will trigger a further rolling update.
 
 ¦Either the `inter.broker.protocol.version` or the `log.message.format.version`.
 ¦Two rolling updates.
