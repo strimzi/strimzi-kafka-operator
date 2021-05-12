@@ -529,7 +529,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcile_withResource_noKafka_noPrivate(VertxTestContext context) throws InterruptedException {
 
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
         Topic kafkaTopic = null;
         Topic privateTopic = null;
 
@@ -570,7 +570,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcile_withResource_noKafka_withPrivate(VertxTestContext context) {
 
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
         Topic kafkaTopic = null;
         Topic privateTopic = kubeTopic;
 
