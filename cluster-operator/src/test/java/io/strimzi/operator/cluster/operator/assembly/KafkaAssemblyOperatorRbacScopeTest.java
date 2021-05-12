@@ -25,7 +25,6 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RoleOperator;
-import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -36,6 +35,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
@@ -108,7 +108,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
      * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'NAMESPACE', the cluster operator only
      * deploys and binds to Roles
      */
-    @ParallelTest
+    @Test
     public void testRolesDeployedWhenNamespaceRbacScope(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -189,7 +189,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
      * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'CLUSTER', the cluster operator
      * binds to ClusterRoles
      */
-    @ParallelTest
+    @Test
     public void testRolesDeployedWhenClusterRbacScope(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
@@ -268,7 +268,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
      * This test checks that when STRIMZI_RBAC_SCOPE feature is set to 'NAMESPACE', the cluster operator
      * binds to ClusterRoles when it can't use Roles due to cross namespace permissions
      */
-    @ParallelTest
+    @Test
     public void testRolesDeployedWhenNamespaceRbacScopeAndMultiWatchNamespace(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()

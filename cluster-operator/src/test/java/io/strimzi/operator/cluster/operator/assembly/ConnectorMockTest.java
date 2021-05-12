@@ -39,8 +39,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.IsolatedTest;
-import io.strimzi.test.annotations.ParallelTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -52,6 +50,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
@@ -445,7 +444,7 @@ public class ConnectorMockTest {
                 ConnectorMockTest.<KafkaConnector>statusIsForCurrentGeneration().and(notReady(reason, message)));
     }
 
-    @ParallelTest
+    @Test
     public void testConnectNotReadyWithoutSpec() {
         String connectName = "cluster";
         KafkaConnect connect = new KafkaConnectBuilder()
@@ -459,7 +458,7 @@ public class ConnectorMockTest {
         waitForConnectNotReady(connectName, "InvalidResourceException", "Spec cannot be null");
     }
 
-    @ParallelTest
+    @Test
     public void testConnectorNotReadyWithoutStrimziClusterLabel() {
         String connectorName = "connector";
 
@@ -477,7 +476,7 @@ public class ConnectorMockTest {
                 "Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No connect cluster in which to create this connector.");
     }
 
-    @ParallelTest
+    @Test
     public void testConnectorNotReadyWhenConnectDoesNotExist() {
         String connectorName = "connector";
 
@@ -493,7 +492,7 @@ public class ConnectorMockTest {
                 "KafkaConnect resource 'cluster' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace ns.");
     }
 
-    @ParallelTest
+    @Test
     public void testConnectorNotReadyWithoutSpec() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -522,7 +521,7 @@ public class ConnectorMockTest {
         waitForConnectorNotReady(connectorName, "InvalidResourceException", "spec property is required");
     }
 
-    @ParallelTest
+    @Test
     public void testConnectorNotReadyWhenConnectNotConfiguredForConnectors() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -553,7 +552,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, delete connector, delete connect */
-    @ParallelTest
+    @Test
     public void testConnectConnectorConnectorConnect() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -617,7 +616,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connector, create connect, delete connector, delete connect */
-    @IsolatedTest
+    @Test
     public void testConnectorConnectConnectorConnect() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -678,7 +677,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, delete connect, delete connector */
-    @ParallelTest
+    @Test
     public void testConnectConnectorConnectConnector() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -742,7 +741,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connector, create connect, delete connect, delete connector */
-    @ParallelTest
+    @Test
     public void testConnectorConnectConnectConnector() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -809,7 +808,7 @@ public class ConnectorMockTest {
      * check the connector is deleted from the old cluster
      * check the connector is added to the new cluster
      * */
-    @ParallelTest
+    @Test
     public void testChangeStrimziClusterLabel(VertxTestContext context) throws InterruptedException {
         String oldConnectClusterName = "cluster1";
         String newConnectClusterName = "cluster2";
@@ -901,7 +900,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, delete connector, delete connect */
-    @IsolatedTest
+    @Test
     public void testConnectorNotReadyWhenExceptionFromConnectRestApi() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -956,7 +955,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, pause connector, resume connector */
-    @ParallelTest
+    @Test
     public void testConnectorPauseResume() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1044,7 +1043,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, restart connector */
-    @ParallelTest
+    @Test
     public void testConnectorRestart() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1118,7 +1117,7 @@ public class ConnectorMockTest {
 
 
     /** Create connect, create connector, add restart annotation, fail to restart connector, check for condition */
-    @ParallelTest
+    @Test
     public void testConnectorRestartFail() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1196,7 +1195,7 @@ public class ConnectorMockTest {
 
 
     /** Create connect, create connector, restart connector task */
-    @ParallelTest
+    @Test
     public void testConnectorRestartTask() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1269,7 +1268,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, restart connector task */
-    @ParallelTest
+    @Test
     public void testConnectorRestartTaskFail() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1346,7 +1345,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, Scale to 0 */
-    @ParallelTest
+    @Test
     public void testConnectScaleToZero() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1412,7 +1411,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, break the REST API */
-    @ParallelTest
+    @Test
     public void testConnectRestAPIIssues() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1479,7 +1478,7 @@ public class ConnectorMockTest {
         waitForConnectorNotReady(connectorName, "ConnectTimeoutException", "connection timed out");
     }
 
-    @ParallelTest
+    @Test
     public void testConnectorUnknownField() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1520,7 +1519,7 @@ public class ConnectorMockTest {
         waitForConnectorCondition(connectorName, "Warning", "UnknownFields");
     }
 
-    @ParallelTest
+    @Test
     public void testConnectorReconciliationPausedUnpaused() {
         String connectName = "cluster";
         String connectorName = "connector";

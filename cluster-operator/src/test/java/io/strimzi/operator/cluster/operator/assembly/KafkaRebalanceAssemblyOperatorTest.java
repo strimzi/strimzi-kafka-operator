@@ -37,7 +37,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.NoStackTraceTimeoutException;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -48,6 +47,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 
@@ -160,7 +160,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 3. The rebalance proposal is ready on the first call
      * 4. The KafkaRebalance resource moves to the 'ProposalReady' state
      */
-    @IsolatedTest
+    @Test
     public void testNewToProposalReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
@@ -195,7 +195,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 5. The rebalance proposal is ready after the specified pending calls
      * 6. The KafkaRebalance resource moves to 'ProposalReady' state
      */
-    @IsolatedTest
+    @Test
     public void testNewToPendingProposalToProposalReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
@@ -240,7 +240,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 7. The operator stops polling the Cruise Control REST API
      * 8. The KafkaRebalance resource moves to 'Stopped' state
      */
-    @IsolatedTest
+    @Test
     public void testNewToPendingProposalToStoppedRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
@@ -303,7 +303,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 13. The rebalance proposal is ready after the specified pending calls
      * 14. The KafkaRebalance resource moves to ProposalReady state
      */
-    @IsolatedTest
+    @Test
     public void testNewToPendingProposalToStoppedAndRefreshRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
@@ -388,7 +388,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 13. The rebalance operation is done
      * 14. The KafkaRebalance resource moves to the 'Ready' state
      */
-    @IsolatedTest
+    @Test
     public void testNewToProposalReadyToRebalancingToReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
@@ -453,7 +453,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 11. The KafkaRebalance resource is annotated with 'strimzi.io/rebalance=refresh'
      * 12. The KafkaRebalance resource moves to the 'ProposalReady' state
      */
-    @IsolatedTest
+    @Test
     public void testNewToProposalReadyToRebalancingToReadyThenRefreshRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
@@ -519,7 +519,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 3. The operator gets a "missing hard goals" error instead of a proposal
      * 4. The KafkaRebalance resource moves to the 'NotReady' state
      */
-    @IsolatedTest
+    @Test
     public void testNewWithMissingHardGoals(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint to get error about hard goals
@@ -554,7 +554,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             })));
     }
 
-    @IsolatedTest
+    @Test
     public void testUnknownPropertyInSpec(VertxTestContext context) throws IOException, URISyntaxException {
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
 
@@ -604,7 +604,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 3. The rebalance proposal is ready on the first call
      * 4. The KafkaRebalance resource transitions to the 'ProposalReady' state
      */
-    @IsolatedTest
+    @Test
     public void testNewToProposalReadySkipHardGoalsRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
@@ -645,7 +645,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 7. The rebalance proposal is ready on the first call
      * 8. The KafkaRebalance resource moves to the 'ProposalReady' state
      */
-    @IsolatedTest
+    @Test
     public void testNewWithMissingHardGoalsAndRefresh(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint to get error about hard goals
@@ -725,7 +725,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 4. The KafkaRebalance resource moves to the 'PendingProposal' state
      * 5. The KafkaRebalance resource is deleted
      */
-    @IsolatedTest
+    @Test
     public void testNewToPendingProposalDeleteRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
@@ -791,7 +791,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 14. The operator stops polling the Cruise Control REST API and requests a stop execution
      * 15. The KafkaRebalance resource moves to the 'Stopped' state
      */
-    @IsolatedTest
+    @Test
     public void testNewToProposalReadyToRebalancingToStoppedRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
@@ -858,7 +858,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 2. The operator checks that the Kafka cluster specified in the KafkaRebalance resource (via label) doesn't exist
      * 4. The KafkaRebalance resource moves to NotReady state
      */
-    @IsolatedTest
+    @Test
     public void testNoKafkaCluster(VertxTestContext context) {
 
         KafkaRebalance kr =
@@ -886,7 +886,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * When the Kafka cluster does not match the selector labels in the cluster operator configuration, the
      * KafkaRebalance resource should be ignored and not reconciled.
      */
-    @IsolatedTest
+    @Test
     public void testKafkaClusterNotMatchingLabelSelector(VertxTestContext context) {
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -925,7 +925,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 })));
     }
 
-    @IsolatedTest
+    @Test
     public void testRebalanceUsesUnknownProperty(VertxTestContext context) throws IOException, URISyntaxException {
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
@@ -966,7 +966,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 2. The operator checks that the Kafka cluster specified in the KafkaRebalance resource (via label) doesn't have Cruise Control configured
      * 4. The KafkaRebalance resource moves to NotReady state
      */
-    @IsolatedTest
+    @Test
     public void testCruiseControlDisabled(VertxTestContext context) {
 
         // build a Kafka cluster without the cruiseControl definition
@@ -1006,7 +1006,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 2. The operator checks that the resource is missing the label to specify the Kafka cluster
      * 4. The KafkaRebalance resource moves to 'NotReady' state
      */
-    @IsolatedTest
+    @Test
     public void testNoKafkaClusterInKafkaRebalanceLabel(VertxTestContext context) {
 
         KafkaRebalance kr =
@@ -1035,7 +1035,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 2. The operator requests a rebalance proposal through the Cruise Control REST API
      * 3. The operator doesn't get a response on time; the resource moves to NotReady
      */
-    @IsolatedTest
+    @Test
     public void testCruiseControlTimingOut(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received
@@ -1068,7 +1068,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 2. The operator requests a rebalance proposal through the Cruise Control REST API
      * 3. The operator doesn't get a response on time; the resource moves to 'NotReady'
      */
-    @IsolatedTest
+    @Test
     public void testCruiseControlNotReachable(VertxTestContext context) {
 
         // stop the mocked Cruise Control server to make it unreachable
@@ -1105,7 +1105,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 2. KafkaRebalance go through the `PendingProposal` to `ProposalReady` state
      * 3. KafkaRebalance status should contain optimization result and session id
      */
-    @IsolatedTest
+    @Test
     public void testRebalanceStatusInProposalReadyState(VertxTestContext context) throws IOException, URISyntaxException {
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
 

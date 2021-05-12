@@ -47,7 +47,6 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -55,6 +54,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
@@ -247,7 +247,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterWithoutConnectorOperator(VertxTestContext context) {
         String kcs2iName = "foo";
         String kcs2iNamespace = "test";
@@ -256,7 +256,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         createCluster(context, kcs2i, false);
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterWithConnectorOperator(VertxTestContext context) {
         String kcs2iName = "foo";
         String kcs2iNamespace = "test";
@@ -266,7 +266,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         createCluster(context, kcs2i, true);
     }
 
-    @ParallelTest
+    @Test
     public void testCreateOrUpdateDoesNotUpdateWithNoDiff(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
@@ -387,7 +387,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
     }
 
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:MethodLength"})
-    @ParallelTest
+    @Test
     public void testUpdateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
@@ -548,7 +548,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateOrUpdateFailsWhenDeploymentUpdateFails(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
@@ -628,7 +628,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             .onComplete(context.failing(v -> context.verify(() -> async.flag())));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateClusterScaleUp(VertxTestContext context) {
         int scaleTo = 4;
 
@@ -707,7 +707,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testUpdateClusterScaleDown(VertxTestContext context) {
         int scaleTo = 2;
 
@@ -788,7 +788,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testReconcile(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
@@ -846,7 +846,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockS2IConnectOps = supplier.connectS2IOperator;
@@ -1039,7 +1039,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterWitDuplicateOlderConnectWithoutConnectorOperator(VertxTestContext context) {
         String kcs2iName = "foo";
         String kcs2iNamespace = "test";
@@ -1048,7 +1048,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         createClusterWithDuplicateOlderConnect(context, kcs2i, false);
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterWitDuplicateOlderConnectWithConnectorOperator(VertxTestContext context) {
         String kcs2iName = "foo";
         String kcs2iNamespace = "test";
@@ -1058,7 +1058,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         createClusterWithDuplicateOlderConnect(context, kcs2i, true);
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterWithSameNameAsConnectFails(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
@@ -1098,7 +1098,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
             })));
     }
 
-    @ParallelTest
+    @Test
     public void testCreateClusterWithJmxEnabled(VertxTestContext context) {
         String kcs2iName = "foo";
         String kcs2iNamespace = "test";

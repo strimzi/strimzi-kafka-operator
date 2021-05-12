@@ -28,7 +28,6 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -39,6 +38,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
@@ -176,7 +176,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Tests regular upgrade with the message format and protocol versions configured to the same Kafka
     // version as we are upgrading from.
-    @IsolatedTest
+    @Test
     public void testUpgradeWithMessageAndProtocolVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
@@ -209,7 +209,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Tests recovery from failed upgrade with the message format and protocol versions configured to the same Kafka
     // version as we are upgrading from.
-    @IsolatedTest
+    @Test
     public void testUpgradeRecoveryWithMessageAndProtocolVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
@@ -280,7 +280,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Tests upgrade without the message format and protocol versions configured. Two rolling updates should happen => first
     // with the old message and protocol versions and another one which rolls also protocol and message versions.
-    @IsolatedTest
+    @Test
     public void testUpgradeWithoutMessageAndProtocolVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
 
@@ -316,7 +316,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Tests upgrade without the message format and protocol versions configured. Two rolling updates should happen => first
     // with the old message and protocol versions and another one which rolls also protocol and message versions.
-    @IsolatedTest
+    @Test
     public void testUpgradeWithNewMessageAndProtocolVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
@@ -355,7 +355,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     // Tests upgrade without any versions specified in the CR.
-    @IsolatedTest
+    @Test
     public void testUpgradeWithoutAnyVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
 
@@ -391,7 +391,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Tests regular upgrade with the message format and protocol versions configured to much older Kafka
     // version than we are upgrading from.
-    @IsolatedTest
+    @Test
     public void testUpgradeWithOlderMessageAndProtocolVersions(VertxTestContext context)  {
         String olderVersion = "2.0";
 
@@ -426,7 +426,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Tests upgrade from Kafka version not supported by the current version of the operator with message format and
     // protocol versions specified.
-    @IsolatedTest
+    @Test
     public void testUpgradeFromUnsupportedKafkaVersionWithMessageAndProtocol(VertxTestContext context)  {
         KafkaVersion unsupported = VERSIONS.version("2.1.0");
 
@@ -503,7 +503,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Tests upgrade from Kafka version not supported by the current version of the operator without message format and
     // protocol versions specified.
-    @IsolatedTest
+    @Test
     public void testUpgradeFromUnsupportedKafkaVersionWithoutMessageAndProtocol(VertxTestContext context)  {
         KafkaVersion unsupported = VERSIONS.version("2.1.0");
 
@@ -588,7 +588,7 @@ public class KafkaUpgradeDowngradeMockTest {
     // Tests upgrade when Kafka StatefulSet and/or Pods existing but without any of the version annotations. This
     // indicates that the Statefulset / Pods were not using the current or recent Strimzi version and since we do not
     // know the version, we should wail.
-    @IsolatedTest
+    @Test
     public void testUpgradeWithoutAnyVersionInPodsOrStsFails(VertxTestContext context)  {
         KafkaVersion unsupported = VERSIONS.version("2.1.0");
 
@@ -653,7 +653,7 @@ public class KafkaUpgradeDowngradeMockTest {
      */
 
     // Tests regular reconciliation without any upgrades
-    @IsolatedTest
+    @Test
     public void testNoopUpgrade(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                 KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
@@ -685,7 +685,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     // Tesst that Kafka works fine when both Pods and StatefulSets is missing at the beginning of reconciliation
-    @IsolatedTest
+    @Test
     public void testNoopWhenStatefulSetAndPodsAreMissing(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                 KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
@@ -731,7 +731,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Test regular downgrade with message and protocol versions defined everywhere and properly rolled out to all brokers.
     // The message and protocol versions used is the same as Kafka version we downgrade to.
-    @IsolatedTest
+    @Test
     public void testDowngradeWithMessageAndProtocolVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
@@ -763,7 +763,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     // Test partial downgrade => emulate previous downgrade failing in the middle and verify it is finished.
-    @IsolatedTest
+    @Test
     public void testDowngradeRecoveryWithMessageAndProtocolVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                 KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
@@ -834,7 +834,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Test regular downgrade with message and protocol versions defined everywhere and properly rolled out to all brokers.
     // The message and protocol versions used are older than the Kafka version we downgrade to.
-    @IsolatedTest
+    @Test
     public void testDowngradeWithOlderMessageAndProtocolVersions(VertxTestContext context)  {
         String olderVersion = "2.0";
 
@@ -869,7 +869,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     // Test downgrade with message and protocol versions defined to newer version than we downgrade to (this fails before
     // reaching downgrade since this is invalid Kafka CR).
-    @IsolatedTest
+    @Test
     public void testDowngradeWithWrongMessageAndProtocolVersionsFails(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                 KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
@@ -898,7 +898,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     // Test downgrade without message and protocol versions configured and the default being used and rolled out to all brokers.
-    @IsolatedTest
+    @Test
     public void testDowngradeWithoutMessageAndProtocolVersionsFails(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
 
@@ -923,7 +923,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     // Test downgrade with message and protocol versions defined to correct version in the CR, but not on the broker pods.
-    @IsolatedTest
+    @Test
     public void testDowngradeWithWrongMessageAndProtocolVersionsOnPodsFails(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
                 KafkaVersionTestUtils.LATEST_FORMAT_VERSION,
@@ -952,7 +952,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     // Test downgrade with message and protocol versions defined to correct version in the CR, but not on the broker pods.
-    @IsolatedTest
+    @Test
     public void testDowngradeWithNoMessageAndProtocolVersionsOnPodsFails(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
 
