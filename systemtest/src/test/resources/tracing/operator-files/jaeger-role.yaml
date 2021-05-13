@@ -11,13 +11,12 @@ rules:
     resources:
       - '*'
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
 
   ## for the operator's own deployment
   - apiGroups:
@@ -41,13 +40,12 @@ rules:
       - services
       - services/finalizers
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - apps
     resources:
@@ -56,87 +54,80 @@ rules:
       - replicasets
       - statefulsets
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - extensions
     resources:
       - ingresses
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   # Ingress for kubernetes 1.14 or higher
   - apiGroups:
       - networking.k8s.io
     resources:
       - ingresses
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - batch
     resources:
       - jobs
       - cronjobs
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - route.openshift.io
     resources:
       - routes
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - image.openshift.io
     resources:
       - imagestreams
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
   - apiGroups:
       - autoscaling
     resources:
       - horizontalpodautoscalers
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
 
   ## needed if you want the operator to create service monitors for the Jaeger instances
   - apiGroups:
@@ -144,13 +135,12 @@ rules:
     resources:
       - servicemonitors
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
 
   ## for the Elasticsearch auto-provisioning
   - apiGroups:
@@ -158,13 +148,12 @@ rules:
     resources:
       - elasticsearches
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
 
   ## for the Kafka auto-provisioning
   - apiGroups:
@@ -173,11 +162,9 @@ rules:
       - kafkas
       - kafkausers
     verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-
+      - 'get'
+      - 'list'
+      - 'create'
+      - 'update'
+      - 'delete'
+      - 'watch'
