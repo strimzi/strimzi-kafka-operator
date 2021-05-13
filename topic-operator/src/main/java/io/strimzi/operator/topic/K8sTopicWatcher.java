@@ -47,7 +47,13 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             if (action.equals(Action.ERROR)) {
                 LOGGER.error("{}: Watch received action=ERROR for {} {} {}", logContext, kind, name, kafkaTopic);
             } else {
-                if (action.equals(Action.DELETED) || shouldReconcile(kafkaTopic, metadata)) {
+                PauseAnnotationChanges pauseAnnotationChanges = pausedAnnotationChanged(kafkaTopic);
+                if (action.equals(Action.DELETED) || shouldReconcile(kafkaTopic, metadata, pauseAnnotationChanges.isChanged())) {
+                    if (pauseAnnotationChanges.isResourcePausedByAnno()) {
+                        topicOperator.pausedTopicCounter.getAndIncrement();
+                    } else if (pauseAnnotationChanges.isResourceUnpausedByAnno()) {
+                        topicOperator.pausedTopicCounter.getAndDecrement();
+                    }
                     LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,
                             metadata.getGeneration(), labels);
                     Handler<AsyncResult<Void>> resultHandler = ar -> {
@@ -75,18 +81,23 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
         }
     }
 
-    public boolean shouldReconcile(KafkaTopic kafkaTopic, ObjectMeta metadata) {
-        boolean pausedByAnno = Annotations.isReconciliationPausedWithAnnotation(kafkaTopic.getMetadata());
-        boolean pausedInStatus = kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getConditions().stream().filter(condition -> "ReconciliationPaused".equals(condition.getType())).findAny().isPresent();
+    public boolean shouldReconcile(KafkaTopic kafkaTopic, ObjectMeta metadata, boolean pauseAnnotationChanged) {
         return kafkaTopic.getStatus() == null // Not status => new KafkaTopic
                 // KT has changed
                 || !Objects.equals(metadata.getGeneration(), kafkaTopic.getStatus().getObservedGeneration())
                 // changing just annotations does not increase the generation of resource, thus we need to check them
-                // unpaused -> paused
-                || (pausedByAnno && !pausedInStatus)
-                // paused -> unpaused
-                || (!pausedByAnno && pausedInStatus);
+                || pauseAnnotationChanged;
     }
+
+    private PauseAnnotationChanges pausedAnnotationChanged(KafkaTopic kafkaTopic) {
+        boolean pausedByAnno = Annotations.isReconciliationPausedWithAnnotation(kafkaTopic.getMetadata());
+        boolean pausedInStatus = kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getConditions().stream().filter(condition -> "ReconciliationPaused".equals(condition.getType())).findAny().isPresent();
+        boolean wasUnpausedIsPaused = pausedByAnno && !pausedInStatus;
+        boolean wasPausedIsUnpaused = !pausedByAnno && pausedInStatus;
+        return new PauseAnnotationChanges(wasUnpausedIsPaused, wasPausedIsUnpaused);
+
+    }
+
 
     @Override
     public void onClose(WatcherException exception) {
@@ -94,6 +105,29 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
         if (exception != null) {
             LOGGER.debug("Restarting  topic watcher due to ", exception);
             onHttpGoneTask.run();
+        }
+    }
+
+    private class PauseAnnotationChanges {
+        private boolean resourcePausedByAnno;
+        private boolean resourceUnpausedByAnno;
+        private boolean isChanged;
+        public PauseAnnotationChanges(boolean resourcePausedByAnno, boolean resourceUnpausedByAnno) {
+            this.resourcePausedByAnno = resourcePausedByAnno;
+            this.resourceUnpausedByAnno = resourceUnpausedByAnno;
+            this.isChanged = this.resourcePausedByAnno || this.resourceUnpausedByAnno;
+        }
+
+        public boolean isResourcePausedByAnno() {
+            return resourcePausedByAnno;
+        }
+
+        public boolean isResourceUnpausedByAnno() {
+            return resourceUnpausedByAnno;
+        }
+
+        public boolean isChanged() {
+            return isChanged;
         }
     }
 }

@@ -75,7 +75,7 @@ class TopicOperator {
     private Counter successfulReconciliationsCounter;
     private Counter lockedReconciliationsCounter;
     private AtomicInteger topicCounter;
-    private AtomicInteger pausedTopicCounter;
+    protected AtomicInteger pausedTopicCounter;
     protected Timer reconciliationsTimer;
 
     enum EventType {
