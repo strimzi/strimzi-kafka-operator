@@ -192,17 +192,17 @@ Periodically, the active segment is _rolled_ to become read-only, and a new acti
 There is only a single segment active at a time.
 Older segments are retained until they are eligible for deletion.
 
-Default settings at the broker level set the maximum size in bytes of a log segment and the amount of time in milliseconds before an active segment is rolled:
+Configuration at the broker level sets the maximum size in bytes of a log segment and the amount of time in milliseconds before an active segment is rolled:
 
 [source,env]
 ----
 # ...
 log.segment.bytes=1073741824
-segment.ms=604800000
+log.roll.ms=604800000
 # ...
 ----
 
-You can override these settings at the topic level.
+You can override these settings at the topic level using `segment.bytes` and `segment.ms`.
 Whether you need to lower or raise these values depends on the policy for segment deletion.
 A larger size means the active segment contains more messages and is rolled less often.
 Segments also become eligible for deletion less often.
