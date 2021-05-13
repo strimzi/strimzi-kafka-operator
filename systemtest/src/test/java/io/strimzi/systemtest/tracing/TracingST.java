@@ -40,7 +40,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -72,7 +71,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
 @ExtendWith(VertxExtension.class)
-@Disabled
 public class TracingST extends AbstractST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
@@ -100,7 +98,7 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_AGENT_NAME = JAEGER_INSTANCE_NAME + "-agent";
     private static final String JAEGER_QUERY_SERVICE = JAEGER_INSTANCE_NAME + "-query";
 
-    private static final String JAEGER_VERSION = "1.18.1";
+    private static final String JAEGER_VERSION = "1.22.1";
 
     private static final String CLUSTER_NAME = "tracing-cluster";
 
@@ -786,6 +784,7 @@ public class TracingST extends AbstractST {
             .withNewKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
+                .withNamespace(NAMESPACE)
             .endMetadata()
             .withNewSpec()
                 .addNewIngress()
@@ -809,7 +808,7 @@ public class TracingST extends AbstractST {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
         String instanceYamlContent = TestUtils.getContent(new File(JAEGER_INSTANCE_PATH), TestUtils::toYamlString);
-        cmdKubeClient().applyContent(instanceYamlContent.replaceAll("image: 'all-in-one:*'", "image: 'all-in-one:" + JAEGER_VERSION.substring(0, 4) + "'"));
+        cmdKubeClient().applyContent(instanceYamlContent.replaceAll("image: 'jaegertracing/all-in-one:*'", "image: 'jaegertracing/all-in-one:" + JAEGER_VERSION.substring(0, 4) + "'"));
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(() -> cmdKubeClient().deleteContent(instanceYamlContent)));
         DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_INSTANCE_NAME, 1);
