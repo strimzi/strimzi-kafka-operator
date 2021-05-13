@@ -582,6 +582,13 @@ spec:
                   type: object
                 image:
                   type: string
+                imagePullSecrets:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                    type: object
+                  type: array
                 labels:
                   additionalProperties:
                     type: string
@@ -605,6 +612,8 @@ spec:
                     fsGroup:
                       format: int64
                       type: integer
+                    fsGroupChangePolicy:
+                      type: string
                     runAsGroup:
                       format: int64
                       type: integer
@@ -1569,6 +1578,8 @@ spec:
                     fsGroup:
                       format: int64
                       type: integer
+                    fsGroupChangePolicy:
+                      type: string
                     runAsGroup:
                       format: int64
                       type: integer
@@ -2547,6 +2558,8 @@ spec:
                     fsGroup:
                       format: int64
                       type: integer
+                    fsGroupChangePolicy:
+                      type: string
                     runAsGroup:
                       format: int64
                       type: integer
@@ -3520,6 +3533,8 @@ spec:
                     fsGroup:
                       format: int64
                       type: integer
+                    fsGroupChangePolicy:
+                      type: string
                     runAsGroup:
                       format: int64
                       type: integer
@@ -4499,6 +4514,8 @@ spec:
                     fsGroup:
                       format: int64
                       type: integer
+                    fsGroupChangePolicy:
+                      type: string
                     runAsGroup:
                       format: int64
                       type: integer
@@ -5477,6 +5494,8 @@ spec:
                     fsGroup:
                       format: int64
                       type: integer
+                    fsGroupChangePolicy:
+                      type: string
                     runAsGroup:
                       format: int64
                       type: integer
@@ -5524,6 +5543,8 @@ spec:
                       type: object
                   type: object
                 serviceAccount:
+                  type: string
+                serviceType:
                   type: string
                 tolerations:
                   items:
@@ -6165,6 +6186,8 @@ spec:
                 fsGroup:
                   format: int64
                   type: integer
+                fsGroupChangePolicy:
+                  type: string
                 runAsGroup:
                   format: int64
                   type: integer
@@ -6226,6 +6249,8 @@ spec:
                     mode:
                       type: string
                     timeout:
+                      type: string
+                    traceTTL:
                       type: string
                     ttlSecondsAfterFinished:
                       format: int32
@@ -6535,6 +6560,8 @@ spec:
                         fsGroup:
                           format: int64
                           type: integer
+                        fsGroupChangePolicy:
+                          type: string
                         runAsGroup:
                           format: int64
                           type: integer
@@ -7539,6 +7566,8 @@ spec:
                         fsGroup:
                           format: int64
                           type: integer
+                        fsGroupChangePolicy:
+                          type: string
                         runAsGroup:
                           format: int64
                           type: integer
@@ -8509,6 +8538,8 @@ spec:
                         fsGroup:
                           format: int64
                           type: integer
+                        fsGroupChangePolicy:
+                          type: string
                         runAsGroup:
                           format: int64
                           type: integer

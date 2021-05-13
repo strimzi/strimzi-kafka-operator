@@ -15,12 +15,13 @@ rules:
     resources:
       - '*'
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   ## for the operator's own deployment
   - apiGroups:
@@ -44,12 +45,13 @@ rules:
       - services
       - services/finalizers
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   - apiGroups:
       - apps
     resources:
@@ -58,69 +60,75 @@ rules:
       - replicasets
       - statefulsets
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   - apiGroups:
       - extensions
     resources:
       - ingresses
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   # Ingress for kubernetes 1.14 or higher
   - apiGroups:
       - networking.k8s.io
     resources:
       - ingresses
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   - apiGroups:
       - batch
     resources:
       - jobs
       - cronjobs
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   - apiGroups:
       - route.openshift.io
     resources:
       - routes
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   - apiGroups:
       - autoscaling
     resources:
       - horizontalpodautoscalers
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   ## needed if you want the operator to create service monitors for the Jaeger instances
   - apiGroups:
@@ -128,12 +136,13 @@ rules:
     resources:
       - servicemonitors
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   ## for the Elasticsearch auto-provisioning
   - apiGroups:
@@ -141,12 +150,13 @@ rules:
     resources:
       - elasticsearches
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   ## for the Kafka auto-provisioning
   - apiGroups:
@@ -155,12 +165,13 @@ rules:
       - kafkas
       - kafkausers
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   ## Extra permissions
   ## This is an extra set of permissions that the Jaeger Operator might make use of if granted
@@ -181,11 +192,11 @@ rules:
     resources:
       - deployments
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'watch'
+      - get
+      - list
+      - patch
+      - update
+      - watch
 
   ## needed only when .Spec.Ingress.Openshift.DelegateUrls is used
   - apiGroups:
@@ -193,9 +204,10 @@ rules:
     resources:
       - clusterrolebindings
     verbs:
-      - 'get'
-      - 'list'
-      - 'create'
-      - 'update'
-      - 'delete'
-      - 'watch'
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
