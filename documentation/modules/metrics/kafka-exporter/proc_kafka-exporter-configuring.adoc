@@ -33,7 +33,7 @@ metadata:
 spec:
   # ...
   kafkaExporter:
-    image: my-org/my-image:latest <1>
+    image: my-registry.io/my-org/my-exporter-cluster:latest <1>
     groupRegex: ".*" <2>
     topicRegex: ".*" <3>
     resources: <4>
@@ -64,15 +64,15 @@ spec:
       timeoutSeconds: 5
 # ...
 ----
-<1> ADVANCED OPTION: Container image configuration, which is link:{BookURLUsing}#assembly-configuring-container-images-deployment-configuration-kafka[recommended only in special situations].
+<1> ADVANCED OPTION: Container image configuration, which is link:{BookURLUsing}#con-common-configuration-images-reference[recommended only in special situations].
 <2> A regular expression to specify the consumer groups to include in the metrics.
 <3> A regular expression to specify the topics to include in the metrics.
-<4> link:{BookURLUsing}#assembly-resource-limits-and-requests-deployment-configuration-kafka[CPU and memory resources to reserve].
+<4> link:{BookURLUsing}#con-common-configuration-resources-reference[CPU and memory resources to reserve].
 <5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
 <6> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
 <7> link:{BookURLUsing}#assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
-<8> link:{BookURLUsing}#assembly-healthchecks-deployment-configuration-kafka[Healthcheck readiness probes].
-<9> link:{BookURLUsing}#assembly-healthchecks-deployment-configuration-kafka[Healthcheck liveness probes].
+<8> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
+<9> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
 
 . Create or update the resource:
 +
