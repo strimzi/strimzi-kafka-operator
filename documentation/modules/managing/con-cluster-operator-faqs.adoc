@@ -105,3 +105,8 @@ When configuring the client directly in Java, set the configuration option to an
 
 [source,java]
 props.put("ssl.endpoint.identification.algorithm", "");
+
+
+=== Control the thread pool size of `kubernetes-ops-pool`
+
+`kubernetes-ops-pool` thread pool is used for various async and blocking operations by the cluster operator. The default of the pool is set at 10. In rare situations if one need to adjust the thread pool size they can set a environment variable `STRIMZI_OPERATIONS_THREAD_POOL_SIZE` to resize the pool size.

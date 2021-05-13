@@ -42,6 +42,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: STRIMZI_OPERATIONS_THREAD_POOL_SIZE
+              value: "10"
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: "120000"
             - name: STRIMZI_OPERATION_TIMEOUT_MS
