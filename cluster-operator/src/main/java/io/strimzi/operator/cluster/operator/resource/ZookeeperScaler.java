@@ -99,9 +99,16 @@ public class ZookeeperScaler implements AutoCloseable {
 
                     getCurrentConfig(zkAdmin)
                             .compose(servers -> scaleTo(zkAdmin, servers, scaleTo))
-                            .compose(nothing -> closeConnection(zkAdmin))
-                            .onSuccess(scalePromise::complete)
-                            .onFailure(scalePromise::fail);
+                            .onComplete(res ->
+                                closeConnection(zkAdmin)
+                                    .onComplete(closeResult -> {
+                                        // Ignoring the result of `closeConnection`
+                                        if (res.succeeded()) {
+                                            scalePromise.complete();
+                                        } else {
+                                            scalePromise.fail(res.cause());
+                                        }
+                                    }));
 
                     return scalePromise.future();
                 });
