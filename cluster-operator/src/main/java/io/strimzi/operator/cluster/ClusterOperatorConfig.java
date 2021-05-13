@@ -107,6 +107,7 @@ public class ClusterOperatorConfig {
      * @param featureGates Configuration string with feature gates settings
      * @param operationsThreadPoolSize The size of the thread pool used for various operations
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
             Set<String> namespaces,
             long reconciliationIntervalMs,

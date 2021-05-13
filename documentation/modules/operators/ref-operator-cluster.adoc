@@ -31,6 +31,9 @@ env:
 The timeout for internal operations, in milliseconds. This value should be
 increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
 
+`STRIMZI_OPERATIONS_THREAD_POOL_SIZE`:: Optional, default 10
+The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the cluster operator. 
+
 `STRIMZI_OPERATOR_NAMESPACE`:: The name of the namespace where the Strimzi Cluster Operator is running.
 Do not configure this variable manually. Use the Kubernetes Downward API.
 +
