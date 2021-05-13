@@ -124,11 +124,7 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing().build());
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
     }
@@ -192,16 +188,8 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
-        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing().build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing().build());
 
         TracingUtils.verify(JAEGER_KAFKA_CONNECT_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
     }
@@ -226,19 +214,11 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing().build());
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.kafkaStreamsWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.kafkaStreamsWithTracing().build());
 
         TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
     }
@@ -255,19 +235,11 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing().build());
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing().build());
 
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
     }
@@ -292,27 +264,15 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing().build());
 
         TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing().build());
 
         TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.kafkaStreamsWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.kafkaStreamsWithTracing().build());
 
         TracingUtils.verify(JAEGER_KAFKA_STREAMS_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
     }
@@ -457,11 +417,7 @@ public class TracingST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
-        resourceManager.createResource(extensionContext, sourceKafkaTracingClient.producerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, sourceKafkaTracingClient.producerWithTracing().build());
 
         LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
@@ -469,11 +425,7 @@ public class TracingST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .build();
 
-        resourceManager.createResource(extensionContext, targetKafkaTracingClient.consumerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, targetKafkaTracingClient.consumerWithTracing().build());
 
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(CLUSTER_NAME, kafkaClusterSourceName, kafkaClusterTargetName,
             ClientUtils.generateRandomConsumerGroup(), 1, false)
@@ -561,26 +513,14 @@ public class TracingST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
-        resourceManager.createResource(extensionContext, sourceKafkaTracingClient.producerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, sourceKafkaTracingClient.producerWithTracing().build());
 
         KafkaTracingExampleClients targetKafkaTracingClient = kafkaTracingClient.toBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .build();
 
-        resourceManager.createResource(extensionContext, targetKafkaTracingClient.consumerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
-        resourceManager.createResource(extensionContext, sourceKafkaTracingClient.kafkaStreamsWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, targetKafkaTracingClient.consumerWithTracing().build());
+        resourceManager.createResource(extensionContext, sourceKafkaTracingClient.kafkaStreamsWithTracing().build());
 
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "1");
@@ -741,16 +681,8 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
-        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing().build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing().build());
 
         String kafkaConnectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
@@ -805,16 +737,8 @@ public class TracingST extends AbstractST {
             .withPollInterval(1000)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
-        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing()
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing().build());
         ClientUtils.waitForClientSuccess(bridgeProducer, NAMESPACE, MESSAGE_COUNT);
 
         TracingUtils.verify(JAEGER_KAFKA_BRIDGE_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
