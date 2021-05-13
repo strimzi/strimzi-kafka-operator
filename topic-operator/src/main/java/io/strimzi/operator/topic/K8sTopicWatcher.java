@@ -108,7 +108,7 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
         }
     }
 
-    private class PauseAnnotationChanges {
+    private static class PauseAnnotationChanges {
         private boolean resourcePausedByAnno;
         private boolean resourceUnpausedByAnno;
         private boolean isChanged;
