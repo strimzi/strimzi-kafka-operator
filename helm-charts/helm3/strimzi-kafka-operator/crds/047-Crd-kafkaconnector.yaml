@@ -1,4 +1,4 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: kafkaconnectors.kafka.strimzi.io
@@ -18,94 +18,93 @@ spec:
     categories:
       - strimzi
   scope: Namespaced
-  additionalPrinterColumns:
-    - name: Cluster
-      description: The name of the Kafka Connect cluster this connector belongs to
-      JSONPath: .metadata.labels.strimzi\.io/cluster
-      type: string
-    - name: Connector class
-      description: The class used by this connector
-      JSONPath: .spec.class
-      type: string
-    - name: Max Tasks
-      description: Maximum number of tasks
-      JSONPath: .spec.tasksMax
-      type: integer
-    - name: Ready
-      description: The state of the custom resource
-      JSONPath: .status.conditions[?(@.type=="Ready")].status
-      type: string
-  subresources:
-    status: {}
-    scale:
-      specReplicasPath: .spec.tasksMax
-      statusReplicasPath: .status.tasksMax
   conversion:
     strategy: None
   versions:
     - name: v1beta2
       served: true
-      storage: false
-    - name: v1alpha1
-      served: true
       storage: true
-  validation:
-    openAPIV3Schema:
-      type: object
-      properties:
-        spec:
+      subresources:
+        status: {}
+        scale:
+          specReplicasPath: .spec.tasksMax
+          statusReplicasPath: .status.tasksMax
+      additionalPrinterColumns:
+        - name: Cluster
+          description: The name of the Kafka Connect cluster this connector belongs to
+          jsonPath: .metadata.labels.strimzi\.io/cluster
+          type: string
+        - name: Connector class
+          description: The class used by this connector
+          jsonPath: .spec.class
+          type: string
+        - name: Max Tasks
+          description: Maximum number of tasks
+          jsonPath: .spec.tasksMax
+          type: integer
+        - name: Ready
+          description: The state of the custom resource
+          jsonPath: .status.conditions[?(@.type=="Ready")].status
+          type: string
+      schema:
+        openAPIV3Schema:
           type: object
           properties:
-            class:
-              type: string
-              description: The Class for the Kafka Connector.
-            tasksMax:
-              type: integer
-              minimum: 1
-              description: The maximum number of tasks for the Kafka Connector.
-            config:
+            spec:
               type: object
-              description: 'The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.'
-            pause:
-              type: boolean
-              description: Whether the connector should be paused. Defaults to false.
-          description: The specification of the Kafka Connector.
-        status:
-          type: object
-          properties:
-            conditions:
-              type: array
-              items:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    description: The unique identifier of a condition, used to distinguish between other conditions in the resource.
-                  status:
-                    type: string
-                    description: The status of the condition, either True, False or Unknown.
-                  lastTransitionTime:
-                    type: string
-                    description: Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
-                  reason:
-                    type: string
-                    description: The reason for the condition's last transition (a single word in CamelCase).
-                  message:
-                    type: string
-                    description: Human-readable message indicating details about the condition's last transition.
-              description: List of status conditions.
-            observedGeneration:
-              type: integer
-              description: The generation of the CRD that was last reconciled by the operator.
-            connectorStatus:
+              properties:
+                class:
+                  type: string
+                  description: The Class for the Kafka Connector.
+                tasksMax:
+                  type: integer
+                  minimum: 1
+                  description: The maximum number of tasks for the Kafka Connector.
+                config:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+                  description: 'The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.'
+                pause:
+                  type: boolean
+                  description: Whether the connector should be paused. Defaults to false.
+              description: The specification of the Kafka Connector.
+            status:
               type: object
-              description: The connector status, as reported by the Kafka Connect REST API.
-            tasksMax:
-              type: integer
-              description: The maximum number of tasks for the Kafka Connector.
-            topics:
-              type: array
-              items:
-                type: string
-              description: The list of topics used by the Kafka Connector.
-          description: The status of the Kafka Connector.
+              properties:
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        description: The unique identifier of a condition, used to distinguish between other conditions in the resource.
+                      status:
+                        type: string
+                        description: The status of the condition, either True, False or Unknown.
+                      lastTransitionTime:
+                        type: string
+                        description: Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
+                      reason:
+                        type: string
+                        description: The reason for the condition's last transition (a single word in CamelCase).
+                      message:
+                        type: string
+                        description: Human-readable message indicating details about the condition's last transition.
+                  description: List of status conditions.
+                observedGeneration:
+                  type: integer
+                  description: The generation of the CRD that was last reconciled by the operator.
+                connectorStatus:
+                  x-kubernetes-preserve-unknown-fields: true
+                  type: object
+                  description: The connector status, as reported by the Kafka Connect REST API.
+                tasksMax:
+                  type: integer
+                  description: The maximum number of tasks for the Kafka Connector.
+                topics:
+                  type: array
+                  items:
+                    type: string
+                  description: The list of topics used by the Kafka Connector.
+              description: The status of the Kafka Connector.
