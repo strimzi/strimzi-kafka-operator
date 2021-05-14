@@ -188,7 +188,7 @@ which multiplies the maximum bandwidth of the link (in bytes/s) with the round-t
 Kafka uses logs to store message data. Logs are a series of segments.
 New messages are written to an _active_ segment, and never subsequently modified.
 The active segment is also read when serving fetch requests from consumers.
-Periodically, the active segment is _rolled_ to become read-only, and a new active segment is created to replace it.
+Periodically, the active segment is _rolled_ to become read-only and a new active segment is created to replace it.
 There is only a single segment active at a time.
 Older segments are retained until they are eligible for deletion.
 
@@ -208,8 +208,8 @@ A larger size means the active segment contains more messages and is rolled less
 Segments also become eligible for deletion less often.
 
 You can set time-based or size-based log retention and cleanup policies so that logs are kept manageable.
-If log retention policies are used, non-active log segments are removed when retention limits are reached.
 Depending on your requirements, you can use log retention configuration to delete old segments.
+If log retention policies are used, non-active log segments are removed when retention limits are reached.
 Deleting old segments bounds the storage space required for the log so you do not exceed disk capacity.
 
 For time-based log retention, you set a retention period based on hours, minutes and milliseconds.
