@@ -566,7 +566,9 @@ public class AbstractUpgradeST extends AbstractST {
 
         LOGGER.info("Converting CRs ...");
         // run conversion of crs
-        ExecResult execResult = Exec.exec(convertorPath, "cr", "-n=" + namespace);
+        // CRs conversion may fail, because for 0.23 for example it's already done
+        // CRS conversion needs old versions of Strimzi CRDs, which are not available after 0.22
+        ExecResult execResult = Exec.exec(null, Arrays.asList(convertorPath, "cr", "-n=" + namespace), 0, true, false);
         LOGGER.debug("CRs conversion STDOUT:");
         LOGGER.debug(execResult.out());
         LOGGER.debug("CRs conversion STDERR:");

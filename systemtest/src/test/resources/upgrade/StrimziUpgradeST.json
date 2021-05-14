@@ -12,7 +12,7 @@
     },
     "generateTopics": true,
     "additionalTopics": 2,
-    "oldestKafka": "2.5.0",
+    "oldestKafka": "2.6.0",
     "imagesBeforeKafkaUpgrade": {
       "zookeeper": "strimzi/kafka:latest-kafka-2.7.0",
       "kafka": "strimzi/kafka:latest-kafka-2.7.0",
