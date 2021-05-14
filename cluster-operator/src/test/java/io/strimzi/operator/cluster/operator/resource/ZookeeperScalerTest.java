@@ -300,6 +300,7 @@ public class ZookeeperScalerTest {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
         when(mockZooAdmin.getConfig(false, null)).thenThrow(KeeperException.ConnectionLossException.class);
+        when(mockZooAdmin.close(1_000)).thenThrow(InterruptedException.class);
 
         ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
             @Override

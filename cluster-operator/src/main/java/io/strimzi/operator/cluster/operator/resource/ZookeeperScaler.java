@@ -251,7 +251,7 @@ public class ZookeeperScaler implements AutoCloseable {
                     zkAdmin.close((int) operationTimeoutMs);
                     promise.complete();
                 } catch (Exception e) {
-                    log.debug("Failed to close the ZooKeeperAdmin", e);
+                    log.warn("Failed to close the ZooKeeperAdmin", e);
                     promise.fail(e);
                 }
             }, false, closePromise);
