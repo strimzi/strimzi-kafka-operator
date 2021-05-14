@@ -245,7 +245,12 @@ public class KafkaClientsTemplates {
 
     static String saslConfigs(String namespaceName, KafkaUser kafkaUser, String secretPrefix) {
         String secretName = secretPrefix == null ? kafkaUser.getMetadata().getName() : secretPrefix + kafkaUser.getMetadata().getName();
-        Secret secret = ResourceManager.kubeClient().namespace(namespaceName).getSecret(secretName);
+        Secret secret = ResourceManager.kubeClient().getSecret(namespaceName, secretName);
+
+        LOGGER.warn("SecretPrefix: {}\nNamespace: {}\nSecretName: {}", secretPrefix, namespaceName, secretName);
+        LOGGER.warn("Secret: {}", secret);
+        LOGGER.warn("KafkaUser: {}", kafkaUser);
+        LOGGER.warn("Secrets in namespace: {}", ResourceManager.kubeClient().listSecrets(namespaceName));
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")), Charset.forName("UTF-8"));
         if (password.isEmpty()) {
