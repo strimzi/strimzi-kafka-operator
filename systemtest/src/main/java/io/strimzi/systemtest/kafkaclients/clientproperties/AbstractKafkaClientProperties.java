@@ -8,6 +8,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -35,7 +36,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Class KafkaClientProperties, which holds inner class builder for fluent way to invoke objects. It is used inside
@@ -276,7 +276,9 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
         File keystore = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".keystore");
         keystore.delete(); // Note horrible race condition, but this is only for testing
         // RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $HOSTNAME -password pass:$2 -out $1
-        if (new ProcessBuilder("openssl",
+        // The following code is needed to avoid race-condition which we see from time to time
+        TestUtils.waitFor("client-keystore readiness", Constants.GLOBAL_POLL_INTERVAL, Constants.CO_OPERATION_TIMEOUT_MEDIUM,
+            () -> Exec.exec("openssl",
                 "pkcs12",
                 "-export",
                 "-in", certFile.getAbsolutePath(),
@@ -285,9 +287,8 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                 "-CAfile", caFile.getAbsolutePath(),
                 "-name", "dfbdbd",
                 "-password", "pass:" + password,
-                "-out", keystore.getAbsolutePath()).inheritIO().start().waitFor() != 0) {
-            fail();
-        }
+                "-out", keystore.getAbsolutePath()).exitStatus());
+
         keystore.deleteOnExit();
         return keystore;
     }
