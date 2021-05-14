@@ -272,15 +272,12 @@ It is suitable when data does not need to be retained forever.
 The `compact` policy guarantees to keep the most recent message for each message key.
 Log compaction is suitable where message values are changeable, and you want to retain the latest update.
 
-In a compacted Kafka log, new messages are appended to the  _head_ of the log, which acts in the same way as a non-compacted log.
-The _tail_ of a compacted log has the older messages that are deleted or compacted according to policy.
-Consequently, the tail has non-contiguous offsets.
-
 If cleanup policy is set to delete logs, older segments are deleted based on log retention limits.
 Otherwise, if the log cleaner is not enabled, and there are no log retention limits, the log will continue to grow.
 
-If cleanup policy is set for log compaction, the head of the log operates as a standard Kafka log, with writes appended in order.
-Records in the tail are compacted.
+If cleanup policy is set for log compaction, the _head_ of the log operates as a standard Kafka log, with writes for new messages appended in order.
+Older records in the _tail_ are compacted or deleted according to policy.
+Consequently, the tail has non-contiguous offsets.
 
 .Log showing key value writes with offset positions before compaction
 image::tuning/broker-tuning-compaction-before.png[Image of compaction showing key value writes]
