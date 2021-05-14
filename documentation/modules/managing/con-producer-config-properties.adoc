@@ -5,6 +5,7 @@
 [id='con-producer-config-properties-{context}']
 = Kafka producer configuration tuning
 
+[role="_abstract"]
 Use a basic producer configuration with optional properties that are tailored to specific use cases.
 
 Adjusting your configuration to maximize throughput might increase latency or vice versa.
@@ -21,7 +22,8 @@ In a basic producer configuration:
 * The order of messages in a partition is not guaranteed.
 * The acknowledgment of messages reaching the broker does not guarantee durability.
 
-[source,shell,subs="+quotes,attributes"]
+.Basic producer configuration properties
+[source,env]
 ----
 # ...
 bootstrap.servers=localhost:9092 <1>
@@ -44,6 +46,7 @@ Compression is useful for improving throughput and reducing the load on storage,
 
 You can apply greater data durability, to minimize the likelihood that messages are lost, using message delivery acknowledgments.
 
+[source,env]
 ----
 # ...
 acks=all <1>
@@ -60,6 +63,7 @@ In this configuration, the producer can continue unaffected if a single broker i
 If a second broker becomes unavailable, the producer won’t receive acknowledgments and won’t be able to produce more messages.
 
 .Topic configuration to support `acks=all`
+[source,env]
 ----
 # ...
 min.insync.replicas=2 <1>
@@ -76,6 +80,7 @@ IDs and sequence numbers are assigned to messages to ensure the order of deliver
 If you are using `acks=all` for data consistency, enabling idempotency makes sense for ordered delivery.
 
 .Ordered delivery with idempotency
+[source,env]
 ----
 # ...
 enable.idempotence=true <1>
@@ -94,6 +99,7 @@ set the number of in-flight (unacknowledged) requests to 1 to preserve ordering.
 Otherwise, a situation is possible where _Message-A_ fails only to succeed after _Message-B_ was already written to the broker.
 
 .Ordered delivery without idempotency
+[source,env]
 ----
 # ...
 enable.idempotence=false <1>
@@ -112,7 +118,7 @@ Transactions, when used with idempotence, allow exactly once writes across multi
 Transactions guarantee that messages using the same transactional ID are produced once,
 and either _all_ are successfully written to the respective logs or _none_ of them are.
 
-[source,shell,subs="+quotes"]
+[source,env,subs="+quotes"]
 ----
 # ...
 enable.idempotence=true
@@ -190,6 +196,7 @@ Batches will remain in the queue until one of the following occurs:
 
 Look at the configuration for batching and buffering to mitigate the impact of `send()` blocking on latency.
 
+[source,env]
 ----
 # ...
 linger.ms=100 <1>
@@ -208,6 +215,7 @@ Improve throughput of your message requests by adjusting the maximum time to wai
 
 You can also direct messages to a specified partition by writing a custom partitioner to replace the default.
 
+[source,env]
 ----
 # ...
 delivery.timeout.ms=120000 <1>

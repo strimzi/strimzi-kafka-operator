@@ -11,7 +11,7 @@ An efficient data storage infrastructure is essential to the optimal performance
 Block storage is required.
 File storage, such as NFS, does not work with Kafka.
 
-For your block storage, you can choose, for example:
+Choose from one of the following options for your block storage:
 
 * Cloud-based block storage solutions, such as {aws-ebs}
 * {K8sLocalPersistentVolumes}

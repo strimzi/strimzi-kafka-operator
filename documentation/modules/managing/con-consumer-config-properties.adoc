@@ -5,6 +5,7 @@
 [id='con-consumer-config-properties-{context}']
 = Kafka consumer configuration tuning
 
+[role="_abstract"]
 Use a basic consumer configuration with optional properties that are tailored to specific use cases.
 
 When tuning your consumers your primary concern will be ensuring that they cope efficiently with the amount of data ingested.
@@ -20,7 +21,8 @@ In a consumer configuration, irrespective of any subsequent configuration:
 * The consumer fetches from a given offset and consumes the messages in order, unless the offset is changed to skip or re-read messages.
 * The broker does not know if the consumer processed the responses, even when committing offsets to Kafka, because the offsets might be sent to a different broker in the cluster.
 
-[source,shell,subs="+quotes,attributes"]
+.Basic consumer configuration properties
+[source,env]
 ----
 # ...
 bootstrap.servers=localhost:9092 <1>
@@ -58,6 +60,7 @@ If you can meet throughput goals with fewer consumers, you save on resources.
 Consumers within the same consumer group send offset commits and heartbeats to the same broker.
 So the greater the number of consumers in the group, the higher the request load on the broker.
 
+[source,env]
 ----
 # ...
 group.id=my-group-id <1>
@@ -92,6 +95,7 @@ when Kafka receives a fetch request from the consumer it will respond when the f
 
 Conversely, you can adjust the `fetch.max.wait.ms` and `fetch.min.bytes` properties lower to improve end-to-end latency.
 
+[source,env]
 ----
 # ...
 fetch.max.wait.ms=500 <1>
@@ -122,6 +126,7 @@ _NUMBER-OF-BROKERS_ * fetch.max.bytes and _NUMBER-OF-PARTITIONS_ * max.partition
 If memory usage can accommodate it, you can increase the values of these two properties.
 By allowing more data in each request, latency is improved as there are fewer fetch requests.
 
+[source,env]
 ----
 # ...
 fetch.max.bytes=52428800 <1>
@@ -146,6 +151,7 @@ or the consumer closes.
 To minimize the likelihood of data loss or duplication, you can set `enable.auto.commit` to `false` and develop your client application to have more control over committing offsets.
 Or you can use `auto.commit.interval.ms` to decrease the intervals between commits.
 
+[source,env]
 ----
 # ...
 enable.auto.commit=false <1>
@@ -178,6 +184,7 @@ The `isolation.level` property has two valid values:
 Use `read_committed` to ensure that only transactional messages that have been committed are read by the consumer.
 However, this will cause an increase in end-to-end latency, because the consumer will not be able to return a message until the brokers have written the transaction markers that record the result of the transaction (_committed_ or _aborted_).
 
+[source,env]
 ----
 # ...
 enable.auto.commit=false
@@ -215,6 +222,7 @@ To avoid data loss, but increase the amount of processing, set `auto.offset.rese
 Also consider using the `earliest` option to avoid messages being lost when the offsets retention period (`offsets.retention.minutes`) configured for a broker has ended.
 If a consumer group or standalone consumer is inactive and commits no offsets during the retention period, previously committed offsets are deleted from `__consumer_offsets`.
 
+[source,env]
 ----
 # ...
 heartbeat.interval.ms=3000 <1>
@@ -254,7 +262,7 @@ If the consumer application does not make a call to poll at least every `max.pol
 If the application cannot process all the records returned from poll in time, you can avoid a rebalance by using the `max.poll.interval.ms` property to specify the interval in milliseconds between polls for new messages from a consumer.
 Or you can use the `max.poll.records` property to set a maximum limit on the number of records returned from the consumer buffer, allowing your application to process fewer records within the `max.poll.interval.ms` limit.
 
-[source,shell,subs="+quotes,attributes"]
+[source,shell]
 ----
 # ...
 group.instance.id=_UNIQUE-ID_ <1>

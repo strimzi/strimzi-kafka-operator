@@ -23,7 +23,7 @@ include::modules/con-service-discovery.adoc[leveloffset=+1]
 include::assembly-cluster-recovery-volume.adoc[leveloffset=+1]
 
 //tuning for clients
-include::assembly-client-config.adoc[leveloffset=+1]
+include::assembly-tuning-config.adoc[leveloffset=+1]
 
 //Uninstall the product
 include::modules/proc-uninstalling.adoc[leveloffset=+1]
