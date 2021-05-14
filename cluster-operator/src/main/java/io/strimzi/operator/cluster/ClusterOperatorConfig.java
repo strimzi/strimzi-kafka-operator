@@ -243,13 +243,13 @@ public class ClusterOperatorConfig {
     }
 
     private static int parseInt(String envVar, int defaultValue) {
-        int defalt = defaultValue;
+        int value = defaultValue;
 
         if (envVar != null) {
-            defalt = Integer.parseInt(envVar);
+            value = Integer.parseInt(envVar);
         }
 
-        return defalt;
+        return value;
     }
 
     private static boolean parseCreateClusterRoles(String createClusterRolesEnvVar) {

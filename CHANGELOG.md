@@ -3,7 +3,7 @@
 ## 0.24.0
 
 * Add support for Kafka 2.7.1 and remove support for 2.6.0, 2.6.1, and 2.6.2
-* Added support to configure the worker thread pool size
+* Added support for configuring cluster-operator's worker thread pool size that is used for various sync and async tasks
  
 ## 0.23.0
 
