@@ -4,7 +4,6 @@
  */
 package io.strimzi.kafka.agent;
 
-import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Gauge;
 import com.yammer.metrics.core.Metric;
 import com.yammer.metrics.core.MetricName;
@@ -40,30 +39,10 @@ public class KafkaAgent {
         this.sessionConnectedFile = sessionConnectedFile;
     }
 
-    /**
-     * Since Kafka 2.6.0, a new class KafkaYammerMetrics exists which has the default Metrics Registry. The old default
-     * registry does not work there anymore. So if the new class exists, we use it and if it doesn't exist we use the
-     * old one. More details can be found here: https://github.com/apache/kafka/blob/2.6.0/core/src/main/java/kafka/metrics/KafkaYammerMetrics.java
-     *
-     * Once we support only 2.6.0 and newer, we can clean this up and use only KafkaYammerMetrics all the time.
-     *
-     * @return  MetricsRegistry with Kafka metrics
-     */
-    private MetricsRegistry metricsRegistry()   {
-        try {
-            Class.forName("kafka.metrics.KafkaYammerMetrics");
-            LOGGER.info("KafkaYammerMetrics found and will be used.");
-            return KafkaYammerMetrics.defaultRegistry();
-        } catch (ClassNotFoundException e) {
-            LOGGER.info("KafkaYammerMetrics not found. Metrics will be used.");
-            return Metrics.defaultRegistry();
-        }
-    }
-
     private void run() {
         LOGGER.info("Starting metrics registry");
 
-        MetricsRegistry metricsRegistry = metricsRegistry();
+        MetricsRegistry metricsRegistry = KafkaYammerMetrics.defaultRegistry();
 
         metricsRegistry.addListener(new MetricsRegistryListener() {
             @Override

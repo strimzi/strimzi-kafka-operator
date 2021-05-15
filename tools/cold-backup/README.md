@@ -32,7 +32,7 @@ kubectl create -f ./examples/topic/kafka-topic.yaml
 
 # send 100000 messages and consume them
 kubectl run kafka-producer-perf-test -it \
-    --image="quay.io/strimzi/kafka:latest-kafka-2.6.0" \
+    --image="quay.io/strimzi/kafka:latest-kafka-2.8.0" \
     --rm="true" --restart="Never" -- bin/kafka-producer-perf-test.sh \
     --topic my-topic --record-size 1000 --num-records 100000 --throughput -1 \
     --producer-props acks=1 bootstrap.servers=my-cluster-kafka-bootstrap:9092
@@ -48,7 +48,7 @@ kubectl exec -it my-cluster-kafka-0 -c kafka -- \
 
 # send additional 12345 messages
 kubectl run kafka-producer-perf-test -it \
-    --image="quay.io/strimzi/kafka:latest-kafka-2.6.0" \
+    --image="quay.io/strimzi/kafka:latest-kafka-2.8.0" \
     --rm="true" --restart="Never" -- bin/kafka-producer-perf-test.sh \
     --topic my-topic --record-size 1000 --num-records 12345 --throughput -1 \
     --producer-props acks=1 bootstrap.servers=my-cluster-kafka-bootstrap:9092
