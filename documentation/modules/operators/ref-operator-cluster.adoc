@@ -208,6 +208,11 @@ Alpha and beta features are removed if they do not prove to be useful.
 ¦
 ¦
 
+¦`ServiceAccountPatching`
+¦0.24.0
+¦
+¦
+
 |===
 
 You configure feature gates using the environment variable `STRIMZI_FEATURE_GATES`.
@@ -230,6 +235,17 @@ To enable it, use `+ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environ
 This feature gate has to be disabled when upgrading from Strimzi 0.22 and earlier or when downgrading to Strimzi 0.22 and earlier.
 
 NOTE: The `ControlPlaneListener` feature gate was introduced in Strimzi 0.23.0 and is expected to remain in the alpha phase for a number of releases before it moves to the beta phase and is enabled by default.
+
+=== Service Account patching feature gate
+
+The default behavior of the Strimzi Cluster Operator is that once the Service Account exists, it is never updated.
+When the `ServiceAccountPatching` feature gate is enabled, the operator will patch the Service Accounts and apply any desired changes to the Service Account configuration in every reconciliation.
+Tsi for example allows changing labels or annotations after the operands are already created.
+This feature gate is currently in the alpha phase and is disabled by default.
+To enable it, use `+ServiceAccountPatching` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+NOTE: The `ServiceAccountPatching` feature gate was introduced in Strimzi 0.24.0 and is expected to remain in the alpha phase for a number of releases before it moves to the beta phase and is enabled by default.
+
 
 == Logging configuration by ConfigMap
 

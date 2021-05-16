@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -486,6 +487,9 @@ public class CruiseControlTest {
         Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
 
+        Map<String, String> saLabels = TestUtils.map("l7", "v7", "l8", "v8");
+        Map<String, String> saAnots = TestUtils.map("a7", "v7", "a8", "v8");
+
         Affinity affinity = new AffinityBuilder()
                 .withNewNodeAffinity()
                     .withNewRequiredDuringSchedulingIgnoredDuringExecution()
@@ -546,6 +550,12 @@ public class CruiseControlTest {
                                 .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
                                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                             .endApiService()
+                            .withNewServiceAccount()
+                                .withNewMetadata()
+                                    .withLabels(saLabels)
+                                    .withAnnotations(saAnots)
+                                .endMetadata()
+                            .endServiceAccount()
                         .endTemplate()
                     .endCruiseControl()
                 .endSpec()
@@ -576,6 +586,11 @@ public class CruiseControlTest {
         assertThat(svc.getMetadata().getAnnotations(),  is(svcAnots));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
         assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
+
+        // Check Service Account
+        ServiceAccount sa = cc.generateServiceAccount();
+        assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
     @ParallelTest

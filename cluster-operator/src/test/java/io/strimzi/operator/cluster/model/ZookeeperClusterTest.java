@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -392,6 +393,9 @@ public class ZookeeperClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l9", "v9", "l10", "v10");
         Map<String, String> pdbAnots = TestUtils.map("a9", "v9", "a10", "v10");
 
+        Map<String, String> saLabels = TestUtils.map("l11", "v11", "l12", "v12");
+        Map<String, String> saAnots = TestUtils.map("a11", "v11", "a12", "v12");
+
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
                 .withIp("192.168.1.86")
@@ -459,6 +463,12 @@ public class ZookeeperClusterTest {
                                     .withAnnotations(pdbAnots)
                                 .endMetadata()
                             .endPodDisruptionBudget()
+                            .withNewServiceAccount()
+                                .withNewMetadata()
+                                    .withLabels(saLabels)
+                                    .withAnnotations(saAnots)
+                                .endMetadata()
+                            .endServiceAccount()
                         .endTemplate()
                     .endZookeeper()
                 .endSpec()
@@ -497,6 +507,11 @@ public class ZookeeperClusterTest {
         PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+
+        // Check Service Account
+        ServiceAccount sa = zc.generateServiceAccount();
+        assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
     @ParallelTest

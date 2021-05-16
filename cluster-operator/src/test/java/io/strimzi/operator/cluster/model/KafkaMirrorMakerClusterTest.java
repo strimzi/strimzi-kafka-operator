@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
@@ -488,6 +489,9 @@ public class KafkaMirrorMakerClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> pdbAnots = TestUtils.map("a5", "v5", "a6", "v6");
 
+        Map<String, String> saLabels = TestUtils.map("l7", "v7", "l8", "v8");
+        Map<String, String> saAnots = TestUtils.map("a7", "v7", "a8", "v8");
+
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
                 .withIp("192.168.1.86")
@@ -523,6 +527,12 @@ public class KafkaMirrorMakerClusterTest {
                                 .withAnnotations(pdbAnots)
                             .endMetadata()
                         .endPodDisruptionBudget()
+                        .withNewServiceAccount()
+                            .withNewMetadata()
+                                .withLabels(saLabels)
+                                .withAnnotations(saAnots)
+                            .endMetadata()
+                        .endServiceAccount()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -547,6 +557,11 @@ public class KafkaMirrorMakerClusterTest {
         PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+
+        // Check Service Account
+        ServiceAccount sa = mmc.generateServiceAccount();
+        assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
     @ParallelTest

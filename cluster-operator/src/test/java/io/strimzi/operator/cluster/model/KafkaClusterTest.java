@@ -25,6 +25,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -1457,6 +1458,9 @@ public class KafkaClusterTest {
         Map<String, String> crbLabels = TestUtils.map("l19", "v19", "l20", "v20");
         Map<String, String> crbAnots = TestUtils.map("a19", "v19", "a20", "v20");
 
+        Map<String, String> saLabels = TestUtils.map("l21", "v21", "l22", "v22");
+        Map<String, String> saAnots = TestUtils.map("a21", "v21", "a22", "v22");
+
         HostAlias hostAlias1 = new HostAliasBuilder()
                         .withHostnames("my-host-1", "my-host-2")
                         .withIp("192.168.1.86")
@@ -1568,6 +1572,12 @@ public class KafkaClusterTest {
                                     .withAnnotations(crbAnots)
                                 .endMetadata()
                             .endClusterRoleBinding()
+                            .withNewServiceAccount()
+                                .withNewMetadata()
+                                    .withLabels(saLabels)
+                                    .withAnnotations(saAnots)
+                                .endMetadata()
+                            .endServiceAccount()
                         .endTemplate()
                     .endKafka()
                 .endSpec()
@@ -1631,6 +1641,11 @@ public class KafkaClusterTest {
         ClusterRoleBinding crb = kc.generateClusterRoleBinding("namespace");
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
         assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
+
+        // Check Service Account
+        ServiceAccount sa = kc.generateServiceAccount();
+        assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
     @ParallelTest
