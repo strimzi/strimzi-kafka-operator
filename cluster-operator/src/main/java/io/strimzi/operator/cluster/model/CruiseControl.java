@@ -318,6 +318,11 @@ public class CruiseControl extends AbstractModel {
                 cruiseControl.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
             }
 
+            if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
+                cruiseControl.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
+                cruiseControl.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(cruiseControl, template.getPodDisruptionBudget());
         }
         return cruiseControl;

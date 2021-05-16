@@ -28,7 +28,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "statefulset", "pod", "clientService", "nodesService", "persistentVolumeClaim",
-        "podDisruptionBudget", "zookeeperContainer", "tlsSidecarContainer"})
+        "podDisruptionBudget", "zookeeperContainer", "tlsSidecarContainer", "serviceAccount"})
 @EqualsAndHashCode
 public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -41,6 +41,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate zookeeperContainer;
     private ContainerTemplate tlsSidecarContainer;
+    private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for ZooKeeper `StatefulSet`.")
@@ -125,6 +126,16 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
 
     public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
         this.tlsSidecarContainer = tlsSidecarContainer;
+    }
+
+    @Description("Template for the ZooKeeper Service Account.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getServiceAccount() {
+        return serviceAccount;
+    }
+
+    public void setServiceAccount(ResourceTemplate serviceAccount) {
+        this.serviceAccount = serviceAccount;
     }
 
     @Override

@@ -133,6 +133,11 @@ public class KafkaExporter extends AbstractModel {
                     kafkaExporter.templateContainerSecurityContext = template.getContainer().getSecurityContext();
                 }
 
+                if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
+                    kafkaExporter.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
+                    kafkaExporter.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+                }
+
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
             }
 

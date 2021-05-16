@@ -26,7 +26,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod", "apiService", "podDisruptionBudget", "cruiseControlContainer", "tlsSidecarContainer"})
+        "deployment", "pod", "apiService", "podDisruptionBudget", "cruiseControlContainer", "tlsSidecarContainer", "serviceAccount"})
 @EqualsAndHashCode
 public class CruiseControlTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -37,6 +37,7 @@ public class CruiseControlTemplate implements Serializable, UnknownPropertyPrese
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate cruiseControlContainer;
     private ContainerTemplate tlsSidecarContainer;
+    private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Cruise Control `Deployment`.")
@@ -97,6 +98,16 @@ public class CruiseControlTemplate implements Serializable, UnknownPropertyPrese
 
     public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
         this.tlsSidecarContainer = tlsSidecarContainer;
+    }
+
+    @Description("Template for the Cruise Control Service Account.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getServiceAccount() {
+        return serviceAccount;
+    }
+
+    public void setServiceAccount(ResourceTemplate serviceAccount) {
+        this.serviceAccount = serviceAccount;
     }
 
     @Override

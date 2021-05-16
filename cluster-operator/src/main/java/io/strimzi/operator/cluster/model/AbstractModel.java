@@ -283,6 +283,8 @@ public abstract class AbstractModel {
     protected Boolean templatePodEnableServiceLinks;
     protected Map<String, String> templateClusterRoleBindingLabels;
     protected Map<String, String> templateClusterRoleBindingAnnotations;
+    protected Map<String, String> templateServiceAccountLabels;
+    protected Map<String, String> templateServiceAccountAnnotations;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -1446,7 +1448,8 @@ public abstract class AbstractModel {
                     .withName(getServiceAccountName())
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
+                    .withLabels(getLabelsWithStrimziName(name, templateServiceAccountLabels).toMap())
+                    .withAnnotations(templateServiceAccountAnnotations)
                 .endMetadata()
             .build();
     }

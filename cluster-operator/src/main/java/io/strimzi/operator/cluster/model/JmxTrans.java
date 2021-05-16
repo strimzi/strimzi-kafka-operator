@@ -146,6 +146,11 @@ public class JmxTrans extends AbstractModel {
                 if (template.getContainer() != null && template.getContainer().getSecurityContext() != null) {
                     result.templateContainerSecurityContext = template.getContainer().getSecurityContext();
                 }
+
+                if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
+                    result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
+                    result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+                }
             }
 
         }

@@ -187,6 +187,11 @@ public class EntityOperator extends AbstractModel {
                 if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
                     result.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
                 }
+
+                if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
+                    result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
+                    result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+                }
             }
 
             result.setTlsSidecar(tlsSidecar);

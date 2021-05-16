@@ -18,8 +18,13 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testFeatureGates() {
         assertThat(new FeatureGates("+ControlPlaneListener").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("  +ControlPlaneListener    ").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
+        assertThat(new FeatureGates("+ServiceAccountPatching").serviceAccountPatchingEnabled(), is(true));
+        assertThat(new FeatureGates("+ControlPlaneListener,-ServiceAccountPatching").controlPlaneListenerEnabled(), is(true));
+        assertThat(new FeatureGates("+ControlPlaneListener,-ServiceAccountPatching").serviceAccountPatchingEnabled(), is(false));
+        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +ServiceAccountPatching").controlPlaneListenerEnabled(), is(true));
+        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +ServiceAccountPatching").serviceAccountPatchingEnabled(), is(true));
+        assertThat(new FeatureGates("+ServiceAccountPatching,-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
+        assertThat(new FeatureGates("+ServiceAccountPatching,-ControlPlaneListener").serviceAccountPatchingEnabled(), is(true));
     }
 
     @ParallelTest

@@ -15,8 +15,10 @@ import static java.util.Arrays.asList;
  */
 public class FeatureGates {
     private static final String CONTROL_PLANE_LISTENER = "ControlPlaneListener";
+    private static final String SERVICE_ACCOUNT_PATCHING = "ServiceAccountPatching";
 
     private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, false);
+    private final FeatureGate serviceAccountPatching = new FeatureGate(SERVICE_ACCOUNT_PATCHING, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -40,6 +42,9 @@ public class FeatureGates {
                 switch (featureGate) {
                     case CONTROL_PLANE_LISTENER:
                         setValueOnlyOnce(controlPlaneListener, value);
+                        break;
+                    case SERVICE_ACCOUNT_PATCHING:
+                        setValueOnlyOnce(serviceAccountPatching, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -70,10 +75,18 @@ public class FeatureGates {
         return controlPlaneListener.isEnabled();
     }
 
+    /**
+     * @return  Returns true when the ServiceAccountPatching feature gate is enabled
+     */
+    public boolean serviceAccountPatchingEnabled() {
+        return serviceAccountPatching.isEnabled();
+    }
+
     @Override
     public String toString() {
         return "FeatureGates(" +
-                "controlPlaneListener=" + controlPlaneListener.isEnabled() +
+                "controlPlaneListener=" + controlPlaneListener.isEnabled() + "," +
+                "ServiceAccountPatching=" + serviceAccountPatching.isEnabled() +
                 ")";
     }
 

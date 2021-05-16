@@ -306,6 +306,11 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateZookeeperContainerSecurityContext = template.getZookeeperContainer().getSecurityContext();
             }
 
+            if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
+                zk.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
+                zk.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 

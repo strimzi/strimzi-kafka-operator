@@ -24,8 +24,8 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "deployment", "pod", "apiService"})
+@JsonPropertyOrder({"deployment", "pod", "apiService", "connectContainer", "initContainer", "podDisruptionBudget",
+        "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig", "buildServiceAccount"})
 @EqualsAndHashCode
 public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -40,6 +40,8 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
     private ContainerTemplate buildContainer;
     private ResourceTemplate buildConfig;
     private ResourceTemplate clusterRoleBinding;
+    private ResourceTemplate serviceAccount;
+    private ResourceTemplate buildServiceAccount;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Connect `Deployment`.")
@@ -143,6 +145,26 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
 
     public void setClusterRoleBinding(ResourceTemplate clusterRoleBinding) {
         this.clusterRoleBinding = clusterRoleBinding;
+    }
+
+    @Description("Template for the Kafka Connect Service Account.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getServiceAccount() {
+        return serviceAccount;
+    }
+
+    public void setServiceAccount(ResourceTemplate serviceAccount) {
+        this.serviceAccount = serviceAccount;
+    }
+
+    @Description("Template for the Kafka Connect Build Service Account.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getBuildServiceAccount() {
+        return buildServiceAccount;
+    }
+
+    public void setBuildServiceAccount(ResourceTemplate buildServiceAccount) {
+        this.buildServiceAccount = buildServiceAccount;
     }
 
     @Override

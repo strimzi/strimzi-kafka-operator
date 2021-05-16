@@ -25,7 +25,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod", "apiService"})
+        "deployment", "pod", "apiService", "podDisruptionBudget", "bridgeContainer", "serviceAccount"})
 @EqualsAndHashCode
 public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -35,6 +35,7 @@ public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserv
     private InternalServiceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate bridgeContainer;
+    private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Bridge `Deployment`.")
@@ -85,6 +86,16 @@ public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserv
 
     public void setBridgeContainer(ContainerTemplate bridgeContainer) {
         this.bridgeContainer = bridgeContainer;
+    }
+
+    @Description("Template for the Kafka Bridge Service Account.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getServiceAccount() {
+        return serviceAccount;
+    }
+
+    public void setServiceAccount(ResourceTemplate serviceAccount) {
+        this.serviceAccount = serviceAccount;
     }
 
     @Override

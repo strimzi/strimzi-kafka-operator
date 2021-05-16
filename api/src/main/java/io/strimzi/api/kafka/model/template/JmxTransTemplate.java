@@ -25,7 +25,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "deployment", "pod", "container", "additionalProperties" })
+@JsonPropertyOrder({ "deployment", "pod", "container", "serviceAccount", "additionalProperties" })
 @EqualsAndHashCode
 public class JmxTransTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -33,6 +33,7 @@ public class JmxTransTemplate implements Serializable, UnknownPropertyPreserving
     private ResourceTemplate deployment;
     private PodTemplate pod;
     private ContainerTemplate container;
+    private ResourceTemplate serviceAccount;
     protected Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for JmxTrans `Deployment`.")
@@ -63,6 +64,16 @@ public class JmxTransTemplate implements Serializable, UnknownPropertyPreserving
 
     public void setContainer(ContainerTemplate container) {
         this.container = container;
+    }
+
+    @Description("Template for the JMX Trans Service Account.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getServiceAccount() {
+        return serviceAccount;
+    }
+
+    public void setServiceAccount(ResourceTemplate serviceAccount) {
+        this.serviceAccount = serviceAccount;
     }
 
     @Override

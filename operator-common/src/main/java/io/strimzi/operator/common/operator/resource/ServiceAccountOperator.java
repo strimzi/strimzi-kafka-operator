@@ -13,6 +13,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
+    private final boolean patching;
 
     /**
      * Constructor
@@ -20,7 +21,18 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
      * @param client The Kubernetes client
      */
     public ServiceAccountOperator(Vertx vertx, KubernetesClient client) {
+        this(vertx, client, false);
+    }
+
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param patching  Enables or disables patching of existing service accounts
+     */
+    public ServiceAccountOperator(Vertx vertx, KubernetesClient client, boolean patching) {
         super(vertx, client, "ServiceAccount");
+        this.patching = patching;
     }
 
     @Override
@@ -30,8 +42,16 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
 
     @Override
     protected Future<ReconcileResult<ServiceAccount>> internalPatch(String namespace, String name, ServiceAccount current, ServiceAccount desired) {
-        // Patching a SA causes new tokens to be created, which we should avoid
-        log.debug("{} {} in namespace {} has not been patched: patching service accounts generates new tokens which should be avoided.", resourceKind, name, namespace);
-        return Future.succeededFuture(ReconcileResult.noop(current));
+        if (patching)   {
+            if (desired.getSecrets() == null || desired.getSecrets().isEmpty())    {
+                desired.setSecrets(current.getSecrets());
+            }
+
+            return super.internalPatch(namespace, name, current, desired);
+        } else {
+            // Patching a SA causes new tokens to be created, which we should avoid
+            log.debug("{} {} in namespace {} has not been patched: patching service accounts generates new tokens which should be avoided.", resourceKind, name, namespace);
+            return Future.succeededFuture(ReconcileResult.noop(current));
+        }
     }
 }
