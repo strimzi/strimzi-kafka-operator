@@ -163,7 +163,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                 if (!properties.getProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG).equals(CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL) &&
                     !properties.getProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG).equals("SASL_" + CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL)
                 ) {
-                    Secret clusterCaCertSecret = kubeClient(namespaceName).getSecret(caSecretName);
+                    Secret clusterCaCertSecret = kubeClient().getSecret(namespaceName, caSecretName);
                     File tsFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".truststore");
                     tsFile.deleteOnExit();
                     KeyStore ts = KeyStore.getInstance(TRUSTSTORE_TYPE_CONFIG);
@@ -171,7 +171,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     if (caSecretName.contains("custom-certificate")) {
                         ts.load(null, tsPassword.toCharArray());
                         CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                        String clusterCaCert = kubeClient(namespaceName).getSecret(caSecretName).getData().get("ca.crt");
+                        String clusterCaCert = kubeClient().getSecret(namespaceName, caSecretName).getData().get("ca.crt");
                         Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(clusterCaCert)));
                         ts.setCertificateEntry("ca.crt", cert);
                         try (FileOutputStream tsOs = new FileOutputStream(tsFile)) {
@@ -192,7 +192,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     && !properties.getProperty(SaslConfigs.SASL_MECHANISM).equals("OAUTHBEARER")) {
 
                     properties.setProperty(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
-                    Secret userSecret = kubeClient(namespaceName).getSecret(kafkaUsername);
+                    Secret userSecret = kubeClient().getSecret(namespaceName, kafkaUsername);
                     String password = new String(Base64.getDecoder().decode(userSecret.getData().get("password")), StandardCharsets.UTF_8);
 
                     String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
@@ -201,7 +201,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     properties.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasCfg);
                 } else if (!kafkaUsername.isEmpty()) {
 
-                    Secret userSecret = kubeClient(namespaceName).getSecret(kafkaUsername);
+                    Secret userSecret = kubeClient().getSecret(namespaceName, kafkaUsername);
 
                     String clientsCaCert = userSecret.getData().get("ca.crt");
                     LOGGER.debug("Clients CA cert: {}", clientsCaCert);
