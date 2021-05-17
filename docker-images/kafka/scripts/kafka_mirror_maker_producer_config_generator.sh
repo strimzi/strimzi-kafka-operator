@@ -33,15 +33,15 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" ]; then
         SECURITY_PROTOCOL="SASL_PLAINTEXT"
     fi
 
-    if [ "x$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" = "xplain" ]; then
+    if [ "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" = "plain" ]; then
         PASSWORD=$(cat "/opt/kafka/producer-password/$KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_PRODUCER")
         SASL_MECHANISM="PLAIN"
         JAAS_CONFIG="org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${KAFKA_MIRRORMAKER_SASL_USERNAME_PRODUCER}\" password=\"${PASSWORD}\";"
-    elif [ "x$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" = "xscram-sha-512" ]; then
+    elif [ "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" = "scram-sha-512" ]; then
         PASSWORD=$(cat "/opt/kafka/producer-password/$KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_PRODUCER")
         SASL_MECHANISM="SCRAM-SHA-512"
         JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"${KAFKA_MIRRORMAKER_SASL_USERNAME_PRODUCER}\" password=\"${PASSWORD}\";"
-    elif [ "x$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" = "xoauth" ]; then
+    elif [ "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" = "oauth" ]; then
         if [ -n "$KAFKA_MIRRORMAKER_OAUTH_ACCESS_TOKEN_PRODUCER" ]; then
             OAUTH_ACCESS_TOKEN="oauth.access.token=\"$KAFKA_MIRRORMAKER_OAUTH_ACCESS_TOKEN_PRODUCER\""
         fi
