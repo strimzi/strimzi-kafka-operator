@@ -53,16 +53,16 @@ if [ -n "$KAFKA_CONNECT_SASL_MECHANISM" ]; then
     else
         SECURITY_PROTOCOL="SASL_PLAINTEXT"
     fi
-    
-    if [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xplain" ]; then
+
+    if [ "$KAFKA_CONNECT_SASL_MECHANISM" = "plain" ]; then
         PASSWORD=$(cat "/opt/kafka/connect-password/$KAFKA_CONNECT_SASL_PASSWORD_FILE")
         SASL_MECHANISM="PLAIN"
         JAAS_CONFIG="org.apache.kafka.common.security.plain.PlainLoginModule required username=\"${KAFKA_CONNECT_SASL_USERNAME}\" password=\"${PASSWORD}\";"
-    elif [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xscram-sha-512" ]; then
+    elif [ "$KAFKA_CONNECT_SASL_MECHANISM" = "scram-sha-512" ]; then
         PASSWORD=$(cat "/opt/kafka/connect-password/$KAFKA_CONNECT_SASL_PASSWORD_FILE")
         SASL_MECHANISM="SCRAM-SHA-512"
         JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"${KAFKA_CONNECT_SASL_USERNAME}\" password=\"${PASSWORD}\";"
-    elif [ "x$KAFKA_CONNECT_SASL_MECHANISM" = "xoauth" ]; then
+    elif [ "$KAFKA_CONNECT_SASL_MECHANISM" = "oauth" ]; then
         if [ -n "$KAFKA_CONNECT_OAUTH_ACCESS_TOKEN" ]; then
             OAUTH_ACCESS_TOKEN="oauth.access.token=\"$KAFKA_CONNECT_OAUTH_ACCESS_TOKEN\""
         fi
