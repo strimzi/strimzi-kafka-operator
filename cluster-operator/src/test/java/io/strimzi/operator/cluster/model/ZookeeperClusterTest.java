@@ -59,6 +59,7 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.security.cert.CertificateParsingException;
@@ -350,7 +351,7 @@ public class ZookeeperClusterTest {
         return zc.generateNodesSecret();
     }
 
-    @ParallelTest
+    @Test
     public void testGenerateBrokerSecret() throws CertificateParsingException {
         Secret secret = generateNodeSecret();
         assertThat(secret.getData().keySet(), is(set(
