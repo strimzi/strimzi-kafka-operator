@@ -105,4 +105,3 @@ When configuring the client directly in Java, set the configuration option to an
 
 [source,java]
 props.put("ssl.endpoint.identification.algorithm", "");
-
