@@ -12,12 +12,12 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.RestartReasons;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Function;
 
 
@@ -36,9 +36,10 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
      * @param client The Kubernetes client
      * @param leaderFinder The Zookeeper leader finder.
      * @param operationTimeoutMs The timeout.
+     * @param metricsProvider - metrics provider needed by pod operator for publishing restart reasons
      */
-    public ZookeeperSetOperator(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder leaderFinder, long operationTimeoutMs) {
-        super(vertx, client, operationTimeoutMs);
+    public ZookeeperSetOperator(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder leaderFinder, long operationTimeoutMs, MetricsProvider metricsProvider) {
+        super(vertx, client, operationTimeoutMs, metricsProvider);
         this.leaderFinder = leaderFinder;
     }
 
@@ -68,7 +69,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
+    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         final int replicas = sts.getSpec().getReplicas();
@@ -79,7 +80,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         for (int i = 0; i < replicas; i++) {
             Pod pod = podOperations.get(sts.getMetadata().getNamespace(), KafkaResources.zookeeperPodName(cluster, i));
-            List<String> zkPodRestart = podRestart.apply(pod);
+            RestartReasons zkPodRestart = podRestart.apply(pod);
             zkRoll |= zkPodRestart != null && !zkPodRestart.isEmpty();
             pods.add(pod);
         }

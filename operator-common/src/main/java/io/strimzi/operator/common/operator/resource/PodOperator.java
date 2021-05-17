@@ -14,6 +14,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.RestartReasons;
+import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -26,14 +28,18 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodOperator.class);
     private static final String NO_UID = "NULL";
+    private RestartReasonPublisher restartPublisher;
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
+     *
+     * @param vertx  The Vertx instance
      * @param client The Kubernetes client
+     * @param restartPublisher - publishes restart reasons to K8s events and Prometheus
      */
-    public PodOperator(Vertx vertx, KubernetesClient client) {
+    public PodOperator(Vertx vertx, KubernetesClient client, RestartReasonPublisher restartPublisher) {
         super(vertx, client, "Pods");
+        this.restartPublisher = restartPublisher;
     }
 
     @Override
@@ -43,9 +49,10 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
 
     /**
      * Watch the pod identified by the given {@code namespace} and {@code name} using the given {@code watcher}.
+     *
      * @param namespace The namespace
-     * @param name The name
-     * @param watcher The watcher
+     * @param name      The name
+     * @param watcher   The watcher
      * @return The watch
      */
     public Watch watch(String namespace, String name, Watcher<Pod> watcher) {
@@ -55,17 +62,24 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
     /**
      * Asynchronously delete the given pod, return a Future which completes when the Pod has been recreated.
      * Note: The pod might not be "ready" when the returned Future completes.
+     *
      * @param reconciliation The reconciliation
-     * @param pod The pod to be restarted
-     * @param timeoutMs Timeout of the deletion
+     * @param pod        The pod to be restarted
+     * @param timeoutMs  Timeout of the deletion
+     * @param reasons    Why the pod is being restarted
      * @return a Future which completes when the Pod has been recreated
      */
-    public Future<Void> restart(Reconciliation reconciliation, Pod pod, long timeoutMs) {
+    public Future<Void> restart(Reconciliation reconciliation, Pod pod, long timeoutMs, RestartReasons reasons) {
         long pollingIntervalMs = 1_000;
         String namespace = pod.getMetadata().getNamespace();
         String podName = pod.getMetadata().getName();
         Promise<Void> deleteFinished = Promise.promise();
-        LOGGER.infoCr(reconciliation, "Rolling pod {}", podName);
+
+        LOGGER.infoCr(reconciliation, "Rolling pod {}",  podName);
+        resourceSupport.executeBlocking(promise -> {
+            restartPublisher.publish(pod, reasons);
+            promise.complete();
+        });
 
         // Determine generation of deleted pod
         String deleted = getPodUid(pod);

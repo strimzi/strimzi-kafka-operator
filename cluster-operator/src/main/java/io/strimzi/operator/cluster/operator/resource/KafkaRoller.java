@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -45,6 +44,8 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.RestartReason;
+import io.strimzi.operator.common.model.RestartReasons;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -168,7 +169,7 @@ public class KafkaRoller {
         runnable -> new Thread(runnable, "kafka-roller"));
 
     private ConcurrentHashMap<Integer, RestartContext> podToContext = new ConcurrentHashMap<>();
-    private Function<Pod, List<String>> podNeedsRestart;
+    private Function<Pod, RestartReasons> podNeedsRestart;
 
     /**
      * If allClient has not been initialized yet, does exactly that
@@ -192,7 +193,7 @@ public class KafkaRoller {
      * @param podNeedsRestart Predicate for determining whether a pod should be rolled.
      * @return A Future completed when rolling is complete.
      */
-    public Future<Void> rollingRestart(Function<Pod, List<String>> podNeedsRestart) {
+    public Future<Void> rollingRestart(Function<Pod, RestartReasons> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
 
         Promise<Void> result = Promise.promise();
@@ -310,23 +311,26 @@ public class KafkaRoller {
         private final boolean needsRestart;
         private final boolean needsReconfig;
         private final boolean forceRestart;
+        private final RestartReasons reasons;
         private final KafkaBrokerConfigurationDiff diff;
         private final KafkaBrokerLoggingConfigurationDiff logDiff;
 
-        public RestartPlan(boolean needsRestart, boolean needsReconfig, boolean forceRestart, KafkaBrokerConfigurationDiff diff, KafkaBrokerLoggingConfigurationDiff logDiff) {
+        public RestartPlan(boolean needsRestart, boolean needsReconfig, boolean forceRestart, KafkaBrokerConfigurationDiff diff, KafkaBrokerLoggingConfigurationDiff logDiff, RestartReasons reasons) {
             this.needsRestart = needsRestart;
             this.needsReconfig = needsReconfig;
             this.forceRestart = forceRestart;
             this.diff = diff;
             this.logDiff = logDiff;
+            this.reasons = reasons;
         }
 
-        public RestartPlan(boolean forceRestart) {
+        public RestartPlan(boolean forceRestart, RestartReasons reasons) {
             this.needsRestart = false;
             this.needsReconfig = false;
             this.forceRestart = forceRestart;
             this.diff = null;
             this.logDiff = null;
+            this.reasons = reasons;
         }
     }
 
@@ -361,7 +365,7 @@ public class KafkaRoller {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
                         if (restartPlan.forceRestart || !maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
                             LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", podId);
-                            restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                            restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartPlan.reasons);
                         } else {
                             awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         }
@@ -381,11 +385,13 @@ public class KafkaRoller {
             }
         } catch (ForceableProblem e) {
             if (isPodStuck(pod) || restartContext.backOff.done() || e.forceNow) {
+                String errMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
                 if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
-                    LOGGER.warnCr(reconciliation, "Pod {} will be force-rolled, due to error: {}", podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
-                    restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                    LOGGER.warnCr(reconciliation, "Pod {} will be force-rolled, due to error: {}", podName(podId), errMessage);
+                    RestartReasons reason = new RestartReasons().add(RestartReason.POD_FORCE_ROLL_ON_ERROR, "Rolling due to error " + errMessage);
+                    restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, reason);
                 } else {
-                    LOGGER.warnCr(reconciliation, "Pod {} can't be safely force-rolled; original error: ", podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                    LOGGER.warnCr(reconciliation, "Pod {} can't be safely force-rolled; original error: {}", podName(podId), errMessage);
                     throw e;
                 }
             } else {
@@ -448,8 +454,7 @@ public class KafkaRoller {
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
     private RestartPlan restartPlan(int podId, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
-
-        List<String> reasonToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
+        RestartReasons reasonToRestartPod = podNeedsRestart.apply(pod);
         boolean podStuck = pod != null
                 && pod.getStatus() != null
                 && "Pending".equals(pod.getStatus().getPhase())
@@ -457,7 +462,7 @@ public class KafkaRoller {
                 "PodScheduled".equals(ps.getType())
                         && "Unschedulable".equals(ps.getReason())
                         && "False".equals(ps.getStatus())).findFirst().isPresent();
-        if (podStuck && !reasonToRestartPod.contains("Pod has old generation")) {
+        if (podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_GENERATION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
             // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
             // and deleting a different pod in the meantime will likely result in another unschedulable pod.
@@ -471,7 +476,8 @@ public class KafkaRoller {
         // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
         // connect to the broker and that it's capable of responding.
         if (!initAdminClient()) {
-            return new RestartPlan(true);
+            RestartReasons reasons = new RestartReasons().add(RestartReason.ADMIN_CLIENT_CANNOT_CONNECT_TO_BROKER, "Unable to connect to broker with admin client");
+            return new RestartPlan(true, reasons);
         }
         Config brokerConfig;
         try {
@@ -504,9 +510,9 @@ public class KafkaRoller {
                 needsReconfig = true;
             }
         } else if (needsRestart) {
-            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod);
+            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod.getReasonMessages());
         }
-        return new RestartPlan(needsRestart, needsReconfig, podStuck, diff, loggingDiff);
+        return new RestartPlan(needsRestart, needsReconfig, podStuck, diff, loggingDiff, reasonToRestartPod);
     }
 
     /**
@@ -632,11 +638,11 @@ public class KafkaRoller {
      * @param timeout The timeout.
      * @param unit The timeout unit.
      */
-    private void restartAndAwaitReadiness(Pod pod, long timeout, TimeUnit unit)
+    private void restartAndAwaitReadiness(Pod pod, long timeout, TimeUnit unit, RestartReasons reasons)
             throws InterruptedException, UnforceableProblem, FatalProblem {
         String podName = pod.getMetadata().getName();
         LOGGER.debugCr(reconciliation, "Rolling pod {}", podName);
-        await(restart(pod), timeout, unit, e -> new UnforceableProblem("Error while trying to restart pod " + podName + " to become ready", e));
+        await(restart(pod, reasons), timeout, unit, e -> new UnforceableProblem("Error while trying to restart pod " + podName + " to become ready", e));
         awaitReadiness(pod, timeout, unit);
     }
 
@@ -686,8 +692,8 @@ public class KafkaRoller {
      * @param pod The pod to be restarted
      * @return a Future which completes when the Pod has been recreated
      */
-    protected Future<Void> restart(Pod pod) {
-        return podOperations.restart(reconciliation, pod, operationTimeoutMs);
+    protected Future<Void> restart(Pod pod, RestartReasons reasons) {
+        return podOperations.restart(reconciliation, pod, operationTimeoutMs, reasons);
     }
 
     /**

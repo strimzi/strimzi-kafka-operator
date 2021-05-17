@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import java.util.List;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.Pod;
@@ -14,6 +13,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.model.RestartReasons;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -33,10 +34,11 @@ public class KafkaSetOperator extends StatefulSetOperator {
      * @param client The Kubernetes client
      * @param operationTimeoutMs The timeout.
      * @param adminClientProvider A provider for the AdminClient.
+     * @param metricsProvider - metrics provider needed by pod operator for publishing restart reasons
      */
     public KafkaSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs,
-                            AdminClientProvider adminClientProvider) {
-        super(vertx, client, operationTimeoutMs);
+                            AdminClientProvider adminClientProvider, MetricsProvider metricsProvider) {
+        super(vertx, client, operationTimeoutMs, metricsProvider);
         this.adminClientProvider = adminClientProvider;
     }
 
@@ -66,12 +68,12 @@ public class KafkaSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart) {
         return maybeRollingUpdate(reconciliation, sts, podNeedsRestart, null, null);
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart,
+    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart,
                                            Secret clusterCaCertSecret, Secret coKeySecret) {
         throw new UnsupportedOperationException();
     }

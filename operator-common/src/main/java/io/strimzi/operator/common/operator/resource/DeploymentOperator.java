@@ -11,8 +11,11 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.RestartReasons;
+import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -28,9 +31,10 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      *
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
+     * @param metricsProvider - provides metrics TODO
      */
-    public DeploymentOperator(Vertx vertx, KubernetesClient client) {
-        this(vertx, client, new PodOperator(vertx, client));
+    public DeploymentOperator(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider) {
+        this(vertx, client, new PodOperator(vertx, client, new RestartReasonPublisher(client, metricsProvider)));
     }
 
     public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {
@@ -61,11 +65,12 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * @param namespace The namespace of the deployment
      * @param name The name of the deployment
      * @param operationTimeoutMs The timeout
+     * @param reasons - why the pod needs to be terminated
      * @return A future which completes when all the pods in the deployment have been restarted.
      */
-    public Future<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
+    public Future<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs, RestartReasons reasons) {
         return getAsync(namespace, name)
-                .compose(deployment -> deletePod(reconciliation, namespace, name))
+                .compose(deployment -> deleteSingletonPod(reconciliation, namespace, name, reasons))
                 .compose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
     }
 
@@ -74,11 +79,13 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * @param reconciliation The reconciliation
      * @param namespace The namespace of the pod.
      * @param name The name of the pod.
+     * @param reasons - why the pod needs to be terminated
      * @return A Future which will complete once all the pods has been deleted.
      */
-    public Future<ReconcileResult<Pod>> deletePod(Reconciliation reconciliation, String namespace, String name) {
+    public Future<ReconcileResult<Pod>> deleteSingletonPod(Reconciliation reconciliation, String namespace, String name, RestartReasons reasons) {
         Labels labels = Labels.EMPTY.withStrimziName(name);
         String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
+        // TODO publish reasons
         return podOperations.reconcile(reconciliation, namespace, podName, null);
     }
 

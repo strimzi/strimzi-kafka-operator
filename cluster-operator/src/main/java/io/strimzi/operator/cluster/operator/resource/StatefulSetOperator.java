@@ -20,13 +20,16 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.RestartReasons;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -56,9 +59,10 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param vertx The Vertx instance.
      * @param client The Kubernetes client.
      * @param operationTimeoutMs The timeout.
+     * @param metricsProvider - metrics provider needed by pod operator for publishing restart reasons
      */
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client), new PvcOperator(vertx, client));
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, MetricsProvider metricsProvider) {
+        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client, new RestartReasonPublisher(client, metricsProvider)), new PvcOperator(vertx, client));
     }
 
     /**
@@ -93,7 +97,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param podNeedsRestart Function that returns a list is reasons why the given pod needs to be restarted, or an empty list if the pod does not need to be restarted.
      * @return A future that completes when any necessary rolling has been completed.
      */
-    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart) {
         return getSecrets(sts).compose(compositeFuture -> {
             return maybeRollingUpdate(reconciliation, sts, podNeedsRestart, compositeFuture.resultAt(0), compositeFuture.resultAt(1));
         });
@@ -121,7 +125,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture);
     }
 
-    public abstract Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
+    public abstract Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
 
     public Future<Void> deletePvc(Reconciliation reconciliation, StatefulSet sts, String pvcName) {
         String namespace = sts.getMetadata().getNamespace();
@@ -147,17 +151,17 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param podNeedsRestart The function for deciding whether to restart the pod.
      * @return a Future which completes when the given (possibly recreated) pod is ready.
      */
-    Future<Void> maybeRestartPod(Reconciliation reconciliation, StatefulSet sts, String podName, Function<Pod, List<String>> podNeedsRestart) {
+    Future<Void> maybeRestartPod(Reconciliation reconciliation, StatefulSet sts, String podName, Function<Pod, RestartReasons> podNeedsRestart) {
         long pollingIntervalMs = 1_000;
         long timeoutMs = operationTimeoutMs;
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         return podOperations.getAsync(sts.getMetadata().getNamespace(), podName).compose(pod -> {
             Future<Void> fut;
-            List<String> reasons = podNeedsRestart.apply(pod);
+            RestartReasons reasons = podNeedsRestart.apply(pod);
             if (reasons != null && !reasons.isEmpty()) {
-                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons);
-                fut = restartPod(reconciliation, pod);
+                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons.getReasonMessages());
+                fut = restartPod(reconciliation, pod, reasons);
             } else {
                 LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
                 fut = Future.succeededFuture();
@@ -176,8 +180,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      * @param pod The pod to be restarted
      * @return a Future which completes when the Pod has been recreated
      */
-    private Future<Void> restartPod(Reconciliation reconciliation, Pod pod) {
-        return podOperations.restart(reconciliation, pod, operationTimeoutMs);
+    private Future<Void> restartPod(Reconciliation reconciliation, Pod pod, RestartReasons reasons) {
+        return podOperations.restart(reconciliation, pod, operationTimeoutMs, reasons);
     }
 
     @Override

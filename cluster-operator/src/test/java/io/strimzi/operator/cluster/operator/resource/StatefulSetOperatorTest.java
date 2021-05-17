@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
@@ -29,6 +28,9 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.model.RestartReason;
+import io.strimzi.operator.common.model.RestartReasons;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
@@ -45,7 +47,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.exceptions.base.MockitoException;
 
-import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -115,9 +116,9 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
     @Override
     protected StatefulSetOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new StatefulSetOperator(vertx, mockClient, 60_000L) {
+        return new StatefulSetOperator(vertx, mockClient, 60_000L, mock(MetricsProvider.class)) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -130,9 +131,9 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
     @Override
     protected StatefulSetOperator createResourceOperationsWithMockedReadiness(Vertx vertx, KubernetesClient mockClient) {
-        return new StatefulSetOperator(vertx, mockClient, 60_000L) {
+        return new StatefulSetOperator(vertx, mockClient, 60_000L, mock(MetricsProvider.class)) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -176,7 +177,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
-        when(podOperator.restart(any(), any(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.restart(any(), any(), anyLong(), any())).thenReturn(Future.succeededFuture());
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -195,7 +196,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -206,7 +207,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> singletonList("roll"))
+        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll"))
             .onComplete(context.succeeding(v -> a.flag()));
     }
 
@@ -227,7 +228,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
                 return null;
             }
         });
-        when(podOperator.restart(any(), any(), anyLong())).thenReturn(Future.failedFuture(new TimeoutException()));
+        when(podOperator.restart(any(), any(), anyLong(), any())).thenReturn(Future.failedFuture(new TimeoutException()));
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -246,7 +247,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons>  podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -257,7 +258,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> singletonList("roll"))
+        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll"))
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 a.flag();
@@ -275,7 +276,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.failedFuture(new TimeoutException()));
         when(podOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
-        when(podOperator.restart(any(), any(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.restart(any(), any(), anyLong(), any())).thenReturn(Future.succeededFuture());
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -294,7 +295,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
             @Override
@@ -304,7 +305,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> singletonList("roll")).onComplete(context.failing(e -> context.verify(() -> {
+        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll")).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, instanceOf(TimeoutException.class));
             a.flag();
         })));
@@ -320,7 +321,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(podOperator.waitFor(any(), anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
         when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
-        when(podOperator.restart(any(), any(), anyLong())).thenReturn(Future.failedFuture("reconcile failed"));
+        when(podOperator.restart(any(), any(), anyLong(), any())).thenReturn(Future.failedFuture("reconcile failed"));
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
         when(pvcOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -339,7 +340,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
             @Override
@@ -349,7 +350,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> singletonList("roll"))
+        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll"))
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e.getMessage(), is("reconcile failed"));
                 a.flag();
@@ -435,7 +436,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -485,7 +486,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -530,7 +531,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -570,7 +571,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 
@@ -611,7 +612,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
             @Override
-            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
+            public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
             }
 

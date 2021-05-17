@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -25,6 +26,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
@@ -33,7 +35,7 @@ public class PodOperatorTest extends
     public void testCreateReadUpdate(VertxTestContext context) {
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10);
         KubernetesClient client = new MockKube().build();
-        PodOperator pr = new PodOperator(vertx, client);
+        PodOperator pr = new PodOperator(vertx, client, mock(RestartReasonPublisher.class));
 
         pr.list(NAMESPACE, Labels.EMPTY);
         context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY), is(emptyList())));
@@ -92,6 +94,6 @@ public class PodOperatorTest extends
 
     @Override
     protected PodOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PodOperator(vertx, mockClient);
+        return new PodOperator(vertx, mockClient, mock(RestartReasonPublisher.class));
     }
 }

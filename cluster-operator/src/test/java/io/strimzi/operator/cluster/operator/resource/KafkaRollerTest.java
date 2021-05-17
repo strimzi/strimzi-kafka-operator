@@ -26,6 +26,8 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.RestartReason;
+import io.strimzi.operator.common.model.RestartReasons;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
@@ -450,7 +452,7 @@ public class KafkaRollerTest {
     private void doSuccessfulConfigUpdate(VertxTestContext testContext, TestingKafkaRoller kafkaRoller,
                                             List<Integer> expected) {
         Checkpoint async = testContext.checkpoint();
-        kafkaRoller.rollingRestart(pod -> emptyList())
+        kafkaRoller.rollingRestart(pod -> new RestartReasons())
                 .onComplete(testContext.succeeding(v -> {
                     testContext.verify(() -> assertThat(restarted(), is(expected)));
                     assertNoUnclosedAdminClient(testContext, kafkaRoller);
@@ -464,9 +466,9 @@ public class KafkaRollerTest {
         Checkpoint async = testContext.checkpoint();
         kafkaRoller.rollingRestart(pod -> {
             if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
-                return singletonList("roll");
+                return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll");
             } else {
-                return emptyList();
+                return new RestartReasons();
             }
         })
             .onComplete(testContext.succeeding(v -> {
@@ -491,9 +493,9 @@ public class KafkaRollerTest {
         CountDownLatch async = new CountDownLatch(1);
         kafkaRoller.rollingRestart(pod -> {
             if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
-                return singletonList("roll");
+                return  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll");
             } else {
-                return emptyList();
+                return new RestartReasons();
             }
         })
             .onComplete(testContext.failing(e -> testContext.verify(() -> {
@@ -678,7 +680,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Future<Void> restart(Pod pod) {
+        protected Future<Void> restart(Pod pod, RestartReasons reasons) {
             restarted.add(pod.getMetadata().getName());
             return succeededFuture();
         }

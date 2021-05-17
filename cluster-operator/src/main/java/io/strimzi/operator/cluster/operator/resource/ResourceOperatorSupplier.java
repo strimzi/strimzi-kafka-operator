@@ -48,6 +48,7 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
+import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.vertx.core.Vertx;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
@@ -100,19 +101,19 @@ public class ResourceOperatorSupplier {
                                     MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs),
-                new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider),
+                new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs, metricsProvider),
+                new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider, metricsProvider),
                 new ConfigMapOperator(vertx, client),
                 new SecretOperator(vertx, client),
                 new PvcOperator(vertx, client),
-                new DeploymentOperator(vertx, client),
+                new DeploymentOperator(vertx, client, metricsProvider),
                 new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
                 new RoleBindingOperator(vertx, client),
                 new RoleOperator(vertx, client),
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
-                new PodOperator(vertx, client),
+                new PodOperator(vertx, client, new RestartReasonPublisher(client, metricsProvider)),
                 new IngressOperator(vertx, client),
                 new IngressV1Beta1Operator(vertx, client),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
