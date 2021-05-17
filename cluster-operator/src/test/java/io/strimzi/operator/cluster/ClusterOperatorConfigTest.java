@@ -80,7 +80,8 @@ public class ClusterOperatorConfigTest {
                 null,
                 ClusterOperatorConfig.RbacScope.CLUSTER,
                 null,
-                "");
+                "",
+                10);
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));

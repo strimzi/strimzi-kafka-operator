@@ -44,6 +44,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_OPERATOR_NAMESPACE_LABELS = "STRIMZI_OPERATOR_NAMESPACE_LABELS";
     public static final String STRIMZI_CUSTOM_RESOURCE_SELECTOR = "STRIMZI_CUSTOM_RESOURCE_SELECTOR";
     public static final String STRIMZI_FEATURE_GATES = "STRIMZI_FEATURE_GATES";
+    public static final String STRIMZI_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_OPERATIONS_THREAD_POOL_SIZE";
 
     // Feature Flags
     public static final String STRIMZI_RBAC_SCOPE = "STRIMZI_RBAC_SCOPE";
@@ -71,6 +72,7 @@ public class ClusterOperatorConfig {
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
+    public static final int DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE = 10;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
@@ -85,6 +87,7 @@ public class ClusterOperatorConfig {
     private final RbacScope rbacScope;
     private final Labels customResourceSelector;
     private final FeatureGates featureGates;
+    private final int operationsThreadPoolSize;
 
     /**
      * Constructor
@@ -102,7 +105,9 @@ public class ClusterOperatorConfig {
      * @param rbacScope true to use Roles where possible instead of ClusterRoles
      * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
      * @param featureGates Configuration string with feature gates settings
+     * @param operationsThreadPoolSize The size of the thread pool used for various operations
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
             Set<String> namespaces,
             long reconciliationIntervalMs,
@@ -116,7 +121,8 @@ public class ClusterOperatorConfig {
             Labels operatorNamespaceLabels,
             RbacScope rbacScope,
             Labels customResourceSelector,
-            String featureGates) {
+            String featureGates,
+            int operationsThreadPoolSize) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -130,6 +136,7 @@ public class ClusterOperatorConfig {
         this.rbacScope = rbacScope;
         this.customResourceSelector = customResourceSelector;
         this.featureGates = new FeatureGates(featureGates);
+        this.operationsThreadPoolSize = operationsThreadPoolSize;
     }
 
     /**
@@ -177,6 +184,7 @@ public class ClusterOperatorConfig {
         RbacScope rbacScope = parseRbacScope(map.get(STRIMZI_RBAC_SCOPE));
         Labels customResourceSelector = parseLabels(map, STRIMZI_CUSTOM_RESOURCE_SELECTOR);
         String featureGates = map.getOrDefault(STRIMZI_FEATURE_GATES, "");
+        int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE);
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -191,7 +199,8 @@ public class ClusterOperatorConfig {
                 operatorNamespaceLabels,
                 rbacScope,
                 customResourceSelector,
-                featureGates);
+                featureGates,
+                operationsThreadPoolSize);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -231,6 +240,16 @@ public class ClusterOperatorConfig {
         }
 
         return timeout;
+    }
+
+    private static int parseInt(String envVar, int defaultValue) {
+        int value = defaultValue;
+
+        if (envVar != null) {
+            value = Integer.parseInt(envVar);
+        }
+
+        return value;
     }
 
     private static boolean parseCreateClusterRoles(String createClusterRolesEnvVar) {
@@ -455,6 +474,13 @@ public class ClusterOperatorConfig {
 
     public FeatureGates featureGates()  {
         return featureGates;
+    }
+
+    /**
+     * @return Thread Pool size to be used by the operator to do operations like reconciliation
+     */
+    public int getOperationsThreadPoolSize() {
+        return operationsThreadPoolSize;
     }
 
     @Override

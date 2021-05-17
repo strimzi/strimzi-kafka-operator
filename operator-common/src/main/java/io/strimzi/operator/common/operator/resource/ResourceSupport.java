@@ -57,7 +57,7 @@ public class ResourceSupport {
 
     <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
         Promise<T> result = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-tool")
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
                 .executeBlocking(blockingCodeHandler, true, result);
         return result.future();
     }

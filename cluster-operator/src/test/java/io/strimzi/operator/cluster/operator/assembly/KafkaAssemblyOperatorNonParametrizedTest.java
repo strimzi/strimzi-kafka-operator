@@ -391,7 +391,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 null,
                 ClusterOperatorConfig.RbacScope.CLUSTER,
                 Labels.fromMap(Map.of("selectorLabel", "value")),
-                "");
+                "",
+                10);
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
                 supplier, config);
