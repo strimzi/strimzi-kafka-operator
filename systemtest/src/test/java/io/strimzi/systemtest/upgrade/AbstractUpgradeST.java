@@ -568,15 +568,19 @@ public class AbstractUpgradeST extends AbstractST {
         // run conversion of crs
         // CRs conversion may fail, because for 0.23 for example it's already done
         // CRS conversion needs old versions of Strimzi CRDs, which are not available after 0.22
-        ExecResult execResult = Exec.exec(null, Arrays.asList(convertorPath, "cr", "-n=" + namespace), 0, true, false);
-        LOGGER.debug("CRs conversion STDOUT:");
-        LOGGER.debug(execResult.out());
-        LOGGER.debug("CRs conversion STDERR:");
-        LOGGER.debug(execResult.err());
-        LOGGER.info("CRs conversion done!");
+        if (cmdKubeClient().exec(true, false, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.status.storedVersions}").out().trim().contains(Constants.V1ALPHA1)) {
+            ExecResult execResult = Exec.exec(convertorPath, "cr", "-n=" + namespace);
+            LOGGER.debug("CRs conversion STDOUT:");
+            LOGGER.debug(execResult.out());
+            LOGGER.debug("CRs conversion STDERR:");
+            LOGGER.debug(execResult.err());
+            LOGGER.info("CRs conversion done!");
+        } else {
+            LOGGER.info("CRs already have v1beta2 versions");
+        }
         // run crd-upgrade
         LOGGER.info("Converting CRDs");
-        execResult = Exec.exec(convertorPath, "crd");
+        ExecResult execResult = Exec.exec(convertorPath, "crd");
         LOGGER.debug("CRDs conversion STDOUT:");
         LOGGER.debug(execResult.out());
         LOGGER.debug("CRDs conversion STDERR:");
