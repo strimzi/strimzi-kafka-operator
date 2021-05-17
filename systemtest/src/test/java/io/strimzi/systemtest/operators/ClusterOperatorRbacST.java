@@ -115,8 +115,6 @@ public class ClusterOperatorRbacST extends AbstractST {
         RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", NAMESPACE, NAMESPACE);
         // 031-RoleBinding
         RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", NAMESPACE, NAMESPACE);
-        // 032-RoleBinding
-        RoleBindingResource.roleBinding(extensionContext, TestUtils.USER_PATH + "/../packaging/install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml", NAMESPACE, NAMESPACE);
     }
 
     @BeforeAll

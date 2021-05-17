@@ -74,7 +74,6 @@ public class MainIT {
                 assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue()));
                 assertThat(cro.get("strimzi-kafka-broker"), is(notNullValue()));
                 assertThat(cro.get("strimzi-entity-operator"), is(notNullValue()));
-                assertThat(cro.get("strimzi-topic-operator"), is(notNullValue()));
                 a.flag();
             })));
     }

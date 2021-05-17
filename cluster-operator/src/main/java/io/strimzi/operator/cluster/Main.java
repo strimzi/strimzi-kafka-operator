@@ -173,7 +173,6 @@ public class Main {
             clusterRoles.put("strimzi-cluster-operator-global", "021-ClusterRole-strimzi-cluster-operator-role.yaml");
             clusterRoles.put("strimzi-kafka-broker", "030-ClusterRole-strimzi-kafka-broker.yaml");
             clusterRoles.put("strimzi-entity-operator", "031-ClusterRole-strimzi-entity-operator.yaml");
-            clusterRoles.put("strimzi-topic-operator", "032-ClusterRole-strimzi-topic-operator.yaml");
             clusterRoles.put("strimzi-kafka-client", "033-ClusterRole-strimzi-kafka-client.yaml");
 
             for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {

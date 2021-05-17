@@ -98,7 +98,7 @@ public class ClusterOperator extends AbstractVerticle {
         log.info("Starting ClusterOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
-        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
+        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
         List<Future> watchFutures = new ArrayList<>(8);
         List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(

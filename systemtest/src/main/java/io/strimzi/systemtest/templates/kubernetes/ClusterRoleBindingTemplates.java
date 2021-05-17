@@ -65,24 +65,6 @@ public class ClusterRoleBindingTemplates {
                 .build()
         );
 
-        kCRBList.add(
-            new ClusterRoleBindingBuilder()
-                .withNewMetadata()
-                    .withName(coName + "-topic-operator")
-                .endMetadata()
-                .withNewRoleRef()
-                    .withApiGroup("rbac.authorization.k8s.io")
-                    .withKind("ClusterRole")
-                    .withName("strimzi-topic-operator")
-                .endRoleRef()
-                .withSubjects(new SubjectBuilder()
-                    .withKind("ServiceAccount")
-                    .withName("strimzi-cluster-operator")
-                    .withNamespace(namespace)
-                    .build()
-                )
-                .build()
-        );
         return kCRBList;
     }
 }

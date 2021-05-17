@@ -360,7 +360,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
      */
     public Future<Void> deleteAsync(String namespace, String name, boolean cascading) {
         Promise<Void> result = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-tool").executeBlocking(
+        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
                     Boolean deleted = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
