@@ -77,7 +77,7 @@ If there are multiple replicas in the same rack, `RackAwareReplicaSelector` alwa
 If the rack ID is not specified, or if it cannot find a replica with the same rack ID, it will fall back to the leader replica.
 
 .Example showing client consuming from replicas in the same availability zone
-image::rack-config-availability-zones.svg[consuming from replicas in the same availability zone]
+image::rack-config-availability-zones.png[consuming from replicas in the same availability zone]
 
 Consuming messages from the closest replicas can be used also in Kafka Connect for sink connectors which are consuming messages.
 When deploying Kafka Connect using Strimzi, you can use the `rack` section in the `KafkaConnect` or `KafkaConnectS2I` custom resources to automatically configure the `client.rack` option.

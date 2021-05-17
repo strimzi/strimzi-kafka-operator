@@ -18,7 +18,7 @@ Supported authorization options:
 * xref:type-KafkaAuthorizationCustom-reference[Custom authorization]
 
 .Kafka cluster authorization options
-image::kafka-authorization-config-options.svg[options for kafks authorization configuration]
+image::kafka-authorization-config-options.png[options for kafks authorization configuration]
 
 == Super users
 

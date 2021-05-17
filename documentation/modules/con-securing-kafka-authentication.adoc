@@ -21,7 +21,7 @@ Supported authentication options:
 The authentication option you choose depends on how you wish to authenticate client access to Kafka brokers.
 
 .Kafka listener authentication options
-image::listener-config-options.svg[options for listener authentication configuration]
+image::listener-config-options.png[options for listener authentication configuration]
 
 The listener `authentication` property is used to specify an authentication mechanism specific to that listener.
 
