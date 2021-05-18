@@ -339,11 +339,20 @@ spec:
                       type: string
                       description: A regular expression matching the topics to exclude
                         from mirroring. Comma-separated lists are also supported.
+                    topicsExcludePattern:
+                      type: string
+                      description: A regular expression matching the topics to exclude
+                        from mirroring. Comma-separated lists are also supported.
                     groupsPattern:
                       type: string
                       description: A regular expression matching the consumer groups
                         to be mirrored. Comma-separated lists are also supported.
                     groupsBlacklistPattern:
+                      type: string
+                      description: A regular expression matching the consumer groups
+                        to exclude from mirroring. Comma-separated lists are also
+                        supported.
+                    groupsExcludePattern:
                       type: string
                       description: A regular expression matching the consumer groups
                         to exclude from mirroring. Comma-separated lists are also

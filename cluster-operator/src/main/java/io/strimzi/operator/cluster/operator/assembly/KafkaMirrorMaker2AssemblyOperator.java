@@ -99,7 +99,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
     public static final String TARGET_CLUSTER_PREFIX = "target.cluster.";
     public static final String SOURCE_CLUSTER_PREFIX = "source.cluster.";
-    
+
     private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
     private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
     private static final String KEYSTORE_SUFFIX = ".keystore.p12";
@@ -254,13 +254,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             return maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2,
                     new InvalidResourceException("sourceCluster with alias " + mirror.getSourceCluster() + " cannot be found in the list of clusters at spec.clusters"));
         }
-        
+
         return CompositeFuture.join(MIRRORMAKER2_CONNECTORS.entrySet().stream()
                     .filter(entry -> entry.getValue().apply(mirror) != null) // filter out non-existent connectors
                     .map(entry -> {
                         String connectorName = sourceClusterAlias + "->" + targetClusterAlias + entry.getKey();
                         String className = MIRRORMAKER2_CONNECTOR_PACKAGE + entry.getKey();
-                        
+
                         KafkaMirrorMaker2ConnectorSpec mm2ConnectorSpec = entry.getValue().apply(mirror);
                         KafkaConnectorSpec connectorSpec = new KafkaConnectorSpecBuilder()
                                 .withClassName(className)
@@ -277,6 +277,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     .map((Void) null).compose(i -> apiClient.updateConnectLoggers(host, KafkaConnectCluster.REST_API_PORT, desiredLogging, mirrorMaker2Cluster.getDefaultLogConfig()));
     }
 
+    @SuppressWarnings("deprecation")
     private static void prepareMirrorMaker2ConnectorConfig(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         Map<String, Object> config = connectorSpec.getConfig();
         addClusterToMirrorMaker2ConnectorConfig(config, targetCluster, TARGET_CLUSTER_PREFIX);
@@ -285,14 +286,29 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         if (mirror.getTopicsPattern() != null) {
             config.put("topics", mirror.getTopicsPattern());
         }
-        if (mirror.getTopicsBlacklistPattern() != null) {
-            config.put("topics.blacklist", mirror.getTopicsBlacklistPattern());
+
+        String topicsExcludePattern = mirror.getTopicsExcludePattern();
+        String topicsBlacklistPattern = mirror.getTopicsBlacklistPattern();
+        if (topicsExcludePattern != null && topicsBlacklistPattern != null) {
+            log.warn("Both topicsExcludePattern and topicsBlacklistPattern mirror properties are present, ignoring topicsBlacklistPattern as it is deprecated");
         }
+        String topicsExclude = topicsExcludePattern != null ? topicsExcludePattern : topicsBlacklistPattern;
+        if (topicsExclude != null) {
+            config.put("topics.exclude", topicsExclude);
+        }
+        
         if (mirror.getGroupsPattern() != null) {
             config.put("groups", mirror.getGroupsPattern());
         }
-        if (mirror.getGroupsBlacklistPattern() != null) {
-            config.put("groups.blacklist", mirror.getGroupsBlacklistPattern());
+        
+        String groupsExcludePattern = mirror.getGroupsExcludePattern();
+        String groupsBlacklistPattern = mirror.getGroupsBlacklistPattern();
+        if (groupsExcludePattern != null && groupsBlacklistPattern != null) {
+            log.warn("Both groupsExcludePattern and groupsBlacklistPattern mirror properties are present, ignoring groupsBlacklistPattern as it is deprecated");
+        }
+        String groupsExclude = groupsExcludePattern != null ? groupsExcludePattern :  groupsBlacklistPattern;
+        if (groupsExclude != null) {
+            config.put("groups.exclude", groupsExclude);
         }
 
         if (mirrorMaker2Cluster.getTracing() != null)   {
@@ -330,7 +346,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             String clientAuthType = authProperties.get(AuthenticationUtils.SASL_MECHANISM);
             if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(clientAuthType)) {
                 saslMechanism = "PLAIN";
-                jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";                    
+                jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";        
             } else if (KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-512";
                 jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";
