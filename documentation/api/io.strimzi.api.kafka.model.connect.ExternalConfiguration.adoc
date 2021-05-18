@@ -147,7 +147,7 @@ The parameter uses the alias from `config.providers`, taking the form `config.pr
 <4> The name of the Secret.
 
 Placeholders for the property values in the Secret are referenced in the connector configuration.
-The placeholder structure is `file:__PATH-AND-FILE-NAME__:__PROPERTY-VALUE__`.
+The placeholder structure is `file:__PATH-AND-FILE-NAME__:__PROPERTY__`.
 `FileConfigProvider` reads and extracts the database _username_ and _password_ property values from the mounted Secret in connector configurations.
 
 .Example connector configuration showing placeholders for external values
@@ -165,8 +165,8 @@ spec:
   config:
     database.hostname: 192.168.99.1
     database.port: "3306"
-    database.user: "${file:/opt/kafka/external-configuration/connector-config/mysecret:my-username}"
-    database.password: "${file:/opt/kafka/external-configuration/connector-config/mysecret:my-password}"
+    database.user: "${file:/opt/kafka/external-configuration/connector-config/mysecret:dbUsername}"
+    database.password: "${file:/opt/kafka/external-configuration/connector-config/mysecret:dbPassword}"
     database.server.id: "184054"
     #...
 ----
