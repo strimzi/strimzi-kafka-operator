@@ -106,7 +106,6 @@ m¦excludedBrokersForReplicaMove
 === Broker load
 
 The broker load section lists all broker IDs and provides a number of metrics for each broker. 
-For each broker a number of metrics (described in the table below) are listed. 
 Each metric is linked to an array containing three values.
 The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
 
