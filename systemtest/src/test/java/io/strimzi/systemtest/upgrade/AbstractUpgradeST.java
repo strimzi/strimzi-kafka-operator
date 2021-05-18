@@ -412,9 +412,9 @@ public class AbstractUpgradeST extends AbstractST {
         // Modify + apply installation files
         copyModifyApply(coDir, namespace);
 
-        LOGGER.info("Waiting for CO deployment");
+        LOGGER.info("Waiting for {} deployment", ResourceManager.getCoDeploymentName());
         DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
-        LOGGER.info("CO ready");
+        LOGGER.info("{} is ready", ResourceManager.getCoDeploymentName());
 
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion)).contains(clusterName)) {
             // Deploy a Kafka cluster
@@ -568,26 +568,27 @@ public class AbstractUpgradeST extends AbstractST {
         // run conversion of crs
         // CRs conversion may fail, because for 0.23 for example it's already done
         // CRS conversion needs old versions of Strimzi CRDs, which are not available after 0.22
-        if (cmdKubeClient().exec(true, false, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.status.storedVersions}").out().trim().contains(Constants.V1ALPHA1)) {
+        if (cmdKubeClient().exec(true, false, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.spec.versions}").out().trim().contains(Constants.V1ALPHA1)) {
             ExecResult execResult = Exec.exec(convertorPath, "cr", "-n=" + namespace);
             LOGGER.debug("CRs conversion STDOUT:");
             LOGGER.debug(execResult.out());
             LOGGER.debug("CRs conversion STDERR:");
             LOGGER.debug(execResult.err());
             LOGGER.info("CRs conversion done!");
-        } else {
-            LOGGER.info("CRs already have v1beta2 versions");
-        }
-        // run crd-upgrade
-        LOGGER.info("Converting CRDs");
-        ExecResult execResult = Exec.exec(convertorPath, "crd");
-        LOGGER.debug("CRDs conversion STDOUT:");
-        LOGGER.debug(execResult.out());
-        LOGGER.debug("CRDs conversion STDERR:");
-        LOGGER.debug(execResult.err());
-        LOGGER.info("CRDs conversion done!");
 
-        waitForKafkaCRDChange();
+            // run crd-upgrade
+            LOGGER.info("Converting CRDs");
+            execResult = Exec.exec(convertorPath, "crd");
+            LOGGER.debug("CRDs conversion STDOUT:");
+            LOGGER.debug(execResult.out());
+            LOGGER.debug("CRDs conversion STDERR:");
+            LOGGER.debug(execResult.err());
+            LOGGER.info("CRDs conversion done!");
+
+            waitForKafkaCRDChange();
+        } else {
+            LOGGER.info("CRs and CRDs already have v1beta2 versions");
+        }
     }
 
     protected void waitForKafkaCRDChange() {
