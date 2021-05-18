@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -139,7 +140,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/strimzi/custom-config/";
     }
 
-    public static KafkaBridgeCluster fromCrd(KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
+    public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
 
         KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(kafkaBridge);
 
@@ -172,7 +173,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         kafkaBridgeCluster.setTls(spec.getTls() != null ? spec.getTls() : null);
 
-        AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        AuthenticationUtils.validateClientAuthentication(reconciliation, spec.getAuthentication(), spec.getTls() != null);
         kafkaBridgeCluster.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
@@ -207,7 +208,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.setHttpEnabled(true);
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
         } else {
-            LOGGER.warn("No protocol specified.");
+            RECONCILIATION_LOGGER.warn(reconciliation, "No protocol specified.");
             throw new InvalidResourceException("No protocol for communication with Bridge specified. Use HTTP.");
         }
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);
@@ -215,7 +216,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         return kafkaBridgeCluster;
     }
     
-    public Service generateService() {
+    public Service generateService(Reconciliation reconciliation) {
         List<ServicePort> ports = new ArrayList<>(3);
 
         int port = DEFAULT_REST_API_PORT;
@@ -223,9 +224,9 @@ public class KafkaBridgeCluster extends AbstractModel {
             port = http.getPort();
         }
 
-        ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
+        ports.add(createServicePort(reconciliation, REST_API_PORT_NAME, port, port, "TCP"));
 
-        return createDiscoverableService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceLabels, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS)),
+        return createDiscoverableService(reconciliation, "ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceLabels, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS)),
                 Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
     }
 
@@ -247,7 +248,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
     }
 
-    protected List<ContainerPort> getContainerPortList() {
+    protected List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
         List<ContainerPort> portList = new ArrayList<>(3);
 
         int port = DEFAULT_REST_API_PORT;
@@ -255,16 +256,16 @@ public class KafkaBridgeCluster extends AbstractModel {
             port = http.getPort();
         }
 
-        portList.add(createContainerPort(REST_API_PORT_NAME, port, "TCP"));
+        portList.add(createContainerPort(reconciliation, REST_API_PORT_NAME, port, "TCP"));
 
         return portList;
     }
 
-    protected List<Volume> getVolumes(boolean isOpenShift) {
+    protected List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
 
         volumeList.add(createTempDirVolume());
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -273,22 +274,22 @@ public class KafkaBridgeCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume with same Secret name was already added
                     if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                     }
                 }
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(reconciliation, authentication, volumeList, "oauth-certs", isOpenShift);
 
         return volumeList;
     }
 
-    protected List<VolumeMount> getVolumeMounts() {
+    protected List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
-        volumeMountList.add(createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(createTempDirVolumeMount(reconciliation));
+        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -297,32 +298,32 @@ public class KafkaBridgeCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume mount with same Secret name was already added
                     if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
+                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, certSecretSource.getSecretName(),
                                 TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
                     }
                 }
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(reconciliation, authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
 
         return volumeMountList;
     }
 
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Reconciliation reconciliation, Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createDeployment(
                 getDeploymentStrategy(),
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(isOpenShift),
+                getInitContainers(reconciliation, imagePullPolicy),
+                getContainers(reconciliation, imagePullPolicy),
+                getVolumes(reconciliation, isOpenShift),
                 imagePullSecrets);
     }
 
     @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>(1);
 
@@ -330,11 +331,11 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .withName(name)
                 .withImage(getImage())
                 .withCommand("/opt/strimzi/bin/docker/kafka_bridge_run.sh")
-                .withEnv(getEnvVars())
-                .withPorts(getContainerPortList())
+                .withEnv(getEnvVars(reconciliation))
+                .withPorts(getContainerPortList(reconciliation))
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
-                .withVolumeMounts(getVolumeMounts())
+                .withVolumeMounts(getVolumeMounts(reconciliation))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
@@ -346,7 +347,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars() {
+    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
@@ -355,8 +356,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(reconciliation, kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(reconciliation, kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_ID, cluster));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));

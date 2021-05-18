@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
@@ -102,21 +103,21 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
         T newResource = getOriginal();
         T modResource = getModified();
 
-        op.reconcile(namespace, resourceName, newResource)
+        op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, newResource)
             .onComplete(context.succeeding(rrCreated -> {
                 T created = op.get(namespace, resourceName);
 
                 context.verify(() -> assertThat(created, is(notNullValue())));
                 assertResources(context, newResource, created);
             }))
-            .compose(rr -> op.reconcile(namespace, resourceName, modResource))
+            .compose(rr -> op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> {
                 T modified = op.get(namespace, resourceName);
 
                 context.verify(() -> assertThat(modified, is(notNullValue())));
                 assertResources(context, modResource, modified);
             }))
-            .compose(rr -> op.reconcile(namespace, resourceName, null))
+            .compose(rr -> op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, null))
             .onComplete(context.succeeding(rrDeleted -> {
                 // it seems the resource is cached for some time so we need wait for it to be null
                 context.verify(() -> {

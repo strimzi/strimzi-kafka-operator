@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 
@@ -29,10 +30,11 @@ public interface K8s {
 
     /**
      * Asynchronously update the given resource's status.
+     * @param reconciliation The reconciliation
      * @param topicResource The topic.
      * @return A future which completes when the topic's status has been updated.
      */
-    Future<KafkaTopic> updateResourceStatus(KafkaTopic topicResource);
+    Future<KafkaTopic> updateResourceStatus(Reconciliation reconciliation, KafkaTopic topicResource);
 
     /**
      * Asynchronously delete the given resource.

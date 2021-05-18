@@ -10,6 +10,7 @@ import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -43,9 +44,9 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
     }
 
     @Override
-    protected Future<ReconcileResult<DeploymentConfig>> internalPatch(String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
+    protected Future<ReconcileResult<DeploymentConfig>> internalPatch(Reconciliation reconciliation, String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
         desired.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(current.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        return super.internalPatch(namespace, name, current, desired);
+        return super.internalPatch(reconciliation, namespace, name, current, desired);
     }
 
     /**

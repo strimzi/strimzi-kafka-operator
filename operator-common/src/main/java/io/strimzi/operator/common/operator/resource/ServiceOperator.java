@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -66,6 +67,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * Patching the service with service definition without the NodePort would cause regenerating the node port
      * which triggers rolling update.
      *
+     * @param reconciliation The reconciliation
      * @param namespace Namespace of the service
      * @param name      Name of the service
      * @param current   Current servicve
@@ -74,7 +76,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<Service>> internalPatch(String namespace, String name, Service current, Service desired) {
+    protected Future<ReconcileResult<Service>> internalPatch(Reconciliation reconciliation, String namespace, String name, Service current, Service desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null) {
                 if (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
@@ -87,7 +89,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                 patchDualStackNetworking(current, desired);
             }
 
-            return super.internalPatch(namespace, name, current, desired);
+            return super.internalPatch(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
             log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
@@ -177,13 +179,14 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * Deletes the resource with the given namespace and name and completes the given future accordingly.
      * This method will do a cascading delete.
      *
+     * @param reconciliation The reconciliation
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
      *
      * @return Future with result of the reconciliation
      */
-    protected Future<ReconcileResult<Service>> internalDelete(String namespace, String name) {
-        return internalDelete(namespace, name, true);
+    protected Future<ReconcileResult<Service>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
+        return internalDelete(reconciliation, namespace, name, true);
     }
 
     public Future<Void> endpointReadiness(String namespace, String name, long pollInterval, long operationTimeoutMs) {

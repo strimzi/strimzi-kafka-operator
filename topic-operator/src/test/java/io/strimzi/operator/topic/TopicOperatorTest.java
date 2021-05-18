@@ -548,7 +548,7 @@ public class TopicOperatorTest {
 
         CountDownLatch latch = new CountDownLatch(1);
         Checkpoint async = context.checkpoint(1);
-        topicOperator.reconcile(reconciliation(), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertExists(context, kubeTopic.getTopicName());
@@ -587,7 +587,7 @@ public class TopicOperatorTest {
 
         Checkpoint async = context.checkpoint();
 
-        topicOperator.reconcile(reconciliation(), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertNotExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
@@ -615,7 +615,7 @@ public class TopicOperatorTest {
         async0.await();
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         CountDownLatch async = new CountDownLatch(2);
-        topicOperator.reconcile(reconciliation(), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -652,8 +652,8 @@ public class TopicOperatorTest {
         });
     }
 
-    TopicOperator.Reconciliation reconciliation() {
-        return topicOperator.new Reconciliation("test", true) {
+    TopicOperator.Reconciliation reconciliation(LogContext logContext) {
+        return topicOperator.new Reconciliation(logContext, "test", true) {
             @Override
             public Future<Void> execute() {
                 return Future.succeededFuture();
@@ -680,7 +680,7 @@ public class TopicOperatorTest {
         async0.await();
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         Checkpoint async = context.checkpoint();
-        topicOperator.reconcile(reconciliation(), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertNotExists(context, topicName);
             mockK8s.assertNotExists(context, topicName.asKubeName());
@@ -711,7 +711,7 @@ public class TopicOperatorTest {
         async0.await();
 
         Checkpoint async = context.checkpoint();
-        topicOperator.reconcile(reconciliation(), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -766,7 +766,7 @@ public class TopicOperatorTest {
         async0.await();
 
         Checkpoint async = context.checkpoint();
-        topicOperator.reconcile(reconciliation(), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, kubeName);
@@ -818,7 +818,7 @@ public class TopicOperatorTest {
         async0.await();
 
         CountDownLatch async = new CountDownLatch(2);
-        topicOperator.reconcile(reconciliation(), logContext, topic, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, topic, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -876,7 +876,7 @@ public class TopicOperatorTest {
         async0.await();
 
         CountDownLatch async = new CountDownLatch(2);
-        topicOperator.reconcile(reconciliation(), logContext, topic, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, topic, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockK8s.assertContainsEvent(context, e ->
                     e.getMessage().contains("KafkaTopic is incompatible with the topic metadata. " +
@@ -930,7 +930,7 @@ public class TopicOperatorTest {
         async0.await();
 
         CountDownLatch async = new CountDownLatch(3);
-        topicOperator.reconcile(reconciliation(), logContext, resource, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, resource, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockK8s.assertNoEvents(context);
             mockTopicStore.read(topicName).onComplete(readResult -> {

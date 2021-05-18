@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonMap;
@@ -51,7 +52,7 @@ public class StatefulSetDiffTest {
                 .endTemplate()
             .endSpec()
             .build();
-        assertThat(new StatefulSetDiff(ss1, ss2).changesSpecTemplate(), is(false));
+        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesSpecTemplate(), is(false));
     }
 
     public StatefulSetDiff testCpuResources(ResourceRequirements requirements1, ResourceRequirements requirements2) {
@@ -85,7 +86,7 @@ public class StatefulSetDiffTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        return new StatefulSetDiff(ss1, ss2);
+        return new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2);
     }
 
     @Test
@@ -185,8 +186,8 @@ public class StatefulSetDiffTest {
                             .build())
                 .endSpec()
                 .build();
-        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates(), is(false));
-        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(true));
+        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeClaimTemplates(), is(false));
+        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeSize(), is(true));
     }
 
     @Test
@@ -235,8 +236,8 @@ public class StatefulSetDiffTest {
                         .build())
                 .endSpec()
                 .build();
-        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates(), is(false));
-        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(false));
+        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeClaimTemplates(), is(false));
+        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeSize(), is(false));
     }
 
     @Test
@@ -292,7 +293,7 @@ public class StatefulSetDiffTest {
                                     .build())
                 .endSpec()
                 .build();
-        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeClaimTemplates(), is(true));
-        assertThat(new StatefulSetDiff(ss1, ss2).changesVolumeSize(), is(false));
+        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeClaimTemplates(), is(true));
+        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeSize(), is(false));
     }
 }

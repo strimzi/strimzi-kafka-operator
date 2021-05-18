@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,35 +44,40 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *
+     * @param reconciliation  The reconciliation
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public KafkaConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
+    public KafkaConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
-    private KafkaConfiguration(String configuration, List<String> forbiddenPrefixes) {
-        super(configuration, forbiddenPrefixes);
+    private KafkaConfiguration(Reconciliation reconciliation, String configuration, List<String> forbiddenPrefixes) {
+        super(reconciliation, configuration, forbiddenPrefixes);
     }
 
 
     /**
      * Returns a KafkaConfiguration created without forbidden option filtering.
+     *
+     * @param reconciliation The reconciliation
      * @param string A string representation of the Properties
      * @return The KafkaConfiguration
      */
-    public static KafkaConfiguration unvalidated(String string) {
-        return new KafkaConfiguration(string, emptyList());
+    public static KafkaConfiguration unvalidated(Reconciliation reconciliation, String string) {
+        return new KafkaConfiguration(reconciliation, string, emptyList());
     }
 
     /**
      * Returns a KafkaConfiguration created without forbidden option filtering.
+     *
+     * @param reconciliation The reconciliation
      * @param map A map representation of the Properties
      * @return The KafkaConfiguration
      */
-    public static KafkaConfiguration unvalidated(Map<String, String> map) {
+    public static KafkaConfiguration unvalidated(Reconciliation reconciliation, Map<String, String> map) {
         StringBuilder string = new StringBuilder();
         map.entrySet().forEach(entry -> string.append(entry.getKey() + "=" + entry.getValue() + "\n"));
-        return new KafkaConfiguration(string.toString(), emptyList());
+        return new KafkaConfiguration(reconciliation, string.toString(), emptyList());
     }
 
     /**

@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
@@ -38,13 +39,13 @@ public class PodOperatorTest extends
         context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY), is(emptyList())));
 
         Checkpoint async = context.checkpoint(1);
-        pr.createOrUpdate(resource()).onComplete(createResult -> {
+        pr.createOrUpdate(new Reconciliation("test", "kind", "ns", "name"), resource()).onComplete(createResult -> {
             context.verify(() -> assertThat(createResult.succeeded(), is(true)));
             context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY).stream()
                         .map(p -> p.getMetadata().getName())
                         .collect(Collectors.toList()), is(singletonList(RESOURCE_NAME))));
 
-            pr.reconcile(NAMESPACE, RESOURCE_NAME, null).onComplete(deleteResult -> {
+            pr.reconcile(new Reconciliation("test", "kind", "ns", "name"), NAMESPACE, RESOURCE_NAME, null).onComplete(deleteResult -> {
                 context.verify(() -> assertThat(deleteResult.succeeded(), is(true)));
                 async.flag();
             });

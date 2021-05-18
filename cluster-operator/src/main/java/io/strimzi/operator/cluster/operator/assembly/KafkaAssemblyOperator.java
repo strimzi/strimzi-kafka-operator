@@ -475,7 +475,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (!ksDiff.isEmpty()) {
                                 Kafka resourceWithNewStatus = new KafkaBuilder(kafka).withStatus(desiredStatus).build();
 
-                                crdOperator.updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
+                                crdOperator.updateStatusAsync(reconciliation, resourceWithNewStatus).onComplete(updateRes -> {
                                     if (updateRes.succeeded()) {
                                         RECONCILIATION_LOGGER.debug(reconciliation, "Completed status update");
                                         updateStatusPromise.complete();
@@ -635,7 +635,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 ModelUtils.getRenewalDays(clusterCaConfig),
                                 clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(),
                                 clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
-                        clusterCa.createRenewOrReplace(
+                        clusterCa.createRenewOrReplace(reconciliation,
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
                                 clusterCaCertLabels, clusterCaCertAnnotations,
                                 clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
@@ -655,7 +655,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 ModelUtils.getRenewalDays(clientsCaConfig),
                                 clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
                                 clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
-                        clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
+                        clientsCa.createRenewOrReplace(reconciliation, reconciliation.namespace(), reconciliation.name(),
                                 caLabels.toMap(), emptyMap(), emptyMap(),
                                 clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                                 isMaintenanceTimeWindowsSatisfied(dateSupplier));
@@ -663,14 +663,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         List<Future> secretReconciliations = new ArrayList<>(2);
 
                         if (clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority())   {
-                            Future clusterSecretReconciliation = secretOperations.reconcile(reconciliation.namespace(), clusterCaCertName, this.clusterCa.caCertSecret())
-                                    .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clusterCaKeyName, this.clusterCa.caKeySecret()));
+                            Future clusterSecretReconciliation = secretOperations.reconcile(reconciliation, reconciliation.namespace(), clusterCaCertName, this.clusterCa.caCertSecret())
+                                    .compose(ignored -> secretOperations.reconcile(reconciliation, reconciliation.namespace(), clusterCaKeyName, this.clusterCa.caKeySecret()));
                             secretReconciliations.add(clusterSecretReconciliation);
                         }
 
                         if (clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority())   {
-                            Future clientsSecretReconciliation = secretOperations.reconcile(reconciliation.namespace(), clientsCaCertName, this.clientsCa.caCertSecret())
-                                .compose(ignored -> secretOperations.reconcile(reconciliation.namespace(), clientsCaKeyName, this.clientsCa.caKeySecret()));
+                            Future clientsSecretReconciliation = secretOperations.reconcile(reconciliation, reconciliation.namespace(), clientsCaCertName, this.clientsCa.caCertSecret())
+                                .compose(ignored -> secretOperations.reconcile(reconciliation, reconciliation.namespace(), clientsCaKeyName, this.clientsCa.caKeySecret()));
                             secretReconciliations.add(clientsSecretReconciliation);
                         }
 
@@ -728,7 +728,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 };
                 if (this.clusterCa.keyReplaced()) {
                     zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                        .compose(sts -> zkSetOperations.maybeRollingUpdate(sts, rollPodAndLogReason,
+                        .compose(sts -> zkSetOperations.maybeRollingUpdate(reconciliation, sts, rollPodAndLogReason,
                         clusterCa.caCertSecret(),
                         oldCoSecret));
                 } else {
@@ -761,7 +761,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(dep -> {
                         if (dep != null) {
                             RECONCILIATION_LOGGER.debug(reconciliation, "Rolling Deployment {} to {}", deploymentName, reasons);
-                            return deploymentOperations.rollingUpdate(namespace, deploymentName, operationTimeoutMs);
+                            return deploymentOperations.rollingUpdate(reconciliation, namespace, deploymentName, operationTimeoutMs);
                         } else {
                             return Future.succeededFuture();
                         }
@@ -857,7 +857,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         if (!podsToRoll.isEmpty())  {
-                            return zkSetOperations.maybeRollingUpdate(sts, pod -> {
+                            return zkSetOperations.maybeRollingUpdate(reconciliation, sts, pod -> {
                                 if (pod != null && podsToRoll.contains(pod.getMetadata().getName())) {
                                     RECONCILIATION_LOGGER.debug(reconciliation, "Rolling ZooKeeper pod {} due to manual rolling update annotation on a pod", pod.getMetadata().getName());
                                     return singletonList("manual rolling update annotation on a pod");
@@ -886,7 +886,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (sts != null) {
                         if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)) {
                             // User trigger rolling update of the whole StatefulSet
-                            return zkSetOperations.maybeRollingUpdate(sts, pod -> {
+                            return zkSetOperations.maybeRollingUpdate(reconciliation, sts, pod -> {
                                 RECONCILIATION_LOGGER.debug(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update",
                                         pod.getMetadata().getName());
                                 return singletonList("manual rolling update");
@@ -907,7 +907,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkVersionChange() {
             if (versionChange.isNoop()) {
-                LOGGER.debug("Kafka.spec.kafka.version is unchanged therefore no change to Zookeeper is required");
+                RECONCILIATION_LOGGER.debug(reconciliation, "Kafka.spec.kafka.version is unchanged therefore no change to Zookeeper is required");
             } else {
                 String versionChangeType;
 
@@ -918,7 +918,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 if (versionChange.requiresZookeeperChange()) {
-                    LOGGER.info("Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
+                    RECONCILIATION_LOGGER.info(reconciliation, "Kafka {} from {} to {} requires Zookeeper {} from {} to {}",
                             versionChangeType,
                             versionChange.from().version(),
                             versionChange.to().version(),
@@ -926,7 +926,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             versionChange.from().zookeeperVersion(),
                             versionChange.to().zookeeperVersion());
                 } else {
-                    LOGGER.info("Kafka {} from {} to {} requires no change in Zookeeper version",
+                    RECONCILIATION_LOGGER.info(reconciliation, "Kafka {} from {} to {} requires no change in Zookeeper version",
                             versionChangeType,
                             versionChange.from().version(),
                             versionChange.to().version());
@@ -935,7 +935,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 // Get the zookeeper image currently set in the Kafka CR or, if that is not set, the image from the target Kafka version
                 String newZkImage = versions.kafkaImage(kafkaAssembly.getSpec().getZookeeper().getImage(), versionChange.to().version());
-                LOGGER.debug("Setting new Zookeeper image: " + newZkImage);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Setting new Zookeeper image: " + newZkImage);
                 this.zkCluster.setImage(newZkImage);
             }
 
@@ -954,7 +954,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         boolean notUpToDate = !isPodUpToDate(sts, pod);
                         List<String> reason = emptyList();
                         if (notUpToDate) {
-                            LOGGER.debug("Rolling pod {} prior to upgrade", pod.getMetadata().getName());
+                            RECONCILIATION_LOGGER.debug(reconciliation, "Rolling pod {} prior to upgrade", pod.getMetadata().getName());
                             reason = singletonList("upgrade quiescence");
                         }
                         return reason;
@@ -975,7 +975,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> prepareVersionChange() {
             if (versionChange.isNoop()) {
-                LOGGER.debug("{}: No Kafka version change", reconciliation);
+                RECONCILIATION_LOGGER.debug(reconciliation, "{}: No Kafka version change", reconciliation);
 
                 if (kafkaCluster.getInterBrokerProtocolVersion() == null) {
                     // When IBPV is not set, we set it to current Kafka version
@@ -1007,13 +1007,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return Future.succeededFuture(this);
             } else {
                 if (versionChange.isUpgrade()) {
-                    LOGGER.info("Kafka is upgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
+                    RECONCILIATION_LOGGER.info(reconciliation, "Kafka is upgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
 
                     // We make sure that the highest log.message.format.version or inter.broker.protocol.version version
                     // used by any of the brokers is not higher than the broker version we upgrade from.
                     if ((highestLogMessageFormatVersion != null && compareDottedVersions(versionChange.from().messageVersion(), highestLogMessageFormatVersion) < 0)
                             || (highestInterBrokerProtocolVersion != null && compareDottedVersions(versionChange.from().protocolVersion(), highestInterBrokerProtocolVersion) < 0)) {
-                        LOGGER.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be lower or equal to the Kafka broker version we upgrade from ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.from().version());
+                        RECONCILIATION_LOGGER.warn(reconciliation, "log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be lower or equal to the Kafka broker version we upgrade from ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.from().version());
                         throw new KafkaUpgradeException("log.message.format.version (" + highestLogMessageFormatVersion + ") and inter.broker.protocol.version (" + highestInterBrokerProtocolVersion + ") used by the brokers have to be lower or equal to the Kafka broker version we upgrade from (" + versionChange.from().version() + ")");
                     }
 
@@ -1037,7 +1037,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     }
                 } else {
                     // Has to be a downgrade
-                    LOGGER.info("Kafka is downgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
+                    RECONCILIATION_LOGGER.info(reconciliation, "Kafka is downgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
 
                     // The currently used log.message.format.version and inter.broker.protocol.version cannot be higher
                     // than the version we are downgrading to. If it is we fail the reconciliation. If they are not set,
@@ -1047,7 +1047,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             || compareDottedVersions(versionChange.to().messageVersion(), highestLogMessageFormatVersion) < 0
                             || highestInterBrokerProtocolVersion == null
                             || compareDottedVersions(versionChange.to().protocolVersion(), highestInterBrokerProtocolVersion) < 0) {
-                        LOGGER.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
+                        RECONCILIATION_LOGGER.warn(reconciliation, "log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
                         throw new KafkaUpgradeException("log.message.format.version (" + highestLogMessageFormatVersion + ") and inter.broker.protocol.version (" + highestInterBrokerProtocolVersion + ") used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to (" + versionChange.to().version() + ")");
                     }
 
@@ -1071,7 +1071,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // validation. But we still double check it as safety.
                     if (compareDottedVersions(versionChange.to().messageVersion(), desiredLogMessageFormat) < 0
                             || compareDottedVersions(versionChange.to().protocolVersion(), desiredInterBrokerProtocol) < 0) {
-                        LOGGER.warn("log.message.format.version ({}) and inter.broker.protocol.version ({}) used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
+                        RECONCILIATION_LOGGER.warn(reconciliation, "log.message.format.version ({}) and inter.broker.protocol.version ({}) used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
                         throw new KafkaUpgradeException("log.message.format.version and inter.broker.protocol.version used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to");
                     }
                 }
@@ -1138,7 +1138,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             this.zkCurrentReplicas = sts.getSpec().getReplicas();
                         }
 
-                        this.zkCluster = ZookeeperCluster.fromCrd(kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
+                        this.zkCluster = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
 
                         // We are upgrading from previous Strimzi version which has a sidecars. The older sidecar
                         // configurations allowed only older versions of TLS to be used by default. But the Zookeeper
@@ -1159,7 +1159,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 zkCluster.getMetricsConfigInCm());
                     })
                     .compose(metricsAndLogging -> {
-                        ConfigMap logAndMetricsConfigMap = zkCluster.generateConfigurationConfigMap(metricsAndLogging);
+                        ConfigMap logAndMetricsConfigMap = zkCluster.generateConfigurationConfigMap(reconciliation, metricsAndLogging);
                         this.zkMetricsAndLogsConfigMap = logAndMetricsConfigMap;
 
                         String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
@@ -1183,21 +1183,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zookeeperServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
                     ZookeeperCluster.containerServiceAccountName(zkCluster.getCluster()),
                     zkCluster.generateServiceAccount()));
         }
 
         Future<ReconciliationState> zkService() {
-            return withVoid(serviceOperations.reconcile(namespace, zkCluster.getServiceName(), zkCluster.generateService()));
+            return withVoid(serviceOperations.reconcile(reconciliation, namespace, zkCluster.getServiceName(), zkCluster.generateService(reconciliation)));
         }
 
         Future<ReconciliationState> zkHeadlessService() {
-            return withVoid(serviceOperations.reconcile(namespace, zkCluster.getHeadlessServiceName(), zkCluster.generateHeadlessService()));
+            return withVoid(serviceOperations.reconcile(reconciliation, namespace, zkCluster.getHeadlessServiceName(), zkCluster.generateHeadlessService(reconciliation)));
         }
 
         Future<ReconciliationState> zkAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(namespace, zkCluster.getAncillaryConfigMapName(), zkMetricsAndLogsConfigMap));
+            return withVoid(configMapOperations.reconcile(reconciliation, namespace, zkCluster.getAncillaryConfigMapName(), zkMetricsAndLogsConfigMap));
         }
 
         /**
@@ -1209,7 +1209,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<Boolean> updateCertificateSecretWithDiff(String secretName, Secret secret)   {
             return secretOperations.getAsync(namespace, secretName)
-                    .compose(oldSecret -> secretOperations.reconcile(namespace, secretName, secret)
+                    .compose(oldSecret -> secretOperations.reconcile(reconciliation, namespace, secretName, secret)
                             .map(res -> {
                                 if (res instanceof ReconcileResult.Patched) {
                                     // The secret is patched and some changes to the existing certificates actually occured
@@ -1230,24 +1230,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(reconciliation, operatorNamespace, operatorNamespaceLabels)));
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
-            return withVoid(podDisruptionBudgetOperator.reconcile(namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudget()));
+            return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudget()));
         }
 
         Future<ReconciliationState> zkStatefulSet() {
-            StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+            StatefulSet zkSts = zkCluster.generateStatefulSet(reconciliation, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
-            return withZkDiff(zkSetOperations.reconcile(namespace, zkCluster.getName(), zkSts));
+            return withZkDiff(zkSetOperations.reconcile(reconciliation, namespace, zkCluster.getName(), zkSts));
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
             // Scale-down and Scale-up might have change the STS. we should get a fresh one.
             return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                    .compose(sts -> zkSetOperations.maybeRollingUpdate(sts,
+                    .compose(sts -> zkSetOperations.maybeRollingUpdate(reconciliation, sts,
                         pod -> getReasonsToRestartPod(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)))
                     .map(this);
         }
@@ -1305,7 +1305,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace,
                                         KafkaResources.zookeeperHeadlessServiceName(name), zkCluster.getPodName(i));
 
-                        ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
+                        ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(reconciliation, vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
 
                         return Future.succeededFuture(zkScaler);
                     });
@@ -1344,7 +1344,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkScalingUpByOne(ZookeeperScaler zkScaler, int current, int desired) {
             if (current < desired) {
-                return zkSetOperations.scaleUp(namespace, zkCluster.getName(), current + 1)
+                return zkSetOperations.scaleUp(reconciliation, namespace, zkCluster.getName(), current + 1)
                         .compose(ignore -> podOperations.readiness(namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
                         .compose(ignore -> zkScaler.scale(current + 1))
                         .compose(ignore -> zkScalingUpByOne(zkScaler, current + 1, desired));
@@ -1390,7 +1390,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (current > desired) {
                 return podsReady(zkCluster, current - 1)
                         .compose(ignore -> zkScaler.scale(current - 1))
-                        .compose(ignore -> zkSetOperations.scaleDown(namespace, zkCluster.getName(), current - 1))
+                        .compose(ignore -> zkSetOperations.scaleDown(reconciliation, namespace, zkCluster.getName(), current - 1))
                         .compose(ignore -> zkScalingDownByOne(zkScaler, current - 1, desired));
             } else {
                 return Future.succeededFuture(this);
@@ -1413,7 +1413,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (res.succeeded())    {
                                 scalingPromise.complete(this);
                             } else {
-                                LOGGER.warn("{}: Failed to verify Zookeeper configuration", res.cause());
+                                RECONCILIATION_LOGGER.warn(reconciliation, "Failed to verify Zookeeper configuration", res.cause());
                                 scalingPromise.fail(res.cause());
                             }
                         });
@@ -1435,7 +1435,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        zkCluster.generateCertificates(kafkaAssembly, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier));
+                        zkCluster.generateCertificates(reconciliation, kafkaAssembly, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier));
                         future.complete(this);
                     } catch (Throwable e) {
                         future.fail(e);
@@ -1458,7 +1458,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             this.kafkaStsAlreadyExists = true;
                         }
 
-                        this.kafkaCluster = KafkaCluster.fromCrd(kafkaAssembly, versions, oldStorage, kafkaCurrentReplicas);
+                        this.kafkaCluster = KafkaCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldStorage, kafkaCurrentReplicas);
                         this.kafkaBootstrapDnsName.addAll(ListenersUtils.alternativeNames(kafkaCluster.getListeners()));
 
                         //return Future.succeededFuture(this);
@@ -1524,7 +1524,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 // Either Pods or StatefulSet already exist. But none of them contains the version
                                 // annotation. This suggests they are not created by the current versions of Strimzi.
                                 // Without the annotation, we cannot detect the Kafka version and decide on upgrade.
-                                LOGGER.warn("Kafka Pods or StatefulSet exist, but do not contain the {} annotation to detect their version. Kafka upgrade cannot be detected.", ANNO_STRIMZI_IO_KAFKA_VERSION);
+                                RECONCILIATION_LOGGER.warn(reconciliation, "Kafka Pods or StatefulSet exist, but do not contain the {} annotation to detect their version. Kafka upgrade cannot be detected.", ANNO_STRIMZI_IO_KAFKA_VERSION);
                                 throw new KafkaUpgradeException("Kafka Pods or StatefulSet exist, but do not contain the " + ANNO_STRIMZI_IO_KAFKA_VERSION + " annotation to detect their version. Kafka upgrade cannot be detected.");
                             }
                         } else if (lowestKafkaVersion.equals(highestKafkaVersion)) {
@@ -1550,7 +1550,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaInitServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
                     kafkaCluster.getServiceAccountName(),
                     kafkaCluster.generateServiceAccount()));
         }
@@ -1558,7 +1558,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {
             ClusterRoleBinding desired = kafkaCluster.generateClusterRoleBinding(namespace);
 
-            return withVoid(withIgnoreRbacError(
+            return withVoid(withIgnoreRbacError(reconciliation,
                     clusterRoleBindingOperations.reconcile(
                         KafkaResources.initContainerClusterRoleBindingName(name, namespace),
                         desired),
@@ -1567,7 +1567,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaScaleDown() {
-            return withVoid(kafkaSetOperations.scaleDown(namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
+            return withVoid(kafkaSetOperations.scaleDown(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
         }
 
         /**
@@ -1577,13 +1577,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> kafkaServices() {
             List<Service> services = new ArrayList<>();
-            services.add(kafkaCluster.generateService());
-            services.add(kafkaCluster.generateHeadlessService());
-            services.addAll(kafkaCluster.generateExternalBootstrapServices());
+            services.add(kafkaCluster.generateService(reconciliation));
+            services.add(kafkaCluster.generateHeadlessService(reconciliation));
+            services.addAll(kafkaCluster.generateExternalBootstrapServices(reconciliation));
 
             int replicas = kafkaCluster.getReplicas();
             for (int i = 0; i < replicas; i++) {
-                services.addAll(kafkaCluster.generateExternalServices(i));
+                services.addAll(kafkaCluster.generateExternalServices(reconciliation, i));
             }
 
             Future fut = serviceOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
@@ -1597,14 +1597,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         for (Service service : services) {
                             String serviceName = service.getMetadata().getName();
                             existingServiceNames.remove(serviceName);
-                            serviceFutures.add(serviceOperations.reconcile(namespace, serviceName, service));
+                            serviceFutures.add(serviceOperations.reconcile(reconciliation, namespace, serviceName, service));
                         }
 
                         RECONCILIATION_LOGGER.debug(reconciliation, "Services {} should be deleted", existingServiceNames);
 
                         // Delete services which match our selector but are not desired anymore
                         for (String serviceName : existingServiceNames) {
-                            serviceFutures.add(serviceOperations.reconcile(namespace, serviceName, null));
+                            serviceFutures.add(serviceOperations.reconcile(reconciliation, namespace, serviceName, null));
                         }
 
                         return CompositeFuture.join(serviceFutures);
@@ -1639,14 +1639,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 for (Route route : routes) {
                                     String routeName = route.getMetadata().getName();
                                     existingRouteNames.remove(routeName);
-                                    routeFutures.add(routeOperations.reconcile(namespace, routeName, route));
+                                    routeFutures.add(routeOperations.reconcile(reconciliation, namespace, routeName, route));
                                 }
 
                                 RECONCILIATION_LOGGER.debug(reconciliation, "Routes {} should be deleted", existingRouteNames);
 
                                 // Delete routes which match our selector but are not desired anymore
                                 for (String routeName : existingRouteNames) {
-                                    routeFutures.add(routeOperations.reconcile(namespace, routeName, null));
+                                    routeFutures.add(routeOperations.reconcile(reconciliation, namespace, routeName, null));
                                 }
 
                                 return CompositeFuture.join(routeFutures);
@@ -1690,14 +1690,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         for (Ingress ingress : ingresses) {
                             String ingressName = ingress.getMetadata().getName();
                             existingIngressNames.remove(ingressName);
-                            ingressFutures.add(ingressOperations.reconcile(namespace, ingressName, ingress));
+                            ingressFutures.add(ingressOperations.reconcile(reconciliation, namespace, ingressName, ingress));
                         }
 
                         RECONCILIATION_LOGGER.debug(reconciliation, "Ingresses {} should be deleted", existingIngressNames);
 
                         // Delete ingresses which match our selector but are not desired anymore
                         for (String ingressName : existingIngressNames) {
-                            ingressFutures.add(ingressOperations.reconcile(namespace, ingressName, null));
+                            ingressFutures.add(ingressOperations.reconcile(reconciliation, namespace, ingressName, null));
                         }
 
                         return CompositeFuture.join(ingressFutures);
@@ -1734,14 +1734,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         for (io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingress : ingresses) {
                             String ingressName = ingress.getMetadata().getName();
                             existingIngressNames.remove(ingressName);
-                            ingressFutures.add(ingressV1Beta1Operations.reconcile(namespace, ingressName, ingress));
+                            ingressFutures.add(ingressV1Beta1Operations.reconcile(reconciliation, namespace, ingressName, ingress));
                         }
 
                         RECONCILIATION_LOGGER.debug(reconciliation, "V1beta1 ingresses {} should be deleted", existingIngressNames);
 
                         // Delete ingresses which match our selector but are not desired anymore
                         for (String ingressName : existingIngressNames) {
-                            ingressFutures.add(ingressV1Beta1Operations.reconcile(namespace, ingressName, null));
+                            ingressFutures.add(ingressV1Beta1Operations.reconcile(reconciliation, namespace, ingressName, null));
                         }
 
                         return CompositeFuture.join(ingressFutures);
@@ -2324,7 +2324,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        kafkaCluster.generateCertificates(kafkaAssembly,
+                        kafkaCluster.generateCertificates(reconciliation, kafkaAssembly,
                                 clusterCa, kafkaBootstrapDnsName, kafkaBrokerDnsNames,
                                 isMaintenanceTimeWindowsSatisfied(dateSupplier));
                         future.complete(this);
@@ -2345,7 +2345,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .map(listener -> listener.getConfiguration().getBrokerCertChainAndKey().getSecretName())
                     .distinct()
                     .collect(Collectors.toList());
-            LOGGER.debug("Validating secret {} with custom TLS listener certificates", secretNames);
+            RECONCILIATION_LOGGER.debug(reconciliation, "Validating secret {} with custom TLS listener certificates", secretNames);
 
             List<Future> secretFutures = new ArrayList<>(secretNames.size());
             Map<String, Secret> customSecrets = new HashMap<>(secretNames.size());
@@ -2355,7 +2355,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(secret -> {
                             if (secret != null) {
                                 customSecrets.put(secretName, secret);
-                                LOGGER.debug("Found secrets {} with custom TLS listener certificate", secretName);
+                                RECONCILIATION_LOGGER.debug(reconciliation, "Found secrets {} with custom TLS listener certificate", secretName);
                             }
 
                             return Future.succeededFuture();
@@ -2416,8 +2416,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ConfigMap> getKafkaAncillaryCm() {
             return Util.metricsAndLogging(configMapOperations, namespace, kafkaCluster.getLogging(), kafkaCluster.getMetricsConfigInCm())
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(metricsAndLoggingCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, featureGates.controlPlaneListenerEnabled());
-                    KafkaConfiguration kc = KafkaConfiguration.unvalidated(kafkaCluster.getBrokersConfiguration()); // has to be after generateAncillaryConfigMap() which generates the configuration
+                    ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(reconciliation, metricsAndLoggingCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, featureGates.controlPlaneListenerEnabled());
+                    KafkaConfiguration kc = KafkaConfiguration.unvalidated(reconciliation, kafkaCluster.getBrokersConfiguration()); // has to be after generateAncillaryConfigMap() which generates the configuration
 
                     // if BROKER_ADVERTISED_HOSTNAMES_FILENAME or BROKER_ADVERTISED_PORTS_FILENAME changes, compute a hash and put it into annotation
                     String brokerConfiguration = brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_HOSTNAMES_FILENAME, "");
@@ -2436,7 +2436,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaAncillaryCm() {
-            return withVoid(getKafkaAncillaryCm().compose(cm -> configMapOperations.reconcile(namespace, kafkaCluster.getAncillaryConfigMapName(), cm)));
+            return withVoid(getKafkaAncillaryCm().compose(cm -> configMapOperations.reconcile(reconciliation, namespace, kafkaCluster.getAncillaryConfigMapName(), cm)));
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
@@ -2452,22 +2452,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaCluster.jmxSecretName(name));
                 return secretFuture.compose(res -> {
                     if (res == null) {
-                        return withVoid(secretOperations.reconcile(namespace, KafkaCluster.jmxSecretName(name),
+                        return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaCluster.jmxSecretName(name),
                                 kafkaCluster.generateJmxSecret()));
                     }
                     return withVoid(Future.succeededFuture(this));
                 });
 
             }
-            return withVoid(secretOperations.reconcile(namespace, KafkaCluster.jmxSecretName(name), null));
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaCluster.jmxSecretName(name), null));
         }
 
         Future<ReconciliationState> kafkaNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(namespace, KafkaCluster.networkPolicyName(name), kafkaCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, KafkaCluster.networkPolicyName(name), kafkaCluster.generateNetworkPolicy(reconciliation, operatorNamespace, operatorNamespaceLabels)));
         }
 
         Future<ReconciliationState> kafkaPodDisruptionBudget() {
-            return withVoid(podDisruptionBudgetOperator.reconcile(namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudget()));
+            return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudget()));
         }
 
         int getPodIndexFromPvcName(String pvcName)  {
@@ -2530,7 +2530,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<Void> reconcilePvc(PersistentVolumeClaim desired)  {
             Promise<Void> resultPromise = Promise.promise();
 
-            pvcOperations.reconcile(namespace, desired.getMetadata().getName(), desired).onComplete(pvcRes -> {
+            pvcOperations.reconcile(reconciliation, namespace, desired.getMetadata().getName(), desired).onComplete(pvcRes -> {
                 if (pvcRes.succeeded()) {
                     resultPromise.complete();
                 } else {
@@ -2561,7 +2561,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         } else  {
                             // Resizing supported by SC => We can reconcile the PVC to have it resized
                             RECONCILIATION_LOGGER.info(reconciliation, "Resizing PVC {} from {} to {}.", desired.getMetadata().getName(), current.getStatus().getCapacity().get("storage").getAmount(), desired.getSpec().getResources().getRequests().get("storage").getAmount());
-                            pvcOperations.reconcile(namespace, desired.getMetadata().getName(), desired).onComplete(pvcRes -> {
+                            pvcOperations.reconcile(reconciliation, namespace, desired.getMetadata().getName(), desired).onComplete(pvcRes -> {
                                 if (pvcRes.succeeded()) {
                                     resultPromise.complete();
                                 } else {
@@ -2649,7 +2649,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             for (Pod pod : pods) {
                                 if (!needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, kafkaCurrentReplicas, kafkaCluster.getReplicas()).isEmpty())   {
                                     // At least one broker needs rolling update => we can trigger it without checking the other brokers
-                                    log.debug("{}: Kafka brokers needs rolling update to add or remove JBOD volumes", reconciliation);
+                                    RECONCILIATION_LOGGER.debug(reconciliation, "Kafka brokers needs rolling update to add or remove JBOD volumes");
 
                                     return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
                                             .compose(sts -> {
@@ -2664,7 +2664,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
                             }
 
-                            log.debug("{}: No rolling update of Kafka brokers due to added or removed JBOD volumes is needed", reconciliation);
+                            RECONCILIATION_LOGGER.debug(reconciliation, "No rolling update of Kafka brokers due to added or removed JBOD volumes is needed");
                             return withVoid(Future.succeededFuture());
                         });
             } else {
@@ -2692,7 +2692,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 if (jsonStorage != null) {
                     Storage currentStorage = ModelUtils.decodeStorageFromJson(jsonStorage);
 
-                    if (new StorageDiff(currentStorage, desiredStorage, currentReplicas, desiredReplicas).isVolumesAddedOrRemoved())    {
+                    if (new StorageDiff(reconciliation, currentStorage, desiredStorage, currentReplicas, desiredReplicas).isVolumesAddedOrRemoved())    {
                         return singletonList("JBOD volumes were added or removed");
                     }
                 }
@@ -2702,7 +2702,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         StatefulSet getKafkaStatefulSet()   {
-            StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+            StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(reconciliation, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             PodTemplateSpec template = kafkaSts.getSpec().getTemplate();
 
             // Annotations with CA generations to help with rolling updates when CA changes
@@ -2727,7 +2727,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
-            return withKafkaDiff(kafkaSetOperations.reconcile(namespace, kafkaCluster.getName(), getKafkaStatefulSet()));
+            return withKafkaDiff(kafkaSetOperations.reconcile(reconciliation, namespace, kafkaCluster.getName(), getKafkaStatefulSet()));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
@@ -2736,7 +2736,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaScaleUp() {
-            return withVoid(kafkaSetOperations.scaleUp(namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
+            return withVoid(kafkaSetOperations.scaleUp(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
         }
 
         Future<ReconciliationState> zkPodsReady() {
@@ -2916,10 +2916,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             // We start by deleting the StatefulSet so that it doesn't interfere with the pod deletion process
             // The deletion has to be non-cascading so that the other pods are not affected
-            Future<Void> fut = stsOperator.deleteAsync(namespace, sts.getMetadata().getName(), false)
+            Future<Void> fut = stsOperator.deleteAsync(reconciliation, namespace, sts.getMetadata().getName(), false)
                     .compose(ignored -> {
                         // After the StatefulSet is deleted, we can delete the pod which was marked for deletion
-                        return podOperations.reconcile(namespace, podName, null);
+                        return podOperations.reconcile(reconciliation, namespace, podName, null);
                     })
                     .compose(ignored -> {
                         // With the pod deleting, we can delete all the PVCs belonging to this pod
@@ -2928,7 +2928,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         for (PersistentVolumeClaim pvc : deletePvcs)    {
                             String pvcName = pvc.getMetadata().getName();
                             RECONCILIATION_LOGGER.debug(reconciliation, "Deleting PVC {} for Pod {} based on {} annotation", pvcName, podName, AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC);
-                            deleteResults.add(pvcOperations.reconcile(namespace, pvcName, null));
+                            deleteResults.add(pvcOperations.reconcile(reconciliation, namespace, pvcName, null));
                         }
                         return CompositeFuture.join(deleteResults);
                     })
@@ -2939,7 +2939,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         Future<Void> waitForDeletion = podOperations.waitFor(namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                             Pod deletion = podOperations.get(namespace, podName);
-                            LOGGER.trace("Checking if Pod {} in namespace {} has been deleted or recreated", podName, namespace);
+                            RECONCILIATION_LOGGER.trace(reconciliation, "Checking if Pod {} in namespace {} has been deleted or recreated", podName, namespace);
                             return deletion == null;
                         });
 
@@ -2958,7 +2958,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             Future<Void> waitForDeletion = pvcOperations.waitFor(namespace, pvcName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                                 PersistentVolumeClaim deletion = pvcOperations.get(namespace, pvcName);
-                                LOGGER.trace("Checking if {} {} in namespace {} has been deleted", pvc.getKind(), pvcName, namespace);
+                                RECONCILIATION_LOGGER.trace(reconciliation, "Checking if {} {} in namespace {} has been deleted", pvc.getKind(), pvcName, namespace);
                                 return deletion == null || (deletion.getMetadata() != null && !uid.equals(deletion.getMetadata().getUid()));
                             });
 
@@ -2974,7 +2974,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         for (PersistentVolumeClaim pvc : createPvcs)    {
                             RECONCILIATION_LOGGER.debug(reconciliation, "Reconciling PVC {} for Pod {} after it was deleted and maybe recreated by the pod", pvc.getMetadata().getName(), podName);
-                            createResults.add(pvcOperations.reconcile(namespace, pvc.getMetadata().getName(), pvc));
+                            createResults.add(pvcOperations.reconcile(reconciliation, namespace, pvc.getMetadata().getName(), pvc));
                         }
 
                         return CompositeFuture.join(createResults);
@@ -2991,7 +2991,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         sts.getMetadata().setUid(null);
                         sts.setStatus(null);
 
-                        return stsOperator.reconcile(namespace, sts.getMetadata().getName(), sts);
+                        return stsOperator.reconcile(reconciliation, namespace, sts.getMetadata().getName(), sts);
                     })
                     .compose(ignored -> podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs));
 
@@ -3072,7 +3072,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 if (Annotations.booleanAnnotation(pvcOperations.get(namespace, pvcName), AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, false)) {
                     RECONCILIATION_LOGGER.debug(reconciliation, "Deleting PVC {}", pvcName);
-                    futures.add(pvcOperations.reconcile(namespace, pvcName, null));
+                    futures.add(pvcOperations.reconcile(reconciliation, namespace, pvcName, null));
                 }
             }
 
@@ -3096,14 +3096,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             MetricsAndLogging uoMetricsAndLogging = res.resultAt(1);
 
                             if (topicOperator != null)  {
-                                this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(toMetricsAndLogging);
+                                this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(reconciliation, toMetricsAndLogging);
                             }
 
                             if (userOperator != null)   {
-                                this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(uoMetricsAndLogging);
+                                this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(reconciliation, uoMetricsAndLogging);
                             }
 
-                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), emptyMap(), imagePullPolicy, imagePullSecrets);
+                            this.eoDeployment = entityOperator.generateDeployment(reconciliation, pfa.isOpenshift(), emptyMap(), imagePullPolicy, imagePullSecrets);
                             return Future.succeededFuture(this);
                         });
             } else {
@@ -3115,12 +3115,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorRole() {
             final Role role;
             if (isEntityOperatorDeployed()) {
-                role = entityOperator.generateRole(namespace, namespace);
+                role = entityOperator.generateRole(reconciliation, namespace, namespace);
             } else {
                 role = null;
             }
 
-            return withVoid(roleOperations.reconcile(
+            return withVoid(roleOperations.reconcile(reconciliation,
                     namespace,
                     EntityOperator.getRoleName(name),
                     role));
@@ -3140,10 +3140,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             final Future<ReconcileResult<Role>> topicWatchedNamespaceFuture;
             if (!namespace.equals(topicWatchedNamespace)) {
-                topicWatchedNamespaceFuture = roleOperations.reconcile(
+                topicWatchedNamespaceFuture = roleOperations.reconcile(reconciliation,
                         topicWatchedNamespace,
                         EntityOperator.getRoleName(name),
-                        entityOperator.generateRole(namespace, topicWatchedNamespace));
+                        entityOperator.generateRole(reconciliation, namespace, topicWatchedNamespace));
             } else {
                 topicWatchedNamespaceFuture = Future.succeededFuture();
             }
@@ -3165,10 +3165,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             final Future<ReconcileResult<Role>> userWatchedNamespaceFuture;
             if (!namespace.equals(userWatchedNamespace)) {
-                userWatchedNamespaceFuture = roleOperations.reconcile(
+                userWatchedNamespaceFuture = roleOperations.reconcile(reconciliation,
                         userWatchedNamespace,
                         EntityOperator.getRoleName(name),
-                        entityOperator.generateRole(namespace, userWatchedNamespace));
+                        entityOperator.generateRole(reconciliation, namespace, userWatchedNamespace));
             } else {
                 userWatchedNamespaceFuture = Future.succeededFuture();
             }
@@ -3177,7 +3177,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
                     EntityOperator.entityOperatorServiceAccountName(name),
                     isEntityOperatorDeployed() ? entityOperator.generateServiceAccount() : null));
         }
@@ -3193,8 +3193,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // or if the topic operator needs to watch a different namespace
             if (!isEntityOperatorDeployed()
                     || entityOperator.getTopicOperator() == null) {
-                LOGGER.debug("entityOperatorTopicOpRoleBindingForRole not required");
-                return withVoid(roleBindingOperations.reconcile(
+                RECONCILIATION_LOGGER.debug(reconciliation, "entityOperatorTopicOpRoleBindingForRole not required");
+                return withVoid(roleBindingOperations.reconcile(reconciliation,
                         namespace,
                         EntityTopicOperator.roleBindingForRoleName(name),
                         null));
@@ -3213,7 +3213,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             final Future<ReconcileResult<RoleBinding>> watchedNamespaceFuture;
 
             if (!namespace.equals(watchedNamespace)) {
-                watchedNamespaceFuture = roleBindingOperations.reconcile(
+                watchedNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
                         watchedNamespace,
                         EntityTopicOperator.roleBindingForRoleName(name),
                         entityOperator.getTopicOperator().generateRoleBindingForRole(namespace, watchedNamespace));
@@ -3222,7 +3222,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             // Create role binding for the the UI runs in (it needs to access the CA etc.)
-            Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = roleBindingOperations.reconcile(
+            Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
                     namespace,
                     EntityTopicOperator.roleBindingForRoleName(name),
                     entityOperator.getTopicOperator().generateRoleBindingForRole(namespace, namespace));
@@ -3235,8 +3235,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // or if the user operator needs to watch a different namespace
             if (!isEntityOperatorDeployed()
                     || entityOperator.getUserOperator() == null) {
-                LOGGER.debug("entityOperatorUserOpRoleBindingForRole not required");
-                return withVoid(roleBindingOperations.reconcile(
+                RECONCILIATION_LOGGER.debug(reconciliation, "entityOperatorUserOpRoleBindingForRole not required");
+                return withVoid(roleBindingOperations.reconcile(reconciliation,
                         namespace,
                         EntityUserOperator.roleBindingForRoleName(name),
                         null));
@@ -3254,7 +3254,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             if (!namespace.equals(watchedNamespace)) {
-                watchedNamespaceFuture = roleBindingOperations.reconcile(
+                watchedNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
                         watchedNamespace,
                         EntityUserOperator.roleBindingForRoleName(name),
                         entityOperator.getUserOperator().generateRoleBindingForRole(namespace, watchedNamespace));
@@ -3263,7 +3263,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             // Create role binding for the the UI runs in (it needs to access the CA etc.)
-            ownNamespaceFuture = roleBindingOperations.reconcile(
+            ownNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
                     namespace,
                     EntityUserOperator.roleBindingForRoleName(name),
                     entityOperator.getUserOperator().generateRoleBindingForRole(namespace, namespace));
@@ -3273,14 +3273,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorTopicOpAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(namespace,
+            return withVoid(configMapOperations.reconcile(reconciliation, namespace,
                     isEntityOperatorDeployed() && entityOperator.getTopicOperator() != null ?
                             entityOperator.getTopicOperator().getAncillaryConfigMapName() : EntityTopicOperator.metricAndLogConfigsName(name),
                     topicOperatorMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> entityOperatorUserOpAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(namespace,
+            return withVoid(configMapOperations.reconcile(reconciliation, namespace,
                     isEntityOperatorDeployed() && entityOperator.getUserOperator() != null ?
                             entityOperator.getUserOperator().getAncillaryConfigMapName() : EntityUserOperator.metricAndLogConfigsName(name),
                     userOperatorMetricsAndLogsConfigMap));
@@ -3298,7 +3298,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
                     Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
-                    return deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), eoDeployment);
+                    return deploymentOperations.reconcile(reconciliation, namespace, EntityOperator.entityOperatorName(name), eoDeployment);
                 }).compose(recon -> {
                     if (recon instanceof ReconcileResult.Noop)   {
                         // Lets check if we need to roll the deployment manually
@@ -3311,12 +3311,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return Future.succeededFuture(this);
                 });
             } else  {
-                return withVoid(deploymentOperations.reconcile(namespace, EntityOperator.entityOperatorName(name), null));
+                return withVoid(deploymentOperations.reconcile(reconciliation, namespace, EntityOperator.entityOperatorName(name), null));
             }
         }
 
         Future<ReconciliationState> entityOperatorRollingUpdate() {
-            return withVoid(deploymentOperations.rollingUpdate(namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs));
+            return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs));
         }
 
         Future<ReconciliationState> entityOperatorReady() {
@@ -3332,7 +3332,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(EntityOperator.secretName(name), entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+            return updateCertificateSecretWithDiff(EntityOperator.secretName(name), entityOperator == null ? null : entityOperator.generateSecret(reconciliation, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
                     .map(changed -> {
                         existingEntityOperatorCertsChanged = changed;
                         return this;
@@ -3342,7 +3342,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isPodUpToDate(StatefulSet sts, Pod pod) {
             final int stsGeneration = StatefulSetOperator.getStsGeneration(sts);
             final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
-            LOGGER.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
+            RECONCILIATION_LOGGER.debug(reconciliation, "Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
                     sts.getMetadata().getNamespace(), sts.getMetadata().getName(), pod.getMetadata().getName(),
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, podGeneration,
                     StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, stsGeneration);
@@ -3350,19 +3350,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         private final Future<ReconciliationState> getCruiseControlDescription() {
-            CruiseControl cruiseControl = CruiseControl.fromCrd(kafkaAssembly, versions);
+            CruiseControl cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions);
             if (cruiseControl != null) {
                 Util.metricsAndLogging(configMapOperations, kafkaAssembly.getMetadata().getNamespace(),
                         cruiseControl.getLogging(), cruiseControl.getMetricsConfigInCm())
                         .compose(metricsAndLogging -> {
-                            ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLogging);
+                            ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(reconciliation, metricsAndLogging);
 
                             Map<String, String> annotations = singletonMap(CruiseControl.ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG));
 
                             this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             this.cruiseControl = cruiseControl;
 
-                            this.ccDeployment = cruiseControl.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
+                            this.ccDeployment = cruiseControl.generateDeployment(reconciliation, pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
                             return Future.succeededFuture(this);
                         });
             }
@@ -3370,20 +3370,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
                     CruiseControl.cruiseControlServiceAccountName(name),
                     ccDeployment != null ? cruiseControl.generateServiceAccount() : null));
         }
 
         Future<ReconciliationState> cruiseControlAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(namespace,
+            return withVoid(configMapOperations.reconcile(reconciliation, namespace,
                     ccDeployment != null && cruiseControl != null ?
                             cruiseControl.getAncillaryConfigMapName() : CruiseControl.metricAndLogConfigsName(name),
                     cruiseControlMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(reconciliation, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
                     .map(changed -> {
                         existingCruiseControlCertsChanged = changed;
                         return this;
@@ -3394,7 +3394,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (this.cruiseControl != null && ccDeployment != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
                 return future.compose(dep -> {
-                    return deploymentOperations.reconcile(namespace, this.cruiseControl.getName(), ccDeployment);
+                    return deploymentOperations.reconcile(reconciliation, namespace, this.cruiseControl.getName(), ccDeployment);
                 }).compose(recon -> {
                     if (recon instanceof ReconcileResult.Noop)   {
                         // Lets check if we need to roll the deployment manually
@@ -3407,16 +3407,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return Future.succeededFuture(this);
                 });
             } else {
-                return withVoid(deploymentOperations.reconcile(namespace, CruiseControl.cruiseControlName(name), null));
+                return withVoid(deploymentOperations.reconcile(reconciliation, namespace, CruiseControl.cruiseControlName(name), null));
             }
         }
 
         Future<ReconciliationState> cruiseControlRollingUpdate() {
-            return withVoid(deploymentOperations.rollingUpdate(namespace, CruiseControl.cruiseControlName(name), operationTimeoutMs));
+            return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, CruiseControl.cruiseControlName(name), operationTimeoutMs));
         }
 
         Future<ReconciliationState> cruiseControlService() {
-            return withVoid(serviceOperations.reconcile(namespace, CruiseControl.cruiseControlServiceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
+            return withVoid(serviceOperations.reconcile(reconciliation, namespace, CruiseControl.cruiseControlServiceName(name), cruiseControl != null ? cruiseControl.generateService(reconciliation) : null));
         }
 
         Future<ReconciliationState> cruiseControlReady() {
@@ -3432,8 +3432,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(namespace, CruiseControl.policyName(name),
-                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null));
+            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, CruiseControl.policyName(name),
+                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(reconciliation, operatorNamespace, operatorNamespaceLabels) : null));
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
@@ -3447,7 +3447,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean isCustomCertUpToDate(StatefulSet sts, Pod pod, String annotation) {
             final String stsThumbprint = Annotations.stringAnnotation(sts.getSpec().getTemplate(), annotation, "");
             final String podThumbprint = Annotations.stringAnnotation(pod, annotation, "");
-            LOGGER.debug("Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
+            RECONCILIATION_LOGGER.debug(reconciliation, "Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
                     sts.getMetadata().getNamespace(), sts.getMetadata().getName(), pod.getMetadata().getName(),
                     annotation, podThumbprint,
                     annotation, stsThumbprint);
@@ -3524,7 +3524,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 return isSatisfiedBy;
             } catch (ParseException e) {
-                LOGGER.warn("The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
+                RECONCILIATION_LOGGER.warn(reconciliation, "The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
                 return false;
             }
         }
@@ -3564,11 +3564,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .withController(false)
                     .build();
 
-            Secret secret = ModelUtils.buildSecret(clusterCa, clusterCa.clusterOperatorSecret(), namespace,
+            Secret secret = ModelUtils.buildSecret(reconciliation, clusterCa, clusterCa.clusterOperatorSecret(), namespace,
                     ClusterOperator.secretName(name), "cluster-operator", "cluster-operator",
                     labels, ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
-            return withVoid(secretOperations.reconcile(namespace, ClusterOperator.secretName(name),
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, ClusterOperator.secretName(name),
                     secret));
         }
 
@@ -3605,7 +3605,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaCustomCertificatesToStatus() {
             for (GenericKafkaListener listener : kafkaCluster.getListeners())   {
                 if (listener.isTls())   {
-                    LOGGER.debug("Adding certificate to status for listener: {}", listener.getName());
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Adding certificate to status for listener: {}", listener.getName());
                     addCertificateToListener(listener.getName(), customListenerCertificates.get(listener.getName()));
                 }
             }
@@ -3640,18 +3640,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         private final Future<ReconciliationState> getKafkaExporterDescription() {
             this.kafkaExporter = KafkaExporter.fromCrd(kafkaAssembly, versions);
-            this.exporterDeployment = kafkaExporter.generateDeployment(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+            this.exporterDeployment = kafkaExporter.generateDeployment(reconciliation, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             return Future.succeededFuture(this);
         }
 
         Future<ReconciliationState> kafkaExporterServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
                     KafkaExporter.containerServiceAccountName(name),
                     exporterDeployment != null ? kafkaExporter.generateServiceAccount() : null));
         }
 
         Future<ReconciliationState> kafkaExporterSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(KafkaExporter.secretName(name), kafkaExporter == null ? null : kafkaExporter.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+            return updateCertificateSecretWithDiff(KafkaExporter.secretName(name), kafkaExporter == null ? null : kafkaExporter.generateSecret(reconciliation, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
                     .map(changed -> {
                         existingKafkaExporterCertsChanged = changed;
                         return this;
@@ -3666,7 +3666,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     int caCertGeneration = getCaCertGeneration(this.clusterCa);
                     Annotations.annotations(exporterDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
-                    return deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), exporterDeployment);
+                    return deploymentOperations.reconcile(reconciliation, namespace, KafkaExporter.kafkaExporterName(name), exporterDeployment);
                 })
                 .compose(recon -> {
                     if (recon instanceof ReconcileResult.Noop)   {
@@ -3680,12 +3680,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return Future.succeededFuture(this);
                 });
             } else  {
-                return withVoid(deploymentOperations.reconcile(namespace, KafkaExporter.kafkaExporterName(name), null));
+                return withVoid(deploymentOperations.reconcile(reconciliation, namespace, KafkaExporter.kafkaExporterName(name), null));
             }
         }
 
         Future<ReconciliationState> kafkaExporterRollingUpdate() {
-            return withVoid(deploymentOperations.rollingUpdate(namespace, KafkaExporter.kafkaExporterName(name), operationTimeoutMs));
+            return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, KafkaExporter.kafkaExporterName(name), operationTimeoutMs));
         }
 
         Future<ReconciliationState> kafkaExporterReady() {
@@ -3703,10 +3703,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> getJmxTransDescription() {
             try {
                 int numOfBrokers = kafkaCluster.getReplicas();
-                this.jmxTrans = JmxTrans.fromCrd(kafkaAssembly, versions);
+                this.jmxTrans = JmxTrans.fromCrd(reconciliation, kafkaAssembly, versions);
                 if (this.jmxTrans != null) {
-                    this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getJmxTrans(), numOfBrokers);
-                    this.jmxTransDeployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);
+                    this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(reconciliation, kafkaAssembly.getSpec().getJmxTrans(), numOfBrokers);
+                    this.jmxTransDeployment = jmxTrans.generateDeployment(reconciliation, imagePullPolicy, imagePullSecrets);
                 }
 
                 return Future.succeededFuture(this);
@@ -3716,14 +3716,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> jmxTransConfigMap() {
-            return withVoid(configMapOperations.reconcile(namespace,
+            return withVoid(configMapOperations.reconcile(reconciliation, namespace,
                     JmxTrans.jmxTransConfigName(name),
                     jmxTransConfigMap));
         }
 
 
         Future<ReconciliationState> jmxTransServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(namespace,
+            return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
                     JmxTrans.containerServiceAccountName(name),
                     jmxTrans != null ? jmxTrans.generateServiceAccount() : null));
         }
@@ -3739,12 +3739,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
                         Annotations.annotations(jmxTransDeployment.getSpec().getTemplate()).put(
                                 JmxTrans.CONFIG_MAP_ANNOTATION_KEY, resourceVersion);
-                        return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name),
+                        return withVoid(deploymentOperations.reconcile(reconciliation, namespace, JmxTrans.jmxTransName(name),
                                 jmxTransDeployment));
                     });
                 });
             } else {
-                return withVoid(deploymentOperations.reconcile(namespace, JmxTrans.jmxTransName(name), null));
+                return withVoid(deploymentOperations.reconcile(reconciliation, namespace, JmxTrans.jmxTransName(name), null));
             }
         }
 
@@ -3779,7 +3779,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return withIgnoreRbacError(clusterRoleBindingOperations.reconcile(KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
+        return withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 }

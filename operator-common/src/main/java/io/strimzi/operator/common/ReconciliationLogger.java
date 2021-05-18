@@ -6,6 +6,7 @@
 package io.strimzi.operator.common;
 
 import org.apache.logging.log4j.Logger;
+import java.util.Objects;
 
 /**
  * This class wraps up the Log4j2 loggers. It adds the markers that can be used for log filtering.
@@ -13,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 public class ReconciliationLogger {
     private final Logger log4j2Logger;
     public ReconciliationLogger(Logger log4j2Logger) {
-        this.log4j2Logger = log4j2Logger;
+        this.log4j2Logger = Objects.requireNonNull(log4j2Logger);
     }
     // INFO
     public void info(Reconciliation r, String msg) {
@@ -98,6 +99,10 @@ public class ReconciliationLogger {
         this.log4j2Logger.warn(r.getMarker(), "{}: " + msg, r, arg1, arg2, arg3);
     }
 
+    public void warn(Reconciliation r, String msg, Object arg1, Object arg2, Object arg3, Object arg4) {
+        this.log4j2Logger.warn(r.getMarker(), "{}: " + msg, r, arg1, arg2, arg3, arg4);
+    }
+
     // FATAL
     public void fatal(Reconciliation r, String msg) {
         this.log4j2Logger.fatal(r.getMarker(), "{}: " + msg, r);
@@ -132,6 +137,10 @@ public class ReconciliationLogger {
         this.log4j2Logger.error(r.getMarker(), "{}: " + msg, r, arg1, arg2, arg3);
     }
 
+    public void error(Reconciliation r, String msg, Object arg1, Object arg2, Object arg3, Object arg4) {
+        this.log4j2Logger.error(r.getMarker(), "{}: " + msg, r, arg1, arg2, arg3, arg4);
+    }
+
     // TRACE
     public void trace(Reconciliation r, String msg) {
         this.log4j2Logger.trace(r.getMarker(), "{}: " + msg, r);
@@ -151,6 +160,10 @@ public class ReconciliationLogger {
 
     public void trace(Reconciliation r, String msg, Object arg1, Object arg2, Object arg3) {
         this.log4j2Logger.trace(r.getMarker(), "{}: " + msg, r, arg1, arg2, arg3);
+    }
+
+    public void trace(Reconciliation r, String msg, Object arg1, Object arg2, Object arg3, Object arg4) {
+        this.log4j2Logger.trace(r.getMarker(), "{}: " + msg, r, arg1, arg2, arg3, arg4);
     }
 
 }

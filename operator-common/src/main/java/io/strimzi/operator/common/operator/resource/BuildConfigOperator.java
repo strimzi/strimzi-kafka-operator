@@ -12,6 +12,7 @@ import io.fabric8.openshift.api.model.BuildConfigList;
 import io.fabric8.openshift.api.model.BuildRequest;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -34,10 +35,10 @@ public class BuildConfigOperator extends AbstractResourceOperator<OpenShiftClien
     }
 
     @Override
-    protected Future<ReconcileResult<BuildConfig>> internalPatch(String namespace, String name, BuildConfig current, BuildConfig desired) {
+    protected Future<ReconcileResult<BuildConfig>> internalPatch(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
         desired.getSpec().setTriggers(current.getSpec().getTriggers());
         // Cascading needs to be set to false to make sure the Builds are not deleted during reconciliation
-        return super.internalPatch(namespace, name, current, desired, false);
+        return super.internalPatch(reconciliation, namespace, name, current, desired, false);
     }
 
     /**
@@ -46,6 +47,7 @@ public class BuildConfigOperator extends AbstractResourceOperator<OpenShiftClien
      *
      * This is n override for BuildConfigs because the {@code selfClosingWatch} used by {@code AbstractResourceoperator} does not work for them.
      *
+     * @param reconciliation The reconciliation
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
      * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
@@ -53,7 +55,7 @@ public class BuildConfigOperator extends AbstractResourceOperator<OpenShiftClien
      * @return A future which will be completed on the context thread once the resource has been deleted.
      */
     @Override
-    protected Future<ReconcileResult<BuildConfig>> internalDelete(String namespace, String name, boolean cascading) {
+    protected Future<ReconcileResult<BuildConfig>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         BuildConfigResource<BuildConfig, Void, Build> resourceOp = operation().inNamespace(namespace).withName(name);
 
         return resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L))

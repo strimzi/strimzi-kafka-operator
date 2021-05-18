@@ -13,6 +13,7 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -91,7 +92,7 @@ public class ZookeeperLeaderFinderTest {
         }
 
         @Override
-        NetClientOptions clientOptions(Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
+        NetClientOptions clientOptions(Reconciliation reconciliation, Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
             return new NetClientOptions()
                     .setKeyCertOptions(coCertificate.keyCertOptions())
                     .setTrustOptions(zkCertificate.trustOptions())
@@ -216,7 +217,7 @@ public class ZookeeperLeaderFinderTest {
     public void test0PodsClusterReturnsUnknowLeader(VertxTestContext context) {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE, emptyList(), coKeySecret())
+        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, emptyList(), coKeySecret())
             .onComplete(context.succeeding(leader -> {
                 context.verify(() -> assertThat(leader, is(Integer.valueOf(ZookeeperLeaderFinder.UNKNOWN_LEADER))));
                 a.flag();
@@ -228,7 +229,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         Checkpoint a = context.checkpoint();
         int firstPodIndex = 0;
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(firstPodIndex)), coKeySecret())
+        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(firstPodIndex)), coKeySecret())
             .onComplete(context.succeeding(leader -> {
                 context.verify(() -> assertThat(leader, is(Integer.valueOf(firstPodIndex))));
                 a.flag();
@@ -261,7 +262,7 @@ public class ZookeeperLeaderFinderTest {
 
         Checkpoint a = context.checkpoint();
 
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithMissingClusterOperatorKey)
+        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithMissingClusterOperatorKey)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(RuntimeException.class));
                 assertThat(e.getMessage(),
@@ -299,7 +300,7 @@ public class ZookeeperLeaderFinderTest {
 
         Checkpoint a = context.checkpoint();
 
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithBadCertificate)
+        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithBadCertificate)
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(RuntimeException.class));
                     assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator\\.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
@@ -338,7 +339,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE,
+        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE,
                 asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
@@ -378,7 +379,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE,
+        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE,
                 asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
@@ -418,7 +419,7 @@ public class ZookeeperLeaderFinderTest {
         TestingZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
+        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(desiredLeaderId));
                 for (FakeZk zk : zks) {
@@ -456,7 +457,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
+        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
             .onComplete(context.succeeding(l -> context.verify(() -> {
                 assertThat(l, is(leader));
                 for (FakeZk zk : zks) {

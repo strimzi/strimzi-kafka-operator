@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.Reconciliation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -85,5 +86,9 @@ public class LogContext {
         }
         this.resourceVersion = newResourceVersion;
         return this;
+    }
+
+    public Reconciliation toReconciliation() {
+        return new Reconciliation(trigger, "KafkaTopic", namespace, topicName);
     }
 }

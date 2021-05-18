@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
@@ -110,7 +111,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
 
         createResourceOperations(vertx, mockClient)
-            .updateStatusAsync(resource())
+            .updateStatusAsync(new Reconciliation("test", "kind", "ns", "name"), resource())
             .onComplete(context.succeeding(kafka -> async.flag()));
     }
 }

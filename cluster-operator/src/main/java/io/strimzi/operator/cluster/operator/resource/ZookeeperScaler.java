@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -32,6 +34,7 @@ import java.util.function.Function;
  */
 public class ZookeeperScaler implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(ZookeeperScaler.class);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final Vertx vertx;
     private final ZooKeeperAdminProvider zooAdminProvider;
@@ -51,6 +54,8 @@ public class ZookeeperScaler implements AutoCloseable {
     private final String keyStorePassword;
     private File keyStoreFile;
 
+    private final Reconciliation reconciliation;
+
     /**
      * ZookeeperScaler constructor
      *
@@ -63,8 +68,10 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @return  ZookeeperScaler instance
      */
-    protected ZookeeperScaler(Vertx vertx, ZooKeeperAdminProvider zooAdminProvider, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
-        LOGGER.debug("Creating Zookeeper Scaler for cluster {}", zookeeperConnectionString);
+    protected ZookeeperScaler(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooAdminProvider, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
+        this.reconciliation = reconciliation;
+
+        RECONCILIATION_LOGGER.debug(reconciliation, "Creating Zookeeper Scaler for cluster {}", zookeeperConnectionString);
 
         this.vertx = vertx;
         this.zooAdminProvider = zooAdminProvider;
@@ -121,13 +128,13 @@ public class ZookeeperScaler implements AutoCloseable {
     public void close() {
         if (trustStoreFile != null) {
             if (!trustStoreFile.delete())   {
-                LOGGER.debug("Failed to delete file {}", trustStoreFile);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Failed to delete file {}", trustStoreFile);
             }
         }
 
         if (keyStoreFile != null)   {
             if (!keyStoreFile.delete())   {
-                LOGGER.debug("Failed to delete file {}", keyStoreFile);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Failed to delete file {}", keyStoreFile);
             }
         }
     }
@@ -144,7 +151,7 @@ public class ZookeeperScaler implements AutoCloseable {
             ZooKeeperAdmin zkAdmin = zooAdminProvider.createZookeeperAdmin(
                 this.zookeeperConnectionString,
                 10_000,
-                watchedEvent -> LOGGER.debug("Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
+                watchedEvent -> RECONCILIATION_LOGGER.debug(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
                 clientConfig);
 
             Util.waitFor(vertx,
@@ -156,13 +163,13 @@ public class ZookeeperScaler implements AutoCloseable {
                 .onSuccess(nothing -> connected.complete(zkAdmin))
                 .onFailure(cause -> {
                     String message = String.format("Failed to connect to Zookeeper %s. Connection was not ready in %d ms.", zookeeperConnectionString, operationTimeoutMs);
-                    LOGGER.warn(message);
+                    RECONCILIATION_LOGGER.warn(reconciliation, message);
 
                     closeConnection(zkAdmin)
                         .onComplete(nothing -> connected.fail(new ZookeeperScalingException(message, cause)));
                 });
         } catch (IOException e)   {
-            LOGGER.warn("Failed to connect to {} to scale Zookeeper", zookeeperConnectionString, e);
+            RECONCILIATION_LOGGER.warn(reconciliation, "Failed to connect to {} to scale Zookeeper", zookeeperConnectionString, e);
             connected.fail(new ZookeeperScalingException("Failed to connect to Zookeeper " + zookeeperConnectionString, e));
         }
 
@@ -182,10 +189,10 @@ public class ZookeeperScaler implements AutoCloseable {
         Map<String, String> desiredServers = generateConfig(scaleTo, zkNodeAddress);
 
         if (isDifferent(currentServers, desiredServers))    {
-            LOGGER.debug("The Zookeeper server configuration needs to be updated");
+            RECONCILIATION_LOGGER.debug(reconciliation, "The Zookeeper server configuration needs to be updated");
             return updateConfig(zkAdmin, desiredServers).map((Void) null);
         } else {
-            LOGGER.debug("The Zookeeper server configuration is already up to date");
+            RECONCILIATION_LOGGER.debug(reconciliation, "The Zookeeper server configuration is already up to date");
             return Future.succeededFuture();
         }
     }
@@ -202,10 +209,10 @@ public class ZookeeperScaler implements AutoCloseable {
             try {
                 byte[] config = zkAdmin.getConfig(false, null);
                 Map<String, String> servers = parseConfig(config);
-                LOGGER.debug("Current Zookeeper configuration is {}", servers);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Current Zookeeper configuration is {}", servers);
                 promise.complete(servers);
             } catch (KeeperException | InterruptedException e)    {
-                LOGGER.warn("Failed to get current Zookeeper server configuration", e);
+                RECONCILIATION_LOGGER.warn(reconciliation, "Failed to get current Zookeeper server configuration", e);
                 promise.fail(new ZookeeperScalingException("Failed to get current Zookeeper server configuration", e));
             }
         }, false, configPromise);
@@ -224,14 +231,14 @@ public class ZookeeperScaler implements AutoCloseable {
 
         vertx.executeBlocking(promise -> {
             try {
-                LOGGER.debug("Updating Zookeeper configuration to {}", newServers);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Updating Zookeeper configuration to {}", newServers);
                 byte[] newConfig = zkAdmin.reconfigure(null, null, serversMapToList(newServers), -1, null);
                 Map<String, String> servers = parseConfig(newConfig);
 
-                LOGGER.debug("New Zookeeper configuration is {}", servers);
+                RECONCILIATION_LOGGER.debug(reconciliation, "New Zookeeper configuration is {}", servers);
                 promise.complete(servers);
             } catch (KeeperException | InterruptedException e)    {
-                LOGGER.warn("Failed to update Zookeeper server configuration", e);
+                RECONCILIATION_LOGGER.warn(reconciliation, "Failed to update Zookeeper server configuration", e);
                 promise.fail(new ZookeeperScalingException("Failed to update Zookeeper server configuration", e));
             }
         }, false, configPromise);
@@ -251,7 +258,7 @@ public class ZookeeperScaler implements AutoCloseable {
                     zkAdmin.close((int) operationTimeoutMs);
                     promise.complete();
                 } catch (Exception e) {
-                    LOGGER.warn("Failed to close the ZooKeeperAdmin", e);
+                    RECONCILIATION_LOGGER.warn(reconciliation, "Failed to close the ZooKeeperAdmin", e);
                     promise.fail(e);
                 }
             }, false, closePromise);
@@ -289,7 +296,7 @@ public class ZookeeperScaler implements AutoCloseable {
 
                 promise.complete(clientConfig);
             } catch (Exception e)    {
-                LOGGER.warn("Failed to create Zookeeper client configuration", e);
+                RECONCILIATION_LOGGER.warn(reconciliation, "Failed to create Zookeeper client configuration", e);
                 promise.fail(new ZookeeperScalingException("Failed to create Zookeeper client configuration", e));
             }
         }, false, configPromise);

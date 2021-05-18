@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -52,31 +53,31 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
     /**
      * Asynchronously delete the given pod, return a Future which completes when the Pod has been recreated.
      * Note: The pod might not be "ready" when the returned Future completes.
-     * @param logContext Some context (for logging)
+     * @param reconciliation The reconciliation
      * @param pod The pod to be restarted
      * @param timeoutMs Timeout of the deletion
      * @return a Future which completes when the Pod has been recreated
      */
-    public Future<Void> restart(String logContext, Pod pod, long timeoutMs) {
+    public Future<Void> restart(Reconciliation reconciliation, Pod pod, long timeoutMs) {
         long pollingIntervalMs = 1_000;
         String namespace = pod.getMetadata().getNamespace();
         String podName = pod.getMetadata().getName();
         Promise<Void> deleteFinished = Promise.promise();
-        log.info("{}: Rolling pod {}", logContext, podName);
+        reconciliationLogger.info(reconciliation, "Rolling pod {}", podName);
 
         // Determine generation of deleted pod
         String deleted = getPodUid(pod);
 
         // Delete the pod
-        log.debug("{}: Waiting for pod {} to be deleted", logContext, podName);
+        reconciliationLogger.debug(reconciliation, "Waiting for pod {} to be deleted", podName);
         Future<Void> podReconcileFuture =
-                reconcile(namespace, podName, null).compose(ignore -> {
+                reconcile(reconciliation, namespace, podName, null).compose(ignore -> {
                     Future<Void> del = waitFor(namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                         // predicate - changed generation means pod has been updated
                         String newUid = getPodUid(get(namespace, podName));
                         boolean done = !deleted.equals(newUid);
                         if (done) {
-                            log.debug("Rolling pod {} finished", podName);
+                            reconciliationLogger.debug(reconciliation, "Rolling pod {} finished", podName);
                         }
                         return done;
                     });
@@ -85,7 +86,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
 
         podReconcileFuture.onComplete(deleteResult -> {
             if (deleteResult.succeeded()) {
-                log.debug("{}: Pod {} was deleted", logContext, podName);
+                reconciliationLogger.debug(reconciliation, "Pod {} was deleted", podName);
             }
             deleteFinished.handle(deleteResult);
         });

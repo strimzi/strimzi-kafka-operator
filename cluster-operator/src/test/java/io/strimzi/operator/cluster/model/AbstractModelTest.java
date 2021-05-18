@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 
@@ -44,7 +45,7 @@ public class AbstractModelTest {
         }
 
         @Override
-        protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+        protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
             return null;
         }
     }

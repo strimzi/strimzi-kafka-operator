@@ -103,7 +103,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         KafkaConnectS2IStatus kafkaConnectS2Istatus = new KafkaConnectS2IStatus();
 
         try {
-            connect = KafkaConnectS2ICluster.fromCrd(kafkaConnectS2I, versions);
+            connect = KafkaConnectS2ICluster.fromCrd(reconciliation, kafkaConnectS2I, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(kafkaConnectS2Istatus, e));
@@ -140,25 +140,25 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                                 "Kafka Connect S2I deployment cannot be enabled.");
                     }
                 })
-                .compose(i -> connectServiceAccount(namespace, connect))
-                .compose(i -> networkPolicyOperator.reconcile(namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnectS2I), operatorNamespace, operatorNamespaceLabels)))
-                .compose(i -> deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas()))
-                .compose(scale -> serviceOperations.reconcile(namespace, connect.getServiceName(), connect.generateService()))
+                .compose(i -> connectServiceAccount(reconciliation, namespace, connect))
+                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(reconciliation, isUseResources(kafkaConnectS2I), operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> deploymentConfigOperations.scaleDown(reconciliation, namespace, connect.getName(), connect.getReplicas()))
+                .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService(reconciliation)))
                 .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, connect.getLogging(), connect.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
+                    ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(reconciliation, metricsAndLoggingCm);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                             Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
                     desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
-                    return configMapOperations.reconcile(namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
+                    return configMapOperations.reconcile(reconciliation, namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
-                .compose(i -> kafkaConnectJmxSecret(namespace, connect.getName(), connect))
-                .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                .compose(i -> imagesStreamOperations.reconcile(namespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()), connect.generateSourceImageStream()))
-                .compose(i -> imagesStreamOperations.reconcile(namespace, KafkaConnectS2IResources.targetImageStreamName(connect.getCluster()), connect.generateTargetImageStream()))
-                .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, connect.getName(), connect.generatePodDisruptionBudget()))
-                .compose(i -> buildConfigOperations.reconcile(namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
-                .compose(i -> deploymentConfigOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()))
+                .compose(i -> kafkaConnectJmxSecret(namespace, connect.getName(), connect, reconciliation))
+                .compose(i -> deploymentConfigOperations.reconcile(reconciliation, namespace, connect.getName(), connect.generateDeploymentConfig(reconciliation, annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+                .compose(i -> imagesStreamOperations.reconcile(reconciliation, namespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()), connect.generateSourceImageStream()))
+                .compose(i -> imagesStreamOperations.reconcile(reconciliation, namespace, KafkaConnectS2IResources.targetImageStreamName(connect.getCluster()), connect.generateTargetImageStream()))
+                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()))
+                .compose(i -> buildConfigOperations.reconcile(reconciliation, namespace, KafkaConnectS2IResources.buildConfigName(connect.getCluster()), connect.generateBuildConfig()))
+                .compose(i -> deploymentConfigOperations.scaleUp(reconciliation, namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> deploymentConfigOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentConfigOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> reconcileConnectors(reconciliation, kafkaConnectS2I, kafkaConnectS2Istatus, connectHasZeroReplicas, desiredLogging.get(), connect.getDefaultLogConfig()))
@@ -216,7 +216,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                         if (!ksDiff.isEmpty()) {
                             KafkaConnectS2I resourceWithNewStatus = new KafkaConnectS2IBuilder(connect).withStatus(desiredStatus).build();
 
-                            ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList>) resourceOperator).updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
+                            ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList>) resourceOperator).updateStatusAsync(reconciliation, resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
                                     RECONCILIATION_LOGGER.debug(reconciliation, "Completed status update");
                                     updateStatusPromise.complete();
@@ -243,8 +243,8 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         return updateStatusPromise.future();
     }
 
-    Future<ReconcileResult<ServiceAccount>> connectServiceAccount(String namespace, KafkaConnectCluster connect) {
-        return serviceAccountOperations.reconcile(namespace,
+    Future<ReconcileResult<ServiceAccount>> connectServiceAccount(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+        return serviceAccountOperations.reconcile(reconciliation, namespace,
                 KafkaConnectS2IResources.serviceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
     }

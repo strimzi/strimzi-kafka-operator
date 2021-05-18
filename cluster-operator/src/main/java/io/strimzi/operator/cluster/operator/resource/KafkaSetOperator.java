@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.AdminClientProvider;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 public class KafkaSetOperator extends StatefulSetOperator {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaSetOperator.class);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private final AdminClientProvider adminClientProvider;
 
@@ -41,37 +44,37 @@ public class KafkaSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
-        return !diff.isEmpty() && needsRollingUpdate(diff);
+    protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
+        return !diff.isEmpty() && needsRollingUpdate(reconciliation, diff);
     }
 
-    public static boolean needsRollingUpdate(StatefulSetDiff diff) {
+    public static boolean needsRollingUpdate(Reconciliation reconciliation, StatefulSetDiff diff) {
         if (diff.changesLabels()) {
-            LOGGER.debug("Changed labels => needs rolling update");
+            RECONCILIATION_LOGGER.debug(reconciliation, "Changed labels => needs rolling update");
             return true;
         }
         if (diff.changesSpecTemplate()) {
-            LOGGER.debug("Changed template spec => needs rolling update");
+            RECONCILIATION_LOGGER.debug(reconciliation, "Changed template spec => needs rolling update");
             return true;
         }
         if (diff.changesVolumeClaimTemplates()) {
-            LOGGER.debug("Changed volume claim template => needs rolling update");
+            RECONCILIATION_LOGGER.debug(reconciliation, "Changed volume claim template => needs rolling update");
             return true;
         }
         if (diff.changesVolumeSize()) {
-            LOGGER.debug("Changed size of the volume claim template => no need for rolling update");
+            RECONCILIATION_LOGGER.debug(reconciliation, "Changed size of the volume claim template => no need for rolling update");
             return false;
         }
         return false;
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
-        return maybeRollingUpdate(sts, podNeedsRestart, null, null);
+    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+        return maybeRollingUpdate(reconciliation, sts, podNeedsRestart, null, null);
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart,
+    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart,
                                            Secret clusterCaCertSecret, Secret coKeySecret) {
         throw new UnsupportedOperationException();
     }

@@ -31,6 +31,7 @@ import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
 import java.util.List;
@@ -56,9 +57,9 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
     // Deprecation is suppressed because of KafkaConnectS2I
     @SuppressWarnings("deprecation")
-    public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2I kafkaConnectS2I, KafkaVersion.Lookup versions) {
+    public static KafkaConnectS2ICluster fromCrd(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I, KafkaVersion.Lookup versions) {
         KafkaConnectS2ISpec spec = kafkaConnectS2I.getSpec();
-        KafkaConnectS2ICluster cluster = fromSpec(spec, versions, new KafkaConnectS2ICluster(kafkaConnectS2I));
+        KafkaConnectS2ICluster cluster = fromSpec(reconciliation, spec, versions, new KafkaConnectS2ICluster(kafkaConnectS2I));
 
         if (spec.getBuild() != null)  {
             throw new InvalidResourceException(".spec.build can be used only with KafkaConnect and is not supported with KafkaConnectS2I.");
@@ -74,23 +75,24 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     /**
      * Generate new DeploymentConfig
      *
+     * @param reconciliation The reconciliation
      * @param annotations The annotations.
      * @param isOpenShift Whether we're on OpenShift.
      * @param imagePullPolicy The image pull policy.
      * @param imagePullSecrets The image pull secrets.
      * @return Source ImageStream resource definition
      */
-    public DeploymentConfig generateDeploymentConfig(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy,
+    public DeploymentConfig generateDeploymentConfig(Reconciliation reconciliation, Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy,
                                                      List<LocalObjectReference> imagePullSecrets) {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
-                .withEnv(getEnvVars())
+                .withEnv(getEnvVars(reconciliation))
                 .withCommand("/opt/kafka/s2i/run")
-                .withPorts(getContainerPortList())
+                .withPorts(getContainerPortList(reconciliation))
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
-                .withVolumeMounts(getVolumeMounts(true))
+                .withVolumeMounts(getVolumeMounts(reconciliation, true))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, image))
                 .withSecurityContext(templateContainerSecurityContext)
@@ -147,7 +149,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                         .withNewSpec()
                             .withEnableServiceLinks(templatePodEnableServiceLinks)
                             .withContainers(container)
-                            .withVolumes(getVolumes(isOpenShift, true))
+                            .withVolumes(getVolumes(reconciliation, isOpenShift, true))
                             .withTolerations(getTolerations())
                             .withAffinity(getMergedAffinity())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))

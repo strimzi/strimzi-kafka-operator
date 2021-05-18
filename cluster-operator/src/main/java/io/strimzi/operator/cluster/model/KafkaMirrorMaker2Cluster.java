@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -68,11 +69,13 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     /**
      * Creates instance of KafkaMirrorMaker2Cluster from CRD definition.
      *
+     * @param reconciliation    The reconciliation
      * @param kafkaMirrorMaker2 The Custom Resource based on which the cluster model should be created.
      * @param versions The image versions for MirrorMaker 2.0 clusters.
      * @return The MirrorMaker 2.0 cluster model.
      */
-    public static KafkaMirrorMaker2Cluster fromCrd(KafkaMirrorMaker2 kafkaMirrorMaker2, 
+    public static KafkaMirrorMaker2Cluster fromCrd(Reconciliation reconciliation,
+                                                   KafkaMirrorMaker2 kafkaMirrorMaker2,
                                                    KafkaVersion.Lookup versions) {
         KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(kafkaMirrorMaker2);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
@@ -95,8 +98,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .findFirst()
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));
         }        
-        cluster.setConfiguration(new KafkaMirrorMaker2Configuration(connectCluster.getConfig().entrySet()));
-        return fromSpec(buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
+        cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
+        return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
     }
 
     @SuppressWarnings("deprecation")
@@ -147,8 +150,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     @Override
-    protected List<Volume> getVolumes(boolean isOpenShift, boolean isS2I) {
-        List<Volume> volumeList = super.getVolumes(isOpenShift, isS2I);
+    protected List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift, boolean isS2I) {
+        List<Volume> volumeList = super.getVolumes(reconciliation, isOpenShift, isS2I);
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             KafkaMirrorMaker2Tls tls = mirrorMaker2Cluster.getTls();
@@ -161,20 +164,20 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                         String volumeName = mirrorMaker2Cluster.getAlias() + '-' + certSecretSource.getSecretName();
                         // skipping if a volume with same Secret name was already added
                         if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
-                            volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
+                            volumeList.add(VolumeUtils.createSecretVolume(reconciliation, volumeName, certSecretSource.getSecretName(), isOpenShift));
                         }
                     }
                 }
             }
     
-            AuthenticationUtils.configureClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, mirrorMaker2Cluster.getAlias() + "-oauth-certs", isOpenShift, mirrorMaker2Cluster.getAlias() + '-',  true);
+            AuthenticationUtils.configureClientAuthenticationVolumes(reconciliation, mirrorMaker2Cluster.getAuthentication(), volumeList, mirrorMaker2Cluster.getAlias() + "-oauth-certs", isOpenShift, mirrorMaker2Cluster.getAlias() + '-',  true);
         }
         return volumeList;
     }
 
     @Override
-    protected List<VolumeMount> getVolumeMounts(boolean isS2I) {
-        List<VolumeMount> volumeMountList = super.getVolumeMounts(isS2I);
+    protected List<VolumeMount> getVolumeMounts(Reconciliation reconciliation, boolean isS2I) {
+        List<VolumeMount> volumeMountList = super.getVolumeMounts(reconciliation, isS2I);
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             String alias = mirrorMaker2Cluster.getAlias();
@@ -189,7 +192,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                         String volumeMountName = alias + '-' + certSecretSource.getSecretName();
                         // skipping if a volume mount with same Secret name was already added
                         if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
-                            volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
+                            volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeMountName,
                                 tlsVolumeMountPath + certSecretSource.getSecretName()));
                         }
                     }
@@ -199,7 +202,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             String passwordVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT, alias);
             String oauthTlsVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, alias);
             String oauthVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, alias);
-            AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
+            AuthenticationUtils.configureClientAuthenticationVolumeMounts(reconciliation, mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
         }
         return volumeMountList;
     }
@@ -210,8 +213,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
-    protected List<EnvVar> getEnvVars() {
-        List<EnvVar> varList = super.getEnvVars();        
+    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+        List<EnvVar> varList = super.getEnvVars(reconciliation);
 
         final StringBuilder clusterAliases = new StringBuilder();
         final StringBuilder clustersTrustedCerts = new StringBuilder();

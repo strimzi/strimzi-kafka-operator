@@ -75,7 +75,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         KafkaMirrorMakerStatus kafkaMirrorMakerStatus = new KafkaMirrorMakerStatus();
 
         try {
-            mirror = KafkaMirrorMakerCluster.fromCrd(assemblyResource, versions);
+            mirror = KafkaMirrorMakerCluster.fromCrd(reconciliation, assemblyResource, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(kafkaMirrorMakerStatus, e));
@@ -88,17 +88,17 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         boolean mirrorHasZeroReplicas = mirror.getReplicas() == 0;
 
         RECONCILIATION_LOGGER.debug(reconciliation, "Updating Kafka Mirror Maker cluster");
-        mirrorMakerServiceAccount(namespace, mirror)
-                .compose(i -> deploymentOperations.scaleDown(namespace, mirror.getName(), mirror.getReplicas()))
+        mirrorMakerServiceAccount(reconciliation, namespace, mirror)
+                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, mirror.getLogging(), mirror.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
+                    ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(reconciliation, metricsAndLoggingCm);
                     annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
-                    return configMapOperations.reconcile(namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap);
+                    return configMapOperations.reconcile(reconciliation, namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
-                .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
-                .compose(i -> deploymentOperations.reconcile(namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                .compose(i -> deploymentOperations.scaleUp(namespace, mirror.getName(), mirror.getReplicas()))
+                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
+                .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirror.getName(), mirror.generateDeployment(reconciliation, annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(namespace, mirror.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, mirror.getName(), 1_000, operationTimeoutMs))
                 .onComplete(reconciliationResult -> {
@@ -123,8 +123,8 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         return new KafkaMirrorMakerStatus();
     }
 
-    Future<ReconcileResult<ServiceAccount>> mirrorMakerServiceAccount(String namespace, KafkaMirrorMakerCluster mirror) {
-        return serviceAccountOperations.reconcile(namespace,
+    Future<ReconcileResult<ServiceAccount>> mirrorMakerServiceAccount(Reconciliation reconciliation, String namespace, KafkaMirrorMakerCluster mirror) {
+        return serviceAccountOperations.reconcile(reconciliation, namespace,
                 KafkaMirrorMakerResources.serviceAccountName(mirror.getCluster()),
                 mirror.generateServiceAccount());
     }

@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Promise;
@@ -127,14 +128,14 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
                 .compose(pfa -> {
                     LOGGER.info("Creating resource");
-                    return op.reconcile(namespace, resourceName, getResource(resourceName));
+                    return op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, getResource(resourceName));
                 })
                 .onComplete(context.succeeding())
                 .compose(rrCreated -> {
                     T newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
 
                     LOGGER.info("Updating resource status");
-                    return op.updateStatusAsync(newStatus);
+                    return op.updateStatusAsync(new Reconciliation("test", "kind", "ns", "name"), newStatus);
                 })
                 .onComplete(context.succeeding())
 
@@ -145,7 +146,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
                 .compose(rrModified -> {
                     LOGGER.info("Deleting resource");
-                    return op.reconcile(namespace, resourceName, null);
+                    return op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, null);
                 })
                 .onComplete(context.succeeding(rrDeleted ->  async.flag()));
     }
@@ -174,7 +175,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                 })))
                 .compose(pfa -> {
                     LOGGER.info("Creating resource");
-                    return op.reconcile(namespace, resourceName, getResource(resourceName));
+                    return op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, getResource(resourceName));
                 })
                 .onComplete(context.succeeding())
 
@@ -182,13 +183,13 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     LOGGER.info("Saving resource with status change prior to deletion");
                     newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, resourceName)));
                     LOGGER.info("Deleting resource");
-                    return op.reconcile(namespace, resourceName, null);
+                    return op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, null);
                 })
                 .onComplete(context.succeeding())
 
                 .compose(rrDeleted -> {
                     LOGGER.info("Updating resource with new status - should fail");
-                    return op.updateStatusAsync(newStatus.get());
+                    return op.updateStatusAsync(new Reconciliation("test", "kind", "ns", "name"), newStatus.get());
                 })
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(KubernetesClientException.class));
@@ -219,7 +220,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                 })))
                 .compose(pfa -> {
                     LOGGER.info("Creating resource");
-                    return op.reconcile(namespace, resourceName, getResource(resourceName));
+                    return op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, getResource(resourceName));
                 })
                 .onComplete(context.succeeding())
                 .compose(rrCreated -> {
@@ -230,7 +231,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     op.operation().inNamespace(namespace).withName(resourceName).patch(updated);
 
                     LOGGER.info("Updating resource status after underlying resource has changed");
-                    return op.updateStatusAsync(newStatus);
+                    return op.updateStatusAsync(new Reconciliation("test", "kind", "ns", "name"), newStatus);
                 })
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat("Exception was not KubernetesClientException, it was : " + e.toString(),
@@ -240,7 +241,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         updateFailed.future().compose(v -> {
             LOGGER.info("Deleting resource");
-            return op.reconcile(namespace, resourceName, null);
+            return op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, null);
         })
         .onComplete(context.succeeding(v -> async.flag()));
     }

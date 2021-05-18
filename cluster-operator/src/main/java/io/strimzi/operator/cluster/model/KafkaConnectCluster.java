@@ -60,6 +60,7 @@ import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
@@ -172,9 +173,9 @@ public class KafkaConnectCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
-    public static KafkaConnectCluster fromCrd(KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
+    public static KafkaConnectCluster fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
 
-        KafkaConnectCluster cluster = fromSpec(kafkaConnect.getSpec(), versions,
+        KafkaConnectCluster cluster = fromSpec(reconciliation, kafkaConnect.getSpec(), versions,
                 new KafkaConnectCluster(kafkaConnect));
 
         cluster.setOwnerReference(kafkaConnect);
@@ -188,7 +189,8 @@ public class KafkaConnectCluster extends AbstractModel {
      * thus permitting reuse of the setter-calling code for subclasses.
      */
     @SuppressWarnings("deprecation")
-    protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectSpec spec,
+    protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
+                                                                KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
                                                                 C kafkaConnect) {
         kafkaConnect.setReplicas(spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
@@ -196,7 +198,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         AbstractConfiguration config = kafkaConnect.getConfiguration();
         if (config == null) {
-            config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
+            config = new KafkaConnectConfiguration(reconciliation, spec.getConfig().entrySet());
             kafkaConnect.setConfiguration(config);
         }
         if (kafkaConnect.tracing != null)   {
@@ -246,7 +248,7 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
         kafkaConnect.setTls(spec.getTls());
-        AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        AuthenticationUtils.validateClientAuthentication(reconciliation, spec.getAuthentication(), spec.getTls() != null);
         kafkaConnect.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
@@ -300,42 +302,42 @@ public class KafkaConnectCluster extends AbstractModel {
         return kafkaConnect;
     }
 
-    public Service generateService() {
+    public Service generateService(Reconciliation reconciliation) {
         List<ServicePort> ports = new ArrayList<>(1);
-        ports.add(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
+        ports.add(createServicePort(reconciliation, REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
 
         if (isJmxEnabled()) {
-            ports.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
+            ports.add(createServicePort(reconciliation, JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
         }
 
-        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceAnnotations));
+        return createService(reconciliation, "ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceAnnotations));
     }
 
-    protected List<ContainerPort> getContainerPortList() {
+    protected List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
         List<ContainerPort> portList = new ArrayList<>(2);
-        portList.add(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP"));
+        portList.add(createContainerPort(reconciliation, REST_API_PORT_NAME, REST_API_PORT, "TCP"));
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+            portList.add(createContainerPort(reconciliation, METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         if (isJmxEnabled()) {
-            portList.add(createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP"));
+            portList.add(createContainerPort(reconciliation, JMX_PORT_NAME, JMX_PORT, "TCP"));
         }
 
         return portList;
     }
 
-    protected List<Volume> getVolumes(boolean isOpenShift, boolean isS2I) {
+    protected List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift, boolean isS2I) {
         List<Volume> volumeList = new ArrayList<>(2);
 
         if (!isS2I) {
             volumeList.add(createTempDirVolume());
         }
 
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         if (rack != null) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, null));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(reconciliation, INIT_VOLUME_NAME, null));
         }
 
         if (tls != null) {
@@ -345,20 +347,20 @@ public class KafkaConnectCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume with same Secret name was already added
                     if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                     }
                 }
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(reconciliation, authentication, volumeList, "oauth-certs", isOpenShift);
 
-        volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
+        volumeList.addAll(getExternalConfigurationVolumes(reconciliation, isOpenShift));
 
         return volumeList;
     }
 
-    private List<Volume> getExternalConfigurationVolumes(boolean isOpenShift)  {
+    private List<Volume> getExternalConfigurationVolumes(Reconciliation reconciliation, boolean isOpenShift)  {
         int mode = 0444;
         if (isOpenShift) {
             mode = 0440;
@@ -371,7 +373,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             if (name != null) {
                 if (volume.getConfigMap() != null && volume.getSecret() != null) {
-                    LOGGER.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                    RECONCILIATION_LOGGER.warn(reconciliation, "Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
                 } else  {
                     if (volume.getConfigMap() != null) {
                         ConfigMapVolumeSource source = volume.getConfigMap();
@@ -401,17 +403,17 @@ public class KafkaConnectCluster extends AbstractModel {
         return volumeList;
     }
 
-    protected List<VolumeMount> getVolumeMounts(boolean isS2I) {
+    protected List<VolumeMount> getVolumeMounts(Reconciliation reconciliation, boolean isS2I) {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
         if (!isS2I) {
-            volumeMountList.add(createTempDirVolumeMount());
+            volumeMountList.add(createTempDirVolumeMount(reconciliation));
         }
 
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         if (rack != null) {
-            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+            volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
         if (tls != null) {
@@ -421,21 +423,21 @@ public class KafkaConnectCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume mount with same Secret name was already added
                     if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
+                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, certSecretSource.getSecretName(),
                                 TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
                     }
                 }
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(reconciliation, authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
 
-        volumeMountList.addAll(getExternalConfigurationVolumeMounts());
+        volumeMountList.addAll(getExternalConfigurationVolumeMounts(reconciliation));
 
         return volumeMountList;
     }
 
-    private List<VolumeMount> getExternalConfigurationVolumeMounts()    {
+    private List<VolumeMount> getExternalConfigurationVolumeMounts(Reconciliation reconciliation)    {
         List<VolumeMount> volumeMountList = new ArrayList<>(0);
 
         for (ExternalConfigurationVolumeSource volume : externalVolumes)    {
@@ -443,7 +445,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             if (name != null)   {
                 if (volume.getConfigMap() != null && volume.getSecret() != null) {
-                    LOGGER.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                    RECONCILIATION_LOGGER.warn(reconciliation, "Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
                 } else  if (volume.getConfigMap() != null || volume.getSecret() != null) {
                     VolumeMount volumeMount = new VolumeMountBuilder()
                             .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
@@ -471,20 +473,20 @@ public class KafkaConnectCluster extends AbstractModel {
         return builder.build();
     }
 
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Reconciliation reconciliation, Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createDeployment(
                 getDeploymentStrategy(),
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(isOpenShift, false),
+                getInitContainers(reconciliation, imagePullPolicy),
+                getContainers(reconciliation, imagePullPolicy),
+                getVolumes(reconciliation, isOpenShift, false),
                 imagePullSecrets);
     }
 
     @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>(1);
 
@@ -492,11 +494,11 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withName(name)
                 .withImage(getImage())
                 .withCommand(getCommand())
-                .withEnv(getEnvVars())
-                .withPorts(getContainerPortList())
+                .withEnv(getEnvVars(reconciliation))
+                .withPorts(getContainerPortList(reconciliation))
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
-                .withVolumeMounts(getVolumeMounts(false))
+                .withVolumeMounts(getVolumeMounts(reconciliation, false))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
@@ -522,7 +524,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getInitContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
         List<Container> initContainers = new ArrayList<>(1);
 
         if (rack != null) {
@@ -532,7 +534,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
                     .withResources(getInitContainerResourceResourceRequirements())
                     .withEnv(getInitContainerEnvVars())
-                    .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                    .withVolumeMounts(VolumeUtils.createVolumeMount(reconciliation, INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
                     .withSecurityContext(templateInitContainerSecurityContext)
                     .build();
@@ -557,7 +559,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars() {
+    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
@@ -591,7 +593,7 @@ public class KafkaConnectCluster extends AbstractModel {
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());
 
-        varList.addAll(getExternalConfigurationEnvVars());
+        varList.addAll(getExternalConfigurationEnvVars(reconciliation));
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
@@ -617,7 +619,7 @@ public class KafkaConnectCluster extends AbstractModel {
         }
     }
 
-    private List<EnvVar> getExternalConfigurationEnvVars()   {
+    private List<EnvVar> getExternalConfigurationEnvVars(Reconciliation reconciliation)   {
         List<EnvVar> varList = new ArrayList<>();
 
         for (ExternalConfigurationEnv var : externalEnvs)    {
@@ -628,7 +630,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
                 if (valueFrom != null)  {
                     if (valueFrom.getConfigMapKeyRef() != null && valueFrom.getSecretKeyRef() != null) {
-                        LOGGER.warn("Environment variable {} with external Kafka Connect configuration has to contain exactly one reference to either ConfigMap or Secret", name);
+                        RECONCILIATION_LOGGER.warn(reconciliation, "Environment variable {} with external Kafka Connect configuration has to contain exactly one reference to either ConfigMap or Secret", name);
                     } else {
                         if (valueFrom.getConfigMapKeyRef() != null) {
                             EnvVarSource envVarSource = new EnvVarSourceBuilder()
@@ -646,7 +648,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     }
                 }
             } else {
-                LOGGER.warn("Name of an environment variable with external Kafka Connect configuration cannot start with `KAFKA_` or `STRIMZI`.");
+                RECONCILIATION_LOGGER.warn(reconciliation, "Name of an environment variable with external Kafka Connect configuration cannot start with `KAFKA_` or `STRIMZI`.");
             }
         }
 
@@ -759,13 +761,14 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for Kafka Connect nodes
      *
+     * @param reconciliation           The reconciliation
      * @param connectorOperatorEnabled Whether the ConnectorOperator is enabled or not
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(boolean connectorOperatorEnabled,
+    public NetworkPolicy generateNetworkPolicy(Reconciliation reconciliation, boolean connectorOperatorEnabled,
                                                String operatorNamespace, Labels operatorNamespaceLabels) {
         if (connectorOperatorEnabled) {
             List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
@@ -834,7 +837,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     .endSpec()
                     .build();
 
-            LOGGER.trace("Created network policy {}", networkPolicy);
+            RECONCILIATION_LOGGER.trace(reconciliation, "Created network policy {}", networkPolicy);
             return networkPolicy;
         } else {
             return null;

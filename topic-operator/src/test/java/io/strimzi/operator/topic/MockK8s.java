@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatusBuilder;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -131,7 +132,7 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public Future<KafkaTopic> updateResourceStatus(KafkaTopic topicResource) {
+    public Future<KafkaTopic> updateResourceStatus(Reconciliation reconciliation, KafkaTopic topicResource) {
         statuses.add(new KafkaTopicStatusBuilder(topicResource.getStatus()).build());
         Long generation = topicResource.getMetadata().getGeneration();
         return Future.succeededFuture(new KafkaTopicBuilder(topicResource)

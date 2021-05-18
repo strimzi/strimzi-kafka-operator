@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +32,7 @@ import static java.util.Objects.isNull;
  */
 public class StorageDiff extends AbstractJsonDiff {
     private static final Logger LOGGER = LogManager.getLogger(StorageDiff.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/deleteClaim|/)$");
@@ -43,13 +46,14 @@ public class StorageDiff extends AbstractJsonDiff {
      * Diffs the storage for allowed or not allowed changes. Examples of allowed changes is increasing volume size or
      * adding overrides for nodes before scale-up / removing them after scale-down.
      *
+     * @param reconciliation    The reconciliation
      * @param current           Current Storage configuration
      * @param desired           Desired Storage configuration
      * @param currentReplicas   Current number of replicas (will differ from desired number of replicas when scaling up or down)
      * @param desiredReplicas   Desired number of replicas (will differ from current number of replicas when scaling up or down)
      */
-    public StorageDiff(Storage current, Storage desired, int currentReplicas, int desiredReplicas) {
-        this(current, desired, currentReplicas, desiredReplicas, "");
+    public StorageDiff(Reconciliation reconciliation, Storage current, Storage desired, int currentReplicas, int desiredReplicas) {
+        this(reconciliation, current, desired, currentReplicas, desiredReplicas, "");
     }
 
     /**
@@ -57,13 +61,14 @@ public class StorageDiff extends AbstractJsonDiff {
      * adding overrides for nodes before scale-up / removing them after scale-down. This constructor is used internally
      * only.
      *
+     * @param reconciliation    The reconciliation
      * @param current           Current Storage configuration
      * @param desired           Desired Storage configuration
      * @param currentReplicas   Current number of replicas (will differ from desired number of replicas when scaling up or down)
      * @param desiredReplicas   Desired number of replicas (will differ from current number of replicas when scaling up or down)
      * @param volumeDesc        Description of the volume which is being used
      */
-    private StorageDiff(Storage current, Storage desired, int currentReplicas, int desiredReplicas, String volumeDesc) {
+    private StorageDiff(Reconciliation reconciliation, Storage current, Storage desired, int currentReplicas, int desiredReplicas, String volumeDesc) {
         boolean changesType = false;
         boolean shrinkSize = false;
         boolean isEmpty = true;
@@ -87,7 +92,7 @@ public class StorageDiff extends AbstractJsonDiff {
 
                 volumesAddedOrRemoved |= isNull(currentVolume) != isNull(desiredVolume);
 
-                StorageDiff diff = new StorageDiff(currentVolume, desiredVolume, currentReplicas, desiredReplicas, "(volume ID: " + volumeId + ") ");
+                StorageDiff diff = new StorageDiff(reconciliation, currentVolume, desiredVolume, currentReplicas, desiredReplicas, "(volume ID: " + volumeId + ") ");
 
                 changesType |= diff.changesType();
                 shrinkSize |= diff.shrinkSize();
@@ -104,7 +109,7 @@ public class StorageDiff extends AbstractJsonDiff {
                 String pathValue = d.get("path").asText();
 
                 if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                    LOGGER.debug("Ignoring Storage {}diff {}", volumeDesc, d);
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Ignoring Storage {}diff {}", volumeDesc, d);
                     continue;
                 }
 
@@ -134,9 +139,9 @@ public class StorageDiff extends AbstractJsonDiff {
                 }
 
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Storage {}differs: {}", volumeDesc, d);
-                    LOGGER.debug("Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
-                    LOGGER.debug("Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Storage {}differs: {}", volumeDesc, d);
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
                 }
 
                 num++;

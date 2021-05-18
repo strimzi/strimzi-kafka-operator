@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.hamcrest.Description;
@@ -302,7 +303,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testEmptyUserConfiguration()  {
         Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(userConfiguration.entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(new Reconciliation("test", "kind", "namespace", "name"), userConfiguration.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder()
                 .withUserConfiguration(kafkaConfiguration)
@@ -319,7 +320,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         userConfiguration.put("transaction.state.log.replication.factor", 3);
         userConfiguration.put("transaction.state.log.min.isr", 2);
 
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(userConfiguration.entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(new Reconciliation("test", "kind", "namespace", "name"), userConfiguration.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder()
                 .withUserConfiguration(kafkaConfiguration)
@@ -338,7 +339,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(new Reconciliation("test", "kind", "namespace", "name"), storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
@@ -353,7 +354,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(new Reconciliation("test", "kind", "namespace", "name"), storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
@@ -385,7 +386,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(new Reconciliation("test", "kind", "namespace", "name"), storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data-1/kafka-log${STRIMZI_BROKER_ID},/var/lib/kafka/data-2/kafka-log${STRIMZI_BROKER_ID},/var/lib/kafka/data-5/kafka-log${STRIMZI_BROKER_ID}"));

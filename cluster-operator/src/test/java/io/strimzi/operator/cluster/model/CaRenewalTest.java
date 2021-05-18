@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.junit5.VertxExtension;
@@ -43,7 +44,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected CertAndKey generateSignedCert(Subject subject,
+            protected CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
                                                     File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
                 int index = invocationCount.getAndIncrement();
 
@@ -62,7 +63,7 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(new Reconciliation("test", "kind", "namespace", "name"), replicas,
                 subjectFn,
                 null,
                 podNameFn,
@@ -100,7 +101,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected CertAndKey generateSignedCert(Subject subject,
+            protected CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
                                                     File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
                 int index = invocationCount.getAndIncrement();
 
@@ -137,7 +138,8 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(new Reconciliation("test", "kind", "namespace", "name"),
+                replicas,
                 subjectFn,
                 initialSecret,
                 podNameFn,
@@ -185,7 +187,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected CertAndKey generateSignedCert(Subject subject,
+            protected CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
                                                     File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
                 int index = invocationCount.getAndIncrement();
 
@@ -222,7 +224,8 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(new Reconciliation("test", "kind", "namespace", "name"),
+                replicas,
                 subjectFn,
                 initialSecret,
                 podNameFn,
@@ -270,7 +273,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected CertAndKey generateSignedCert(Subject subject,
+            protected CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
                                                     File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
                 int index = invocationCount.getAndIncrement();
 
@@ -307,7 +310,8 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = false;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(new Reconciliation("test", "kind", "namespace", "name"),
+                replicas,
                 subjectFn,
                 initialSecret,
                 podNameFn,

@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.CompositeFuture;
@@ -50,6 +52,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
                     "|/status)$");
 
     protected final Logger log = LogManager.getLogger(getClass());
+    protected final ReconciliationLogger reconciliationLogger = new ReconciliationLogger(log);
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
@@ -74,25 +77,27 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * Asynchronously create or update the given {@code resource} depending on whether it already exists,
      * returning a future for the outcome.
      * If the resource with that name already exists the future completes successfully.
+     * @param reconciliation The reconciliation
      * @param resource The resource to create.
      * @return A future which completes with the outcome.
      */
-    public Future<ReconcileResult<T>> createOrUpdate(T resource) {
+    public Future<ReconcileResult<T>> createOrUpdate(Reconciliation reconciliation, T resource) {
         if (resource == null) {
             throw new NullPointerException();
         }
-        return reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource);
+        return reconcile(reconciliation, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource);
     }
 
     /**
      * Asynchronously reconciles the resource with the given namespace and name to match the given
      * desired resource, returning a future for the result.
+     * @param reconciliation Reconciliation object
      * @param namespace The namespace of the resource to reconcile
      * @param name The name of the resource to reconcile
      * @param desired The desired state of the resource.
      * @return A future which completes when the resource has been updated.
      */
-    public Future<ReconcileResult<T>> reconcile(String namespace, String name, T desired) {
+    public Future<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T desired) {
         if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
             return Future.failedFuture("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
         } else if (desired != null && !name.equals(desired.getMetadata().getName())) {
@@ -105,19 +110,19 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
                 T current = operation().inNamespace(namespace).withName(name).get();
                 if (desired != null) {
                     if (current == null) {
-                        log.debug("{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                        internalCreate(namespace, name, desired).onComplete(future);
+                        reconciliationLogger.debug(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
+                        internalCreate(reconciliation, namespace, name, desired).onComplete(future);
                     } else {
-                        log.debug("{} {}/{} already exists, patching it", resourceKind, namespace, name);
-                        internalPatch(namespace, name, current, desired).onComplete(future);
+                        reconciliationLogger.debug(reconciliation, "{} {}/{} already exists, patching it", resourceKind, namespace, name);
+                        internalPatch(reconciliation, namespace, name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
-                        log.debug("{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                        internalDelete(namespace, name).onComplete(future);
+                        reconciliationLogger.debug(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
+                        internalDelete(reconciliation, namespace, name).onComplete(future);
                     } else {
-                        log.debug("{} {}/{} does not exist, noop", resourceKind, namespace, name);
+                        reconciliationLogger.debug(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
                         future.complete(ReconcileResult.noop(null));
                     }
                 }
@@ -139,8 +144,8 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return A future which will be completed on the context thread
      *         once the resource has been deleted.
      */
-    protected Future<ReconcileResult<T>> internalDelete(String namespace, String name) {
-        return internalDelete(namespace, name, true);
+    protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
+        return internalDelete(reconciliation, namespace, name, true);
     }
 
     /**
@@ -155,7 +160,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return A future which will be completed on the context thread
      *         once the resource has been deleted.
      */
-    protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
+    protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         R resourceOp = operation().inNamespace(namespace).withName(name);
 
         Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
@@ -163,7 +168,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
             "observe deletion of " + resourceKind + " " + namespace + "/" + name,
             (action, resource) -> {
                 if (action == Watcher.Action.DELETED) {
-                    log.debug("{} {}/{} has been deleted", resourceKind, namespace, name);
+                    reconciliationLogger.debug(reconciliation, "{} {}/{} has been deleted", resourceKind, namespace, name);
                     return ReconcileResult.deleted();
                 } else {
                     return null;
@@ -216,22 +221,22 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * Patches the resource with the given namespace and name to match the given desired resource
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalPatch(String namespace, String name, T current, T desired) {
-        return internalPatch(namespace, name, current, desired, true);
+    protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
+        return internalPatch(reconciliation, namespace, name, current, desired, true);
     }
 
-    protected Future<ReconcileResult<T>> internalPatch(String namespace, String name, T current, T desired, boolean cascading) {
+    protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T current, T desired, boolean cascading) {
         if (needsPatching(name, current, desired))  {
             try {
                 T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
-                log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                reconciliationLogger.debug(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
             } catch (Exception e) {
-                log.debug("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+                reconciliationLogger.debug(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                 return Future.failedFuture(e);
             }
         } else {
-            log.debug("{} {} in namespace {} did not changed and doesn't need patching", resourceKind, name, namespace);
+            reconciliationLogger.debug(reconciliation, "{} {} in namespace {} did not changed and doesn't need patching", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }
@@ -251,13 +256,13 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * Creates a resource with the given namespace and name with the given desired state
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalCreate(String namespace, String name, T desired) {
+    protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String namespace, String name, T desired) {
         try {
             ReconcileResult<T> result = ReconcileResult.created(operation().inNamespace(namespace).withName(name).create(desired));
-            log.debug("{} {} in namespace {} has been created", resourceKind, name, namespace);
+            reconciliationLogger.debug(reconciliation, "{} {} in namespace {} has been created", resourceKind, name, namespace);
             return Future.succeededFuture(result);
         } catch (Exception e) {
-            log.debug("Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
+            reconciliationLogger.debug(reconciliation, "Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }

@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -102,7 +103,7 @@ public class KafkaClusterOAuthValidationTest {
                 .endSpec()
                 .build();
 
-        KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+        KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
     }
 
     @ParallelTest
@@ -143,7 +144,7 @@ public class KafkaClusterOAuthValidationTest {
                     .endSpec()
                     .build();
 
-            KafkaCluster.fromCrd(kafkaAssembly, VERSIONS);
+            KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
         });
     }
 

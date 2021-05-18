@@ -44,6 +44,7 @@ import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -90,7 +91,7 @@ public class KafkaBridgeClusterTest {
                 .withNewHttp(8080)
             .endSpec()
             .build();
-    private final KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+    private final KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
     private Map<String, String> expectedLabels(String name)    {
         return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
@@ -133,7 +134,7 @@ public class KafkaBridgeClusterTest {
 
     @ParallelTest
     public void testDefaultValues() {
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(ResourceUtils.createEmptyKafkaBridge(namespace, cluster), VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), ResourceUtils.createEmptyKafkaBridge(namespace, cluster), VERSIONS);
 
         assertThat(kbc.image, is("quay.io/strimzi/kafka-bridge:latest"));
         assertThat(kbc.replicas, is(KafkaBridgeCluster.DEFAULT_REPLICAS));
@@ -155,12 +156,12 @@ public class KafkaBridgeClusterTest {
 
     @ParallelTest
     public void testEnvVars()   {
-        assertThat(kbc.getEnvVars(), is(getExpectedEnvVars()));
+        assertThat(kbc.getEnvVars(new Reconciliation("test", "kind", "namespace", "name")), is(getExpectedEnvVars()));
     }
 
     @ParallelTest
     public void testGenerateService()   {
-        Service svc = kbc.generateService();
+        Service svc = kbc.generateService(new Reconciliation("test", "kind", "namespace", "name"));
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
         assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kbc.getName())));
@@ -179,7 +180,7 @@ public class KafkaBridgeClusterTest {
 
     @ParallelTest
     public void testGenerateDeployment()   {
-        Deployment dep = kbc.generateDeployment(new HashMap<String, String>(), true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null);
 
         assertThat(dep.getMetadata().getName(), is(KafkaBridgeResources.deploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
@@ -218,8 +219,8 @@ public class KafkaBridgeClusterTest {
                     .endTls()
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-secret"));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("my-another-secret"));
@@ -250,8 +251,8 @@ public class KafkaBridgeClusterTest {
                                     .build())
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("user-secret"));
 
@@ -281,8 +282,8 @@ public class KafkaBridgeClusterTest {
                                     .build())
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
 
         // 2 = 1 volume from logging/metrics + just 1 from above certs Secret
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(3));
@@ -302,8 +303,8 @@ public class KafkaBridgeClusterTest {
                     .endKafkaClientAuthenticationScramSha512()
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user1-secret"));
 
@@ -329,8 +330,8 @@ public class KafkaBridgeClusterTest {
                     .endKafkaClientAuthenticationPlain()
             .endSpec()
             .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user1-secret"));
 
@@ -444,10 +445,10 @@ public class KafkaBridgeClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
         // Check Deployment
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
@@ -464,7 +465,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
 
         // Check Service
-        Service svc = kbc.generateService();
+        Service svc = kbc.generateService(new Reconciliation("test", "kind", "namespace", "name"));
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
@@ -497,18 +498,18 @@ public class KafkaBridgeClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
     }
 
     @ParallelTest
     public void testDefaultGracePeriod() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource).build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
     }
 
@@ -526,9 +527,9 @@ public class KafkaBridgeClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -543,9 +544,9 @@ public class KafkaBridgeClusterTest {
         secrets.add(secret1);
         secrets.add(secret2);
 
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(this.resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), this.resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, secrets);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, secrets);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -565,9 +566,9 @@ public class KafkaBridgeClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, singletonList(secret1));
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, singletonList(secret1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -576,9 +577,9 @@ public class KafkaBridgeClusterTest {
     @ParallelTest
     public void testDefaultImagePullSecrets() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource).build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
@@ -593,9 +594,9 @@ public class KafkaBridgeClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
@@ -605,9 +606,9 @@ public class KafkaBridgeClusterTest {
     @ParallelTest
     public void testDefaultSecurityContext() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource).build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
@@ -622,7 +623,7 @@ public class KafkaBridgeClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
         PodDisruptionBudget pdb = kbc.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
@@ -631,7 +632,7 @@ public class KafkaBridgeClusterTest {
     @ParallelTest
     public void testDefaultPodDisruptionBudget() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource).build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
         PodDisruptionBudget pdb = kbc.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
@@ -639,12 +640,12 @@ public class KafkaBridgeClusterTest {
 
     @ParallelTest
     public void testImagePullPolicy() {
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(Collections.EMPTY_MAP, true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), Collections.EMPTY_MAP, true, ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = kbc.generateDeployment(Collections.EMPTY_MAP, true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), Collections.EMPTY_MAP, true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -663,9 +664,9 @@ public class KafkaBridgeClusterTest {
                     .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
                 .endSpec()
                 .build();
-        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kbc.generateDeployment(Collections.EMPTY_MAP, true, null, null);
+        Deployment dep = kbc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), Collections.EMPTY_MAP, true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(cont.getResources().getLimits(), is(limits));
         assertThat(cont.getResources().getRequests(), is(requests));
@@ -700,7 +701,7 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(resource, VERSIONS).getEnvVars();
+        List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -738,7 +739,7 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(resource, VERSIONS).getEnvVars();
+        List<EnvVar> kafkaEnvVars = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -762,8 +763,8 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
@@ -788,8 +789,8 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
@@ -815,8 +816,8 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
@@ -839,7 +840,7 @@ public class KafkaBridgeClusterTest {
                     .endSpec()
                     .build();
 
-            KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+            KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
         });
     }
 
@@ -859,7 +860,7 @@ public class KafkaBridgeClusterTest {
                     .endSpec()
                     .build();
 
-            KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+            KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
         });
     }
 
@@ -897,8 +898,8 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
@@ -944,8 +945,8 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_SASL_MECHANISM.equals(var.getName())).findFirst().orElse(null).getValue(), is("oauth"));
@@ -963,10 +964,10 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
         // Check ports in container
-        Deployment dep = kb.generateDeployment(emptyMap(), true, null, null);
+        Deployment dep = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getLivenessProbe().getHttpGet().getPort(), is(new IntOrString(KafkaBridgeCluster.REST_API_PORT_NAME)));
@@ -976,7 +977,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts().get(0).getProtocol(), is("TCP"));
 
         // Check ports on Service
-        Service svc = kb.generateService();
+        Service svc = kb.generateService(new Reconciliation("test", "kind", "namespace", "name"));
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
         assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kb.getName())));
@@ -1005,8 +1006,8 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment dep = kb.generateDeployment(new HashMap<String, String>(), true, null, null);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment dep = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(20)));
@@ -1025,8 +1026,8 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment deployment = kb.generateDeployment(new HashMap<>(), true, null, null);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment deployment = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<>(), true, null, null);
         Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING), is("jaeger"));
@@ -1045,8 +1046,8 @@ public class KafkaBridgeClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(resource, VERSIONS);
-        Deployment deployment = kb.generateDeployment(new HashMap<>(), true, null, null);
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        Deployment deployment = kb.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<>(), true, null, null);
         Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED), is("true"));

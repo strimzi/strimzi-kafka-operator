@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -164,7 +165,7 @@ public class KafkaExporterTest {
 
     @ParallelTest
     public void testGenerateDeployment() {
-        Deployment dep = ke.generateDeployment(true, null, null);
+        Deployment dep = ke.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -219,15 +220,15 @@ public class KafkaExporterTest {
 
     @ParallelTest
     public void testEnvVars()   {
-        assertThat(ke.getEnvVars(), is(getExpectedEnvVars()));
+        assertThat(ke.getEnvVars(new Reconciliation("test", "kind", "namespace", "name")), is(getExpectedEnvVars()));
     }
 
     @ParallelTest
     public void testImagePullPolicy() {
-        Deployment dep = ke.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = ke.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = ke.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = ke.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -262,7 +263,7 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
-        List<EnvVar> kafkaEnvVars = ke.getEnvVars();
+        List<EnvVar> kafkaEnvVars = ke.getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvOneValue));
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvTwoValue));
     }
@@ -298,7 +299,7 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
-        List<EnvVar> kafkaEnvVars = ke.getEnvVars();
+        List<EnvVar> kafkaEnvVars = ke.getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(testEnvOneValue));
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvTwoKey.equals(var.getName())).map(EnvVar::getValue).findFirst().get(), is(groupRegex));
     }
@@ -310,8 +311,8 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
-        assertThat(ke.generateDeployment(true, null, null), is(nullValue()));
-        assertThat(ke.generateSecret(null, true), is(nullValue()));
+        assertThat(ke.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), true, null, null), is(nullValue()));
+        assertThat(ke.generateSecret(new Reconciliation("test", "kind", "namespace", "name"), null, true), is(nullValue()));
     }
 
     @ParallelTest
@@ -321,7 +322,7 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
-        assertThat(ke.generateDeployment(true, null, null), is(nullValue()));
+        assertThat(ke.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), true, null, null), is(nullValue()));
     }
 
     @ParallelTest
@@ -410,7 +411,7 @@ public class KafkaExporterTest {
         KafkaExporter ke = KafkaExporter.fromCrd(resource, VERSIONS);
 
         // Check Deployment
-        Deployment dep = ke.generateDeployment(true, null, null);
+        Deployment dep = ke.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
 

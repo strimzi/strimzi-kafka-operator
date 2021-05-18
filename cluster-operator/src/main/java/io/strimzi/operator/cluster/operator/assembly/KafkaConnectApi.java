@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpClientResponse;
@@ -20,6 +21,7 @@ import java.util.Set;
 public interface KafkaConnectApi {
     /**
      * Make a {@code PUT} request to {@code /connectors/${connectorName}/config}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to create or update.
@@ -27,51 +29,56 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns information about the connector, including its name, config and tasks.
      */
-    Future<Map<String, Object>> createOrUpdatePutRequest(String host, int port, String connectorName, JsonObject configJson);
+    Future<Map<String, Object>> createOrUpdatePutRequest(Reconciliation reconciliation, String host, int port, String connectorName, JsonObject configJson);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/config}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to get the config of.
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's config.
      */
-    Future<Map<String, String>> getConnectorConfig(String host, int port, String connectorName);
+    Future<Map<String, String>> getConnectorConfig(Reconciliation reconciliation, String host, int port, String connectorName);
 
-    Future<Map<String, String>> getConnectorConfig(BackOff backOff, String host, int port, String connectorName);
+    Future<Map<String, String>> getConnectorConfig(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to create or update.
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns information about the connector, including its name, config and tasks.
      */
-    Future<Map<String, Object>> getConnector(String host, int port, String connectorName);
+    Future<Map<String, Object>> getConnector(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code DELETE} request to {@code /connectors/${connectorName}}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to delete.
      * @return A Future which completes with the result of the request.
      */
-    Future<Void> delete(String host, int port, String connectorName);
+    Future<Void> delete(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/status}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to get the status of.
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's status.
      */
-    Future<Map<String, Object>> status(String host, int port, String connectorName);
+    Future<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/status}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to get the status of.
@@ -79,10 +86,11 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's status.
      */
-    Future<Map<String, Object>> status(String host, int port, String connectorName, Set<Integer> okStatusCodes);
+    Future<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName, Set<Integer> okStatusCodes);
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/status}, retrying according to {@code backoff}.
+     * @param reconciliation The reconciliation
      * @param backOff The backoff parameters.
      * @param host The host to make the request to.
      * @param port The port to make the request to.
@@ -90,7 +98,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's status.
      */
-    Future<Map<String, Object>> statusWithBackOff(BackOff backOff, String host, int port, String connectorName);
+    Future<Map<String, Object>> statusWithBackOff(Reconciliation reconciliation, BackOff backOff, String host, int port, String connectorName);
 
     /**
      * Make a {@code PUT} request to {@code /connectors/${connectorName}/pause}.
@@ -121,15 +129,17 @@ public interface KafkaConnectApi {
 
     /**
      * Make a {@code GET} request to {@code /connector-plugins}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connector plugins.
      */
-    Future<List<ConnectorPlugin>> listConnectorPlugins(String host, int port);
+    Future<List<ConnectorPlugin>> listConnectorPlugins(Reconciliation reconciliation, String host, int port);
 
     /**
      * Make a {@code GET} request to {@code /admin/loggers/$logger}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param desiredLogging Desired logging.
@@ -137,16 +147,17 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connector loggers.
      */
-    Future<Void> updateConnectLoggers(String host, int port, String desiredLogging, OrderedProperties defaultLogging);
+    Future<Void> updateConnectLoggers(Reconciliation reconciliation, String host, int port, String desiredLogging, OrderedProperties defaultLogging);
 
     /**
      * Make a {@code GET} request to {@code /admin/loggers}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connect loggers.
      */
-    Future<Map<String, Map<String, String>>> listConnectLoggers(String host, int port);
+    Future<Map<String, Map<String, String>>> listConnectLoggers(Reconciliation reconciliation, String host, int port);
 
     /**
      * Make a {@code POST} request to {@code /connectors/${connectorName}/restart}.
@@ -169,13 +180,14 @@ public interface KafkaConnectApi {
 
     /**
      * Make a {@code GET} request to {@code /connectors/${connectorName}/topics}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to get the status of.
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the connector's topics.
      */
-    Future<List<String>> getConnectorTopics(String host, int port, String connectorName);
+    Future<List<String>> getConnectorTopics(Reconciliation reconciliation, String host, int port, String connectorName);
 }
 
 class ConnectRestException extends RuntimeException {

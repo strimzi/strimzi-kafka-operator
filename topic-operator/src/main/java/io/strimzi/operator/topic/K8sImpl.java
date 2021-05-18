@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
@@ -79,8 +80,8 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public Future<KafkaTopic> updateResourceStatus(KafkaTopic topicResource) {
-        return crdOperator.updateStatusAsync(topicResource);
+    public Future<KafkaTopic> updateResourceStatus(Reconciliation ctx, KafkaTopic topicResource) {
+        return crdOperator.updateStatusAsync(ctx, topicResource);
     }
 
     @Override

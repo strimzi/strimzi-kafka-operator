@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Main;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -214,10 +215,10 @@ public class EntityOperator extends AbstractModel {
         return null;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Reconciliation reconciliation, boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
 
         if (!isDeployed()) {
-            LOGGER.warn("Topic and/or User Operators not declared: Entity Operator will not be deployed");
+            RECONCILIATION_LOGGER.warn(reconciliation, "Topic and/or User Operators not declared: Entity Operator will not be deployed");
             return null;
         }
 
@@ -230,22 +231,22 @@ public class EntityOperator extends AbstractModel {
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(isOpenShift),
+                getInitContainers(reconciliation, imagePullPolicy),
+                getContainers(reconciliation, imagePullPolicy),
+                getVolumes(reconciliation, isOpenShift),
                 imagePullSecrets
         );
     }
 
     @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(3);
 
         if (topicOperator != null) {
-            containers.addAll(topicOperator.getContainers(imagePullPolicy));
+            containers.addAll(topicOperator.getContainers(reconciliation, imagePullPolicy));
         }
         if (userOperator != null) {
-            containers.addAll(userOperator.getContainers(imagePullPolicy));
+            containers.addAll(userOperator.getContainers(reconciliation, imagePullPolicy));
         }
 
         String tlsSidecarImage = this.tlsSidecarImage;
@@ -261,9 +262,9 @@ public class EntityOperator extends AbstractModel {
                 .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(getTlsSidecarEnvVars())
-                .withVolumeMounts(createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                        VolumeUtils.createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
-                        VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
+                .withVolumeMounts(createTempDirVolumeMount(reconciliation, TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
+                        VolumeUtils.createVolumeMount(reconciliation, TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
+                        VolumeUtils.createVolumeMount(reconciliation, TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
                             .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh")
                         .endExec().endPreStop().build())
@@ -289,20 +290,20 @@ public class EntityOperator extends AbstractModel {
         return varList;
     }
 
-    private List<Volume> getVolumes(boolean isOpenShift) {
+    private List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(7);
 
         if (topicOperator != null) {
-            volumeList.addAll(topicOperator.getVolumes());
+            volumeList.addAll(topicOperator.getVolumes(reconciliation));
         }
 
         if (userOperator != null) {
-            volumeList.addAll(userOperator.getVolumes());
+            volumeList.addAll(userOperator.getVolumes(reconciliation));
         }
 
         volumeList.add(createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-        volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.secretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.secretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
     }
 
@@ -311,17 +312,18 @@ public class EntityOperator extends AbstractModel {
      * internal communication with Kafka and Zookeeper.
      * It also contains the related Entity Operator private key.
      *
+     * @param reconciliation The reconciliation
      * @param clusterCa The cluster CA.
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
      *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateSecret(Reconciliation reconciliation, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         if (!isDeployed()) {
             return null;
         }
         Secret secret = clusterCa.entityOperatorSecret();
-        return ModelUtils.buildSecret(clusterCa, secret, namespace, EntityOperator.secretName(cluster), name,
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, EntityOperator.secretName(cluster), name,
                 "entity-operator", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 
@@ -367,12 +369,13 @@ public class EntityOperator extends AbstractModel {
      * If the namespace of the role is not the same as the namespace of the parent resource (Kafka CR), we do not set
      * the owner reference.
      *
+     * @param reconciliation        The reconciliation
      * @param ownerNamespace        The namespace of the parent resource (the Kafka CR)
      * @param namespace             The namespace this role will be located
      *
      * @return role for the entity operator
      */
-    public Role generateRole(String ownerNamespace, String namespace) {
+    public Role generateRole(Reconciliation reconciliation, String ownerNamespace, String namespace) {
         List<PolicyRule> rules;
 
         try (BufferedReader br = new BufferedReader(
@@ -386,7 +389,7 @@ public class EntityOperator extends AbstractModel {
             ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
             rules = cr.getRules();
         } catch (IOException e) {
-            LOGGER.error("Failed to read entity-operator ClusterRole.", e);
+            RECONCILIATION_LOGGER.error(reconciliation, "Failed to read entity-operator ClusterRole.", e);
             throw new RuntimeException(e);
         }
 

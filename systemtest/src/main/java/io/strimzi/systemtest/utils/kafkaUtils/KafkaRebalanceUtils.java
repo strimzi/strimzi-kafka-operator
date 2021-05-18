@@ -10,6 +10,8 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -27,10 +29,11 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaRebalanceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaRebalanceUtils.class);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private KafkaRebalanceUtils() {}
 
-    private static Condition rebalanceStateCondition(String namespaceName, String resourceName) {
+    private static Condition rebalanceStateCondition(Reconciliation reconciliation, String namespaceName, String resourceName) {
 
         List<Condition> statusConditions = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName)
                 .withName(resourceName).get().getStatus().getConditions().stream()
@@ -41,10 +44,10 @@ public class KafkaRebalanceUtils {
         if (statusConditions.size() == 1) {
             return statusConditions.get(0);
         } else if (statusConditions.size() > 1) {
-            LOGGER.warn("Multiple KafkaRebalance State Conditions were present in the KafkaRebalance status");
+            RECONCILIATION_LOGGER.warn(reconciliation, "Multiple KafkaRebalance State Conditions were present in the KafkaRebalance status");
             throw new RuntimeException("Multiple KafkaRebalance State Conditions were present in the KafkaRebalance status");
         } else {
-            LOGGER.warn("No KafkaRebalance State Conditions were present in the KafkaRebalance status");
+            RECONCILIATION_LOGGER.warn(reconciliation, "No KafkaRebalance State Conditions were present in the KafkaRebalance status");
             throw new RuntimeException("No KafkaRebalance State Conditions were present in the KafkaRebalance status");
         }
     }
@@ -58,46 +61,46 @@ public class KafkaRebalanceUtils {
         return waitForKafkaRebalanceCustomResourceState(kubeClient().getNamespace(), resourceName, state);
     }
 
-    public static String annotateKafkaRebalanceResource(String namespaceName, String resourceName, KafkaRebalanceAnnotation annotation) {
-        LOGGER.info("Annotating KafkaRebalance:{} with annotation {}", resourceName, annotation.toString());
+    public static String annotateKafkaRebalanceResource(Reconciliation reconciliation, String namespaceName, String resourceName, KafkaRebalanceAnnotation annotation) {
+        RECONCILIATION_LOGGER.info(reconciliation, "Annotating KafkaRebalance:{} with annotation {}", resourceName, annotation.toString());
         return ResourceManager.cmdKubeClient().namespace(namespaceName)
             .execInCurrentNamespace("annotate", "kafkarebalance", resourceName, Annotations.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation.toString())
             .out()
             .trim();
     }
 
-    public static String annotateKafkaRebalanceResource(String resourceName, KafkaRebalanceAnnotation annotation) {
-        return annotateKafkaRebalanceResource(kubeClient().getNamespace(), resourceName, annotation);
+    public static String annotateKafkaRebalanceResource(Reconciliation reconciliation, String resourceName, KafkaRebalanceAnnotation annotation) {
+        return annotateKafkaRebalanceResource(reconciliation, kubeClient().getNamespace(), resourceName, annotation);
     }
 
-    public static void doRebalancingProcess(String namespaceName, String rebalanceName) {
+    public static void doRebalancingProcess(Reconciliation reconciliation, String namespaceName, String rebalanceName) {
         // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
-        if (!rebalanceStateCondition(namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
-            LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
+        if (!rebalanceStateCondition(reconciliation, namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
+            RECONCILIATION_LOGGER.info(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
             waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.PendingProposal);
 
-            LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
+            RECONCILIATION_LOGGER.info(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
 
             waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);
         }
 
-        LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
+        RECONCILIATION_LOGGER.info(reconciliation, "Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
-        String response = annotateKafkaRebalanceResource(namespaceName, rebalanceName, KafkaRebalanceAnnotation.approve);
+        String response = annotateKafkaRebalanceResource(reconciliation, namespaceName, rebalanceName, KafkaRebalanceAnnotation.approve);
 
-        LOGGER.info("Response from the annotation process {}", response);
+        RECONCILIATION_LOGGER.info(reconciliation, "Response from the annotation process {}", response);
 
-        LOGGER.info("Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
+        RECONCILIATION_LOGGER.info(reconciliation, "Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
 
         waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.Rebalancing);
 
-        LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
+        RECONCILIATION_LOGGER.info(reconciliation, "Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
 
         waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.Ready);
     }
 
-    public static void waitForRebalanceStatusStability(String namespaceName, String resourceName) {
+    public static void waitForRebalanceStatusStability(Reconciliation reconciliation, String namespaceName, String resourceName) {
         int[] stableCounter = {0};
 
         KafkaRebalanceStatus oldStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get().getStatus();
@@ -106,20 +109,20 @@ public class KafkaRebalanceUtils {
             if (KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get().getStatus().equals(oldStatus)) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
-                    LOGGER.info("KafkaRebalance status is stable for {} polls intervals", stableCounter[0]);
+                    RECONCILIATION_LOGGER.info(reconciliation, "KafkaRebalance status is stable for {} polls intervals", stableCounter[0]);
                     return true;
                 }
             } else {
-                LOGGER.info("KafkaRebalance status is not stable. Going to set the counter to zero.");
+                RECONCILIATION_LOGGER.info(reconciliation, "KafkaRebalance status is not stable. Going to set the counter to zero.");
                 stableCounter[0] = 0;
                 return false;
             }
-            LOGGER.info("KafkaRebalance status gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            RECONCILIATION_LOGGER.info(reconciliation, "KafkaRebalance status gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
             return false;
         });
     }
 
-    public static void waitForRebalanceStatusStability(String resourceName) {
-        waitForRebalanceStatusStability(kubeClient().getNamespace(), resourceName);
+    public static void waitForRebalanceStatusStability(Reconciliation reconciliation, String resourceName) {
+        waitForRebalanceStatusStability(reconciliation, kubeClient().getNamespace(), resourceName);
     }
 }

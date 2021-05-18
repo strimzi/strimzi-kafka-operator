@@ -12,6 +12,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -115,7 +116,7 @@ public class ClusterCa extends Ca {
         return cruiseControlSecret;
     }
 
-    public Map<String, CertAndKey> generateZkCerts(Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
+    public Map<String, CertAndKey> generateZkCerts(Reconciliation reconciliation, Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
 
@@ -143,8 +144,9 @@ public class ClusterCa extends Ca {
             return subject;
         };
 
-        LOGGER.debug("{}: Reconciling zookeeper certificates", this);
+        RECONCILIATION_LOGGER.debug(reconciliation, "{}: Reconciling zookeeper certificates", this);
         return maybeCopyOrGenerateCerts(
+            reconciliation,
             kafka.getSpec().getZookeeper().getReplicas(),
             subjectFn,
             zkNodesSecret,
@@ -152,7 +154,7 @@ public class ClusterCa extends Ca {
             isMaintenanceTimeWindowsSatisfied);
     }
 
-    public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, Set<String> externalBootstrapAddresses,
+    public Map<String, CertAndKey> generateBrokerCerts(Reconciliation reconciliation, Kafka kafka, Set<String> externalBootstrapAddresses,
             Map<Integer, Set<String>> externalAddresses, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
@@ -202,8 +204,9 @@ public class ClusterCa extends Ca {
 
             return subject;
         };
-        LOGGER.debug("{}: Reconciling kafka broker certificates", this);
+        RECONCILIATION_LOGGER.debug(reconciliation, "{}: Reconciling kafka broker certificates", this);
         return maybeCopyOrGenerateCerts(
+            reconciliation,
             kafka.getSpec().getKafka().getReplicas(),
             subjectFn,
             brokersSecret,

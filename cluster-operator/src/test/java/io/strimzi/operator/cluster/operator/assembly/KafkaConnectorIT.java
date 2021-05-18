@@ -124,7 +124,7 @@ public class KafkaConnectorIT {
         // Intercept status updates at CrdOperator level
         // This is to bridge limitations between MockKube and the CrdOperator, as there are currently no Fabric8 APIs for status update
         CrdOperator connectCrdOperator = mock(CrdOperator.class);
-        when(connectCrdOperator.updateStatusAsync(any())).thenAnswer(invocation -> {
+        when(connectCrdOperator.updateStatusAsync(any(), any())).thenAnswer(invocation -> {
             try {
                 return Future.succeededFuture(Crds.kafkaConnectorOperation(client)
                         .inNamespace(namespace)

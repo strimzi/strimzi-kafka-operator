@@ -35,6 +35,8 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.logging.log4j.LogManager;
@@ -61,6 +63,7 @@ public class ModelUtils {
     private ModelUtils() {}
 
     protected static final Logger LOGGER = LogManager.getLogger(ModelUtils.class.getName());
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
     public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**
@@ -128,8 +131,8 @@ public class ModelUtils {
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
-    public static Secret buildSecret(ClusterCa clusterCa, Secret secret, String namespace, String secretName,
-            String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
+    public static Secret buildSecret(Reconciliation reconciliation, ClusterCa clusterCa, Secret secret, String namespace, String secretName,
+                                     String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, String> data = new HashMap<>(4);
         CertAndKey certAndKey = null;
         boolean shouldBeRegenerated = false;
@@ -146,15 +149,15 @@ public class ModelUtils {
         }
 
         if (shouldBeRegenerated) {
-            LOGGER.debug("Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
+            RECONCILIATION_LOGGER.debug(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
 
             try {
-                certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
+                certAndKey = clusterCa.generateSignedCert(reconciliation, commonName, Ca.IO_STRIMZI);
             } catch (IOException e) {
-                LOGGER.warn("Error while generating certificates", e);
+                RECONCILIATION_LOGGER.warn(reconciliation, "Error while generating certificates", e);
             }
 
-            LOGGER.debug("End generating certificates");
+            RECONCILIATION_LOGGER.debug(reconciliation, "End generating certificates");
         } else {
             if (secret.getData().get(keyCertName + ".p12") != null &&
                     !secret.getData().get(keyCertName + ".p12").isEmpty() &&
@@ -170,11 +173,11 @@ public class ModelUtils {
             } else {
                 try {
                     // coming from an older operator version, the secret exists but without keystore and password
-                    certAndKey = clusterCa.addKeyAndCertToKeyStore(commonName,
+                    certAndKey = clusterCa.addKeyAndCertToKeyStore(reconciliation, commonName,
                             decodeFromSecret(secret, keyCertName + ".key"),
                             decodeFromSecret(secret, keyCertName + ".crt"));
                 } catch (IOException e) {
-                    LOGGER.error("Error generating the keystore for {}", keyCertName, e);
+                    RECONCILIATION_LOGGER.error(reconciliation, "Error generating the keystore for {}", keyCertName, e);
                 }
             }
         }

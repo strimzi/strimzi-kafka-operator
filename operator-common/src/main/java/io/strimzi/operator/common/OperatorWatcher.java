@@ -42,11 +42,11 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
                 operator.reconcile(reconciliation);
                 break;
             case ERROR:
-                LOGGER.error("Failed {} {} in namespace{} ", operator.kind(), name, namespace);
+                RECONCILIATION_LOGGER.error(new Reconciliation("watch", operator.kind(), namespace, name), "Failed {} {} in namespace{} ", operator.kind(), name, namespace);
                 operator.reconcileAll("watch error", namespace, ignored -> { });
                 break;
             default:
-                LOGGER.error("Unknown action: {} in namespace {}", name, namespace);
+                RECONCILIATION_LOGGER.error(new Reconciliation("watch", operator.kind(), namespace, name), "Unknown action: {} in namespace {}", name, namespace);
                 operator.reconcileAll("watch unknown", namespace, ignored -> { });
         }
     }

@@ -146,7 +146,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         KafkaUserModel user;
 
         try {
-            user = KafkaUserModel.fromCrd(certManager, passwordGenerator, resource, clientsCaCert, clientsCaKey, userSecret, secretPrefix);
+            user = KafkaUserModel.fromCrd(reconciliation, certManager, passwordGenerator, resource, clientsCaCert, clientsCaKey, userSecret, secretPrefix);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(userStatus, e));
@@ -185,7 +185,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
                 scramShaCredentialOperator.reconcile(user.getName(), password)
                         .compose(ignore -> CompositeFuture.join(kafkaUserQuotasOperator.reconcile(KafkaUserModel.getTlsUserName(userName), finalTlsQuotas),
                                 kafkaUserQuotasOperator.reconcile(KafkaUserModel.getScramUserName(userName), finalScramOrNoneQuotas))),
-                reconcileSecretAndSetStatus(namespace, user, desired, userStatus),
+                reconcileSecretAndSetStatus(reconciliation, namespace, user, desired, userStatus),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(userName), tlsAcls),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(userName), scramOrNoneAcls))
                 .onComplete(reconciliationResult -> {
@@ -202,8 +202,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         return handler.future();
     }
 
-    protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
-        return secretOperations.reconcile(namespace, user.getSecretName(), desired).compose(ar -> {
+    protected Future<ReconcileResult<Secret>> reconcileSecretAndSetStatus(Reconciliation reconciliation, String namespace, KafkaUserModel user, Secret desired, KafkaUserStatus userStatus) {
+        return secretOperations.reconcile(reconciliation, namespace, user.getSecretName(), desired).compose(ar -> {
             if (desired != null) {
                 userStatus.setSecret(desired.getMetadata().getName());
             }
@@ -221,7 +221,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
         RECONCILIATION_LOGGER.debug(reconciliation, "Deleting User {} from namespace {}", user, namespace);
-        return CompositeFuture.join(secretOperations.reconcile(namespace, KafkaUserModel.getSecretName(secretPrefix, user), null),
+        return CompositeFuture.join(secretOperations.reconcile(reconciliation, namespace, KafkaUserModel.getSecretName(secretPrefix, user), null),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),
                 scramShaCredentialOperator.reconcile(KafkaUserModel.getScramUserName(user), null)

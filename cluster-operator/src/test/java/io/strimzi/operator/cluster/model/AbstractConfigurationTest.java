@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.strimzi.operator.common.InvalidConfigParameterException;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -232,7 +233,7 @@ public class AbstractConfigurationTest {
         conf.put("zookeeper.connection.timeout.ms", "42"); // valid
         conf.put("zookeeper.connection.timeout", "42"); // invalid
 
-        KafkaConfiguration kc = new KafkaConfiguration(conf.entrySet());
+        KafkaConfiguration kc = new KafkaConfiguration(new Reconciliation("test", "kind", "namespace", "name"), conf.entrySet());
 
         assertThat(kc.asOrderedProperties().asMap().get("valid"), is("validValue"));
         assertThat(kc.asOrderedProperties().asMap().get("zookeeper.connection.whatever"), is(nullValue()));
@@ -246,7 +247,7 @@ public class AbstractConfigurationTest {
         Map<String, Object> conf = new HashMap<>();
         conf.put("ssl.cipher.suites", "cipher1,cipher2,cipher3"); // valid
 
-        KafkaConfiguration kc = new KafkaConfiguration(conf.entrySet());
+        KafkaConfiguration kc = new KafkaConfiguration(new Reconciliation("test", "kind", "namespace", "name"), conf.entrySet());
 
         assertThat(kc.asOrderedProperties().asMap().get("ssl.cipher.suites"), is("cipher1,cipher2,cipher3"));
     }
@@ -258,7 +259,7 @@ public class AbstractConfigurationTest {
         conf.put("ssl.endpoint.identification.algorithm", ""); // valid
         conf.put("ssl.keystore.location", "/tmp/my.keystore"); // invalid
 
-        KafkaConnectConfiguration configuration = new KafkaConnectConfiguration(conf.entrySet());
+        KafkaConnectConfiguration configuration = new KafkaConnectConfiguration(new Reconciliation("test", "kind", "namespace", "name"), conf.entrySet());
 
         assertThat(configuration.asOrderedProperties().asMap().get("key.converter"), is("my.package.Converter"));
         assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
@@ -272,7 +273,7 @@ public class AbstractConfigurationTest {
         conf.put("ssl.endpoint.identification.algorithm", ""); // valid
         conf.put("ssl.keystore.location", "/tmp/my.keystore"); // invalid
 
-        KafkaMirrorMakerConsumerConfiguration configuration = new KafkaMirrorMakerConsumerConfiguration(conf.entrySet());
+        KafkaMirrorMakerConsumerConfiguration configuration = new KafkaMirrorMakerConsumerConfiguration(new Reconciliation("test", "kind", "namespace", "name"), conf.entrySet());
 
         assertThat(configuration.asOrderedProperties().asMap().get("compression.type"), is("zstd"));
         assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
@@ -286,7 +287,7 @@ public class AbstractConfigurationTest {
         conf.put("ssl.endpoint.identification.algorithm", ""); // valid
         conf.put("ssl.keystore.location", "/tmp/my.keystore"); // invalid
 
-        KafkaMirrorMakerProducerConfiguration configuration = new KafkaMirrorMakerProducerConfiguration(conf.entrySet());
+        KafkaMirrorMakerProducerConfiguration configuration = new KafkaMirrorMakerProducerConfiguration(new Reconciliation("test", "kind", "namespace", "name"), conf.entrySet());
 
         assertThat(configuration.asOrderedProperties().asMap().get("compression.type"), is("zstd"));
         assertThat(configuration.asOrderedProperties().asMap().get("ssl.keystore.location"), is(nullValue()));
@@ -322,7 +323,7 @@ class TestConfiguration extends AbstractConfiguration {
      *                      pairs.
      */
     public TestConfiguration(String configuration) {
-        super(configuration, FORBIDDEN_PREFIXES, DEFAULTS);
+        super(new Reconciliation("test", "kind", "namespace", "name"), configuration, FORBIDDEN_PREFIXES, DEFAULTS);
     }
 
     /**
@@ -332,7 +333,7 @@ class TestConfiguration extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public TestConfiguration(JsonObject jsonOptions) {
-        super(jsonOptions, FORBIDDEN_PREFIXES, DEFAULTS);
+        super(new Reconciliation("test", "kind", "namespace", "name"), jsonOptions, FORBIDDEN_PREFIXES, DEFAULTS);
     }
 }
 
@@ -352,7 +353,7 @@ class TestConfigurationWithoutDefaults extends AbstractConfiguration {
      *                      pairs.
      */
     public TestConfigurationWithoutDefaults(String configuration) {
-        super(configuration, FORBIDDEN_PREFIXES);
+        super(new Reconciliation("test", "kind", "namespace", "name"), configuration, FORBIDDEN_PREFIXES);
     }
 
     /**
@@ -362,6 +363,6 @@ class TestConfigurationWithoutDefaults extends AbstractConfiguration {
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
     public TestConfigurationWithoutDefaults(JsonObject jsonOptions) {
-        super(jsonOptions, FORBIDDEN_PREFIXES);
+        super(new Reconciliation("test", "kind", "namespace", "name"), jsonOptions, FORBIDDEN_PREFIXES);
     }
 }

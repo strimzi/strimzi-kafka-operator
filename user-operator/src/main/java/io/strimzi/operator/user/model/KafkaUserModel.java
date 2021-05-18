@@ -21,6 +21,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.UserOperatorConfig;
@@ -93,6 +94,7 @@ public class KafkaUserModel {
     /**
      * Creates instance of KafkaUserModel from CRD definition.
      *
+     * @param reconciliation The reconciliation
      * @param certManager CertManager instance for work with certificates.
      * @param passwordGenerator A password generator.
      * @param kafkaUser The Custom Resource based on which the model should be created.
@@ -102,7 +104,8 @@ public class KafkaUserModel {
      * @param secretPrefix The prefix used to add to the name of the Secret generated from the KafkaUser resource.
      * @return The user model.
      */
-    public static KafkaUserModel fromCrd(CertManager certManager,
+    public static KafkaUserModel fromCrd(Reconciliation reconciliation,
+                                         CertManager certManager,
                                          PasswordGenerator passwordGenerator,
                                          KafkaUser kafkaUser,
                                          Secret clientsCaCert,
@@ -120,7 +123,7 @@ public class KafkaUserModel {
                 throw new InvalidResourceException("Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.");
             }
 
-            result.maybeGenerateCertificates(certManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret,
+            result.maybeGenerateCertificates(reconciliation, certManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret,
                     UserOperatorConfig.getClientsCaValidityDays(), UserOperatorConfig.getClientsCaRenewalDays());
         } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
             result.maybeGeneratePassword(passwordGenerator, userSecret);
@@ -170,6 +173,7 @@ public class KafkaUserModel {
     /**
      * Manage certificates generation based on those already present in the Secrets
      *
+     * @param reconciliation The reconciliation
      * @param certManager CertManager instance for handling certificates creation
      * @param passwordGenerator PasswordGenerator instance for generating passwords
      * @param clientsCaCertSecret The clients CA certificate Secret.
@@ -179,7 +183,7 @@ public class KafkaUserModel {
      * @param renewalDays The renewal days.
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
-    public void maybeGenerateCertificates(CertManager certManager, PasswordGenerator passwordGenerator,
+    public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
                                           Secret clientsCaCertSecret, Secret clientsCaKeySecret,
                                           Secret userSecret, int validityDays, int renewalDays) {
         if (clientsCaCertSecret == null) {
@@ -227,7 +231,7 @@ public class KafkaUserModel {
                     } else {
                         // coming from an older operator version, the user secret exists but without keystore and password
                         try {
-                            this.userCertAndKey = clientsCa.addKeyAndCertToKeyStore(name,
+                            this.userCertAndKey = clientsCa.addKeyAndCertToKeyStore(reconciliation, name,
                                     decodeFromSecret(userSecret, "user.key"),
                                     decodeFromSecret(userSecret, "user.crt"));
                         } catch (IOException e) {
@@ -239,7 +243,7 @@ public class KafkaUserModel {
             }
 
             try {
-                this.userCertAndKey = clientsCa.generateSignedCert(name);
+                this.userCertAndKey = clientsCa.generateSignedCert(reconciliation, name);
             } catch (IOException e) {
                 LOGGER.error("Error generating signed certificate for user {}", name, e);
             }

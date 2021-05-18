@@ -490,7 +490,7 @@ public class KafkaRoller {
 
         if (!needsRestart && allowReconfiguration) {
             RECONCILIATION_LOGGER.trace(reconciliation, "Broker {}: description {}", podId, brokerConfig);
-            diff = new KafkaBrokerConfigurationDiff(brokerConfig, kafkaConfig, kafkaVersion, podId);
+            diff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfig, kafkaVersion, podId);
             loggingDiff = logging(podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
@@ -552,12 +552,12 @@ public class KafkaRoller {
         KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
         await(Util.kafkaFutureToVertxFuture(vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                LOGGER.error("Error doing dynamic config update", error);
+                RECONCILIATION_LOGGER.error(reconciliation, "Error doing dynamic config update", error);
                 return new ForceableProblem("Error doing dynamic update", error);
             });
         await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                LOGGER.error("Error performing dynamic logging update for pod {}", podId, error);
+                RECONCILIATION_LOGGER.error(reconciliation, "Error performing dynamic logging update for pod {}", podId, error);
                 return new ForceableProblem("Error performing dynamic logging update for pod " + podId, error);
             });
 
@@ -568,7 +568,7 @@ public class KafkaRoller {
             throws ForceableProblem, InterruptedException {
         Config brokerLogging = brokerLogging(podId);
         RECONCILIATION_LOGGER.trace(reconciliation, "Broker {}: logging description {}", podId, brokerLogging);
-        return new KafkaBrokerLoggingConfigurationDiff(brokerLogging, kafkaLogging, podId);
+        return new KafkaBrokerLoggingConfigurationDiff(reconciliation, brokerLogging, kafkaLogging, podId);
     }
 
     /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */
@@ -690,7 +690,7 @@ public class KafkaRoller {
      * @return a Future which completes when the Pod has been recreated
      */
     protected Future<Void> restart(Pod pod) {
-        return podOperations.restart("Rolling update of " + namespace + "/" + KafkaCluster.kafkaClusterName(cluster), pod, operationTimeoutMs);
+        return podOperations.restart(reconciliation, pod, operationTimeoutMs);
     }
 
     /**

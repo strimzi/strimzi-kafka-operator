@@ -17,6 +17,8 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramS
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,6 +32,7 @@ import java.util.function.Function;
 
 public class AuthenticationUtils {
     protected static final Logger LOGGER = LogManager.getLogger(AuthenticationUtils.class.getName());
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
     public static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
@@ -41,32 +44,33 @@ public class AuthenticationUtils {
     /**
      * Validates Kafka client authentication for all components based on Apache Kafka clients.
      *
+     * @param reconciliation The reconciliation
      * @param authentication    The authentication object from CRD
      * @param tls   Indicates whether TLS is enabled or not
      */
     @SuppressWarnings("BooleanExpressionComplexity")
-    public static void validateClientAuthentication(KafkaClientAuthentication authentication, boolean tls)    {
+    public static void validateClientAuthentication(Reconciliation reconciliation, KafkaClientAuthentication authentication, boolean tls)    {
         if (authentication != null)   {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls auth = (KafkaClientAuthenticationTls) authentication;
                 if (auth.getCertificateAndKey() != null) {
                     if (!tls) {
-                        LOGGER.warn("TLS configuration missing: related TLS client authentication will not work properly");
+                        RECONCILIATION_LOGGER.warn(reconciliation, "TLS configuration missing: related TLS client authentication will not work properly");
                     }
                 } else {
-                    LOGGER.warn("TLS Client authentication selected, but no certificate and key configured.");
+                    RECONCILIATION_LOGGER.warn(reconciliation, "TLS Client authentication selected, but no certificate and key configured.");
                     throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512)    {
                 KafkaClientAuthenticationScramSha512 auth = (KafkaClientAuthenticationScramSha512) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    LOGGER.warn("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
+                    RECONCILIATION_LOGGER.warn(reconciliation, "SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                     throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain auth = (KafkaClientAuthenticationPlain) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    LOGGER.warn("PLAIN authentication selected, but username or password configuration is missing.");
+                    RECONCILIATION_LOGGER.warn(reconciliation, "PLAIN authentication selected, but username or password configuration is missing.");
                     throw new InvalidResourceException("PLAIN authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
@@ -78,7 +82,7 @@ public class AuthenticationUtils {
                     // Valid options, lets just pass it through.
                     // This way the condition is easier to read and understand.
                 } else {
-                    LOGGER.warn("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
+                    RECONCILIATION_LOGGER.warn(reconciliation, "OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
                     throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
                 }
             }
@@ -88,18 +92,20 @@ public class AuthenticationUtils {
     /**
      * Creates the Volumes used for authentication of Kafka client based components
      *
+     * @param reconciliation    The reconciliation
      * @param authentication    Authentication object from CRD
      * @param volumeList    List where the volumes will be added
      * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
      * @param isOpenShift   Indicates whether we run on OpenShift or not
      */
-    public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift)   {
-        configureClientAuthenticationVolumes(authentication, volumeList, oauthVolumeNamePrefix, isOpenShift, "", false);
+    public static void configureClientAuthenticationVolumes(Reconciliation reconciliation, KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift)   {
+        configureClientAuthenticationVolumes(reconciliation, authentication, volumeList, oauthVolumeNamePrefix, isOpenShift, "", false);
     }
 
     /**
      * Creates the Volumes used for authentication of Kafka client based components
      *
+     * @param reconciliation    The reconciliation
      * @param authentication    Authentication object from CRD
      * @param volumeList    List where the volumes will be added
      * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
@@ -107,30 +113,30 @@ public class AuthenticationUtils {
      * @param volumeNamePrefix Prefix used for volume names
      * @param createOAuthSecretVolumes   Indicates whether OAuth secret volumes will be added to the list
      */
-    public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift, String volumeNamePrefix, boolean createOAuthSecretVolumes)   {
+    public static void configureClientAuthenticationVolumes(Reconciliation reconciliation, KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift, String volumeNamePrefix, boolean createOAuthSecretVolumes)   {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
-                addNewVolume(volumeList, volumeNamePrefix, tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift);
+                addNewVolume(reconciliation, volumeList, volumeNamePrefix, tlsAuth.getCertificateAndKey().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                addNewVolume(volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
+                addNewVolume(reconciliation, volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                addNewVolume(volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
+                addNewVolume(reconciliation, volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-                volumeList.addAll(configureOauthCertificateVolumes(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
+                volumeList.addAll(configureOauthCertificateVolumes(reconciliation, oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
 
                 if (createOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
-                        addNewVolume(volumeList, volumeNamePrefix, oauth.getClientSecret().getSecretName(), isOpenShift);
+                        addNewVolume(reconciliation, volumeList, volumeNamePrefix, oauth.getClientSecret().getSecretName(), isOpenShift);
                     }
                     if (oauth.getAccessToken() != null) {
-                        addNewVolume(volumeList, volumeNamePrefix, oauth.getAccessToken().getSecretName(), isOpenShift);
+                        addNewVolume(reconciliation, volumeList, volumeNamePrefix, oauth.getAccessToken().getSecretName(), isOpenShift);
                     }
                     if (oauth.getRefreshToken() != null) {
-                        addNewVolume(volumeList, volumeNamePrefix, oauth.getRefreshToken().getSecretName(), isOpenShift);
+                        addNewVolume(reconciliation, volumeList, volumeNamePrefix, oauth.getRefreshToken().getSecretName(), isOpenShift);
                     }
                 }
             }
@@ -141,16 +147,17 @@ public class AuthenticationUtils {
      * Creates the Volumes used for authentication of Kafka client based components, checking that the named volume has not already been
      * created.
      */
-    private static void addNewVolume(List<Volume> volumeList, String volumeNamePrefix, String secretName, boolean isOpenShift) {
+    private static void addNewVolume(Reconciliation reconciliation, List<Volume> volumeList, String volumeNamePrefix, String secretName, boolean isOpenShift) {
         // skipping if a volume with same name was already added
         if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeNamePrefix + secretName))) {
-            volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + secretName, secretName, isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume(reconciliation, volumeNamePrefix + secretName, secretName, isOpenShift));
         }
     }
 
     /**
      * Creates the VolumeMounts used for authentication of Kafka client based components
      *
+     * @param reconciliation    The reconciliation
      * @param authentication    Authentication object from CRD
      * @param volumeMountList    List where the volumes will be added
      * @param tlsVolumeMount    Path where the TLS certs should be mounted
@@ -158,13 +165,14 @@ public class AuthenticationUtils {
      * @param oauthVolumeMount      Path where the OAuth certificates would be mounted
      * @param oauthVolumeNamePrefix Prefix used for OAuth volume names
      */
-    public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthVolumeMount, String oauthVolumeNamePrefix) {
-        configureClientAuthenticationVolumeMounts(authentication, volumeMountList, tlsVolumeMount, passwordVolumeMount, oauthVolumeMount, oauthVolumeNamePrefix, "", false, null);
+    public static void configureClientAuthenticationVolumeMounts(Reconciliation reconciliation, KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthVolumeMount, String oauthVolumeNamePrefix) {
+        configureClientAuthenticationVolumeMounts(reconciliation, authentication, volumeMountList, tlsVolumeMount, passwordVolumeMount, oauthVolumeMount, oauthVolumeNamePrefix, "", false, null);
     }
 
     /**
      * Creates the VolumeMounts used for authentication of Kafka client based components
      *
+     * @param reconciliation    The reconciliation
      * @param authentication    Authentication object from CRD
      * @param volumeMountList    List where the volume mounts will be added
      * @param tlsVolumeMount    Path where the TLS certs should be mounted
@@ -175,35 +183,35 @@ public class AuthenticationUtils {
      * @param mountOAuthSecretVolumes Indicates whether OAuth secret volume mounts will be added to the list
      * @param oauthSecretsVolumeMount Path where the OAuth secrets would be mounted
      */
-    public static void configureClientAuthenticationVolumeMounts(KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthCertsVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthSecretsVolumeMount) {
+    public static void configureClientAuthenticationVolumeMounts(Reconciliation reconciliation, KafkaClientAuthentication authentication, List<VolumeMount> volumeMountList, String tlsVolumeMount, String passwordVolumeMount, String oauthCertsVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthSecretsVolumeMount) {
         if (authentication != null) {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
 
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
+                    volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
                             tlsVolumeMount + tlsAuth.getCertificateAndKey().getSecretName()));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-                volumeMountList.addAll(configureOauthCertificateVolumeMounts(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthCertsVolumeMount));
+                volumeMountList.addAll(configureOauthCertificateVolumeMounts(reconciliation, oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthCertsVolumeMount));
             
                 if (mountOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getClientSecret().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getClientSecret().getSecretName()));
                     }
                     if (oauth.getAccessToken() != null) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauthSecretsVolumeMount + oauth.getAccessToken().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauthSecretsVolumeMount + oauth.getAccessToken().getSecretName()));
                     }
                     if (oauth.getRefreshToken() != null) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauthSecretsVolumeMount + oauth.getRefreshToken().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauthSecretsVolumeMount + oauth.getRefreshToken().getSecretName()));
                     }
                 }
             }
@@ -288,13 +296,14 @@ public class AuthenticationUtils {
      * Generates volumes needed for certificates needed to connect to OAuth server.
      * This is used in both OAuth servers and clients.
      *
+     * @param reconciliation    The reconciliation
      * @param volumeNamePrefix    Prefix for naming the secret volumes
      * @param trustedCertificates   List of certificates which should be mounted
      * @param isOpenShift   Flag whether we are on OpenShift or not
      *
      * @return List of new Volumes
      */
-    public static List<Volume> configureOauthCertificateVolumes(String volumeNamePrefix, List<CertSecretSource> trustedCertificates, boolean isOpenShift)   {
+    public static List<Volume> configureOauthCertificateVolumes(Reconciliation reconciliation, String volumeNamePrefix, List<CertSecretSource> trustedCertificates, boolean isOpenShift)   {
         List<Volume> newVolumes = new ArrayList<>();
 
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
@@ -304,7 +313,7 @@ public class AuthenticationUtils {
                 Map<String, String> items = Collections.singletonMap(certSecretSource.getCertificate(), "tls.crt");
                 String volumeName = String.format("%s-%d", volumeNamePrefix, i);
 
-                Volume vol = VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), items, isOpenShift);
+                Volume vol = VolumeUtils.createSecretVolume(reconciliation, volumeName, certSecretSource.getSecretName(), items, isOpenShift);
 
                 newVolumes.add(vol);
                 i++;
@@ -318,13 +327,15 @@ public class AuthenticationUtils {
      * Generates volume mounts needed for certificates needed to connect to OAuth server.
      * This is used in both OAuth servers and clients.
      *
+     *
+     * @param reconciliation    The reconciliation
      * @param volumeNamePrefix   Prefix which was used to name the secret volumes
      * @param trustedCertificates   List of certificates which should be mounted
      * @param baseVolumeMount   The Base volume into which the certificates should be mounted
      *
      * @return List of new VolumeMounts
      */
-    public static List<VolumeMount> configureOauthCertificateVolumeMounts(String volumeNamePrefix, List<CertSecretSource> trustedCertificates, String baseVolumeMount)   {
+    public static List<VolumeMount> configureOauthCertificateVolumeMounts(Reconciliation reconciliation, String volumeNamePrefix, List<CertSecretSource> trustedCertificates, String baseVolumeMount)   {
         List<VolumeMount> newVolumeMounts = new ArrayList<>();
 
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
@@ -332,7 +343,7 @@ public class AuthenticationUtils {
 
             for (CertSecretSource certSecretSource : trustedCertificates) {
                 String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-                newVolumeMounts.add(VolumeUtils.createVolumeMount(volumeName, String.format("%s/%s-%d", baseVolumeMount, certSecretSource.getSecretName(), i)));
+                newVolumeMounts.add(VolumeUtils.createVolumeMount(reconciliation, volumeName, String.format("%s/%s-%d", baseVolumeMount, certSecretSource.getSecretName(), i)));
                 i++;
             }
         }

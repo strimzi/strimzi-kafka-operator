@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -41,6 +42,7 @@ public class CrdOperator<C extends KubernetesClient,
         this.listCls = listCls;
     }
 
+
     @Override
     protected MixedOperation<T, L, Resource<T>> operation() {
         return client.customResources(cls, listCls);
@@ -58,7 +60,7 @@ public class CrdOperator<C extends KubernetesClient,
      *         once the resource has been deleted.
      */
     @Override
-    protected Future<ReconcileResult<T>> internalDelete(String namespace, String name, boolean cascading) {
+    protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         Resource<T> resourceOp = operation().inNamespace(namespace).withName(name);
 
         Future<Void> watchForDeleteFuture = Util.waitFor(vertx,
@@ -73,11 +75,11 @@ public class CrdOperator<C extends KubernetesClient,
         return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
 
-    public Future<T> patchAsync(T resource) {
-        return patchAsync(resource, true);
+    public Future<T> patchAsync(Reconciliation reconciliation, T resource) {
+        return patchAsync(reconciliation, resource, true);
     }
 
-    public Future<T> patchAsync(T resource, boolean cascading) {
+    public Future<T> patchAsync(Reconciliation reconciliation, T resource, boolean cascading) {
         Promise<T> blockingPromise = Promise.promise();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
@@ -85,10 +87,10 @@ public class CrdOperator<C extends KubernetesClient,
             String name = resource.getMetadata().getName();
             try {
                 T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(resource);
-                log.debug("{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                reconciliationLogger.debug(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {
-                log.debug("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+                reconciliationLogger.debug(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                 future.fail(e);
             }
         }, true, blockingPromise);
@@ -96,7 +98,7 @@ public class CrdOperator<C extends KubernetesClient,
         return blockingPromise.future();
     }
 
-    public Future<T> updateStatusAsync(T resource) {
+    public Future<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
         Promise<T> blockingPromise = Promise.promise();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
@@ -105,10 +107,10 @@ public class CrdOperator<C extends KubernetesClient,
 
             try {
                 T result = operation().inNamespace(namespace).withName(name).updateStatus(resource);
-                log.info("Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
+                reconciliationLogger.info(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {
-                log.debug("Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
+                reconciliationLogger.debug(reconciliation, "Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
                 future.fail(e);
             }
         }, true, blockingPromise);

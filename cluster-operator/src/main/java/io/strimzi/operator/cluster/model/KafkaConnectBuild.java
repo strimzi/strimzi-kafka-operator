@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -222,6 +223,7 @@ public class KafkaConnectBuild extends AbstractModel {
     /**
      * Generates builder Pod for building a new KafkaConnect container image with additional connector plugins
      *
+     * @param reconciliation    The reconciliation
      * @param isOpenShift       Flag defining whether we are running on OpenShift
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  Image pull secrets
@@ -229,13 +231,13 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @return  Pod which will build the new container image
      */
-    public Pod generateBuilderPod(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
+    public Pod generateBuilderPod(Reconciliation reconciliation, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
         return createPod(
                 KafkaConnectResources.buildPodName(cluster),
                 Collections.singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, newBuildRevision),
-                getVolumes(isOpenShift),
+                getVolumes(reconciliation, isOpenShift),
                 null,
-                getContainers(imagePullPolicy),
+                getContainers(reconciliation, imagePullPolicy),
                 imagePullSecrets,
                 isOpenShift
         );
@@ -248,17 +250,17 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @return  List of volumes
      */
-    private List<Volume> getVolumes(boolean isOpenShift) {
+    private List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
         List<Volume> volumes = new ArrayList<>(3);
 
-        volumes.add(VolumeUtils.createEmptyDirVolume("workspace", null));
-        volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
+        volumes.add(VolumeUtils.createEmptyDirVolume(reconciliation, "workspace", null));
+        volumes.add(VolumeUtils.createConfigMapVolume(reconciliation, "dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
 
         if (build.getOutput() instanceof DockerOutput) {
             DockerOutput output = (DockerOutput) build.getOutput();
 
             if (output.getPushSecret() != null) {
-                volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
+                volumes.add(VolumeUtils.createSecretVolume(reconciliation, "docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
             }
         } else {
             throw new RuntimeException("Kubernetes build requires output of type `docker`.");
@@ -309,12 +311,13 @@ public class KafkaConnectBuild extends AbstractModel {
     /**
      * Generates the builder container with the Kaniko executor
      *
+     * @param reconciliation    The reconciliation
      * @param imagePullPolicy   Image pull policy
      *
      * @return  Builder container definition which will be used in the Pod
      */
     @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(1);
 
         List<String> args = additionalKanikoOptions != null ? new ArrayList<>(4 + additionalKanikoOptions.size()) : new ArrayList<>(4);

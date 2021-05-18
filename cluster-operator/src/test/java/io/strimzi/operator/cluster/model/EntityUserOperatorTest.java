@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -143,7 +144,7 @@ public class EntityUserOperatorTest {
 
     @ParallelTest
     public void testEnvVars()   {
-        checkEnvVars(getExpectedEnvVars(), entityUserOperator.getEnvVars());
+        checkEnvVars(getExpectedEnvVars(), entityUserOperator.getEnvVars(new Reconciliation("test", "kind", "namespace", "name")));
     }
 
     @ParallelTest
@@ -223,7 +224,7 @@ public class EntityUserOperatorTest {
 
     @ParallelTest
     public void testGetContainers() {
-        List<Container> containers = entityUserOperator.getContainers(null);
+        List<Container> containers = entityUserOperator.getContainers(new Reconciliation("test", "kind", "namespace", "name"), null);
         assertThat(containers.size(), is(1));
 
         Container container = containers.get(0);
@@ -298,7 +299,7 @@ public class EntityUserOperatorTest {
                 .build();
 
         EntityUserOperator f = EntityUserOperator.fromCrd(kafkaAssembly);
-        List<EnvVar> envvar = f.getEnvVars();
+        List<EnvVar> envvar = f.getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
         assertThat(Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY)).findFirst().get().getValue()), is(validity));
         assertThat(Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().get().getValue()), is(renewal));
     }

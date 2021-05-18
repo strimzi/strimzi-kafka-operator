@@ -38,6 +38,7 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -360,7 +361,7 @@ public class ModelUtilsTest {
         }
 
         @Override
-        protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+        protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
             return null;
         }
     }
@@ -510,7 +511,7 @@ public class ModelUtilsTest {
                 .endSpec()
                 .build();
 
-        KafkaCluster model1 = KafkaCluster.fromCrd(kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        KafkaCluster model1 = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
         /*AbstractModel model1 = new AbstractModel(kafka, "test") {
             @Override
             protected String getDefaultLogConfigFileName() {
@@ -524,7 +525,7 @@ public class ModelUtilsTest {
         };*/
         ModelUtils.parsePodTemplate(model1, pt1);
 
-        KafkaCluster model2 = KafkaCluster.fromCrd(kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        KafkaCluster model2 = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
         /*AbstractModel model2 = new AbstractModel(kafka, "test") {
             @Override
             protected String getDefaultLogConfigFileName() {

@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -111,7 +112,7 @@ public class KafkaConnectApiTest {
     public void test(VertxTestContext context) {
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         Checkpoint async = context.checkpoint();
-        client.listConnectorPlugins("localhost", PORT)
+        client.listConnectorPlugins(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT)
             .onComplete(context.succeeding(connectorPlugins -> context.verify(() -> {
                 assertThat(connectorPlugins.size(), greaterThanOrEqualTo(2));
 
@@ -137,7 +138,7 @@ public class KafkaConnectApiTest {
                     .put("tasks.max", "1")
                     .put("file", "/dev/null")
                     .put("topic", "my-topic");
-                return client.createOrUpdatePutRequest("localhost", PORT, "test", o);
+                return client.createOrUpdatePutRequest(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT, "test", o);
             })
             .onComplete(context.succeeding())
             .compose(created -> {
@@ -147,7 +148,7 @@ public class KafkaConnectApiTest {
                 Handler<Long> handler = new Handler<Long>() {
                     @Override
                     public void handle(Long timerId) {
-                        client.status("localhost", PORT, "test").onComplete(result -> {
+                        client.status(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT, "test").onComplete(result -> {
                             if (result.succeeded()) {
                                 Map<String, Object> status = result.result();
                                 if ("RUNNING".equals(((Map) status.getOrDefault("connector", emptyMap())).get("state"))) {
@@ -179,7 +180,7 @@ public class KafkaConnectApiTest {
                     assertThat(an.get("worker_id"), is("localhost:18083"));
                 }
             })))
-            .compose(status -> client.getConnectorConfig(new BackOff(10), "localhost", PORT, "test"))
+            .compose(status -> client.getConnectorConfig(new Reconciliation("test", "kind", "namespace", "name"), new BackOff(10), "localhost", PORT, "test"))
             .onComplete(context.succeeding(config -> context.verify(() -> {
                 assertThat(config, is(TestUtils.map("connector.class", "FileStreamSource",
                         "file", "/dev/null",
@@ -187,7 +188,7 @@ public class KafkaConnectApiTest {
                         "name", "test",
                         "topic", "my-topic")));
             })))
-            .compose(config -> client.getConnectorConfig(new BackOff(10), "localhost", PORT, "does-not-exist"))
+            .compose(config -> client.getConnectorConfig(new Reconciliation("test", "kind", "namespace", "name"), new BackOff(10), "localhost", PORT, "does-not-exist"))
             .onComplete(context.failing(error -> context.verify(() -> {
                 assertThat(error, instanceOf(ConnectRestException.class));
                 assertThat(((ConnectRestException) error).getStatusCode(), is(404));
@@ -212,7 +213,7 @@ public class KafkaConnectApiTest {
                         .put("tasks.max", "1")
                         .put("file", "/dev/null")
                         .put("topic", "my-topic");
-                return client.createOrUpdatePutRequest("localhost", PORT, "broken", o);
+                return client.createOrUpdatePutRequest(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT, "broken", o);
             })
             .onComplete(context.failing(error -> context.verify(() -> {
                 assertThat(error, instanceOf(ConnectRestException.class));
@@ -227,7 +228,7 @@ public class KafkaConnectApiTest {
                         .put("tasks.max", "dog")
                         .put("file", "/dev/null")
                         .put("topic", "my-topic");
-                return client.createOrUpdatePutRequest("localhost", PORT, "broken2", o);
+                return client.createOrUpdatePutRequest(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT, "broken2", o);
             })
             .onComplete(context.failing(error -> context.verify(() -> {
                 assertThat(error, instanceOf(ConnectRestException.class));
@@ -238,11 +239,11 @@ public class KafkaConnectApiTest {
             .compose(createResponse -> client.list("localhost", PORT))
             .onComplete(context.succeeding(connectorNames -> context.verify(() ->
                     assertThat(connectorNames, is(singletonList("test"))))))
-            .compose(connectorNames -> client.delete("localhost", PORT, "test"))
+            .compose(connectorNames -> client.delete(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT, "test"))
             .onComplete(context.succeeding())
             .compose(deletedConnector -> client.list("localhost", PORT))
             .onComplete(context.succeeding(connectorNames -> assertThat(connectorNames, is(empty()))))
-            .compose(connectorNames -> client.delete("localhost", PORT, "never-existed"))
+            .compose(connectorNames -> client.delete(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT, "never-existed"))
             .onComplete(context.failing(error -> {
                 assertThat(error, instanceOf(ConnectRestException.class));
                 assertThat(error.getMessage(),
@@ -265,9 +266,9 @@ public class KafkaConnectApiTest {
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(desired);
 
-        client.updateConnectLoggers("localhost", PORT, desired, ops)
+        client.updateConnectLoggers(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT, desired, ops)
                 .onComplete(context.succeeding())
-                .compose(a -> client.listConnectLoggers("localhost", PORT)
+                .compose(a -> client.listConnectLoggers(new Reconciliation("test", "kind", "namespace", "name"), "localhost", PORT)
                         .onComplete(context.succeeding(map -> context.verify(() -> {
                             assertThat(map.get("org.apache.zookeeper").get("level"), is("WARN"));
                             assertThat(map.get("org.I0Itec.zkclient").get("level"), is("INFO"));

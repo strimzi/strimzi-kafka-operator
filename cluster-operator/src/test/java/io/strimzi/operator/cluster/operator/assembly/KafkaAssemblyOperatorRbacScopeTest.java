@@ -137,14 +137,14 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the operations for RoleBindings
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
         // Capture the names of reconciled rolebindings and their patched state
         ArgumentCaptor<String> roleBindingNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<RoleBinding> roleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
-        when(mockRoleBindingOps.reconcile(eq(namespace), roleBindingNameCaptor.capture(), roleBindingCaptor.capture()))
+        when(mockRoleBindingOps.reconcile(any(), eq(namespace), roleBindingNameCaptor.capture(), roleBindingCaptor.capture()))
                 .thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperatorRolesSubset kao = new KafkaAssemblyOperatorRolesSubset(
@@ -218,14 +218,14 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the operations for RoleBindings
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
         // Capture the names of reconciled rolebindings and their patched state
         ArgumentCaptor<String> roleBindingNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<RoleBinding> roleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
-        when(mockRoleBindingOps.reconcile(eq(namespace), roleBindingNameCaptor.capture(), roleBindingCaptor.capture()))
+        when(mockRoleBindingOps.reconcile(any(), eq(namespace), roleBindingNameCaptor.capture(), roleBindingCaptor.capture()))
                 .thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperatorRolesSubset kao = new KafkaAssemblyOperatorRolesSubset(
@@ -299,14 +299,14 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the operations for Roles
         RoleOperator mockRoleOps = supplier.roleOperations;
         // Capture the names of reconciled Roles and their patched state
         ArgumentCaptor<String> roleNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Role> roleCaptor = ArgumentCaptor.forClass(Role.class);
-        when(mockRoleOps.reconcile(anyString(), roleNameCaptor.capture(), roleCaptor.capture()))
+        when(mockRoleOps.reconcile(any(), anyString(), roleNameCaptor.capture(), roleCaptor.capture()))
                 .thenReturn(Future.succeededFuture());
 
         // Mock the operations for RoleBindings
@@ -314,7 +314,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         // Capture the names of reconciled RoleBindings and their patched state
         ArgumentCaptor<String> roleBindingNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<RoleBinding> roleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
-        when(mockRoleBindingOps.reconcile(anyString(), roleBindingNameCaptor.capture(), roleBindingCaptor.capture()))
+        when(mockRoleBindingOps.reconcile(any(), anyString(), roleBindingNameCaptor.capture(), roleBindingCaptor.capture()))
                 .thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperatorRolesSubset kao = new KafkaAssemblyOperatorRolesSubset(

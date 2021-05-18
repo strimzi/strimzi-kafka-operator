@@ -138,10 +138,10 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -218,10 +218,10 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -292,10 +292,10 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -376,7 +376,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         ClusterOperatorConfig config = new ClusterOperatorConfig(
                 singleton("dummy"),
@@ -468,7 +468,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSet operations
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
@@ -482,14 +482,14 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         IngressV1Beta1Operator mockIngressV1Beta1ops = supplier.ingressV1Beta1Operations;
         ArgumentCaptor<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingressV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress.class);
         when(mockIngressV1Beta1ops.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockIngressV1Beta1ops.reconcile(anyString(), anyString(), ingressV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress())));
+        when(mockIngressV1Beta1ops.reconcile(any(), anyString(), anyString(), ingressV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress())));
         when(mockIngressV1Beta1ops.hasIngressAddress(eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock ingress v1 ops
         IngressOperator mockIngressOps = supplier.ingressOperations;
         ArgumentCaptor<Ingress> ingressCaptor = ArgumentCaptor.forClass(Ingress.class);
         when(mockIngressOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockIngressOps.reconcile(anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
+        when(mockIngressOps.reconcile(any(), anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
         when(mockIngressOps.hasIngressAddress(eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator op = new MockKafkaAssemblyOperatorForIngressTests(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
@@ -503,7 +503,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     assertThat(ingressV1Beta1Captor.getAllValues().size(), is(4));
 
                     verify(mockIngressOps, never()).list(any(), any());
-                    verify(mockIngressOps, never()).reconcile(any(), any(), any());
+                    verify(mockIngressOps, never()).reconcile(any(), any(), any(), any());
                     verify(mockIngressOps, never()).hasIngressAddress(any(), any(), anyLong(), anyLong());
 
                     async.flag();
@@ -559,7 +559,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSet operations
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
@@ -573,14 +573,14 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         IngressV1Beta1Operator mockIngressV1Beta1ops = supplier.ingressV1Beta1Operations;
         ArgumentCaptor<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingressV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress.class);
         when(mockIngressV1Beta1ops.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockIngressV1Beta1ops.reconcile(anyString(), anyString(), ingressV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress())));
+        when(mockIngressV1Beta1ops.reconcile(any(), anyString(), anyString(), ingressV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress())));
         when(mockIngressV1Beta1ops.hasIngressAddress(eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock ingress v1 ops
         IngressOperator mockIngressOps = supplier.ingressOperations;
         ArgumentCaptor<Ingress> ingressCaptor = ArgumentCaptor.forClass(Ingress.class);
         when(mockIngressOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockIngressOps.reconcile(anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
+        when(mockIngressOps.reconcile(any(), anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
         when(mockIngressOps.hasIngressAddress(eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator op = new MockKafkaAssemblyOperatorForIngressTests(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
@@ -594,7 +594,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     assertThat(ingressV1Beta1Captor.getAllValues().size(), is(0));
 
                     verify(mockIngressV1Beta1ops, never()).list(any(), any());
-                    verify(mockIngressV1Beta1ops, never()).reconcile(any(), any(), any());
+                    verify(mockIngressV1Beta1ops, never()).reconcile(any(), any(), any(), any());
                     verify(mockIngressV1Beta1ops, never()).hasIngressAddress(any(), any(), anyLong(), anyLong());
 
                     async.flag();

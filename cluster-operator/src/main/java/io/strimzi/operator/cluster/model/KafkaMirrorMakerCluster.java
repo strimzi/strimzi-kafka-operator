@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -122,7 +123,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     @SuppressWarnings("deprecation")
-    public static KafkaMirrorMakerCluster fromCrd(KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
+    public static KafkaMirrorMakerCluster fromCrd(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
         KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(kafkaMirrorMaker);
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
@@ -149,9 +150,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.setInclude(include != null ? include : whitelist);
 
-            AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
+            AuthenticationUtils.validateClientAuthentication(reconciliation, spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
             kafkaMirrorMakerCluster.setProducer(spec.getProducer());
-            AuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
+            AuthenticationUtils.validateClientAuthentication(reconciliation, spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
             kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
 
             kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion()));
@@ -195,89 +196,89 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return kafkaMirrorMakerCluster;
     }
 
-    protected List<ContainerPort> getContainerPortList() {
+    protected List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
         List<ContainerPort> portList = new ArrayList<>(1);
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+            portList.add(createContainerPort(reconciliation, METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;
     }
 
-    protected List<Volume> getVolumes(boolean isOpenShift) {
+    protected List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
 
         volumeList.add(createTempDirVolume());
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
-        createClientSecretVolume(producer, volumeList, "producer-oauth-certs", isOpenShift);
-        createClientSecretVolume(consumer, volumeList, "consumer-oauth-certs", isOpenShift);
+        createClientSecretVolume(reconciliation, producer, volumeList, "producer-oauth-certs", isOpenShift);
+        createClientSecretVolume(reconciliation, consumer, volumeList, "consumer-oauth-certs", isOpenShift);
 
         return volumeList;
     }
 
-    protected void createClientSecretVolume(KafkaMirrorMakerClientSpec client, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift) {
+    protected void createClientSecretVolume(Reconciliation reconciliation, KafkaMirrorMakerClientSpec client, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift) {
         if (client.getTls() != null && client.getTls().getTrustedCertificates() != null && client.getTls().getTrustedCertificates().size() > 0) {
             for (CertSecretSource certSecretSource: client.getTls().getTrustedCertificates()) {
                 // skipping if a volume with same Secret name was already added
                 if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+                    volumeList.add(VolumeUtils.createSecretVolume(reconciliation, certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                 }
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(client.getAuthentication(), volumeList, oauthVolumeNamePrefix, isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(reconciliation, client.getAuthentication(), volumeList, oauthVolumeNamePrefix, isOpenShift);
     }
 
-    protected List<VolumeMount> getVolumeMounts() {
+    protected List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
-        volumeMountList.add(createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(createTempDirVolumeMount(reconciliation));
+        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         /** producer auth*/
         if (producer.getTls() != null && producer.getTls().getTrustedCertificates() != null && producer.getTls().getTrustedCertificates().size() > 0) {
             for (CertSecretSource certSecretSource: producer.getTls().getTrustedCertificates()) {
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
+                    volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, certSecretSource.getSecretName(),
                             TLS_CERTS_VOLUME_MOUNT_PRODUCER + certSecretSource.getSecretName()));
                 }
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(producer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs");
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(reconciliation, producer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs");
 
         /** consumer auth*/
         if (consumer.getTls() != null && consumer.getTls().getTrustedCertificates() != null && consumer.getTls().getTrustedCertificates().size() > 0) {
             for (CertSecretSource certSecretSource: consumer.getTls().getTrustedCertificates()) {
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                    volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
+                    volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, certSecretSource.getSecretName(),
                             TLS_CERTS_VOLUME_MOUNT_CONSUMER + certSecretSource.getSecretName()));
                 }
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(consumer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER, "consumer-oauth-certs");
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(reconciliation, consumer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER, "consumer-oauth-certs");
 
         return volumeMountList;
     }
 
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Reconciliation reconciliation, Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createDeployment(
                 getDeploymentStrategy(),
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(isOpenShift),
+                getInitContainers(reconciliation, imagePullPolicy),
+                getContainers(reconciliation, imagePullPolicy),
+                getVolumes(reconciliation, isOpenShift),
                 imagePullSecrets);
     }
 
     @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>(1);
 
@@ -285,8 +286,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .withName(name)
                 .withImage(getImage())
                 .withCommand("/opt/kafka/kafka_mirror_maker_run.sh")
-                .withEnv(getEnvVars())
-                .withPorts(getContainerPortList())
+                .withEnv(getEnvVars(reconciliation))
+                .withPorts(getContainerPortList(reconciliation))
                 .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
                         .withNewExec()
                             .withCommand("/opt/kafka/kafka_mirror_maker_liveness.sh")
@@ -296,7 +297,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                             // The mirror-maker-agent will create /tmp/mirror-maker-ready in the container
                             .withCommand("test", "-f", "/tmp/mirror-maker-ready")
                         .endExec().build())
-                .withVolumeMounts(getVolumeMounts())
+                .withVolumeMounts(getVolumeMounts(reconciliation))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
@@ -307,8 +308,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return containers;
     }
 
-    private KafkaMirrorMakerConsumerConfiguration getConsumerConfiguration()    {
-        KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(consumer.getConfig().entrySet());
+    private KafkaMirrorMakerConsumerConfiguration getConsumerConfiguration(Reconciliation reconciliation) {
+        KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(reconciliation, consumer.getConfig().entrySet());
 
         if (tracing != null) {
             config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
@@ -317,8 +318,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return config;
     }
 
-    private KafkaMirrorMakerProducerConfiguration getProducerConfiguration()    {
-        KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(producer.getConfig().entrySet());
+    private KafkaMirrorMakerProducerConfiguration getProducerConfiguration(Reconciliation reconciliation)    {
+        KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(reconciliation, producer.getConfig().entrySet());
 
         if (tracing != null) {
             config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
@@ -328,12 +329,12 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars() {
+    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER,
-                getConsumerConfiguration().getConfiguration()));
+                getConsumerConfiguration(reconciliation).getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER,
-                getProducerConfiguration().getConfiguration()));
+                getProducerConfiguration(reconciliation).getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER, consumer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER, producer.getBootstrapServers()));

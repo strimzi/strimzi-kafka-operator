@@ -147,10 +147,10 @@ public class CertificateRenewalTest {
             }).collect(Collectors.toList());
         });
         ArgumentCaptor<Secret> c = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -1206,7 +1206,7 @@ public class CertificateRenewalTest {
     public void testRenewalOfDeploymentCertificatesWithNullSecret() throws IOException {
         CertAndKey newCertAndKey = new CertAndKey("new-key".getBytes(), "new-cert".getBytes(), "new-truststore".getBytes(), "new-keystore".getBytes(), "new-password");
         ClusterCa clusterCaMock = mock(ClusterCa.class);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.generateSignedCert(any(), anyString(), anyString())).thenReturn(newCertAndKey);
         String namespace = "my-namespace";
         String secretName = "my-secret";
         String commonName = "deployment";
@@ -1215,7 +1215,7 @@ public class CertificateRenewalTest {
         OwnerReference ownerReference = new OwnerReference();
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Secret newSecret = ModelUtils.buildSecret(clusterCaMock, null, namespace, secretName, commonName,
+        Secret newSecret = ModelUtils.buildSecret(new Reconciliation("test", "kind", "namespace", "name"), clusterCaMock, null, namespace, secretName, commonName,
                 keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
@@ -1240,7 +1240,7 @@ public class CertificateRenewalTest {
         ClusterCa clusterCaMock = mock(ClusterCa.class);
         when(clusterCaMock.certRenewed()).thenReturn(true);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(false);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.generateSignedCert(any(), anyString(), anyString())).thenReturn(newCertAndKey);
         String namespace = "my-namespace";
         String secretName = "my-secret";
         String commonName = "deployment";
@@ -1249,7 +1249,7 @@ public class CertificateRenewalTest {
         OwnerReference ownerReference = new OwnerReference();
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Secret newSecret = ModelUtils.buildSecret(clusterCaMock, initialSecret, namespace, secretName, commonName,
+        Secret newSecret = ModelUtils.buildSecret(new Reconciliation("test", "kind", "namespace", "name"), clusterCaMock, initialSecret, namespace, secretName, commonName,
                 keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
@@ -1274,7 +1274,7 @@ public class CertificateRenewalTest {
         ClusterCa clusterCaMock = mock(ClusterCa.class);
         when(clusterCaMock.certRenewed()).thenReturn(false);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(true);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.generateSignedCert(any(), anyString(), anyString())).thenReturn(newCertAndKey);
         String namespace = "my-namespace";
         String secretName = "my-secret";
         String commonName = "deployment";
@@ -1283,7 +1283,7 @@ public class CertificateRenewalTest {
         OwnerReference ownerReference = new OwnerReference();
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Secret newSecret = ModelUtils.buildSecret(clusterCaMock, initialSecret, namespace, secretName, commonName,
+        Secret newSecret = ModelUtils.buildSecret(new Reconciliation("test", "kind", "namespace", "name"), clusterCaMock, initialSecret, namespace, secretName, commonName,
                 keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
@@ -1308,7 +1308,7 @@ public class CertificateRenewalTest {
         ClusterCa clusterCaMock = mock(ClusterCa.class);
         when(clusterCaMock.certRenewed()).thenReturn(false);
         when(clusterCaMock.isExpiring(any(), any())).thenReturn(true);
-        when(clusterCaMock.generateSignedCert(anyString(), anyString())).thenReturn(newCertAndKey);
+        when(clusterCaMock.generateSignedCert(any(), anyString(), anyString())).thenReturn(newCertAndKey);
         String namespace = "my-namespace";
         String secretName = "my-secret";
         String commonName = "deployment";
@@ -1317,7 +1317,7 @@ public class CertificateRenewalTest {
         OwnerReference ownerReference = new OwnerReference();
         boolean isMaintenanceTimeWindowsSatisfied = false;
 
-        Secret newSecret = ModelUtils.buildSecret(clusterCaMock, initialSecret, namespace, secretName, commonName,
+        Secret newSecret = ModelUtils.buildSecret(new Reconciliation("test", "kind", "namespace", "name"), clusterCaMock, initialSecret, namespace, secretName, commonName,
                 keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes())));

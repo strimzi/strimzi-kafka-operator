@@ -6,6 +6,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,9 +38,10 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *
+     * @param reconciliation  The reconciliation
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public ZookeeperConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
+    public ZookeeperConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
     }
 }

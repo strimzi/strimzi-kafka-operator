@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,17 +46,19 @@ import io.strimzi.api.kafka.model.storage.Storage;
  */
 public class VolumeUtils {
     protected static final Logger LOGGER = LogManager.getLogger(VolumeUtils.class.getName());
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
     private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
 
     /**
      * Creates a Kubernetes volume which will map to ConfigMap with specific items mounted
      *
+     * @param reconciliation    The reconciliation
      * @param name              Name of the Volume
      * @param configMapName     Name of the ConfigMap
      * @param items             Specific items which should be mapped from the ConfigMap
      * @return                  The newly created Volume
      */
-    public static Volume createConfigMapVolume(String name, String configMapName, Map<String, String> items) {
+    public static Volume createConfigMapVolume(Reconciliation reconciliation, String name, String configMapName, Map<String, String> items) {
         String validName = getValidVolumeName(name);
 
         List<KeyToPath> keysPaths = new ArrayList<>();
@@ -78,7 +82,7 @@ public class VolumeUtils {
                 .withConfigMap(configMapVolumeSource)
                 .build();
 
-        LOGGER.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+        RECONCILIATION_LOGGER.trace(reconciliation, "Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
 
         return volume;
     }
@@ -86,11 +90,12 @@ public class VolumeUtils {
     /**
      * Creates a Kubernetes volume which will map to ConfigMap
      *
+     * @param reconciliation    The reconciliation
      * @param name              Name of the Volume
      * @param configMapName     Name of the ConfigMap
      * @return                  The newly created Volume
      */
-    public static Volume createConfigMapVolume(String name, String configMapName) {
+    public static Volume createConfigMapVolume(Reconciliation reconciliation, String name, String configMapName) {
         String validName = getValidVolumeName(name);
 
         ConfigMapVolumeSource configMapVolumeSource = new ConfigMapVolumeSourceBuilder()
@@ -102,7 +107,7 @@ public class VolumeUtils {
                 .withConfigMap(configMapVolumeSource)
                 .build();
 
-        LOGGER.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+        RECONCILIATION_LOGGER.trace(reconciliation, "Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
 
         return volume;
     }
@@ -110,13 +115,14 @@ public class VolumeUtils {
     /**
      * Creates a secret volume with given items
      *
+     * @param reconciliation The reconciliation
      * @param name        Name of the Volume
      * @param secretName  Name of the Secret
      * @param items       contents of the Secret
      * @param isOpenshift true if underlying cluster OpenShift
      * @return The Volume created
      */
-    public static Volume createSecretVolume(String name, String secretName, Map<String, String> items, boolean isOpenshift) {
+    public static Volume createSecretVolume(Reconciliation reconciliation, String name, String secretName, Map<String, String> items, boolean isOpenshift) {
         String validName = getValidVolumeName(name);
 
         int mode = 0444;
@@ -145,19 +151,20 @@ public class VolumeUtils {
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        LOGGER.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
+        RECONCILIATION_LOGGER.trace(reconciliation, "Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
     /**
      * Creates a secret volume
      *
+     * @param reconciliation The reconciliation
      * @param name        Name of the Volume
      * @param secretName  Name of the Secret
      * @param isOpenshift true if underlying cluster OpenShift
      * @return The Volume created
      */
-    public static Volume createSecretVolume(String name, String secretName, boolean isOpenshift) {
+    public static Volume createSecretVolume(Reconciliation reconciliation, String name, String secretName, boolean isOpenshift) {
         String validName = getValidVolumeName(name);
 
         int mode = 0444;
@@ -174,18 +181,19 @@ public class VolumeUtils {
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        LOGGER.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
+        RECONCILIATION_LOGGER.trace(reconciliation, "Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
     /**
      * Creates an empty directory volume
      *
+     * @param reconciliation The reconciliation
      * @param name      Name of the Volume
      * @param sizeLimit Volume size
      * @return The Volume created
      */
-    public static Volume createEmptyDirVolume(String name, String sizeLimit) {
+    public static Volume createEmptyDirVolume(Reconciliation reconciliation, String name, String sizeLimit) {
         String validName = getValidVolumeName(name);
 
         EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
@@ -197,7 +205,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withEmptyDir(emptyDirVolumeSource)
                 .build();
-        LOGGER.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
+        RECONCILIATION_LOGGER.trace(reconciliation, "Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
         return volume;
     }
 
@@ -235,22 +243,23 @@ public class VolumeUtils {
     /**
      * Creates a Volume mount
      *
+     * @param reconciliation The reconciliation
      * @param name Name of the Volume mount
      * @param path volume mount path
      * @return The Volume mount created
      */
-    public static VolumeMount createVolumeMount(String name, String path) {
+    public static VolumeMount createVolumeMount(Reconciliation reconciliation, String name, String path) {
         String validName = getValidVolumeName(name);
 
         VolumeMount volumeMount = new VolumeMountBuilder()
                 .withName(validName)
                 .withMountPath(path)
                 .build();
-        LOGGER.trace("Created volume mount {} for volume {}", volumeMount, validName);
+        RECONCILIATION_LOGGER.trace(reconciliation, "Created volume mount {} for volume {}", volumeMount, validName);
         return volumeMount;
     }
 
-    public static List<Volume> getDataVolumes(Storage storage) {
+    public static List<Volume> getDataVolumes(Reconciliation reconciliation, Storage storage) {
         List<Volume> volumes = new ArrayList<>();
 
         if (storage != null) {
@@ -259,13 +268,13 @@ public class VolumeUtils {
                     if (volume.getId() == null)
                         throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
                     // it's called recursively for setting the information from the current volume
-                    volumes.addAll(getDataVolumes(volume));
+                    volumes.addAll(getDataVolumes(reconciliation, volume));
                 }
             } else if (storage instanceof EphemeralStorage) {
                 Integer id = ((EphemeralStorage) storage).getId();
                 String name = getVolumePrefix(id);
                 String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-                volumes.add(createEmptyDirVolume(name, sizeLimit));
+                volumes.add(createEmptyDirVolume(reconciliation, name, sizeLimit));
             }
         }
 
@@ -293,7 +302,7 @@ public class VolumeUtils {
         return pvcs;
     }
 
-    public static List<VolumeMount> getDataVolumeMountPaths(Storage storage, String mountPath) {
+    public static List<VolumeMount> getDataVolumeMountPaths(Reconciliation reconciliation, Storage storage, String mountPath) {
         List<VolumeMount> volumeMounts = new ArrayList<>();
 
         if (storage != null) {
@@ -302,7 +311,7 @@ public class VolumeUtils {
                     if (volume.getId() == null)
                         throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
                     // it's called recursively for setting the information from the current volume
-                    volumeMounts.addAll(getDataVolumeMountPaths(volume, mountPath));
+                    volumeMounts.addAll(getDataVolumeMountPaths(reconciliation, volume, mountPath));
                 }
             } else {
                 Integer id;
@@ -317,7 +326,7 @@ public class VolumeUtils {
 
                 String name = getVolumePrefix(id);
                 String namedMountPath = mountPath + "/" + name;
-                volumeMounts.add(createVolumeMount(name, namedMountPath));
+                volumeMounts.add(createVolumeMount(reconciliation, name, namedMountPath));
             }
         }
 

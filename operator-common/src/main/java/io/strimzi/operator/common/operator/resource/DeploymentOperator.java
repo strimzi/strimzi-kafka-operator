@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -54,34 +55,36 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
     /**
      * Asynchronously roll the deployment returning a Future which will complete once all the pods have been rolled
      * and the Deployment is ready.
+     * @param reconciliation The reconciliation
      * @param namespace The namespace of the deployment
      * @param name The name of the deployment
      * @param operationTimeoutMs The timeout
      * @return A future which completes when all the pods in the deployment have been restarted.
      */
-    public Future<Void> rollingUpdate(String namespace, String name, long operationTimeoutMs) {
+    public Future<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
         return getAsync(namespace, name)
-                .compose(deployment -> deletePod(namespace, name))
+                .compose(deployment -> deletePod(reconciliation, namespace, name))
                 .compose(ignored -> readiness(namespace, name, 1_000, operationTimeoutMs));
     }
 
     /**
      * Asynchronously delete the given pod.
+     * @param reconciliation The reconciliation
      * @param namespace The namespace of the pod.
      * @param name The name of the pod.
      * @return A Future which will complete once all the pods has been deleted.
      */
-    public Future<ReconcileResult<Pod>> deletePod(String namespace, String name) {
+    public Future<ReconcileResult<Pod>> deletePod(Reconciliation reconciliation, String namespace, String name) {
         Labels labels = Labels.EMPTY.withStrimziName(name);
         String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
-        return podOperations.reconcile(namespace, podName, null);
+        return podOperations.reconcile(reconciliation, namespace, podName, null);
     }
 
     @Override
-    protected Future<ReconcileResult<Deployment>> internalPatch(String namespace, String name, Deployment current, Deployment desired, boolean cascading) {
+    protected Future<ReconcileResult<Deployment>> internalPatch(Reconciliation reconciliation, String namespace, String name, Deployment current, Deployment desired, boolean cascading) {
         String k8sRev = Annotations.annotations(current).get(Annotations.ANNO_DEP_KUBE_IO_REVISION);
         Annotations.annotations(desired).put(Annotations.ANNO_DEP_KUBE_IO_REVISION, k8sRev);
-        return super.internalPatch(namespace, name, current, desired, cascading);
+        return super.internalPatch(reconciliation, namespace, name, current, desired, cascading);
     }
 
     /**

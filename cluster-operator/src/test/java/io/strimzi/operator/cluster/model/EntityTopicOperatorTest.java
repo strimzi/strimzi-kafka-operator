@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -121,7 +122,7 @@ public class EntityTopicOperatorTest {
 
     @ParallelTest
     public void testEnvVars()   {
-        assertThat(entityTopicOperator.getEnvVars(), is(getExpectedEnvVars()));
+        assertThat(entityTopicOperator.getEnvVars(new Reconciliation("test", "kind", "namespace", "name")), is(getExpectedEnvVars()));
     }
 
     @ParallelTest
@@ -203,7 +204,7 @@ public class EntityTopicOperatorTest {
 
     @ParallelTest
     public void testGetContainers() {
-        List<Container> containers = entityTopicOperator.getContainers(null);
+        List<Container> containers = entityTopicOperator.getContainers(new Reconciliation("test", "kind", "namespace", "name"), null);
         assertThat(containers.size(), is(1));
 
         Container container = containers.get(0);

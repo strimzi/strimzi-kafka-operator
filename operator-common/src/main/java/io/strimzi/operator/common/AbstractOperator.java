@@ -345,7 +345,7 @@ public abstract class AbstractOperator<
                         if (!sDiff.isEmpty()) {
                             res.setStatus(desiredStatus);
 
-                            return resourceOperator.updateStatusAsync(res)
+                            return resourceOperator.updateStatusAsync(reconciliation, res)
                                     .compose(notUsed -> {
                                         RECONCILIATION_LOGGER.debug(reconciliation, "Completed status update");
                                         return Future.succeededFuture();
@@ -578,18 +578,19 @@ public abstract class AbstractOperator<
      * we want to ignore the error and return success. This is used to let Strimzi work without some Cluster-wide RBAC
      * rights when the features they are needed for are not used by the user.
      *
+     * @param reconciliation    The reconciliation
      * @param reconcileFuture   The original reconciliation future
      * @param desired           The desired state of the resource.
      * @return                  A future which completes when the resource was reconciled.
      */
-    public Future<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
+    public Future<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Reconciliation reconciliation, Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
         return reconcileFuture.compose(
             rr -> Future.succeededFuture(),
             e -> {
                 if (desired == null
                         && e.getMessage() != null
                         && e.getMessage().contains("Message: Forbidden!")) {
-                    LOGGER.debug("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
+                    RECONCILIATION_LOGGER.debug(reconciliation, "Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
                     return Future.succeededFuture();
                 }
                 return Future.failedFuture(e.getMessage());

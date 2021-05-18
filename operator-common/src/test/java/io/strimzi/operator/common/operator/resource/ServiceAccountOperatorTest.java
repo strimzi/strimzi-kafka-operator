@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
@@ -107,7 +108,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
         ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource)
+        op.createOrUpdate(new Reconciliation("test", "kind", "ns", "name"), resource)
             .onComplete(context.succeeding(rr -> {
                 context.verify(() -> assertThat(rr, instanceOf(ReconcileResult.Noop.class)));
                 verify(mockResource).get();

@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -181,7 +182,7 @@ public class KafkaConnectBuildTest {
 
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
+        Pod pod = build.generateBuilderPod(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.IFNOTPRESENT, null, null);
         assertThat(pod.getMetadata().getName(), is(KafkaConnectResources.buildPodName(cluster)));
         assertThat(pod.getMetadata().getNamespace(), is(namespace));
 
@@ -240,7 +241,7 @@ public class KafkaConnectBuildTest {
 
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
+        Pod pod = build.generateBuilderPod(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.IFNOTPRESENT, null, null);
         assertThat(pod.getSpec().getVolumes().size(), is(2));
         assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultArgs));
         assertThat(pod.getSpec().getVolumes().get(0).getName(), is("workspace"));
@@ -440,7 +441,7 @@ public class KafkaConnectBuildTest {
 
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
+        Pod pod = build.generateBuilderPod(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.IFNOTPRESENT, null, null);
         assertThat(pod.getMetadata().getLabels().entrySet().containsAll(buildPodLabels.entrySet()), is(true));
         assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(buildPodAnnos.entrySet()), is(true));
         assertThat(pod.getSpec().getPriorityClassName(), is("top-priority"));
@@ -487,7 +488,7 @@ public class KafkaConnectBuildTest {
 
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
 
-        Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
+        Pod pod = build.generateBuilderPod(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.IFNOTPRESENT, null, null);
         assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(expectedArgs));
     }
 

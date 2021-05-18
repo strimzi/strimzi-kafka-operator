@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +24,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 public class StatefulSetDiff extends AbstractJsonDiff {
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetDiff.class.getName());
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     private static final String SHORTENED_STRIMZI_DOMAIN = Annotations.STRIMZI_DOMAIN.substring(0, Annotations.STRIMZI_DOMAIN.length() - 1);
 
@@ -69,7 +72,7 @@ public class StatefulSetDiff extends AbstractJsonDiff {
     private final boolean changesLabels;
     private final boolean changesSpecReplicas;
 
-    public StatefulSetDiff(StatefulSet current, StatefulSet desired) {
+    public StatefulSetDiff(Reconciliation reconciliation, StatefulSet current, StatefulSet desired) {
         JsonNode source = patchMapper().valueToTree(current);
         JsonNode target = patchMapper().valueToTree(desired);
         JsonNode diff = JsonDiff.asJson(source, target);
@@ -83,7 +86,7 @@ public class StatefulSetDiff extends AbstractJsonDiff {
             String pathValue = d.get("path").asText();
             if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
                 ObjectMeta md = current.getMetadata();
-                LOGGER.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                RECONCILIATION_LOGGER.debug(reconciliation, "StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                 continue;
             }
             Matcher resourceMatchers = RESOURCE_PATH.matcher(pathValue);
@@ -92,16 +95,16 @@ public class StatefulSetDiff extends AbstractJsonDiff {
                     boolean same = compareMemoryAndCpuResources(source, target, pathValue, resourceMatchers);
                     if (same) {
                         ObjectMeta md = current.getMetadata();
-                        LOGGER.debug("StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                        RECONCILIATION_LOGGER.debug(reconciliation, "StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                         continue;
                     }
                 }
             }
             if (LOGGER.isDebugEnabled()) {
                 ObjectMeta md = current.getMetadata();
-                LOGGER.debug("StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
-                LOGGER.debug("Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
-                LOGGER.debug("Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
+                RECONCILIATION_LOGGER.debug(reconciliation, "StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
+                RECONCILIATION_LOGGER.debug(reconciliation, "Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
+                RECONCILIATION_LOGGER.debug(reconciliation, "Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;
