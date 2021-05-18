@@ -126,6 +126,7 @@ public class SecretCertProvider {
                     .withAnnotations(annotations)
                     .withOwnerReferences(or)
                 .endMetadata()
+                .withType("Opaque")
                 .withData(data)
                 .build();
 
