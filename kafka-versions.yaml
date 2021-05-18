@@ -125,7 +125,7 @@
   protocol: 2.7
   url: https://archive.apache.org/dist/kafka/2.7.1/kafka_2.12-2.7.1.tgz
   checksum: 33D365CC87ABC9B85AA51F0B0C26E3749A5E9821F611B3F73239AABC9D6CD2F1E55F01ED0647AF5818967AF35213FA1BEDFAB89C3F22B083015A75C318DDC5AB
-  zookeeper: 3.5.8
+  zookeeper: 3.5.9
   third-party-libs: 2.7.x
   supported: true
   default: false
