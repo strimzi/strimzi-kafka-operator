@@ -68,6 +68,11 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
         List<ObjectReference> secrets = new ArrayList<>();
 
         op.reconcile(namespace, resourceName, newResource)
+                .compose(rr -> {
+                    // Wait for the service account to be created and secrets added
+                    return Util.waitFor(vertx, "token secrets created for service account " + resourceName, "has tokens", 1000,
+                            30_000, () -> !op.get(namespace, resourceName).getSecrets().isEmpty());
+                })
                 .onComplete(context.succeeding(rrCreated -> {
                     ServiceAccount created = op.get(namespace, resourceName);
 
