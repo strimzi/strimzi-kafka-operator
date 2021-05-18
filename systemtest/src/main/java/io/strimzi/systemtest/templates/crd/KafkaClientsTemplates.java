@@ -245,7 +245,7 @@ public class KafkaClientsTemplates {
 
     static String saslConfigs(String namespaceName, KafkaUser kafkaUser, String secretPrefix) {
         String secretName = secretPrefix == null ? kafkaUser.getMetadata().getName() : secretPrefix + kafkaUser.getMetadata().getName();
-        Secret secret = ResourceManager.kubeClient().namespace(namespaceName).getSecret(secretName);
+        Secret secret = ResourceManager.kubeClient().getSecret(namespaceName, secretName);
 
         String password = new String(Base64.getDecoder().decode(secret.getData().get("password")), Charset.forName("UTF-8"));
         if (password.isEmpty()) {
