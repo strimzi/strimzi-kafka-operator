@@ -21,7 +21,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
     private static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
     private static final String STATUS_KEY = "Status";
-    private static final String SUMMARY_KEY = "summary";
 
     private final Vertx vertx;
     private final long idleTimeout;
@@ -228,11 +227,21 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                             // We handle these in the same way as COMPLETED tasks so we drop down to that case.
                                         case COMPLETED:
                                             // Completed tasks will have the original rebalance proposal summary in their original response
-                                            statusJson.put(SUMMARY_KEY, ((JsonObject) Json.decodeValue(jsonUserTask.getString("originalResponse"))).getJsonObject(SUMMARY_KEY));
+                                            JsonObject originalResponse = (JsonObject) Json.decodeValue(jsonUserTask.getString(
+                                                    CruiseControlRebalanceKeys.ORIGINAL_RESPONSE.getKey()));
+                                            statusJson.put(CruiseControlRebalanceKeys.SUMMARY.getKey(),
+                                                    originalResponse.getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()));
+                                            // Extract the load before/after information for the brokers
+                                            statusJson.put(
+                                                    CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey(),
+                                                    originalResponse.getJsonObject(CruiseControlRebalanceKeys.LOAD_BEFORE_OPTIMIZATION.getKey()));
+                                            statusJson.put(
+                                                    CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey(),
+                                                    originalResponse.getJsonObject(CruiseControlRebalanceKeys.LOAD_AFTER_OPTIMIZATION.getKey()));
                                             break;
                                         case COMPLETED_WITH_ERROR:
                                             // Completed with error tasks will have "CompletedWithError" as their original response, which is not Json.
-                                            statusJson.put(SUMMARY_KEY, jsonUserTask.getString("originalResponse"));
+                                            statusJson.put(CruiseControlRebalanceKeys.SUMMARY.getKey(), jsonUserTask.getString(CruiseControlRebalanceKeys.ORIGINAL_RESPONSE.getKey()));
                                             break;
                                         default:
                                             throw new IllegalStateException("Unexpected user task status: " + taskStatus);

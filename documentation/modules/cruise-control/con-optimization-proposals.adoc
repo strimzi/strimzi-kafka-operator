@@ -34,7 +34,14 @@ Consider a shorter interval for fast changing clusters, although this increases 
 [discrete]
 == Contents of optimization proposals
 
-The following table describes the properties contained in an optimization proposal:
+An optimization proposal consists of two main sections: the _summary_ and the _broker load_.
+The summary provides an overview of the proposed cluster rebalance and indicates the scale of the changes involved.
+The broker load allows you to see the impact of the proposed rebalance on each of the brokers in the cluster.
+
+[discrete]
+=== Summary
+
+The following table explains the properties contained in the optimization proposal's summary section:
 
 .Properties contained in an optimization proposal
 [cols="35,65",options="header",stripes="none",separator=¦]
@@ -94,10 +101,46 @@ m¦excludedBrokersForReplicaMove
 
 |===
 
+
+[discrete]
+=== Broker load
+
+The broker load section lists all broker IDs and provides a number of metrics for each broker. 
+For each broker a number of metrics (described in the table below) are listed. 
+Each metric is linked to an array containing three values.
+The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
+
+The following table explains the properties contained in the optimization proposal's broker load section:
+
+[cols="35,65",options="header",stripes="none"]
+|======================================================================================================
+
+| JSON property               | Description
+
+m| leaders                     | The number of replicas on this broker that are partition leaders.
+
+m| replicas                    | The number of replicas on this broker.
+
+m| cpuPercentage               | The CPU utilization as a percentage of the defined capacity.
+
+m| diskUsedPercentage          | The disk utilization as a percentage of the defined capacity.
+
+m| diskUsedMB                  | The absolute disk usage in MB.
+
+m| networkOutRate              | The total network output rate for the broker.
+
+m| leaderNetworkInRate         | The network input rate for all partition leader replicas on this broker.
+
+m| followerNetworkInRate       | The network input rate for all follower replicas on this broker.
+
+m| potentialMaxNetworkOutRate  | The hypothetical maximum network output rate that would be realized if this broker became the leader of all the replicas it currently hosts.
+
+|======================================================================================================
+
 .Additional resources
 
 * xref:con-optimization-goals-{context}[] 
 
 * xref:proc-generating-optimization-proposals-{context}[] 
 
-* xref:proc-approving-optimization-proposal-{context}[] 
+* xref:proc-approving-optimization-proposal-{context}[]

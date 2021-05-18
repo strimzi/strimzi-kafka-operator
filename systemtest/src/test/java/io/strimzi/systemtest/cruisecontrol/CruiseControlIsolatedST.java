@@ -159,9 +159,11 @@ public class CruiseControlIsolatedST extends AbstractST {
 
         LOGGER.info("Checking status of KafkaRebalance");
         KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
-        assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic1));
-        assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic2));
-        assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), not(containsString(includedTopic)));
+        Map<String, Object> optimizationResult = kafkaRebalanceStatus.getOptimizationResult();
+        Map<String, Object> optimizationSummary = (Map<String, Object>) optimizationResult.get("summary");
+        assertThat(optimizationSummary.get("excludedTopics").toString(), containsString(excludedTopic1));
+        assertThat(optimizationSummary.get("excludedTopics").toString(), containsString(excludedTopic2));
+        assertThat(optimizationSummary.get("excludedTopics").toString(), not(containsString(includedTopic)));
 
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.approve);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Ready);
