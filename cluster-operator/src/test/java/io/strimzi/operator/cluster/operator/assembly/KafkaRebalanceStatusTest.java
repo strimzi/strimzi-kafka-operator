@@ -35,6 +35,7 @@ import static org.keycloak.util.JsonSerialization.mapper;
 public class KafkaRebalanceStatusTest {
 
     private static final int BROKER_ONE_KEY = 1;
+
     private static final String BROKER_LOAD_KEY = "brokerLoad";
     private static final String RESOURCE_NAME = "my-rebalance";
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
@@ -114,38 +115,35 @@ public class KafkaRebalanceStatusTest {
         JsonObject output = KafkaRebalanceAssemblyOperator.parseLoadStats(
                 loadBeforeArray, loadAfterArray);
 
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, LinkedHashMap<String, String>> outputMap = mapper.readValue(output.encodePrettily(), Map.class);
-            assertThat(outputMap, hasKey("1"));
+        assertThat(output.getMap(), hasKey("1"));
 
-            LinkedHashMap<String, LinkedHashMap> m = (LinkedHashMap) outputMap.get("1");
+        assertThat(output.getJsonObject("1").getMap(), hasKey(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey()));
 
-            assertThat(outputMap.get("1"), hasKey(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey()));
+        JsonObject replicas = output.getJsonObject("1").getJsonObject("replicas");
 
-            ArrayList<Integer> replicas = new ArrayList<>();
-            replicas.add((Integer) m.get("replicas").get("before"));
-            replicas.add((Integer) m.get("replicas").get("after"));
-            replicas.add((Integer) m.get("replicas").get("diff"));
+        ArrayList<Integer> replicasList = new ArrayList<>();
+        replicasList.add(replicas.getInteger("before"));
+        replicasList.add(replicas.getInteger("after"));
+        replicasList.add(replicas.getInteger("diff"));
 
-            assertThat(replicas.get(0), is(10));
-            assertThat(replicas.get(1), is(5));
-            assertThat(replicas.get(2), is(-5));
+        assertThat(replicasList.get(0), is(10));
+        assertThat(replicasList.get(1), is(5));
+        assertThat(replicasList.get(2), is(-5));
 
-            assertThat(outputMap.get("1"), hasKey(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey()));
+        assertThat(output.getJsonObject("1").getMap(), hasKey(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey()));
 
-            ArrayList<Double> cpu = new ArrayList<>();
-            cpu.add((Double) m.get("cpuPercentage").get("before"));
-            cpu.add((Double) m.get("cpuPercentage").get("after"));
-            cpu.add((Double) m.get("cpuPercentage").get("diff"));
+        JsonObject cpus = output.getJsonObject("1").getJsonObject("cpuPercentage");
 
-            assertThat(cpu.get(0), is(10.));
-            assertThat(cpu.get(1), is(20.0));
-            assertThat(cpu.get(2), is(10.0));
+        ArrayList<Double> cpu = new ArrayList<>();
 
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
+        cpu.add(cpus.getDouble("before"));
+        cpu.add(cpus.getDouble("after"));
+        cpu.add(cpus.getDouble("diff"));
+
+        assertThat(cpu.get(0), is(10.));
+        assertThat(cpu.get(1), is(20.0));
+        assertThat(cpu.get(2), is(10.0));
+
     }
 
     @Test
