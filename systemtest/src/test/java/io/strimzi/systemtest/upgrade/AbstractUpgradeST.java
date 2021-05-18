@@ -26,6 +26,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
+import io.strimzi.test.executor.ExecResult;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -133,9 +134,22 @@ public class AbstractUpgradeST extends AbstractST {
 
         // X -> 0.22.0 data
         JsonObject midStep = JsonObject.mapFrom(jsonData);
-        midStep.put("urlFrom", jsonData.getString("urlPrevVersion"));
-        midStep.put("fromVersion", jsonData.getString("prevVersion"));
-        midStep.put("fromExamples", jsonData.getString("prevVersionExamples"));
+        JsonObject afterMidStep = JsonObject.mapFrom(jsonData);
+        if (jsonData.getString("prevVersion").isEmpty()) {
+            midStep.put("urlFrom", jsonData.getString("urlFrom"));
+            midStep.put("fromVersion", jsonData.getString("fromVersion"));
+            midStep.put("fromExamples", jsonData.getString("fromExamples"));
+            afterMidStep.put("urlFrom", "HEAD");
+            afterMidStep.put("fromVersion", "HEAD");
+            afterMidStep.put("fromExamples", "HEAD");
+        } else {
+            midStep.put("urlFrom", jsonData.getString("urlPrevVersion"));
+            midStep.put("fromVersion", jsonData.getString("prevVersion"));
+            midStep.put("fromExamples", jsonData.getString("prevVersionExamples"));
+            afterMidStep.put("urlFrom", midStepUrl);
+            afterMidStep.put("fromVersion", midStepVersion);
+            afterMidStep.put("fromExamples", midStepExamples);
+        }
 
         midStep.put("urlTo", midStepUrl);
         midStep.put("toVersion", midStepVersion);
@@ -150,13 +164,6 @@ public class AbstractUpgradeST extends AbstractST {
         midStep.put("proceduresAfterOperatorUpgrade", midStepProcedures);
 
         steps.put("midStep", midStep);
-
-        // 0.22.0 -> HEAD
-        JsonObject afterMidStep = JsonObject.mapFrom(jsonData);
-        afterMidStep.put("urlFrom", midStepUrl);
-        afterMidStep.put("fromVersion", midStepVersion);
-        afterMidStep.put("fromExamples", midStepExamples);
-
         steps.put("toHEAD", afterMidStep);
 
         return steps;
@@ -405,9 +412,9 @@ public class AbstractUpgradeST extends AbstractST {
         // Modify + apply installation files
         copyModifyApply(coDir, namespace);
 
-        LOGGER.info("Waiting for CO deployment");
+        LOGGER.info("Waiting for {} deployment", ResourceManager.getCoDeploymentName());
         DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
-        LOGGER.info("CO ready");
+        LOGGER.info("{} is ready", ResourceManager.getCoDeploymentName());
 
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion)).contains(clusterName)) {
             // Deploy a Kafka cluster
@@ -557,14 +564,31 @@ public class AbstractUpgradeST extends AbstractST {
 
         Exec.exec("chmod", "+x", convertorPath);
 
-        LOGGER.info("Converting CRs");
+        LOGGER.info("Converting CRs ...");
         // run conversion of crs
-        Exec.exec(convertorPath, "cr", "-n=" + namespace);
-        // run crd-upgrade
-        LOGGER.info("Converting CRDs");
-        Exec.exec(convertorPath, "crd");
+        // CRs conversion may fail, because for 0.23 for example it's already done
+        // CRS conversion needs old versions of Strimzi CRDs, which are not available after 0.22
+        if (cmdKubeClient().exec(true, false, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.spec.versions}").out().trim().contains(Constants.V1ALPHA1)) {
+            ExecResult execResult = Exec.exec(convertorPath, "cr", "-n=" + namespace);
+            LOGGER.debug("CRs conversion STDOUT:");
+            LOGGER.debug(execResult.out());
+            LOGGER.debug("CRs conversion STDERR:");
+            LOGGER.debug(execResult.err());
+            LOGGER.info("CRs conversion done!");
 
-        waitForKafkaCRDChange();
+            // run crd-upgrade
+            LOGGER.info("Converting CRDs");
+            execResult = Exec.exec(convertorPath, "crd");
+            LOGGER.debug("CRDs conversion STDOUT:");
+            LOGGER.debug(execResult.out());
+            LOGGER.debug("CRDs conversion STDERR:");
+            LOGGER.debug(execResult.err());
+            LOGGER.info("CRDs conversion done!");
+
+            waitForKafkaCRDChange();
+        } else {
+            LOGGER.info("CRs and CRDs already have v1beta2 versions");
+        }
     }
 
     protected void waitForKafkaCRDChange() {
