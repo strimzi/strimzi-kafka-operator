@@ -25,9 +25,9 @@ public class LogCollector {
     private File eventsDir;
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    public LogCollector(KubeClient kubeClient, File logDir) {
+    public LogCollector(String namespaceName, KubeClient kubeClient, File logDir) {
         this.kubeClient = kubeClient;
-        this.namespace = kubeClient.getNamespace();
+        this.namespace = namespaceName;
         this.logDir = logDir;
         this.eventsDir = new File(logDir + "/events");
         this.configMapDir = new File(logDir + "/configMaps");
@@ -45,14 +45,14 @@ public class LogCollector {
         LOGGER.info("Collecting logs for Pod(s) in namespace {}", namespace);
 
         try {
-            kubeClient.listPods().forEach(pod -> {
+            kubeClient.listPods(namespace).forEach(pod -> {
                 String podName = pod.getMetadata().getName();
                 pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                    String log = kubeClient.getPodResource(podName).inContainer(containerStatus.getName()).getLog();
+                    String log = kubeClient.getPodResource(namespace, podName).inContainer(containerStatus.getName()).getLog();
                     // Write logs from containers to files
                     writeFile(logDir + "/" + "logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
                     // Describe all pods
-                    String describe = cmdKubeClient().describe("pod", podName);
+                    String describe = cmdKubeClient(namespace).describe("pod", podName);
                     writeFile(logDir + "/" + "describe-pod-" + podName + "-container-" + containerStatus.getName() + ".log", describe);
                 });
             });
@@ -63,9 +63,9 @@ public class LogCollector {
 
     public void collectEvents() {
         LOGGER.info("Collecting events in Namespace {}", namespace);
-        String events = cmdKubeClient().getEvents();
+        String events = cmdKubeClient(namespace).getEvents();
         // Write events to file
-        writeFile(eventsDir + "/" + "events-in-namespace" + kubeClient.getNamespace() + ".log", events);
+        writeFile(eventsDir + "/" + "events-in-namespace" + namespace + ".log", events);
     }
 
     public void collectConfigMaps() {
@@ -77,28 +77,28 @@ public class LogCollector {
 
     public void collectDeployments() {
         LOGGER.info("Collecting Deployments in Namespace {}", namespace);
-        writeFile(logDir + "/deployments.log", cmdKubeClient().getResourcesAsYaml(Constants.DEPLOYMENT));
+        writeFile(logDir + "/deployments.log", cmdKubeClient(namespace).getResourcesAsYaml(Constants.DEPLOYMENT));
     }
 
     public void collectStatefulSets() {
         LOGGER.info("Collecting StatefulSets in Namespace {}", namespace);
-        writeFile(logDir + "/statefulsets.log", cmdKubeClient().getResourcesAsYaml(Constants.STATEFUL_SET));
+        writeFile(logDir + "/statefulsets.log", cmdKubeClient(namespace).getResourcesAsYaml(Constants.STATEFUL_SET));
     }
 
     public void collectReplicaSets() {
         LOGGER.info("Collecting ReplicaSet in Namespace {}", namespace);
-        writeFile(logDir + "/replicasets.log", cmdKubeClient().getResourcesAsYaml("replicaset"));
+        writeFile(logDir + "/replicasets.log", cmdKubeClient(namespace).getResourcesAsYaml("replicaset"));
     }
 
     public void collectStrimzi() {
         LOGGER.info("Collecting Strimzi in Namespace {}", namespace);
-        String crData = cmdKubeClient().exec(false, "get", "strimzi", "-o", "yaml", "-n", namespace).out();
+        String crData = cmdKubeClient(namespace).exec(false, "get", "strimzi", "-o", "yaml", "-n", namespace).out();
         writeFile(logDir + "/strimzi-custom-resources.log", crData);
     }
 
     public void collectClusterInfo() {
         LOGGER.info("Collecting cluster status");
-        String nodes = cmdKubeClient().exec(false, "describe", "nodes").out();
+        String nodes = cmdKubeClient(namespace).exec(false, "describe", "nodes").out();
         writeFile(logDir + "/cluster-status.log", nodes);
     }
 }
