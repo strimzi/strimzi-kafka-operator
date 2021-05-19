@@ -16,16 +16,13 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Specialization of {@link StatefulSetOperator} for StatefulSets of Kafka brokers
  */
 public class KafkaSetOperator extends StatefulSetOperator {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaSetOperator.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaSetOperator.class);
 
     private final AdminClientProvider adminClientProvider;
 

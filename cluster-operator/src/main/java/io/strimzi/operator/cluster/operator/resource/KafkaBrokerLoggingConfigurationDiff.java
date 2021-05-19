@@ -12,8 +12,6 @@ import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -26,8 +24,7 @@ import java.util.Map;
 
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
     private final Reconciliation reconciliation;
 

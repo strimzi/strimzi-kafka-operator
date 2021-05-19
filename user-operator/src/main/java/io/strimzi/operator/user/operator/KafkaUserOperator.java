@@ -30,8 +30,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -46,8 +44,7 @@ import java.util.stream.Collectors;
  */
 public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec, KafkaUserStatus,
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList>> {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaUserOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaUserOperator.class.getName());
 
     private final SecretOperator secretOperations;
     private final SimpleAclOperator aclOperations;

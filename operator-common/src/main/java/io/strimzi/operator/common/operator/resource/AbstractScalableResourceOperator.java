@@ -13,9 +13,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 /**
  * An {@link AbstractResourceOperator} that can be scaled up and down in addition to the usual operations.
@@ -32,8 +29,6 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
 
     public static final String ANNO_STRIMZI_IO_GENERATION = Annotations.STRIMZI_DOMAIN + "generation";
     public static final String ANNO_STRIMZI_IO_DELETE_POD_AND_PVC = Annotations.STRIMZI_DOMAIN + "delete-pod-and-pvc";
-
-    private final Logger log = LogManager.getLogger(getClass());
 
     /**
      * Constructor

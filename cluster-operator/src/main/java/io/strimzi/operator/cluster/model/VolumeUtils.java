@@ -46,7 +46,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
  */
 public class VolumeUtils {
     protected static final Logger LOGGER = LogManager.getLogger(VolumeUtils.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(VolumeUtils.class.getName());
     private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
 
     /**

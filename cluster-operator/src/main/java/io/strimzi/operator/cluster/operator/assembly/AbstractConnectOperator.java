@@ -102,7 +102,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         extends AbstractOperator<T, P, S, CrdOperator<C, T, L>> {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractConnectOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
@@ -296,7 +296,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                         });
                             } else {
                                 updateStatus(new Reconciliation("connector-watch", connectOperator.kind(),
-                                        kafkaConnector.getMetadata().getNamespace(), connectName),
+                                        kafkaConnector.getMetadata().getNamespace(), null),
                                         new InvalidResourceException("Resource lacks label '"
                                                 + Labels.STRIMZI_CLUSTER_LABEL
                                                 + "': No connect cluster in which to create this connector."),

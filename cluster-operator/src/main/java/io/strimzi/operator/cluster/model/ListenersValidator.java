@@ -29,7 +29,7 @@ import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAu
  */
 public class ListenersValidator {
     protected static final Logger LOGGER = LogManager.getLogger(ListenersValidator.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(ListenersValidator.class.getName());
     private final static Pattern LISTENER_NAME_PATTERN = Pattern.compile(GenericKafkaListener.LISTENER_NAME_REGEX);
     public final static List<Integer> FORBIDDEN_PORTS = List.of(9404, 9999);
     public final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;

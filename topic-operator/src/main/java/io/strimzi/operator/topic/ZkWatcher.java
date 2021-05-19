@@ -9,8 +9,6 @@ import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,8 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class ZkWatcher {
 
-    protected Logger log = LogManager.getLogger(getClass());
-    protected ReconciliationLogger reconciliationLogger = ReconciliationLogger.create(log);
+    protected ReconciliationLogger reconciliationLogger = ReconciliationLogger.create(getClass());
 
     protected final TopicOperator topicOperator;
     private volatile ZkWatcherState state = ZkWatcherState.NOT_STARTED;

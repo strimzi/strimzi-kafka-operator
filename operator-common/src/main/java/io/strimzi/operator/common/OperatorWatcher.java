@@ -7,8 +7,6 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.function.Consumer;
 
@@ -20,8 +18,7 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     private final String namespace;
     private final Consumer<WatcherException> onClose;
     private Operator operator;
-    private static final Logger LOGGER = LogManager.getLogger(OperatorWatcher.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(OperatorWatcher.class);
 
     OperatorWatcher(Operator operator, String namespace, Consumer<WatcherException> onClose) {
         this.namespace = namespace;

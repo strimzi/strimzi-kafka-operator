@@ -112,7 +112,7 @@ public abstract class AbstractModel {
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
 
     protected static final Logger LOGGER = LogManager.getLogger(AbstractModel.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(AbstractModel.class.getName());
     protected static final String LOG4J2_MONITOR_INTERVAL = "30";
 
     protected static final String DEFAULT_JVM_XMS = "128M";

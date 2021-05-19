@@ -63,7 +63,7 @@ public class ModelUtils {
     private ModelUtils() {}
 
     protected static final Logger LOGGER = LogManager.getLogger(ModelUtils.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(ModelUtils.class.getName());
     public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**

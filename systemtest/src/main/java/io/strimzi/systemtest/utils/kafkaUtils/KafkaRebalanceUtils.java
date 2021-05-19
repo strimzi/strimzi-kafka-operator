@@ -17,8 +17,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,8 +26,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaRebalanceUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaRebalanceUtils.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaRebalanceUtils.class);
 
     private KafkaRebalanceUtils() {}
 

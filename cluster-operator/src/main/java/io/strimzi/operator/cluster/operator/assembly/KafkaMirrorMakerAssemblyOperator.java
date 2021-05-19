@@ -31,8 +31,6 @@ import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,8 +43,7 @@ import java.util.Map;
  */
 public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>, KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerAssemblyOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaMirrorMakerAssemblyOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;

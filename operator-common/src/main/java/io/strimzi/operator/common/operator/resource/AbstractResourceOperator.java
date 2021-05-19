@@ -52,7 +52,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
                     "|/status)$");
 
     protected final Logger log = LogManager.getLogger(getClass());
-    protected final ReconciliationLogger reconciliationLogger = ReconciliationLogger.create(log);
+    protected final ReconciliationLogger reconciliationLogger = ReconciliationLogger.create(getClass());
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;

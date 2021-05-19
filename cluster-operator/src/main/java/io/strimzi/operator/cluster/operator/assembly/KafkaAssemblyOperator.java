@@ -159,7 +159,7 @@ import static java.util.Collections.emptyMap;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity", "checkstyle:JavaNCSS"})
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, Resource<Kafka>, KafkaSpec, KafkaStatus> {
     private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaAssemblyOperator.class.getName());
 
     private final long operationTimeoutMs;
     private final String operatorNamespace;

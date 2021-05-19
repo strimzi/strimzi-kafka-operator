@@ -8,8 +8,6 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.OrderedProperties;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,8 +20,7 @@ import static java.util.Arrays.asList;
  * Abstract class for processing and generating configuration passed by the user.
  */
 public abstract class AbstractConfiguration {
-    private static final Logger LOGGER = LogManager.getLogger(AbstractConfiguration.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(AbstractConfiguration.class.getName());
 
     private final OrderedProperties options = new OrderedProperties();
 

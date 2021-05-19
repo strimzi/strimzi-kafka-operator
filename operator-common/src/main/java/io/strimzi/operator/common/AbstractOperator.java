@@ -74,7 +74,7 @@ public abstract class AbstractOperator<
             implements Operator {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractOperator.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(AbstractOperator.class);
 
     private static final long PROGRESS_WARNING = 60_000L;
     protected static final int LOCK_TIMEOUT_MS = 10000;

@@ -61,8 +61,6 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import static java.util.Collections.singletonList;
 
@@ -107,8 +105,7 @@ import static java.util.Collections.singletonList;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ParameterNumber"})
 public class KafkaRoller {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaRoller.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaRoller.class);
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;

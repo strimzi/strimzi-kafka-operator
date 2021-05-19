@@ -15,8 +15,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +26,7 @@ import java.util.function.Function;
  */
 public class ZookeeperSetOperator extends StatefulSetOperator {
 
-    private static final Logger LOGGER = LogManager.getLogger(ZookeeperSetOperator.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(ZookeeperSetOperator.class);
     private final ZookeeperLeaderFinder leaderFinder;
 
     /**

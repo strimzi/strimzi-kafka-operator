@@ -36,7 +36,7 @@ import static java.lang.Integer.parseInt;
 class KafkaAvailability {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaAvailability.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaAvailability.class.getName());
 
     private final Admin ac;
 
