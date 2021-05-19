@@ -208,9 +208,9 @@ public class ConnectorMockTest {
             return Future.succeededFuture(Collections.singletonList(connectorPlugin));
         });
         when(api.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
-        when(api.getConnectorConfig(any(), any(), anyInt(), any())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(1);
-            String connectorName = invocation.getArgument(3);
+        when(api.getConnectorConfig(any(), any(), any(), anyInt(), any())).thenAnswer(invocation -> {
+            String host = invocation.getArgument(2);
+            String connectorName = invocation.getArgument(4);
             ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
             if (connectorState != null) {
                 Map<String, String> map = new HashMap<>();
@@ -226,8 +226,8 @@ public class ConnectorMockTest {
             }
         });
         when(api.getConnector(any(), any(), anyInt(), any())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(0);
-            String connectorName = invocation.getArgument(2);
+            String host = invocation.getArgument(1);
+            String connectorName = invocation.getArgument(3);
             ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
             if (connectorState == null) {
                 return Future.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s", connectorName), 404, "Not Found", ""));
@@ -238,31 +238,31 @@ public class ConnectorMockTest {
                     "tasks", emptyMap()));
         });
         when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenAnswer(invocation -> {
-            LOGGER.info((String) invocation.getArgument(0) + invocation.getArgument(1) + invocation.getArgument(2) + invocation.getArgument(3));
-            String host = invocation.getArgument(0);
+            LOGGER.info((String) invocation.getArgument(1) + invocation.getArgument(2) + invocation.getArgument(3) + invocation.getArgument(4));
+            String host = invocation.getArgument(1);
             LOGGER.info("###### create " + host);
-            String connectorName = invocation.getArgument(2);
-            JsonObject connectorConfig = invocation.getArgument(3);
+            String connectorName = invocation.getArgument(3);
+            JsonObject connectorConfig = invocation.getArgument(4);
             runningConnectors.putIfAbsent(key(host, connectorName), new ConnectorState(false, connectorConfig));
             return Future.succeededFuture();
         });
         when(api.delete(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(0);
+            String host = invocation.getArgument(1);
             LOGGER.info("###### delete " + host);
-            String connectorName = invocation.getArgument(2);
+            String connectorName = invocation.getArgument(3);
             ConnectorState remove = runningConnectors.remove(key(host, connectorName));
             return remove != null ? Future.succeededFuture() : Future.failedFuture("No such connector " + connectorName);
         });
         when(api.statusWithBackOff(any(), any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(1);
+            String host = invocation.getArgument(2);
             LOGGER.info("###### status " + host);
-            String connectorName = invocation.getArgument(3);
+            String connectorName = invocation.getArgument(4);
             return kafkaConnectApiStatusMock(host, connectorName);
         });
         when(api.status(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(0);
+            String host = invocation.getArgument(1);
             LOGGER.info("###### status " + host);
-            String connectorName = invocation.getArgument(2);
+            String connectorName = invocation.getArgument(3);
             return kafkaConnectApiStatusMock(host, connectorName);
         });
         when(api.pause(any(), anyInt(), anyString())).thenAnswer(invocation -> {
@@ -308,8 +308,8 @@ public class ConnectorMockTest {
             return Future.succeededFuture();
         });
         when(api.getConnectorTopics(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(0);
-            String connectorName = invocation.getArgument(2);
+            String host = invocation.getArgument(1);
+            String connectorName = invocation.getArgument(3);
             ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
             if (connectorState == null) {
                 return Future.failedFuture(new ConnectRestException("GET", String.format("/connectors/%s/topics", connectorName), 404, "Not Found", ""));

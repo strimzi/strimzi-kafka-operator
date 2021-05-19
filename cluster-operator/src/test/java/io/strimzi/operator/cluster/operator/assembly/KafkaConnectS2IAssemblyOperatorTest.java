@@ -195,7 +195,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map annotations = new HashMap();
                 annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
-                assertThat(dc, is(connect.generateDeploymentConfig(any(), annotations, true, null, null)));
+                assertThat(dc, is(connect.generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), annotations, true, null, null)));
 
                 // Verify Build Config
                 List<BuildConfig> capturedBc = bcCaptor.getAllValues();
@@ -292,7 +292,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectS2IOps.updateStatusAsync(any(), any(KafkaConnectS2I.class))).thenReturn(Future.succeededFuture());
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(null));
         when(mockServiceOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateService(new Reconciliation("test", "kind", "namespace", "name")));
-        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(any(), new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockIsOps.get(kcs2iNamespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()))).thenReturn(connect.generateSourceImageStream());
@@ -415,7 +415,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectS2IOps.updateStatusAsync(any(), any(KafkaConnectS2I.class))).thenReturn(Future.succeededFuture());
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(null));
         when(mockServiceOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateService(new Reconciliation("test", "kind", "namespace", "name")));
-        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(any(), new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockIsOps.get(kcs2iNamespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()))).thenReturn(connect.generateSourceImageStream());
@@ -514,7 +514,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
                 Map annotations = new HashMap();
                 annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
-                assertThat(dc, is(compareTo.generateDeploymentConfig(any(), annotations, true, null, null)));
+                assertThat(dc, is(compareTo.generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), annotations, true, null, null)));
 
                 // Verify Build Config
                 List<BuildConfig> capturedBc = bcCaptor.getAllValues();
@@ -571,7 +571,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
 
         when(mockConnectS2IOps.get(kcs2iNamespace, kcs2iName)).thenReturn(kcs2i);
         when(mockServiceOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateService(new Reconciliation("test", "kind", "namespace", "name")));
-        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(any(), new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockIsOps.get(kcs2iNamespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()))).thenReturn(connect.generateSourceImageStream());
@@ -658,7 +658,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(null));
         when(mockConnectS2IOps.updateStatusAsync(any(), any(KafkaConnectS2I.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateService(new Reconciliation("test", "kind", "namespace", "name")));
-        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(any(), new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockIsOps.get(kcs2iNamespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()))).thenReturn(connect.generateSourceImageStream());
@@ -672,10 +672,10 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockDcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), kcs2iNamespace, connect.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(any(), eq(kcs2iNamespace), eq(connect.getName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), kcs2iNamespace, connect.getName(), scaleTo);
+                .when(mockDcOps).scaleDown(any(), eq(kcs2iNamespace), eq(connect.getName()), eq(scaleTo));
 
         when(mockConnectS2IOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnectS2I())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -702,7 +702,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2iNamespace, kcs2iName), kcs2i)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), kcs2iNamespace, connect.getName(), scaleTo);
+                verify(mockDcOps).scaleUp(any(), eq(kcs2iNamespace), eq(connect.getName()), eq(scaleTo));
                 async.flag();
             })));
     }
@@ -737,7 +737,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(null));
         when(mockConnectS2IOps.updateStatusAsync(any(), any(KafkaConnectS2I.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateService(new Reconciliation("test", "kind", "namespace", "name")));
-        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(any(), new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.get(kcs2iNamespace, connect.getName())).thenReturn(connect.generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null));
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockIsOps.get(kcs2iNamespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()))).thenReturn(connect.generateSourceImageStream());
@@ -752,10 +752,10 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockDcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), kcs2iNamespace, connect.getName(), 2);
+                .when(mockDcOps).scaleUp(any(), eq(kcs2iNamespace), eq(connect.getName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), kcs2iNamespace, connect.getName(), scaleTo);
+                .when(mockDcOps).scaleDown(any(), eq(kcs2iNamespace), eq(connect.getName()), eq(scaleTo));
 
         when(mockConnectS2IOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnectS2I())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -783,7 +783,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnectS2I.RESOURCE_KIND, kcs2iNamespace, kcs2iName), kcs2i)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify ScaleDown
-                verify(mockDcOps).scaleDown(any(), kcs2iNamespace, connect.getName(), scaleTo);
+                verify(mockDcOps).scaleDown(any(), eq(kcs2iNamespace), eq(connect.getName()), eq(scaleTo));
                 async.flag();
             })));
     }
@@ -809,12 +809,12 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         // providing the list of ALL DeploymentConfigs for all the Kafka Connect S2I clusters
         Labels newLabels = Labels.forStrimziKind(KafkaConnectS2I.RESOURCE_KIND);
         when(mockDcOps.list(eq(kcs2iNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateDeploymentConfig(any(), new HashMap<String, String>(), true, null, null)));
+                asList(KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null)));
 
         // providing the list DeploymentConfigs for already "existing" Kafka Connect S2I clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(kcs2iNamespace), eq(barLabels))).thenReturn(
-                asList(KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateDeploymentConfig(any(), new HashMap<String, String>(), true, null, null))
+                asList(KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), new HashMap<String, String>(), true, null, null))
         );
         when(mockDcOps.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -992,7 +992,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map annotations = new HashMap();
                 annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
-                assertThat(dc, is(connect.generateDeploymentConfig(any(), annotations, true, null, null)));
+                assertThat(dc, is(connect.generateDeploymentConfig(new Reconciliation("test", "kind", "namespace", "name"), annotations, true, null, null)));
 
                 // Verify Build Config
                 List<BuildConfig> capturedBc = bcCaptor.getAllValues();

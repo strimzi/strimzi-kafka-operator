@@ -484,10 +484,10 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), kbNamespace, bridge.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), kbNamespace, bridge.getName(), scaleTo);
+                .when(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
 
         when(mockBridgeOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaBridge())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -499,7 +499,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), kb)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), kbNamespace, bridge.getName(), scaleTo);
+                verify(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
 
                 async.flag();
             })));
@@ -544,10 +544,10 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), kbNamespace, bridge.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), kbNamespace, bridge.getName(), scaleTo);
+                .when(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
 
         when(mockBridgeOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaBridge())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -559,8 +559,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), scaledDownCluster)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), kbNamespace, bridge.getName(), scaleTo);
-                verify(mockDcOps).scaleDown(any(), kbNamespace, bridge.getName(), scaleTo);
+                verify(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
+                verify(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
                 async.flag();
             })));
     }

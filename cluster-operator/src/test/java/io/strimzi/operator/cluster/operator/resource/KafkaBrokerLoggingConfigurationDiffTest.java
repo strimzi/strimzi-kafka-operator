@@ -19,7 +19,6 @@ import java.util.Map;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 
 public class KafkaBrokerLoggingConfigurationDiffTest {
 
@@ -54,7 +53,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
 
     @Test
     public void testReplaceRootLogger() {
-        KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(any(), getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), brokerId);
+        KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(new Reconciliation("test", "kind", "namespace", "name"), getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), brokerId);
         assertThat(klcd.getDiffSize(), is(0));
     }
 
@@ -66,7 +65,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
         // Prepare currentConfig
         Config currentConfig = getRealisticConfig();
 
-        KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(any(), currentConfig, desiredConfig, brokerId);
+        KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(new Reconciliation("test", "kind", "namespace", "name"), currentConfig, desiredConfig, brokerId);
         assertThat(diff.getLoggingDiff(), is(getRealisticConfigDiff()));
     }
 

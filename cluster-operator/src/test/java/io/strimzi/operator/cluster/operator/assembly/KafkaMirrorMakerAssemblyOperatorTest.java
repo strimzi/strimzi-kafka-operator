@@ -472,10 +472,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockDcOps.waitForObserved(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), kmmNamespace, mirror.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), kmmNamespace, mirror.getName(), scaleTo);
+                .when(mockDcOps).scaleDown(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
 
         when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker())));
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
@@ -493,7 +493,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), kmmNamespace, mirror.getName(), scaleTo);
+                verify(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
                 async.flag();
             })));
     }
@@ -535,10 +535,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockDcOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), kmmNamespace, mirror.getName(), scaleTo);
+                .when(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), kmmNamespace, mirror.getName(), scaleTo);
+                .when(mockDcOps).scaleDown(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
 
         when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -554,7 +554,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), kmmNamespace, mirror.getName(), scaleTo);
+                verify(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
                 async.flag();
             })));
     }

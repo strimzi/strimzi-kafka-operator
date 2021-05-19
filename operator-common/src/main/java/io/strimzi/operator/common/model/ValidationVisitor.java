@@ -10,6 +10,7 @@ import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import org.apache.logging.log4j.Logger;
 
@@ -22,6 +23,7 @@ import java.util.Set;
 
 public class ValidationVisitor implements ResourceVisitor.Visitor {
     private final Logger logger;
+    private final ReconciliationLogger reconciliationLogger;
     private final HasMetadata resource;
     private final Set<Condition> warningConditions;
     private final String transitionTime = StatusUtils.iso8601Now();
@@ -29,6 +31,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
     public ValidationVisitor(HasMetadata resource, Logger logger, Set<Condition> warningConditions) {
         this.resource = resource;
         this.logger = logger;
+        this.reconciliationLogger = new ReconciliationLogger(logger);
         this.warningConditions = warningConditions;
     }
 

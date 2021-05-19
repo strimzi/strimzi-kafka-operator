@@ -601,8 +601,8 @@ public class KafkaAssemblyOperatorTest {
         }
 
         when(mockDepOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
-            String name = invocation.getArgument(1);
-            Deployment desired = invocation.getArgument(2);
+            String name = invocation.getArgument(2);
+            Deployment desired = invocation.getArgument(3);
             if (desired != null) {
                 if (name.contains("operator")) {
                     if (entityOperator != null) {
@@ -640,7 +640,7 @@ public class KafkaAssemblyOperatorTest {
         );
 
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
-            Secret desired = invocation.getArgument(2);
+            Secret desired = invocation.getArgument(3);
             if (desired != null) {
                 secretsMap.put(desired.getMetadata().getName(), desired);
             }
@@ -1233,11 +1233,11 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock StatefulSet patch
         when(mockZsOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
-            StatefulSet sts = invocation.getArgument(2);
+            StatefulSet sts = invocation.getArgument(3);
             return Future.succeededFuture(ReconcileResult.patched(sts));
         });
         when(mockKsOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
-            StatefulSet sts = invocation.getArgument(2);
+            StatefulSet sts = invocation.getArgument(3);
             return Future.succeededFuture(ReconcileResult.patched(sts));
         });
         when(mockZsOps.maybeRollingUpdate(any(), any(), any(Function.class))).thenReturn(Future.succeededFuture());
