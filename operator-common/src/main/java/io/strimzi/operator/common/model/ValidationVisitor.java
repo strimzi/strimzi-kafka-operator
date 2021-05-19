@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
-import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
@@ -23,21 +22,15 @@ import java.util.Map;
 import java.util.Set;
 
 public class ValidationVisitor implements ResourceVisitor.Visitor {
-    private final Logger logger;
     private final ReconciliationLogger reconciliationLogger;
     private final HasMetadata resource;
     private final Set<Condition> warningConditions;
     private final String transitionTime = StatusUtils.iso8601Now();
 
-    public ValidationVisitor(HasMetadata resource, Logger logger, Set<Condition> warningConditions) {
+    public ValidationVisitor(HasMetadata resource, ReconciliationLogger logger, Set<Condition> warningConditions) {
         this.resource = resource;
-        this.logger = logger;
-        this.reconciliationLogger = ReconciliationLogger.create(ValidationVisitor.class);
+        this.reconciliationLogger = logger;
         this.warningConditions = warningConditions;
-    }
-
-    Reconciliation decontext() {
-        return new Reconciliation("trigger", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 
     <M extends AnnotatedElement & Member> boolean isPresent(M member,

@@ -20,7 +20,7 @@ import org.apache.logging.log4j.util.Supplier;
  * the OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE and ALL custom log levels.
  * <p>Compatible with Log4j 2.6 or higher.</p>
  */
-public final class ReconciliationLogger implements Serializable {
+public class ReconciliationLogger implements Serializable {
     private static final long serialVersionUID = 258810740149174L;
     private final ExtendedLoggerWrapper logger;
 
@@ -34,7 +34,7 @@ public final class ReconciliationLogger implements Serializable {
     private static final Level TRACE = Level.forName("TRACE", 600);
     private static final Level ALL = Level.forName("ALL", 10000);
 
-    private ReconciliationLogger(final Logger logger) {
+    protected ReconciliationLogger(final Logger logger) {
         this.logger = new ExtendedLoggerWrapper((AbstractLogger) logger, logger.getName(), logger.getMessageFactory());
     }
 

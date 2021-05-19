@@ -74,7 +74,8 @@ public class OperatorMetricsTest {
                 return Future.succeededFuture();
             }
 
-            public Set<Condition> validate(CustomResource resource) {
+            @Override
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 return emptySet();
             }
 

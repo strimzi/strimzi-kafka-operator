@@ -4,12 +4,15 @@
  */
 package io.strimzi.test.logging;
 
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.core.Logger;
-import org.apache.logging.log4j.message.FormattedMessageFactory;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.AbstractLogger;
+import org.apache.logging.log4j.spi.ExtendedLoggerWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +21,7 @@ import java.util.function.Predicate;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class TestLogger extends AbstractLogger {
+public class TestLogger extends ReconciliationLogger {
     public static class LoggedMessage {
         private final Level level;
         private final Marker marker;
@@ -29,6 +32,13 @@ public class TestLogger extends AbstractLogger {
             this.level = level;
             this.marker = marker;
             this.formattedMessage = message.getFormattedMessage();
+            this.throwable = throwable;
+        }
+
+        public LoggedMessage(Level level, Marker marker, String msg, Throwable throwable) {
+            this.level = level;
+            this.marker = marker;
+            this.formattedMessage = msg;
             this.throwable = throwable;
         }
 
@@ -49,13 +59,17 @@ public class TestLogger extends AbstractLogger {
         }
     }
 
-    private final Logger delegate;
+    private TestLogger(final Logger logger) {
+        super(new ExtendedLoggerWrapper((AbstractLogger) logger, logger.getName(), logger.getMessageFactory()));
+    }
+
+    public static TestLogger create(final Class<?> loggerName) {
+        final Logger wrapped = LogManager.getLogger(loggerName);
+        return new TestLogger(wrapped);
+    }
+
     private List<LoggedMessage> loggedMessages = new ArrayList<>();
 
-    public TestLogger(Logger delegate) {
-        super("test", new FormattedMessageFactory());
-        this.delegate = delegate;
-    }
 
     public List<LoggedMessage> getLoggedMessages() {
         return loggedMessages;
@@ -69,96 +83,19 @@ public class TestLogger extends AbstractLogger {
         assertThat("Unexpected message was logged", getLoggedMessages().stream().noneMatch(test), is(true));
     }
 
+
     @Override
-    public Level getLevel() {
-        return Level.TRACE;
+    public void warn(Reconciliation reconciliation, String msg) {
+        loggedMessages.add(new LoggedMessage(Level.WARN, null, reconciliation.toString() + ": " + msg, null));
     }
 
     @Override
-    public boolean isEnabled(Level level, Marker marker, Message message, Throwable throwable) {
-        return true;
+    public void debug(Reconciliation reconciliation, String msg) {
+        loggedMessages.add(new LoggedMessage(Level.DEBUG, null, reconciliation.toString() + ": " + msg, null));
     }
 
     @Override
-    public boolean isEnabled(Level level, Marker marker, CharSequence charSequence, Throwable throwable) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, Object o, Throwable throwable) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Throwable throwable) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object... objects) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5, Object o6) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5, Object o6, Object o7) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5, Object o6, Object o7, Object o8) {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5, Object o6, Object o7, Object o8, Object o9) {
-        return true;
-    }
-
-    @Override
-    public void logMessage(String s, Level level, Marker marker, Message message, Throwable throwable) {
-        if (delegate != null) {
-            delegate.logMessage(s, level, marker, message, throwable);
-        }
-        loggedMessages.add(new LoggedMessage(level, marker, message, throwable));
+    public void info(Reconciliation reconciliation, String msg) {
+        loggedMessages.add(new LoggedMessage(Level.INFO, null, reconciliation.toString() + ": " + msg, null));
     }
 }

@@ -440,7 +440,7 @@ public abstract class AbstractOperator<
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0);
 
-            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, LOGGER, warningConditions));
+            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, RECONCILIATION_LOGGER, warningConditions));
 
             return warningConditions;
         }
