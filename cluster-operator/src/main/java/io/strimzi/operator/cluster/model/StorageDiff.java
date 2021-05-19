@@ -32,7 +32,7 @@ import static java.util.Objects.isNull;
  */
 public class StorageDiff extends AbstractJsonDiff {
     private static final Logger LOGGER = LogManager.getLogger(StorageDiff.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/deleteClaim|/)$");

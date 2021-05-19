@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 public class KafkaSetOperator extends StatefulSetOperator {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaSetOperator.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final AdminClientProvider adminClientProvider;
 

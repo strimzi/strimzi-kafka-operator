@@ -29,7 +29,7 @@ import java.util.function.Function;
 public class ZookeeperSetOperator extends StatefulSetOperator {
 
     private static final Logger LOGGER = LogManager.getLogger(ZookeeperSetOperator.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
     private final ZookeeperLeaderFinder leaderFinder;
 
     /**

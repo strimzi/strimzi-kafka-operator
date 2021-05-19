@@ -66,7 +66,7 @@ import static java.util.Collections.singletonMap;
 public abstract class Ca {
 
     protected static final Logger LOGGER = LogManager.getLogger(Ca.class);
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
             .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)

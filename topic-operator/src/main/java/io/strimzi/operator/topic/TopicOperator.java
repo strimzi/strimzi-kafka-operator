@@ -58,7 +58,7 @@ import static java.util.Collections.singletonList;
 class TopicOperator {
 
     private final static Logger LOGGER = LogManager.getLogger(TopicOperator.class);
-    private final static ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private final static ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final static Logger EVENT_LOGGER = LogManager.getLogger("Event");
     public static final String METRICS_PREFIX = "strimzi.";

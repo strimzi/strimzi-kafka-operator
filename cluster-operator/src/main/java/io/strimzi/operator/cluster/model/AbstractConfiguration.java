@@ -23,7 +23,7 @@ import static java.util.Arrays.asList;
  */
 public abstract class AbstractConfiguration {
     private static final Logger LOGGER = LogManager.getLogger(AbstractConfiguration.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final OrderedProperties options = new OrderedProperties();
 

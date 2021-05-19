@@ -46,7 +46,7 @@ import java.util.Map;
 public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>, KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerAssemblyOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;

@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 
 public class Util {
     private static final Logger LOGGER = LogManager.getLogger(Util.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
         Promise<T> result = Promise.promise();

@@ -24,7 +24,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 public class StatefulSetDiff extends AbstractJsonDiff {
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetDiff.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private static final String SHORTENED_STRIMZI_DOMAIN = Annotations.STRIMZI_DOMAIN.substring(0, Annotations.STRIMZI_DOMAIN.length() - 1);
 

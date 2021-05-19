@@ -48,7 +48,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     private static final int INIT_GENERATION = 0;
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetOperator.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
     protected final PodOperator podOperations;
     private final PvcOperator pvcOperations;
     protected final long operationTimeoutMs;

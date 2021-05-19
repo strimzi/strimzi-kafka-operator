@@ -29,7 +29,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaRebalanceUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaRebalanceUtils.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private KafkaRebalanceUtils() {}
 

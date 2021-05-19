@@ -129,7 +129,7 @@ public class KafkaConnectorIT {
                 return Future.succeededFuture(Crds.kafkaConnectorOperation(client)
                         .inNamespace(namespace)
                         .withName(connectorName)
-                        .patch(invocation.getArgument(0)));
+                        .patch(invocation.getArgument(1)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }

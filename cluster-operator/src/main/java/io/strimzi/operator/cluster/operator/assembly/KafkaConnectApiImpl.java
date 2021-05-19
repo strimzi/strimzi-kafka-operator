@@ -42,7 +42,7 @@ import static java.util.Arrays.asList;
 @SuppressWarnings({"deprecation"})
 class KafkaConnectApiImpl implements KafkaConnectApi {
     private static final Logger LOGGER = LogManager.getLogger(KafkaConnectApiImpl.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
     public static final TypeReference<Map<String, Object>> TREE_TYPE = new TypeReference<Map<String, Object>>() {
     };
     public static final TypeReference<Map<String, String>> MAP_OF_STRINGS = new TypeReference<Map<String, String>>() {

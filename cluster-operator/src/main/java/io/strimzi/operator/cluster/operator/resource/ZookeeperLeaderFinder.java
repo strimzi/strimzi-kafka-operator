@@ -46,7 +46,7 @@ import static java.lang.Integer.parseInt;
 public class ZookeeperLeaderFinder {
 
     private static final Logger LOGGER = LogManager.getLogger(ZookeeperLeaderFinder.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private static final Pattern LEADER_MODE_PATTERN = Pattern.compile("^Mode: leader$", Pattern.MULTILINE);
 

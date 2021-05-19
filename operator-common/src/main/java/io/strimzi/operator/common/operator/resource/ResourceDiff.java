@@ -18,7 +18,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
     private static final Logger LOGGER = LogManager.getLogger(ResourceDiff.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final boolean isEmpty;
 

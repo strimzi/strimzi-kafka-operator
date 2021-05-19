@@ -34,7 +34,7 @@ import java.util.function.Function;
  */
 public class ZookeeperScaler implements AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(ZookeeperScaler.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final Vertx vertx;
     private final ZooKeeperAdminProvider zooAdminProvider;

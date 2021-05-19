@@ -44,7 +44,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaBrokerConfigurationDiff.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final Reconciliation reconciliation;
     private final Collection<AlterConfigOp> diff;

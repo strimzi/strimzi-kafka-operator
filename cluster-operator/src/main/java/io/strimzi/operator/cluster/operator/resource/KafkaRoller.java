@@ -108,7 +108,7 @@ import static java.util.Collections.singletonList;
 public class KafkaRoller {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaRoller.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;

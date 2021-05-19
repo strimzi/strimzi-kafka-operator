@@ -27,7 +27,7 @@ import java.util.Map;
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
     private final Collection<AlterConfigOp> diff;
     private final Reconciliation reconciliation;
 

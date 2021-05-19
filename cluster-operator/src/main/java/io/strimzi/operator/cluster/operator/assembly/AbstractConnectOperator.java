@@ -102,7 +102,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         extends AbstractOperator<T, P, S, CrdOperator<C, T, L>> {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractConnectOperator.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;

@@ -32,7 +32,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
     public ValidationVisitor(HasMetadata resource, Logger logger, Set<Condition> warningConditions) {
         this.resource = resource;
         this.logger = logger;
-        this.reconciliationLogger = new ReconciliationLogger(this.logger);
+        this.reconciliationLogger = ReconciliationLogger.create(this.logger);
         this.warningConditions = warningConditions;
     }
 

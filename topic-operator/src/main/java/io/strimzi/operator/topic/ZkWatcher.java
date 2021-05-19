@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class ZkWatcher {
 
     protected Logger log = LogManager.getLogger(getClass());
-    protected ReconciliationLogger reconciliationLogger = new ReconciliationLogger(log);
+    protected ReconciliationLogger reconciliationLogger = ReconciliationLogger.create(log);
 
     protected final TopicOperator topicOperator;
     private volatile ZkWatcherState state = ZkWatcherState.NOT_STARTED;

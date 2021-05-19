@@ -21,7 +21,7 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     private final Consumer<WatcherException> onClose;
     private Operator operator;
     private static final Logger LOGGER = LogManager.getLogger(OperatorWatcher.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     OperatorWatcher(Operator operator, String namespace, Consumer<WatcherException> onClose) {
         this.namespace = namespace;

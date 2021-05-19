@@ -22,7 +22,7 @@ import java.util.Objects;
 class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
-    private final static ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private final static ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
     private final Future<Void> initReconcileFuture;
     private final Runnable onHttpGoneTask;
 

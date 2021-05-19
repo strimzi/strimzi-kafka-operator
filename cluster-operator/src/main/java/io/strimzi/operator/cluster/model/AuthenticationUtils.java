@@ -32,7 +32,7 @@ import java.util.function.Function;
 
 public class AuthenticationUtils {
     protected static final Logger LOGGER = LogManager.getLogger(AuthenticationUtils.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
     public static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";

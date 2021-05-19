@@ -23,7 +23,7 @@ import java.util.Map;
 public class ResourceVisitor {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceVisitor.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(LOGGER);
 
     public interface Visitor {
         /**
