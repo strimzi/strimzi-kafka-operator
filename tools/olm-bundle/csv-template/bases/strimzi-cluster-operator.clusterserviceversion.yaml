@@ -771,36 +771,42 @@ spec:
     ### CRD Upgrades
 
     **!!! IMPORTANT !!!** 
-    This release introduces new API version `v1beta2` to all Strimzi custom resources. 
-    This is a preparation for migration to `apiextensions/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions/v1beta1`. 
-    Migration to `v1beta2` needs to be completed for all Strimzi CRDs and CRs after the upgrade to 0.22 is done and before upgrading to Strimzi 0.23 which will support only Strimzi `v1beta2` APIs and `apiextensions/v1` CRDs.
-    For more details about the CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.22.1/deploying.html#assembly-upgrade-resources-str).
+    Starting with Strimzi 0.23, we support only the `v1beta2` API version of all Strimzi custom resources. 
+    This is a required for migration to `apiextensions/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions/v1beta1`. 
+    Migration to `v1beta2` needs to be completed for all Strimzi CRDs and CRs **before upgrading to Strimzi 0.23**.
+    For more details about the CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.23.0/deploying.html#assembly-upgrade-resources-str).
 
-    ### New in 0.22
+    ### New in 0.23
 
-    * Add v1beta2 version for all resources. v1beta2 removes all deprecated fields.
+    * Migrate to CRD v1 (required by Kubernetes 1.22+)
 
-    * Add annotations that enable the operator to restart Kafka Connect connectors or tasks. The annotations can be applied to the KafkaConnector and the KafkaMirrorMaker2 custom resources.
+    * Strimzi API versions `v1alpha1` and `v1beta1` were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser` (use `v1beta2` versions instead)
 
-    * Add additional configuration options for the Kaniko executor used by the Kafka Connect Build on Kubernetes
+    * Add support for Kafka 2.8.0 and 2.6.2, remove support for Kafka 2.5.x
 
-    * Add support for JMX options configuration of all Kafka Connect (KC, KC2SI, MM2)
+    * Make it possible to configure maximum number of connections and maximum connection creation rate in listener configuration
 
-    * Update Strimzi Kafka OAuth to version 0.7 and add support for new features (OAuth over SASL PLAIN, Checking token audience, Validating tokens using JSONPath)
+    * Add support for configuring finalizers for `loadbalancer` type listeners
 
-    * Configure external logging ConfigMap name and key.
+    * Use dedicated Service Account for Kafka Connect Build on Kubernetes
 
-    * Add support for configuring labels and annotations in ClusterRoleBindings created as part of Kafka and Kafka Connect clusters
+    * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
 
-    * Add support for Ingress v1 in Kubernetes 1.19 and newer
+    * Support for configuring custom Authorizer implementation
 
-    * Add support for Kafka 2.6.1
+    * Changed Reconciliation interval for Topic Operator from 90 to 120 seconds (to keep it the same as for other operators)
 
-    * List topics used by a Kafka Connect connector in the .status section of the KafkaConnector custom resource
+    * Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
 
-    * Bump Cruise Control to v2.5.37 for Kafka 2.7 support. Note this new version of Cruise Control uses Log4j 2 and is supported by dynamic logging configuration (where logging properties are defined in a ConfigMap). However, existing Log4j configurations must be updated to Log4j 2 configurations.
+    * Removed requirement for replicas and partitions KafkaTopic spec making these parameters optional
 
-    * Support pausing reconciliation of CR with annotation strimzi.io/pause-reconciliation
+    * Support to configure a custom filter for parent CR's labels propagation into subresources
+
+    * Allow disabling service links (environment variables describing Kubernetes services) in Pod template
+
+    * Add support for separate control plane listener (disabled by default, available via the `ControlPlaneListener` feature gate)
+
+    * Support for Dual Stack networking
 
     ### Supported Features
 
@@ -895,14 +901,7 @@ spec:
   - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIyLjAuMSwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCA1MTIgNTk1IiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCA1MTIgNTk1OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+Cgkuc3Qwe2ZpbGw6IzE5MkM0Nzt9Cgkuc3Qxe2ZpbGw6dXJsKCNTVkdJRF8xXyk7fQoJLnN0MntmaWxsOnVybCgjU1ZHSURfMl8pO30KCS5zdDN7ZmlsbDp1cmwoI1NWR0lEXzNfKTt9Cgkuc3Q0e2ZpbGw6dXJsKCNTVkdJRF80Xyk7fQoJLnN0NXtmaWxsOnVybCgjU1ZHSURfNV8pO30KCS5zdDZ7ZmlsbDp1cmwoI1NWR0lEXzZfKTt9Cjwvc3R5bGU+CjxnPgoJPHBvbHlnb24gY2xhc3M9InN0MCIgcG9pbnRzPSIyNTYsNSAxLDE1Mi4yIDEsNDQ2LjcgMjU2LDU5My45IDUxMSw0NDYuNyA1MTEsMTUyLjIgMjU2LDUgCSIvPgoJPGxpbmVhckdyYWRpZW50IGlkPSJTVkdJRF8xXyIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHgxPSIxMDkuNDk5NiIgeTE9Ijg0Ljk2MjIiIHgyPSI0NDAuOTUxNyIgeTI9Ijc5My44MTAyIj4KCQk8c3RvcCAgb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1jb2xvcjojRkZGRkZGIi8+CgkJPHN0b3AgIG9mZnNldD0iMSIgc3R5bGU9InN0b3AtY29sb3I6IzU0QkFEOCIvPgoJPC9saW5lYXJHcmFkaWVudD4KCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik0yNTYsNTYxbDIyNi41LTEzMC44di0yNi4zYy0zNy42LTcuMy04NC45LTE0LjMtMTQzLjUtMTkuM2MtMTk5LjItMTcuMi0xNC44LTU2LjYsNjguOS0xMjcuMQoJCVMxMzAsMTY1LjcsMTMwLDE2NS43czE0Ny42LDMxLDEzMi44LDUwYy0xMC41LDEzLjUtMTM0LjMsNDMuNS0yMzMuMyw4OC4xdjEyNi41TDI1Niw1NjF6Ii8+CjwvZz4KPC9zdmc+Cg==
     mediatype: image/svg+xml
   install:
-    spec:
-      permissions:
-      - rules: [] # placeholder
-        serviceAccountName: strimzi-cluster-operator
-      clusterPermissions:
-      - rules: [] # placeholder
-        serviceAccountName: strimzi-cluster-operator
-      deployments: [] # placeholder
+    spec: null # placeholder
     strategy: deployment
   installModes:
     - supported: true
@@ -944,6 +943,7 @@ spec:
   maturity: stable
   provider:
     name: Strimzi
+  replaces: # placeholder 
   selector:
     matchLabels:
       name: strimzi-cluster-operator
