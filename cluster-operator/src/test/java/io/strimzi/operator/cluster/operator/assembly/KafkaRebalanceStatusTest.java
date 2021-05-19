@@ -154,7 +154,7 @@ public class KafkaRebalanceStatusTest {
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
 
-        KafkaRebalanceAssemblyOperator.MapandStatus<ConfigMap, Map<String, Object>> output = KafkaRebalanceAssemblyOperator.processOptimizationProposal(kr, proposal);
+        KafkaRebalanceAssemblyOperator.MapAndStatus<ConfigMap, Map<String, Object>> output = KafkaRebalanceAssemblyOperator.processOptimizationProposal(kr, proposal);
 
         assertTrue(output.getStatus().containsKey(CruiseControlRebalanceKeys.SUMMARY.getKey()));
 
