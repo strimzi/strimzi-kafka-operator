@@ -44,7 +44,7 @@ class KafkaAvailability {
 
     private final Future<Collection<TopicDescription>> descriptions;
 
-    KafkaAvailability(Admin ac, Reconciliation reconciliation) {
+    KafkaAvailability(Reconciliation reconciliation, Admin ac) {
         this.ac = ac;
         this.reconciliation = reconciliation;
         // 1. Get all topic names

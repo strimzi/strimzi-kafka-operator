@@ -128,19 +128,19 @@ public class KafkaRoller {
     private final boolean allowReconfiguration;
     private Admin allClient;
 
-    public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
-                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                        StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-                        String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
-        this(vertx, reconciliation, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
+    public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
+                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
+                       StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
+                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
+        this(reconciliation, vertx, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
                 sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaLogging, kafkaVersion, allowReconfiguration);
     }
 
-    public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
-                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                        StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-                        AdminClientProvider adminClientProvider,
-                        String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
+    public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
+                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
+                       StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
+                       AdminClientProvider adminClientProvider,
+                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
         this.namespace = sts.getMetadata().getNamespace();
         this.cluster = Labels.cluster(sts);
         this.numPods = sts.getSpec().getReplicas();
@@ -715,7 +715,7 @@ public class KafkaRoller {
     }
 
     protected KafkaAvailability availability(Admin ac) {
-        return new KafkaAvailability(ac, reconciliation);
+        return new KafkaAvailability(reconciliation, ac);
     }
 
     String podName(int podId) {

@@ -733,11 +733,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return topics -> Future.succeededFuture(new ConnectorStatusAndConditions(status.statusResult, topics, status.conditions));
     }
 
-    public Set<Condition> validate(KafkaConnector resource) {
+    public Set<Condition> validate(Reconciliation reconciliation, KafkaConnector resource) {
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0);
 
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, LOGGER, warningConditions));
+            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, LOGGER, warningConditions));
 
             return warningConditions;
         }
@@ -761,7 +761,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             connectorStatus.conditions.forEach(condition -> conditions.add(condition));
         }
 
-        Set<Condition> unknownAndDeprecatedConditions = validate(connector);
+        Set<Condition> unknownAndDeprecatedConditions = validate(reconciliation, connector);
         unknownAndDeprecatedConditions.forEach(condition -> conditions.add(condition));
 
         if (!Annotations.isReconciliationPausedWithAnnotation(connector)) {
@@ -889,7 +889,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return updateStatusPromise.future();
     }
 
-    Future<ReconcileResult<Secret>> kafkaConnectJmxSecret(String namespace, String name, KafkaConnectCluster connectCluster, Reconciliation reconciliation) {
+    Future<ReconcileResult<Secret>> kafkaConnectJmxSecret(Reconciliation reconciliation, String namespace, String name, KafkaConnectCluster connectCluster) {
         if (connectCluster.isJmxAuthenticated()) {
             Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaConnectCluster.jmxSecretName(name));
             return secretFuture.compose(res -> {

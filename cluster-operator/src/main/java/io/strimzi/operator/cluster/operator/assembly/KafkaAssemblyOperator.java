@@ -736,7 +736,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 return zkRollFuture
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
-                        .compose(sts -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
+                        .compose(sts -> new KafkaRoller(reconciliation, vertx, podOperations, 1_000, operationTimeoutMs,
                             () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
                             kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), true)
                             .rollingRestart(rollPodAndLogReason))
@@ -983,7 +983,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     if (highestInterBrokerProtocolVersion != null
                             && !kafkaCluster.getKafkaVersion().protocolVersion().equals(highestInterBrokerProtocolVersion)) {
-                        log.info("{}: Upgrading Kafka inter.broker.protocol.version from {} to {}", reconciliation, highestInterBrokerProtocolVersion, kafkaCluster.getKafkaVersion().protocolVersion());
+                        RECONCILIATION_LOGGER.info(reconciliation, "Upgrading Kafka inter.broker.protocol.version from {} to {}", highestInterBrokerProtocolVersion, kafkaCluster.getKafkaVersion().protocolVersion());
 
                         if (kafkaCluster.getLogMessageFormatVersion() == null
                             && highestLogMessageFormatVersion != null) {
@@ -1000,7 +1000,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     if (highestLogMessageFormatVersion != null &&
                             !kafkaCluster.getKafkaVersion().messageVersion().equals(highestLogMessageFormatVersion)) {
-                        log.info("{}: Upgrading Kafka log.message.format.version from {} to {}", reconciliation, highestLogMessageFormatVersion, kafkaCluster.getKafkaVersion().messageVersion());
+                        RECONCILIATION_LOGGER.info(reconciliation, "Upgrading Kafka log.message.format.version from {} to {}", highestLogMessageFormatVersion, kafkaCluster.getKafkaVersion().messageVersion());
                     }
                 }
 
@@ -1123,7 +1123,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, boolean allowReconfiguration) {
             return adminClientSecrets()
-                .compose(compositeFuture -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
+                .compose(compositeFuture -> new KafkaRoller(reconciliation, vertx, podOperations, 1_000, operationTimeoutMs,
                     () -> new BackOff(250, 2, 10), sts, compositeFuture.resultAt(0), compositeFuture.resultAt(1), adminClientProvider,
                         kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), allowReconfiguration)
                     .rollingRestart(podNeedsRestart));

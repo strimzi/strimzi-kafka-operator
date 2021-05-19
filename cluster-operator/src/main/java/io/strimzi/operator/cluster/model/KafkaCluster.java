@@ -462,7 +462,7 @@ public class KafkaCluster extends AbstractModel {
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
         List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners().getGenericKafkaListeners();
-        ListenersValidator.validate(kafkaClusterSpec.getReplicas(), listeners);
+        ListenersValidator.validate(reconciliation, kafkaClusterSpec.getReplicas(), listeners);
         result.setListeners(listeners);
 
         // Set authorization

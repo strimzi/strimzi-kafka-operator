@@ -58,7 +58,7 @@ import static io.strimzi.operator.common.Util.async;
  * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, CustomResource)}
  * and {@link #delete(Reconciliation)} methods for subclasses to implement.
  * 
- * <li>add support for operator-side {@linkplain #validate(CustomResource) validation}.
+ * <li>add support for operator-side {@linkplain #validate(Reconciliation, CustomResource) validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
  *ą
  * </ul>
@@ -214,7 +214,7 @@ public abstract class AbstractOperator<
                 Promise<Void> createOrUpdate = Promise.promise();
                 if (Annotations.isReconciliationPausedWithAnnotation(cr)) {
                     S status = createStatus();
-                    Set<Condition> conditions = validate(cr);
+                    Set<Condition> conditions = validate(reconciliation, cr);
                     conditions.add(StatusUtils.getPausedCondition());
                     status.setConditions(new ArrayList<>(conditions));
                     status.setObservedGeneration(cr.getStatus() != null ? cr.getStatus().getObservedGeneration() : 0);
@@ -251,7 +251,7 @@ public abstract class AbstractOperator<
                     return createOrUpdate.future();
                 }
 
-                Set<Condition> unknownAndDeprecatedConditions = validate(cr);
+                Set<Condition> unknownAndDeprecatedConditions = validate(reconciliation, cr);
 
                 RECONCILIATION_LOGGER.info(reconciliation, "{} {} will be checked for creation or modification", kind, name);
 
@@ -431,15 +431,16 @@ public abstract class AbstractOperator<
      * Validate the Custom Resource.
      * This should log at the WARN level (rather than throwing)
      * if the resource can safely be reconciled (e.g. it merely using deprecated API).
+     * @param reconciliation The reconciliation
      * @param resource The custom resource
      * @throws InvalidResourceException if the resource cannot be safely reconciled.
      * @return set of conditions
      */
-    /*test*/ public Set<Condition> validate(T resource) {
+    /*test*/ public Set<Condition> validate(Reconciliation reconciliation, T resource) {
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0);
 
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, LOGGER, warningConditions));
+            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, LOGGER, warningConditions));
 
             return warningConditions;
         }

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.logging.TestLogger;
 import org.apache.logging.log4j.Level;
@@ -42,7 +43,7 @@ public class ValidationVisitorTest {
 
         Set<Condition> warningConditions = new HashSet<>();
 
-        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, warningConditions));
+        ResourceVisitor.visit(new Reconciliation("test", "kind", "namespace", "name"), k, new ValidationVisitor(resource, logger, warningConditions));
 
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
@@ -90,7 +91,7 @@ public class ValidationVisitorTest {
 
         Set<Condition> warningConditions = new HashSet<>();
 
-        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, warningConditions));
+        ResourceVisitor.visit(new Reconciliation("test", "kind", "namespace", "name"), k, new ValidationVisitor(resource, logger, warningConditions));
 
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 

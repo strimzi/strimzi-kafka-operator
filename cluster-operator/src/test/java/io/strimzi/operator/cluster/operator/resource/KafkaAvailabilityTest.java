@@ -293,7 +293,7 @@ public class KafkaAvailabilityTest {
 
             .addBroker(4);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -332,7 +332,7 @@ public class KafkaAvailabilityTest {
 
             .addBroker(2);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -371,7 +371,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -397,7 +397,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -424,7 +424,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -450,7 +450,7 @@ public class KafkaAvailabilityTest {
                 .endTopic()
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -485,7 +485,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaSorted = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaSorted = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -522,7 +522,7 @@ public class KafkaAvailabilityTest {
 
                 .addBroker(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -558,7 +558,7 @@ public class KafkaAvailabilityTest {
                 .addBroker(3)
                 .listTopicsResult(new TimeoutException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -592,7 +592,7 @@ public class KafkaAvailabilityTest {
                 .addBroker(3)
                 .describeTopicsResult("A", new UnknownTopicOrPartitionException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {
@@ -626,7 +626,7 @@ public class KafkaAvailabilityTest {
                 .addBroker(3)
                 .describeConfigsResult(new ConfigResource(ConfigResource.Type.TOPIC, "A"), new UnknownTopicOrPartitionException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(ksb.ac(), new Reconciliation("dummy", "kind", "namespace", "A"));
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
 
         Checkpoint a = context.checkpoint(ksb.brokers.size());
         for (Integer brokerId : ksb.brokers.keySet()) {

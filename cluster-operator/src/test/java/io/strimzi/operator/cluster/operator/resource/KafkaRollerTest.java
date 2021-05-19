@@ -583,7 +583,7 @@ public class KafkaRollerTest {
                                    Function<Integer, ForceableProblem> getConfigsException,
                                    Function<Integer, Future<Boolean>> canRollFn,
                                   int... controllers) {
-            super(KafkaRollerTest.vertx, new Reconciliation("test", "Kafka", stsNamespace(), clusterName()), podOps, 500, 1000,
+            super(new Reconciliation("test", "Kafka", stsNamespace(), clusterName()), KafkaRollerTest.vertx, podOps, 500, 1000,
                 () -> new BackOff(10L, 2, 4),
                 sts, clusterCaCertSecret, coKeySecret, "", "", KafkaVersionTestUtils.getLatestVersion(), true);
             this.controllers = controllers;

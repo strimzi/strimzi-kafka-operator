@@ -125,7 +125,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -178,7 +178,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 return new HashSet<>();
             }
 
@@ -230,7 +230,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -291,7 +291,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -354,7 +354,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 // Do nothing
                 return emptySet();
             }

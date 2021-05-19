@@ -5,6 +5,8 @@
 package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,35 +23,39 @@ import java.util.Map;
 public class ResourceVisitor {
 
     private static final Logger LOGGER = LogManager.getLogger(ResourceVisitor.class);
+    private static final ReconciliationLogger RECONCILIATION_LOGGER = new ReconciliationLogger(LOGGER);
 
     public interface Visitor {
         /**
          * Called when a property is visited.
+         * @param reconciliation The reconciliation
          * @param path The property path for reaching this property
          * @param owner The object with the property
          * @param method The getter method for the property.
          * @param property abstraction for using the method.
          * @param propertyValue The value of the property.
          */
-        default void visitMethodProperty(List<String> path, Object owner,
+        default void visitMethodProperty(Reconciliation reconciliation, List<String> path, Object owner,
                                  Method method, Property<Method> property, Object propertyValue) {
-            visitProperty(path, owner, method, property, propertyValue);
+            visitProperty(reconciliation, path, owner, method, property, propertyValue);
         }
         /**
          * Called when a field property is visited.
+         * @param reconciliation The reconciliation
          * @param path The property path for reaching this property
          * @param owner The object with the property
          * @param field The field for the property.
          * @param property abstraction for using the method.
          * @param propertyValue The value of the property.
          */
-        default void visitFieldProperty(List<String> path, Object owner,
+        default void visitFieldProperty(Reconciliation reconciliation, List<String> path, Object owner,
                                 Field field, Property<Field> property, Object propertyValue) {
-            visitProperty(path, owner, field, property, propertyValue);
+            visitProperty(reconciliation, path, owner, field, property, propertyValue);
         }
 
         /**
          * Called when a property is visited.
+         * @param reconciliation The reconciliation
          * @param path The property path for reaching this property
          * @param owner The object with the property
          * @param member The getter method or field for the property.
@@ -57,23 +63,24 @@ public class ResourceVisitor {
          * @param propertyValue The value of the property.
          * @param <M> The type of member ({@code Field} or {@code Method}).
          */
-        <M extends AnnotatedElement & Member> void visitProperty(List<String> path, Object owner,
+        <M extends AnnotatedElement & Member> void visitProperty(Reconciliation reconciliation, List<String> path, Object owner,
                                         M member, Property<M> property, Object propertyValue);
 
         /**
          * Called when an object is visited.
+         * @param reconciliation The reconciliation
          * @param path The property path to this object.
          * @param object The object
          */
-        void visitObject(List<String> path, Object object);
+        void visitObject(Reconciliation reconciliation, List<String> path, Object object);
     }
 
-    public static <T extends HasMetadata> void visit(T resource, Visitor visitor) {
+    public static <T extends HasMetadata> void visit(Reconciliation reconciliation, T resource, Visitor visitor) {
         ArrayList<String> path = new ArrayList<>();
         try {
-            visit(path, resource, visitor);
+            visit(reconciliation, path, resource, visitor);
         } catch (RuntimeException | ReflectiveOperationException | StackOverflowError e) {
-            LOGGER.error("Error while visiting {}", path, e);
+            RECONCILIATION_LOGGER.error(reconciliation, "Error while visiting {}", path, e);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             } else {
@@ -82,13 +89,13 @@ public class ResourceVisitor {
         }
     }
 
-    private static void visit(List<String> path, Object resource, Visitor visitor) throws ReflectiveOperationException {
+    private static void visit(Reconciliation reconciliation, List<String> path, Object resource, Visitor visitor) throws ReflectiveOperationException {
         Class<?> cls = resource.getClass();
-        visitor.visitObject(path, resource);
+        visitor.visitObject(reconciliation, path, resource);
         for (Field field : cls.getFields()) {
             Object propertyValue = field.get(resource);
-            visitor.visitFieldProperty(path, resource, field, FIELD_PROPERTY, propertyValue);
-            visitProperty(path, field, FIELD_PROPERTY, propertyValue, visitor);
+            visitor.visitFieldProperty(reconciliation, path, resource, field, FIELD_PROPERTY, propertyValue);
+            visitProperty(reconciliation, path, field, FIELD_PROPERTY, propertyValue, visitor);
         }
         for (Method method : cls.getMethods()) {
             String name = method.getName();
@@ -107,8 +114,8 @@ public class ResourceVisitor {
                 }
                 if (property != null) {
                     Object propertyValue = method.invoke(resource);
-                    visitor.visitMethodProperty(path, resource, method, property, propertyValue);
-                    visitProperty(path, method, property, propertyValue, visitor);
+                    visitor.visitMethodProperty(reconciliation, path, resource, method, property, propertyValue);
+                    visitProperty(reconciliation, path, method, property, propertyValue, visitor);
                 }
             }
         }
@@ -128,7 +135,7 @@ public class ResourceVisitor {
                 || isFloat;
     }
 
-    static <M extends AnnotatedElement & Member> void visitProperty(List<String> path, M member,
+    static <M extends AnnotatedElement & Member> void visitProperty(Reconciliation reconciliation, List<String> path, M member,
                                                                     Property<M> property, Object propertyValue,
                                                                     Visitor visitor)
             throws ReflectiveOperationException {
@@ -139,7 +146,7 @@ public class ResourceVisitor {
                 path.add(propertyName);
                 if (propertyValue instanceof Object[]) {
                     for (Object element : (Object[]) propertyValue) {
-                        visit(path, element, visitor);
+                        visit(reconciliation, path, element, visitor);
                     }
                 }
                 // otherwise it's an array of primitives, in which case there are not further objects to visit
@@ -150,7 +157,7 @@ public class ResourceVisitor {
                     if (element != null
                             && !element.getClass().isEnum()
                             && !isScalar(element.getClass())) {
-                        visit(path, element, visitor);
+                        visit(reconciliation, path, element, visitor);
                     }
                 }
                 path.remove(path.size() - 1);
@@ -158,7 +165,7 @@ public class ResourceVisitor {
                     && !Map.class.isAssignableFrom(returnType)
                     && !returnType.isEnum()) {
                 path.add(propertyName);
-                visit(path, propertyValue, visitor);
+                visit(reconciliation, path, propertyValue, visitor);
                 path.remove(path.size() - 1);
             }
         }

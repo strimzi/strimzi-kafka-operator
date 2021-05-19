@@ -152,7 +152,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
                     return configMapOperations.reconcile(reconciliation, namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
-                .compose(i -> kafkaConnectJmxSecret(namespace, connect.getName(), connect, reconciliation))
+                .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, connect.getName(), connect))
                 .compose(i -> deploymentConfigOperations.reconcile(reconciliation, namespace, connect.getName(), connect.generateDeploymentConfig(reconciliation, annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> imagesStreamOperations.reconcile(reconciliation, namespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()), connect.generateSourceImageStream()))
                 .compose(i -> imagesStreamOperations.reconcile(reconciliation, namespace, KafkaConnectS2IResources.targetImageStreamName(connect.getCluster()), connect.generateTargetImageStream()))
@@ -191,13 +191,13 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
      * Updates the Status field of the Kafka ConnectS2I CR. It diffs the desired status against the current status and calls
      * the update only when there is any difference in non-timestamp fields.
      *
-     * @param kafkaConnectS2Iassembly The CR of Kafka ConnectS2I
      * @param reconciliation Reconciliation information
+     * @param kafkaConnectS2Iassembly The CR of Kafka ConnectS2I
      * @param desiredStatus The KafkaConnectS2Istatus which should be set
      *
      * @return
      */
-    Future<Void> updateStatus(KafkaConnectS2I kafkaConnectS2Iassembly, Reconciliation reconciliation, KafkaConnectS2IStatus desiredStatus) {
+    Future<Void> updateStatus(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2Iassembly, KafkaConnectS2IStatus desiredStatus) {
         Promise<Void> updateStatusPromise = Promise.promise();
 
         resourceOperator.getAsync(kafkaConnectS2Iassembly.getMetadata().getNamespace(), kafkaConnectS2Iassembly.getMetadata().getName()).onComplete(getRes -> {
