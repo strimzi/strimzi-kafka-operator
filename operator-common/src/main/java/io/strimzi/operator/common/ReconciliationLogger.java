@@ -480,32 +480,6 @@ public final class ReconciliationLogger implements Serializable {
     }
 
     /**
-     * Logs a message which is only to be constructed if the logging level is the
-     * {@code OFF} level. The {@code MessageSupplier} may or may not use the
-     * {@link MessageFactory} to construct the {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @since Log4j-2.4
-     */
-    public void off(final MessageSupplier msgSupplier) {
-        logger.logIfEnabled(FQCN, OFF, null, msgSupplier, (Throwable) null);
-    }
-
-    /**
-     * Logs a message (only to be constructed if the logging level is the {@code OFF}
-     * level) including the stack trace of the {@link Throwable} <code>t</code> passed as parameter.
-     * The {@code MessageSupplier} may or may not use the {@link MessageFactory} to construct the
-     * {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @param t the exception to log, including its stack trace.
-     * @since Log4j-2.4
-     */
-    public void off(final MessageSupplier msgSupplier, final Throwable t) {
-        logger.logIfEnabled(FQCN, OFF, null, msgSupplier, t);
-    }
-
-    /**
      * Logs a message with the specific Marker at the {@code FATAL} level.
      *
      * @param reconciliation The reconciliation
@@ -781,25 +755,6 @@ public final class ReconciliationLogger implements Serializable {
     }
 
     /**
-     * Logs the specified Message at the {@code FATAL} level.
-     *
-     * @param msg the message string to be logged
-     */
-    public void fatal(final Message msg) {
-        logger.logIfEnabled(FQCN, FATAL, null, msg, (Throwable) null);
-    }
-
-    /**
-     * Logs the specified Message at the {@code FATAL} level.
-     *
-     * @param msg the message string to be logged
-     * @param t A Throwable or null.
-     */
-    public void fatal(final Message msg, final Throwable t) {
-        logger.logIfEnabled(FQCN, FATAL, null, msg, t);
-    }
-
-    /**
      * Logs a message which is only to be constructed if the logging level is the
      * {@code FATAL} level with the specified Marker.
      *
@@ -866,32 +821,6 @@ public final class ReconciliationLogger implements Serializable {
      */
     public void fatal(final Reconciliation reconciliation, final MessageSupplier msgSupplier, final Throwable t) {
         logger.logIfEnabled(FQCN, FATAL, reconciliation.getMarker(), msgSupplier, t);
-    }
-
-    /**
-     * Logs a message which is only to be constructed if the logging level is the
-     * {@code FATAL} level. The {@code MessageSupplier} may or may not use the
-     * {@link MessageFactory} to construct the {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @since Log4j-2.4
-     */
-    public void fatal(final MessageSupplier msgSupplier) {
-        logger.logIfEnabled(FQCN, FATAL, null, msgSupplier, (Throwable) null);
-    }
-
-    /**
-     * Logs a message (only to be constructed if the logging level is the {@code FATAL}
-     * level) including the stack trace of the {@link Throwable} <code>t</code> passed as parameter.
-     * The {@code MessageSupplier} may or may not use the {@link MessageFactory} to construct the
-     * {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @param t the exception to log, including its stack trace.
-     * @since Log4j-2.4
-     */
-    public void fatal(final MessageSupplier msgSupplier, final Throwable t) {
-        logger.logIfEnabled(FQCN, FATAL, null, msgSupplier, t);
     }
 
     /**
@@ -1170,25 +1099,6 @@ public final class ReconciliationLogger implements Serializable {
     }
 
     /**
-     * Logs the specified Message at the {@code ERROR} level.
-     *
-     * @param msg the message string to be logged
-     */
-    public void error(final Message msg) {
-        logger.logIfEnabled(FQCN, ERROR, null, msg, (Throwable) null);
-    }
-
-    /**
-     * Logs the specified Message at the {@code ERROR} level.
-     *
-     * @param msg the message string to be logged
-     * @param t A Throwable or null.
-     */
-    public void error(final Message msg, final Throwable t) {
-        logger.logIfEnabled(FQCN, ERROR, null, msg, t);
-    }
-
-    /**
      * Logs a message which is only to be constructed if the logging level is the
      * {@code ERROR} level with the specified Marker.
      *
@@ -1255,32 +1165,6 @@ public final class ReconciliationLogger implements Serializable {
      */
     public void error(final Reconciliation reconciliation, final MessageSupplier msgSupplier, final Throwable t) {
         logger.logIfEnabled(FQCN, ERROR, reconciliation.getMarker(), msgSupplier, t);
-    }
-
-    /**
-     * Logs a message which is only to be constructed if the logging level is the
-     * {@code ERROR} level. The {@code MessageSupplier} may or may not use the
-     * {@link MessageFactory} to construct the {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @since Log4j-2.4
-     */
-    public void error(final MessageSupplier msgSupplier) {
-        logger.logIfEnabled(FQCN, ERROR, null, msgSupplier, (Throwable) null);
-    }
-
-    /**
-     * Logs a message (only to be constructed if the logging level is the {@code ERROR}
-     * level) including the stack trace of the {@link Throwable} <code>t</code> passed as parameter.
-     * The {@code MessageSupplier} may or may not use the {@link MessageFactory} to construct the
-     * {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @param t the exception to log, including its stack trace.
-     * @since Log4j-2.4
-     */
-    public void error(final MessageSupplier msgSupplier, final Throwable t) {
-        logger.logIfEnabled(FQCN, ERROR, null, msgSupplier, t);
     }
 
     /**
@@ -1559,25 +1443,6 @@ public final class ReconciliationLogger implements Serializable {
     }
 
     /**
-     * Logs the specified Message at the {@code WARN} level.
-     *
-     * @param msg the message string to be logged
-     */
-    public void warn(final Message msg) {
-        logger.logIfEnabled(FQCN, WARN, null, msg, (Throwable) null);
-    }
-
-    /**
-     * Logs the specified Message at the {@code WARN} level.
-     *
-     * @param msg the message string to be logged
-     * @param t A Throwable or null.
-     */
-    public void warn(final Message msg, final Throwable t) {
-        logger.logIfEnabled(FQCN, WARN, null, msg, t);
-    }
-
-    /**
      * Logs a message which is only to be constructed if the logging level is the {@code WARN}level.
      *
      * @param msgSupplier A function, which when called, produces the desired log message;
@@ -1668,32 +1533,6 @@ public final class ReconciliationLogger implements Serializable {
      */
     public void warn(final Reconciliation reconciliation, final MessageSupplier msgSupplier, final Throwable t) {
         logger.logIfEnabled(FQCN, WARN, reconciliation.getMarker(), msgSupplier, t);
-    }
-
-    /**
-     * Logs a message which is only to be constructed if the logging level is the
-     * {@code WARN} level. The {@code MessageSupplier} may or may not use the
-     * {@link MessageFactory} to construct the {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @since Log4j-2.4
-     */
-    public void warn(final MessageSupplier msgSupplier) {
-        logger.logIfEnabled(FQCN, WARN, null, msgSupplier, (Throwable) null);
-    }
-
-    /**
-     * Logs a message (only to be constructed if the logging level is the {@code WARN}
-     * level) including the stack trace of the {@link Throwable} <code>t</code> passed as parameter.
-     * The {@code MessageSupplier} may or may not use the {@link MessageFactory} to construct the
-     * {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @param t the exception to log, including its stack trace.
-     * @since Log4j-2.4
-     */
-    public void warn(final MessageSupplier msgSupplier, final Throwable t) {
-        logger.logIfEnabled(FQCN, WARN, null, msgSupplier, t);
     }
 
     /**
@@ -1972,15 +1811,6 @@ public final class ReconciliationLogger implements Serializable {
     }
 
     /**
-     * Logs the specified Message at the {@code INFO} level.
-     *
-     * @param msg the message string to be logged
-     */
-    public void info(final Message msg) {
-        logger.logIfEnabled(FQCN, INFO, null, msg, (Throwable) null);
-    }
-
-    /**
      * Logs a message which is only to be constructed if the logging level is the
      * {@code INFO} level with the specified Marker.
      *
@@ -2047,32 +1877,6 @@ public final class ReconciliationLogger implements Serializable {
      */
     public void info(final Reconciliation reconciliation, final MessageSupplier msgSupplier, final Throwable t) {
         logger.logIfEnabled(FQCN, INFO, reconciliation.getMarker(), msgSupplier, t);
-    }
-
-    /**
-     * Logs a message which is only to be constructed if the logging level is the
-     * {@code INFO} level. The {@code MessageSupplier} may or may not use the
-     * {@link MessageFactory} to construct the {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @since Log4j-2.4
-     */
-    public void info(final MessageSupplier msgSupplier) {
-        logger.logIfEnabled(FQCN, INFO, null, msgSupplier, (Throwable) null);
-    }
-
-    /**
-     * Logs a message (only to be constructed if the logging level is the {@code INFO}
-     * level) including the stack trace of the {@link Throwable} <code>t</code> passed as parameter.
-     * The {@code MessageSupplier} may or may not use the {@link MessageFactory} to construct the
-     * {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @param t the exception to log, including its stack trace.
-     * @since Log4j-2.4
-     */
-    public void info(final MessageSupplier msgSupplier, final Throwable t) {
-        logger.logIfEnabled(FQCN, INFO, null, msgSupplier, t);
     }
 
     /**
@@ -2351,25 +2155,6 @@ public final class ReconciliationLogger implements Serializable {
     }
 
     /**
-     * Logs the specified Message at the {@code DEBUG} level.
-     *
-     * @param msg the message string to be logged
-     */
-    public void debug(final Message msg) {
-        logger.logIfEnabled(FQCN, DEBUG, null, msg, (Throwable) null);
-    }
-
-    /**
-     * Logs the specified Message at the {@code DEBUG} level.
-     *
-     * @param msg the message string to be logged
-     * @param t A Throwable or null.
-     */
-    public void debug(final Message msg, final Throwable t) {
-        logger.logIfEnabled(FQCN, DEBUG, null, msg, t);
-    }
-
-    /**
      * Logs a message which is only to be constructed if the logging level is the {@code DEBUG}level.
      *
      * @param msgSupplier A function, which when called, produces the desired log message;
@@ -2460,32 +2245,6 @@ public final class ReconciliationLogger implements Serializable {
      */
     public void debug(final Reconciliation reconciliation, final MessageSupplier msgSupplier, final Throwable t) {
         logger.logIfEnabled(FQCN, DEBUG, reconciliation.getMarker(), msgSupplier, t);
-    }
-
-    /**
-     * Logs a message which is only to be constructed if the logging level is the
-     * {@code DEBUG} level. The {@code MessageSupplier} may or may not use the
-     * {@link MessageFactory} to construct the {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @since Log4j-2.4
-     */
-    public void debug(final MessageSupplier msgSupplier) {
-        logger.logIfEnabled(FQCN, DEBUG, null, msgSupplier, (Throwable) null);
-    }
-
-    /**
-     * Logs a message (only to be constructed if the logging level is the {@code DEBUG}
-     * level) including the stack trace of the {@link Throwable} <code>t</code> passed as parameter.
-     * The {@code MessageSupplier} may or may not use the {@link MessageFactory} to construct the
-     * {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @param t the exception to log, including its stack trace.
-     * @since Log4j-2.4
-     */
-    public void debug(final MessageSupplier msgSupplier, final Throwable t) {
-        logger.logIfEnabled(FQCN, DEBUG, null, msgSupplier, t);
     }
 
     /**
@@ -2764,25 +2523,6 @@ public final class ReconciliationLogger implements Serializable {
     }
 
     /**
-     * Logs the specified Message at the {@code TRACE} level.
-     *
-     * @param msg the message string to be logged
-     */
-    public void trace(final Message msg) {
-        logger.logIfEnabled(FQCN, TRACE, null, msg, (Throwable) null);
-    }
-
-    /**
-     * Logs the specified Message at the {@code TRACE} level.
-     *
-     * @param msg the message string to be logged
-     * @param t A Throwable or null.
-     */
-    public void trace(final Message msg, final Throwable t) {
-        logger.logIfEnabled(FQCN, TRACE, null, msg, t);
-    }
-
-    /**
      * Logs a message which is only to be constructed if the logging level is the
      * {@code TRACE} level with the specified Marker.
      *
@@ -2849,32 +2589,6 @@ public final class ReconciliationLogger implements Serializable {
      */
     public void trace(final Reconciliation reconciliation, final MessageSupplier msgSupplier, final Throwable t) {
         logger.logIfEnabled(FQCN, TRACE, reconciliation.getMarker(), msgSupplier, t);
-    }
-
-    /**
-     * Logs a message which is only to be constructed if the logging level is the
-     * {@code TRACE} level. The {@code MessageSupplier} may or may not use the
-     * {@link MessageFactory} to construct the {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @since Log4j-2.4
-     */
-    public void trace(final MessageSupplier msgSupplier) {
-        logger.logIfEnabled(FQCN, TRACE, null, msgSupplier, (Throwable) null);
-    }
-
-    /**
-     * Logs a message (only to be constructed if the logging level is the {@code TRACE}
-     * level) including the stack trace of the {@link Throwable} <code>t</code> passed as parameter.
-     * The {@code MessageSupplier} may or may not use the {@link MessageFactory} to construct the
-     * {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @param t the exception to log, including its stack trace.
-     * @since Log4j-2.4
-     */
-    public void trace(final MessageSupplier msgSupplier, final Throwable t) {
-        logger.logIfEnabled(FQCN, TRACE, null, msgSupplier, t);
     }
 
     /**
@@ -3153,25 +2867,6 @@ public final class ReconciliationLogger implements Serializable {
     }
 
     /**
-     * Logs the specified Message at the {@code ALL} level.
-     *
-     * @param msg the message string to be logged
-     */
-    public void all(final Message msg) {
-        logger.logIfEnabled(FQCN, ALL, null, msg, (Throwable) null);
-    }
-
-    /**
-     * Logs the specified Message at the {@code ALL} level.
-     *
-     * @param msg the message string to be logged
-     * @param t A Throwable or null.
-     */
-    public void all(final Message msg, final Throwable t) {
-        logger.logIfEnabled(FQCN, ALL, null, msg, t);
-    }
-
-    /**
      * Logs a message which is only to be constructed if the logging level is the
      * {@code ALL} level with the specified Marker.
      *
@@ -3238,32 +2933,6 @@ public final class ReconciliationLogger implements Serializable {
      */
     public void all(final Reconciliation reconciliation, final MessageSupplier msgSupplier, final Throwable t) {
         logger.logIfEnabled(FQCN, ALL, reconciliation.getMarker(), msgSupplier, t);
-    }
-
-    /**
-     * Logs a message which is only to be constructed if the logging level is the
-     * {@code ALL} level. The {@code MessageSupplier} may or may not use the
-     * {@link MessageFactory} to construct the {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @since Log4j-2.4
-     */
-    public void all(final MessageSupplier msgSupplier) {
-        logger.logIfEnabled(FQCN, ALL, null, msgSupplier, (Throwable) null);
-    }
-
-    /**
-     * Logs a message (only to be constructed if the logging level is the {@code ALL}
-     * level) including the stack trace of the {@link Throwable} <code>t</code> passed as parameter.
-     * The {@code MessageSupplier} may or may not use the {@link MessageFactory} to construct the
-     * {@code Message}.
-     *
-     * @param msgSupplier A function, which when called, produces the desired log message.
-     * @param t the exception to log, including its stack trace.
-     * @since Log4j-2.4
-     */
-    public void all(final MessageSupplier msgSupplier, final Throwable t) {
-        logger.logIfEnabled(FQCN, ALL, null, msgSupplier, t);
     }
 }
 
