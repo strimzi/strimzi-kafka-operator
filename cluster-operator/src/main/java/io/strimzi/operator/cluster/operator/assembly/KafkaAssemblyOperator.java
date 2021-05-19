@@ -975,14 +975,33 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> prepareVersionChange() {
             if (versionChange.isNoop()) {
-                log.debug("No Kafka version change");
-
-                if (kafkaCluster.getLogMessageFormatVersion() == null) {
-                    kafkaCluster.setLogMessageFormatVersion(kafkaCluster.getKafkaVersion().messageVersion());
-                }
+                log.debug("{}: No Kafka version change", reconciliation);
 
                 if (kafkaCluster.getInterBrokerProtocolVersion() == null) {
+                    // When IBPV is not set, we set it to current Kafka version
                     kafkaCluster.setInterBrokerProtocolVersion(kafkaCluster.getKafkaVersion().protocolVersion());
+
+                    if (highestInterBrokerProtocolVersion != null
+                            && !kafkaCluster.getKafkaVersion().protocolVersion().equals(highestInterBrokerProtocolVersion)) {
+                        log.info("{}: Upgrading Kafka inter.broker.protocol.version from {} to {}", reconciliation, highestInterBrokerProtocolVersion, kafkaCluster.getKafkaVersion().protocolVersion());
+
+                        if (kafkaCluster.getLogMessageFormatVersion() == null
+                            && highestLogMessageFormatVersion != null) {
+                            // IBPV and LMFV should not change in the same rolling update. When this rolling update is going
+                            // to change the IPBV, we keep the old LGFV
+                            kafkaCluster.setLogMessageFormatVersion(highestLogMessageFormatVersion);
+                        }
+                    }
+                }
+
+                if (kafkaCluster.getLogMessageFormatVersion() == null) {
+                    // When LMFV is not set, we set it to current Kafka version
+                    kafkaCluster.setLogMessageFormatVersion(kafkaCluster.getKafkaVersion().messageVersion());
+
+                    if (highestLogMessageFormatVersion != null &&
+                            !kafkaCluster.getKafkaVersion().messageVersion().equals(highestLogMessageFormatVersion)) {
+                        log.info("{}: Upgrading Kafka log.message.format.version from {} to {}", reconciliation, highestLogMessageFormatVersion, kafkaCluster.getKafkaVersion().messageVersion());
+                    }
                 }
 
                 return Future.succeededFuture(this);
