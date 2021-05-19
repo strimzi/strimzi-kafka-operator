@@ -290,6 +290,7 @@ public class KafkaUserModel {
                     .withAnnotations(Util.mergeLabelsOrAnnotations(null, templateSecretAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
+                .withType("Opaque")
                 .withData(data)
                 .build();
 
