@@ -143,7 +143,7 @@ public class MockK8s implements K8s {
     }
 
     @Override
-    public Future<Void> deleteResource(ResourceName resourceName) {
+    public Future<Void> deleteResource(Reconciliation reconciliation, ResourceName resourceName) {
         Promise<Void> handler = Promise.promise();
         AsyncResult<Void> response = deleteResponse.apply(resourceName);
         if (response.succeeded()) {

@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclResourcePatternType;
 import io.strimzi.api.kafka.model.AclRuleType;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
@@ -65,7 +66,7 @@ public class SimpleAclOperatorIT {
         }
 
         simpleAclOperator = new SimpleAclOperator(vertx,
-                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.bootstrapServers(), null, null, null));
+                new DefaultAdminClientProvider().createAdminClient(new Reconciliation("test", "kind", "namespace", "name"), kafkaCluster.bootstrapServers(), null, null, null));
     }
 
     @Test

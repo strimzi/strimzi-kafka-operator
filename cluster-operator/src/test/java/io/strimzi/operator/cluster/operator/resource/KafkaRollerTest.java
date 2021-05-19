@@ -529,7 +529,7 @@ public class KafkaRollerTest {
                     .endMetadata()
                 .build()
         );
-        when(podOps.readiness(any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock ->  {
+        when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock ->  {
             String podName = invocationOnMock.getArgument(1);
             return readiness.apply(podName2Number(podName));
         });

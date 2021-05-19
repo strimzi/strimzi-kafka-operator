@@ -38,10 +38,11 @@ public interface K8s {
 
     /**
      * Asynchronously delete the given resource.
+     * @param reconciliation The reconciliation
      * @param resourceName The name of the resource to be deleted.
      * @return A future which completes when the topic has been deleted.
      */
-    Future<Void> deleteResource(ResourceName resourceName);
+    Future<Void> deleteResource(Reconciliation reconciliation, ResourceName resourceName);
 
     /**
      * Asynchronously list the resources.

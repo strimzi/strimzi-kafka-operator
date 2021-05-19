@@ -59,6 +59,7 @@ public class ZookeeperScaler implements AutoCloseable {
     /**
      * ZookeeperScaler constructor
      *
+     * @param reconciliation                The reconciliation
      * @param vertx                         Vertx instance
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
@@ -154,7 +155,7 @@ public class ZookeeperScaler implements AutoCloseable {
                 watchedEvent -> RECONCILIATION_LOGGER.debug(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
                 clientConfig);
 
-            Util.waitFor(vertx,
+            Util.waitFor(reconciliation, vertx,
                 String.format("ZooKeeperAdmin connection to %s", zookeeperConnectionString),
                 "connected",
                 1_000,
@@ -281,8 +282,8 @@ public class ZookeeperScaler implements AutoCloseable {
             try {
                 ZKClientConfig clientConfig = new ZKClientConfig();
 
-                trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
-                keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
+                trustStoreFile = Util.createFileTrustStore(reconciliation, getClass().getName(), "p12", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
+                keyStoreFile = Util.createFileStore(reconciliation, getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
 
                 clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
                 clientConfig.setProperty("zookeeper.client.secure", "true");

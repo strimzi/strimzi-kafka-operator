@@ -64,7 +64,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
     public Future<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
         return getAsync(namespace, name)
                 .compose(deployment -> deletePod(reconciliation, namespace, name))
-                .compose(ignored -> readiness(namespace, name, 1_000, operationTimeoutMs));
+                .compose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
     }
 
     /**
@@ -91,6 +91,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * Asynchronously polls the deployment until either the observed generation matches the desired
      * generation sequence number or timeout.
      *
+     * @param reconciliation The reconciliation
      * @param namespace The namespace.
      * @param name The resource name.
      * @param pollIntervalMs The polling interval
@@ -98,8 +99,8 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      * @return  A future which completes when the observed generation of the deployment matches the
      * generation sequence number of the desired state.
      */
-    public Future<Void> waitForObserved(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
+    public Future<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 
     /**

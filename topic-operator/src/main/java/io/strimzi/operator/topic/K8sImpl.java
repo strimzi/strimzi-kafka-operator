@@ -85,7 +85,7 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public Future<Void> deleteResource(ResourceName resourceName) {
+    public Future<Void> deleteResource(Reconciliation reconciliation, ResourceName resourceName) {
         Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
@@ -94,7 +94,7 @@ public class K8sImpl implements K8s {
                     LOGGER.warn("KafkaTopic {} could not be deleted, since it doesn't seem to exist", resourceName.toString());
                     future.complete();
                 } else {
-                    Util.waitFor(vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
+                    Util.waitFor(reconciliation, vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
                         KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(resourceName.toString()).get();
                         boolean notExists = kafkaTopic == null;
                         LOGGER.debug("KafkaTopic {} deleted {}", resourceName.toString(), notExists);

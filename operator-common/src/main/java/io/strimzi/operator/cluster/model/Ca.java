@@ -391,7 +391,7 @@ public abstract class Ca {
 
             List<String> reasons = new ArrayList<>(2);
 
-            if (certSubjectChanged(certAndKey, subject, podName))   {
+            if (certSubjectChanged(reconciliation, certAndKey, subject, podName))   {
                 reasons.add("DNS names changed");
             }
 
@@ -456,20 +456,21 @@ public abstract class Ca {
     /**
      * Checks whether subject alternate names changed and certificate needs a renewal
      *
+     * @param reconciliation The reconciliation
      * @param certAndKey    Current certificate
      * @param desiredSubject    Desired subject alternate names
      * @param podName   Name of the pod to which this certificate belongs (used for log messages)
      * @return  True if the subjects are different, false otherwise
      */
-    /*test*/ boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+    /*test*/ boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, Subject desiredSubject, String podName)    {
         Collection<String> desiredAltNames = desiredSubject.subjectAltNames().values();
         Collection<String> currentAltNames = getSubjectAltNames(certAndKey.cert());
 
         if (currentAltNames != null && desiredAltNames.containsAll(currentAltNames) && currentAltNames.containsAll(desiredAltNames))   {
-            LOGGER.trace("Alternate subjects match. No need to refresh cert for pod {}.", podName);
+            RECONCILIATION_LOGGER.trace(reconciliation, "Alternate subjects match. No need to refresh cert for pod {}.", podName);
             return false;
         } else {
-            LOGGER.debug("Alternate subjects for pod {} differ - current: {}; desired: {}", podName, currentAltNames, desiredAltNames);
+            RECONCILIATION_LOGGER.debug(reconciliation, "Alternate subjects for pod {} differ - current: {}; desired: {}", podName, currentAltNames, desiredAltNames);
             return true;
         }
     }
@@ -561,7 +562,7 @@ public abstract class Ca {
         SecretCertProvider secretCertProvider = new SecretCertProvider();
 
         if (caCertsRemoved) {
-            LOGGER.info("{}: Expired CA certificates removed", this);
+            RECONCILIATION_LOGGER.info(reconciliation, "{}: Expired CA certificates removed", this);
         }
         if (renewalType != RenewalType.NOOP && renewalType != RenewalType.POSTPONED) {
             LOGGER.debug("{}: {}", this, renewalType.postDescription(caKeySecretName, caCertSecretName));

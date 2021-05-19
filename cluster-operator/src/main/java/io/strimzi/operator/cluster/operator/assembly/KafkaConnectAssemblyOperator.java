@@ -167,7 +167,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> connectBuild(reconciliation, namespace, build, buildState))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, connect.getName(), connect.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService(reconciliation)))
-                .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, connect.getLogging(), connect.getMetricsConfigInCm()))
+                .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, connect.getLogging(), connect.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
                     ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(reconciliation, metricsAndLoggingCm);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
@@ -191,8 +191,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return deploymentOperations.reconcile(reconciliation, namespace, connect.getName(), dep);
                 })
                 .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, connect.getName(), connect.getReplicas()))
-                .compose(i -> deploymentOperations.waitForObserved(namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging.get(), connect.getDefaultLogConfig()))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
@@ -240,7 +240,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding();
 
         return withIgnoreRbacError(reconciliation,
-                clusterRoleBindingOperations.reconcile(
+                clusterRoleBindingOperations.reconcile(reconciliation,
                         KafkaConnectResources.initContainerClusterRoleBindingName(name, namespace),
                         desired),
                 desired
@@ -256,7 +256,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return super.delete(reconciliation)
-                .compose(i -> withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
+                .compose(i -> withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
@@ -384,7 +384,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return                      Future which completes when the build is finished (or fails if it fails)
      */
     private Future<Void> kubernetesBuildWaitForFinish(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, BuildState buildState, String newBuildRevision)  {
-        return podOperator.waitFor(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
+        return podOperator.waitFor(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
                 .compose(ignore -> podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
                 .compose(pod -> {
                     if (KafkaConnectBuildUtils.buildPodSucceeded(pod)) {
@@ -498,7 +498,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return                      Future which completes when the build is finished (or fails if it fails)
      */
     private Future<Void> openShiftBuildWaitForFinish(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, BuildState buildState, String newBuildRevision)   {
-        return buildOperator.waitFor(namespace, buildState.currentBuildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> openShiftBuildFinished(namespace, buildState.currentBuildName))
+        return buildOperator.waitFor(reconciliation, namespace, buildState.currentBuildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> openShiftBuildFinished(namespace, buildState.currentBuildName))
                 .compose(ignore -> buildOperator.getAsync(namespace, buildState.currentBuildName))
                 .compose(build -> {
                     if (KafkaConnectBuildUtils.buildSucceeded(build))   {

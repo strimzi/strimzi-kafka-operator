@@ -332,7 +332,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
         ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
-        when(mockCrbOps.reconcile(eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
+        when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -343,7 +343,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         op.delete(reconciliation)
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(desiredCrb.getValue(), is(nullValue()));
-                    Mockito.verify(mockCrbOps, times(1)).reconcile(any(), any());
+                    Mockito.verify(mockCrbOps, times(1)).reconcile(any(), any(), any());
 
                     async.flag();
                 })));
@@ -483,14 +483,14 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingressV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress.class);
         when(mockIngressV1Beta1ops.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockIngressV1Beta1ops.reconcile(any(), anyString(), anyString(), ingressV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress())));
-        when(mockIngressV1Beta1ops.hasIngressAddress(eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockIngressV1Beta1ops.hasIngressAddress(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock ingress v1 ops
         IngressOperator mockIngressOps = supplier.ingressOperations;
         ArgumentCaptor<Ingress> ingressCaptor = ArgumentCaptor.forClass(Ingress.class);
         when(mockIngressOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockIngressOps.reconcile(any(), anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
-        when(mockIngressOps.hasIngressAddress(eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockIngressOps.hasIngressAddress(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator op = new MockKafkaAssemblyOperatorForIngressTests(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup()));
@@ -504,7 +504,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
                     verify(mockIngressOps, never()).list(any(), any());
                     verify(mockIngressOps, never()).reconcile(any(), any(), any(), any());
-                    verify(mockIngressOps, never()).hasIngressAddress(any(), any(), anyLong(), anyLong());
+                    verify(mockIngressOps, never()).hasIngressAddress(any(), any(), any(), anyLong(), anyLong());
 
                     async.flag();
                 })));
@@ -574,14 +574,14 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingressV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress.class);
         when(mockIngressV1Beta1ops.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockIngressV1Beta1ops.reconcile(any(), anyString(), anyString(), ingressV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress())));
-        when(mockIngressV1Beta1ops.hasIngressAddress(eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockIngressV1Beta1ops.hasIngressAddress(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock ingress v1 ops
         IngressOperator mockIngressOps = supplier.ingressOperations;
         ArgumentCaptor<Ingress> ingressCaptor = ArgumentCaptor.forClass(Ingress.class);
         when(mockIngressOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockIngressOps.reconcile(any(), anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
-        when(mockIngressOps.hasIngressAddress(eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockIngressOps.hasIngressAddress(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator op = new MockKafkaAssemblyOperatorForIngressTests(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup()));
@@ -595,7 +595,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
                     verify(mockIngressV1Beta1ops, never()).list(any(), any());
                     verify(mockIngressV1Beta1ops, never()).reconcile(any(), any(), any(), any());
-                    verify(mockIngressV1Beta1ops, never()).hasIngressAddress(any(), any(), anyLong(), anyLong());
+                    verify(mockIngressV1Beta1ops, never()).hasIngressAddress(any(), any(), any(), anyLong(), anyLong());
 
                     async.flag();
                 })));

@@ -53,6 +53,7 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
      * Asynchronously polls the deployment configuration until either the observed generation matches the desired
      * generation sequence number or timeout.
      *
+     * @param reconciliation The reconciliation
      * @param namespace The namespace.
      * @param name The resource name.
      * @param pollIntervalMs The polling interval
@@ -60,8 +61,8 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
      * @return  A future which completes when the observed generation of the deployment configuration matches the
      * generation sequence number of the desired state.
      */
-    public Future<Void> waitForObserved(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
+    public Future<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 
     /**

@@ -177,7 +177,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+            protected boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, Subject desiredSubject, String podName)    {
                 return false;
             }
 
@@ -263,7 +263,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+            protected boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, Subject desiredSubject, String podName)    {
                 return false;
             }
 

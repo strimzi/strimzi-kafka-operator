@@ -519,7 +519,7 @@ public class KafkaRoller {
      */
     protected Config brokerConfig(int brokerId) throws ForceableProblem, InterruptedException {
         ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(brokerId));
-        return await(Util.kafkaFutureToVertxFuture(vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
+        return await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
             30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error getting broker config", error)
         );
@@ -532,7 +532,7 @@ public class KafkaRoller {
      */
     protected Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
         ConfigResource resource = Util.getBrokersLogging(brokerId);
-        return await(Util.kafkaFutureToVertxFuture(vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
+        return await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
                 30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error getting broker logging", error)
         );
@@ -550,12 +550,12 @@ public class KafkaRoller {
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
         KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
-        await(Util.kafkaFutureToVertxFuture(vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
+        await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
                 RECONCILIATION_LOGGER.error(reconciliation, "Error doing dynamic config update", error);
                 return new ForceableProblem("Error doing dynamic update", error);
             });
-        await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
+        await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
                 RECONCILIATION_LOGGER.error(reconciliation, "Error performing dynamic logging update for pod {}", podId, error);
                 return new ForceableProblem("Error performing dynamic logging update for pod " + podId, error);
@@ -701,7 +701,7 @@ public class KafkaRoller {
         try {
             String bootstrapHostnames = podNames.stream().map(podName -> KafkaCluster.podDnsName(this.namespace, this.cluster, podName) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
             RECONCILIATION_LOGGER.debug(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
-            return adminClientProvider.createAdminClient(bootstrapHostnames, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
+            return adminClientProvider.createAdminClient(reconciliation, bootstrapHostnames, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
         } catch (KafkaException e) {
             if (ceShouldBeFatal && (e instanceof ConfigException
                     || e.getCause() instanceof ConfigException)) {
@@ -804,7 +804,7 @@ public class KafkaRoller {
     }
 
     protected Future<Void> isReady(String namespace, String podName) {
-        return podOperations.readiness(namespace, podName, pollingIntervalMs, operationTimeoutMs)
+        return podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, operationTimeoutMs)
             .recover(error -> {
                 RECONCILIATION_LOGGER.warn(reconciliation, "Error waiting for pod {}/{} to become ready: {}", namespace, podName, error);
                 return Future.failedFuture(error);

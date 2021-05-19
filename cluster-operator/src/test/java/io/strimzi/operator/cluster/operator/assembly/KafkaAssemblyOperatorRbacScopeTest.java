@@ -179,7 +179,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                             .withName("test-instance-entity-operator")
                             .build()));
 
-                    verify(supplier.clusterRoleBindingOperator, never()).reconcile(anyString(), any());
+                    verify(supplier.clusterRoleBindingOperator, never()).reconcile(any(), anyString(), any());
 
                     async.flag();
                 })));

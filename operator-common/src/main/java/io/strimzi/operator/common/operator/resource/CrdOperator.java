@@ -63,7 +63,7 @@ public class CrdOperator<C extends KubernetesClient,
     protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         Resource<T> resourceOp = operation().inNamespace(namespace).withName(name);
 
-        Future<Void> watchForDeleteFuture = Util.waitFor(vertx,
+        Future<Void> watchForDeleteFuture = Util.waitFor(reconciliation, vertx,
             String.format("%s resource %s", resourceKind, name),
             "deleted",
             1_000,

@@ -167,7 +167,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             }
             return fut.compose(ignored -> {
                 RECONCILIATION_LOGGER.debug(reconciliation, "Rolling update of {}/{}: wait for pod {} readiness", namespace, name, podName);
-                return podOperations.readiness(namespace, podName, pollingIntervalMs, timeoutMs);
+                return podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, timeoutMs);
             });
         });
     }
@@ -255,9 +255,9 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             return crt;
         }
         // ... then wait for the STS to be ready...
-        crt.compose(res -> readiness(namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
+        crt.compose(res -> readiness(reconciliation, namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
         // ... then wait for all the pods to be ready
-            .compose(res -> podReadiness(namespace, desired, 1_000, operationTimeoutMs).map(res))
+            .compose(res -> podReadiness(reconciliation, namespace, desired, 1_000, operationTimeoutMs).map(res))
             .onComplete(result);
 
         return result.future();
@@ -266,12 +266,12 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     /**
      * Returns a future that completes when all the pods [0..replicas-1] in the given statefulSet are ready.
      */
-    protected Future<?> podReadiness(String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
+    protected Future<?> podReadiness(Reconciliation reconciliation, String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
         final int replicas = desired.getSpec().getReplicas();
         List<Future> waitPodResult = new ArrayList<>(replicas);
         for (int i = 0; i < replicas; i++) {
             String podName = getPodName(desired, i);
-            waitPodResult.add(podOperations.readiness(namespace, podName, pollInterval, operationTimeoutMs));
+            waitPodResult.add(podOperations.readiness(reconciliation, namespace, podName, pollInterval, operationTimeoutMs));
         }
         return CompositeFuture.join(waitPodResult);
     }
@@ -330,7 +330,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
             operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
 
-            Future<Void> deletedFut = waitFor(namespace, name, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+            Future<Void> deletedFut = waitFor(reconciliation, namespace, name, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                 StatefulSet sts = get(namespace, name);
                 RECONCILIATION_LOGGER.trace(reconciliation, "Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
                 return sts == null;

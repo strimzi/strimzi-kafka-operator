@@ -6,6 +6,7 @@ package io.strimzi.operator.user.operator;
 
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -60,7 +61,7 @@ public class KafkaUserQuotasIT {
         zkClient = new ZkClient(kafkaCluster.zKConnectString(), 6000_0, 30_000, new BytesPushThroughSerializer());
 
         kuq = new KafkaUserQuotasOperator(vertx,
-                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.bootstrapServers(), null, null, null));
+                new DefaultAdminClientProvider().createAdminClient(new Reconciliation("test", "kind", "namespace", "name"), kafkaCluster.bootstrapServers(), null, null, null));
     }
 
     @AfterAll

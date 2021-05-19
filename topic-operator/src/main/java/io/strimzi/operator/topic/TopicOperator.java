@@ -194,7 +194,7 @@ class TopicOperator {
 
         @Override
         public void handle(Void v) {
-            k8s.deleteResource(resourceName).onComplete(handler);
+            k8s.deleteResource(logContext.toReconciliation(), resourceName).onComplete(handler);
         }
 
         @Override
@@ -841,7 +841,7 @@ class TopicOperator {
     private Future<Void> awaitExistential(LogContext logContext, TopicName topicName, boolean checkExists) {
         String logState = "confirmed " + (checkExists ? "" : "non-") + "existence";
         AtomicReference<Future<Boolean>> ref = new AtomicReference<>(kafka.topicExists(topicName));
-        Future<Void> voidFuture = Util.waitFor(vertx, logContext.toString(), logState, 1_000, 60_000,
+        Future<Void> voidFuture = Util.waitFor(logContext.toReconciliation(), vertx, logContext.toString(), logState, 1_000, 60_000,
             () -> {
                 Future<Boolean> existsFuture = ref.get();
                 if (existsFuture.isComplete()) {

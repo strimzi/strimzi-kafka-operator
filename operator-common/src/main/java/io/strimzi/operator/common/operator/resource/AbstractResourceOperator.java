@@ -138,6 +138,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * Deletes the resource with the given namespace and name and completes the given future accordingly.
      * This method will do a cascading delete.
      *
+     * @param reconciliation The reconciliation
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
      *
@@ -153,6 +154,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * returning a Future which completes once the resource
      * is observed to have been deleted.
      *
+     * @param reconciliation The reconciliation
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
      * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
@@ -194,27 +196,29 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     /**
      * Returns the diff of the current and desired resources
      *
+     * @param reconciliation The reconciliation
      * @param resourceName  Name of the resource used for logging
      * @param current       Current resource
      * @param desired       Desired resource
      *
      * @return              The ResourceDiff instance
      */
-    protected ResourceDiff<T> diff(String resourceName, T current, T desired)  {
-        return new ResourceDiff<>(resourceKind, resourceName, current, desired, ignorablePaths());
+    protected ResourceDiff<T> diff(Reconciliation reconciliation, String resourceName, T current, T desired)  {
+        return new ResourceDiff<>(reconciliation, resourceKind, resourceName, current, desired, ignorablePaths());
     }
 
     /**
      * Checks whether the current and desired resources differ and need to be patched in the Kubernetes API server.
      *
+     * @param reconciliation The reconciliation
      * @param name      Name of the resource used for logging
      * @param current   Current resource
      * @param desired   Desired resource
      *
      * @return          True if the resources differ and need patching
      */
-    protected boolean needsPatching(String name, T current, T desired)   {
-        return !diff(name, current, desired).isEmpty();
+    protected boolean needsPatching(Reconciliation reconciliation, String name, T current, T desired)   {
+        return !diff(reconciliation, name, current, desired).isEmpty();
     }
 
     /**
@@ -226,7 +230,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T current, T desired, boolean cascading) {
-        if (needsPatching(name, current, desired))  {
+        if (needsPatching(reconciliation, name, current, desired))  {
             try {
                 T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
                 reconciliationLogger.debug(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
@@ -380,6 +384,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * Returns a future that completes when the resource identified by the given {@code namespace} and {@code name}
      * is ready.
      *
+     * @param reconciliation The reconciliation
      * @param namespace The namespace.
      * @param name The resource name.
      * @param pollIntervalMs The poll interval in milliseconds.
@@ -388,14 +393,15 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return A future that completes when the resource identified by the given {@code namespace} and {@code name}
      * is ready.
      */
-    public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
-        return waitFor(namespace, name, "ready", pollIntervalMs, timeoutMs, predicate);
+    public Future<Void> waitFor(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+        return waitFor(reconciliation, namespace, name, "ready", pollIntervalMs, timeoutMs, predicate);
     }
 
     /**
      * Returns a future that completes when the resource identified by the given {@code namespace} and {@code name}
      * is ready.
      *
+     * @param reconciliation The reconciliation
      * @param namespace The namespace.
      * @param name The resource name.
      * @param logState The state we are waiting for use in log messages
@@ -405,8 +411,8 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return A future that completes when the resource identified by the given {@code namespace} and {@code name}
      * is ready.
      */
-    public Future<Void> waitFor(String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
-        return Util.waitFor(vertx,
+    public Future<Void> waitFor(Reconciliation reconciliation, String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+        return Util.waitFor(reconciliation, vertx,
             String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
             logState,
             pollIntervalMs,

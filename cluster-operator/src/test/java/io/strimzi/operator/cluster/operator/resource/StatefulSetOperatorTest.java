@@ -137,7 +137,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
 
             @Override
-            public Future<Void> readiness(String namespace, String name, long pollIntervalMs, long timeoutMs) {
+            public Future<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
                 return Future.succeededFuture();
             }
 
@@ -147,7 +147,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
 
             @Override
-            protected Future<?> podReadiness(String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
+            protected Future<?> podReadiness(Reconciliation reconciliation, String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
                 return Future.succeededFuture();
             }
         };
@@ -172,8 +172,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
-        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.waitFor(any(), anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
         when(podOperator.restart(any(), any(), anyLong())).thenReturn(Future.succeededFuture());
@@ -217,7 +217,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         AtomicInteger call = new AtomicInteger();
         when(podOperator.getAsync(anyString(), anyString())).thenAnswer(invocation -> {
@@ -271,8 +271,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
-        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.failedFuture(new TimeoutException()));
+        when(podOperator.waitFor(any(), anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.failedFuture(new TimeoutException()));
         when(podOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
         when(podOperator.restart(any(), any(), anyLong())).thenReturn(Future.succeededFuture());
@@ -317,8 +317,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockResource.get()).thenReturn(resource);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
-        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.waitFor(any(), anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
         when(podOperator.restart(any(), any(), anyLong())).thenReturn(Future.failedFuture("reconcile failed"));
 
@@ -416,8 +416,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockResource.create(any(StatefulSet.class))).thenReturn(sts1);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
-        when(podOperator.readiness(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.waitFor(any(), anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
+        when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(podOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
 
@@ -445,7 +445,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
 
             @Override
-            public Future<Void> waitFor(String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+            public Future<Void> waitFor(Reconciliation reconciliation, String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
                 return Future.succeededFuture();
             }
         };
