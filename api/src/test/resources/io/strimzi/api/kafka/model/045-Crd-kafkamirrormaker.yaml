@@ -1111,7 +1111,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Mirror Maker Service Account.
+                    description: Template for the Kafka MirrorMaker service account.
                 description: Template to specify how Kafka MirrorMaker resources,
                   `Deployments` and `Pods`, are generated.
               livenessProbe:
@@ -2523,7 +2523,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Mirror Maker Service Account.
+                    description: Template for the Kafka MirrorMaker service account.
                 description: Template to specify how Kafka MirrorMaker resources,
                   `Deployments` and `Pods`, are generated.
               livenessProbe:
@@ -3935,7 +3935,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Mirror Maker Service Account.
+                    description: Template for the Kafka MirrorMaker service account.
                 description: Template to specify how Kafka MirrorMaker resources,
                   `Deployments` and `Pods`, are generated.
               livenessProbe:

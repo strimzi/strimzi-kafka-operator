@@ -1051,7 +1051,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Connect Service Account.
+                    description: Template for the Kafka Connect service account.
                   clusterRoleBinding:
                     type: object
                     properties:
@@ -1563,7 +1563,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Connect Build Service Account.
+                    description: Template for the Kafka Connect Build service account.
                 description: Template for Kafka Connect and Kafka Connect S2I resources.
                   The template allows users to specify how the `Deployment`, `Pods`
                   and `Service` are generated.
@@ -3122,7 +3122,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Connect Service Account.
+                    description: Template for the Kafka Connect service account.
                   clusterRoleBinding:
                     type: object
                     properties:
@@ -3634,7 +3634,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Connect Build Service Account.
+                    description: Template for the Kafka Connect Build service account.
                 description: Template for Kafka Connect and Kafka Connect S2I resources.
                   The template allows users to specify how the `Deployment`, `Pods`
                   and `Service` are generated.
@@ -5193,7 +5193,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Connect Service Account.
+                    description: Template for the Kafka Connect service account.
                   clusterRoleBinding:
                     type: object
                     properties:
@@ -5705,7 +5705,7 @@ spec:
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
-                    description: Template for the Kafka Connect Build Service Account.
+                    description: Template for the Kafka Connect Build service account.
                 description: Template for Kafka Connect and Kafka Connect S2I resources.
                   The template allows users to specify how the `Deployment`, `Pods`
                   and `Service` are generated.

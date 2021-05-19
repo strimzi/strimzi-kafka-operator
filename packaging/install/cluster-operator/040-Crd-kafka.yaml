@@ -1932,7 +1932,7 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
-                        description: Template for the Kafka Service Account.
+                        description: Template for the Kafka service account.
                       clusterRoleBinding:
                         type: object
                         properties:
@@ -2864,7 +2864,7 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
-                        description: Template for the ZooKeeper Service Account.
+                        description: Template for the ZooKeeper service account.
                     description: Template for ZooKeeper cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
@@ -3977,7 +3977,7 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
-                        description: Template for the Entity Operator Service Account.
+                        description: Template for the Entity Operator service account.
                     description: Template for Entity Operator resources. The template
                       allows users to specify how is the `Deployment` and `Pods` generated.
                 description: Configuration of the Entity Operator.
@@ -4957,7 +4957,7 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
-                        description: Template for the Cruise Control Service Account.
+                        description: Template for the Cruise Control service account.
                     description: Template to specify how Cruise Control resources,
                       `Deployments` and `Pods`, are generated.
                   brokerCapacity:
@@ -5631,7 +5631,7 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
-                        description: Template for the JMX Trans Service Account.
+                        description: Template for the JMX Trans service account.
                     description: Template for JmxTrans resources.
                 required:
                 - outputDefinitions
@@ -6198,7 +6198,7 @@ spec:
                                   Can be applied to different resources such as `StatefulSets`,
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
-                        description: Template for the Kafka Exporter Service Account.
+                        description: Template for the Kafka Exporter service account.
                     description: Customization of deployment templates and pods.
                   livenessProbe:
                     type: object

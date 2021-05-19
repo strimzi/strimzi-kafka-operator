@@ -805,7 +805,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |clusterCaCert             1.2+<.<a|Template for Secret with Kafka Cluster certificate public key.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|serviceAccount            1.2+<.<a|Template for the Kafka Service Account.
+|serviceAccount            1.2+<.<a|Template for the Kafka service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |clusterRoleBinding        1.2+<.<a|Template for the Kafka ClusterRoleBinding.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
@@ -1076,7 +1076,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |zookeeperContainer     1.2+<.<a|Template for the ZooKeeper container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount         1.2+<.<a|Template for the ZooKeeper Service Account.
+|serviceAccount         1.2+<.<a|Template for the ZooKeeper service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
@@ -1230,7 +1230,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |tlsSidecarContainer     1.2+<.<a|Template for the Entity Operator TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount          1.2+<.<a|Template for the Entity Operator Service Account.
+|serviceAccount          1.2+<.<a|Template for the Entity Operator service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
@@ -1312,7 +1312,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |tlsSidecarContainer     1.2+<.<a|Template for the Cruise Control TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount          1.2+<.<a|Template for the Cruise Control Service Account.
+|serviceAccount          1.2+<.<a|Template for the Cruise Control service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
@@ -1415,7 +1415,7 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |container       1.2+<.<a|Template for JmxTrans container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount  1.2+<.<a|Template for the JMX Trans Service Account.
+|serviceAccount  1.2+<.<a|Template for the JMX Trans service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
@@ -1467,7 +1467,7 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |container       1.2+<.<a|Template for the Kafka Exporter container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount  1.2+<.<a|Template for the Kafka Exporter Service Account.
+|serviceAccount  1.2+<.<a|Template for the Kafka Exporter service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
@@ -1807,7 +1807,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |podDisruptionBudget  1.2+<.<a|Template for Kafka Connect `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|serviceAccount       1.2+<.<a|Template for the Kafka Connect Service Account.
+|serviceAccount       1.2+<.<a|Template for the Kafka Connect service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |clusterRoleBinding   1.2+<.<a|Template for the Kafka Connect ClusterRoleBinding.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
@@ -1817,7 +1817,7 @@ Used in: xref:type-KafkaConnectS2ISpec-{context}[`KafkaConnectS2ISpec`], xref:ty
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |buildConfig          1.2+<.<a|Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|buildServiceAccount  1.2+<.<a|Template for the Kafka Connect Build Service Account.
+|buildServiceAccount  1.2+<.<a|Template for the Kafka Connect Build service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
@@ -2637,7 +2637,7 @@ Used in: xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |mirrorMakerContainer  1.2+<.<a|Template for Kafka MirrorMaker container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount        1.2+<.<a|Template for the Kafka Mirror Maker Service Account.
+|serviceAccount        1.2+<.<a|Template for the Kafka MirrorMaker service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
@@ -2834,7 +2834,7 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |bridgeContainer      1.2+<.<a|Template for the Kafka Bridge container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount       1.2+<.<a|Template for the Kafka Bridge Service Account.
+|serviceAccount       1.2+<.<a|Template for the Kafka Bridge service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 

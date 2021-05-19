@@ -888,7 +888,7 @@ spec:
                               type: object
                               description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                           description: Metadata applied to the resource.
-                      description: Template for the Kafka Bridge Service Account.
+                      description: Template for the Kafka Bridge service account.
                   description: Template for Kafka Bridge resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
                 tracing:
                   type: object
