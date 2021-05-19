@@ -66,7 +66,7 @@ public class JmxTransTemplate implements Serializable, UnknownPropertyPreserving
         this.container = container;
     }
 
-    @Description("Template for the JMX Trans Service Account.")
+    @Description("Template for the JMX Trans service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

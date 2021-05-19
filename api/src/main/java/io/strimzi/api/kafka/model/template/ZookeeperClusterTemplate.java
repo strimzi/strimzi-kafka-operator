@@ -128,7 +128,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
         this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
-    @Description("Template for the ZooKeeper Service Account.")
+    @Description("Template for the ZooKeeper service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

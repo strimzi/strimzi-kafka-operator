@@ -49,7 +49,7 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
 
             return super.internalPatch(namespace, name, current, desired);
         } else {
-            // Patching a SA causes new tokens to be created, which we should avoid
+            // Patching an SA causes new tokens to be created, which we should avoid
             log.debug("{} {} in namespace {} has not been patched: patching service accounts generates new tokens which should be avoided.", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }

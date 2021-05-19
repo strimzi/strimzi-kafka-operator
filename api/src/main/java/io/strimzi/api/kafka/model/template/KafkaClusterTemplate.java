@@ -227,7 +227,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
         this.clusterRoleBinding = clusterRoleBinding;
     }
 
-    @Description("Template for the Kafka Service Account.")
+    @Description("Template for the Kafka service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

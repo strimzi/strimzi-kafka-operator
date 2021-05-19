@@ -147,7 +147,7 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
         this.clusterRoleBinding = clusterRoleBinding;
     }
 
-    @Description("Template for the Kafka Connect Service Account.")
+    @Description("Template for the Kafka Connect service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;
@@ -157,7 +157,7 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
         this.serviceAccount = serviceAccount;
     }
 
-    @Description("Template for the Kafka Connect Build Service Account.")
+    @Description("Template for the Kafka Connect Build service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getBuildServiceAccount() {
         return buildServiceAccount;

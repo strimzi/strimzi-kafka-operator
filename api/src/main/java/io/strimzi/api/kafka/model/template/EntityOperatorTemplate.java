@@ -87,7 +87,7 @@ public class EntityOperatorTemplate implements Serializable, UnknownPropertyPres
         this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
-    @Description("Template for the Entity Operator Service Account.")
+    @Description("Template for the Entity Operator service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

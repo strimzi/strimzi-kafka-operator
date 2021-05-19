@@ -76,7 +76,7 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
         this.mirrorMakerContainer = mirrorMakerContainer;
     }
 
-    @Description("Template for the Kafka Mirror Maker Service Account.")
+    @Description("Template for the Kafka MirrorMaker service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

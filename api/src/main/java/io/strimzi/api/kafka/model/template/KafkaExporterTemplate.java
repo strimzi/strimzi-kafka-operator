@@ -82,7 +82,7 @@ public class KafkaExporterTemplate implements Serializable, UnknownPropertyPrese
         this.container = container;
     }
 
-    @Description("Template for the Kafka Exporter Service Account.")
+    @Description("Template for the Kafka Exporter service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

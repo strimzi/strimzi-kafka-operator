@@ -100,7 +100,7 @@ public class CruiseControlTemplate implements Serializable, UnknownPropertyPrese
         this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
-    @Description("Template for the Cruise Control Service Account.")
+    @Description("Template for the Cruise Control service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

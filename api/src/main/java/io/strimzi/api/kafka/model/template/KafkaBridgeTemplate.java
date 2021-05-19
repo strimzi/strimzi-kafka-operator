@@ -88,7 +88,7 @@ public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserv
         this.bridgeContainer = bridgeContainer;
     }
 
-    @Description("Template for the Kafka Bridge Service Account.")
+    @Description("Template for the Kafka Bridge service account.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getServiceAccount() {
         return serviceAccount;

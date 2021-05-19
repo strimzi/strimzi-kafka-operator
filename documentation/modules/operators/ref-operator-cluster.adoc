@@ -241,11 +241,14 @@ NOTE: The `ControlPlaneListener` feature gate was introduced in Strimzi 0.23.0 a
 
 === Service Account patching feature gate
 
-The default behavior of the Strimzi Cluster Operator is that once the Service Account exists, it is never updated.
-When the `ServiceAccountPatching` feature gate is enabled, the operator will patch the Service Accounts and apply any desired changes to the Service Account configuration in every reconciliation.
-Tsi for example allows changing labels or annotations after the operands are already created.
-This feature gate is currently in the alpha phase and is disabled by default.
-To enable it, use `+ServiceAccountPatching` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+By default, the Cluster Operator does not update service accounts. 
+To allow the Cluster Operator to apply updates, enable the `ServiceAccountPatching` feature gate.  
+
+Add `+ServiceAccountPatching` to the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+The feature gate is currently in the alpha phase and disabled by default.
+With the feature gate enabled, the Cluster Operator applies updates to service account configuration in every reconciliation.
+For example, you can change service account labels and annotations after the operands are already created.  
 
 NOTE: The `ServiceAccountPatching` feature gate was introduced in Strimzi 0.24.0 and is expected to remain in the alpha phase for a number of releases before it moves to the beta phase and is enabled by default.
 
