@@ -25,16 +25,17 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
  * inside ./systemtest/target/logs directory where the structure of the logs are as follows:
  *
  * ./logs
- *      /test-suite_time/
- *          /test-case/
- *              /configmaps/
- *              /events
- *              deployment.log
- *              configmap.log
- *              ...
+ *      /time/
+ *          /test-suite_time/
+ *              /test-case/
+ *                  /configmaps/
+ *                  /events
+ *                  deployment.log
+ *                  configmap.log
+ *                  ...
  *
-*           cluster-operator.log    // shared cluster operator logs for all tests inside one test suite
- *      /another-test-suite_time/
+ *              cluster-operator.log    // shared cluster operator logs for all tests inside one test suite
+ *          /another-test-suite_time/
  *      ...
  */
 public class LogCollector implements LogCollect {
@@ -90,53 +91,56 @@ public class LogCollector implements LogCollect {
      */
     class CoLogCollector implements LogCollect {
 
-        @Override
-        public void collectLogsFromPods() {
-            final Pod coPod = kubeClient.getClient().pods().inAnyNamespace().list().getItems().stream()
+        private final Pod clusterOperatorPod;
+        private final String clusterOperatorNamespace;
+
+        public CoLogCollector() {
+            this.clusterOperatorPod = kubeClient.getClient().pods().inAnyNamespace().list().getItems().stream()
                 .filter(pod -> pod.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
                 // contract only one Cluster Operator deployment inside all namespaces
                 .findFirst()
                 .orElseThrow();
+            this.clusterOperatorNamespace = this.clusterOperatorPod.getMetadata().getNamespace();
+        }
 
-            try {
-                // cluster operator pod logs
-                final String coPodName = coPod.getMetadata().getName();
-                coPod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                    scrapeAndCreateLogs(testSuite, coPod.getMetadata().getNamespace(), coPodName, containerStatus);
-                });
-            } catch (Exception allExceptions) {
-                LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
-            }
+        @Override
+        public void collectLogsFromPods() {
+            // cluster operator pod logs
+            final String coPodName = this.clusterOperatorPod.getMetadata().getName();
+            this.clusterOperatorPod.getStatus().getContainerStatuses().forEach(containerStatus -> {
+                scrapeAndCreateLogs(testSuite, this.clusterOperatorNamespace, coPodName, containerStatus);
+            });
         }
 
         @Override
         public void collectEvents() {
-            kubeClient.getClient().events().v1().events().inAnyNamespace().list().getItems().stream()
-                .filter(event -> event.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
-                .forEach(event -> writeFile(eventsDir + "/" + event.getMetadata().getName() + ".log", event.toString()));
+            String events = cmdKubeClient(this.clusterOperatorNamespace).getEvents();
+            // Write events to file
+            writeFile(eventsDir + "/" + "cluster-operator-events-in-namespace" + this.clusterOperatorNamespace + ".log", events);
         }
+
         @Override
         public void collectConfigMaps() {
-            kubeClient.getClient().configMaps().inAnyNamespace().list().getItems().stream()
+            kubeClient.getClient().configMaps().inNamespace(this.clusterOperatorNamespace).list().getItems().stream()
                 .filter(configMap -> configMap.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
                 .forEach(configMap -> writeFile(configMapDir + "/" + configMap.getMetadata().getName() + "-" + namespace + ".log", configMap.toString()));
         }
 
         @Override
         public void collectDeployments() {
-            kubeClient.getClient().apps().deployments().inAnyNamespace().list().getItems().stream()
+            kubeClient.getClient().apps().deployments().inNamespace(this.clusterOperatorNamespace).list().getItems().stream()
                 .filter(deployment -> deployment.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
                 .forEach(deployment -> writeFile(testCase + "/" + deployment.getMetadata().getName() + "-" + namespace + ".log", deployment.toString()));
         }
         @Override
         public void collectStatefulSets() {
-            kubeClient.getClient().apps().statefulSets().inAnyNamespace().list().getItems().stream()
+            kubeClient.getClient().apps().statefulSets().inNamespace(this.clusterOperatorNamespace).list().getItems().stream()
                 .filter(statefulSet -> statefulSet.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
                 .forEach(statefulSet -> writeFile(testCase + "/" + statefulSet.getMetadata().getName() + "-" + namespace + ".log", statefulSet.toString()));
         }
         @Override
         public void collectReplicaSets() {
-            kubeClient.getClient().apps().replicaSets().inAnyNamespace().list().getItems().stream()
+            kubeClient.getClient().apps().replicaSets().inNamespace(this.clusterOperatorNamespace).list().getItems().stream()
                 .filter(replicaSet -> replicaSet.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
                 .forEach(replicaSet -> writeFile(testCase + "/" + replicaSet.getMetadata().getName() + "-" + namespace + ".log", replicaSet.toString()));
         }
@@ -144,9 +148,10 @@ public class LogCollector implements LogCollect {
 
     @Override
     public void collectLogsFromPods() {
-        coLogCollector.collectLogsFromPods();
-        LOGGER.info("Collecting logs for Pod(s) in namespace {}", namespace);
         try {
+            coLogCollector.collectLogsFromPods();
+            LOGGER.info("Collecting logs for Pod(s) in namespace {}", namespace);
+
             kubeClient.listPods(namespace).forEach(pod -> {
                 String podName = pod.getMetadata().getName();
                 pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
@@ -154,7 +159,7 @@ public class LogCollector implements LogCollect {
                 });
             });
         } catch (Exception allExceptions) {
-            LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored.");
+            LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored. Exception message" + allExceptions.getMessage());
         }
     }
 
