@@ -215,7 +215,7 @@ public class KafkaUserModel {
                         && !userCrt.isEmpty()
                         && userKey != null
                         && !userKey.isEmpty()
-                        && !clientsCa.isExpiring(userSecret, "user.crt")) {
+                        && !clientsCa.isExpiring(reconciliation, userSecret, "user.crt")) {
 
                     if (userKeyStore != null
                             && !userKeyStore.isEmpty()

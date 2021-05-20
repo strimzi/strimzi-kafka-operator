@@ -39,7 +39,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Secret secret, String certKey)  {
+            public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
                 return false;
             }
 
@@ -96,7 +96,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Secret secret, String certKey)  {
+            public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
                 return false;
             }
 
@@ -172,7 +172,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Secret secret, String certKey)  {
+            public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
                 return true;
             }
 
@@ -258,7 +258,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Secret secret, String certKey)  {
+            public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
                 return true;
             }
 
