@@ -6,8 +6,8 @@ ARG THIRD_PARTY_LIBS
 ARG strimzi_version
 ARG TARGETPLATFORM
 
-RUN yum -y install gettext nmap-ncat stunnel net-tools && yum clean all -y
-RUN yum -y install unzip && yum clean all -y
+RUN microdnf install gettext nmap-ncat stunnel net-tools unzip hostname findutils \
+    && microdnf clean all
 
 # Add kafka user with UID 1001
 # The user is in the group 0 to have access to the mounted volumes and storage

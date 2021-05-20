@@ -32,8 +32,11 @@ COPY jmxtrans_readiness_check.sh /opt/jmx/
 #####
 # Add NC
 #####
-RUN yum install -y nc
+RUN microdnf install nc \
+    && microdnf clean all
 
 VOLUME ${JSON_DIR}
 
 ENTRYPOINT [ "/docker-entrypoint.sh",  "start-without-jmx" ]
+
+USER 1001
