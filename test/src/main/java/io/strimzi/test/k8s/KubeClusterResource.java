@@ -15,7 +15,11 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
@@ -42,6 +46,8 @@ public class KubeClusterResource {
 
     private String namespace;
     private String testNamespace;
+    // {test-suite-name} -> {{namespace-1}, {namespace-2},...,}
+    protected static Map<String, Set<String>> mapWithSuiteNamespaces = new HashMap<>();
 
     protected List<String> bindingsNamespaces = new ArrayList<>();
     private List<String> deploymentNamespaces = new ArrayList<>();
@@ -143,7 +149,7 @@ public class KubeClusterResource {
      * @param useNamespace namespace which will be used as default by kubernetes client
      * @param namespaces list of namespaces which will be created
      */
-    public void createNamespaces(String useNamespace, List<String> namespaces) {
+    public void createNamespaces(ExtensionContext extensionContext, String useNamespace, List<String> namespaces) {
         bindingsNamespaces = namespaces;
         for (String namespace: namespaces) {
 
@@ -157,6 +163,7 @@ public class KubeClusterResource {
             deploymentNamespaces.add(namespace);
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
+            if (extensionContext != null) addNamespaceToSet(extensionContext, namespace);
         }
         testNamespace = useNamespace;
         LOGGER.info("Using Namespace {}", useNamespace);
@@ -168,29 +175,41 @@ public class KubeClusterResource {
      * by calling {@link #deleteNamespaces()}
      * @param useNamespace namespace which will be created and used as default by kubernetes client
      */
+    public void createNamespace(ExtensionContext extensionContext, String useNamespace) {
+        createNamespaces(extensionContext, useNamespace, Collections.singletonList(useNamespace));
+    }
+
     public void createNamespace(String useNamespace) {
-        createNamespaces(useNamespace, Collections.singletonList(useNamespace));
+        createNamespaces(null, useNamespace, Collections.singletonList(useNamespace));
     }
 
     /**
      * Delete all created namespaces. Namespaces are deleted in the reverse order than they were created.
      */
-    public void deleteNamespaces() {
+    public void deleteNamespaces(ExtensionContext extensionContext) {
         Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
             LOGGER.info("Deleting Namespace {}", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
+            if (extensionContext != null) deleteNamespaceFromSet(extensionContext, namespace);
         }
         deploymentNamespaces.clear();
         bindingsNamespaces = null;
         LOGGER.info("Using Namespace {}", testNamespace);
         setNamespace(testNamespace);
+
+        if (extensionContext != null) deleteNamespaceFromSet(extensionContext, testNamespace);
     }
 
-    public void deleteNamespace(String namespaceName) {
+    public void deleteNamespaces() {
+        deleteNamespaces(null);
+    }
+
+    public void deleteNamespace(ExtensionContext extensionContext, String namespaceName) {
         kubeClient().deleteNamespace(namespaceName);
         cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
+        if (extensionContext != null) deleteNamespaceFromSet(extensionContext, testNamespace);
     }
 
     /**
@@ -347,5 +366,38 @@ public class KubeClusterResource {
     /** Returns list of currently deployed resources */
     public List<String> getListOfDeployedResources() {
         return deploymentResources;
+    }
+
+    private synchronized void addNamespaceToSet(ExtensionContext extensionContext, String namespaceName) {
+        String testClass = null;
+
+        if (extensionContext.getTestClass().isPresent()) testClass = extensionContext.getRequiredTestClass().getName();
+
+        if (mapWithSuiteNamespaces.containsKey(testClass)) {
+            Set<String> testSuiteNamespaces = mapWithSuiteNamespaces.get(testClass);
+            testSuiteNamespaces.add(namespaceName);
+            mapWithSuiteNamespaces.put(testClass, testSuiteNamespaces);
+        } else {
+            // test-suite is new
+            mapWithSuiteNamespaces.put(testClass, new HashSet<>(Set.of(namespaceName)));
+        }
+
+        LOGGER.debug("SUITE_NAMESPACE_MAP: \n{}", mapWithSuiteNamespaces);
+    }
+
+    private synchronized void deleteNamespaceFromSet(ExtensionContext extensionContext, String namespaceName) {
+        String testClass = null;
+
+        if (extensionContext.getTestClass().isPresent()) testClass = extensionContext.getRequiredTestClass().getName();
+
+        // dynamically removing from the map
+        Set<String> testSuiteNamespaces = mapWithSuiteNamespaces.get(testClass);
+        testSuiteNamespaces.remove(namespaceName);
+        mapWithSuiteNamespaces.put(testClass, testSuiteNamespaces);
+        LOGGER.debug("SUITE_NAMESPACE_MAP after deletion: \n{}", mapWithSuiteNamespaces);
+    }
+
+    public static Map<String, Set<String>> getMapWithSuiteNamespaces() {
+        return mapWithSuiteNamespaces;
     }
 }

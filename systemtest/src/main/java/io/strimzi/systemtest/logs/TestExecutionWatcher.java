@@ -76,21 +76,8 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION, testClass, testMethod);
 
         testMethod = testMethod.isEmpty() ? "class-context-" + new Random().nextInt(Integer.MAX_VALUE) : testMethod;
-
-        if (StUtils.isParallelNamespaceTest(extensionContext)) {
-            namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-            logCollector = new LogCollector(namespaceName, testClass, testMethod, kubeClient(), Environment.TEST_LOG_DIR);
-        } else {
-            logCollector = new LogCollector(kubeClient().getNamespace(), testClass, testMethod, kubeClient(), Environment.TEST_LOG_DIR);
-        }
+        logCollector = new LogCollector(testClass, testMethod, kubeClient(), Environment.TEST_LOG_DIR);
         // collecting logs for all resources inside Kubernetes cluster
-        logCollector.collectEvents();
-        logCollector.collectConfigMaps();
-        logCollector.collectLogsFromPods();
-        logCollector.collectDeployments();
-        logCollector.collectStatefulSets();
-        logCollector.collectReplicaSets();
-        logCollector.collectStrimzi();
-        logCollector.collectClusterInfo();
+        logCollector.collect();
     }
 }

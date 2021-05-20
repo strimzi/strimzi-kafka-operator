@@ -252,7 +252,7 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-        cluster.createNamespaces(clientNamespace, namespaces);
+        cluster.createNamespaces(extensionContext, clientNamespace, namespaces);
         cluster.createCustomResources(resources);
         applyClusterOperatorInstallFiles(clientNamespace);
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
@@ -792,7 +792,7 @@ public abstract class AbstractST implements TestSeparator {
                 final String namespaceToDelete = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
                 LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, testContext.getDisplayName());
-                cluster.deleteNamespace(namespaceToDelete);
+                cluster.deleteNamespace(testContext, namespaceToDelete);
             }
         }
     }
@@ -814,11 +814,11 @@ public abstract class AbstractST implements TestSeparator {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
         String testName = null;
+        String testClass = null;
 
         synchronized (lock) {
-            if (extensionContext.getTestMethod().isPresent()) {
-                testName = extensionContext.getTestMethod().get().getName();
-            }
+            if (extensionContext.getTestClass().isPresent()) testClass = extensionContext.getTestClass().get().getName();
+            if (extensionContext.getTestMethod().isPresent()) testName = extensionContext.getTestMethod().get().getName();
 
             LOGGER.info("Not first test we are gonna generate cluster name");
             String clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
