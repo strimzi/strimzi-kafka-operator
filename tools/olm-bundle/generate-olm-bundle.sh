@@ -81,7 +81,7 @@ generate_olm_bundle() {
       if [ "$kind" = "CustomResourceDefinition" ]; then
         kind="crd"
       else
-        name=$(echo "$name" | sed 's/-//g')
+        name=$(echo "$name" | $SED 's/-//g')
         kind=$(echo "$kind" | tr '[:upper:]' '[:lower:]')
       fi
       dest="${MANIFESTS}/${name}.${kind}.yaml"
