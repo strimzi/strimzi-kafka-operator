@@ -120,7 +120,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
-                pfa, new FeatureGates(""), 60_000L);
+                pfa, FeatureGates.NONE, 60_000L);
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         kco = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa,

@@ -122,7 +122,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
-                pfa, new FeatureGates(""), 60_000L);
+                pfa, FeatureGates.NONE, 60_000L);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         this.kco = new KafkaConnectAssemblyOperator(vertx, pfa, supplier, config, foo -> kafkaConnectApi);
 

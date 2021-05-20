@@ -14,9 +14,12 @@ import static java.util.Arrays.asList;
  * Class for handling the configuration of feature gates
  */
 public class FeatureGates {
+    public static final FeatureGates NONE = new FeatureGates("");
+
     private static final String CONTROL_PLANE_LISTENER = "ControlPlaneListener";
     private static final String SERVICE_ACCOUNT_PATCHING = "ServiceAccountPatching";
 
+    // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, false);
     private final FeatureGate serviceAccountPatching = new FeatureGate(SERVICE_ACCOUNT_PATCHING, false);
 
@@ -82,6 +85,18 @@ public class FeatureGates {
         return serviceAccountPatching.isEnabled();
     }
 
+    /**
+     * Returns a list of all Feature gates. Used for testing.
+     *
+     * @return  List of all Feature Gates
+     */
+    /*test*/ List<FeatureGate> allFeatureGates()  {
+        return List.of(
+                controlPlaneListener,
+                serviceAccountPatching
+        );
+    }
+
     @Override
     public String toString() {
         return "FeatureGates(" +
@@ -137,6 +152,13 @@ public class FeatureGates {
          */
         public boolean isEnabled() {
             return value == null ? defaultValue : value;
+        }
+
+        /**
+         * @return  Returns True if this feature gate is enabled by default. False otherwise.
+         */
+        public boolean isEnabledByDefault() {
+            return defaultValue;
         }
     }
 }

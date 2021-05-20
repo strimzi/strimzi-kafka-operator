@@ -291,7 +291,7 @@ public class KafkaAssemblyOperatorMockTest {
         return new ResourceOperatorSupplier(vertx, client, leaderFinder,
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, kubernetesVersion),
-                new FeatureGates(""), 2_000);
+                FeatureGates.NONE, 2_000);
     }
 
     private void assertResourceRequirements(VertxTestContext context, String statefulSetName) {

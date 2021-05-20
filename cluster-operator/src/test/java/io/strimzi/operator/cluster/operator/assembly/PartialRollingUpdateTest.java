@@ -181,7 +181,7 @@ public class PartialRollingUpdateTest {
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
-                new FeatureGates(""), 60_000L);
+                FeatureGates.NONE, 60_000L);
     }
 
     private void startKube() {
