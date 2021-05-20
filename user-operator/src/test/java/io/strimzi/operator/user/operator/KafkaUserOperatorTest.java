@@ -85,7 +85,7 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(new Reconciliation("test", "kind", "namespace", "name"), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
         when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
