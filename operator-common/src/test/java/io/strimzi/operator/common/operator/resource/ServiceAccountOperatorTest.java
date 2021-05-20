@@ -5,6 +5,8 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.ObjectReference;
+import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
@@ -16,14 +18,21 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,19 +104,75 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> op = createResourceOperations(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(resource)
             .onComplete(context.succeeding(rr -> {
                 context.verify(() -> assertThat(rr, instanceOf(ReconcileResult.Noop.class)));
                 verify(mockResource).get();
-                //verify(mockResource).patch(any());
+                verify(mockResource, never()).patch(any());
                 verify(mockResource, never()).create(any());
                 verify(mockResource, never()).create();
                 verify(mockResource, never()).createOrReplace(any());
                 verify(mockCms, never()).createOrReplace(any());
                 async.flag();
             }));
+    }
+
+    @Test
+    public void testSecretsPatching(VertxTestContext context)   {
+        List<ObjectReference> secrets = List.of(
+                new ObjectReferenceBuilder().withName("secretName1").build(),
+                new ObjectReferenceBuilder().withName("secretName2").build()
+        );
+
+        ServiceAccount current = new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withSecrets(secrets)
+                .build();
+
+        ServiceAccount desired = new ServiceAccountBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                    .withLabels(Map.of("lKey", "lValue"))
+                    .withAnnotations(Map.of("aKey", "aValue"))
+                .endMetadata()
+                .build();
+
+        Resource mockResource = mock(resourceType());
+        when(mockResource.get()).thenReturn(current);
+        ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
+        when(mockResource.patch(saCaptor.capture())).thenReturn(desired);
+        when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockResource);
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
+
+        KubernetesClient mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, true);
+
+        Checkpoint async = context.checkpoint();
+        op.reconcile(NAMESPACE, RESOURCE_NAME, desired)
+                .onComplete(context.succeeding(rr -> {
+                    verify(mockResource, times(1)).patch(any());
+
+                    assertThat(saCaptor.getValue(), is(notNullValue()));
+                    assertThat(saCaptor.getValue().getSecrets().size(), is(2));
+                    assertThat(saCaptor.getValue().getSecrets(), is(secrets));
+                    assertThat(saCaptor.getValue().getMetadata().getLabels().get("lKey"), is("lValue"));
+                    assertThat(saCaptor.getValue().getMetadata().getAnnotations().get("aKey"), is("aValue"));
+
+                    async.flag();
+                }));
     }
 }

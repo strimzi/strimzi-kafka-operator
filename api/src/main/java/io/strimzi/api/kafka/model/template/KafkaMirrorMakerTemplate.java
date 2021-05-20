@@ -24,8 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "deployment", "pod"})
+@JsonPropertyOrder({"deployment", "pod", "podDisruptionBudget", "mirrorMakerContainer", "serviceAccount"})
 @EqualsAndHashCode
 public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -34,6 +33,7 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
     private PodTemplate pod;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate mirrorMakerContainer;
+    private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka MirrorMaker `Deployment`.")
@@ -74,6 +74,16 @@ public class KafkaMirrorMakerTemplate implements Serializable, UnknownPropertyPr
 
     public void setMirrorMakerContainer(ContainerTemplate mirrorMakerContainer) {
         this.mirrorMakerContainer = mirrorMakerContainer;
+    }
+
+    @Description("Template for the Kafka MirrorMaker service account.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getServiceAccount() {
+        return serviceAccount;
+    }
+
+    public void setServiceAccount(ResourceTemplate serviceAccount) {
+        this.serviceAccount = serviceAccount;
     }
 
     @Override

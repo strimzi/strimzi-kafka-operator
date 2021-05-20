@@ -558,6 +558,11 @@ public class KafkaCluster extends AbstractModel {
                 result.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
             }
 
+            if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
+                result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
+                result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 

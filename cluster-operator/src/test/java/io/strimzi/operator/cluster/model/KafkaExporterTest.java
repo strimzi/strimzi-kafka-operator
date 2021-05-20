@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
@@ -335,8 +336,8 @@ public class KafkaExporterTest {
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
 
-        Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
+        Map<String, String> saAnots = TestUtils.map("a5", "v5", "a6", "v6");
 
         Affinity affinity = new AffinityBuilder()
                 .withNewNodeAffinity()
@@ -396,6 +397,12 @@ public class KafkaExporterTest {
                                 .withTopologySpreadConstraints(tsc1, tsc2)
                                 .withEnableServiceLinks(false)
                             .endPod()
+                            .withNewServiceAccount()
+                                .withNewMetadata()
+                                    .withLabels(saLabels)
+                                    .withAnnotations(saAnots)
+                                .endMetadata()
+                            .endServiceAccount()
                         .endTemplate()
                     .endKafkaExporter()
                 .endSpec()
@@ -416,6 +423,11 @@ public class KafkaExporterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+
+        // Check Service Account
+        ServiceAccount sa = ke.generateServiceAccount();
+        assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
     @AfterAll

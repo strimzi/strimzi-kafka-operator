@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -390,6 +391,9 @@ public class KafkaConnectBuildTest {
         Map<String, String> buildConfigLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> buildConfigAnnos = TestUtils.map("a3", "v3", "a4", "v4");
 
+        Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
+        Map<String, String> saAnots = TestUtils.map("a5", "v5", "a6", "v6");
+
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withName(cluster)
@@ -424,6 +428,12 @@ public class KafkaConnectBuildTest {
                                 .withAnnotations(buildConfigAnnos)
                             .endMetadata()
                         .endBuildConfig()
+                        .withNewBuildServiceAccount()
+                            .withNewMetadata()
+                                .withLabels(saLabels)
+                                .withAnnotations(saAnots)
+                            .endMetadata()
+                        .endBuildServiceAccount()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -442,6 +452,11 @@ public class KafkaConnectBuildTest {
         BuildConfig bc = build.generateBuildConfig(dockerfile);
         assertThat(bc.getMetadata().getLabels().entrySet().containsAll(buildConfigLabels.entrySet()), is(true));
         assertThat(bc.getMetadata().getAnnotations().entrySet().containsAll(buildConfigAnnos.entrySet()), is(true));
+
+        // Check Service Account
+        ServiceAccount sa = build.generateServiceAccount();
+        assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
     @ParallelTest

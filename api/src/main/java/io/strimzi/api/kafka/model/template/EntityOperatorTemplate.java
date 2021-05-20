@@ -24,8 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "deployment", "pod"})
+@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount"})
 @EqualsAndHashCode
 public class EntityOperatorTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -35,6 +34,7 @@ public class EntityOperatorTemplate implements Serializable, UnknownPropertyPres
     private ContainerTemplate topicOperatorContainer;
     private ContainerTemplate userOperatorContainer;
     private ContainerTemplate tlsSidecarContainer;
+    private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Entity Operator `Deployment`.")
@@ -85,6 +85,16 @@ public class EntityOperatorTemplate implements Serializable, UnknownPropertyPres
 
     public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
         this.tlsSidecarContainer = tlsSidecarContainer;
+    }
+
+    @Description("Template for the Entity Operator service account.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getServiceAccount() {
+        return serviceAccount;
+    }
+
+    public void setServiceAccount(ResourceTemplate serviceAccount) {
+        this.serviceAccount = serviceAccount;
     }
 
     @Override

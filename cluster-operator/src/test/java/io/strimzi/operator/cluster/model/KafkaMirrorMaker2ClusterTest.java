@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -682,6 +683,9 @@ public class KafkaMirrorMaker2ClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
 
+        Map<String, String> saLabels = TestUtils.map("l9", "v9", "l10", "v10");
+        Map<String, String> saAnots = TestUtils.map("a9", "v9", "a10", "v10");
+
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
                 .withIp("192.168.1.86")
@@ -725,6 +729,12 @@ public class KafkaMirrorMaker2ClusterTest {
                                 .withAnnotations(pdbAnots)
                             .endMetadata()
                         .endPodDisruptionBudget()
+                        .withNewServiceAccount()
+                            .withNewMetadata()
+                                .withLabels(saLabels)
+                                .withAnnotations(saAnots)
+                            .endMetadata()
+                        .endServiceAccount()
                     .endTemplate()
                 .endSpec()
                 .build();
@@ -756,6 +766,11 @@ public class KafkaMirrorMaker2ClusterTest {
         PodDisruptionBudget pdb = kmm2.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+
+        // Check Service Account
+        ServiceAccount sa = kmm2.generateServiceAccount();
+        assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {

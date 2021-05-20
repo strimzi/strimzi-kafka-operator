@@ -277,6 +277,11 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
             }
 
+            if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
+                kafkaConnect.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
+                kafkaConnect.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
         }
 
