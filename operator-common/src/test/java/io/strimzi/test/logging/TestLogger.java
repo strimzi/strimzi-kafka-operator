@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.AbstractLogger;
 import org.apache.logging.log4j.spi.ExtendedLoggerWrapper;
 
@@ -27,13 +26,6 @@ public class TestLogger extends ReconciliationLogger {
         private final Marker marker;
         private final String formattedMessage;
         private final Throwable throwable;
-
-        LoggedMessage(Level level, Marker marker, Message message, Throwable throwable) {
-            this.level = level;
-            this.marker = marker;
-            this.formattedMessage = message.getFormattedMessage();
-            this.throwable = throwable;
-        }
 
         public LoggedMessage(Level level, Marker marker, String msg, Throwable throwable) {
             this.level = level;
@@ -70,7 +62,6 @@ public class TestLogger extends ReconciliationLogger {
 
     private List<LoggedMessage> loggedMessages = new ArrayList<>();
 
-
     public List<LoggedMessage> getLoggedMessages() {
         return loggedMessages;
     }
@@ -83,19 +74,8 @@ public class TestLogger extends ReconciliationLogger {
         assertThat("Unexpected message was logged", getLoggedMessages().stream().noneMatch(test), is(true));
     }
 
-
     @Override
     public void warn(Reconciliation reconciliation, String msg) {
         loggedMessages.add(new LoggedMessage(Level.WARN, null, reconciliation.toString() + ": " + msg, null));
-    }
-
-    @Override
-    public void debug(Reconciliation reconciliation, String msg) {
-        loggedMessages.add(new LoggedMessage(Level.DEBUG, null, reconciliation.toString() + ": " + msg, null));
-    }
-
-    @Override
-    public void info(Reconciliation reconciliation, String msg) {
-        loggedMessages.add(new LoggedMessage(Level.INFO, null, reconciliation.toString() + ": " + msg, null));
     }
 }
