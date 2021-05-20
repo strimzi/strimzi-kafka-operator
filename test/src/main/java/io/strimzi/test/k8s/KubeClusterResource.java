@@ -47,7 +47,7 @@ public class KubeClusterResource {
     private String namespace;
     private String testNamespace;
     // {test-suite-name} -> {{namespace-1}, {namespace-2},...,}
-    protected static Map<String, Set<String>> mapWithSuiteNamespaces = new HashMap<>();
+    private final static Map<String, Set<String>> MAP_WITH_SUITE_NAMESPACES = new HashMap<>();
 
     protected List<String> bindingsNamespaces = new ArrayList<>();
     private List<String> deploymentNamespaces = new ArrayList<>();
@@ -373,16 +373,16 @@ public class KubeClusterResource {
 
         if (extensionContext.getTestClass().isPresent()) testClass = extensionContext.getRequiredTestClass().getName();
 
-        if (mapWithSuiteNamespaces.containsKey(testClass)) {
-            Set<String> testSuiteNamespaces = mapWithSuiteNamespaces.get(testClass);
+        if (MAP_WITH_SUITE_NAMESPACES.containsKey(testClass)) {
+            Set<String> testSuiteNamespaces = MAP_WITH_SUITE_NAMESPACES.get(testClass);
             testSuiteNamespaces.add(namespaceName);
-            mapWithSuiteNamespaces.put(testClass, testSuiteNamespaces);
+            MAP_WITH_SUITE_NAMESPACES.put(testClass, testSuiteNamespaces);
         } else {
             // test-suite is new
-            mapWithSuiteNamespaces.put(testClass, new HashSet<>(Set.of(namespaceName)));
+            MAP_WITH_SUITE_NAMESPACES.put(testClass, new HashSet<>(Set.of(namespaceName)));
         }
 
-        LOGGER.debug("SUITE_NAMESPACE_MAP: \n{}", mapWithSuiteNamespaces);
+        LOGGER.debug("SUITE_NAMESPACE_MAP: \n{}", MAP_WITH_SUITE_NAMESPACES);
     }
 
     private synchronized void deleteNamespaceFromSet(ExtensionContext extensionContext, String namespaceName) {
@@ -391,13 +391,13 @@ public class KubeClusterResource {
         if (extensionContext.getTestClass().isPresent()) testClass = extensionContext.getRequiredTestClass().getName();
 
         // dynamically removing from the map
-        Set<String> testSuiteNamespaces = mapWithSuiteNamespaces.get(testClass);
+        Set<String> testSuiteNamespaces = MAP_WITH_SUITE_NAMESPACES.get(testClass);
         testSuiteNamespaces.remove(namespaceName);
-        mapWithSuiteNamespaces.put(testClass, testSuiteNamespaces);
-        LOGGER.debug("SUITE_NAMESPACE_MAP after deletion: \n{}", mapWithSuiteNamespaces);
+        MAP_WITH_SUITE_NAMESPACES.put(testClass, testSuiteNamespaces);
+        LOGGER.debug("SUITE_NAMESPACE_MAP after deletion: \n{}", MAP_WITH_SUITE_NAMESPACES);
     }
 
     public static Map<String, Set<String>> getMapWithSuiteNamespaces() {
-        return mapWithSuiteNamespaces;
+        return MAP_WITH_SUITE_NAMESPACES;
     }
 }
