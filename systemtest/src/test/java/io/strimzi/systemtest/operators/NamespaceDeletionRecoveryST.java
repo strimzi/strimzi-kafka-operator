@@ -291,7 +291,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     @BeforeAll
     void createStorageClass() {
-        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).withName(storageClassName).delete();
+        kubeClient().getClient().storage().storageClasses().withName(storageClassName).delete();
         StorageClass storageClass = new StorageClassBuilder()
             .withNewMetadata()
                 .withName(storageClassName)
@@ -300,12 +300,12 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .withReclaimPolicy("Retain")
             .build();
 
-        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).createOrReplace(storageClass);
+        kubeClient().getClient().storage().storageClasses().createOrReplace(storageClass);
     }
 
     @AfterAll
     void teardown() {
-        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).withName(storageClassName).delete();
+        kubeClient().getClient().storage().storageClasses().withName(storageClassName).delete();
 
         kubeClient().getClient().persistentVolumes().list().getItems().stream()
             .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka") || pv.getSpec().getClaimRef().getName().contains("zookeeper"))

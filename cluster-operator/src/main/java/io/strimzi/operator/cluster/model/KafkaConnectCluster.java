@@ -35,7 +35,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
@@ -782,7 +782,7 @@ public class KafkaConnectCluster extends AbstractModel {
             NetworkPolicyIngressRule restApiRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
                         .withNewPort(REST_API_PORT)
-                        .withNewProtocol("TCP")
+                        .withProtocol("TCP")
                     .endPort()
                     .build();
 
@@ -819,7 +819,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
                         .addNewPort()
                             .withNewPort(METRICS_PORT)
-                            .withNewProtocol("TCP")
+                            .withProtocol("TCP")
                         .endPort()
                         .withFrom()
                         .build();

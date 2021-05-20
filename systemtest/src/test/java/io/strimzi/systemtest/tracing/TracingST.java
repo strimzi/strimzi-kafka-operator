@@ -781,8 +781,8 @@ public class TracingST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-            .withNewApiVersion("networking.k8s.io/v1")
-            .withNewKind(Constants.NETWORK_POLICY)
+            .withApiVersion("networking.k8s.io/v1")
+            .withKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
                 .withNamespace(NAMESPACE)

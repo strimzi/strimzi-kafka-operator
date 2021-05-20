@@ -39,7 +39,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
@@ -1011,10 +1011,10 @@ public class KafkaCluster extends AbstractModel {
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()
                     .withPath("/")
-                    .withNewPathType("Prefix")
+                    .withPathType("Prefix")
                     .withNewBackend()
                         .withNewService()
-                            .withNewName(serviceName)
+                            .withName(serviceName)
                             .withNewPort()
                                 .withNumber(listener.getPort())
                             .endPort()
@@ -1127,10 +1127,10 @@ public class KafkaCluster extends AbstractModel {
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()
                     .withPath("/")
-                    .withNewPathType("Prefix")
+                    .withPathType("Prefix")
                     .withNewBackend()
                         .withNewService()
-                            .withNewName(ingressName)
+                            .withName(ingressName)
                             .withNewPort()
                                 .withNumber(listener.getPort())
                             .endPort()
@@ -1729,7 +1729,7 @@ public class KafkaCluster extends AbstractModel {
         NetworkPolicyIngressRule controlPlaneRule = new NetworkPolicyIngressRuleBuilder()
                 .addNewPort()
                 .withNewPort(CONTROLPLANE_PORT)
-                .withNewProtocol("TCP")
+                .withProtocol("TCP")
                 .endPort()
                 .build();
 
@@ -1741,7 +1741,7 @@ public class KafkaCluster extends AbstractModel {
         NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
                 .addNewPort()
                 .withNewPort(REPLICATION_PORT)
-                .withNewProtocol("TCP")
+                .withProtocol("TCP")
                 .endPort()
                 .build();
 
@@ -1754,7 +1754,7 @@ public class KafkaCluster extends AbstractModel {
             NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
                         .withNewPort(listener.getPort())
-                        .withNewProtocol("TCP")
+                        .withProtocol("TCP")
                     .endPort()
                     .withFrom(listener.getNetworkPolicyPeers())
                     .build();
@@ -1767,7 +1767,7 @@ public class KafkaCluster extends AbstractModel {
             NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
                         .withNewPort(METRICS_PORT)
-                        .withNewProtocol("TCP")
+                        .withProtocol("TCP")
                     .endPort()
                     .withFrom()
                     .build();
@@ -1780,7 +1780,7 @@ public class KafkaCluster extends AbstractModel {
             NetworkPolicyIngressRule jmxRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
                         .withNewPort(JMX_PORT)
-                        .withNewProtocol("TCP")
+                        .withProtocol("TCP")
                     .endPort()
                     .withFrom()
                     .build();

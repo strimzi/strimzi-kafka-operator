@@ -98,7 +98,7 @@ class StatefulSetMockBuilder extends MockBuilder<StatefulSet, StatefulSetList, R
     }
 
     private void mockNoncascadingPatch(String resourceName, EditReplacePatchDeletable<StatefulSet> c) {
-        when(c.patch(any())).thenAnswer(patchInvocation -> {
+        when(c.patch(any(StatefulSet.class))).thenAnswer(patchInvocation -> {
             StatefulSet argument = patchInvocation.getArgument(0);
             return doPatch(resourceName, argument, argument.getSpec().getReplicas());
         });

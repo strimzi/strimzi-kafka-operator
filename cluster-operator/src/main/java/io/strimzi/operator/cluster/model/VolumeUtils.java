@@ -58,8 +58,8 @@ public class VolumeUtils {
 
         for (Map.Entry<String, String> item : items.entrySet()) {
             KeyToPath keyPath = new KeyToPathBuilder()
-                    .withNewKey(item.getKey())
-                    .withNewPath(item.getValue())
+                    .withKey(item.getKey())
+                    .withPath(item.getValue())
                     .build();
 
             keysPaths.add(keyPath);
@@ -121,8 +121,8 @@ public class VolumeUtils {
 
         for (Map.Entry<String, String> item : items.entrySet()) {
             KeyToPath keyPath = new KeyToPathBuilder()
-                    .withNewKey(item.getKey())
-                    .withNewPath(item.getValue())
+                    .withKey(item.getKey())
+                    .withPath(item.getValue())
                     .build();
 
             keysPaths.add(keyPath);

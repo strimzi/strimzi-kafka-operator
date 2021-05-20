@@ -1244,7 +1244,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 return Future.succeededFuture(Crds.kafkaRebalanceOperation(client)
                         .inNamespace(namespace)
                         .withName(resource)
-                        .patch(invocation.getArgument(1)));
+                        .patch((KafkaRebalance) invocation.getArgument(1)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }
@@ -1256,7 +1256,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 return Future.succeededFuture(Crds.kafkaRebalanceOperation(client)
                         .inNamespace(namespace)
                         .withName(resource)
-                        .patch(invocation.getArgument(1)));
+                        .patch((KafkaRebalance) invocation.getArgument(1)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }
