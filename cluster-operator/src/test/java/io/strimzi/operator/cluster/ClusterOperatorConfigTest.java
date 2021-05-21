@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.UnsupportedVersionException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
@@ -287,6 +288,21 @@ public class ClusterOperatorConfigTest {
             InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.fromMap(editedEnvVars));
             assertThat(e.getMessage(), containsString(envVar.getKey()));
         }
+    }
+
+    @Test
+    public void testConfigUnsupportedVersions() {
+        Map<String, String> envVars = new HashMap<>(5);
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString() + " 2.6.0=myimage:2.6.0");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+
+        Throwable exception = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.fromMap(envVars));
+        assertThat(exception.getMessage(), is("Failed to parse default container image configuration for Kafka from environment variable STRIMZI_KAFKA_IMAGES"));
+        assertThat(exception.getCause().getClass(), is(UnsupportedVersionException.class));
+        assertThat(exception.getCause().getMessage(), is("Kafka version 2.6.0 has a container image configured but is not supported."));
     }
 
     @Test

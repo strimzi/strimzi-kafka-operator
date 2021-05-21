@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NoImageException;
+import io.strimzi.operator.cluster.model.UnsupportedVersionException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -348,7 +349,7 @@ public class ClusterOperatorConfig {
             image = "Kafka Mirror Maker 2";
             envVar = STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES;
             lookup.validateKafkaMirrorMaker2Images(lookup.supportedVersionsForFeature("kafkaMirrorMaker2"));
-        } catch (NoImageException e) {
+        } catch (NoImageException | UnsupportedVersionException e) {
             throw new InvalidConfigurationException("Failed to parse default container image configuration for " + image + " from environment variable " + envVar, e);
         }
         return lookup;
