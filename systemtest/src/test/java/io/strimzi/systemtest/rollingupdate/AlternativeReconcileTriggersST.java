@@ -252,7 +252,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
-        Map<String, String> secretData = kubeClient(namespaceName).getSecret(KafkaResources.brokersServiceName(clusterName)).getData();
+        Map<String, String> secretData = kubeClient().getSecret(namespaceName, KafkaResources.brokersServiceName(clusterName)).getData();
 
         for (Map.Entry<String, String> item : secretData.entrySet()) {
             if (item.getKey().endsWith(".crt")) {
