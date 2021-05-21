@@ -3032,11 +3032,15 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 |xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
 |topicsPattern           1.2+<.<a|A regular expression matching the topics to be mirrored, for example, "topic1\|topic2\|topic3". Comma-separated lists are also supported.
 |string
-|topicsBlacklistPattern  1.2+<.<a|A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.
+|topicsBlacklistPattern  1.2+<.<a|*The `topicsBlacklistPattern` property has been deprecated, and should now be configured using `.spec.mirrors.topicsExcludePattern`.* A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.
+|string
+|topicsExcludePattern    1.2+<.<a|A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.
 |string
 |groupsPattern           1.2+<.<a|A regular expression matching the consumer groups to be mirrored. Comma-separated lists are also supported.
 |string
-|groupsBlacklistPattern  1.2+<.<a|A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.
+|groupsBlacklistPattern  1.2+<.<a|*The `groupsBlacklistPattern` property has been deprecated, and should now be configured using `.spec.mirrors.groupsExcludePattern`.* A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.
+|string
+|groupsExcludePattern    1.2+<.<a|A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.
 |string
 |====
 

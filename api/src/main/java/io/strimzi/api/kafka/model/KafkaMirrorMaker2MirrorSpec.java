@@ -8,7 +8,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -23,7 +25,8 @@ import static java.util.Collections.emptyMap;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"sourceCluster", "targetCluster", "sourceConnector", "heartbeatConnector", "checkpointConnector", "topicsPattern", "topicsBlacklistPattern", "groupsPattern", "groupsBlacklistPattern"})
+@JsonPropertyOrder({"sourceCluster", "targetCluster", "sourceConnector", "heartbeatConnector", "checkpointConnector",
+    "topicsPattern", "topicsBlacklistPattern", "topicsExcludePattern", "groupsPattern", "groupsBlacklistPattern", "groupsExcludePattern"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -35,8 +38,10 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
     private KafkaMirrorMaker2ConnectorSpec heartbeatConnector;
     private String topicsPattern;
     private String topicsBlacklistPattern;
+    private String topicsExcludePattern;
     private String groupsPattern;
     private String groupsBlacklistPattern;
+    private String groupsExcludePattern;
     private Map<String, Object> additionalProperties;
 
     @Description("A regular expression matching the topics to be mirrored, for example, \"topic1|topic2|topic3\". Comma-separated lists are also supported.")
@@ -48,6 +53,9 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.topicsPattern = topicsPattern;
     }
 
+    @DeprecatedProperty(movedToPath = ".spec.mirrors.topicsExcludePattern")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     @Description("A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.")
     public String getTopicsBlacklistPattern() {
         return topicsBlacklistPattern;
@@ -55,6 +63,15 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
 
     public void setTopicsBlacklistPattern(String topicsBlacklistPattern) {
         this.topicsBlacklistPattern = topicsBlacklistPattern;
+    }
+
+    @Description("A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.")
+    public String getTopicsExcludePattern() {
+        return topicsExcludePattern;
+    }
+
+    public void setTopicsExcludePattern(String topicsExcludePattern) {
+        this.topicsExcludePattern = topicsExcludePattern;
     }
 
     @Description("A regular expression matching the consumer groups to be mirrored. Comma-separated lists are also supported.")
@@ -66,6 +83,9 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.groupsPattern = groupsPattern;
     }
 
+    @DeprecatedProperty(movedToPath = ".spec.mirrors.groupsExcludePattern")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     @Description("A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.")
     public String getGroupsBlacklistPattern() {
         return groupsBlacklistPattern;
@@ -73,6 +93,15 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
 
     public void setGroupsBlacklistPattern(String groupsBlacklistPattern) {
         this.groupsBlacklistPattern = groupsBlacklistPattern;
+    }
+
+    @Description("A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.")
+    public String getGroupsExcludePattern() {
+        return groupsExcludePattern;
+    }
+
+    public void setGroupsExcludePattern(String groupsExcludePattern) {
+        this.groupsExcludePattern = groupsExcludePattern;
     }
 
     @Description("The alias of the source cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at `spec.clusters`.")
@@ -100,7 +129,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         return sourceConnector;
     }
 
-    public void setSourceConnector(KafkaMirrorMaker2ConnectorSpec sourceConnector) {        
+    public void setSourceConnector(KafkaMirrorMaker2ConnectorSpec sourceConnector) {
         this.sourceConnector = sourceConnector;
     }
 
