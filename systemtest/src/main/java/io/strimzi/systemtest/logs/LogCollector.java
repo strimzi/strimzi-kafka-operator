@@ -57,6 +57,7 @@ public class LogCollector implements LogCollect {
     private final File logDir;
     private final Pod clusterOperatorPod;
     private final String clusterOperatorNamespace;
+    private File namespaceFile;
 
     public LogCollector(String testSuiteName, String testCaseName, KubeClient kubeClient, String logDir) throws IOException {
         this.kubeClient = kubeClient;
@@ -92,35 +93,40 @@ public class LogCollector implements LogCollect {
 
         // collect logs for all namespace related to test suite
         namespaces.stream().forEach(namespace -> {
-            this.collectEvents(namespace);
-            this.collectConfigMaps(namespace);
-            this.collectLogsFromPods(namespace);
-            this.collectDeployments(namespace);
-            this.collectStatefulSets(namespace);
-            this.collectReplicaSets(namespace);
-            this.collectStrimzi(namespace);
-            this.collectClusterInfo(namespace);
+            namespaceFile = new File(testCase + "/" + namespace);
+
+            boolean namespaceLogDirExist = this.namespaceFile.exists() || this.namespaceFile.mkdirs();
+            if (!namespaceLogDirExist) throw new RuntimeException("Unable to create path");
+
+            this.collectEvents();
+            this.collectConfigMaps();
+            this.collectLogsFromPods();
+            this.collectDeployments();
+            this.collectStatefulSets();
+            this.collectReplicaSets();
+            this.collectStrimzi();
+            this.collectClusterInfo();
         });
     }
 
     @Override
-    public void collectLogsFromPods(String namespaceName) {
+    public void collectLogsFromPods() {
         try {
-            LOGGER.info("Collecting logs for Pod(s) in namespace {}", namespaceName);
+            LOGGER.info("Collecting logs for Pod(s) in namespace {}", namespaceFile.getName());
 
             // in case we are in the cluster operator namespace we wants shared logs for whole test suite
-            if (namespaceName.equals(this.clusterOperatorNamespace)) {
-                kubeClient.listPods(namespaceName).forEach(pod -> {
+            if (namespaceFile.getName().equals(this.clusterOperatorNamespace)) {
+                kubeClient.listPods(namespaceFile.getName()).forEach(pod -> {
                     String podName = pod.getMetadata().getName();
                     pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                        scrapeAndCreateLogs(testSuite, namespaceName, podName, containerStatus);
+                        scrapeAndCreateLogs(testSuite, podName, containerStatus);
                     });
                 });
             } else {
-                kubeClient.listPods(namespaceName).forEach(pod -> {
+                kubeClient.listPods(namespaceFile.getName()).forEach(pod -> {
                     String podName = pod.getMetadata().getName();
                     pod.getStatus().getContainerStatuses().forEach(containerStatus -> {
-                        scrapeAndCreateLogs(testCase, namespaceName, podName, containerStatus);
+                        scrapeAndCreateLogs(namespaceFile, podName, containerStatus);
                     });
                 });
             }
@@ -130,57 +136,57 @@ public class LogCollector implements LogCollect {
     }
 
     @Override
-    public void collectEvents(String namespaceName) {
-        LOGGER.info("Collecting events in Namespace {}", namespaceName);
-        String events = cmdKubeClient(namespaceName).getEvents();
+    public void collectEvents() {
+        LOGGER.info("Collecting events in Namespace {}", namespaceFile);
+        String events = cmdKubeClient(namespaceFile.getName()).getEvents();
         // Write events to file
-        writeFile(testCase + "/" + namespaceName + "_events.log", events);
+        writeFile(namespaceFile + "/events.log", events);
     }
 
     @Override
-    public void collectConfigMaps(String namespaceName) {
-        LOGGER.info("Collecting ConfigMaps in Namespace {}", namespaceName);
-        kubeClient.listConfigMaps(namespaceName).forEach(configMap -> {
-            writeFile(testCase + "/" + namespaceName + "_" + configMap.getMetadata().getName() + ".log", configMap.toString());
+    public void collectConfigMaps() {
+        LOGGER.info("Collecting ConfigMaps in Namespace {}", namespaceFile);
+        kubeClient.listConfigMaps(namespaceFile.getName()).forEach(configMap -> {
+            writeFile(namespaceFile + "/" + configMap.getMetadata().getName() + ".log", configMap.toString());
         });
     }
 
     @Override
-    public void collectDeployments(String namespaceName) {
-        LOGGER.info("Collecting Deployments in Namespace {}", namespaceName);
-        writeFile(testCase + "/" + namespaceName + "_deployments.log", cmdKubeClient(namespaceName).getResourcesAsYaml(Constants.DEPLOYMENT));
+    public void collectDeployments() {
+        LOGGER.info("Collecting Deployments in Namespace {}", namespaceFile);
+        writeFile(namespaceFile + "/deployments.log", cmdKubeClient(namespaceFile.getName()).getResourcesAsYaml(Constants.DEPLOYMENT));
     }
 
     @Override
-    public void collectStatefulSets(String namespaceName) {
-        LOGGER.info("Collecting StatefulSets in Namespace {}", namespaceName);
-        writeFile(testCase + "/" + namespaceName + "_statefulsets.log", cmdKubeClient(namespaceName).getResourcesAsYaml(Constants.STATEFUL_SET));
+    public void collectStatefulSets() {
+        LOGGER.info("Collecting StatefulSets in Namespace {}", namespaceFile);
+        writeFile(namespaceFile + "/statefulsets.log", cmdKubeClient(namespaceFile.getName()).getResourcesAsYaml(Constants.STATEFUL_SET));
     }
 
     @Override
-    public void collectReplicaSets(String namespaceName) {
-        LOGGER.info("Collecting ReplicaSet in Namespace {}", namespaceName);
-        writeFile(testCase + "/" + namespaceName + "_replicasets.log", cmdKubeClient(namespaceName).getResourcesAsYaml("replicaset"));
+    public void collectReplicaSets() {
+        LOGGER.info("Collecting ReplicaSet in Namespace {}", namespaceFile);
+        writeFile(namespaceFile + "/replicasets.log", cmdKubeClient(namespaceFile.getName()).getResourcesAsYaml("replicaset"));
     }
 
-    public void collectStrimzi(String namespaceName) {
-        LOGGER.info("Collecting Strimzi in Namespace {}", namespaceName);
-        String crData = cmdKubeClient(namespaceName).exec(false, "get", "strimzi", "-o", "yaml", "-n", namespaceName).out();
-        writeFile(testCase + "/" + namespaceName + "_strimzi-custom-resources.log", crData);
+    public void collectStrimzi() {
+        LOGGER.info("Collecting Strimzi in Namespace {}", namespaceFile);
+        String crData = cmdKubeClient(namespaceFile.getName()).exec(false, "get", "strimzi", "-o", "yaml", "-n", namespaceFile.getName()).out();
+        writeFile(namespaceFile + "/strimzi-custom-resources.log", crData);
     }
 
-    public void collectClusterInfo(String namespaceName) {
+    public void collectClusterInfo() {
         LOGGER.info("Collecting cluster status");
-        String nodes = cmdKubeClient(namespaceName).exec(false, "describe", "nodes").out();
-        writeFile(testCase + "/" + namespaceName + "_cluster-status.log", nodes);
+        String nodes = cmdKubeClient(namespaceFile.getName()).exec(false, "describe", "nodes").out();
+        writeFile(namespaceFile + "/cluster-status.log", nodes);
     }
 
-    private void scrapeAndCreateLogs(File path, String namespaceName, String podName, ContainerStatus containerStatus) {
-        String log = kubeClient.getPodResource(namespaceName, podName).inContainer(containerStatus.getName()).getLog();
+    private void scrapeAndCreateLogs(File path, String podName, ContainerStatus containerStatus) {
+        String log = kubeClient.getPodResource(namespaceFile.getName(), podName).inContainer(containerStatus.getName()).getLog();
         // Write logs from containers to files
-        writeFile(path + "/" + namespaceName + "_logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+        writeFile(path + "/logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
         // Describe all pods
-        String describe = cmdKubeClient(namespaceName).describe("pod", podName);
-        writeFile(path + "/" + namespaceName + "_describe-pod-" + podName + "-container-" + containerStatus.getName() + ".log", describe);
+        String describe = cmdKubeClient(namespaceFile.getName()).describe("pod", podName);
+        writeFile(path + "/describe-pod-" + podName + "-container-" + containerStatus.getName() + ".log", describe);
     }
 }
