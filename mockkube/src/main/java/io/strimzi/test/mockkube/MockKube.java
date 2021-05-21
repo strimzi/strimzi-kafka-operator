@@ -55,6 +55,7 @@ import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.V1beta1PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.Build;
@@ -335,7 +336,9 @@ public class MockKube {
 
         // Policy group
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);
+        V1beta1PolicyAPIGroupDSL v1beta1policy = mock(V1beta1PolicyAPIGroupDSL.class);
         when(mockClient.policy()).thenReturn(policy);
+        when(policy.v1beta1()).thenReturn(v1beta1policy);
         podDisruptionBudgedMockBuilder.build2(mockClient.policy().v1beta1()::podDisruptionBudget);
 
         // RBAC group
