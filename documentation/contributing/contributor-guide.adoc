@@ -49,7 +49,6 @@ image:operators.png[Operators within the Strimzi architecture]
 |FileStreamSourceConnector
 |Transfers data to your Kafka cluster from a file (the source).
 |===
-
 ----
 
 [[contributing]]
