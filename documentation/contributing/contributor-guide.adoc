@@ -1,7 +1,7 @@
 [[contributing-to-docs]]
 = Contributing to the documentation
 
-This procedure shows the steps to contribute to the Strimzi documentation.
+This section shows you how to contribute to the Strimzi documentation and contains important guidelines for creating accessible content.
 
 [[contribution-getting-started]]
 == Getting started
@@ -11,10 +11,10 @@ Before you begin you need to:
 . xref:setting-up-git[Install and set up Git]
 
 [[contribution-accessibility]]
-== Accessibility
+== Accessibility guidelines
 
-Strimzi aims to make its web content accessible.
-When contributing to the documentation, ensure that your content adheres to the following:
+Strimzi aims to make its content accessible.
+When contributing to the documentation, ensure that your content adheres to the following guidelines:
 
 * Images:
 ** Include a caption
@@ -28,6 +28,29 @@ When contributing to the documentation, ensure that your content adheres to the 
 ** Provide a logical reading order
 ** Don't contain empty cells
 * Color is not used as the only visual means to convey information (not _check the green text_)
+
+.Example image caption and description
+[source,asciidoc]
+----
+.Operators within the Strimzi architecture
+image:operators.png[Operators within the Strimzi architecture]
+----
+
+.Example table headings
+[source,asciidoc]
+----
+.File connectors
+[cols="2*",options="header"]
+|===
+
+|File Connector
+|Description
+
+|FileStreamSourceConnector
+|Transfers data to your Kafka cluster from a file (the source).
+|===
+
+----
 
 [[contributing]]
 == Contributing to the documentation
