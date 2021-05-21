@@ -78,11 +78,11 @@ public class SystemTestCertManager {
 
     public static List<String> getCertificateChain(String certificateName) {
         return new ArrayList<>(asList(
-                "s:/O=io.strimzi/CN=" + certificateName + "\n" +
-                "   i:/O=io.strimzi/CN=cluster-ca",
+                "s:O = io.strimzi, CN = " + certificateName + "\n" +
+                "   i:O = io.strimzi, CN = cluster-ca",
                 "Server certificate\n" +
-                "subject=/O=io.strimzi/CN=" + certificateName + "\n" +
-                "issuer=/O=io.strimzi/CN=cluster-ca"
+                "subject=O = io.strimzi, CN = " + certificateName + "\n\n" +
+                "issuer=O = io.strimzi, CN = cluster-ca"
         ));
     }
 
