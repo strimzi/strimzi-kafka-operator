@@ -1,7 +1,7 @@
 [[contributing-to-docs]]
 = Contributing to the documentation
 
-The following guide walks you through contributing to the Strimzi documentation.
+This procedure shows the steps to contribute to the Strimzi documentation.
 
 [[contribution-getting-started]]
 == Getting started
@@ -9,6 +9,25 @@ The following guide walks you through contributing to the Strimzi documentation.
 Before you begin you need to:
 
 . xref:setting-up-git[Install and set up Git]
+
+[[contribution-accessibility]]
+== Accessibility
+
+Strimzi aims to make its web content accessible.
+When contributing to the documentation, ensure that your content adheres to the following:
+
+* Images:
+** Include a caption
+** Provide alternative text
+** Are described in the surrounding text
+* Images of text are not used (such as with code fragments)
+* Links provide descriptive text about the target (not _click here_)
+* Tables:
+** Include a caption
+** Contain headings
+** Provide a logical reading order
+** Don't contain empty cells
+* Color is not used as the only visual means to convey information (not _check the green text_)
 
 [[contributing]]
 == Contributing to the documentation
@@ -56,7 +75,7 @@ $ git add <file-name>
 $ git commit -a -s -m "<message>"
 ----
 +
-Note that the project requires all commits to be signed off, indicating that _you_ certify the changes with the link:https://developercertificate.org/[developer certificate of origin (DCO)]. 
+Note that the project requires all commits to be signed off, indicating that _you_ certify the changes with the link:https://developercertificate.org/[developer certificate of origin (DCO)].
 . Push your changes to your fork
 +
 [source]
