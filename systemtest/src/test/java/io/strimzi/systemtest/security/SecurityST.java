@@ -1763,8 +1763,8 @@ class SecurityST extends AbstractST {
 
     boolean checkMountVolumeSecret(String namespaceName, String podName, VolumeMount volumeMount, String principalDNType, String expectedPrincipal) {
         String dn = cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-                "openssl x509 -in " + volumeMount.getMountPath() + "/ca.crt -noout -" + principalDNType).out().strip();
-        String certOutIssuer = dn.substring(principalDNType.length() + 3).replace("/", ",");
+                "openssl x509 -in " + volumeMount.getMountPath() + "/ca.crt -noout -nameopt RFC2253 -" + principalDNType).out().strip();
+        String certOutIssuer = dn.substring(principalDNType.length() + 1).replace("/", ",");
         return SystemTestCertManager.containsAllDN(certOutIssuer, expectedPrincipal);
     }
 

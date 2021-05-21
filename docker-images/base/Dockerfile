@@ -4,7 +4,7 @@ ARG TARGETPLATFORM
 USER root
 
 RUN microdnf update \
-    && microdnf install openssl bind-utils \
+    && microdnf install openssl bind-utils procps \
     && microdnf clean all
 
 ENV JAVA_HOME /usr/lib/jvm/jre-11
