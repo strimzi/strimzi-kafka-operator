@@ -1,10 +1,11 @@
-FROM registry.access.redhat.com/ubi8/openjdk-11-runtime:latest
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+ARG JAVA_VERSION=11
 ARG TARGETPLATFORM
 
 USER root
 
 RUN microdnf update \
-    && microdnf install openssl bind-utils procps \
+    && microdnf install java-${JAVA_VERSION}-openjdk-headless openssl bind-utils procps shadow-utils \
     && microdnf clean all
 
 ENV JAVA_HOME /usr/lib/jvm/jre-11
