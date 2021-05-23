@@ -2,6 +2,7 @@
 
 ## 0.24.0
 
+* Use Red Hat UBI8 base image
 * Add support for Kafka 2.7.1 and remove support for 2.6.0, 2.6.1, and 2.6.2
 * Support for patching of service accounts and configuring their labels and annotations. The feature is disabled by default and enabled using the new `ServiceAccountPatching` feature gate.
 * Added support for configuring cluster-operator's worker thread pool size that is used for various sync and async tasks
