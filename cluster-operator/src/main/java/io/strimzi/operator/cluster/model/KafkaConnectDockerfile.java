@@ -15,6 +15,7 @@ import io.strimzi.operator.common.Util;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * This class is used to generate the Dockerfile used by Kafka Connect Build. It takes the API definition with the
@@ -25,6 +26,14 @@ public class KafkaConnectDockerfile {
     private static final String BASE_PLUGIN_PATH = "/opt/kafka/plugins/";
     private static final String ROOT_USER = "root:root";
     private static final String NON_PRIVILEGED_USER = "1001";
+
+    private static final String ENV_VAR_HTTP_PROXY = "HTTP_PROXY";
+    private static final String ENV_VAR_HTTPS_PROXY = "HTTPS_PROXY";
+    private static final String ENV_VAR_NO_PROXY = "NO_PROXY";
+
+    private static final String HTTP_PROXY = System.getenv(ENV_VAR_HTTP_PROXY);
+    private static final String HTTPS_PROXY = System.getenv(ENV_VAR_HTTPS_PROXY);
+    private static final String NO_PROXY = System.getenv(ENV_VAR_NO_PROXY);
 
     private final String dockerfile;
 
@@ -41,6 +50,7 @@ public class KafkaConnectDockerfile {
         printHeader(writer); // Print initial comment
         from(writer, fromImage); // Create FROM statement
         user(writer, ROOT_USER); // Switch to root user to be able to add plugins
+        proxy(writer); // Configures proxy environment variables
         connectorPlugins(writer, connectBuild.getPlugins());
         user(writer, NON_PRIVILEGED_USER); // Switch back to the regular unprivileged user
 
@@ -57,6 +67,27 @@ public class KafkaConnectDockerfile {
      */
     private void from(PrintWriter writer, String fromImage) {
         writer.println("FROM " + fromImage);
+        writer.println();
+    }
+
+    /**
+     * Generates proxy arguments if set in the operator
+     *
+     * @param writer        Writer for printing the Docker commands
+     */
+    private void proxy(PrintWriter writer) {
+        if (HTTP_PROXY != null) {
+            writer.println(String.format("ARG %s=%s", ENV_VAR_HTTP_PROXY.toLowerCase(Locale.ENGLISH), HTTP_PROXY));
+        }
+
+        if (HTTPS_PROXY != null) {
+            writer.println(String.format("ARG %s=%s", ENV_VAR_HTTPS_PROXY.toLowerCase(Locale.ENGLISH), HTTPS_PROXY));
+        }
+
+        if (NO_PROXY != null) {
+            writer.println(String.format("ARG %s=%s", ENV_VAR_NO_PROXY.toLowerCase(Locale.ENGLISH), NO_PROXY));
+        }
+
         writer.println();
     }
 
