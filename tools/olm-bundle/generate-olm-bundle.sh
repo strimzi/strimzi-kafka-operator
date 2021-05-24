@@ -153,7 +153,7 @@ generate_olm_bundle() {
   
   yq ea -i ".spec.replaces = \"${PREVIOUS_BUNDLE_VERSION}\" | .spec.replaces style=\"\"" ${CSV_FILE}
   
-	generate_related_images
+  generate_related_images
   generate_image_digests
 }
 
@@ -199,26 +199,26 @@ generate_image_digests() {
     image=$(echo $image_tag | cut -d':' -f1);
     repo=$(echo $image | rev | cut -d'/' -f1 | rev);
     
-		if [ "$repo" != "kafka-bridge" ]; then
+    if [ "$repo" != "kafka-bridge" ]; then
       tag=$(echo $tag | $SED "s/$(echo $tag | cut -d'-' -f1)/${DOCKER_TAG}/g")
     fi
     registry=$DOCKER_REGISTRY;
     org=$DOCKER_ORG;
 
-		echo "Get digest from remote registry for image: ${registry}/${org}/${repo}:${tag}"
-		resp="$(curl -s -w '\n%{http_code}' -H "Accept: application/vnd.docker.distribution.manifest.v2+json" https://${registry}/v2/${org}/${repo}/manifests/${tag})"
+    echo "Get digest from remote registry for image: ${registry}/${org}/${repo}:${tag}"
+    resp="$(curl -s -w '\n%{http_code}' -H "Accept: application/vnd.docker.distribution.manifest.v2+json" https://${registry}/v2/${org}/${repo}/manifests/${tag})"
 
-		code=$(tail -1 <<< "$resp")
+    code=$(tail -1 <<< "$resp")
     body=$($SED '$ d' <<< "$resp")
 
-		if [ "$code" != "200" ]; then
+    if [ "$code" != "200" ]; then
       echo "ERROR: Could not find image in remote registry: '$registry/$org/$repo:$tag'"
-			exit 1;
+      exit 1;
     fi
-		digest=$(echo -n "$body" | sha256sum | head -c 64);
+    digest=$(echo -n "$body" | sha256sum | head -c 64);
     
-		image_digest="${image}@sha256:${digest}"
-		echo "Replacing $image_tag with $image_digest"
+    image_digest="${image}@sha256:${digest}"
+    echo "Replacing $image_tag with $image_digest"
     $SED -i "s|${image_tag}|${image_digest}|g" ${CSV_FILE};
   done
 }
