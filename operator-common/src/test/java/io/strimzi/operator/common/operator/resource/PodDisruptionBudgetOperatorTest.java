@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.V1beta1PolicyAPIGroupDSL;
 import io.vertx.core.Vertx;
 
 import static java.util.Collections.singletonMap;
@@ -22,7 +23,9 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
     @Override
     protected void  mocker(KubernetesClient mockClient, MixedOperation op) {
         PolicyAPIGroupDSL mockPolicy = mock(PolicyAPIGroupDSL.class);
-        when(mockPolicy.v1beta1().podDisruptionBudget()).thenReturn(op);
+        V1beta1PolicyAPIGroupDSL mockV1beta1 = mock(V1beta1PolicyAPIGroupDSL.class);
+        when(mockPolicy.v1beta1()).thenReturn(mockV1beta1);
+        when(mockV1beta1.podDisruptionBudget()).thenReturn(op);
         when(mockClient.policy()).thenReturn(mockPolicy);
     }
 
