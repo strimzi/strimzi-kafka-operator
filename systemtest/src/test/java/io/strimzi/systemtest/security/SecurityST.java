@@ -111,8 +111,6 @@ class SecurityST extends AbstractST {
     public static final String NAMESPACE = "security-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
     private static final String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
-    private static final String TLS_PROTOCOL = "Protocol  : TLSv1";
-    private static final String SSL_TIMEOUT = "Timeout   : 300 (sec)";
     static final String STRIMZI_TEST_CLUSTER_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClusterCA";
     static final String STRIMZI_TEST_CLIENTS_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClientsCA";
 
@@ -134,6 +132,7 @@ class SecurityST extends AbstractST {
         LOGGER.info("Check Kafka bootstrap certificate");
         String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.tlsBootstrapAddress(clusterName), KafkaResources.bootstrapServiceName(clusterName),
                 KafkaResources.kafkaPodName(clusterName, 0), "kafka", false);
+        LOGGER.info("OPENSSL OUTPUT: \n\n{}\n\n", outputCertificate);
         verifyCerts(clusterName, outputCertificate, "kafka");
 
         LOGGER.info("Check zookeeper client certificate");
@@ -171,8 +170,6 @@ class SecurityST extends AbstractST {
 
         assertThat(certificate, containsString(certificateChains.get(0)));
         assertThat(certificate, containsString(certificateChains.get(1)));
-        assertThat(certificate, containsString(TLS_PROTOCOL));
-        assertThat(certificate, containsString(SSL_TIMEOUT));
         assertThat(certificate, containsString(OPENSSL_RETURN_CODE));
     }
 
@@ -1763,8 +1760,8 @@ class SecurityST extends AbstractST {
 
     boolean checkMountVolumeSecret(String namespaceName, String podName, VolumeMount volumeMount, String principalDNType, String expectedPrincipal) {
         String dn = cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-                "openssl x509 -in " + volumeMount.getMountPath() + "/ca.crt -noout -" + principalDNType).out().strip();
-        String certOutIssuer = dn.substring(principalDNType.length() + 3).replace("/", ",");
+                "openssl x509 -in " + volumeMount.getMountPath() + "/ca.crt -noout -nameopt RFC2253 -" + principalDNType).out().strip();
+        String certOutIssuer = dn.substring(principalDNType.length() + 1).replace("/", ",");
         return SystemTestCertManager.containsAllDN(certOutIssuer, expectedPrincipal);
     }
 

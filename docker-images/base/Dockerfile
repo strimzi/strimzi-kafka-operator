@@ -1,10 +1,14 @@
-FROM centos:7
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 ARG JAVA_VERSION=11
 ARG TARGETPLATFORM
 
-RUN yum -y update \
-    && yum -y install java-${JAVA_VERSION}-openjdk-headless openssl bind-utils \
-    && yum -y clean all
+USER root
+
+RUN microdnf update \
+    && microdnf install java-${JAVA_VERSION}-openjdk-headless openssl bind-utils procps shadow-utils \
+    && microdnf clean all
+
+ENV JAVA_HOME /usr/lib/jvm/jre-11
 
 #####
 # Add Tini
