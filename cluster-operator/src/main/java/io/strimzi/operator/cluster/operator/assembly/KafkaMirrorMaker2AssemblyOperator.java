@@ -268,7 +268,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 .withTasksMax(mm2ConnectorSpec.getTasksMax())
                                 .build();                      
 
-                        prepareMirrorMaker2ConnectorConfig(mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
+                        prepareMirrorMaker2ConnectorConfig(reconciliation, mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
                         RECONCILIATION_LOGGER.debug(reconciliation, "creating/updating connector {} config: {}", connectorName, asJson(reconciliation, connectorSpec).toString());
                         return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connectorName, connectorSpec, mirrorMaker2Status);
                     })                            
@@ -277,7 +277,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     }
 
     @SuppressWarnings("deprecation")
-    private static void prepareMirrorMaker2ConnectorConfig(KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
+    private static void prepareMirrorMaker2ConnectorConfig(Reconciliation reconciliation, KafkaMirrorMaker2MirrorSpec mirror, KafkaMirrorMaker2ClusterSpec sourceCluster, KafkaMirrorMaker2ClusterSpec targetCluster, KafkaConnectorSpec connectorSpec, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
         Map<String, Object> config = connectorSpec.getConfig();
         addClusterToMirrorMaker2ConnectorConfig(config, targetCluster, TARGET_CLUSTER_PREFIX);
         addClusterToMirrorMaker2ConnectorConfig(config, sourceCluster, SOURCE_CLUSTER_PREFIX);
@@ -289,7 +289,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         String topicsExcludePattern = mirror.getTopicsExcludePattern();
         String topicsBlacklistPattern = mirror.getTopicsBlacklistPattern();
         if (topicsExcludePattern != null && topicsBlacklistPattern != null) {
-            log.warn("Both topicsExcludePattern and topicsBlacklistPattern mirror properties are present, ignoring topicsBlacklistPattern as it is deprecated");
+            RECONCILIATION_LOGGER.warn(reconciliation, "Both topicsExcludePattern and topicsBlacklistPattern mirror properties are present, ignoring topicsBlacklistPattern as it is deprecated");
         }
         String topicsExclude = topicsExcludePattern != null ? topicsExcludePattern : topicsBlacklistPattern;
         if (topicsExclude != null) {
@@ -303,7 +303,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         String groupsExcludePattern = mirror.getGroupsExcludePattern();
         String groupsBlacklistPattern = mirror.getGroupsBlacklistPattern();
         if (groupsExcludePattern != null && groupsBlacklistPattern != null) {
-            log.warn("Both groupsExcludePattern and groupsBlacklistPattern mirror properties are present, ignoring groupsBlacklistPattern as it is deprecated");
+            RECONCILIATION_LOGGER.warn(reconciliation, "Both groupsExcludePattern and groupsBlacklistPattern mirror properties are present, ignoring groupsBlacklistPattern as it is deprecated");
         }
         String groupsExclude = groupsExcludePattern != null ? groupsExcludePattern :  groupsBlacklistPattern;
         if (groupsExclude != null) {
