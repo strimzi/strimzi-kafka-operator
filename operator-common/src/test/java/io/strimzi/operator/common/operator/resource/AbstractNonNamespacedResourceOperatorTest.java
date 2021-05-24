@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -95,9 +96,12 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
+        EditReplacePatchDeletable mockR = mock(resourceType());
+        HasMetadata hasMetadata = mock(HasMetadata.class);
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.withPropagationPolicy(true ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
-        when(mockResource.patch(any())).thenReturn(resource);
+
+        when(mockResource.withPropagationPolicy(any())).thenReturn(mockR);
+        when(mockR.patch((T) any())).thenReturn(hasMetadata);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -114,7 +118,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource())
                 .onComplete(context.succeeding(ar -> {
                     verify(mockResource).get();
-                    verify(mockResource).patch(any());
+                    verify(mockR).patch((T) any());
                     verify(mockResource, never()).create(any());
                     verify(mockResource, never()).create();
                     verify(mockResource, never()).createOrReplace(any());
