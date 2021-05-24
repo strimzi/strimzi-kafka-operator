@@ -23,10 +23,22 @@ All other CSV fields must be updated manually in the template CSV file, `./csv-t
 
 ## Usage
 ```
-./generate-olm-bundle.sh <BUNDLE_VERSION>
+make BUNDLE_VERSION=<BUNDLE_VERSION>
 
+# Alternatively, to override image env vars taken from ../../Makefile.docker
+make BUNDLE_VERSION=<BUNDLE_VERSION> \
+     DOCKER_REGISTRY=<DOCKER_REGISTRY> \ 
+     DOCKER_ORG=<DOCKER_ORG> \
+     DOCKER_TAG=<DOCKER_TAG>
 ```
+
 for example:
 ```
-/generate-olm-bundle.sh 0.22.1
+make BUNDLE_VERSION=0.23.0
+
+# Alternatively, to override the image env vars taken from ../../Makefile.docker
+make BUNDLE_VERSION=0.23.0 \
+     DOCKER_REGISTRY=docker.io \
+     DOCKER_ORG=strimzi \
+     DOCKER_TAG=0.23.0
 ```
