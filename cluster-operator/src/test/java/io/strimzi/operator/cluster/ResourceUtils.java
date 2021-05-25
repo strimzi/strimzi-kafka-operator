@@ -525,13 +525,13 @@ public class ResourceUtils {
     }
 
     public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, KafkaMirrorMakerProducerSpec producer,
-                                                          KafkaMirrorMakerConsumerSpec consumer, String whitelist, Map<String, Object> metricsCm) {
-        return createKafkaMirrorMaker(namespace, name, image, null, producer, consumer, whitelist, metricsCm);
+                                                          KafkaMirrorMakerConsumerSpec consumer, String include, Map<String, Object> metricsCm) {
+        return createKafkaMirrorMaker(namespace, name, image, null, producer, consumer, include, metricsCm);
     }
 
     public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, Integer replicas,
                                                           KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer,
-                                                          String whitelist, Map<String, Object> metricsCm) {
+                                                          String include, Map<String, Object> metricsCm) {
 
         KafkaMirrorMakerBuilder builder = new KafkaMirrorMakerBuilder()
                 .withMetadata(new ObjectMetaBuilder()
@@ -544,7 +544,7 @@ public class ResourceUtils {
                     .withImage(image)
                     .withProducer(producer)
                     .withConsumer(consumer)
-                    .withWhitelist(whitelist)
+                    .withInclude(include)
                     .withMetrics(metricsCm)
                 .endSpec();
 

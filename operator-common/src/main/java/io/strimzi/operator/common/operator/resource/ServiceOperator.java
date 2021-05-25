@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import static io.strimzi.operator.common.Annotations.LOADBALANCER_ANNOTATION_WHITELIST;
+import static io.strimzi.operator.common.Annotations.LOADBALANCER_ANNOTATION_IGNORELIST;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
@@ -107,7 +107,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
         Map<String, String> currentAnnotations = current.getMetadata().getAnnotations();
         if (currentAnnotations != null) {
             Map<String, String> matchedAnnotations = currentAnnotations.keySet().stream()
-                    .filter(annotation -> LOADBALANCER_ANNOTATION_WHITELIST.stream().anyMatch(whitelist -> whitelist.test(annotation)))
+                    .filter(annotation -> LOADBALANCER_ANNOTATION_IGNORELIST.stream().anyMatch(ignorelist -> ignorelist.test(annotation)))
                     .collect(Collectors.toMap(Function.identity(), currentAnnotations::get));
 
             if (!matchedAnnotations.isEmpty()) {

@@ -17,6 +17,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.OneOf;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -32,9 +33,10 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "version", "replicas", "image", "consumer",
-        "producer", "resources", "whitelist",
+        "producer", "resources", "whitelist", "include",
         "affinity", "tolerations", "jvmOptions",
         "logging", "metrics", "metricsConfig", "tracing", "template"})
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("whitelist")), @OneOf.Alternative(@OneOf.Alternative.Property("include"))})
 @EqualsAndHashCode
 public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics {
     private static final long serialVersionUID = 1L;
@@ -46,6 +48,7 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
     private String version;
     private String image;
     private String whitelist;
+    private String include;
     private KafkaMirrorMakerConsumerSpec consumer;
     private KafkaMirrorMakerProducerSpec producer;
     private ResourceRequirements resources;
@@ -92,15 +95,28 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
     }
 
     @Description("List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. " +
-            "Mirroring two topics named A and B is achieved by using the whitelist `'A|B'`. Or, as a special case, you can mirror all topics using the whitelist '*'. " +
+            "Mirroring two topics named A and B is achieved by using the expression `'A|B'`. Or, as a special case, you can mirror all topics using the regular expression '*'. " +
             "You can also specify multiple regular expressions separated by commas.")
-    @JsonProperty(required = true)
+    @DeprecatedProperty(movedToPath = "spec.include")
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     public String getWhitelist() {
         return whitelist;
     }
 
     public void setWhitelist(String whitelist) {
         this.whitelist = whitelist;
+    }
+
+    @Description("List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. " +
+            "Mirroring two topics named A and B is achieved by using the expression `'A|B'`. Or, as a special case, you can mirror all topics using the regular expression '*'. " +
+            "You can also specify multiple regular expressions separated by commas.")
+    public String getInclude() {
+        return include;
+    }
+
+    public void setInclude(String include) {
+        this.include = include;
     }
 
     @Description("Configuration of source cluster.")

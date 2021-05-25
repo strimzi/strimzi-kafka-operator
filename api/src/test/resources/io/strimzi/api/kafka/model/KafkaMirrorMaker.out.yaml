@@ -16,4 +16,4 @@ spec:
     bootstrapServers: "my-target-kafka:9092"
     config:
       foo: "buz"
-  whitelist: "*"
+  include: "*"

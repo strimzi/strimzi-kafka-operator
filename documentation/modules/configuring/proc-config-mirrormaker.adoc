@@ -73,7 +73,7 @@ spec:
       ssl.enabled.protocols: "TLSv1.2"
       ssl.protocol: "TLSv1.2"
       ssl.endpoint.identification.algorithm: HTTPS <13>
-  whitelist: "my-topic|other-topic" <14>
+  include: "my-topic|other-topic" <14>
   resources: <15>
     requests:
       cpu: "1"
@@ -138,7 +138,7 @@ spec:
 <11> If the xref:property-producer-abort-on-send-reference[`abortOnSendFailure` property] is set to `true`, Kafka MirrorMaker will exit and the container will restart following a send failure for a message.
 <12> xref:con-common-configuration-ssl-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
 <13> xref:type-KafkaMirrorMakerProducerSpec-reference[Hostname verification is enabled] by setting to `HTTPS`. An empty string disables the verification.
-<14> A xref:property-mm-whitelist-reference[_whitelist_ of topics] mirrored from source to target Kafka cluster.
+<14> A xref:property-mm-include-reference[included topics] mirrored from source to target Kafka cluster.
 <15> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <16> Specified xref:property-mm-loggers-reference[loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. MirrorMaker has a single logger called `mirrormaker.root.logger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <17> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
