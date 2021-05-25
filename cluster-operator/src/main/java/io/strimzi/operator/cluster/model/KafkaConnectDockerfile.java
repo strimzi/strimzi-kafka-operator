@@ -78,17 +78,18 @@ public class KafkaConnectDockerfile {
     private void proxy(PrintWriter writer) {
         if (HTTP_PROXY != null) {
             writer.println(String.format("ARG %s=%s", ENV_VAR_HTTP_PROXY.toLowerCase(Locale.ENGLISH), HTTP_PROXY));
+            writer.println();
         }
 
         if (HTTPS_PROXY != null) {
             writer.println(String.format("ARG %s=%s", ENV_VAR_HTTPS_PROXY.toLowerCase(Locale.ENGLISH), HTTPS_PROXY));
+            writer.println();
         }
 
         if (NO_PROXY != null) {
             writer.println(String.format("ARG %s=%s", ENV_VAR_NO_PROXY.toLowerCase(Locale.ENGLISH), NO_PROXY));
+            writer.println();
         }
-
-        writer.println();
     }
 
     /**
