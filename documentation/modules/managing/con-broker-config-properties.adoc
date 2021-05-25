@@ -353,6 +353,7 @@ You can set an upper limit on the percentage of memory used through the buffer l
 ----
 # ...
 log.cleaner.dedupe.buffer.size=134217728
+log.cleaner.io.buffer.load.factor=0.9
 # ...
 ----
 
