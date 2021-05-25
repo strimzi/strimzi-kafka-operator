@@ -19,7 +19,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,14 +28,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.util.JsonSerialization.mapper;
-
 
 public class KafkaRebalanceStatusTest {
 
     private static final int BROKER_ONE_KEY = 1;
-
-    private static final String BROKER_LOAD_KEY = "brokerLoad";
     private static final String RESOURCE_NAME = "my-rebalance";
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
@@ -121,28 +116,17 @@ public class KafkaRebalanceStatusTest {
 
         JsonObject replicas = output.getJsonObject("1").getJsonObject("replicas");
 
-        ArrayList<Integer> replicasList = new ArrayList<>();
-        replicasList.add(replicas.getInteger("before"));
-        replicasList.add(replicas.getInteger("after"));
-        replicasList.add(replicas.getInteger("diff"));
-
-        assertThat(replicasList.get(0), is(10));
-        assertThat(replicasList.get(1), is(5));
-        assertThat(replicasList.get(2), is(-5));
+        assertThat(replicas.getInteger("before"), is(10));
+        assertThat(replicas.getInteger("after"), is(5));
+        assertThat(replicas.getInteger("diff"), is(-5));
 
         assertThat(output.getJsonObject("1").getMap(), hasKey(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey()));
 
         JsonObject cpus = output.getJsonObject("1").getJsonObject("cpuPercentage");
 
-        ArrayList<Double> cpu = new ArrayList<>();
-
-        cpu.add(cpus.getDouble("before"));
-        cpu.add(cpus.getDouble("after"));
-        cpu.add(cpus.getDouble("diff"));
-
-        assertThat(cpu.get(0), is(10.));
-        assertThat(cpu.get(1), is(20.0));
-        assertThat(cpu.get(2), is(10.0));
+        assertThat(cpus.getDouble("before"), is(10.));
+        assertThat(cpus.getDouble("after"), is(20.0));
+        assertThat(cpus.getDouble("diff"), is(10.0));
 
     }
 
@@ -156,42 +140,29 @@ public class KafkaRebalanceStatusTest {
 
         KafkaRebalanceAssemblyOperator.MapAndStatus<ConfigMap, Map<String, Object>> output = KafkaRebalanceAssemblyOperator.processOptimizationProposal(kr, proposal);
 
-        assertTrue(output.getStatus().containsKey(CruiseControlRebalanceKeys.SUMMARY.getKey()));
-
         Map<String, String> brokerMap = output.getLoadMap().getData();
 
         try {
 
             ObjectMapper mapper = new ObjectMapper();
 
-            Map<String, LinkedHashMap<String, String>> brokerLoadMap = mapper.readValue(brokerMap.get("brokerLoad"), LinkedHashMap.class);
+            Map<String, LinkedHashMap<String, String>> brokerLoadMap = mapper.readValue(brokerMap.get(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY), LinkedHashMap.class);
 
-            assertThat(brokerMap, hasKey(BROKER_LOAD_KEY));
+            assertThat(brokerMap, hasKey(KafkaRebalanceAssemblyOperator.BROKER_LOAD_KEY));
 
             LinkedHashMap<String, LinkedHashMap<String, Object>> m = (LinkedHashMap) brokerLoadMap.get("1");
 
             assertThat(m, hasKey(CruiseControlLoadParameters.CPU_PERCENTAGE.getKafkaRebalanceStatusKey()));
 
-            ArrayList<Double> cpu = new ArrayList<>();
-            cpu.add((Double) m.get("cpuPercentage").get("before"));
-            cpu.add((Double) m.get("cpuPercentage").get("after"));
-            cpu.add((Double) m.get("cpuPercentage").get("diff"));
-
-            assertThat(cpu.get(0), is(10.0));
-            assertThat(cpu.get(1), is(20.0));
-            assertThat(cpu.get(2), is(10.0));
-
+            assertThat((Double) m.get("cpuPercentage").get("before"), is(10.0));
+            assertThat((Double) m.get("cpuPercentage").get("after"), is(20.0));
+            assertThat((Double) m.get("cpuPercentage").get("diff"), is(10.0));
 
             assertThat(m, hasKey(CruiseControlLoadParameters.REPLICAS.getKafkaRebalanceStatusKey()));
 
-            ArrayList<Integer> replicas = new ArrayList<>();
-            replicas.add((Integer) m.get("replicas").get("before"));
-            replicas.add((Integer) m.get("replicas").get("after"));
-            replicas.add((Integer) m.get("replicas").get("diff"));
-
-            assertThat(replicas.get(0), is(10));
-            assertThat(replicas.get(1), is(5));
-            assertThat(replicas.get(2), is(-5));
+            assertThat((Integer) m.get("replicas").get("before"), is(10));
+            assertThat((Integer) m.get("replicas").get("after"), is(5));
+            assertThat((Integer) m.get("replicas").get("diff"), is(-5));
 
         } catch (JsonProcessingException e) {
             e.printStackTrace();

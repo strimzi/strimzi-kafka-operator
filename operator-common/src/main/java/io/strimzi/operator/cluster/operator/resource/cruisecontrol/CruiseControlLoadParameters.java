@@ -54,8 +54,7 @@ public enum CruiseControlLoadParameters {
 
     private static List<CruiseControlLoadParameters> filterByType(String filterType) {
         return Arrays.stream(CruiseControlLoadParameters.values())
-                .filter(loadParameter -> loadParameter.getType() != null)
-                .filter(loadParameter -> loadParameter.getType().equals(filterType))
+                .filter(loadParameter -> filterType.equals(loadParameter.getType()))
                 .collect(Collectors.toList());
     }
 

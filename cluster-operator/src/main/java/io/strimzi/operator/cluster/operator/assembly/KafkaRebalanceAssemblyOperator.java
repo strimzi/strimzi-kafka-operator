@@ -142,7 +142,7 @@ public class KafkaRebalanceAssemblyOperator
 
     private static final long REBALANCE_POLLING_TIMER_MS = 5_000;
     private static final int MAX_API_RETRIES = 5;
-    protected static final String BROKER_LOAD_KEY = "brokerLoad";
+    protected static final String BROKER_LOAD_KEY = "brokerLoad.json";
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private final PlatformFeaturesAvailability pfa;
@@ -409,7 +409,7 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     /**
-     * computeNextStatus returns a future to a KafkaRebalanceStatus that will be computed depending on the given
+     * computeNextStatus returns a future to a wrapper class containing ConfigMap and KafkaRebalanceStatus that will be computed depending on the given
      * KafkaRebalance state, status and annotations.
      */
     /* test */ protected Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> computeNextStatus(Reconciliation reconciliation,
@@ -426,7 +426,7 @@ public class KafkaRebalanceAssemblyOperator
             case Rebalancing:
                 return onRebalancing(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation);
             case Stopped:
-                return onStop(kafkaRebalance, reconciliation, host, apiClient, rebalanceAnnotation, rebalanceOptionsBuilder);
+                return onStop(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
             case Ready:
                 // Rebalance Complete
                 return onReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
@@ -510,7 +510,7 @@ public class KafkaRebalanceAssemblyOperator
      *                              returned by the Cruise Control rebalance endpoint.
      * @param brokerLoadAfterArray The JSONArray of broker load JSONObjects, for after the optimization proposal is applied,
      *                             returned by the Cruise Control rebalance endpoint.
-     * @return A map linking from broker ID integer to a map of load parameter to [before, after, difference] arrays.
+     * @return A JsonObject linking from broker ID integer to a map of load parameter to [before, after, difference] arrays.
      */
     protected static JsonObject parseLoadStats(JsonArray brokerLoadBeforeArray, JsonArray brokerLoadAfterArray) {
 
@@ -582,18 +582,17 @@ public class KafkaRebalanceAssemblyOperator
         return brokersStats;
     }
 
+    /**
+     * A wrapper class containing used to bind the ConfigMap and the status together.
+     */
+
     static class MapAndStatus<T, K> {
 
         T loadMap;
-
         K status;
 
         public T getLoadMap() {
             return loadMap;
-        }
-
-        public void setLoadMap(T loadMap) {
-            this.loadMap = loadMap;
         }
 
         public K getStatus() {
@@ -616,7 +615,7 @@ public class KafkaRebalanceAssemblyOperator
      * load map.
      *
      * @param  proposalJson The JSONObject representing the response from the Cruise Control rebalance endpoint.
-     * @return A map containing the proposal summary and broker load maps.
+     * @return A wrapper class containing the proposal summary map and a config map containing broker load.
      */
     protected static MapAndStatus<ConfigMap, Map<String, Object>> processOptimizationProposal(KafkaRebalance kafkaRebalance, JsonObject proposalJson) {
 
@@ -647,10 +646,7 @@ public class KafkaRebalanceAssemblyOperator
                 .withData(Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.encodePrettily()))
                 .build();
 
-        Map<String, Object> optimizationProposal = new HashMap<>();
-        optimizationProposal.put(CruiseControlRebalanceKeys.SUMMARY.getKey(),
-                proposalJson.getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()).getMap());
-        return new MapAndStatus<>(rebalanceMap, optimizationProposal);
+        return new MapAndStatus<>(rebalanceMap, proposalJson.getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()).getMap());
     }
 
     private MapAndStatus<ConfigMap, KafkaRebalanceStatus> buildRebalanceStatus(KafkaRebalance kafkaRebalance, String sessionID, KafkaRebalanceState cruiseControlState, JsonObject proposalJson) {
@@ -673,7 +669,7 @@ public class KafkaRebalanceAssemblyOperator
      * @param host Cruise Control service to which sending the rebalance proposal request
      * @param apiClient Cruise Control REST API client instance
      * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
-     * @return a Future with the next {@code KafkaRebalanceStatus} including the state
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} including the ConfigMap and state
      */
 
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onNew(Reconciliation reconciliation,
@@ -693,7 +689,7 @@ public class KafkaRebalanceAssemblyOperator
      * @param kafkaRebalance Current {@code KafkaRebalance} resource
      * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
      * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
-     * @return a Future with the next {@code KafkaRebalanceStatus} including the state
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus> } including the ConfigMap and state
      */
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onNotReady(Reconciliation reconciliation,
                                                     String host, CruiseControlApi apiClient,
@@ -726,7 +722,7 @@ public class KafkaRebalanceAssemblyOperator
      * @param kafkaRebalance Current {@code KafkaRebalance} resource
      * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
      * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
-     * @return a Future with the next {@code KafkaRebalanceStatus} including the state
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} including the ConfigMap and state.
      */
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onPendingProposal(Reconciliation reconciliation,
                                                            String host, CruiseControlApi apiClient,
@@ -807,7 +803,7 @@ public class KafkaRebalanceAssemblyOperator
      * @param kafkaRebalance Current {@code KafkaRebalance} resource
      * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
      * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
-     * @return a Future with the next {@code KafkaRebalanceStatus} including the state
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} including the ConfigMap and state
      */
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onProposalReady(Reconciliation reconciliation,
                                                          String host, CruiseControlApi apiClient,
@@ -845,7 +841,7 @@ public class KafkaRebalanceAssemblyOperator
      * @param apiClient Cruise Control REST API client instance
      * @param kafkaRebalance Current {@code KafkaRebalance} resource
      * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
-     * @return a Future with the next {@code KafkaRebalanceStatus} including the state
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} including the state
      */
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onRebalancing(Reconciliation reconciliation,
                                                        String host, CruiseControlApi apiClient,
@@ -972,11 +968,11 @@ public class KafkaRebalanceAssemblyOperator
      * @param apiClient Cruise Control REST API client instance
      * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
      * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
-     * @return a Future with the next {@code KafkaRebalanceStatus} bringing the state
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} bringing the ConfigMap and state.
      */
 
-    private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onStop(KafkaRebalance kafkaRebalance, Reconciliation reconciliation,
-                                                String host, CruiseControlApi apiClient, KafkaRebalanceAnnotation rebalanceAnnotation,
+    private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onStop(Reconciliation reconciliation,
+                                                String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance, KafkaRebalanceAnnotation rebalanceAnnotation,
                                                 RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
             return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
@@ -998,7 +994,7 @@ public class KafkaRebalanceAssemblyOperator
      * @param apiClient Cruise Control REST API client instance
      * @param rebalanceAnnotation The current value for the strimzi.io/rebalance annotation
      * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
-     * @return a Future with the next {@code KafkaRebalanceStatus} bringing the state
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} bringing the ConfigMap and state
      */
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onReady(Reconciliation reconciliation,
                                                  String host, CruiseControlApi apiClient,

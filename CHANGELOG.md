@@ -9,6 +9,7 @@
 * Add Kafka Quotas plugin with produce, consume, and storage quotas
 * Remove topics and groups "blacklist" pattern from KafkaMirrorMaker2 CRD
 * Support pausing reconciliation of KafkaTopic CR with annotation `strimzi.io/pause-reconciliation`
+* Support for broker load information added to the rebalance optimization proposal. Information on the load difference, before and after a rebalance is stored in a ConfigMap
 
 ## 0.23.0
 

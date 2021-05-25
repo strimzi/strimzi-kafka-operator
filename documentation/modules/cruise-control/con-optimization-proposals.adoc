@@ -36,7 +36,7 @@ Consider a shorter interval for fast changing clusters, although this increases 
 
 An optimization proposal consists of two main sections: the _summary_ and the _broker load_.
 The summary provides an overview of the proposed cluster rebalance and indicates the scale of the changes involved.
-The broker load allows you to see the impact of the proposed rebalance on each of the brokers in the cluster.
+The broker load shows before and after values for the proposed rebalance, so you can see the impact on each of the brokers in the cluster.
 
 [discrete]
 === Summary
@@ -105,8 +105,8 @@ m¦excludedBrokersForReplicaMove
 [discrete]
 === Broker load
 
-The broker load section lists all broker IDs and provides a number of metrics for each broker. 
-Each metric is linked to an array containing three values.
+The broker load is a json string which consist of all broker IDs and provides a number of metrics for each broker.
+Each metric consist of three values.
 The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
 
 The following table explains the properties contained in the optimization proposal's broker load section:
