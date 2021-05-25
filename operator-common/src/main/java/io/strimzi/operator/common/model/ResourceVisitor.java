@@ -147,7 +147,9 @@ public class ResourceVisitor {
             } else if (Collection.class.isAssignableFrom(returnType)) {
                 path.add(propertyName);
                 for (Object element : (Collection<?>) propertyValue) {
-                    if (element != null && !element.getClass().isEnum()) {
+                    if (element != null
+                            && !element.getClass().isEnum()
+                            && !isScalar(element.getClass())) {
                         visit(path, element, visitor);
                     }
                 }

@@ -27,6 +27,11 @@ spec:
     storage:
       type: ephemeral
     version: 2.8.0
+    template:
+      pod:
+        securityContext:
+          supplementalGroups:
+            - 971001234
     tlsSidecar: {}
   topicOperator: {}
   zookeeper:
