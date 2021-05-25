@@ -577,7 +577,7 @@ class TopicOperator {
             RECONCILIATION_LOGGER.info(logContext.toReconciliation(), "Reconciling topic {}, k8sTopic:{}, kafkaTopic:{}, privateTopic:{}", topicName, k8sTopic == null ? "null" : "nonnull", kafkaTopic == null ? "null" : "nonnull", privateTopic == null ? "null" : "nonnull");
         }
         if (k8sTopic != null && Annotations.isReconciliationPausedWithAnnotation(k8sTopic.getMetadata())) {
-            LOGGER.debug("{}: Reconciliation paused, not applying changes.", logContext);
+            RECONCILIATION_LOGGER.debug(logContext.toReconciliation(), "Reconciliation paused, not applying changes.");
             reconciliationResultHandler = Future.succeededFuture();
         } else if (privateTopic == null) {
             if (k8sTopic == null) {
@@ -1488,20 +1488,20 @@ class TopicOperator {
                 .onComplete(ar -> {
                     if (ar.failed()) {
                         reconciliation.failed();
-                        LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), ar.cause());
+                        RECONCILIATION_LOGGER.error(logContext.toReconciliation(), "Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), ar.cause());
                     } else {
                         reconciliation.succeeded();
-                        LOGGER.info("Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
+                        RECONCILIATION_LOGGER.info(logContext.toReconciliation(), "Success reconciling KafkaTopic {}", logTopic(kafkaTopicResource));
                     }
                     topicPromise.handle(ar);
                 });
         } catch (InvalidTopicException e) {
             reconciliation.failed();
-            LOGGER.error("Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
+            RECONCILIATION_LOGGER.error(logContext.toReconciliation(), "Error reconciling KafkaTopic {}: Invalid resource: ", logTopic(kafkaTopicResource), e.getMessage());
             topicPromise.fail(e);
         } catch (OperatorException e) {
             reconciliation.failed();
-            LOGGER.error("Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), e);
+            RECONCILIATION_LOGGER.error(logContext.toReconciliation(), "Error reconciling KafkaTopic {}", logTopic(kafkaTopicResource), e);
             topicPromise.fail(e);
         }
         return topicPromise.future();
