@@ -112,6 +112,7 @@ public class TopicOperatorTest {
         Map<String, String> lbls = new HashMap<>();
         lbls.put("app", "strimzi");
         metadata.setLabels(lbls);
+        metadata.setAnnotations(new HashMap<>());
     }
 
     @AfterEach
@@ -529,7 +530,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcile_withResource_noKafka_noPrivate(VertxTestContext context) throws InterruptedException {
 
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
         Topic kafkaTopic = null;
         Topic privateTopic = null;
 
@@ -570,7 +571,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcile_withResource_noKafka_withPrivate(VertxTestContext context) {
 
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
         Topic kafkaTopic = null;
         Topic privateTopic = kubeTopic;
 
@@ -1236,14 +1237,15 @@ public class TopicOperatorTest {
     public void testReconcileMetrics(VertxTestContext context) throws InterruptedException {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
-        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
         resourceAdded(context, null, null, null);
+        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
 
         Checkpoint async = context.checkpoint();
         reconcileFuture.onComplete(context.succeeding(e -> context.verify(() -> {
             MeterRegistry registry = metrics.meterRegistry();
 
             assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
             assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
             assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
@@ -1258,6 +1260,67 @@ public class TopicOperatorTest {
 
             async.flag();
         })));
+    }
+
+    @Test
+    public void testReconcileMetricsWithPausedTopic(VertxTestContext context) throws InterruptedException {
+        mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
+        mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
+        metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "false");
+        resourceAdded(context, null, null, null);
+        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
+
+        // workaround for the vertx junit5 integration
+        CountDownLatch latch = new CountDownLatch(2);
+        CountDownLatch splitLatch = new CountDownLatch(1);
+
+        reconcileFuture.onComplete(context.succeeding(e -> context.verify(() -> {
+            MeterRegistry registry = metrics.meterRegistry();
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                    .tag("kind", "KafkaTopic")
+                    .tag("name", topicName.toString())
+                    .tag("resource-namespace", "default-namespace")
+                    .gauge().value(), is(1.0));
+
+            latch.countDown();
+            splitLatch.countDown();
+        })));
+
+        splitLatch.await(10_000, TimeUnit.MILLISECONDS);
+        metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "true");
+
+        resourceAdded(context, null, null, null);
+        topicOperator.reconcileAllTopics("periodic").onComplete(context.succeeding(f -> context.verify(() -> {
+            MeterRegistry registry = metrics.meterRegistry();
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(2.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(1.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(2.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(2L));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                    .tag("kind", "KafkaTopic")
+                    .tag("name", topicName.toString())
+                    .tag("resource-namespace", "default-namespace")
+                    .gauge().value(), is(1.0));
+
+            latch.countDown();
+        })));
+
+        assertThat(latch.await(10_000, TimeUnit.MILLISECONDS), is(true));
+        context.completeNow();
     }
 
     @Test

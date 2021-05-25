@@ -8,6 +8,7 @@
 * Added support for configuring cluster-operator's worker thread pool size that is used for various sync and async tasks
 * Add Kafka Quotas plugin with produce, consume, and storage quotas
 * Remove topics and groups "blacklist" pattern from KafkaMirrorMaker2 CRD
+* Support pausing reconciliation of KafkaTopic CR with annotation `strimzi.io/pause-reconciliation`
 
 ## 0.23.0
 

@@ -17,8 +17,6 @@ For example, you can apply the annotation to the `KafkaConnect` resource so that
 You can also create a custom resource with the pause annotation enabled.
 The custom resource is created, but it is ignored.
 
-IMPORTANT: It is not currently possible to pause reconciliation of `KafkaTopic` resources.
-
 .Prerequisites
 
 * The Strimzi Operator that manages the custom resource is running.
