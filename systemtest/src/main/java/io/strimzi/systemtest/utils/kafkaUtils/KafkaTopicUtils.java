@@ -163,7 +163,7 @@ public class KafkaTopicUtils {
     }
 
     public static String describeTopicViaKafkaPod(String topicName, String kafkaPodName, String bootstrapServer) {
-        return cmdKubeClient().execInPod(kafkaPodName, "./bin/kafka-topics.sh",
+        return cmdKubeClient().execInPod(kafkaPodName, "/opt/kafka/bin/kafka-topics.sh",
             "--topic",
             topicName,
             "--describe",
