@@ -43,7 +43,6 @@
 
 //OAuth attributes and links
 :oauth2-site: link:https://oauth.net/2/[OAuth 2.0 site^]
-:oauth-version: 0.7.2
 :keycloak-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
 :keycloak-server-install-doc: link:https://www.keycloak.org/docs/latest/server_installation/index.html#_operator[Installing the Keycloak Operator^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Keycloak Authorization Services^]
