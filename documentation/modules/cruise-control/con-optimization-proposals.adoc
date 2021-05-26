@@ -114,7 +114,11 @@ Each metric consist of three values.
 The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
 
 To extract the JSON string from the ConfigMap, use the following command:
-`kubectl describe configmap my-rebalance`
+
+[source,shell,subs=+quotes]
+----
+kubectl get configmap my-rebalance -o json | jq .data
+----
 
 The following table explains the properties contained in the optimization proposal's broker load ConfigMap:
 
