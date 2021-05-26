@@ -5,8 +5,9 @@
 [id='configuring-pod-anti-affinity-to-schedule-each-kafka-broker-on-a-different-worker-node-{context}']
 = Configuring pod anti-affinity to schedule each Kafka broker on a different worker node
 
-When multiple Kafka brokers or multiple ZooKeeper nodes are running on the same Kubernetes worker nodes, they will all become unavailable at the same time in case of worker node issues.
-To increase the reliability, you can use `podAntiAffinity` to schedule each Kafka broker or ZooKeeper node on different Kubernetes worker node.
+Many Kafka brokers or ZooKeeper nodes can run on the same Kubernetes worker node.
+If the worker node fails, they will all become unavailable at the same time. 
+To improve reliability, you can use `podAntiAffinity` configuration to schedule each Kafka broker or ZooKeeper node on a different Kubernetes worker node.
 
 .Prerequisites
 
@@ -16,8 +17,8 @@ To increase the reliability, you can use `podAntiAffinity` to schedule each Kafk
 .Procedure
 
 . Edit the `affinity` property in the resource specifying the cluster deployment.
-To make sure that no worker nodes are shared by Kafka brokers or by ZooKeeper nodes, use the `strimzi.io/name` label.
-The `topologyKey` should be set to `kubernetes.io/hostname` to specify that the selected pods should not be scheduled on nodes with the same hostname.
+To make sure that no worker nodes are shared by Kafka brokers or ZooKeeper nodes, use the `strimzi.io/name` label.
+Set the `topologyKey` to `kubernetes.io/hostname` to specify that the selected pods are not scheduled on nodes with the same hostname.
 This will still allow the same worker node to be shared by a single Kafka broker and a single ZooKeeper node.
 For example:
 +
@@ -60,7 +61,7 @@ spec:
 +
 Where `_CLUSTER-NAME_` is the name of your Kafka custom resource.
 
-. Alternatively, if you want to make sure that even no Kafka broker and ZooKeeper node share the same worker node, you can use the `strimzi.io/cluster` label.
+. If you even want to make sure that a Kafka broker and ZooKeeper node do not share the same worker node, use the `strimzi.io/cluster` label.
 For example:
 +
 [source,yaml,subs="+quotes,attributes+"]
@@ -104,6 +105,5 @@ Where `_CLUSTER-NAME_` is the name of your Kafka custom resource.
 
 . Create or update the resource.
 +
-This can be done using `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _KAFKA-CONFIG-FILE_

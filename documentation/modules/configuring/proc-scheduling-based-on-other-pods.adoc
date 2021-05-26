@@ -5,8 +5,8 @@
 [id='configuring-pod-anti-affinity-in-kafka-components-{context}']
 = Configuring pod anti-affinity in Kafka components
 
-To make sure your Kafka brokers deliver good and stable performance, you can use the `podAntiAffinity` to tell Kubernetes to not schedule the Kafka brokers on the same nodes as some other workloads.
-Typically, you want to avoid Kafka to run on the same worker node as other network or storage intensive applications such as databases, storage or other messaging platforms.
+Pod anti-affinity configuration helps with the stability and performance of Kafka brokers. By using `podAntiAffinity`, Kubernetes will not schedule Kafka brokers on the same nodes as other workloads. 
+Typically, you want to avoid Kafka running on the same worker node as other network or storage intensive applications such as databases, storage or other messaging platforms.
 
 .Prerequisites
 
