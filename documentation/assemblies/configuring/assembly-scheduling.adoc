@@ -11,6 +11,8 @@ Scheduling Kafka pods in a way that avoids sharing nodes with other critical wor
 
 include::../../modules/configuring/ref-affinity.adoc[leveloffset=+1]
 
+include::../../modules/configuring/proc-scheduling-brokers-on-different-worker-nodes.adoc[leveloffset=+1]
+
 include::../../modules/configuring/proc-scheduling-based-on-other-pods.adoc[leveloffset=+1]
 
 include::../../modules/configuring/proc-scheduling-deployment-to-node-using-node-affinity.adoc[leveloffset=+1]
