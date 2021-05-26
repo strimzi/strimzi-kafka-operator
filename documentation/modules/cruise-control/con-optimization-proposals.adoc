@@ -109,7 +109,7 @@ m¦excludedBrokersForReplicaMove
 [discrete]
 === Broker load
 
-The broker load is stored in a ConfigMap (with the same name as the KafakRebalance custom resource) as a JSON formatted string. This JSON string consists of a JSON object with keys for each broker IDs linking to a number of metrics for each broker
+The broker load is stored in a ConfigMap (with the same name as the KafakRebalance custom resource) as a JSON formatted string. This JSON string consists of a JSON object with keys for each broker IDs linking to a number of metrics for each broker.
 Each metric consist of three values.
 The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
 
