@@ -36,7 +36,7 @@ public class AbstractModelTest {
     // Implement AbstractModel to test the abstract class
     private class Model extends AbstractModel   {
         public Model(HasMetadata resource) {
-            super(resource, "model-app");
+            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, "model-app");
         }
 
         @Override
@@ -45,7 +45,7 @@ public class AbstractModelTest {
         }
 
         @Override
-        protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+        protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
             return null;
         }
     }

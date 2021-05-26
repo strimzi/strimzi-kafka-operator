@@ -152,7 +152,7 @@ public class KafkaConnectS2IClusterTest {
 
     @ParallelTest
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new Reconciliation("test", "kind", "namespace", "name"), new MetricsAndLogging(metricsCM, null));
+        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
     }
 
@@ -220,12 +220,12 @@ public class KafkaConnectS2IClusterTest {
 
     @ParallelTest
     public void testEnvVars()   {
-        assertThat(kc.getEnvVars(new Reconciliation("test", "kind", "namespace", "name")), is(getExpectedEnvVars()));
+        assertThat(kc.getEnvVars(), is(getExpectedEnvVars()));
     }
 
     @ParallelTest
     public void testGenerateService()   {
-        Service svc = kc.generateService(new Reconciliation("test", "kind", "namespace", "name"));
+        Service svc = kc.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
         assertThat(svc.getMetadata().getLabels(), is(expectedLabels(KafkaConnectS2IResources.serviceName(cluster))));
@@ -249,7 +249,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
-        Service svc = kc.generateService(new Reconciliation("test", "kind", "namespace", "name"));
+        Service svc = kc.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
         assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kc.getServiceName())));
@@ -637,7 +637,7 @@ public class KafkaConnectS2IClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
 
         // Check Service
-        Service svc = kc.generateService(new Reconciliation("test", "kind", "namespace", "name"));
+        Service svc = kc.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
@@ -1013,7 +1013,7 @@ public class KafkaConnectS2IClusterTest {
 
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), this.resource, VERSIONS);
 
-        Deployment dep = kc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"),
+        Deployment dep = kc.generateDeployment(
                 emptyMap(), true, null, secrets);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
@@ -1036,7 +1036,7 @@ public class KafkaConnectS2IClusterTest {
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        Deployment dep = kc.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"),
+        Deployment dep = kc.generateDeployment(
                 emptyMap(), true, null, singletonList(secret1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
@@ -1202,7 +1202,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> kafkaEnvVars = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
+        List<EnvVar> kafkaEnvVars = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -1240,7 +1240,7 @@ public class KafkaConnectS2IClusterTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> kafkaEnvVars = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
+        List<EnvVar> kafkaEnvVars = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars();
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -1453,7 +1453,7 @@ public class KafkaConnectS2IClusterTest {
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(new Reconciliation("test", "kind", "namespace", "name"), true, "operator-namespace", null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1475,7 +1475,7 @@ public class KafkaConnectS2IClusterTest {
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(new Reconciliation("test", "kind", "namespace", "name"), true, namespace, null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1497,7 +1497,7 @@ public class KafkaConnectS2IClusterTest {
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(new Reconciliation("test", "kind", "namespace", "name"), true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1519,7 +1519,7 @@ public class KafkaConnectS2IClusterTest {
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        assertThat(kc.generateNetworkPolicy(new Reconciliation("test", "kind", "namespace", "name"), false, null, null), is(nullValue()));
+        assertThat(kc.generateNetworkPolicy(false, null, null), is(nullValue()));
     }
 
     @ParallelTest

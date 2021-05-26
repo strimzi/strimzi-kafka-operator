@@ -122,7 +122,7 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = zc.generateConfigurationConfigMap(new Reconciliation("test", "kind", "namespace", "name"), new MetricsAndLogging(metricsCM, null));
+        ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLogging(metricsCM, null));
         checkMetricsConfigMap(metricsCm);
         checkOwnerReference(zc.createOwnerReference(), metricsCm);
     }
@@ -148,7 +148,7 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGenerateService() {
-        Service headful = zc.generateService(new Reconciliation("test", "kind", "namespace", "name"));
+        Service headful = zc.generateService();
 
         assertThat(headful.getSpec().getType(), is("ClusterIP"));
         assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
@@ -173,7 +173,7 @@ public class ZookeeperClusterTest {
                 .endSpec()
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
-        Service headful = zc.generateService(new Reconciliation("test", "kind", "namespace", "name"));
+        Service headful = zc.generateService();
 
         assertThat(headful.getSpec().getType(), is("ClusterIP"));
         assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
@@ -189,7 +189,7 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGenerateHeadlessService() {
-        Service headless = zc.generateHeadlessService(new Reconciliation("test", "kind", "namespace", "name"));
+        Service headless = zc.generateHeadlessService();
         checkHeadlessService(headless);
         checkOwnerReference(zc.createOwnerReference(), headless);
     }
@@ -214,7 +214,7 @@ public class ZookeeperClusterTest {
     @ParallelTest
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
         checkStatefulSet(sts);
         checkOwnerReference(zc.createOwnerReference(), sts);
     }
@@ -232,7 +232,7 @@ public class ZookeeperClusterTest {
                             .endZookeeper()
                         .endSpec().build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), editZooAssembly, VERSIONS);
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null);
+        StatefulSet sts = zc.generateStatefulSet(false, null, null);
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
     }
 
@@ -328,13 +328,13 @@ public class ZookeeperClusterTest {
     @ParallelTest
     public void withAffinity() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly, versions) -> ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, versions), this.getClass().getSimpleName() + ".withAffinity");
-        resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @ParallelTest
     public void withTolerations() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly, versions) -> ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, versions), this.getClass().getSimpleName() + ".withTolerations");
-        resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null).getSpec().getTemplate().getSpec().getTolerations());
+        resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
@@ -346,7 +346,7 @@ public class ZookeeperClusterTest {
         ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.createRenewOrReplace(new Reconciliation("test", "kind", "namespace", "name"), namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
 
-        zc.generateCertificates(new Reconciliation("test", "kind", "namespace", "name"), ka, clusterCa, true);
+        zc.generateCertificates(ka, clusterCa, true);
         return zc.generateNodesSecret();
     }
 
@@ -477,7 +477,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getMetadata().getLabels().entrySet().containsAll(expectedStsLabels.entrySet()), is(true));
         assertThat(sts.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
@@ -491,14 +491,14 @@ public class ZookeeperClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
 
         // Check Service
-        Service svc = zc.generateService(new Reconciliation("test", "kind", "namespace", "name"));
+        Service svc = zc.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
         assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
 
         // Check Headless Service
-        svc = zc.generateHeadlessService(new Reconciliation("test", "kind", "namespace", "name"));
+        svc = zc.generateHeadlessService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()), is(true));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("SingleStack"));
@@ -531,7 +531,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
     }
 
@@ -542,7 +542,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
     }
 
@@ -565,7 +565,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -584,7 +584,7 @@ public class ZookeeperClusterTest {
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap());
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, secrets);
+        StatefulSet sts = zc.generateStatefulSet(true, null, secrets);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -609,7 +609,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, singletonList(secret1));
+        StatefulSet sts = zc.generateStatefulSet(true, null, singletonList(secret1));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -622,7 +622,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
@@ -642,7 +642,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
@@ -656,7 +656,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, null, null);
+        StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
@@ -698,10 +698,10 @@ public class ZookeeperClusterTest {
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
         ZookeeperCluster kc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.ALWAYS, null);
+        StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.IFNOTPRESENT, null);
+        sts = zc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
@@ -713,7 +713,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Other namespace
-        NetworkPolicy np = zc.generateNetworkPolicy(new Reconciliation("test", "kind", "namespace", "name"), "operator-namespace", null);
+        NetworkPolicy np = zc.generateNetworkPolicy("operator-namespace", null);
 
         LabelSelector podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
@@ -767,19 +767,19 @@ public class ZookeeperClusterTest {
         assertThat(metricsRule.getFrom().size(), is(0));
 
         // Check Network Policies => The same namespace
-        np = zc.generateNetworkPolicy(new Reconciliation("test", "kind", "namespace", "name"), namespace, null);
+        np = zc.generateNetworkPolicy(namespace, null);
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => The same namespace with namespace labels
-        np = zc.generateNetworkPolicy(new Reconciliation("test", "kind", "namespace", "name"), namespace, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        np = zc.generateNetworkPolicy(namespace, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => Other namespace with namespace labels
-        np = zc.generateNetworkPolicy(new Reconciliation("test", "kind", "namespace", "name"), "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        np = zc.generateNetworkPolicy("operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         LabelSelector namespaceSelector = new LabelSelector();
@@ -799,7 +799,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), ka, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage())));
 
         // Check PVCs
@@ -828,7 +828,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), ka, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage())));
 
         // Check PVCs
@@ -865,7 +865,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), ka, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage())));
 
         // Check PVCs
@@ -938,7 +938,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), ka, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage())));
 
         // Check PVCs
@@ -958,7 +958,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), ka, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null);
+        StatefulSet sts = zc.generateStatefulSet(false, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
@@ -974,7 +974,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), ka, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null);
+        StatefulSet sts = zc.generateStatefulSet(false, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
@@ -1065,7 +1065,7 @@ public class ZookeeperClusterTest {
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        List<EnvVar> zkEnvVars = zc.getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
+        List<EnvVar> zkEnvVars = zc.getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 zkEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -1109,7 +1109,7 @@ public class ZookeeperClusterTest {
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
 
-        List<EnvVar> zkEnvVars = zc.getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
+        List<EnvVar> zkEnvVars = zc.getEnvVars();
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 zkEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvOneValue), is(false));
@@ -1146,7 +1146,7 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
-        StatefulSet sts = zc.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null);
+        StatefulSet sts = zc.generateStatefulSet(false, null, null);
 
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(

@@ -138,12 +138,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     }
                 })
                 .compose(i -> connectServiceAccount(reconciliation, namespace, connect))
-                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(reconciliation, isUseResources(kafkaConnectS2I), operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnectS2I), operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentConfigOperations.scaleDown(reconciliation, namespace, connect.getName(), connect.getReplicas()))
-                .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService(reconciliation)))
+                .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, connect.getLogging(), connect.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(reconciliation, metricsAndLoggingCm);
+                    ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                             Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
                     desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));

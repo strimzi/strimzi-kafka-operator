@@ -118,7 +118,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -275,7 +275,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -402,7 +402,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), oldKc, VERSIONS);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(oldKc, VERSIONS);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(new Reconciliation("test", oldKc.getKind(), oldKc.getMetadata().getNamespace(), oldKc.getMetadata().getName()), oldKc, VERSIONS);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -412,7 +412,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -446,7 +446,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), false, null, null);
+            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
             dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub());
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
             return Future.succeededFuture(dep);
@@ -568,7 +568,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), oldKc, VERSIONS);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(oldKc, VERSIONS);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(new Reconciliation("test", oldKc.getKind(), oldKc.getMetadata().getNamespace(), oldKc.getMetadata().getName()), oldKc, VERSIONS);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -578,7 +578,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -612,7 +612,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), false, null, null);
+            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
             dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
             return Future.succeededFuture(dep);
@@ -742,7 +742,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), oldKc, VERSIONS);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(oldKc, VERSIONS);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(new Reconciliation("test", oldKc.getKind(), oldKc.getMetadata().getNamespace(), oldKc.getMetadata().getName()), oldKc, VERSIONS);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -752,7 +752,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -786,7 +786,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), false, null, null);
+            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
             dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
             return Future.succeededFuture(dep);
@@ -920,7 +920,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster oldConnect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), oldKc, VERSIONS);
-        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(oldKc, VERSIONS);
+        KafkaConnectBuild oldBuild = KafkaConnectBuild.fromCrd(new Reconciliation("test", oldKc.getKind(), oldKc.getMetadata().getNamespace(), oldKc.getMetadata().getName()), oldKc, VERSIONS);
 
         KafkaConnect kc = new KafkaConnectBuilder(oldKc)
                 .editSpec()
@@ -930,7 +930,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -964,7 +964,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), false, null, null);
+            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
             dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
             return Future.succeededFuture(dep);
@@ -1094,7 +1094,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1128,7 +1128,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = connect.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), false, null, null);
+            Deployment dep = connect.generateDeployment(emptyMap(), false, null, null);
             dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub());
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:blablabla");
             return Future.succeededFuture(dep);
@@ -1224,7 +1224,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(kc, VERSIONS);
+        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
@@ -1258,7 +1258,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = connect.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), emptyMap(), false, null, null);
+            Deployment dep = connect.generateDeployment(emptyMap(), false, null, null);
             dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub());
             dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, "true");
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:blablabla");

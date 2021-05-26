@@ -112,7 +112,7 @@ public class ModelUtilsTest {
                 .withMaxUnavailable(2)
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka);
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, template);
         assertThat(model.templatePodDisruptionBudgetLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -129,7 +129,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka);
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, null);
         assertThat(model.templatePodDisruptionBudgetLabels, is(nullValue()));
@@ -182,7 +182,7 @@ public class ModelUtilsTest {
                 .withTolerations(tolerations)
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka);
 
         ModelUtils.parsePodTemplate(model, template);
         assertThat(model.templatePodLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -208,7 +208,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka);
 
         ModelUtils.parsePodTemplate(model, null);
         assertThat(model.templatePodLabels, is(nullValue()));
@@ -235,7 +235,7 @@ public class ModelUtilsTest {
                 .withDeploymentStrategy(DeploymentStrategy.RECREATE)
                 .build();
 
-        Model model = new Model(connect);
+        Model model = new Model(new Reconciliation("test", connect.getKind(), connect.getMetadata().getNamespace(), connect.getMetadata().getName()), connect);
 
         ModelUtils.parseDeploymentTemplate(model, template);
         assertThat(model.templateDeploymentLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -252,7 +252,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(connect);
+        Model model = new Model(new Reconciliation("test", connect.getKind(), connect.getMetadata().getNamespace(), connect.getMetadata().getName()), connect);
 
         ModelUtils.parseDeploymentTemplate(model, null);
         assertThat(model.templateDeploymentAnnotations, is(nullValue()));
@@ -278,7 +278,7 @@ public class ModelUtilsTest {
                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka);
 
         ModelUtils.parseInternalServiceTemplate(model, template);
         assertThat(model.templateServiceLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -296,7 +296,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka);
 
         ModelUtils.parseInternalServiceTemplate(model, null);
         assertThat(model.templateServiceLabels, is(nullValue()));
@@ -323,7 +323,7 @@ public class ModelUtilsTest {
                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka);
 
         ModelUtils.parseInternalHeadlessServiceTemplate(model, template);
         assertThat(model.templateHeadlessServiceLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -341,7 +341,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka);
 
         ModelUtils.parseInternalHeadlessServiceTemplate(model, null);
         assertThat(model.templateHeadlessServiceLabels, is(nullValue()));
@@ -351,8 +351,8 @@ public class ModelUtilsTest {
     }
 
     private class Model extends AbstractModel   {
-        public Model(HasMetadata resource) {
-            super(resource, "model-app");
+        public Model(Reconciliation reconciliation, HasMetadata resource) {
+            super(reconciliation, resource, "model-app");
         }
 
         @Override
@@ -361,7 +361,7 @@ public class ModelUtilsTest {
         }
 
         @Override
-        protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+        protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
             return null;
         }
     }

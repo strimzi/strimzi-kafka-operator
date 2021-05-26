@@ -51,15 +51,15 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      *
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    private KafkaConnectS2ICluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    private KafkaConnectS2ICluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
     }
 
     // Deprecation is suppressed because of KafkaConnectS2I
     @SuppressWarnings("deprecation")
     public static KafkaConnectS2ICluster fromCrd(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I, KafkaVersion.Lookup versions) {
         KafkaConnectS2ISpec spec = kafkaConnectS2I.getSpec();
-        KafkaConnectS2ICluster cluster = fromSpec(reconciliation, spec, versions, new KafkaConnectS2ICluster(kafkaConnectS2I));
+        KafkaConnectS2ICluster cluster = fromSpec(reconciliation, spec, versions, new KafkaConnectS2ICluster(reconciliation, kafkaConnectS2I));
 
         if (spec.getBuild() != null)  {
             throw new InvalidResourceException(".spec.build can be used only with KafkaConnect and is not supported with KafkaConnectS2I.");
@@ -87,12 +87,12 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(image)
-                .withEnv(getEnvVars(reconciliation))
+                .withEnv(getEnvVars())
                 .withCommand("/opt/kafka/s2i/run")
-                .withPorts(getContainerPortList(reconciliation))
+                .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
-                .withVolumeMounts(getVolumeMounts(reconciliation, true))
+                .withVolumeMounts(getVolumeMounts(true))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, image))
                 .withSecurityContext(templateContainerSecurityContext)
@@ -149,7 +149,7 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                         .withNewSpec()
                             .withEnableServiceLinks(templatePodEnableServiceLinks)
                             .withContainers(container)
-                            .withVolumes(getVolumes(reconciliation, isOpenShift, true))
+                            .withVolumes(getVolumes(isOpenShift, true))
                             .withTolerations(getTolerations())
                             .withAffinity(getMergedAffinity())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))

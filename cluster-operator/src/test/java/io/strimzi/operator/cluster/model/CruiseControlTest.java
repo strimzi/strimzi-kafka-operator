@@ -350,7 +350,7 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testEnvVars()   {
-        assertThat(cc.getEnvVars(new Reconciliation("test", "kind", "namespace", "name")), is(getExpectedEnvVars()));
+        assertThat(cc.getEnvVars(), is(getExpectedEnvVars()));
     }
 
     @ParallelTest
@@ -394,7 +394,7 @@ public class CruiseControlTest {
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        List<EnvVar> envVarList = cc.getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
+        List<EnvVar> envVarList = cc.getEnvVars();
 
         assertThat(envVarList, hasItems(new EnvVar(testEnvOneKey, testEnvOneValue, null)));
         assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, testEnvTwoValue, null)));
@@ -428,7 +428,7 @@ public class CruiseControlTest {
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
-        List<EnvVar> envVarList = cc.getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
+        List<EnvVar> envVarList = cc.getEnvVars();
 
         assertThat(envVarList, hasItems(new EnvVar(testEnvOneKey, testEnvOneValue, null)));
         assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, testEnvTwoValue, null)));

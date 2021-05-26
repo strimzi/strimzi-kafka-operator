@@ -485,11 +485,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new Reconciliation("test", "kind", "namespace", "name"), new MetricsAndLogging(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -604,11 +604,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new Reconciliation("test", "kind", "namespace", "name"), new MetricsAndLogging(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -713,11 +713,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new Reconciliation("test", "kind", "namespace", "name"), new MetricsAndLogging(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -819,11 +819,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new Reconciliation("test", "kind", "namespace", "name"), new MetricsAndLogging(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -924,11 +924,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new Reconciliation("test", "kind", "namespace", "name"), new MetricsAndLogging(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
@@ -1110,11 +1110,11 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new Reconciliation("test", "kind", "namespace", "name"), new MetricsAndLogging(null, null))));
+        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock the PodOperator
         PodOperator mockPodOps = supplier.podOperations;

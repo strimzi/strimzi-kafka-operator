@@ -113,7 +113,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         KafkaConnectStatus kafkaConnectStatus = new KafkaConnectStatus();
         try {
             connect = KafkaConnectCluster.fromCrd(reconciliation, kafkaConnect, versions);
-            build = KafkaConnectBuild.fromCrd(kafkaConnect, versions);
+            build = KafkaConnectBuild.fromCrd(reconciliation, kafkaConnect, versions);
         } catch (Exception e) {
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(kafkaConnectStatus, e));
@@ -149,7 +149,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 })
                 .compose(i -> connectServiceAccount(reconciliation, namespace, connect))
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
-                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(reconciliation, isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentOperations.getAsync(namespace, connect.getName()))
                 .compose(deployment -> {
                     if (deployment != null) {
@@ -163,10 +163,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 })
                 .compose(i -> connectBuild(reconciliation, namespace, build, buildState))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, connect.getName(), connect.getReplicas()))
-                .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService(reconciliation)))
+                .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, connect.getLogging(), connect.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(reconciliation, metricsAndLoggingCm);
+                    ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                             Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
                     desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
@@ -179,7 +179,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildState.desiredBuildRevision);
                     }
 
-                    Deployment dep = connect.generateDeployment(reconciliation, annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+                    Deployment dep = connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
 
                     if (buildState.desiredImage != null) {
                         dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(buildState.desiredImage);
@@ -352,7 +352,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private Future<Void> kubernetesBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
         return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap)
                 .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), connectBuild.generateServiceAccount()))
-                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(reconciliation, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, newBuildRevision)))
+                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, newBuildRevision)))
                 .mapEmpty();
     }
 

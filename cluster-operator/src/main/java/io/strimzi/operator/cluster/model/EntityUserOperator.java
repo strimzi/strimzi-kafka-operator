@@ -83,10 +83,11 @@ public class EntityUserOperator extends AbstractModel {
     protected SecurityContext templateContainerSecurityContext;
 
     /**
+     * @param reconciliation   The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected EntityUserOperator(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected EntityUserOperator(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = userOperatorName(cluster);
         this.readinessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -211,10 +212,11 @@ public class EntityUserOperator extends AbstractModel {
     /**
      * Create an Entity User Operator from given desired resource
      *
+     * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity User Operator one
      * @return Entity User Operator instance, null if not configured in the ConfigMap
      */
-    public static EntityUserOperator fromCrd(Kafka kafkaAssembly) {
+    public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
         EntityUserOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
@@ -223,7 +225,7 @@ public class EntityUserOperator extends AbstractModel {
             if (userOperatorSpec != null) {
 
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityUserOperator(kafkaAssembly);
+                result = new EntityUserOperator(reconciliation, kafkaAssembly);
 
                 result.setOwnerReference(kafkaAssembly);
                 String image = userOperatorSpec.getImage();
@@ -264,25 +266,25 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
         return singletonList(new ContainerBuilder()
                 .withName(USER_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
                 .withArgs("/opt/strimzi/bin/user_operator_run.sh")
-                .withEnv(getEnvVars(reconciliation))
-                .withPorts(singletonList(createContainerPort(reconciliation, HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
+                .withEnv(getEnvVars())
+                .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath + "ready", HEALTHCHECK_PORT_NAME))
                 .withResources(getResources())
-                .withVolumeMounts(getVolumeMounts(reconciliation))
+                .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
                 .build());
     }
 
     @Override
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
@@ -309,16 +311,16 @@ public class EntityUserOperator extends AbstractModel {
         return varList;
     }
 
-    public List<Volume> getVolumes(Reconciliation reconciliation) {
+    public List<Volume> getVolumes() {
         return asList(createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                VolumeUtils.createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+                VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
-    private List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
-        return asList(createTempDirVolumeMount(reconciliation, USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                VolumeUtils.createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
-                VolumeUtils.createVolumeMount(reconciliation, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
-                VolumeUtils.createVolumeMount(reconciliation, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
+    private List<VolumeMount> getVolumeMounts() {
+        return asList(createTempDirVolumeMount(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
+                VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
+                VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
+                VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
     @Override

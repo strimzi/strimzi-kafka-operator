@@ -135,10 +135,11 @@ public class CruiseControl extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected CruiseControl(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = CruiseControlResources.deploymentName(cluster);
         this.serviceName = CruiseControlResources.serviceName(cluster);
         this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
@@ -178,7 +179,7 @@ public class CruiseControl extends AbstractModel {
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
 
         if (spec != null) {
-            cruiseControl = new CruiseControl(kafkaAssembly);
+            cruiseControl = new CruiseControl(reconciliation, kafkaAssembly);
             cruiseControl.isDeployed = true;
 
             cruiseControl.setReplicas(DEFAULT_REPLICAS);
@@ -343,17 +344,17 @@ public class CruiseControl extends AbstractModel {
             return null;
         }
 
-        List<ServicePort> ports = Collections.singletonList(createServicePort(reconciliation, REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
-        return createService(reconciliation, "ClusterIP", ports, templateServiceAnnotations);
+        List<ServicePort> ports = Collections.singletonList(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
+        return createService("ClusterIP", ports, templateServiceAnnotations);
     }
 
     protected List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
         List<ContainerPort> portList = new ArrayList<>(1);
 
-        portList.add(createContainerPort(reconciliation, REST_API_PORT_NAME, REST_API_PORT, "TCP"));
+        portList.add(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP"));
 
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(reconciliation, METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;
@@ -362,16 +363,16 @@ public class CruiseControl extends AbstractModel {
     protected List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
         return Arrays.asList(createTempDirVolume(),
                 createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                createSecretVolume(reconciliation, TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift),
-                createSecretVolume(reconciliation, TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
-                createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+                createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift),
+                createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
+                createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
     protected List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
-        return Arrays.asList(createTempDirVolumeMount(reconciliation),
-                createVolumeMount(reconciliation, CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
-                createVolumeMount(reconciliation, CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT),
-                createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        return Arrays.asList(createTempDirVolumeMount(),
+                createVolumeMount(CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
+                createVolumeMount(CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT),
+                createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
     public Deployment generateDeployment(Reconciliation reconciliation, boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
@@ -392,20 +393,20 @@ public class CruiseControl extends AbstractModel {
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 getMergedAffinity(),
-                getInitContainers(reconciliation, imagePullPolicy),
-                getContainers(reconciliation, imagePullPolicy),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
                 getVolumes(reconciliation, isOpenShift),
                 imagePullSecrets);
     }
 
     @Override
-    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(2);
         Container container = new ContainerBuilder()
                 .withName(CRUISE_CONTROL_CONTAINER_NAME)
                 .withImage(getImage())
                 .withCommand("/opt/cruise-control/cruise_control_run.sh")
-                .withEnv(getEnvVars(reconciliation))
+                .withEnv(getEnvVars())
                 .withPorts(getContainerPortList(reconciliation))
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
@@ -428,9 +429,9 @@ public class CruiseControl extends AbstractModel {
                 .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
                 .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
                 .withEnv(getTlsSidecarEnvVars())
-                .withVolumeMounts(createTempDirVolumeMount(reconciliation, TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                        createVolumeMount(reconciliation, TLS_SIDECAR_CC_CERTS_VOLUME_NAME, TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
-                        createVolumeMount(reconciliation, TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
+                .withVolumeMounts(createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
+                        createVolumeMount(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
+                        createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
                 .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
                         .withCommand("/opt/stunnel/cruise_control_stunnel_pre_stop.sh",
                                 String.valueOf(templateTerminationGracePeriodSeconds))
@@ -446,7 +447,7 @@ public class CruiseControl extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
         varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));

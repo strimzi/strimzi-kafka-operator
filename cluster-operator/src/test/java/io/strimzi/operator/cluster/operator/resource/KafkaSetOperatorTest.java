@@ -40,8 +40,8 @@ public class KafkaSetOperatorTest {
     public void before() {
         KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
         Reconciliation r = new Reconciliation("test", "kind", "namespace", "name");
-        currectSts = KafkaCluster.fromCrd(r, getResource(), versions).generateStatefulSet(r, true, null, null);
-        desiredSts = KafkaCluster.fromCrd(r, getResource(), versions).generateStatefulSet(r, true, null, null);
+        currectSts = KafkaCluster.fromCrd(r, getResource(), versions).generateStatefulSet(true, null, null);
+        desiredSts = KafkaCluster.fromCrd(r, getResource(), versions).generateStatefulSet(true, null, null);
     }
 
     private Kafka getResource() {

@@ -102,7 +102,7 @@ public class EntityTopicOperatorTest {
                     .endSpec()
                     .build();
 
-    private final EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
+    private final EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -122,7 +122,7 @@ public class EntityTopicOperatorTest {
 
     @ParallelTest
     public void testEnvVars()   {
-        assertThat(entityTopicOperator.getEnvVars(new Reconciliation("test", "kind", "namespace", "name")), is(getExpectedEnvVars()));
+        assertThat(entityTopicOperator.getEnvVars(), is(getExpectedEnvVars()));
     }
 
     @ParallelTest
@@ -164,7 +164,7 @@ public class EntityTopicOperatorTest {
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
                         .build();
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
 
         assertThat(entityTopicOperator.getWatchedNamespace(), is(namespace));
         assertThat(entityTopicOperator.getImage(), is("quay.io/strimzi/operator:latest"));
@@ -185,7 +185,7 @@ public class EntityTopicOperatorTest {
     public void testFromCrdNoEntityOperator() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
@@ -198,13 +198,13 @@ public class EntityTopicOperatorTest {
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
                         .build();
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(resource);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
     @ParallelTest
     public void testGetContainers() {
-        List<Container> containers = entityTopicOperator.getContainers(new Reconciliation("test", "kind", "namespace", "name"), null);
+        List<Container> containers = entityTopicOperator.getContainers(null);
         assertThat(containers.size(), is(1));
 
         Container container = containers.get(0);

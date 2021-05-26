@@ -169,10 +169,11 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    private ZookeeperCluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = zookeeperClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
@@ -198,7 +199,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "deprecation"})
     public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
-        ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly);
+        ZookeeperCluster zk = new ZookeeperCluster(reconciliation, kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
 
@@ -318,11 +319,11 @@ public class ZookeeperCluster extends AbstractModel {
         return zk;
     }
 
-    public Service generateService(Reconciliation reconciliation) {
+    public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(1);
-        ports.add(createServicePort(reconciliation, CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+        ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
 
-        return createService(reconciliation, "ClusterIP", ports, templateServiceAnnotations);
+        return createService("ClusterIP", ports, templateServiceAnnotations);
     }
 
     public static String policyName(String cluster) {
@@ -332,13 +333,12 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for ZooKeeper nodes
      *
-     * @param reconciliation                                The reconciliation
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(Reconciliation reconciliation, String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
         NetworkPolicyPort clientsPort = new NetworkPolicyPort();
@@ -443,34 +443,31 @@ public class ZookeeperCluster extends AbstractModel {
         return networkPolicy;
     }
 
-    public Service generateHeadlessService(Reconciliation reconciliation) {
-        return createHeadlessService(reconciliation, getServicePortList(reconciliation));
+    public Service generateHeadlessService() {
+        return createHeadlessService(getServicePortList());
     }
 
-    public StatefulSet generateStatefulSet(Reconciliation reconciliation, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
 
         return createStatefulSet(
                 Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 Collections.emptyMap(),
-                getVolumes(reconciliation, isOpenShift),
+                getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
-                getInitContainers(reconciliation, imagePullPolicy),
-                getContainers(reconciliation, imagePullPolicy),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
                 imagePullSecrets,
                 isOpenShift);
     }
 
     /**
      * Generates the ZooKeeper nodes certificates
-     *
-     * @param reconciliation The reconciliation
-     * @param kafka The Kafka custom resource
+     *  @param kafka The Kafka custom resource
      * @param clusterCa The CA for cluster certificates
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
      */
-    public void generateCertificates(Reconciliation reconciliation, Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         RECONCILIATION_LOGGER.debug(reconciliation, "Generating certificates");
         try {
             nodeCerts = clusterCa.generateZkCerts(reconciliation, kafka, isMaintenanceTimeWindowsSatisfied);
@@ -501,7 +498,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>(1);
 
@@ -509,9 +506,9 @@ public class ZookeeperCluster extends AbstractModel {
                 .withName(ZOOKEEPER_NAME)
                 .withImage(getImage())
                 .withCommand("/opt/kafka/zookeeper_run.sh")
-                .withEnv(getEnvVars(reconciliation))
-                .withVolumeMounts(getVolumeMounts(reconciliation))
-                .withPorts(getContainerPortList(reconciliation))
+                .withEnv(getEnvVars())
+                .withVolumeMounts(getVolumeMounts())
+                .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.execProbe(livenessProbeOptions, Collections.singletonList(livenessPath)))
                 .withReadinessProbe(ProbeGenerator.execProbe(readinessProbeOptions, Collections.singletonList(readinessPath)))
                 .withResources(getResources())
@@ -525,7 +522,7 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
@@ -546,41 +543,41 @@ public class ZookeeperCluster extends AbstractModel {
         return varList;
     }
 
-    private List<ServicePort> getServicePortList(Reconciliation reconciliation) {
+    private List<ServicePort> getServicePortList() {
         List<ServicePort> portList = new ArrayList<>(3);
-        portList.add(createServicePort(reconciliation, CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
-        portList.add(createServicePort(reconciliation, CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
-        portList.add(createServicePort(reconciliation, LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));
+        portList.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+        portList.add(createServicePort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
+        portList.add(createServicePort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));
 
         return portList;
     }
 
-    private List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
+    private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(4);
 
-        portList.add(createContainerPort(reconciliation, CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"));
-        portList.add(createContainerPort(reconciliation, LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"));
-        portList.add(createContainerPort(reconciliation, CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, "TCP"));
+        portList.add(createContainerPort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, "TCP"));
+        portList.add(createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, "TCP"));
+        portList.add(createContainerPort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, "TCP"));
 
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(reconciliation, METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return portList;
     }
 
-    private List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
+    private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(5);
 
         if (storage instanceof EphemeralStorage) {
             String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-            volumeList.add(VolumeUtils.createEmptyDirVolume(reconciliation, VOLUME_NAME, sizeLimit));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(VOLUME_NAME, sizeLimit));
         }
 
         volumeList.add(createTempDirVolume());
-        volumeList.add(VolumeUtils.createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, ancillaryConfigMapName));
-        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 
         return volumeList;
     }
@@ -603,14 +600,14 @@ public class ZookeeperCluster extends AbstractModel {
         return pvcList;
     }
 
-    private List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
+    private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(5);
 
-        volumeMountList.add(createTempDirVolumeMount(reconciliation));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, VOLUME_NAME, mountPath));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT));
+        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createVolumeMount(VOLUME_NAME, mountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT));
 
         return volumeMountList;
     }
@@ -659,13 +656,12 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Generates a configuration ConfigMap with metrics and logging configurations and node count.
      *
-     * @param reconciliation       The reconciliation
      * @param metricsAndLogging    The ConfigMaps with original logging and metrics configurations.
      *
      * @return      The generated configuration ConfigMap.
      */
-    public ConfigMap generateConfigurationConfigMap(Reconciliation reconciliation, MetricsAndLogging metricsAndLogging) {
-        ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(reconciliation, metricsAndLogging);
+    public ConfigMap generateConfigurationConfigMap(MetricsAndLogging metricsAndLogging) {
+        ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(metricsAndLogging);
         zkConfigMap.getData().put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
         return zkConfigMap;
     }

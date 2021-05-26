@@ -57,10 +57,11 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    private KafkaMirrorMaker2Cluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaMirrorMaker2Resources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
@@ -77,7 +78,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     public static KafkaMirrorMaker2Cluster fromCrd(Reconciliation reconciliation,
                                                    KafkaMirrorMaker2 kafkaMirrorMaker2,
                                                    KafkaVersion.Lookup versions) {
-        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(kafkaMirrorMaker2);
+        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
         cluster.setOwnerReference(kafkaMirrorMaker2);
 
@@ -150,8 +151,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     @Override
-    protected List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift, boolean isS2I) {
-        List<Volume> volumeList = super.getVolumes(reconciliation, isOpenShift, isS2I);
+    protected List<Volume> getVolumes(boolean isOpenShift, boolean isS2I) {
+        List<Volume> volumeList = super.getVolumes(isOpenShift, isS2I);
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             KafkaMirrorMaker2Tls tls = mirrorMaker2Cluster.getTls();
@@ -164,7 +165,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                         String volumeName = mirrorMaker2Cluster.getAlias() + '-' + certSecretSource.getSecretName();
                         // skipping if a volume with same Secret name was already added
                         if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
-                            volumeList.add(VolumeUtils.createSecretVolume(reconciliation, volumeName, certSecretSource.getSecretName(), isOpenShift));
+                            volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
                         }
                     }
                 }
@@ -176,8 +177,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     @Override
-    protected List<VolumeMount> getVolumeMounts(Reconciliation reconciliation, boolean isS2I) {
-        List<VolumeMount> volumeMountList = super.getVolumeMounts(reconciliation, isS2I);
+    protected List<VolumeMount> getVolumeMounts(boolean isS2I) {
+        List<VolumeMount> volumeMountList = super.getVolumeMounts(isS2I);
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             String alias = mirrorMaker2Cluster.getAlias();
@@ -192,7 +193,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                         String volumeMountName = alias + '-' + certSecretSource.getSecretName();
                         // skipping if a volume mount with same Secret name was already added
                         if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
-                            volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeMountName,
+                            volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
                                 tlsVolumeMountPath + certSecretSource.getSecretName()));
                         }
                     }
@@ -213,8 +214,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
-        List<EnvVar> varList = super.getEnvVars(reconciliation);
+    protected List<EnvVar> getEnvVars() {
+        List<EnvVar> varList = super.getEnvVars();
 
         final StringBuilder clusterAliases = new StringBuilder();
         final StringBuilder clustersTrustedCerts = new StringBuilder();

@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -23,19 +22,19 @@ public class VolumeUtilsTest {
 
     @ParallelTest
     public void testCreateEmptyDirVolumeWithSizeLimit() {
-        Volume volume = VolumeUtils.createEmptyDirVolume(new Reconciliation("test", "kind", "namespace", "name"), "bar", "1Gi");
+        Volume volume = VolumeUtils.createEmptyDirVolume("bar", "1Gi");
         assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
     @ParallelTest
     public void testCreateEmptyDirVolumeWithNullSizeLimit() {
-        Volume volume = VolumeUtils.createEmptyDirVolume(new Reconciliation("test", "kind", "namespace", "name"), "bar", null);
+        Volume volume = VolumeUtils.createEmptyDirVolume("bar", null);
         assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
     @ParallelTest
     public void testCreateEmptyDirVolumeWithEmptySizeLimit() {
-        Volume volume = VolumeUtils.createEmptyDirVolume(new Reconciliation("test", "kind", "namespace", "name"), "bar", "");
+        Volume volume = VolumeUtils.createEmptyDirVolume("bar", "");
         assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
@@ -62,31 +61,31 @@ public class VolumeUtilsTest {
 
     @ParallelTest
     public void testCreateSecretVolumeWithValidName() {
-        Volume volume = VolumeUtils.createSecretVolume(new Reconciliation("test", "kind", "namespace", "name"), "oauth-my-secret", "my-secret", true);
+        Volume volume = VolumeUtils.createSecretVolume("oauth-my-secret", "my-secret", true);
         assertThat(volume.getName(), is("oauth-my-secret"));
     }
 
     @ParallelTest
     public void testCreateSecretVolumeWithInvalidName() {
-        Volume volume = VolumeUtils.createSecretVolume(new Reconciliation("test", "kind", "namespace", "name"), "oauth-my.secret", "my.secret", true);
+        Volume volume = VolumeUtils.createSecretVolume("oauth-my.secret", "my.secret", true);
         assertThat(volume.getName(), is("oauth-my-secret-b744ae5a"));
     }
 
     @ParallelTest
     public void testCreateConfigMapVolumeWithValidName() {
-        Volume volume = VolumeUtils.createConfigMapVolume(new Reconciliation("test", "kind", "namespace", "name"), "oauth-my-cm", "my-cm");
+        Volume volume = VolumeUtils.createConfigMapVolume("oauth-my-cm", "my-cm");
         assertThat(volume.getName(), is("oauth-my-cm"));
     }
 
     @ParallelTest
     public void testCreateConfigMapVolumeWithInvalidName() {
-        Volume volume = VolumeUtils.createConfigMapVolume(new Reconciliation("test", "kind", "namespace", "name"), "oauth-my.cm", "my.cm");
+        Volume volume = VolumeUtils.createConfigMapVolume("oauth-my.cm", "my.cm");
         assertThat(volume.getName(), is("oauth-my-cm-62fdd747"));
     }
 
     @ParallelTest
     public void testCreateConfigMapVolumeWithItems() {
-        Volume volume = VolumeUtils.createConfigMapVolume(new Reconciliation("test", "kind", "namespace", "name"), "my-cm-volume", "my-cm", Collections.singletonMap("fileName.txt", "/path/to/fileName.txt"));
+        Volume volume = VolumeUtils.createConfigMapVolume("my-cm-volume", "my-cm", Collections.singletonMap("fileName.txt", "/path/to/fileName.txt"));
 
         assertThat(volume.getName(), is("my-cm-volume"));
         assertThat(volume.getConfigMap().getName(), is("my-cm"));

@@ -171,8 +171,8 @@ public class JmxTransTest {
 
     @ParallelTest
     public void testConfigMapOnScaleUp() throws JsonProcessingException  {
-        ConfigMap originalCM = jmxTrans.generateJmxTransConfigMap(new Reconciliation("test", "kind", "namespace", "name"), jmxTransSpec, 1);
-        ConfigMap scaledCM = jmxTrans.generateJmxTransConfigMap(new Reconciliation("test", "kind", "namespace", "name"), jmxTransSpec, 2);
+        ConfigMap originalCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 1);
+        ConfigMap scaledCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 2);
 
         assertThat(originalCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length() <
                         scaledCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length(),
@@ -181,8 +181,8 @@ public class JmxTransTest {
 
     @ParallelTest
     public void testConfigMapOnScaleDown() throws JsonProcessingException  {
-        ConfigMap originalCM = jmxTrans.generateJmxTransConfigMap(new Reconciliation("test", "kind", "namespace", "name"), jmxTransSpec, 2);
-        ConfigMap scaledCM = jmxTrans.generateJmxTransConfigMap(new Reconciliation("test", "kind", "namespace", "name"), jmxTransSpec, 1);
+        ConfigMap originalCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 2);
+        ConfigMap scaledCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 1);
 
         assertThat(originalCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length() >
                         scaledCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length(),
@@ -260,7 +260,7 @@ public class JmxTransTest {
         JmxTrans jmxTrans = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
 
         // Check Deployment
-        Deployment dep = jmxTrans.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), null, null);
+        Deployment dep = jmxTrans.generateDeployment(null, null);
         assertThat(dep.getMetadata().getLabels(), hasEntries(expectedDepLabels));
         assertThat(dep.getMetadata().getAnnotations(), hasEntries(depAnots));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
@@ -312,7 +312,7 @@ public class JmxTransTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> envVars = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
+        List<EnvVar> envVars = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -347,7 +347,7 @@ public class JmxTransTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> envVars = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars(new Reconciliation("test", "kind", "namespace", "name"));
+        List<EnvVar> envVars = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars();
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -382,7 +382,7 @@ public class JmxTransTest {
         JmxTrans jmxTrans = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
         assertThat(jmxTrans.templateContainerSecurityContext, is(securityContext));
 
-        Deployment deployment = jmxTrans.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), null, null);
+        Deployment deployment = jmxTrans.generateDeployment(null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(

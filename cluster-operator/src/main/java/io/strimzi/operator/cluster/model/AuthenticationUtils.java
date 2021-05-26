@@ -150,7 +150,7 @@ public class AuthenticationUtils {
     private static void addNewVolume(Reconciliation reconciliation, List<Volume> volumeList, String volumeNamePrefix, String secretName, boolean isOpenShift) {
         // skipping if a volume with same name was already added
         if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeNamePrefix + secretName))) {
-            volumeList.add(VolumeUtils.createSecretVolume(reconciliation, volumeNamePrefix + secretName, secretName, isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume(volumeNamePrefix + secretName, secretName, isOpenShift));
         }
     }
 
@@ -190,28 +190,28 @@ public class AuthenticationUtils {
 
                 // skipping if a volume mount with same Secret name was already added
                 if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName()))) {
-                    volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
+                    volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + tlsAuth.getCertificateAndKey().getSecretName(),
                             tlsVolumeMount + tlsAuth.getCertificateAndKey().getSecretName()));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
-                volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
                 KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
-                volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeMountList.addAll(configureOauthCertificateVolumeMounts(reconciliation, oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthCertsVolumeMount));
             
                 if (mountOAuthSecretVolumes) {
                     if (oauth.getClientSecret() != null) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getClientSecret().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getClientSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getClientSecret().getSecretName()));
                     }
                     if (oauth.getAccessToken() != null) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauthSecretsVolumeMount + oauth.getAccessToken().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getAccessToken().getSecretName(), oauthSecretsVolumeMount + oauth.getAccessToken().getSecretName()));
                     }
                     if (oauth.getRefreshToken() != null) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauthSecretsVolumeMount + oauth.getRefreshToken().getSecretName()));
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauthSecretsVolumeMount + oauth.getRefreshToken().getSecretName()));
                     }
                 }
             }
@@ -313,7 +313,7 @@ public class AuthenticationUtils {
                 Map<String, String> items = Collections.singletonMap(certSecretSource.getCertificate(), "tls.crt");
                 String volumeName = String.format("%s-%d", volumeNamePrefix, i);
 
-                Volume vol = VolumeUtils.createSecretVolume(reconciliation, volumeName, certSecretSource.getSecretName(), items, isOpenShift);
+                Volume vol = VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), items, isOpenShift);
 
                 newVolumes.add(vol);
                 i++;
@@ -343,7 +343,7 @@ public class AuthenticationUtils {
 
             for (CertSecretSource certSecretSource : trustedCertificates) {
                 String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-                newVolumeMounts.add(VolumeUtils.createVolumeMount(reconciliation, volumeName, String.format("%s/%s-%d", baseVolumeMount, certSecretSource.getSecretName(), i)));
+                newVolumeMounts.add(VolumeUtils.createVolumeMount(volumeName, String.format("%s/%s-%d", baseVolumeMount, certSecretSource.getSecretName(), i)));
                 i++;
             }
         }

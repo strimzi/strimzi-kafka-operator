@@ -112,10 +112,10 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         StatefulSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockKafkaSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         StatefulSetOperator mockZkSetOps = supplier.zkSetOperations;
-        when(mockZkSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockZkSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
@@ -181,14 +181,14 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         StatefulSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
         when(mockKafkaSetOps.getAsync(any(), any())).thenAnswer(i -> {
-            StatefulSet sts = kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null);
+            StatefulSet sts = kafkaCluster.generateStatefulSet(false, null, null);
             sts.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
             return Future.succeededFuture(sts);
         });
 
         StatefulSetOperator mockZkSetOps = supplier.zkSetOperations;
         when(mockZkSetOps.getAsync(any(), any())).thenAnswer(i -> {
-            StatefulSet sts = zkCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null);
+            StatefulSet sts = zkCluster.generateStatefulSet(false, null, null);
             sts.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
             return Future.succeededFuture(sts);
         });
@@ -266,10 +266,10 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         StatefulSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockKafkaSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         StatefulSetOperator mockZkSetOps = supplier.zkSetOperations;
-        when(mockZkSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(new Reconciliation("test", "kind", "namespace", "name"), false, null, null)));
+        when(mockZkSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
         ArgumentCaptor<Function<Pod, List<String>>> zkNeedsRestartCaptor = ArgumentCaptor.forClass(Function.class);
         when(mockZkSetOps.maybeRollingUpdate(any(), any(), zkNeedsRestartCaptor.capture())).thenReturn(Future.succeededFuture());
 

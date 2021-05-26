@@ -147,12 +147,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
         RECONCILIATION_LOGGER.debug(reconciliation, "Updating Kafka MirrorMaker 2.0 cluster");
         mirrorMaker2ServiceAccount(reconciliation, namespace, mirrorMaker2Cluster)
-                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(reconciliation, true, operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(true, operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
-                .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService(reconciliation)))
+                .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, mirrorMaker2Cluster.getLogging(), mirrorMaker2Cluster.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(reconciliation, metricsAndLoggingCm);
+                    ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                             Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
                     desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
@@ -160,7 +160,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
-                .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateDeployment(reconciliation, annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+                .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))

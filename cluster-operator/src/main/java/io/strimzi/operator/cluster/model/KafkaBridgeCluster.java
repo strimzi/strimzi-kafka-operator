@@ -121,10 +121,11 @@ public class KafkaBridgeCluster extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaBridgeCluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaBridgeResources.deploymentName(cluster);
         this.serviceName = KafkaBridgeResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
@@ -142,7 +143,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
 
-        KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(kafkaBridge);
+        KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(reconciliation, kafkaBridge);
 
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         kafkaBridgeCluster.tracing = spec.getTracing();
@@ -216,7 +217,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         return kafkaBridgeCluster;
     }
     
-    public Service generateService(Reconciliation reconciliation) {
+    public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(3);
 
         int port = DEFAULT_REST_API_PORT;
@@ -224,9 +225,9 @@ public class KafkaBridgeCluster extends AbstractModel {
             port = http.getPort();
         }
 
-        ports.add(createServicePort(reconciliation, REST_API_PORT_NAME, port, port, "TCP"));
+        ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
 
-        return createDiscoverableService(reconciliation, "ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceLabels, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS)),
+        return createDiscoverableService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceLabels, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS)),
                 Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
     }
 
@@ -248,7 +249,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         return Collections.singletonMap(Labels.STRIMZI_DISCOVERY_LABEL, anno.encodePrettily());
     }
 
-    protected List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
+    protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(3);
 
         int port = DEFAULT_REST_API_PORT;
@@ -256,16 +257,16 @@ public class KafkaBridgeCluster extends AbstractModel {
             port = http.getPort();
         }
 
-        portList.add(createContainerPort(reconciliation, REST_API_PORT_NAME, port, "TCP"));
+        portList.add(createContainerPort(REST_API_PORT_NAME, port, "TCP"));
 
         return portList;
     }
 
-    protected List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
+    protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
 
         volumeList.add(createTempDirVolume());
-        volumeList.add(VolumeUtils.createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -274,7 +275,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume with same Secret name was already added
                     if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
                     }
                 }
             }
@@ -285,11 +286,11 @@ public class KafkaBridgeCluster extends AbstractModel {
         return volumeList;
     }
 
-    protected List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
+    protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
-        volumeMountList.add(createTempDirVolumeMount(reconciliation));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -298,7 +299,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     // skipping if a volume mount with same Secret name was already added
                     if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, certSecretSource.getSecretName(),
+                        volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
                                 TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
                     }
                 }
@@ -310,20 +311,20 @@ public class KafkaBridgeCluster extends AbstractModel {
         return volumeMountList;
     }
 
-    public Deployment generateDeployment(Reconciliation reconciliation, Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createDeployment(
                 getDeploymentStrategy(),
                 Collections.emptyMap(),
                 annotations,
                 getMergedAffinity(),
-                getInitContainers(reconciliation, imagePullPolicy),
-                getContainers(reconciliation, imagePullPolicy),
-                getVolumes(reconciliation, isOpenShift),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
+                getVolumes(isOpenShift),
                 imagePullSecrets);
     }
 
     @Override
-    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
 
         List<Container> containers = new ArrayList<>(1);
 
@@ -331,11 +332,11 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .withName(name)
                 .withImage(getImage())
                 .withCommand("/opt/strimzi/bin/docker/kafka_bridge_run.sh")
-                .withEnv(getEnvVars(reconciliation))
-                .withPorts(getContainerPortList(reconciliation))
+                .withEnv(getEnvVars())
+                .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
-                .withVolumeMounts(getVolumeMounts(reconciliation))
+                .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
@@ -347,7 +348,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));

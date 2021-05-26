@@ -80,10 +80,11 @@ public class JmxTrans extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected JmxTrans(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected JmxTrans(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = JmxTransResources.deploymentName(cluster);
         this.clusterName = cluster;
         this.replicas = 1;
@@ -111,7 +112,7 @@ public class JmxTrans extends AbstractModel {
                 RECONCILIATION_LOGGER.warn(reconciliation, error);
                 throw new InvalidResourceException(error);
             }
-            result = new JmxTrans(kafkaAssembly);
+            result = new JmxTrans(reconciliation, kafkaAssembly);
             result.isDeployed = true;
 
             if (kafkaAssembly.getSpec().getKafka().getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword) {
@@ -159,7 +160,7 @@ public class JmxTrans extends AbstractModel {
         return result;
     }
 
-    public Deployment generateDeployment(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (!isDeployed()) {
             return null;
         }
@@ -177,9 +178,9 @@ public class JmxTrans extends AbstractModel {
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 getMergedAffinity(),
-                getInitContainers(reconciliation, imagePullPolicy),
-                getContainers(reconciliation, imagePullPolicy),
-                getVolumes(reconciliation),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
+                getVolumes(),
                 imagePullSecrets
         );
     }
@@ -187,12 +188,11 @@ public class JmxTrans extends AbstractModel {
     /**
      * Generates the string'd config that the JmxTrans deployment needs to run. It is configured by the user in the yaml
      * and this method will convert that into the config the JmxTrans understands.
-     * @param reconciliation The reconciliation
      * @param spec The JmxTrans that was defined by the user
      * @param numOfBrokers number of kafka brokers
      * @return the jmx trans config file that targets each broker
      */
-    private String generateJMXConfig(Reconciliation reconciliation, JmxTransSpec spec, int numOfBrokers) throws JsonProcessingException {
+    private String generateJMXConfig(JmxTransSpec spec, int numOfBrokers) throws JsonProcessingException {
         JmxTransServers servers = new JmxTransServers();
         servers.setServers(new ArrayList<>());
         ObjectMapper mapper = new ObjectMapper();
@@ -212,49 +212,48 @@ public class JmxTrans extends AbstractModel {
     /**
      * Generates the JmxTrans config map
      *
-     * @param reconciliation The reconciliation
      * @param spec The JmxTransSpec that was defined by the user
      * @param numOfBrokers number of kafka brokers
      * @return the config map that mounts the JmxTrans config
      * @throws JsonProcessingException when JmxTrans config can't be created properly
      */
-    public ConfigMap generateJmxTransConfigMap(Reconciliation reconciliation, JmxTransSpec spec, int numOfBrokers) throws JsonProcessingException {
+    public ConfigMap generateJmxTransConfigMap(JmxTransSpec spec, int numOfBrokers) throws JsonProcessingException {
         Map<String, String> data = new HashMap<>(1);
-        String jmxConfig = generateJMXConfig(reconciliation, spec, numOfBrokers);
+        String jmxConfig = generateJMXConfig(spec, numOfBrokers);
         data.put(JMXTRANS_CONFIGMAP_KEY, jmxConfig);
         configMapName = jmxTransConfigName(clusterName);
         return createConfigMap(jmxTransConfigName(clusterName), data);
     }
 
-    public List<Volume> getVolumes(Reconciliation reconciliation) {
+    public List<Volume> getVolumes() {
         List<Volume> volumes = new ArrayList<>(3);
 
         volumes.add(createTempDirVolume());
-        volumes.add(VolumeUtils.createConfigMapVolume(reconciliation, JMXTRANS_VOLUME_NAME, configMapName));
-        volumes.add(VolumeUtils.createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, KafkaCluster.metricAndLogConfigsName(clusterName)));
+        volumes.add(VolumeUtils.createConfigMapVolume(JMXTRANS_VOLUME_NAME, configMapName));
+        volumes.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaCluster.metricAndLogConfigsName(clusterName)));
 
         return volumes;
     }
 
-    private List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
+    private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(3);
 
-        volumeMountList.add(createTempDirVolumeMount(reconciliation));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, JMXTRANS_VOLUME_NAME, JMX_FILE_PATH));
+        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(JMXTRANS_VOLUME_NAME, JMX_FILE_PATH));
         return volumeMountList;
     }
 
     @Override
-    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(1);
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
-                .withEnv(getEnvVars(reconciliation))
+                .withEnv(getEnvVars())
                 .withReadinessProbe(jmxTransReadinessProbe(readinessProbeOptions, clusterName))
                 .withResources(getResources())
-                .withVolumeMounts(getVolumeMounts(reconciliation))
+                .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
                 .build();
@@ -265,7 +264,7 @@ public class JmxTrans extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
         if (isJmxAuthenticated()) {

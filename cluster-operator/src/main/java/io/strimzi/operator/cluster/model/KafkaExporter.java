@@ -69,10 +69,11 @@ public class KafkaExporter extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaExporter(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaExporterResources.deploymentName(cluster);
         this.replicas = 1;
         this.readinessPath = "/metrics";
@@ -88,8 +89,8 @@ public class KafkaExporter extends AbstractModel {
 
     }
 
-    public static KafkaExporter fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        KafkaExporter kafkaExporter = new KafkaExporter(kafkaAssembly);
+    public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+        KafkaExporter kafkaExporter = new KafkaExporter(reconciliation, kafkaAssembly);
 
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
         if (spec != null) {
@@ -155,13 +156,13 @@ public class KafkaExporter extends AbstractModel {
         this.saramaLoggingEnabled = saramaLoggingEnabled;
     }
 
-    protected List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
+    protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(1);
-        portList.add(createContainerPort(reconciliation, METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+        portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         return portList;
     }
 
-    public Deployment generateDeployment(Reconciliation reconciliation, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (!isDeployed()) {
             return null;
         }
@@ -179,29 +180,29 @@ public class KafkaExporter extends AbstractModel {
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 getMergedAffinity(),
-                getInitContainers(reconciliation, imagePullPolicy),
-                getContainers(reconciliation, imagePullPolicy),
-                getVolumes(reconciliation, isOpenShift),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
+                getVolumes(isOpenShift),
                 imagePullSecrets
         );
     }
 
     @Override
-    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
                 .withName(name)
                 .withImage(getImage())
                 .withCommand("/opt/kafka-exporter/kafka_exporter_run.sh")
-                .withEnv(getEnvVars(reconciliation))
-                .withPorts(getContainerPortList(reconciliation))
+                .withEnv(getEnvVars())
+                .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, METRICS_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, METRICS_PORT_NAME))
                 .withResources(getResources())
-                .withVolumeMounts(createTempDirVolumeMount(reconciliation),
-                        VolumeUtils.createVolumeMount(reconciliation, KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
-                        VolumeUtils.createVolumeMount(reconciliation, CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))
+                .withVolumeMounts(createTempDirVolumeMount(),
+                        VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
+                        VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
                 .build();
@@ -212,7 +213,7 @@ public class KafkaExporter extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_LOGGING, logging));
@@ -230,12 +231,12 @@ public class KafkaExporter extends AbstractModel {
         return varList;
     }
 
-    private List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
+    private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(3);
 
         volumeList.add(createTempDirVolume());
-        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporter.secretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, CLUSTER_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporter.secretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 
         return volumeList;
     }
@@ -309,13 +310,12 @@ public class KafkaExporter extends AbstractModel {
      * internal communication with Kafka and Zookeeper.
      * It also contains the related Kafka Exporter private key.
      *
-     * @param reconciliation The reconciliation
      * @param clusterCa The cluster CA.
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
      *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateSecret(Reconciliation reconciliation, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         if (!isDeployed()) {
             return null;
         }

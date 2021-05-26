@@ -186,6 +186,7 @@ public abstract class AbstractModel {
         }
     }
 
+    protected final Reconciliation reconciliation;
     protected final String cluster;
     protected final String namespace;
 
@@ -294,10 +295,12 @@ public abstract class AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation   The reconciliation
      * @param resource         Kubernetes resource with metadata containing the namespace and cluster name
      * @param applicationName  Name of the application that the extending class is deploying
      */
-    protected AbstractModel(HasMetadata resource, String applicationName) {
+    protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String applicationName) {
+        this.reconciliation = reconciliation;
         this.cluster = resource.getMetadata().getName();
         this.namespace = resource.getMetadata().getNamespace();
         this.labels = Labels.generateDefaultLabels(resource, applicationName, STRIMZI_CLUSTER_OPERATOR_NAME);
@@ -469,12 +472,11 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @param reconciliation The reconciliation
      * @param logging The Logging to parse.
      * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
      * @return The logging properties as a String in log4j/2 properties file format.
      */
-    public String parseLogging(Reconciliation reconciliation, Logging logging, ConfigMap externalCm) {
+    public String parseLogging(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             InlineLogging inlineLogging = (InlineLogging) logging;
             OrderedProperties newSettings = getDefaultLogConfig();
@@ -482,7 +484,7 @@ public abstract class AbstractModel {
             if (inlineLogging.getLoggers() != null) {
                 // Inline logging as specified and some loggers are configured
                 if (shouldPatchLoggerAppender()) {
-                    String rootAppenderName = getRootAppenderNamesFromDefaultLoggingConfig(reconciliation, newSettings);
+                    String rootAppenderName = getRootAppenderNamesFromDefaultLoggingConfig(newSettings);
                     String newRootLogger = inlineLogging.getLoggers().get("log4j.rootLogger");
                     newSettings.addMapPairs(inlineLogging.getLoggers());
 
@@ -519,7 +521,7 @@ public abstract class AbstractModel {
         }
     }
 
-    private String getRootAppenderNamesFromDefaultLoggingConfig(Reconciliation reconciliation, OrderedProperties newSettings) {
+    private String getRootAppenderNamesFromDefaultLoggingConfig(OrderedProperties newSettings) {
         String logger = newSettings.asMap().get("log4j.rootLogger");
         String appenderName = "";
         if (logger != null) {
@@ -558,15 +560,14 @@ public abstract class AbstractModel {
     /**
      * Generates a metrics and logging ConfigMap according to configured defaults.
      *
-     * @param reconciliation The reconciliation
      * @param metricsAndLogging The external CMs
      * @return The generated ConfigMap.
      */
-    public ConfigMap generateMetricsAndLogConfigMap(Reconciliation reconciliation, MetricsAndLogging metricsAndLogging) {
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> data = new HashMap<>(2);
-        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(reconciliation, getLogging(), metricsAndLogging.getLoggingCm()));
+        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), metricsAndLogging.getLoggingCm()));
         if (getMetricsConfigInCm() != null) {
-            String parseResult = parseMetrics(reconciliation, metricsAndLogging.getMetricsCm());
+            String parseResult = parseMetrics(metricsAndLogging.getMetricsCm());
             if (parseResult != null) {
                 this.setMetricsEnabled(true);
                 data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
@@ -575,7 +576,7 @@ public abstract class AbstractModel {
         return createConfigMap(ancillaryConfigMapName, data);
     }
 
-    protected String parseMetrics(Reconciliation reconciliation, ConfigMap externalCm) {
+    protected String parseMetrics(ConfigMap externalCm) {
         if (getMetricsConfigInCm() != null) {
             if (getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
                 if (externalCm == null) {
@@ -645,7 +646,7 @@ public abstract class AbstractModel {
      *
      * @return null
      */
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+    protected List<EnvVar> getEnvVars() {
         return null;
     }
 
@@ -810,7 +811,7 @@ public abstract class AbstractModel {
      *
      * @return a list of init containers to add to the StatefulSet/Deployment
      */
-    protected List<Container> getInitContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
         return null;
     }
 
@@ -819,9 +820,9 @@ public abstract class AbstractModel {
      *
      * @return a list of containers to add to the StatefulSet/Deployment
      */
-    protected abstract List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy);
+    protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
 
-    protected ContainerPort createContainerPort(Reconciliation reconciliation, String name, int port, String protocol) {
+    protected ContainerPort createContainerPort(String name, int port, String protocol) {
         ContainerPort containerPort = new ContainerPortBuilder()
                 .withName(name)
                 .withProtocol(protocol)
@@ -831,13 +832,13 @@ public abstract class AbstractModel {
         return containerPort;
     }
 
-    protected ServicePort createServicePort(Reconciliation reconciliation, String name, int port, int targetPort, String protocol) {
-        ServicePort servicePort = createServicePort(reconciliation, name, port, targetPort, null, protocol);
+    protected ServicePort createServicePort(String name, int port, int targetPort, String protocol) {
+        ServicePort servicePort = createServicePort(name, port, targetPort, null, protocol);
         RECONCILIATION_LOGGER.trace(reconciliation, "Created service port {}", servicePort);
         return servicePort;
     }
 
-    protected ServicePort createServicePort(Reconciliation reconciliation, String name, int port, int targetPort, Integer nodePort, String protocol) {
+    protected ServicePort createServicePort(String name, int port, int targetPort, Integer nodePort, String protocol) {
         ServicePortBuilder builder = new ServicePortBuilder()
             .withName(name)
             .withProtocol(protocol)
@@ -926,16 +927,16 @@ public abstract class AbstractModel {
         return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data);
     }
 
-    protected Service createService(Reconciliation reconciliation, String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(reconciliation, serviceName, type, ports, getLabelsWithStrimziName(serviceName, templateServiceLabels),
+    protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
+        return createService(serviceName, type, ports, getLabelsWithStrimziName(serviceName, templateServiceLabels),
                 getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
     }
 
-    protected Service createDiscoverableService(Reconciliation reconciliation, String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
-        return createService(reconciliation, serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, labels), getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
+    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
+        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, labels), getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
     }
 
-    protected Service createService(Reconciliation reconciliation, String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations, IpFamilyPolicy ipFamilyPolicy, List<IpFamily> ipFamilies) {
+    protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations, IpFamilyPolicy ipFamilyPolicy, List<IpFamily> ipFamilies) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -969,7 +970,7 @@ public abstract class AbstractModel {
      * Uses Alpha annotation service.alpha.kubernetes.io/tolerate-unready-endpoints for older versions of Kubernetes still supported by Strimzi,
      * replaced by the publishNotReadyAddresses field in the spec,  annotation is ignored in later versions of Kubernetes
      */
-    protected Service createHeadlessService(Reconciliation reconciliation, List<ServicePort> ports) {
+    protected Service createHeadlessService(List<ServicePort> ports) {
         Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
         Service service = new ServiceBuilder()
                 .withNewMetadata()
@@ -1588,11 +1589,11 @@ public abstract class AbstractModel {
                 .build();
     }
 
-    protected VolumeMount createTempDirVolumeMount(Reconciliation reconciliation) {
-        return createTempDirVolumeMount(reconciliation, STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
+    protected VolumeMount createTempDirVolumeMount() {
+        return createTempDirVolumeMount(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
     }
 
-    protected VolumeMount createTempDirVolumeMount(Reconciliation reconciliation, String volumeName) {
-        return VolumeUtils.createVolumeMount(reconciliation, volumeName, STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH);
+    protected VolumeMount createTempDirVolumeMount(String volumeName) {
+        return VolumeUtils.createVolumeMount(volumeName, STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH);
     }
 }

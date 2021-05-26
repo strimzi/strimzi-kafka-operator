@@ -135,6 +135,10 @@ public class ReconciliationLogger implements Serializable {
         return new ReconciliationLogger(wrapped);
     }
 
+
+
+    ////////////////// CR logging
+
     /**
      * Logs a message with the specific Marker at the {@code OFF} level.
      * 
@@ -2934,5 +2938,8 @@ public class ReconciliationLogger implements Serializable {
     public void all(final Reconciliation reconciliation, final MessageSupplier msgSupplier, final Throwable t) {
         logger.logIfEnabled(FQCN, ALL, reconciliation.getMarker(), msgSupplier, t);
     }
+
+
+
 }
 

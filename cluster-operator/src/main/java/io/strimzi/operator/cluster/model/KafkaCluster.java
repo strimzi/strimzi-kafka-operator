@@ -238,10 +238,11 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    private KafkaCluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = kafkaClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
@@ -365,7 +366,7 @@ public class KafkaCluster extends AbstractModel {
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS", "deprecation"})
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
-        KafkaCluster result = new KafkaCluster(kafkaAssembly);
+        KafkaCluster result = new KafkaCluster(reconciliation, kafkaAssembly);
 
         result.setOwnerReference(kafkaAssembly);
 
@@ -452,7 +453,7 @@ public class KafkaCluster extends AbstractModel {
             result.setStorage(kafkaClusterSpec.getStorage());
         }
 
-        result.setDataVolumesClaimsAndMountPaths(reconciliation, result.getStorage());
+        result.setDataVolumesClaimsAndMountPaths(result.getStorage());
 
         result.setResources(kafkaClusterSpec.getResources());
 
@@ -666,17 +667,14 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Manage certificates generation based on those already present in the Secrets
-     *
-     * @param reconciliation           The reconciliation
-     * @param kafka                    The Kafka custom resource
+     *  @param kafka                    The Kafka custom resource
      * @param clusterCa                The CA for cluster certificates
      * @param externalBootstrapDnsName The set of DNS names for bootstrap service (should be appended to every broker certificate)
      * @param externalDnsNames         The list of DNS names for broker pods (should be appended only to specific certificates for given broker)
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
      */
-    public void generateCertificates(Reconciliation reconciliation, Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName,
-            Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName,
+                                     Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
         RECONCILIATION_LOGGER.debug(reconciliation, "Generating certificates");
 
         try {
@@ -695,14 +693,14 @@ public class KafkaCluster extends AbstractModel {
      *
      * @return List with generated ports
      */
-    private List<ServicePort> getServicePorts(Reconciliation reconciliation) {
+    private List<ServicePort> getServicePorts() {
         List<GenericKafkaListener> internalListeners = ListenersUtils.internalListeners(listeners);
 
         List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 1);
-        ports.add(createServicePort(reconciliation, REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
+        ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
 
         for (GenericKafkaListener listener : internalListeners) {
-            ports.add(createServicePort(reconciliation, ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
+            ports.add(createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
         }
 
         return ports;
@@ -714,19 +712,19 @@ public class KafkaCluster extends AbstractModel {
      *
      * @return List with generated ports
      */
-    private List<ServicePort> getHeadlessServicePorts(Reconciliation reconciliation) {
+    private List<ServicePort> getHeadlessServicePorts() {
         List<GenericKafkaListener> internalListeners = ListenersUtils.internalListeners(listeners);
 
         List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 3);
-        ports.add(createServicePort(reconciliation, CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, CONTROLPLANE_PORT, "TCP"));
-        ports.add(createServicePort(reconciliation, REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
+        ports.add(createServicePort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, CONTROLPLANE_PORT, "TCP"));
+        ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
 
         for (GenericKafkaListener listener : internalListeners) {
-            ports.add(createServicePort(reconciliation, ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
+            ports.add(createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
         }
 
         if (isJmxEnabled()) {
-            ports.add(createServicePort(reconciliation, JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
+            ports.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
         }
 
         return ports;
@@ -735,11 +733,10 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates a Service according to configured defaults
      *
-     * @param reconciliation The reconciliation
      * @return The generated Service
      */
-    public Service generateService(Reconciliation reconciliation) {
-        return createDiscoverableService(reconciliation, "ClusterIP", getServicePorts(reconciliation), templateServiceLabels,
+    public Service generateService() {
+        return createDiscoverableService("ClusterIP", getServicePorts(), templateServiceLabels,
                 Util.mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), templateServiceAnnotations));
     }
 
@@ -773,10 +770,9 @@ public class KafkaCluster extends AbstractModel {
      * Generates list of external bootstrap services. These services are used for exposing it externally.
      * Separate services are used to make sure that we do expose the right port in the right way.
      *
-     * @param reconciliation The reconciliation
      * @return The list with generated Services
      */
-    public List<Service> generateExternalBootstrapServices(Reconciliation reconciliation) {
+    public List<Service> generateExternalBootstrapServices() {
         List<GenericKafkaListener> externalListeners = ListenersUtils.externalListeners(listeners);
         List<Service> services = new ArrayList<>(externalListeners.size());
 
@@ -784,7 +780,7 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             List<ServicePort> ports = Collections.singletonList(
-                    createServicePort(reconciliation, ListenersUtils.backwardsCompatiblePortName(listener),
+                    createServicePort(ListenersUtils.backwardsCompatiblePortName(listener),
                             listener.getPort(),
                             listener.getPort(),
                             ListenersUtils.bootstrapNodePort(listener),
@@ -792,7 +788,6 @@ public class KafkaCluster extends AbstractModel {
             );
 
             Service service = createService(
-                    reconciliation,
                     serviceName,
                     ListenersUtils.serviceType(listener),
                     ports,
@@ -840,11 +835,10 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates list of service for pod. These services are used for exposing it externally.
      *
-     * @param reconciliation The reconciliation
      * @param pod Number of the pod for which this service should be generated
      * @return The list with generated Services
      */
-    public List<Service> generateExternalServices(Reconciliation reconciliation, int pod) {
+    public List<Service> generateExternalServices(int pod) {
         List<GenericKafkaListener> externalListeners = ListenersUtils.externalListeners(listeners);
         List<Service> services = new ArrayList<>(externalListeners.size());
 
@@ -852,7 +846,7 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
 
             List<ServicePort> ports = Collections.singletonList(
-                    createServicePort(reconciliation,
+                    createServicePort(
                             ListenersUtils.backwardsCompatiblePortName(listener),
                             listener.getPort(),
                             listener.getPort(),
@@ -863,7 +857,6 @@ public class KafkaCluster extends AbstractModel {
             Labels selector = getSelectorLabels().withStatefulSetPod(kafkaPodName(cluster, pod));
 
             Service service = createService(
-                    reconciliation,
                     serviceName,
                     ListenersUtils.serviceType(listener),
                     ports,
@@ -1250,24 +1243,21 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates a headless Service according to configured defaults
      *
-     * @param reconciliation The reconciliation
      * @return The generated Service
      */
-    public Service generateHeadlessService(Reconciliation reconciliation) {
-        return createHeadlessService(reconciliation, getHeadlessServicePorts(reconciliation));
+    public Service generateHeadlessService() {
+        return createHeadlessService(getHeadlessServicePorts());
     }
 
     /**
      * Generates a StatefulSet according to configured defaults
      *
-     * @param reconciliation   The reconciliation
      * @param isOpenShift      True iff this operator is operating within OpenShift.
      * @param imagePullPolicy  The image pull policy.
      * @param imagePullSecrets The image pull secrets.
      * @return The generated StatefulSet.
      */
-    public StatefulSet generateStatefulSet(Reconciliation reconciliation,
-                                           boolean isOpenShift,
+    public StatefulSet generateStatefulSet(boolean isOpenShift,
                                            ImagePullPolicy imagePullPolicy,
                                            List<LocalObjectReference> imagePullSecrets) {
         Map<String, String> stsAnnotations = new HashMap<>(2);
@@ -1283,11 +1273,11 @@ public class KafkaCluster extends AbstractModel {
         return createStatefulSet(
                 stsAnnotations,
                 podAnnotations,
-                getVolumes(reconciliation, isOpenShift),
+                getVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
-                getInitContainers(reconciliation, imagePullPolicy),
-                getContainers(reconciliation, imagePullPolicy),
+                getInitContainers(imagePullPolicy),
+                getContainers(imagePullPolicy),
                 imagePullSecrets,
                 isOpenShift);
     }
@@ -1328,17 +1318,17 @@ public class KafkaCluster extends AbstractModel {
         return createSecret(KafkaCluster.jmxSecretName(cluster), data);
     }
 
-    private List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
+    private List<ContainerPort> getContainerPortList() {
         List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
-        ports.add(createContainerPort(reconciliation, CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, "TCP"));
-        ports.add(createContainerPort(reconciliation, REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
+        ports.add(createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, "TCP"));
+        ports.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
 
         for (GenericKafkaListener listener : listeners) {
-            ports.add(createContainerPort(reconciliation, ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), "TCP"));
+            ports.add(createContainerPort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), "TCP"));
         }
 
         if (isMetricsEnabled) {
-            ports.add(createContainerPort(reconciliation, METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+            ports.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
         return ports;
@@ -1362,14 +1352,13 @@ public class KafkaCluster extends AbstractModel {
      * Fill the StatefulSet with volumes, persistent volume claims and related volume mount paths for the storage
      * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
      *
-     * @param reconciliation The reconciliation
      * @param storage the Storage instance from which building volumes, persistent volume claims and
      *                related volume mount paths
      */
-    private void setDataVolumesClaimsAndMountPaths(Reconciliation reconciliation, Storage storage) {
-        dataVolumeMountPaths = VolumeUtils.getDataVolumeMountPaths(reconciliation, storage, mountPath);
+    private void setDataVolumesClaimsAndMountPaths(Storage storage) {
+        dataVolumeMountPaths = VolumeUtils.getDataVolumeMountPaths(storage, mountPath);
         dataPvcs = VolumeUtils.getDataPersistentVolumeClaims(storage);
-        dataVolumes = VolumeUtils.getDataVolumes(reconciliation, storage);
+        dataVolumes = VolumeUtils.getDataVolumes(storage);
     }
 
     /**
@@ -1404,18 +1393,18 @@ public class KafkaCluster extends AbstractModel {
         return pvcs;
     }
 
-    private List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
+    private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(dataVolumes);
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(reconciliation, INIT_VOLUME_NAME, null));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, null));
         }
 
         volumeList.add(createTempDirVolume());
-        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(reconciliation, CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createConfigMapVolume(reconciliation, logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
         volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
 
         for (GenericKafkaListener listener : listeners) {
@@ -1429,7 +1418,7 @@ public class KafkaCluster extends AbstractModel {
                 items.put(secretSource.getCertificate(), "tls.crt");
 
                 volumeList.add(
-                        VolumeUtils.createSecretVolume(reconciliation,
+                        VolumeUtils.createSecretVolume(
                                 "custom-" + ListenersUtils.identifier(listener) + "-certs",
                                 secretSource.getSecretName(),
                                 items,
@@ -1456,18 +1445,18 @@ public class KafkaCluster extends AbstractModel {
         return new ArrayList<>(dataPvcs);
     }
 
-    private List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
+    private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(dataVolumeMountPaths);
 
-        volumeMountList.add(createTempDirVolumeMount(reconciliation));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, "ready-files", "/var/opt/kafka"));
+        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
+        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
 
         for (GenericKafkaListener listener : listeners) {
@@ -1476,7 +1465,7 @@ public class KafkaCluster extends AbstractModel {
             if (listener.isTls()
                     && listener.getConfiguration() != null
                     && listener.getConfiguration().getBrokerCertChainAndKey() != null)  {
-                volumeMountList.add(VolumeUtils.createVolumeMount(reconciliation, "custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
+                volumeMountList.add(VolumeUtils.createVolumeMount("custom-" + identifier + "-certs", "/opt/kafka/certificates/custom-" + identifier + "-certs"));
             }
 
             if (isListenerWithOAuth(listener))   {
@@ -1543,7 +1532,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getInitContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> initContainers = new ArrayList<>(1);
 
         if (rack != null || !ListenersUtils.nodePortListeners(listeners).isEmpty()) {
@@ -1560,7 +1549,7 @@ public class KafkaCluster extends AbstractModel {
                     .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
                     .withResources(resources)
                     .withEnv(getInitContainerEnvVars())
-                    .withVolumeMounts(VolumeUtils.createVolumeMount(reconciliation, INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                    .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
                     .withSecurityContext(templateInitContainerSecurityContext)
                     .build();
@@ -1572,13 +1561,13 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected List<Container> getContainers(Reconciliation reconciliation, ImagePullPolicy imagePullPolicy) {
+    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         Container container = new ContainerBuilder()
                 .withName(KAFKA_NAME)
                 .withImage(getImage())
-                .withEnv(getEnvVars(reconciliation))
-                .withVolumeMounts(getVolumeMounts(reconciliation))
-                .withPorts(getContainerPortList(reconciliation))
+                .withEnv(getEnvVars())
+                .withVolumeMounts(getVolumeMounts())
+                .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
                         .withNewExec()
                             .withCommand("/opt/kafka/kafka_liveness.sh")
@@ -1603,7 +1592,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    protected List<EnvVar> getEnvVars(Reconciliation reconciliation) {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
@@ -1692,13 +1681,12 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for Kafka brokers
      *
-     * @param reconciliation                                The reconciliation
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(Reconciliation reconciliation, String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
         // Internal peers => Strimzi components which need access
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector() // Cluster Operator
@@ -1983,12 +1971,12 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
-    private String generateBrokerConfiguration(Reconciliation reconciliation, boolean controlPlaneListener)   {
+    private String generateBrokerConfiguration(boolean controlPlaneListener)   {
         return new KafkaBrokerConfigurationBuilder()
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper(cluster)
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(reconciliation, storage, mountPath))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
                 .withListeners(cluster, namespace, listeners, controlPlaneListener)
                 .withAuthorization(cluster, authorization)
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
@@ -2000,10 +1988,10 @@ public class KafkaCluster extends AbstractModel {
         return this.brokersConfiguration;
     }
 
-    public ConfigMap generateAncillaryConfigMap(Reconciliation reconciliation, MetricsAndLogging metricsAndLogging, Set<String> advertisedHostnames, Set<String> advertisedPorts, boolean controlPlaneListener)   {
-        ConfigMap cm = generateMetricsAndLogConfigMap(reconciliation, metricsAndLogging);
+    public ConfigMap generateAncillaryConfigMap(MetricsAndLogging metricsAndLogging, Set<String> advertisedHostnames, Set<String> advertisedPorts, boolean controlPlaneListener)   {
+        ConfigMap cm = generateMetricsAndLogConfigMap(metricsAndLogging);
 
-        this.brokersConfiguration = generateBrokerConfiguration(reconciliation, controlPlaneListener);
+        this.brokersConfiguration = generateBrokerConfiguration(controlPlaneListener);
 
         cm.getData().put(BROKER_CONFIGURATION_FILENAME, this.brokersConfiguration);
         cm.getData().put(BROKER_ADVERTISED_HOSTNAMES_FILENAME, String.join(" ", advertisedHostnames));

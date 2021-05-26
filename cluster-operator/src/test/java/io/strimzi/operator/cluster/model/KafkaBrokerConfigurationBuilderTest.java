@@ -339,7 +339,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(new Reconciliation("test", "kind", "namespace", "name"), storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
@@ -354,7 +354,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(new Reconciliation("test", "kind", "namespace", "name"), storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
@@ -386,7 +386,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(new Reconciliation("test", "kind", "namespace", "name"), storage, "/var/lib/kafka"))
+                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, "/var/lib/kafka"))
                 .build();
 
         assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data-1/kafka-log${STRIMZI_BROKER_ID},/var/lib/kafka/data-2/kafka-log${STRIMZI_BROKER_ID},/var/lib/kafka/data-5/kafka-log${STRIMZI_BROKER_ID}"));
