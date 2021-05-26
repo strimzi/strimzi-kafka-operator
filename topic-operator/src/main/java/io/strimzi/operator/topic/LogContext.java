@@ -7,8 +7,7 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -17,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class LogContext {
 
-    private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(K8sTopicWatcher.class);
 
     private static AtomicInteger ctx = new AtomicInteger();
     private final String base;
@@ -75,14 +74,14 @@ public class LogContext {
 
     public Marker getMarker() {
         String marker = "KafkaTopic(" + namespace + "/" + topicName + ")";
-        LOGGER.trace("marker is {}", marker);
+        LOGGER.traceOp("marker is {}", marker);
         return MarkerManager.getMarker(marker);
     }
 
     public LogContext withKubeTopic(KafkaTopic kafkaTopic) {
         String newResourceVersion = kafkaTopic == null ? null : kafkaTopic.getMetadata().getResourceVersion();
         if (!Objects.equals(resourceVersion, newResourceVersion)) {
-            LOGGER.debug("{}: Concurrent modification in kube: new version {}", this, newResourceVersion);
+            LOGGER.debugOp("{}: Concurrent modification in kube: new version {}", this, newResourceVersion);
         }
         this.resourceVersion = newResourceVersion;
         return this;

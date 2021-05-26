@@ -72,7 +72,7 @@ public abstract class ZkWatcher {
         this.children.put(child, false);
         LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child, topicOperator.getNamespace(), child);
         String path = getPath(child);
-        reconciliationLogger.debug(logContext.toReconciliation(), "Watching znode {} for changes", path);
+        reconciliationLogger.debugCr(logContext.toReconciliation(), "Watching znode {} for changes", path);
         Handler<AsyncResult<byte[]>> handler = dataResult -> {
             if (dataResult.succeeded()) {
                 this.children.compute(child, (k, v) -> {
@@ -82,7 +82,7 @@ public abstract class ZkWatcher {
                     return true;
                 });
             } else {
-                reconciliationLogger.error(logContext.toReconciliation(), "While getting or watching znode {}", path, dataResult.cause());
+                reconciliationLogger.errorCr(logContext.toReconciliation(), "While getting or watching znode {}", path, dataResult.cause());
             }
         };
         zk.watchData(path, handler).compose(zk2 -> {
@@ -98,7 +98,7 @@ public abstract class ZkWatcher {
      */
     protected void removeChild(String child) {
         LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child, topicOperator.getNamespace(), child);
-        reconciliationLogger.debug(logContext.toReconciliation(), "Unwatching znode {} for changes", child);
+        reconciliationLogger.debugCr(logContext.toReconciliation(), "Unwatching znode {} for changes", child);
         this.children.remove(child);
         zk.unwatchData(getPath(child));
     }

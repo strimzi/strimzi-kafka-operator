@@ -18,7 +18,7 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     private final String namespace;
     private final Consumer<WatcherException> onClose;
     private Operator operator;
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(OperatorWatcher.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(OperatorWatcher.class);
 
     OperatorWatcher(Operator operator, String namespace, Consumer<WatcherException> onClose) {
         this.namespace = namespace;
@@ -35,15 +35,15 @@ class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
             case DELETED:
             case MODIFIED:
                 Reconciliation reconciliation = new Reconciliation("watch", operator.kind(), namespace, name);
-                RECONCILIATION_LOGGER.info(reconciliation, "{} {} in namespace {} was {}", operator.kind(), name, namespace, action);
+                LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", operator.kind(), name, namespace, action);
                 operator.reconcile(reconciliation);
                 break;
             case ERROR:
-                RECONCILIATION_LOGGER.error(new Reconciliation("watch", operator.kind(), namespace, name), "Failed {} {} in namespace{} ", operator.kind(), name, namespace);
+                LOGGER.errorCr(new Reconciliation("watch", operator.kind(), namespace, name), "Failed {} {} in namespace{} ", operator.kind(), name, namespace);
                 operator.reconcileAll("watch error", namespace, ignored -> { });
                 break;
             default:
-                RECONCILIATION_LOGGER.error(new Reconciliation("watch", operator.kind(), namespace, name), "Unknown action: {} in namespace {}", name, namespace);
+                LOGGER.errorCr(new Reconciliation("watch", operator.kind(), namespace, name), "Unknown action: {} in namespace {}", name, namespace);
                 operator.reconcileAll("watch unknown", namespace, ignored -> { });
         }
     }

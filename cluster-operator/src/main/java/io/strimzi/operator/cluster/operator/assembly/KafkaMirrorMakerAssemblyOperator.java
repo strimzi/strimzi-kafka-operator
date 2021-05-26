@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>, KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> {
 
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaMirrorMakerAssemblyOperator.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMakerAssemblyOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
@@ -84,7 +84,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
         boolean mirrorHasZeroReplicas = mirror.getReplicas() == 0;
 
-        RECONCILIATION_LOGGER.debug(reconciliation, "Updating Kafka Mirror Maker cluster");
+        LOGGER.debugCr(reconciliation, "Updating Kafka Mirror Maker cluster");
         mirrorMakerServiceAccount(reconciliation, namespace, mirror)
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, mirror.getLogging(), mirror.getMetricsConfigInCm()))

@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
@@ -39,8 +40,6 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -70,7 +69,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorMockTest {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectAssemblyOperatorMockTest.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperatorMockTest.class);
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
@@ -129,7 +128,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Promise created = Promise.promise();
 
-        LOGGER.info("Reconciling initially -> create");
+        LOGGER.infoOp("Reconciling initially -> create");
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 if (!reconciliationPaused) {
@@ -166,7 +165,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         createConnectCluster(context, mock, false)
             .onComplete(context.succeeding())
             .compose(v -> {
-                LOGGER.info("Reconciling again -> update");
+                LOGGER.infoOp("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
             })
             .onComplete(context.succeeding(v -> async.flag()));
@@ -194,7 +193,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         createConnectCluster(context, mock, true)
                 .onComplete(context.succeeding())
                 .compose(v -> {
-                    LOGGER.info("Reconciling again -> update");
+                    LOGGER.infoOp("Reconciling again -> update");
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
                 })
                 .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -228,7 +227,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                             .withReplicas(replicas)
                             .endSpec()
                             .build());
-                    LOGGER.info("Reconciling again -> update");
+                    LOGGER.infoOp("Reconciling again -> update");
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
                 })
                 .onComplete(context.succeeding(v -> context.verify(() -> {

@@ -6,10 +6,8 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,10 +22,10 @@ import io.vertx.micrometer.VertxPrometheusOptions;
  */
 public class Main {
 
-    private final static Logger LOGGER = LogManager.getLogger(Main.class);
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(Main.class);
 
     public static void main(String[] args) {
-        LOGGER.info("TopicOperator {} is starting", Main.class.getPackage().getImplementationVersion());
+        LOGGER.infoOp("TopicOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         Main main = new Main();
         main.run();
     }
@@ -51,9 +49,9 @@ public class Main {
         Session session = new Session(kubeClient, config);
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
-                LOGGER.info("Session deployed");
+                LOGGER.infoOp("Session deployed");
             } else {
-                LOGGER.error("Error deploying Session", ar.cause());
+                LOGGER.errorOp("Error deploying Session", ar.cause());
             }
         });
     }

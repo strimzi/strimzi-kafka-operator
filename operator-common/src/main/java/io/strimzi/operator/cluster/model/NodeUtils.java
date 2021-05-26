@@ -6,15 +6,14 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class NodeUtils {
-    private static final Logger LOGGER = LogManager.getLogger(NodeUtils.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(NodeUtils.class);
 
     /**
      * Tries to find the right address of the node. The different addresses has different prioprities:
@@ -36,7 +35,7 @@ public class NodeUtils {
 
         Map<String, String> addressMap = addresses.stream()
                 .collect(Collectors.toMap(NodeAddress::getType, NodeAddress::getAddress, (address1, address2) -> {
-                    LOGGER.warn("Found multiple addresses with the same type. Only the first address '{}' will be used.", address1);
+                    LOGGER.warnOp("Found multiple addresses with the same type. Only the first address '{}' will be used.", address1);
                     return address1;
                 }));
 

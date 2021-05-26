@@ -13,14 +13,13 @@ import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.Gettable;
 import io.fabric8.kubernetes.client.dsl.Listable;
 import io.fabric8.kubernetes.client.dsl.Watchable;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.Closeable;
 import java.util.List;
@@ -28,7 +27,7 @@ import java.util.function.BiFunction;
 
 public class ResourceSupport {
     public static final long DEFAULT_TIMEOUT_MS = 300_000;
-    protected static final Logger LOGGER = LogManager.getLogger(ResourceSupport.class);
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceSupport.class);
 
     private final Vertx vertx;
 
@@ -46,7 +45,7 @@ public class ResourceSupport {
         return executeBlocking(
             blockingFuture -> {
                 try {
-                    LOGGER.debug("Closing {}", closeable);
+                    LOGGER.debugOp("Closing {}", closeable);
                     closeable.close();
                     blockingFuture.complete();
                 } catch (Throwable t) {
@@ -133,7 +132,7 @@ public class ResourceSupport {
 
                     closeFuture.onComplete(closeResult ->
                         vertx.runOnContext(ignored2 -> {
-                            LOGGER.debug("Completing watch future");
+                            LOGGER.debugOp("Completing watch future");
                             if (joinResult.succeeded() && closeResult.succeeded()) {
                                 resultPromise.complete(joinResult.result().resultAt(1));
                             } else {
@@ -145,7 +144,7 @@ public class ResourceSupport {
 
                 try {
                     Watch watch = watchable.watch(this);
-                    LOGGER.debug("Opened watch {} for evaluation of {}", watch, watchFnDescription);
+                    LOGGER.debugOp("Opened watch {} for evaluation of {}", watch, watchFnDescription);
                     watchPromise.complete(watch);
                 } catch (Throwable t) {
                     watchPromise.fail(t);
@@ -162,11 +161,11 @@ public class ResourceSupport {
                                 f.tryComplete(apply);
                                 vertx.cancelTimer(timerId);
                             } else {
-                                LOGGER.debug("Not yet satisfied: {}", watchFnDescription);
+                                LOGGER.debugOp("Not yet satisfied: {}", watchFnDescription);
                             }
                         } catch (Throwable t) {
                             if (!f.tryFail(t)) {
-                                LOGGER.debug("Ignoring exception thrown while " +
+                                LOGGER.debugOp("Ignoring exception thrown while " +
                                         "evaluating watch {} because the future was already completed", watchFnDescription, t);
                             }
                         }

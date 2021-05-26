@@ -13,8 +13,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,8 +21,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class StatefulSetDiff extends AbstractJsonDiff {
 
-    private static final Logger LOGGER = LogManager.getLogger(StatefulSetDiff.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(StatefulSetDiff.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatefulSetDiff.class.getName());
 
     private static final String SHORTENED_STRIMZI_DOMAIN = Annotations.STRIMZI_DOMAIN.substring(0, Annotations.STRIMZI_DOMAIN.length() - 1);
 
@@ -86,7 +83,7 @@ public class StatefulSetDiff extends AbstractJsonDiff {
             String pathValue = d.get("path").asText();
             if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
                 ObjectMeta md = current.getMetadata();
-                RECONCILIATION_LOGGER.debug(reconciliation, "StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                LOGGER.debugCr(reconciliation, "StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                 continue;
             }
             Matcher resourceMatchers = RESOURCE_PATH.matcher(pathValue);
@@ -95,16 +92,17 @@ public class StatefulSetDiff extends AbstractJsonDiff {
                     boolean same = compareMemoryAndCpuResources(source, target, pathValue, resourceMatchers);
                     if (same) {
                         ObjectMeta md = current.getMetadata();
-                        RECONCILIATION_LOGGER.debug(reconciliation, "StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
+                        LOGGER.debugCr(reconciliation, "StatefulSet {}/{} ignoring diff {}", md.getNamespace(), md.getName(), d);
                         continue;
                     }
                 }
             }
+
             if (LOGGER.isDebugEnabled()) {
                 ObjectMeta md = current.getMetadata();
-                RECONCILIATION_LOGGER.debug(reconciliation, "StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
-                RECONCILIATION_LOGGER.debug(reconciliation, "Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
-                RECONCILIATION_LOGGER.debug(reconciliation, "Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
+                LOGGER.debugCr(reconciliation, "StatefulSet {}/{} differs: {}", md.getNamespace(), md.getName(), d);
+                LOGGER.debugCr(reconciliation, "Current StatefulSet path {} has value {}", pathValue, lookupPath(source, pathValue));
+                LOGGER.debugCr(reconciliation, "Desired StatefulSet path {} has value {}", pathValue, lookupPath(target, pathValue));
             }
 
             num++;

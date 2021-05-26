@@ -87,10 +87,10 @@ public class CrdOperator<C extends KubernetesClient,
             String name = resource.getMetadata().getName();
             try {
                 T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(resource);
-                reconciliationLogger.debug(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                reconciliationLogger.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {
-                reconciliationLogger.debug(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+                reconciliationLogger.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                 future.fail(e);
             }
         }, true, blockingPromise);
@@ -107,10 +107,10 @@ public class CrdOperator<C extends KubernetesClient,
 
             try {
                 T result = operation().inNamespace(namespace).withName(name).updateStatus(resource);
-                reconciliationLogger.info(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
+                reconciliationLogger.infoCr(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {
-                reconciliationLogger.debug(reconciliation, "Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
+                reconciliationLogger.debugCr(reconciliation, "Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
                 future.fail(e);
             }
         }, true, blockingPromise);

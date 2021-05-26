@@ -109,7 +109,7 @@ public class JmxTrans extends AbstractModel {
                 String error = String.format("Can't start up JmxTrans '%s' in '%s' as Kafka spec.kafka.jmxOptions is not specified",
                         JmxTransResources.deploymentName(kafkaAssembly.getMetadata().getName()),
                         kafkaAssembly.getMetadata().getNamespace());
-                RECONCILIATION_LOGGER.warn(reconciliation, error);
+                LOGGER.warnCr(reconciliation, error);
                 throw new InvalidResourceException(error);
             }
             result = new JmxTrans(reconciliation, kafkaAssembly);
@@ -204,7 +204,7 @@ public class JmxTrans extends AbstractModel {
         try {
             return mapper.writeValueAsString(servers);
         } catch (JsonProcessingException e) {
-            RECONCILIATION_LOGGER.error(reconciliation, "Could not create JmxTrans config json because: " + e.getMessage());
+            LOGGER.errorCr(reconciliation, "Could not create JmxTrans config json because: " + e.getMessage());
             throw e;
         }
     }

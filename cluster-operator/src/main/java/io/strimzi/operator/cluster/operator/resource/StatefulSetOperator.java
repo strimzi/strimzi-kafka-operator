@@ -31,8 +31,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,8 +45,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     private static final int NO_GENERATION = -1;
     private static final int INIT_GENERATION = 0;
 
-    private static final Logger LOGGER = LogManager.getLogger(StatefulSetOperator.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(StatefulSetOperator.class.getName());
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatefulSetOperator.class.getName());
     protected final PodOperator podOperations;
     private final PvcOperator pvcOperations;
     protected final long operationTimeoutMs;
@@ -159,14 +156,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             Future<Void> fut;
             List<String> reasons = podNeedsRestart.apply(pod);
             if (reasons != null && !reasons.isEmpty()) {
-                RECONCILIATION_LOGGER.debug(reconciliation, "Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons);
+                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons);
                 fut = restartPod(reconciliation, pod);
             } else {
-                RECONCILIATION_LOGGER.debug(reconciliation, "Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
+                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
                 fut = Future.succeededFuture();
             }
             return fut.compose(ignored -> {
-                RECONCILIATION_LOGGER.debug(reconciliation, "Rolling update of {}/{}: wait for pod {} readiness", namespace, name, podName);
+                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: wait for pod {} readiness", namespace, name, podName);
                 return podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, timeoutMs);
             });
         });
@@ -293,11 +290,8 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
         // Don't scale via patch
         desired.getSpec().setReplicas(current.getSpec().getReplicas());
-        if (LOGGER.isTraceEnabled()) {
-            RECONCILIATION_LOGGER.trace(reconciliation, "Patching {} {}/{} to match desired state {}", resourceKind, namespace, name, desired);
-        } else {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Patching {} {}/{}", resourceKind, namespace, name);
-        }
+        LOGGER.traceCr(reconciliation, "Patching {} {}/{} to match desired state {}", resourceKind, namespace, name, desired);
+        LOGGER.debugCr(reconciliation, "Patching {} {}/{}", resourceKind, namespace, name);
 
         if (diff.changesVolumeClaimTemplates() || diff.changesVolumeSize()) {
             // When volume claim templates change, we need to delete the STS and re-create it
@@ -332,14 +326,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
             Future<Void> deletedFut = waitFor(reconciliation, namespace, name, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                 StatefulSet sts = get(namespace, name);
-                RECONCILIATION_LOGGER.trace(reconciliation, "Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
+                LOGGER.traceCr(reconciliation, "Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
                 return sts == null;
             });
 
             deletedFut.onComplete(res -> {
                 if (res.succeeded())    {
                     StatefulSet result = operation().inNamespace(namespace).withName(name).create(desired);
-                    RECONCILIATION_LOGGER.debug(reconciliation, "{} {} in namespace {} has been replaced", resourceKind, name, namespace);
+                    LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been replaced", resourceKind, name, namespace);
                     promise.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
                 } else {
                     promise.fail(res.cause());
@@ -348,7 +342,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
 
             return promise.future();
         } catch (Exception e) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
+            LOGGER.debugCr(reconciliation, "Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }
@@ -371,14 +365,14 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
                     Boolean deleted = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
 
                     if (deleted) {
-                        RECONCILIATION_LOGGER.debug(reconciliation, "{} {} in namespace {} has been deleted", resourceKind, name, namespace);
+                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been deleted", resourceKind, name, namespace);
                         future.complete();
                     } else  {
-                        RECONCILIATION_LOGGER.debug(reconciliation, "{} {} in namespace {} has been not been deleted", resourceKind, name, namespace);
+                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been not been deleted", resourceKind, name, namespace);
                         future.fail(resourceKind + " " + name + " in namespace " + namespace + " has been not been deleted");
                     }
                 } catch (Exception e) {
-                    RECONCILIATION_LOGGER.debug(reconciliation, "Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
+                    LOGGER.debugCr(reconciliation, "Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
                     future.fail(e);
                 }
             }, true, result

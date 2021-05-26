@@ -14,8 +14,6 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,8 +29,7 @@ import static java.util.Objects.isNull;
  * Class for diffing storage configuration
  */
 public class StorageDiff extends AbstractJsonDiff {
-    private static final Logger LOGGER = LogManager.getLogger(StorageDiff.class.getName());
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(StorageDiff.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StorageDiff.class.getName());
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/deleteClaim|/)$");
@@ -109,7 +106,7 @@ public class StorageDiff extends AbstractJsonDiff {
                 String pathValue = d.get("path").asText();
 
                 if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                    RECONCILIATION_LOGGER.debug(reconciliation, "Ignoring Storage {}diff {}", volumeDesc, d);
+                    LOGGER.debugCr(reconciliation, "Ignoring Storage {}diff {}", volumeDesc, d);
                     continue;
                 }
 
@@ -139,9 +136,9 @@ public class StorageDiff extends AbstractJsonDiff {
                 }
 
                 if (LOGGER.isDebugEnabled()) {
-                    RECONCILIATION_LOGGER.debug(reconciliation, "Storage {}differs: {}", volumeDesc, d);
-                    RECONCILIATION_LOGGER.debug(reconciliation, "Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
-                    RECONCILIATION_LOGGER.debug(reconciliation, "Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
+                    LOGGER.debugCr(reconciliation, "Storage {}differs: {}", volumeDesc, d);
+                    LOGGER.debugCr(reconciliation, "Current Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(source, pathValue));
+                    LOGGER.debugCr(reconciliation, "Desired Storage {}path {} has value {}", volumeDesc, pathValue, lookupPath(target, pathValue));
                 }
 
                 num++;

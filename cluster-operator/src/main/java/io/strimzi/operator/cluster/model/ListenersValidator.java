@@ -13,8 +13,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.kafka.oauth.jsonpath.JsonPathFilterQuery;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.List;
@@ -28,8 +26,7 @@ import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAu
  * Util methods for validating Kafka listeners
  */
 public class ListenersValidator {
-    protected static final Logger LOGGER = LogManager.getLogger(ListenersValidator.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(ListenersValidator.class.getName());
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ListenersValidator.class.getName());
     private final static Pattern LISTENER_NAME_PATTERN = Pattern.compile(GenericKafkaListener.LISTENER_NAME_REGEX);
     public final static List<Integer> FORBIDDEN_PORTS = List.of(9404, 9999);
     public final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;
@@ -45,7 +42,7 @@ public class ListenersValidator {
         Set<String> errors = validateAndGetErrorMessages(replicas, listeners);
 
         if (!errors.isEmpty())  {
-            RECONCILIATION_LOGGER.error(reconciliation, "Listener configuration is not valid: {}", errors);
+            LOGGER.errorCr(reconciliation, "Listener configuration is not valid: {}", errors);
             throw new InvalidResourceException("Listener configuration is not valid: " + errors);
         }
     }

@@ -6,8 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +42,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
  * Shared methods for working with Volume
  */
 public class VolumeUtils {
-    protected static final Logger LOGGER = LogManager.getLogger(VolumeUtils.class.getName());
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(VolumeUtils.class.getName());
     private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
 
     /**
@@ -78,7 +77,7 @@ public class VolumeUtils {
                 .withConfigMap(configMapVolumeSource)
                 .build();
 
-        LOGGER.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+        LOGGER.traceOp("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
 
         return volume;
     }
@@ -102,7 +101,7 @@ public class VolumeUtils {
                 .withConfigMap(configMapVolumeSource)
                 .build();
 
-        LOGGER.trace("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
+        LOGGER.traceOp("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
 
         return volume;
     }
@@ -145,7 +144,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        LOGGER.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
+        LOGGER.traceOp("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -174,7 +173,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        LOGGER.trace("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
+        LOGGER.traceOp("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -197,7 +196,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withEmptyDir(emptyDirVolumeSource)
                 .build();
-        LOGGER.trace("Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
+        LOGGER.traceOp("Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
         return volume;
     }
 
@@ -246,7 +245,7 @@ public class VolumeUtils {
                 .withName(validName)
                 .withMountPath(path)
                 .build();
-        LOGGER.trace("Created volume mount {} for volume {}", volumeMount, validName);
+        LOGGER.traceOp("Created volume mount {} for volume {}", volumeMount, validName);
         return volumeMount;
     }
 

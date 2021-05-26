@@ -6,6 +6,7 @@ package io.strimzi.operator;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -13,8 +14,6 @@ import io.vertx.core.Vertx;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.text.ParseException;
 import java.util.Map;
@@ -23,7 +22,7 @@ import java.util.Map;
  * Gives a info about certain features availability regarding to kubernetes version
  */
 public class PlatformFeaturesAvailability {
-    private static final Logger LOGGER = LogManager.getLogger(PlatformFeaturesAvailability.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PlatformFeaturesAvailability.class.getName());
 
     private boolean routes = false;
     private boolean builds = false;
@@ -67,7 +66,7 @@ public class PlatformFeaturesAvailability {
         if (client.isAdaptable(OkHttpClient.class)) {
             return client.adapt(OkHttpClient.class);
         } else {
-            LOGGER.error("Cannot adapt KubernetesClient to OkHttpClient");
+            LOGGER.errorOp("Cannot adapt KubernetesClient to OkHttpClient");
             throw new RuntimeException("Cannot adapt KubernetesClient to OkHttpClient");
         }
     }
@@ -149,7 +148,7 @@ public class PlatformFeaturesAvailability {
             try {
                 request.complete(client.getVersion());
             } catch (Exception e) {
-                LOGGER.error("Detection of Kubernetes version failed.", e);
+                LOGGER.errorOp("Detection of Kubernetes version failed.", e);
                 request.fail(e);
             }
         }, promise);
@@ -166,17 +165,17 @@ public class PlatformFeaturesAvailability {
 
                 Response resp = httpClient.newCall(new Request.Builder().get().url(masterUrl + "apis/" + api + "/" + version).build()).execute();
                 if (resp.code() >= 200 && resp.code() < 300) {
-                    LOGGER.debug("{} returned {}. This API is supported.", resp.request().url(), resp.code());
+                    LOGGER.debugOp("{} returned {}. This API is supported.", resp.request().url(), resp.code());
                     isSupported = true;
                 } else {
-                    LOGGER.debug("{} returned {}. This API is not supported.", resp.request().url(), resp.code());
+                    LOGGER.debugOp("{} returned {}. This API is not supported.", resp.request().url(), resp.code());
                     isSupported = false;
                 }
 
                 resp.close();
                 request.complete(isSupported);
             } catch (Exception e) {
-                LOGGER.error("Detection of {}/{} API failed. This API will be disabled.", api, version, e);
+                LOGGER.errorOp("Detection of {}/{} API failed. This API will be disabled.", api, version, e);
                 request.complete(false);
             }
         }, promise);

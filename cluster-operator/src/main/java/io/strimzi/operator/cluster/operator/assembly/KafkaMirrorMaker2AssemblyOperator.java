@@ -79,7 +79,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CON
  * </ul>
  */
 public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2AssemblyOperator.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2AssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final KafkaVersion.Lookup versions;
@@ -145,7 +145,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
         boolean mirrorMaker2HasZeroReplicas = mirrorMaker2Cluster.getReplicas() == 0;
 
-        RECONCILIATION_LOGGER.debug(reconciliation, "Updating Kafka MirrorMaker 2.0 cluster");
+        LOGGER.debugCr(reconciliation, "Updating Kafka MirrorMaker 2.0 cluster");
         mirrorMaker2ServiceAccount(reconciliation, namespace, mirrorMaker2Cluster)
                 .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(true, operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
@@ -222,7 +222,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         .map(mirror -> mirror.getSourceCluster() + "->" + mirror.getTargetCluster() + connectorEntry.getKey())
                         .collect(Collectors.toSet()));
             }
-            RECONCILIATION_LOGGER.debug(reconciliation, "delete MirrorMaker 2.0 connectors: {}", deleteMirrorMaker2ConnectorNames);
+            LOGGER.debugCr(reconciliation, "delete MirrorMaker 2.0 connectors: {}", deleteMirrorMaker2ConnectorNames);
             Stream<Future<Void>> deletionFutures = deleteMirrorMaker2ConnectorNames.stream()
                     .map(connectorName -> apiClient.delete(reconciliation, host, KafkaConnectCluster.REST_API_PORT, connectorName));
             Stream<Future<Void>> createUpdateFutures = mirrors.stream()
@@ -269,7 +269,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 .build();                      
 
                         prepareMirrorMaker2ConnectorConfig(reconciliation, mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
-                        RECONCILIATION_LOGGER.debug(reconciliation, "creating/updating connector {} config: {}", connectorName, asJson(reconciliation, connectorSpec).toString());
+                        LOGGER.debugCr(reconciliation, "creating/updating connector {} config: {}", connectorName, asJson(reconciliation, connectorSpec).toString());
                         return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connectorName, connectorSpec, mirrorMaker2Status);
                     })                            
                     .collect(Collectors.toList()))
@@ -289,7 +289,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         String topicsExcludePattern = mirror.getTopicsExcludePattern();
         String topicsBlacklistPattern = mirror.getTopicsBlacklistPattern();
         if (topicsExcludePattern != null && topicsBlacklistPattern != null) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "Both topicsExcludePattern and topicsBlacklistPattern mirror properties are present, ignoring topicsBlacklistPattern as it is deprecated");
+            LOGGER.warnCr(reconciliation, "Both topicsExcludePattern and topicsBlacklistPattern mirror properties are present, ignoring topicsBlacklistPattern as it is deprecated");
         }
         String topicsExclude = topicsExcludePattern != null ? topicsExcludePattern : topicsBlacklistPattern;
         if (topicsExclude != null) {
@@ -303,7 +303,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         String groupsExcludePattern = mirror.getGroupsExcludePattern();
         String groupsBlacklistPattern = mirror.getGroupsBlacklistPattern();
         if (groupsExcludePattern != null && groupsBlacklistPattern != null) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "Both groupsExcludePattern and groupsBlacklistPattern mirror properties are present, ignoring groupsBlacklistPattern as it is deprecated");
+            LOGGER.warnCr(reconciliation, "Both groupsExcludePattern and groupsBlacklistPattern mirror properties are present, ignoring groupsBlacklistPattern as it is deprecated");
         }
         String groupsExclude = groupsExcludePattern != null ? groupsExcludePattern :  groupsBlacklistPattern;
         if (groupsExclude != null) {
@@ -428,7 +428,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private Future<Void> maybeUpdateMirrorMaker2Status(Reconciliation reconciliation, KafkaMirrorMaker2 mirrorMaker2, Throwable error) {
         KafkaMirrorMaker2Status status = new KafkaMirrorMaker2Status();
         if (error != null) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "Error reconciling MirrorMaker 2.0 {}", mirrorMaker2.getMetadata().getName(), error);
+            LOGGER.warnCr(reconciliation, "Error reconciling MirrorMaker 2.0 {}", mirrorMaker2.getMetadata().getName(), error);
         }
         StatusUtils.setStatusConditionAndObservedGeneration(mirrorMaker2, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
         return maybeUpdateStatusCommon(resourceOperator, mirrorMaker2, reconciliation, status,
@@ -506,7 +506,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * Patches the KafkaMirrorMaker2 CR to remove the supplied annotation
      */
     protected Future<Void> removeAnnotation(Reconciliation reconciliation, KafkaMirrorMaker2 resource, String annotationKey) {
-        RECONCILIATION_LOGGER.debug(reconciliation, "Removing annotation {}", annotationKey);
+        LOGGER.debugCr(reconciliation, "Removing annotation {}", annotationKey);
         KafkaMirrorMaker2 patchedKafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(resource)
             .editMetadata()
             .removeFromAnnotations(annotationKey)

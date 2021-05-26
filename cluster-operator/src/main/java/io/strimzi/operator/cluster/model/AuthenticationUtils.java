@@ -19,8 +19,6 @@ import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,8 +29,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 public class AuthenticationUtils {
-    protected static final Logger LOGGER = LogManager.getLogger(AuthenticationUtils.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(AuthenticationUtils.class.getName());
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AuthenticationUtils.class.getName());
 
     public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
     public static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
@@ -55,22 +52,22 @@ public class AuthenticationUtils {
                 KafkaClientAuthenticationTls auth = (KafkaClientAuthenticationTls) authentication;
                 if (auth.getCertificateAndKey() != null) {
                     if (!tls) {
-                        RECONCILIATION_LOGGER.warn(reconciliation, "TLS configuration missing: related TLS client authentication will not work properly");
+                        LOGGER.warnCr(reconciliation, "TLS configuration missing: related TLS client authentication will not work properly");
                     }
                 } else {
-                    RECONCILIATION_LOGGER.warn(reconciliation, "TLS Client authentication selected, but no certificate and key configured.");
+                    LOGGER.warnCr(reconciliation, "TLS Client authentication selected, but no certificate and key configured.");
                     throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512)    {
                 KafkaClientAuthenticationScramSha512 auth = (KafkaClientAuthenticationScramSha512) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    RECONCILIATION_LOGGER.warn(reconciliation, "SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
+                    LOGGER.warnCr(reconciliation, "SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                     throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain auth = (KafkaClientAuthenticationPlain) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    RECONCILIATION_LOGGER.warn(reconciliation, "PLAIN authentication selected, but username or password configuration is missing.");
+                    LOGGER.warnCr(reconciliation, "PLAIN authentication selected, but username or password configuration is missing.");
                     throw new InvalidResourceException("PLAIN authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
@@ -82,7 +79,7 @@ public class AuthenticationUtils {
                     // Valid options, lets just pass it through.
                     // This way the condition is easier to read and understand.
                 } else {
-                    RECONCILIATION_LOGGER.warn(reconciliation, "OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
+                    LOGGER.warnCr(reconciliation, "OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
                     throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
                 }
             }

@@ -63,13 +63,13 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
         String namespace = pod.getMetadata().getNamespace();
         String podName = pod.getMetadata().getName();
         Promise<Void> deleteFinished = Promise.promise();
-        reconciliationLogger.info(reconciliation, "Rolling pod {}", podName);
+        reconciliationLogger.infoCr(reconciliation, "Rolling pod {}", podName);
 
         // Determine generation of deleted pod
         String deleted = getPodUid(pod);
 
         // Delete the pod
-        reconciliationLogger.debug(reconciliation, "Waiting for pod {} to be deleted", podName);
+        reconciliationLogger.debugCr(reconciliation, "Waiting for pod {} to be deleted", podName);
         Future<Void> podReconcileFuture =
                 reconcile(reconciliation, namespace, podName, null).compose(ignore -> {
                     Future<Void> del = waitFor(reconciliation, namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
@@ -77,7 +77,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
                         String newUid = getPodUid(get(namespace, podName));
                         boolean done = !deleted.equals(newUid);
                         if (done) {
-                            reconciliationLogger.debug(reconciliation, "Rolling pod {} finished", podName);
+                            reconciliationLogger.debugCr(reconciliation, "Rolling pod {} finished", podName);
                         }
                         return done;
                     });
@@ -86,7 +86,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
 
         podReconcileFuture.onComplete(deleteResult -> {
             if (deleteResult.succeeded()) {
-                reconciliationLogger.debug(reconciliation, "Pod {} was deleted", podName);
+                reconciliationLogger.debugCr(reconciliation, "Pod {} was deleted", podName);
             }
             deleteFinished.handle(deleteResult);
         });

@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic.zk;
 
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -14,8 +15,6 @@ import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkNoNodeException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.ACL;
 
@@ -27,10 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ZkImpl implements Zk {
 
-    private final static Logger LOGGER = LogManager.getLogger(ZkImpl.class);
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(ZkImpl.class);
     private static final <T> Handler<AsyncResult<T>> log(String msg) {
         return ignored -> {
-            LOGGER.trace("{} returned {}", msg, ignored);
+            LOGGER.traceOp("{} returned {}", msg, ignored);
         };
     }
     private final Vertx vertx;

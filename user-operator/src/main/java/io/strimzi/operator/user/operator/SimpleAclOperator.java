@@ -5,6 +5,7 @@
 package io.strimzi.operator.user.operator;
 
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
@@ -23,8 +24,6 @@ import org.apache.kafka.common.errors.UnknownServerException;
 import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.apache.kafka.common.utils.SecurityUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +37,7 @@ import java.util.concurrent.ExecutionException;
  * SimlpeAclOperator is responsible for managing the authorization rules in Apache Kafka / Apache Zookeeper.
  */
 public class SimpleAclOperator {
-    private static final Logger LOGGER = LogManager.getLogger(SimpleAclOperator.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(SimpleAclOperator.class.getName());
 
     private static final List<String> IGNORED_USERS = Arrays.asList("*", "ANONYMOUS");
 
@@ -78,7 +77,7 @@ public class SimpleAclOperator {
                         future.complete();
                         return;
                     } else {
-                        LOGGER.error("Reconciliation failed for user {}", username, e);
+                        LOGGER.errorOp("Reconciliation failed for user {}", username, e);
                         future.fail(e);
                         return;
                     }
@@ -86,18 +85,18 @@ public class SimpleAclOperator {
 
                 if (desired == null || desired.isEmpty()) {
                     if (current.size() == 0)    {
-                        LOGGER.debug("User {}: No expected Acl rules and no existing Acl rules -> NoOp", username);
+                        LOGGER.debugOp("User {}: No expected Acl rules and no existing Acl rules -> NoOp", username);
                         future.complete(ReconcileResult.noop(desired));
                     } else {
-                        LOGGER.debug("User {}: No expected Acl rules, but {} existing Acl rules -> Deleting rules", username, current.size());
+                        LOGGER.debugOp("User {}: No expected Acl rules, but {} existing Acl rules -> Deleting rules", username, current.size());
                         internalDelete(username, current).onComplete(future);
                     }
                 } else {
                     if (current.isEmpty())  {
-                        LOGGER.debug("User {}: {} expected Acl rules, but no existing Acl rules -> Adding rules", username, desired.size());
+                        LOGGER.debugOp("User {}: {} expected Acl rules, but no existing Acl rules -> Adding rules", username, desired.size());
                         internalCreate(username, desired).onComplete(future);
                     } else  {
-                        LOGGER.debug("User {}: {} expected Acl rules and {} existing Acl rules -> Reconciling rules", username, desired.size(), current.size());
+                        LOGGER.debugOp("User {}: {} expected Acl rules and {} existing Acl rules -> Reconciling rules", username, desired.size(), current.size());
                         internalUpdate(username, desired, current).onComplete(future);
                     }
                 }
@@ -116,7 +115,7 @@ public class SimpleAclOperator {
             Collection<AclBinding> aclBindings = getAclBindings(username, desired);
             adminClient.createAcls(aclBindings).all().get();
         } catch (Exception e) {
-            LOGGER.error("Adding Acl rules for user {} failed", username, e);
+            LOGGER.errorOp("Adding Acl rules for user {} failed", username, e);
             return Future.failedFuture(e);
         }
 
@@ -145,7 +144,7 @@ public class SimpleAclOperator {
             if (res.succeeded())    {
                 promise.complete(ReconcileResult.patched(desired));
             } else  {
-                LOGGER.error("Updating Acl rules for user {} failed", username, res.cause());
+                LOGGER.errorOp("Updating Acl rules for user {} failed", username, res.cause());
                 promise.fail(res.cause());
             }
         });
@@ -180,7 +179,7 @@ public class SimpleAclOperator {
             Collection<AclBindingFilter> aclBindingFilters = getAclBindingFilters(username, current);
             adminClient.deleteAcls(aclBindingFilters).all().get();
         } catch (Exception e) {
-            LOGGER.error("Deleting Acl rules for user {} failed", username, e);
+            LOGGER.errorOp("Deleting Acl rules for user {} failed", username, e);
             return Future.failedFuture(e);
         }
         return Future.succeededFuture(ReconcileResult.deleted());
@@ -193,7 +192,7 @@ public class SimpleAclOperator {
      * @return The Set of ACLs applying to single user.
      */
     public Set<SimpleAclRule> getAcls(String username)   {
-        LOGGER.debug("Searching for ACL rules of user {}", username);
+        LOGGER.debugOp("Searching for ACL rules of user {}", username);
         Set<SimpleAclRule> result = new HashSet<>();
         KafkaPrincipal principal = new KafkaPrincipal("User", username);
 
@@ -213,9 +212,9 @@ public class SimpleAclOperator {
         }
 
         if (aclBindings != null) {
-            LOGGER.debug("ACL rules for user {}", username);
+            LOGGER.debugOp("ACL rules for user {}", username);
             for (AclBinding aclBinding : aclBindings) {
-                LOGGER.debug("{}", aclBinding);
+                LOGGER.debugOp("{}", aclBinding);
                 result.add(SimpleAclRule.fromAclBinding(aclBinding));
             }
         }
@@ -232,7 +231,7 @@ public class SimpleAclOperator {
         Set<String> result = new HashSet<>();
         Set<String> ignored = new HashSet<>(IGNORED_USERS.size());
 
-        LOGGER.debug("Searching for Users with any ACL rules");
+        LOGGER.debugOp("Searching for Users with any ACL rules");
 
         Collection<AclBinding> aclBindings;
         try {
@@ -251,12 +250,12 @@ public class SimpleAclOperator {
                 if (IGNORED_USERS.contains(username))   {
                     if (!ignored.contains(username)) {
                         // This info message is loged only once per reocnciliation even if there are multiple rules
-                        LOGGER.info("Existing ACLs for user '{}' will be ignored.", username);
+                        LOGGER.infoOp("Existing ACLs for user '{}' will be ignored.", username);
                         ignored.add(username);
                     }
                 } else {
                     if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Adding user {} to Set of users with ACLs", username);
+                        LOGGER.traceOp("Adding user {} to Set of users with ACLs", username);
                     }
 
                     result.add(username);

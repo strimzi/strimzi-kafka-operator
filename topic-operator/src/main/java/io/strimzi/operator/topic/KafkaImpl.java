@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -23,8 +24,6 @@ import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.TopicExistsException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import static java.util.Collections.singleton;
 
@@ -36,7 +35,7 @@ import static java.util.Collections.singleton;
  */
 public class KafkaImpl implements Kafka {
 
-    private final static Logger LOGGER = LogManager.getLogger(KafkaImpl.class);
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaImpl.class);
 
     protected final Admin adminClient;
 
@@ -54,7 +53,7 @@ public class KafkaImpl implements Kafka {
     @Override
     public Future<Void> deleteTopic(TopicName topicName) {
         Promise<Void> handler = Promise.promise();
-        LOGGER.debug("Deleting topic {}", topicName);
+        LOGGER.debugOp("Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 singleton(topicName.toString())).values().get(topicName.toString());
         mapFuture(future).onComplete(ar -> {
@@ -105,7 +104,7 @@ public class KafkaImpl implements Kafka {
      */
     @Override
     public Future<TopicMetadata> topicMetadata(TopicName topicName) {
-        LOGGER.debug("Getting metadata for topic {}", topicName);
+        LOGGER.debugOp("Getting metadata for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
         return topicExists(topicName).compose(exists -> {
             if (exists) {
@@ -124,7 +123,7 @@ public class KafkaImpl implements Kafka {
     @Override
     public Future<Set<String>> listTopics() {
         try {
-            LOGGER.debug("Listing topics");
+            LOGGER.debugOp("Listing topics");
             ListTopicsOptions listOptions = new ListTopicsOptions().listInternal(true);
             return mapFuture(adminClient.listTopics(listOptions).names());
         } catch (Exception e) {
@@ -138,7 +137,7 @@ public class KafkaImpl implements Kafka {
         try {
             String topicName = topic.getTopicName().toString();
             final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions());
-            LOGGER.debug("Increasing partitions {}", newPartitions);
+            LOGGER.debugOp("Increasing partitions {}", newPartitions);
             final Map<String, NewPartitions> request = Collections.singletonMap(topicName, newPartitions);
             return mapFuture(adminClient.createPartitions(request).values().get(topicName));
         } catch (Exception e) {
@@ -154,7 +153,7 @@ public class KafkaImpl implements Kafka {
     public Future<Void> createTopic(Topic topic) {
         try {
             NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
-            LOGGER.debug("Creating topic {}", newTopic);
+            LOGGER.debugOp("Creating topic {}", newTopic);
             KafkaFuture<Void> future = adminClient.createTopics(
                     singleton(newTopic)).values().get(newTopic.name());
             return mapFuture(future);

@@ -63,13 +63,13 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
                 try {
                     Integer currentScale = currentScale(namespace, name);
                     if (currentScale != null && currentScale < scaleTo) {
-                        reconciliationLogger.info(reconciliation, "Scaling up to {} replicas", scaleTo);
+                        reconciliationLogger.infoCr(reconciliation, "Scaling up to {} replicas", scaleTo);
                         resource(namespace, name).scale(scaleTo, true);
                         currentScale = scaleTo;
                     }
                     future.complete(currentScale);
                 } catch (Exception e) {
-                    reconciliationLogger.error(reconciliation, "Caught exception while scaling up", e);
+                    reconciliationLogger.errorCr(reconciliation, "Caught exception while scaling up", e);
                     future.fail(e);
                 }
             },
@@ -102,13 +102,13 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
                     if (nextReplicas != null) {
                         while (nextReplicas > scaleTo) {
                             nextReplicas--;
-                            reconciliationLogger.info(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
+                            reconciliationLogger.infoCr(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
                             resource(namespace, name).scale(nextReplicas, true);
                         }
                     }
                     future.complete(nextReplicas);
                 } catch (Exception e) {
-                    reconciliationLogger.error(reconciliation, "Caught exception while scaling down", e);
+                    reconciliationLogger.errorCr(reconciliation, "Caught exception while scaling down", e);
                     future.fail(e);
                 }
             },

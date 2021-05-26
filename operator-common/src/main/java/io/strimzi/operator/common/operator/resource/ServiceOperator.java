@@ -91,7 +91,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
 
             return super.internalPatch(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
-            log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            reconciliationLogger.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }

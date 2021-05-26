@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user.operator;
 
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.json.JsonObject;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
@@ -11,8 +12,6 @@ import org.apache.kafka.common.security.scram.ScramCredential;
 import org.apache.kafka.common.security.scram.internals.ScramCredentialUtils;
 import org.apache.kafka.common.security.scram.internals.ScramFormatter;
 import org.apache.kafka.common.security.scram.internals.ScramMechanism;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
@@ -23,7 +22,7 @@ import java.util.List;
  * Utility class for managing Scram credentials
  */
 public class ScramShaCredentials {
-    private static final Logger LOGGER = LogManager.getLogger(ScramShaCredentials.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ScramShaCredentials.class.getName());
 
     private final static int ITERATIONS = 4096;
     private final static int CONNECTION_TIMEOUT = 30_000;
@@ -45,10 +44,10 @@ public class ScramShaCredentials {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
-            LOGGER.debug("Updating {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debugOp("Updating {} credentials for user {}", mechanism.mechanismName(), username);
             zkClient.writeData("/config/users/" + username, updateUserJson(data, password));
         } else {
-            LOGGER.debug("Creating {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debugOp("Creating {} credentials for user {}", mechanism.mechanismName(), username);
             ensurePath("/config/users");
             zkClient.createPersistent("/config/users/" + username, createUserJson(password));
         }
@@ -72,7 +71,7 @@ public class ScramShaCredentials {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
-            LOGGER.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debugOp("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
             JsonObject deletedJson = removeScramCredentialsFromUserJson(data);
             if (configJsonIsEmpty(deletedJson)) {
                 zkClient.deleteRecursive("/config/users/" + username);
@@ -81,7 +80,7 @@ public class ScramShaCredentials {
             }
             notifyChanges(username);
         } else {
-            LOGGER.warn("Credentials for user {} already don't exist", username);
+            LOGGER.warnOp("Credentials for user {} already don't exist", username);
         }
     }
 
@@ -109,7 +108,7 @@ public class ScramShaCredentials {
                         ScramCredentialUtils.credentialFromString(scramCredentials);
                         return true;
                     } catch (IllegalArgumentException e) {
-                        LOGGER.warn("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
+                        LOGGER.warnOp("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
                     }
                 }
             }
@@ -145,7 +144,7 @@ public class ScramShaCredentials {
      * @param username  Name of the user whose configuration changed
      */
     private void notifyChanges(String username) {
-        LOGGER.debug("Notifying changes for user {}", username);
+        LOGGER.debugOp("Notifying changes for user {}", username);
 
         ensurePath("/config/changes");
 

@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class ResourceVisitor {
 
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(ResourceVisitor.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceVisitor.class);
 
     public interface Visitor {
         /**
@@ -77,7 +77,7 @@ public class ResourceVisitor {
         try {
             visit(reconciliation, path, resource, visitor);
         } catch (RuntimeException | ReflectiveOperationException | StackOverflowError e) {
-            RECONCILIATION_LOGGER.error(reconciliation, "Error while visiting {}", path, e);
+            LOGGER.errorCr(reconciliation, "Error while visiting {}", path, e);
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             } else {

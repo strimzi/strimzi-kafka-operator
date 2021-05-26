@@ -144,7 +144,7 @@ public class ClusterCa extends Ca {
             return subject;
         };
 
-        RECONCILIATION_LOGGER.debug(reconciliation, "{}: Reconciling zookeeper certificates", this);
+        LOGGER.debugCr(reconciliation, "{}: Reconciling zookeeper certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
             kafka.getSpec().getZookeeper().getReplicas(),
@@ -204,7 +204,7 @@ public class ClusterCa extends Ca {
 
             return subject;
         };
-        RECONCILIATION_LOGGER.debug(reconciliation, "{}: Reconciling kafka broker certificates", this);
+        LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
             kafka.getSpec().getKafka().getReplicas(),

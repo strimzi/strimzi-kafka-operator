@@ -22,7 +22,7 @@ import io.vertx.core.Vertx;
  */
 public class KafkaSetOperator extends StatefulSetOperator {
 
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaSetOperator.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaSetOperator.class);
 
     private final AdminClientProvider adminClientProvider;
 
@@ -47,19 +47,19 @@ public class KafkaSetOperator extends StatefulSetOperator {
 
     public static boolean needsRollingUpdate(Reconciliation reconciliation, StatefulSetDiff diff) {
         if (diff.changesLabels()) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Changed labels => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed labels => needs rolling update");
             return true;
         }
         if (diff.changesSpecTemplate()) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Changed template spec => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed template spec => needs rolling update");
             return true;
         }
         if (diff.changesVolumeClaimTemplates()) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Changed volume claim template => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed volume claim template => needs rolling update");
             return true;
         }
         if (diff.changesVolumeSize()) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Changed size of the volume claim template => no need for rolling update");
+            LOGGER.debugCr(reconciliation, "Changed size of the volume claim template => no need for rolling update");
             return false;
         }
         return false;

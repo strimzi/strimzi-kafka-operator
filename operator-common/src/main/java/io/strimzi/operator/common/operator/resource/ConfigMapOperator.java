@@ -44,13 +44,13 @@ public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient
                     && compareObjects(current.getMetadata().getLabels(), desired.getMetadata().getLabels())) {
                 // Checking some metadata. We cannot check entire metadata object because it contains
                 // timestamps which would cause restarting loop
-                reconciliationLogger.debug(reconciliation, "{} {} in namespace {} has not been patched because resources are equal", resourceKind, name, namespace);
+                reconciliationLogger.debugCr(reconciliation, "{} {} in namespace {} has not been patched because resources are equal", resourceKind, name, namespace);
                 return Future.succeededFuture(ReconcileResult.noop(current));
             } else {
                 return super.internalPatch(reconciliation, namespace, name, current, desired);
             }
         } catch (Exception e) {
-            reconciliationLogger.error(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            reconciliationLogger.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }

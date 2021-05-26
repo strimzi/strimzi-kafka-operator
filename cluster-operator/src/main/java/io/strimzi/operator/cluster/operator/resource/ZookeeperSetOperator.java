@@ -26,7 +26,7 @@ import java.util.function.Function;
  */
 public class ZookeeperSetOperator extends StatefulSetOperator {
 
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(ZookeeperSetOperator.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ZookeeperSetOperator.class);
     private final ZookeeperLeaderFinder leaderFinder;
 
     /**
@@ -49,19 +49,19 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
 
     public static boolean needsRollingUpdate(Reconciliation reconciliation, StatefulSetDiff diff) {
         if (diff.changesLabels()) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Changed labels => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed labels => needs rolling update");
             return true;
         }
         if (diff.changesSpecTemplate()) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Changed template spec => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed template spec => needs rolling update");
             return true;
         }
         if (diff.changesVolumeClaimTemplates()) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Changed volume claim template => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed volume claim template => needs rolling update");
             return true;
         }
         if (diff.changesVolumeSize()) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Changed size of the volume claim template => no need for rolling update");
+            LOGGER.debugCr(reconciliation, "Changed size of the volume claim template => no need for rolling update");
             return false;
         }
         return false;
@@ -72,7 +72,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         final int replicas = sts.getSpec().getReplicas();
-        RECONCILIATION_LOGGER.debug(reconciliation, "Considering rolling update of {}/{}", namespace, name);
+        LOGGER.debugCr(reconciliation, "Considering rolling update of {}/{}", namespace, name);
 
         boolean zkRoll = false;
         ArrayList<Pod> pods = new ArrayList<>(replicas);
@@ -91,18 +91,18 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             rollFuture = promise.future();
             Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(reconciliation, cluster, namespace, pods, coKeySecret);
             leaderFuture.compose(leader -> {
-                RECONCILIATION_LOGGER.debug(reconciliation, "Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
+                LOGGER.debugCr(reconciliation, "Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
                 Future<Void> fut = Future.succeededFuture();
                 // Then roll each non-leader pod
                 for (int i = 0; i < replicas; i++) {
                     String podName = KafkaResources.zookeeperPodName(cluster, i);
                     if (i != leader) {
-                        RECONCILIATION_LOGGER.debug(reconciliation, "Possibly restarting non-leader pod {}", podName);
+                        LOGGER.debugCr(reconciliation, "Possibly restarting non-leader pod {}", podName);
                         // roll the pod and wait until it is ready
                         // this prevents rolling into faulty state (note: this applies just for ZK pods)
                         fut = fut.compose(ignore -> maybeRestartPod(reconciliation, sts, podName, podRestart));
                     } else {
-                        RECONCILIATION_LOGGER.debug(reconciliation, "Deferring restart of leader {}", podName);
+                        LOGGER.debugCr(reconciliation, "Deferring restart of leader {}", podName);
                     }
                 }
                 if (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER) {
@@ -111,7 +111,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                     // Finally roll the leader pod
                     return fut.compose(ar -> {
                         // the leader is rolled as the last
-                        RECONCILIATION_LOGGER.debug(reconciliation, "Possibly restarting leader pod (previously deferred) {}", leader);
+                        LOGGER.debugCr(reconciliation, "Possibly restarting leader pod (previously deferred) {}", leader);
                         return maybeRestartPod(reconciliation, sts, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
                     });
                 }

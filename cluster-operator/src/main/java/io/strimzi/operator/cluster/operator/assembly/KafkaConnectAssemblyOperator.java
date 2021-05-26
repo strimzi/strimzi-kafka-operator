@@ -61,7 +61,7 @@ import java.util.function.Function;
 // Deprecation is suppressed because of KafkaConnectS2I
 @SuppressWarnings("deprecation")
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodOperator podOperator;
@@ -124,7 +124,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         Map<String, String> annotations = new HashMap<>(2);
 
-        RECONCILIATION_LOGGER.debug(reconciliation, "Updating Kafka Connect cluster");
+        LOGGER.debugCr(reconciliation, "Updating Kafka Connect cluster");
 
         Future<KafkaConnectS2I> connectS2ICheck;
         if (connectS2IOperations != null)   {
@@ -275,7 +275,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             if (newBuildRevision.equals(buildState.currentBuildRevision)
                     && !buildState.forceRebuild) {
                 // The revision is the same and rebuild was not forced => nothing to do
-                RECONCILIATION_LOGGER.info(reconciliation, "Build configuration did not changed. Nothing new to build. Container image {} will be used.", buildState.currentImage);
+                LOGGER.infoCr(reconciliation, "Build configuration did not changed. Nothing new to build. Container image {} will be used.", buildState.currentImage);
                 buildState.desiredImage = buildState.currentImage;
                 buildState.desiredBuildRevision = newBuildRevision;
                 return Future.succeededFuture();
@@ -320,11 +320,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                 && !buildState.forceRebuild) {
                             // Builder pod exists, is not failed, and is building the same Dockerfile and we are not
                             // asked to force re-build by the annotation => we re-use the existing build
-                            RECONCILIATION_LOGGER.info(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
+                            LOGGER.infoCr(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
                             return kubernetesBuildWaitForFinish(reconciliation, namespace, connectBuild, buildState, newBuildRevision);
                         } else {
                             // Pod exists, but it either failed or is for different Dockerfile => start new build
-                            RECONCILIATION_LOGGER.info(reconciliation, "Previous build exists, but uses different Dockerfile or failed. New build will be started.");
+                            LOGGER.infoCr(reconciliation, "Previous build exists, but uses different Dockerfile or failed. New build will be started.");
                             return podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null)
                                     .compose(ignore -> kubernetesBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision))
                                     .compose(ignore -> kubernetesBuildWaitForFinish(reconciliation, namespace, connectBuild, buildState, newBuildRevision));
@@ -388,11 +388,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                         ContainerStateTerminated state = pod.getStatus().getContainerStatuses().get(0).getState().getTerminated();
                         buildState.desiredImage = state.getMessage().trim();
                         buildState.desiredBuildRevision = newBuildRevision;
-                        RECONCILIATION_LOGGER.info(reconciliation, "Build completed successfully. New image is {}.", buildState.desiredImage);
+                        LOGGER.infoCr(reconciliation, "Build completed successfully. New image is {}.", buildState.desiredImage);
                         return Future.succeededFuture();
                     } else {
                         ContainerStateTerminated state = pod.getStatus().getContainerStatuses().get(0).getState().getTerminated();
-                        RECONCILIATION_LOGGER.warn(reconciliation, "Build failed with code {}: {}", state.getExitCode(), state.getMessage());
+                        LOGGER.warnCr(reconciliation, "Build failed with code {}: {}", state.getExitCode(), state.getMessage());
                         return Future.failedFuture("The Kafka Connect build failed");
                     }
                 })
@@ -434,7 +434,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                 && !buildState.forceRebuild) {
                             // Build exists, is not failed, and is building the same Dockerfile and we are not
                             // asked to force re-build by the annotation => we re-use the existing build
-                            RECONCILIATION_LOGGER.info(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
+                            LOGGER.infoCr(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
                             buildState.currentBuildName = build.getMetadata().getName();
                             return openShiftBuildWaitForFinish(reconciliation, namespace, connectBuild, buildState, newBuildRevision);
                         } else {
@@ -511,18 +511,18 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                             buildState.desiredImage = image.replace(tag, digest);
                             buildState.desiredBuildRevision = newBuildRevision;
 
-                            RECONCILIATION_LOGGER.info(reconciliation, "Build {} completed successfully. New image is {}.", buildState.currentBuildName, buildState.desiredImage);
+                            LOGGER.infoCr(reconciliation, "Build {} completed successfully. New image is {}.", buildState.currentBuildName, buildState.desiredImage);
                             return Future.succeededFuture();
                         } else {
-                            RECONCILIATION_LOGGER.warn(reconciliation, "Build {} completed successfully. But the new container image was not found.", buildState.currentBuildName);
+                            LOGGER.warnCr(reconciliation, "Build {} completed successfully. But the new container image was not found.", buildState.currentBuildName);
                             return Future.failedFuture("The Kafka Connect build completed, but the new container image was not found.");
                         }
                     } else {
                         // Build failed. If the Status exists, we try to provide more detailed information
                         if (build.getStatus() != null) {
-                            RECONCILIATION_LOGGER.info(reconciliation, "Build {} failed with code {}: {}", buildState.currentBuildName, build.getStatus().getPhase(), build.getStatus().getLogSnippet());
+                            LOGGER.infoCr(reconciliation, "Build {} failed with code {}: {}", buildState.currentBuildName, build.getStatus().getPhase(), build.getStatus().getLogSnippet());
                         } else {
-                            RECONCILIATION_LOGGER.warn(reconciliation, "Build {} failed for unknown reason", buildState.currentBuildName);
+                            LOGGER.warnCr(reconciliation, "Build {} failed for unknown reason", buildState.currentBuildName);
                         }
 
                         return Future.failedFuture("The Kafka Connect build failed.");

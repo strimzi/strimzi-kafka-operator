@@ -38,7 +38,6 @@
 * Update Kaniko executor to 1.6.0
 * Add support for separate control plane listener (disabled by default, available via the `ControlPlaneListener` feature gate)
 * Support for Dual Stack networking
-* Add support for filtering logs by the markers
 
 ### Changes, deprecations and removals
 

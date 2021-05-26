@@ -11,6 +11,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
@@ -24,8 +25,6 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.security.Security;
 import java.time.Duration;
@@ -35,7 +34,7 @@ import java.util.concurrent.CompletionStage;
 
 public class Session extends AbstractVerticle {
 
-    private final static Logger LOGGER = LogManager.getLogger(Session.class);
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(Session.class);
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
@@ -67,7 +66,7 @@ public class Session extends AbstractVerticle {
         for (Config.Value<?> v: Config.keys()) {
             sb.append("\t").append(v.key).append(": ").append(Util.maskPassword(v.key, config.get(v).toString())).append(System.lineSeparator());
         }
-        LOGGER.info("Using config:{}", sb.toString());
+        LOGGER.infoOp("Using config:{}", sb.toString());
         this.metricsRegistry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
     }
 
@@ -84,10 +83,10 @@ public class Session extends AbstractVerticle {
         vertx.executeBlocking(blockingResult -> {
             long timeout = 120_000L;
             long deadline = System.currentTimeMillis() + timeout;
-            LOGGER.info("Stopping");
-            LOGGER.debug("Stopping kube watch");
+            LOGGER.infoOp("Stopping");
+            LOGGER.debugOp("Stopping kube watch");
             topicWatch.close();
-            LOGGER.debug("Stopping zk watches");
+            LOGGER.debugOp("Stopping zk watches");
             topicsWatcher.stop();
 
             Promise<Void> promise = Promise.promise();
@@ -95,13 +94,13 @@ public class Session extends AbstractVerticle {
                 @Override
                 public void handle(Long inflightTimerId) {
                     if (!topicOperator.isWorkInflight()) {
-                        LOGGER.debug("Inflight work has finished");
+                        LOGGER.debugOp("Inflight work has finished");
                         promise.complete();
                     } else if (System.currentTimeMillis() > deadline) {
-                        LOGGER.error("Timeout waiting for inflight work to finish");
+                        LOGGER.errorOp("Timeout waiting for inflight work to finish");
                         promise.complete();
                     } else {
-                        LOGGER.debug("Waiting for inflight work to finish");
+                        LOGGER.debugOp("Waiting for inflight work to finish");
                         vertx.setTimer(1_000, this);
                     }
                 }
@@ -117,13 +116,13 @@ public class Session extends AbstractVerticle {
 
             promise.future().compose(ignored -> {
 
-                LOGGER.debug("Disconnecting from zookeeper {}", zk);
+                LOGGER.debugOp("Disconnecting from zookeeper {}", zk);
                 zk.disconnect(zkResult -> {
                     if (zkResult.failed()) {
-                        LOGGER.warn("Error disconnecting from zookeeper: {}", String.valueOf(zkResult.cause()));
+                        LOGGER.warnOp("Error disconnecting from zookeeper: {}", String.valueOf(zkResult.cause()));
                     }
                     long timeoutMs = Math.max(1, deadline - System.currentTimeMillis());
-                    LOGGER.debug("Closing AdminClient {} with timeout {}ms", adminClient, timeoutMs);
+                    LOGGER.debugOp("Closing AdminClient {} with timeout {}ms", adminClient, timeoutMs);
                     try {
                         adminClient.close(Duration.ofMillis(timeoutMs));
                         HttpServer healthServer = this.healthServer;
@@ -131,9 +130,9 @@ public class Session extends AbstractVerticle {
                             healthServer.close();
                         }
                     } catch (TimeoutException e) {
-                        LOGGER.warn("Timeout while closing AdminClient with timeout {}ms", timeoutMs, e);
+                        LOGGER.warnOp("Timeout while closing AdminClient with timeout {}ms", timeoutMs, e);
                     } finally {
-                        LOGGER.info("Stopped");
+                        LOGGER.infoOp("Stopped");
                         blockingResult.complete();
                     }
                 });
@@ -144,7 +143,7 @@ public class Session extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> start) {
-        LOGGER.info("Starting");
+        LOGGER.infoOp("Starting");
         Properties kafkaClientProps = new Properties();
 
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
@@ -162,18 +161,18 @@ public class Session extends AbstractVerticle {
         }
 
         this.adminClient = AdminClient.create(kafkaClientProps);
-        LOGGER.debug("Using AdminClient {}", adminClient);
+        LOGGER.debugOp("Using AdminClient {}", adminClient);
         this.kafka = new KafkaImpl(adminClient, vertx);
-        LOGGER.debug("Using Kafka {}", kafka);
+        LOGGER.debugOp("Using Kafka {}", kafka);
         Labels labels = config.get(Config.LABELS);
 
         String namespace = config.get(Config.NAMESPACE);
-        LOGGER.debug("Using namespace {}", namespace);
+        LOGGER.debugOp("Using namespace {}", namespace);
         this.k8s = new K8sImpl(vertx, kubeClient, labels, namespace);
-        LOGGER.debug("Using k8s {}", k8s);
+        LOGGER.debugOp("Using k8s {}", k8s);
 
         String clientId = config.get(Config.CLIENT_ID);
-        LOGGER.debug("Using client-Id {}", clientId);
+        LOGGER.debugOp("Using client-Id {}", clientId);
 
         Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
                 this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
@@ -184,7 +183,7 @@ public class Session extends AbstractVerticle {
                     return;
                 }
                 this.zk = zkResult.result();
-                LOGGER.debug("Using ZooKeeper {}", zk);
+                LOGGER.debugOp("Using ZooKeeper {}", zk);
 
                 String topicsPath = config.get(Config.TOPICS_PATH);
                 TopicStore topicStore;
@@ -202,7 +201,7 @@ public class Session extends AbstractVerticle {
                     topicStore = ConcurrentUtil.result(
                             cs.handle((s, t) -> {
                                 if (t != null) {
-                                    LOGGER.error("Failed to create topic store.", t);
+                                    LOGGER.errorOp("Failed to create topic store.", t);
                                     start.fail(t);
                                     return null; // [1]
                                 } else {
@@ -215,26 +214,26 @@ public class Session extends AbstractVerticle {
                     }
                 }
 
-                LOGGER.debug("Using TopicStore {}", topicStore);
+                LOGGER.debugOp("Using TopicStore {}", topicStore);
 
                 this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config, new MicrometerMetricsProvider());
-                LOGGER.debug("Using Operator {}", topicOperator);
+                LOGGER.debugOp("Using Operator {}", topicOperator);
 
                 this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
-                LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
+                LOGGER.debugOp("Using TopicConfigsWatcher {}", topicConfigsWatcher);
                 this.topicWatcher = new ZkTopicWatcher(topicOperator);
-                LOGGER.debug("Using TopicWatcher {}", topicWatcher);
+                LOGGER.debugOp("Using TopicWatcher {}", topicWatcher);
                 this.topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
-                LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
+                LOGGER.debugOp("Using TopicsWatcher {}", topicsWatcher);
                 topicsWatcher.start(zk);
 
                 Promise<Void> initReconcilePromise = Promise.promise();
 
                 watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
-                LOGGER.debug("Starting watcher");
+                LOGGER.debugOp("Starting watcher");
                 startWatcher().compose(
                     ignored -> {
-                        LOGGER.debug("Starting health server");
+                        LOGGER.debugOp("Starting health server");
                         return Future.<Void>succeededFuture();
                     })
                     .compose(i -> startHealthServer())
@@ -263,18 +262,18 @@ public class Session extends AbstractVerticle {
                     }
                 };
                 periodic.handle(null);
-                LOGGER.info("Started");
+                LOGGER.infoOp("Started");
             });
     }
 
     Future<Void> startWatcher() {
         Promise<Void> promise = Promise.promise();
         try {
-            LOGGER.debug("Watching KafkaTopics matching {}", config.get(Config.LABELS).labels());
+            LOGGER.debugOp("Watching KafkaTopics matching {}", config.get(Config.LABELS).labels());
 
             Session.this.topicWatch = kubeClient.customResources(KafkaTopic.class, KafkaTopicList.class)
                     .inNamespace(config.get(Config.NAMESPACE)).withLabels(config.get(Config.LABELS).labels()).watch(watcher);
-            LOGGER.debug("Watching setup");
+            LOGGER.debugOp("Watching setup");
             promise.complete();
         } catch (Throwable t) {
             promise.fail(t);

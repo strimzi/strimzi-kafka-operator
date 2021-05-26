@@ -4,8 +4,7 @@
  */
 package io.strimzi.operator.common.process;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,7 +12,7 @@ import java.util.List;
 
 public class ProcessHelper {
 
-    private static final Logger LOGGER = LogManager.getLogger(ProcessHelper.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ProcessHelper.class);
 
     /**
      * Execute the command given in {@code args}.
@@ -39,28 +38,24 @@ public class ProcessHelper {
         pb.redirectError(stderr);
         pb.redirectOutput(stdout);
         Process p = pb.start();
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Started process {} with command line {}", p, args);
-        }
+        LOGGER.infoOp("Started process {} with command line {}", p, args);
         p.getOutputStream().close();
         int exitCode = p.waitFor();
         // TODO timeout on wait
-        LOGGER.info("Process {}: exited with status {}", p, exitCode);
+        LOGGER.infoOp("Process {}: exited with status {}", p, exitCode);
         return new ProcessResult(p, stdout, stderr);
     }
 
     public static File createTmpFile(String suffix) throws IOException {
         File tmpFile = File.createTempFile(ProcessHelper.class.getName(), suffix);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Created temporary file {}", tmpFile);
-        }
+        LOGGER.traceOp("Created temporary file {}", tmpFile);
         tmpFile.deleteOnExit();
         return tmpFile;
     }
 
     public static void delete(File file) {
         if (!file.delete()) {
-            LOGGER.warn("Unable to delete temporary file {}", file);
+            LOGGER.warnOp("Unable to delete temporary file {}", file);
         }
     }
 

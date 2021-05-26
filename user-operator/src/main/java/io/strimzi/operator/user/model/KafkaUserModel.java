@@ -22,13 +22,12 @@ import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.common.PasswordGenerator;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -43,7 +42,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class KafkaUserModel {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaUserModel.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaUserModel.class.getName());
 
     public static final String KEY_PASSWORD = "password";
     public static final String KEY_SASL_JAAS_CONFIG = "sasl.jaas.config";
@@ -126,7 +125,7 @@ public class KafkaUserModel {
             result.maybeGenerateCertificates(reconciliation, certManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret,
                     UserOperatorConfig.getClientsCaValidityDays(), UserOperatorConfig.getClientsCaRenewalDays());
         } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
-            result.maybeGeneratePassword(passwordGenerator, userSecret);
+            result.maybeGeneratePassword(reconciliation, passwordGenerator, userSecret);
         }
 
         if (kafkaUser.getSpec().getAuthorization() != null && kafkaUser.getSpec().getAuthorization().getType().equals(KafkaUserAuthorizationSimple.TYPE_SIMPLE)) {
@@ -235,7 +234,7 @@ public class KafkaUserModel {
                                     decodeFromSecret(userSecret, "user.key"),
                                     decodeFromSecret(userSecret, "user.crt"));
                         } catch (IOException e) {
-                            LOGGER.error("Error generating the keystore for user {}", name, e);
+                            LOGGER.errorCr(reconciliation, "Error generating the keystore for user {}", name, e);
                         }
                     }
                     return;
@@ -245,17 +244,18 @@ public class KafkaUserModel {
             try {
                 this.userCertAndKey = clientsCa.generateSignedCert(reconciliation, name);
             } catch (IOException e) {
-                LOGGER.error("Error generating signed certificate for user {}", name, e);
+                LOGGER.errorCr(reconciliation, "Error generating signed certificate for user {}", name, e);
             }
 
         }
     }
 
     /**
+     * @param reconciliation The reconciliation.
      * @param generator The password generator.
      * @param userSecret The Secret containing any existing password.
      */
-    public void maybeGeneratePassword(PasswordGenerator generator, Secret userSecret) {
+    public void maybeGeneratePassword(Reconciliation reconciliation, PasswordGenerator generator, Secret userSecret) {
         if (userSecret != null) {
             // Secret already exists -> lets verify if it has a password
             String password = userSecret.getData().get(KEY_PASSWORD);
@@ -264,7 +264,7 @@ public class KafkaUserModel {
                 return;
             }
         }
-        LOGGER.debug("Generating user password");
+        LOGGER.debugCr(reconciliation, "Generating user password");
         this.scramSha512Password = generator.generate();
 
     }

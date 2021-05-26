@@ -20,7 +20,7 @@ import static java.util.Arrays.asList;
  * Abstract class for processing and generating configuration passed by the user.
  */
 public abstract class AbstractConfiguration {
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(AbstractConfiguration.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConfiguration.class.getName());
 
     private final OrderedProperties options = new OrderedProperties();
 
@@ -134,9 +134,9 @@ public abstract class AbstractConfiguration {
                     forbidden = false;
             }
             if (forbidden) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "Configuration option \"{}\" is forbidden and will be ignored", k);
+                LOGGER.warnCr(reconciliation, "Configuration option \"{}\" is forbidden and will be ignored", k);
             } else {
-                RECONCILIATION_LOGGER.trace(reconciliation, "Configuration option \"{}\" is allowed and will be passed to the assembly", k);
+                LOGGER.traceCr(reconciliation, "Configuration option \"{}\" is allowed and will be passed to the assembly", k);
             }
             return forbidden;
         }));

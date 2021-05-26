@@ -219,7 +219,7 @@ public class EntityOperator extends AbstractModel {
     public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
 
         if (!isDeployed()) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "Topic and/or User Operators not declared: Entity Operator will not be deployed");
+            LOGGER.warnCr(reconciliation, "Topic and/or User Operators not declared: Entity Operator will not be deployed");
             return null;
         }
 
@@ -388,7 +388,7 @@ public class EntityOperator extends AbstractModel {
             ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
             rules = cr.getRules();
         } catch (IOException e) {
-            RECONCILIATION_LOGGER.error(reconciliation, "Failed to read entity-operator ClusterRole.", e);
+            LOGGER.errorCr(reconciliation, "Failed to read entity-operator ClusterRole.", e);
             throw new RuntimeException(e);
         }
 

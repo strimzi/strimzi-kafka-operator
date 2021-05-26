@@ -39,8 +39,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -62,8 +60,7 @@ public class ModelUtils {
 
     private ModelUtils() {}
 
-    protected static final Logger LOGGER = LogManager.getLogger(ModelUtils.class.getName());
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(ModelUtils.class.getName());
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ModelUtils.class.getName());
     public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**
@@ -149,15 +146,15 @@ public class ModelUtils {
         }
 
         if (shouldBeRegenerated) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
+            LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
 
             try {
                 certAndKey = clusterCa.generateSignedCert(reconciliation, commonName, Ca.IO_STRIMZI);
             } catch (IOException e) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "Error while generating certificates", e);
+                LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
             }
 
-            RECONCILIATION_LOGGER.debug(reconciliation, "End generating certificates");
+            LOGGER.debugCr(reconciliation, "End generating certificates");
         } else {
             if (secret.getData().get(keyCertName + ".p12") != null &&
                     !secret.getData().get(keyCertName + ".p12").isEmpty() &&
@@ -177,7 +174,7 @@ public class ModelUtils {
                             decodeFromSecret(secret, keyCertName + ".key"),
                             decodeFromSecret(secret, keyCertName + ".crt"));
                 } catch (IOException e) {
-                    RECONCILIATION_LOGGER.error(reconciliation, "Error generating the keystore for {}", keyCertName, e);
+                    LOGGER.errorCr(reconciliation, "Error generating the keystore for {}", keyCertName, e);
                 }
             }
         }

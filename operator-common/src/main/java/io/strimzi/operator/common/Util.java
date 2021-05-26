@@ -24,8 +24,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -55,8 +53,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Util {
-    private static final Logger LOGGER = LogManager.getLogger(Util.class);
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(Util.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Util.class);
 
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
         Promise<T> result = Promise.promise();
@@ -105,7 +102,7 @@ public class Util {
     public static Future<Void> waitFor(Reconciliation reconciliation, Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed,
                                        Predicate<Throwable> failOnError) {
         Promise<Void> promise = Promise.promise();
-        RECONCILIATION_LOGGER.debug(reconciliation, "Waiting for {} to get {}", logContext, logState);
+        LOGGER.debugCr(reconciliation, "Waiting for {} to get {}", logContext, logState);
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<Long>() {
             @Override
@@ -116,18 +113,18 @@ public class Util {
                             if (completed.getAsBoolean())   {
                                 future.complete();
                             } else {
-                                RECONCILIATION_LOGGER.trace(reconciliation, "{} is not {}", logContext, logState);
+                                LOGGER.traceCr(reconciliation, "{} is not {}", logContext, logState);
                                 future.fail("Not " + logState + " yet");
                             }
                         } catch (Throwable e) {
-                            RECONCILIATION_LOGGER.warn(reconciliation, "Caught exception while waiting for {} to get {}", logContext, logState, e);
+                            LOGGER.warnCr(reconciliation, "Caught exception while waiting for {} to get {}", logContext, logState, e);
                             future.fail(e);
                         }
                     },
                     true,
                     res -> {
                         if (res.succeeded()) {
-                            RECONCILIATION_LOGGER.debug(reconciliation, "{} is {}", logContext, logState);
+                            LOGGER.debugCr(reconciliation, "{} is {}", logContext, logState);
                             promise.complete();
                         } else {
                             if (failOnError.test(res.cause())) {
@@ -136,7 +133,7 @@ public class Util {
                                 long timeLeft = deadline - System.currentTimeMillis();
                                 if (timeLeft <= 0) {
                                     String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
-                                    RECONCILIATION_LOGGER.error(reconciliation, exceptionMessage);
+                                    LOGGER.errorCr(reconciliation, exceptionMessage);
                                     promise.fail(new TimeoutException(exceptionMessage));
                                 } else {
                                     // Schedule ourselves to run again
@@ -218,7 +215,7 @@ public class Util {
             return f;
         } catch (IOException e) {
             if (f != null && !f.delete()) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "Failed to delete temporary file in exception handler");
+                LOGGER.warnCr(reconciliation, "Failed to delete temporary file in exception handler");
             }
             throw new RuntimeException(e);
         }
@@ -269,7 +266,7 @@ public class Util {
             return f;
         } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
             if (f != null && !f.delete()) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "Failed to delete temporary file in exception handler");
+                LOGGER.warnCr(reconciliation, "Failed to delete temporary file in exception handler");
             }
             throw e;
         }
@@ -286,7 +283,7 @@ public class Util {
             sb.append("\t").append(entry.getKey()).append(": ").append(maskPassword(entry.getKey(), entry.getValue())).append("\n");
         }
 
-        LOGGER.info("Using config:\n" + sb.toString());
+        LOGGER.infoOp("Using config:\n" + sb.toString());
     }
 
     /**
@@ -365,7 +362,7 @@ public class Util {
             });
             return promise.future();
         } else {
-            RECONCILIATION_LOGGER.trace(reconciliation, "KafkaFuture is null");
+            LOGGER.traceCr(reconciliation, "KafkaFuture is null");
             return Future.succeededFuture();
         }
     }
@@ -514,7 +511,7 @@ public class Util {
         } else if (metricsConfigInCm == null) {
             configMaps.add(Future.succeededFuture(null));
         } else {
-            RECONCILIATION_LOGGER.warn(reconciliation, "Unknown metrics type {}", metricsConfigInCm.getType());
+            LOGGER.warnCr(reconciliation, "Unknown metrics type {}", metricsConfigInCm.getType());
             throw new InvalidResourceException("Unknown metrics type " + metricsConfigInCm.getType());
         }
 

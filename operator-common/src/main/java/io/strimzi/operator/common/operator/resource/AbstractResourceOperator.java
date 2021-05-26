@@ -23,8 +23,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -51,7 +49,6 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
             "^(/metadata/managedFields" +
                     "|/status)$");
 
-    protected final Logger log = LogManager.getLogger(getClass());
     protected final ReconciliationLogger reconciliationLogger = ReconciliationLogger.create(getClass());
     protected final Vertx vertx;
     protected final C client;
@@ -110,19 +107,19 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
                 T current = operation().inNamespace(namespace).withName(name).get();
                 if (desired != null) {
                     if (current == null) {
-                        reconciliationLogger.debug(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
+                        reconciliationLogger.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
                         internalCreate(reconciliation, namespace, name, desired).onComplete(future);
                     } else {
-                        reconciliationLogger.debug(reconciliation, "{} {}/{} already exists, patching it", resourceKind, namespace, name);
+                        reconciliationLogger.debugCr(reconciliation, "{} {}/{} already exists, patching it", resourceKind, namespace, name);
                         internalPatch(reconciliation, namespace, name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
-                        reconciliationLogger.debug(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
+                        reconciliationLogger.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
                         internalDelete(reconciliation, namespace, name).onComplete(future);
                     } else {
-                        reconciliationLogger.debug(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
+                        reconciliationLogger.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
                         future.complete(ReconcileResult.noop(null));
                     }
                 }
@@ -170,7 +167,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
             "observe deletion of " + resourceKind + " " + namespace + "/" + name,
             (action, resource) -> {
                 if (action == Watcher.Action.DELETED) {
-                    reconciliationLogger.debug(reconciliation, "{} {}/{} has been deleted", resourceKind, namespace, name);
+                    reconciliationLogger.debugCr(reconciliation, "{} {}/{} has been deleted", resourceKind, namespace, name);
                     return ReconcileResult.deleted();
                 } else {
                     return null;
@@ -233,14 +230,14 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         if (needsPatching(reconciliation, name, current, desired))  {
             try {
                 T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
-                reconciliationLogger.debug(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                reconciliationLogger.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
             } catch (Exception e) {
-                reconciliationLogger.debug(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+                reconciliationLogger.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                 return Future.failedFuture(e);
             }
         } else {
-            reconciliationLogger.debug(reconciliation, "{} {} in namespace {} did not changed and doesn't need patching", resourceKind, name, namespace);
+            reconciliationLogger.debugCr(reconciliation, "{} {} in namespace {} did not changed and doesn't need patching", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }
@@ -263,10 +260,10 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String namespace, String name, T desired) {
         try {
             ReconcileResult<T> result = ReconcileResult.created(operation().inNamespace(namespace).withName(name).create(desired));
-            reconciliationLogger.debug(reconciliation, "{} {} in namespace {} has been created", resourceKind, name, namespace);
+            reconciliationLogger.debugCr(reconciliation, "{} {} in namespace {} has been created", resourceKind, name, namespace);
             return Future.succeededFuture(result);
         } catch (Exception e) {
-            reconciliationLogger.debug(reconciliation, "Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
+            reconciliationLogger.debugCr(reconciliation, "Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }

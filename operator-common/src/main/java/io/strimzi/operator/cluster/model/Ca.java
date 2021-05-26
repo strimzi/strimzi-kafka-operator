@@ -17,8 +17,6 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -64,8 +62,7 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public abstract class Ca {
 
-    protected static final Logger LOGGER = LogManager.getLogger(Ca.class);
-    protected static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(Ca.class);
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
             .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
@@ -213,7 +210,7 @@ public abstract class Ca {
 
     private static void delete(Reconciliation reconciliation, File file) {
         if (!file.delete()) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "{} cannot be deleted", file.getName());
+            LOGGER.warnCr(reconciliation, "{} cannot be deleted", file.getName());
         }
     }
 
@@ -279,7 +276,7 @@ public abstract class Ca {
 
     /*test*/ CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
                                             File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
-        RECONCILIATION_LOGGER.debug(reconciliation, "Generating certificate {} with SAN {}, signed by CA {}", subject, subject.subjectAltNames(), this);
+        LOGGER.debugCr(reconciliation, "Generating certificate {} with SAN {}, signed by CA {}", subject, subject.subjectAltNames(), this);
 
         certManager.generateCsr(keyFile, csrFile, subject);
         certManager.generateCert(csrFile, currentCaKey(), currentCaCertBytes(),
@@ -369,7 +366,7 @@ public abstract class Ca {
         // scale down -> it will copy just the requested number of replicas
         for (int i = 0; i < replicasInNewSecret; i++) {
             String podName = podNameFn.apply(i);
-            RECONCILIATION_LOGGER.debug(reconciliation, "Certificate for {} already exists", podName);
+            LOGGER.debugCr(reconciliation, "Certificate for {} already exists", podName);
             Subject subject = subjectFn.apply(i);
 
             CertAndKey certAndKey;
@@ -403,7 +400,7 @@ public abstract class Ca {
             }
 
             if (!reasons.isEmpty())  {
-                RECONCILIATION_LOGGER.debug(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
+                LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
 
                 CertAndKey newCertAndKey = generateSignedCert(reconciliation, subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
                 certs.put(podName, newCertAndKey);
@@ -418,7 +415,7 @@ public abstract class Ca {
         for (int i = replicasInSecret; i < replicas; i++) {
             String podName = podNameFn.apply(i);
 
-            RECONCILIATION_LOGGER.debug(reconciliation, "Certificate for {} to generate", podName);
+            LOGGER.debugCr(reconciliation, "Certificate for {} to generate", podName);
             CertAndKey k = generateSignedCert(reconciliation, subjectFn.apply(i),
                     brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
             certs.put(podName, k);
@@ -447,7 +444,7 @@ public abstract class Ca {
             isExpiring = certNeedsRenewal(reconciliation, currentCert);
         } catch (RuntimeException e) {
             // TODO: We should mock the certificates properly so that this doesn't fail in tests (not now => long term :-o)
-            RECONCILIATION_LOGGER.debug(reconciliation, "Failed to parse existing certificate", e);
+            LOGGER.debugCr(reconciliation, "Failed to parse existing certificate", e);
         }
 
         return isExpiring;
@@ -467,10 +464,10 @@ public abstract class Ca {
         Collection<String> currentAltNames = getSubjectAltNames(reconciliation, certAndKey.cert());
 
         if (currentAltNames != null && desiredAltNames.containsAll(currentAltNames) && currentAltNames.containsAll(desiredAltNames))   {
-            RECONCILIATION_LOGGER.trace(reconciliation, "Alternate subjects match. No need to refresh cert for pod {}.", podName);
+            LOGGER.traceCr(reconciliation, "Alternate subjects match. No need to refresh cert for pod {}.", podName);
             return false;
         } else {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Alternate subjects for pod {} differ - current: {}; desired: {}", podName, currentAltNames, desiredAltNames);
+            LOGGER.debugCr(reconciliation, "Alternate subjects for pod {} differ - current: {}; desired: {}", podName, currentAltNames, desiredAltNames);
             return true;
         }
     }
@@ -494,7 +491,7 @@ public abstract class Ca {
                     .collect(Collectors.toList());
         } catch (CertificateException | RuntimeException e) {
             // TODO: We should mock the certificates properly so that this doesn't fail in tests (not now => long term :-o)
-            RECONCILIATION_LOGGER.debug(reconciliation, "Failed to parse existing certificate", e);
+            LOGGER.debugCr(reconciliation, "Failed to parse existing certificate", e);
         }
 
         return subjectAltNames;
@@ -526,7 +523,7 @@ public abstract class Ca {
             caCertsRemoved = false;
         } else {
             this.renewalType = shouldCreateOrRenew(reconciliation, currentCert, namespace, clusterName, maintenanceWindowSatisfied);
-            RECONCILIATION_LOGGER.debug(reconciliation, "{} renewalType {}", this, renewalType);
+            LOGGER.debugCr(reconciliation, "{} renewalType {}", this, renewalType);
             switch (renewalType) {
                 case CREATE:
                     keyData = new HashMap<>(1);
@@ -563,10 +560,10 @@ public abstract class Ca {
         SecretCertProvider secretCertProvider = new SecretCertProvider();
 
         if (caCertsRemoved) {
-            RECONCILIATION_LOGGER.info(reconciliation, "{}: Expired CA certificates removed", this);
+            LOGGER.infoCr(reconciliation, "{}: Expired CA certificates removed", this);
         }
         if (renewalType != RenewalType.NOOP && renewalType != RenewalType.POSTPONED) {
-            RECONCILIATION_LOGGER.debug(reconciliation, "{}: {}", this, renewalType.postDescription(caKeySecretName, caCertSecretName));
+            LOGGER.debugCr(reconciliation, "{}: {}", this, renewalType.postDescription(caKeySecretName, caCertSecretName));
         }
 
         // cluster CA certificate annotation handling
@@ -663,33 +660,33 @@ public abstract class Ca {
             case RENEW_CERT:
             case CREATE:
                 if (generateCa) {
-                    RECONCILIATION_LOGGER.debug(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
+                    LOGGER.debugCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
                 } else {
-                    RECONCILIATION_LOGGER.warn(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
+                    LOGGER.warnCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
                 }
                 break;
             case POSTPONED:
-                RECONCILIATION_LOGGER.warn(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
+                LOGGER.warnCr(reconciliation, "{}: {}: {}", this, renewalType.preDescription(caKeySecretName, caCertSecretName), reason);
                 break;
             case NOOP:
-                RECONCILIATION_LOGGER.debug(reconciliation, "{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
+                LOGGER.debugCr(reconciliation, "{}: The CA certificate in secret {} already exists and does not need renewing", this, caCertSecretName);
                 break;
         }
         if (!generateCa) {
             if (renewalType.equals(RenewalType.RENEW_CERT)) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "The certificate (data.{}) in Secret {} in namespace {} needs to be renewed " +
+                LOGGER.warnCr(reconciliation, "The certificate (data.{}) in Secret {} in namespace {} needs to be renewed " +
                                 "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
                                 "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
                         CA_CRT.replace(".", "\\."), this.caCertSecretName, namespace,
                         currentCert.getNotAfter());
             } else if (renewalType.equals(RenewalType.REPLACE_KEY)) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "The private key (data.{}) in Secret {} in namespace {} needs to be renewed " +
+                LOGGER.warnCr(reconciliation, "The private key (data.{}) in Secret {} in namespace {} needs to be renewed " +
                                 "and it is not configured to automatically renew. This needs to be manually updated before that date. " +
                                 "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
                         CA_KEY.replace(".", "\\."), this.caKeySecretName, namespace,
                         currentCert.getNotAfter());
             } else if (caCertSecret == null) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "The certificate (data.{}) in Secret {} and the private key (data.{}) in Secret {} in namespace {} " +
+                LOGGER.warnCr(reconciliation, "The certificate (data.{}) in Secret {} and the private key (data.{}) in Secret {} in namespace {} " +
                                 "needs to be configured with a Base64 encoded PEM-format certificate. " +
                                 "Alternatively, configure Kafka.spec.tlsCertificates.generateCertificateAuthority=true in the Kafka resource with name {} in namespace {}.",
                         CA_CRT.replace(".", "\\."), this.caCertSecretName,
@@ -780,7 +777,7 @@ public abstract class Ca {
                 Instant expiryDate = cert.getNotAfter().toInstant();
                 remove = expiryDate.isBefore(Instant.now());
                 if (remove) {
-                    RECONCILIATION_LOGGER.debug(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
+                    LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
                             certName.replace(".", "\\."), expiryDate);
                 }
             } catch (CertificateException e) {
@@ -788,12 +785,12 @@ public abstract class Ca {
                 // doesn't remove stores and related password
                 if (!certName.endsWith(".p12") && !certName.endsWith(".password")) {
                     remove = true;
-                    RECONCILIATION_LOGGER.debug(reconciliation, "The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
+                    LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
                             certName.replace(".", "\\."));
                 }
             }
             if (remove) {
-                RECONCILIATION_LOGGER.debug(reconciliation, "Removing data.{} from Secret",
+                LOGGER.debugCr(reconciliation, "Removing data.{} from Secret",
                         certName.replace(".", "\\."));
                 iter.remove();
                 removed.add(certName);
@@ -822,7 +819,7 @@ public abstract class Ca {
 
     public boolean certNeedsRenewal(Reconciliation reconciliation, X509Certificate cert)  {
         Date notAfter = cert.getNotAfter();
-        RECONCILIATION_LOGGER.trace(reconciliation, "Certificate {} expires on {}", cert.getSubjectDN(), notAfter);
+        LOGGER.traceCr(reconciliation, "Certificate {} expires on {}", cert.getSubjectDN(), notAfter);
         long msTillExpired = notAfter.getTime() - System.currentTimeMillis();
         return msTillExpired < renewalDays * 24L * 60L * 60L * 1000L;
     }
@@ -905,7 +902,7 @@ public abstract class Ca {
 
     private void generateCaKeyAndCert(Reconciliation reconciliation, Subject subject, Map<String, String> keyData, Map<String, String> certData) {
         try {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Generating CA with subject={}", subject);
+            LOGGER.debugCr(reconciliation, "Generating CA with subject={}", subject);
             File keyFile = File.createTempFile("tls", subject.commonName() + "-key");
             try {
                 File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
@@ -948,7 +945,7 @@ public abstract class Ca {
 
     private void renewCaCert(Reconciliation reconciliation, Subject subject, Map<String, String> certData) {
         try {
-            RECONCILIATION_LOGGER.debug(reconciliation, "Renewing CA with subject={}, org={}", subject);
+            LOGGER.debugCr(reconciliation, "Renewing CA with subject={}, org={}", subject);
 
             Base64.Decoder decoder = Base64.getDecoder();
             byte[] bytes = decoder.decode(caKeySecret.getData().get(CA_KEY));

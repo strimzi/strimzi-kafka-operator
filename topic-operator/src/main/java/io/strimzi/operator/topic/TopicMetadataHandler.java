@@ -6,11 +6,10 @@ package io.strimzi.operator.topic;
 
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
 
@@ -20,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicMetadata>> {
 
-    private static final Logger LOGGER = LogManager.getLogger(TopicMetadataHandler.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicMetadataHandler.class);
 
     private final BackOff backOff;
 
@@ -63,9 +62,9 @@ public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicM
         long delay;
         try {
             delay = backOff.delayMs();
-            LOGGER.debug("Backing off for {}ms on getting metadata for {}", delay, topicName);
+            LOGGER.debugOp("Backing off for {}ms on getting metadata for {}", delay, topicName);
         } catch (MaxAttemptsExceededException e) {
-            LOGGER.info("Max attempts reached on getting metadata for {} after {}ms, giving up for now", topicName, backOff.totalDelayMs());
+            LOGGER.infoOp("Max attempts reached on getting metadata for {} after {}ms, giving up for now", topicName, backOff.totalDelayMs());
             this.onMaxAttemptsExceeded(e);
             return;
         }

@@ -208,7 +208,7 @@ public class ZookeeperCluster extends AbstractModel {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
         if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
+            LOGGER.warnCr(reconciliation, "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
         zk.setReplicas(replicas);
 
@@ -248,11 +248,11 @@ public class ZookeeperCluster extends AbstractModel {
             StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, oldReplicas, zookeeperClusterSpec.getReplicas());
 
             if (!diff.isEmpty()) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "Only the following changes to Zookeeper storage are allowed: " +
+                LOGGER.warnCr(reconciliation, "Only the following changes to Zookeeper storage are allowed: " +
                         "changing the deleteClaim flag, " +
                         "changing overrides to nodes which do not exist yet " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                RECONCILIATION_LOGGER.warn(reconciliation, "The desired ZooKeeper storage configuration in the custom resource {}/{} contains changes which are not allowed. As " +
+                LOGGER.warnCr(reconciliation, "The desired ZooKeeper storage configuration in the custom resource {}/{} contains changes which are not allowed. As " +
                         "a result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
@@ -439,7 +439,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .endSpec()
                 .build();
 
-        RECONCILIATION_LOGGER.trace(reconciliation, "Created network policy {}", networkPolicy);
+        LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
         return networkPolicy;
     }
 
@@ -468,13 +468,13 @@ public class ZookeeperCluster extends AbstractModel {
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
      */
     public void generateCertificates(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        RECONCILIATION_LOGGER.debug(reconciliation, "Generating certificates");
+        LOGGER.debugCr(reconciliation, "Generating certificates");
         try {
             nodeCerts = clusterCa.generateZkCerts(reconciliation, kafka, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "Error while generating certificates", e);
+            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }
-        RECONCILIATION_LOGGER.debug(reconciliation, "End generating certificates");
+        LOGGER.debugCr(reconciliation, "End generating certificates");
     }
 
     /**

@@ -26,7 +26,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaRebalanceUtils {
 
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaRebalanceUtils.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRebalanceUtils.class);
 
     private KafkaRebalanceUtils() {}
 
@@ -41,10 +41,10 @@ public class KafkaRebalanceUtils {
         if (statusConditions.size() == 1) {
             return statusConditions.get(0);
         } else if (statusConditions.size() > 1) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "Multiple KafkaRebalance State Conditions were present in the KafkaRebalance status");
+            LOGGER.warnCr(reconciliation, "Multiple KafkaRebalance State Conditions were present in the KafkaRebalance status");
             throw new RuntimeException("Multiple KafkaRebalance State Conditions were present in the KafkaRebalance status");
         } else {
-            RECONCILIATION_LOGGER.warn(reconciliation, "No KafkaRebalance State Conditions were present in the KafkaRebalance status");
+            LOGGER.warnCr(reconciliation, "No KafkaRebalance State Conditions were present in the KafkaRebalance status");
             throw new RuntimeException("No KafkaRebalance State Conditions were present in the KafkaRebalance status");
         }
     }
@@ -59,7 +59,7 @@ public class KafkaRebalanceUtils {
     }
 
     public static String annotateKafkaRebalanceResource(Reconciliation reconciliation, String namespaceName, String resourceName, KafkaRebalanceAnnotation annotation) {
-        RECONCILIATION_LOGGER.info(reconciliation, "Annotating KafkaRebalance:{} with annotation {}", resourceName, annotation.toString());
+        LOGGER.infoCr(reconciliation, "Annotating KafkaRebalance:{} with annotation {}", resourceName, annotation.toString());
         return ResourceManager.cmdKubeClient().namespace(namespaceName)
             .execInCurrentNamespace("annotate", "kafkarebalance", resourceName, Annotations.ANNO_STRIMZI_IO_REBALANCE + "=" + annotation.toString())
             .out()
@@ -73,26 +73,26 @@ public class KafkaRebalanceUtils {
     public static void doRebalancingProcess(Reconciliation reconciliation, String namespaceName, String rebalanceName) {
         // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
         if (!rebalanceStateCondition(reconciliation, namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
-            RECONCILIATION_LOGGER.info(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
+            LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
             waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.PendingProposal);
 
-            RECONCILIATION_LOGGER.info(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
+            LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
 
             waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);
         }
 
-        RECONCILIATION_LOGGER.info(reconciliation, "Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
+        LOGGER.infoCr(reconciliation, "Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
         String response = annotateKafkaRebalanceResource(reconciliation, namespaceName, rebalanceName, KafkaRebalanceAnnotation.approve);
 
-        RECONCILIATION_LOGGER.info(reconciliation, "Response from the annotation process {}", response);
+        LOGGER.infoCr(reconciliation, "Response from the annotation process {}", response);
 
-        RECONCILIATION_LOGGER.info(reconciliation, "Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
+        LOGGER.infoCr(reconciliation, "Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
 
         waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.Rebalancing);
 
-        RECONCILIATION_LOGGER.info(reconciliation, "Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
+        LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
 
         waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.Ready);
     }
@@ -106,15 +106,15 @@ public class KafkaRebalanceUtils {
             if (KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get().getStatus().equals(oldStatus)) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
-                    RECONCILIATION_LOGGER.info(reconciliation, "KafkaRebalance status is stable for {} polls intervals", stableCounter[0]);
+                    LOGGER.infoCr(reconciliation, "KafkaRebalance status is stable for {} polls intervals", stableCounter[0]);
                     return true;
                 }
             } else {
-                RECONCILIATION_LOGGER.info(reconciliation, "KafkaRebalance status is not stable. Going to set the counter to zero.");
+                LOGGER.infoCr(reconciliation, "KafkaRebalance status is not stable. Going to set the counter to zero.");
                 stableCounter[0] = 0;
                 return false;
             }
-            RECONCILIATION_LOGGER.info(reconciliation, "KafkaRebalance status gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            LOGGER.infoCr(reconciliation, "KafkaRebalance status gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
             return false;
         });
     }

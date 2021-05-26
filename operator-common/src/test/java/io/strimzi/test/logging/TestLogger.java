@@ -75,7 +75,7 @@ public class TestLogger extends ReconciliationLogger {
     }
 
     @Override
-    public void warn(Reconciliation reconciliation, String msg) {
+    public void warnCr(Reconciliation reconciliation, String msg) {
         loggedMessages.add(new LoggedMessage(Level.WARN, null, reconciliation.toString() + ": " + msg, null));
     }
 }

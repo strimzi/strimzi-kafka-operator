@@ -29,14 +29,13 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 public class PartialRollingUpdateTest {
 
-    private static final Logger LOGGER = LogManager.getLogger(PartialRollingUpdateTest.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PartialRollingUpdateTest.class);
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -147,7 +146,7 @@ public class PartialRollingUpdateTest {
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
 
-        LOGGER.info("bootstrap reconciliation");
+        LOGGER.infoOp("bootstrap reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
@@ -157,7 +156,7 @@ public class PartialRollingUpdateTest {
             context.failNow(new Throwable("Test timeout"));
         }
         context.completeNow();
-        LOGGER.info("bootstrap reconciliation complete");
+        LOGGER.infoOp("bootstrap reconciliation complete");
 
         this.kafkaSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
         this.zkSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get();
@@ -200,7 +199,7 @@ public class PartialRollingUpdateTest {
 
         this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
-        LOGGER.info("Started test KafkaAssemblyOperator");
+        LOGGER.infoOp("Started test KafkaAssemblyOperator");
     }
 
     @Test
@@ -215,7 +214,7 @@ public class PartialRollingUpdateTest {
         // Now start the KafkaAssemblyOperator with those pods and that statefulset
         startKube();
 
-        LOGGER.info("Recovery reconciliation");
+        LOGGER.infoOp("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
@@ -239,7 +238,7 @@ public class PartialRollingUpdateTest {
         // Now start the KafkaAssemblyOperator with those pods and that statefulset
         startKube();
 
-        LOGGER.info("Recovery reconciliation");
+        LOGGER.infoOp("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
@@ -269,7 +268,7 @@ public class PartialRollingUpdateTest {
         // Now start the KafkaAssemblyOperator with those pods and that statefulset
         startKube();
 
-        LOGGER.info("Recovery reconciliation");
+        LOGGER.infoOp("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
@@ -302,7 +301,7 @@ public class PartialRollingUpdateTest {
         // Now start the KafkaAssemblyOperator with those pods and that statefulset
         startKube();
 
-        LOGGER.info("Recovery reconciliation");
+        LOGGER.infoOp("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();

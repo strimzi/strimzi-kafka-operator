@@ -57,7 +57,7 @@ import java.util.function.Function;
 // Deprecation is suppressed because of KafkaConnectS2I
 @SuppressWarnings("deprecation")
 public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> {
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaConnectS2IAssemblyOperator.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectS2IAssemblyOperator.class.getName());
 
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
@@ -116,7 +116,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
 
-        RECONCILIATION_LOGGER.debug(reconciliation, "Updating Kafka Connect S2I cluster");
+        LOGGER.debugCr(reconciliation, "Updating Kafka Connect S2I cluster");
 
         connectOperations.getAsync(kafkaConnectS2I.getMetadata().getNamespace(), kafkaConnectS2I.getMetadata().getName())
                 .compose(otherConnect -> {
@@ -203,7 +203,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
                 if (connect != null) {
                     if (StatusUtils.isResourceV1alpha1(connect)) {
-                        RECONCILIATION_LOGGER.warn(reconciliation, "The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", connect.getApiVersion());
+                        LOGGER.warnCr(reconciliation, "The resource needs to be upgraded from version {} to 'v1beta1' to use the status field", connect.getApiVersion());
                         updateStatusPromise.complete();
                     } else {
                         KafkaConnectS2IStatus currentStatus = connect.getStatus();
@@ -215,24 +215,24 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
 
                             ((CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList>) resourceOperator).updateStatusAsync(reconciliation, resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
-                                    RECONCILIATION_LOGGER.debug(reconciliation, "Completed status update");
+                                    LOGGER.debugCr(reconciliation, "Completed status update");
                                     updateStatusPromise.complete();
                                 } else {
-                                    RECONCILIATION_LOGGER.error(reconciliation, "Failed to update status", updateRes.cause());
+                                    LOGGER.errorCr(reconciliation, "Failed to update status", updateRes.cause());
                                     updateStatusPromise.fail(updateRes.cause());
                                 }
                             });
                         } else {
-                            RECONCILIATION_LOGGER.debug(reconciliation, "Status did not change");
+                            LOGGER.debugCr(reconciliation, "Status did not change");
                             updateStatusPromise.complete();
                         }
                     }
                 } else {
-                    RECONCILIATION_LOGGER.error(reconciliation, "Current Kafka ConnectS2I resource not found");
+                    LOGGER.errorCr(reconciliation, "Current Kafka ConnectS2I resource not found");
                     updateStatusPromise.fail("Current Kafka ConnectS2I resource not found");
                 }
             } else {
-                RECONCILIATION_LOGGER.error(reconciliation, "Failed to get the current Kafka ConnectS2I resource and its status", getRes.cause());
+                LOGGER.errorCr(reconciliation, "Failed to get the current Kafka ConnectS2I resource and its status", getRes.cause());
                 updateStatusPromise.fail(getRes.cause());
             }
         });

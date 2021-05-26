@@ -430,12 +430,12 @@ public class KafkaCluster extends AbstractModel {
             StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, oldReplicas, kafkaClusterSpec.getReplicas());
 
             if (!diff.isEmpty()) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "Only the following changes to Kafka storage are allowed: " +
+                LOGGER.warnCr(reconciliation, "Only the following changes to Kafka storage are allowed: " +
                         "changing the deleteClaim flag, " +
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
                         "changing overrides to nodes which do not exist yet" +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                RECONCILIATION_LOGGER.warn(reconciliation, "The desired Kafka storage configuration in the custom resource {}/{} contains changes which are not allowed. As a " +
+                LOGGER.warnCr(reconciliation, "The desired Kafka storage configuration in the custom resource {}/{} contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
@@ -459,7 +459,7 @@ public class KafkaCluster extends AbstractModel {
 
         // Configure listeners
         if (kafkaClusterSpec.getListeners() == null || kafkaClusterSpec.getListeners().getGenericKafkaListeners() == null) {
-            RECONCILIATION_LOGGER.error(reconciliation, "The required field .spec.kafka.listeners is missing");
+            LOGGER.errorCr(reconciliation, "The required field .spec.kafka.listeners is missing");
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
         List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners().getGenericKafkaListeners();
@@ -473,7 +473,7 @@ public class KafkaCluster extends AbstractModel {
             } else {
                 KafkaAuthorizationKeycloak authorizationKeycloak = (KafkaAuthorizationKeycloak) kafkaClusterSpec.getAuthorization();
                 if (authorizationKeycloak.getClientId() == null || authorizationKeycloak.getTokenEndpointUri() == null) {
-                    RECONCILIATION_LOGGER.error(reconciliation, "Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                    LOGGER.errorCr(reconciliation, "Keycloak Authorization: Token Endpoint URI and clientId are both required");
                     throw new InvalidResourceException("Keycloak Authorization: Token Endpoint URI and clientId are both required");
                 }
             }
@@ -638,7 +638,7 @@ public class KafkaCluster extends AbstractModel {
 
         if (!errorsInConfig.isEmpty()) {
             for (String error : errorsInConfig) {
-                RECONCILIATION_LOGGER.warn(reconciliation, "Kafka {}/{} has invalid spec.kafka.config: {}",
+                LOGGER.warnCr(reconciliation, "Kafka {}/{} has invalid spec.kafka.config: {}",
                         kafkaAssembly.getMetadata().getNamespace(),
                         kafkaAssembly.getMetadata().getName(),
                         error);
@@ -675,15 +675,15 @@ public class KafkaCluster extends AbstractModel {
      */
     public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName,
                                      Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
-        RECONCILIATION_LOGGER.debug(reconciliation, "Generating certificates");
+        LOGGER.debugCr(reconciliation, "Generating certificates");
 
         try {
             brokerCerts = clusterCa.generateBrokerCerts(reconciliation, kafka, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
-            RECONCILIATION_LOGGER.warn(reconciliation, "Error while generating certificates", e);
+            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }
 
-        RECONCILIATION_LOGGER.debug(reconciliation, "End generating certificates");
+        LOGGER.debugCr(reconciliation, "End generating certificates");
     }
 
     /**
@@ -1803,7 +1803,7 @@ public class KafkaCluster extends AbstractModel {
                 .endSpec()
                 .build();
 
-        RECONCILIATION_LOGGER.trace(reconciliation, "Created network policy {}", networkPolicy);
+        LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
         return networkPolicy;
     }
 

@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  */
 public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec, KafkaUserStatus,
         CrdOperator<KubernetesClient, KafkaUser, KafkaUserList>> {
-    private static final ReconciliationLogger RECONCILIATION_LOGGER = ReconciliationLogger.create(KafkaUserOperator.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaUserOperator.class.getName());
 
     private final SecretOperator secretOperations;
     private final SimpleAclOperator aclOperations;
@@ -149,7 +149,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
             return Future.failedFuture(new ReconciliationException(userStatus, e));
         }
 
-        RECONCILIATION_LOGGER.debug(reconciliation, "Updating User {} in namespace {}", userName, namespace);
+        LOGGER.debugCr(reconciliation, "Updating User {} in namespace {}", userName, namespace);
         Secret desired = user.generateSecret();
         String password = null;
 
@@ -217,7 +217,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String user = reconciliation.name();
-        RECONCILIATION_LOGGER.debug(reconciliation, "Deleting User {} from namespace {}", user, namespace);
+        LOGGER.debugCr(reconciliation, "Deleting User {} from namespace {}", user, namespace);
         return CompositeFuture.join(secretOperations.reconcile(reconciliation, namespace, KafkaUserModel.getSecretName(secretPrefix, user), null),
                 aclOperations.reconcile(KafkaUserModel.getTlsUserName(user), null),
                 aclOperations.reconcile(KafkaUserModel.getScramUserName(user), null),

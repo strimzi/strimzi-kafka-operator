@@ -18,6 +18,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.junit5.VertxExtension;
@@ -25,8 +26,6 @@ import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import okhttp3.OkHttpClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -54,7 +53,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static Vertx vertx;
-    private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ClusterOperatorTest.class);
 
     private static Map<String, String> buildEnv(String namespaces) {
         Map<String, String> env = new HashMap<>();
@@ -176,7 +175,7 @@ public class ClusterOperatorTest {
                 for (String deploymentId: vertx.deploymentIDs()) {
                     vertx.undeploy(deploymentId, asyncResult -> {
                         if (asyncResult.failed()) {
-                            LOGGER.error("Failed to undeploy {}", deploymentId);
+                            LOGGER.errorOp("Failed to undeploy {}", deploymentId);
                             context.failNow(asyncResult.cause());
                         }
                         latch.countDown();
@@ -251,7 +250,7 @@ public class ClusterOperatorTest {
                 for (String deploymentId: vertx.deploymentIDs()) {
                     vertx.undeploy(deploymentId, asyncResult -> {
                         if (asyncResult.failed()) {
-                            LOGGER.error("Failed to undeploy {}", deploymentId);
+                            LOGGER.errorOp("Failed to undeploy {}", deploymentId);
                             context.failNow(asyncResult.cause());
                         }
                         latch.countDown();

@@ -14,6 +14,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -26,8 +27,6 @@ import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,7 +60,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ZookeeperLeaderFinderTest {
 
-    private static final Logger LOGGER = LogManager.getLogger(ZookeeperLeaderFinderTest.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ZookeeperLeaderFinderTest.class);
 
     public static final String NAMESPACE = "testns";
     public static final String CLUSTER = "testcluster";
@@ -138,17 +137,17 @@ public class ZookeeperLeaderFinderTest {
             try {
                 countDownLatch.await(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                LOGGER.error("Failed to close zk instance {}", e);
+                LOGGER.errorOp("Failed to close zk instance {}", e);
             }
         }
 
         public Future<Integer> start() {
             Promise<Integer> promise = Promise.promise();
 
-            netServer.exceptionHandler(ex -> LOGGER.error(ex))
+            netServer.exceptionHandler(ex -> LOGGER.errorOp(ex))
                 .connectHandler(socket -> {
-                    LOGGER.debug("ZK {}: client connection to {}, from {}", id, socket.localAddress(), socket.remoteAddress());
-                    socket.exceptionHandler(ex -> LOGGER.error(ex));
+                    LOGGER.debugOp("ZK {}: client connection to {}, from {}", id, socket.localAddress(), socket.remoteAddress());
+                    socket.exceptionHandler(ex -> LOGGER.errorOp(ex));
                     StringBuffer sb = new StringBuffer();
                     socket.handler(buf -> {
                         sb.append(buf.toString());
@@ -156,14 +155,14 @@ public class ZookeeperLeaderFinderTest {
                             socket.write("vesvsebserb\n");
                             int attempt = attempts.getAndIncrement();
                             if (isLeader.apply(attempt)) {
-                                LOGGER.debug("ZK {}: is leader on attempt {}", id, attempt);
+                                LOGGER.debugOp("ZK {}: is leader on attempt {}", id, attempt);
                                 socket.write("Mode: ");
                                 socket.write("leader\n");
                             } else {
-                                LOGGER.debug("ZK {}: is not leader on attempt {}", id, attempt);
+                                LOGGER.debugOp("ZK {}: is not leader on attempt {}", id, attempt);
                             }
                             socket.write("vesvsebserb\n");
-                            LOGGER.debug("ZK {}: Sent response, closing", id);
+                            LOGGER.debugOp("ZK {}: Sent response, closing", id);
                             socket.close();
                         }
                     });
@@ -187,7 +186,7 @@ public class ZookeeperLeaderFinderTest {
             FakeZk zk = new FakeZk(id, attempt -> fn.apply(id, attempt));
             zks.add(zk);
             zk.start().onComplete(context.succeeding(port -> {
-                LOGGER.debug("ZK {} listening on port {}", id, port);
+                LOGGER.debugOp("ZK {} listening on port {}", id, port);
                 result[id] = port;
                 async.countDown();
             }));

@@ -91,7 +91,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
             }
 
             warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", msg, transitionTime));
-            reconciliationLogger.warn(reconciliation, msg);
+            reconciliationLogger.warnCr(reconciliation, msg);
         }
 
         // Look for deprecated objects. With OneOf, the field might not be deprecated, but the used value might be
@@ -113,7 +113,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                 msg += ".";
 
                 warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedObjects", msg, transitionTime));
-                reconciliationLogger.warn(reconciliation, msg);
+                reconciliationLogger.warnCr(reconciliation, msg);
             }
         }
     }
@@ -138,7 +138,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));
 
-                reconciliationLogger.warn(reconciliation, msg);
+                reconciliationLogger.warnCr(reconciliation, msg);
                 warningConditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg, transitionTime));
             }
         }

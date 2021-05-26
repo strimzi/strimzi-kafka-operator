@@ -11,11 +11,10 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NoImageException;
 import io.strimzi.operator.cluster.model.UnsupportedVersionException;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableResourceOperator;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,7 +32,7 @@ import static java.util.Collections.unmodifiableSet;
  * Cluster Operator configuration
  */
 public class ClusterOperatorConfig {
-    private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorConfig.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ClusterOperatorConfig.class.getName());
 
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -159,7 +158,7 @@ public class ClusterOperatorConfig {
      */
     private static void warningsForRemovedEndVars(Map<String, String> map) {
         if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE))    {
-            LOGGER.warn("Kafka TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
+            LOGGER.warnOp("Kafka TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
                     "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE);
         }
     }

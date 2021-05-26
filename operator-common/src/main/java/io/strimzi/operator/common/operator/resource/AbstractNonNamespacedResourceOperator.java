@@ -14,13 +14,12 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -43,7 +42,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
             "^(/metadata/managedFields" +
                     "|/status)$");
 
-    protected final Logger log = LogManager.getLogger(getClass());
+    protected final ReconciliationLogger log = ReconciliationLogger.create(getClass());
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
@@ -99,19 +98,19 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                 T current = operation().withName(name).get();
                 if (desired != null) {
                     if (current == null) {
-                        log.debug("{} {} does not exist, creating it", resourceKind, name);
-                        internalCreate(name, desired).onComplete(future);
+                        log.debugCr(reconciliation, "{} {} does not exist, creating it", resourceKind, name);
+                        internalCreate(reconciliation, name, desired).onComplete(future);
                     } else {
-                        log.debug("{} {} already exists, patching it", resourceKind, name);
+                        log.debugCr(reconciliation, "{} {} already exists, patching it", resourceKind, name);
                         internalPatch(reconciliation, name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
-                        log.debug("{} {} exist, deleting it", resourceKind, name);
-                        internalDelete(name).onComplete(future);
+                        log.debugCr(reconciliation, "{} {} exist, deleting it", resourceKind, name);
+                        internalDelete(reconciliation, name).onComplete(future);
                     } else {
-                        log.debug("{} {} does not exist, noop", resourceKind, name);
+                        log.debugCr(reconciliation, "{} {} does not exist, noop", resourceKind, name);
                         future.complete(ReconcileResult.noop(null));
                     }
                 }
@@ -131,18 +130,19 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * Asynchronously deletes the resource with the given {@code name},
      * returning a Future which completes once the resource
      * is observed to have been deleted.
+     * @param reconciliation The reconciliation
      * @param name The resource to be deleted.
      * @return A future which will be completed on the context thread
      * once the resource has been deleted.
      */
-    private Future<ReconcileResult<T>> internalDelete(String name) {
+    private Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String name) {
         R resourceOp = operation().withName(name);
         Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
                 deleteTimeoutMs(),
             "observe deletion of " + resourceKind + " " + name,
             (action, resource) -> {
                 if (action == Watcher.Action.DELETED) {
-                    log.debug("{} {} has been deleted", resourceKind, name);
+                    log.debugCr(reconciliation, "{} {} has been deleted", resourceKind, name);
                     return ReconcileResult.deleted();
                 } else {
                     return null;
@@ -199,15 +199,15 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         if (needsPatching(reconciliation, name, current, desired))  {
             try {
                 T result = operation().withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
-                log.debug("{} {} has been patched", resourceKind, name);
+                log.debugCr(reconciliation, "{} {} has been patched", resourceKind, name);
                 return Future.succeededFuture(wasChanged(current, result) ?
                         ReconcileResult.patched(result) : ReconcileResult.noop(result));
             } catch (Exception e) {
-                log.debug("Caught exception while patching {} {}", resourceKind, name, e);
+                log.debugCr(reconciliation, "Caught exception while patching {} {}", resourceKind, name, e);
                 return Future.failedFuture(e);
             }
         } else {
-            log.debug("{} {} did not changed and doesn't need patching", resourceKind, name);
+            log.debugCr(reconciliation, "{} {} did not changed and doesn't need patching", resourceKind, name);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }
@@ -227,13 +227,13 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * Creates a resource with the name with the given desired state
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalCreate(String name, T desired) {
+    protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String name, T desired) {
         try {
             ReconcileResult<T> result = ReconcileResult.created(operation().withName(name).create(desired));
-            log.debug("{} {} has been created", resourceKind, name);
+            log.debugCr(reconciliation, "{} {} has been created", resourceKind, name);
             return Future.succeededFuture(result);
         } catch (Exception e) {
-            log.debug("Caught exception while creating {} {}", resourceKind, name, e);
+            log.debugCr(reconciliation, "Caught exception while creating {} {}", resourceKind, name, e);
             return Future.failedFuture(e);
         }
     }
