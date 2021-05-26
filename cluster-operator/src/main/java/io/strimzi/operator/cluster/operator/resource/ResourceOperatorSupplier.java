@@ -5,15 +5,16 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.KafkaMirrorMakerList;
-import io.strimzi.api.kafka.KafkaMirrorMaker2List;
-import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.KafkaMirrorMaker2List;
+import io.strimzi.api.kafka.KafkaMirrorMakerList;
+import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
@@ -45,8 +46,6 @@ import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.vertx.core.Vertx;
@@ -85,20 +84,25 @@ public class ResourceOperatorSupplier {
     public final MetricsProvider metricsProvider;
     public AdminClientProvider adminClientProvider;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
-        this(vertx, client,
-            new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
-            // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
-                () -> new BackOff(5_000, 2, 4)),
-                    new DefaultAdminClientProvider(),
-                    new DefaultZookeeperScalerProvider(),
-                    new MicrometerMetricsProvider(),
-                    pfa, gates, operationTimeoutMs);
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, String operatorName, long operationTimeoutMs) {
+        this(vertx,
+             client,
+             new ZookeeperLeaderFinder(vertx,
+                 new SecretOperator(vertx, client),
+                 // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                 () -> new BackOff(5_000, 2, 4)),
+             new DefaultAdminClientProvider(),
+             new DefaultZookeeperScalerProvider(),
+             metricsProvider,
+             new RestartReasonPublisher(client, metricsProvider),
+             pfa,
+             gates,
+             operationTimeoutMs);
     }
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf,
                                     AdminClientProvider adminClientProvider, ZookeeperScalerProvider zkScalerProvider,
-                                    MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
+                                    MetricsProvider metricsProvider, RestartReasonPublisher restartReasonPublisher, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs, metricsProvider),
@@ -106,7 +110,7 @@ public class ResourceOperatorSupplier {
                 new ConfigMapOperator(vertx, client),
                 new SecretOperator(vertx, client),
                 new PvcOperator(vertx, client),
-                new DeploymentOperator(vertx, client, metricsProvider),
+                new DeploymentOperator(vertx, client, restartReasonPublisher),
                 new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
                 new RoleBindingOperator(vertx, client),
                 new RoleOperator(vertx, client),

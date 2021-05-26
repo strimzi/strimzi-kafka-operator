@@ -4,9 +4,8 @@
  */
 package io.strimzi.api.kafka;
 
-import io.strimzi.api.kafka.model.KafkaUser;
-
 import io.fabric8.kubernetes.client.CustomResourceList;
+import io.strimzi.api.kafka.model.KafkaUser;
 
 /**
  * A {@code CustomResourceList<KafkaUser>} required for using Fabric8 CRD support.

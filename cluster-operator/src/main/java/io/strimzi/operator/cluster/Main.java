@@ -16,11 +16,10 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.PasswordGenerator;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.*;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -101,7 +100,9 @@ public class Main {
     static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         Util.printEnvInfo();
 
-        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.featureGates(), config.getOperationTimeoutMs());
+        //TODO operator name
+        MetricsProvider metricsProvider = new MicrometerMetricsProvider();
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, metricsProvider, pfa, config.featureGates(), "", config.getOperationTimeoutMs());
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         PasswordGenerator passwordGenerator = new PasswordGenerator(12,

@@ -6,14 +6,9 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.strimzi.operator.cluster.operator.assembly.*;
 import io.strimzi.operator.common.AbstractOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;

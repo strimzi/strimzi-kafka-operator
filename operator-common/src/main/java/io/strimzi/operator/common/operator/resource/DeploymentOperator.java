@@ -31,10 +31,10 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      *
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
-     * @param metricsProvider - provides metrics TODO
+     * @param restartReasonPublisher - provides metrics TODO
      */
-    public DeploymentOperator(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider) {
-        this(vertx, client, new PodOperator(vertx, client, new RestartReasonPublisher(client, metricsProvider)));
+    public DeploymentOperator(Vertx vertx, KubernetesClient client, RestartReasonPublisher restartReasonPublisher) {
+        this(vertx, client, new PodOperator(vertx, client, restartReasonPublisher));
     }
 
     public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {

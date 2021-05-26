@@ -6,10 +6,9 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-
-import io.fabric8.kubernetes.api.model.Volume;
 
 import java.util.Collections;
 

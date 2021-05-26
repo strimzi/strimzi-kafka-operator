@@ -88,12 +88,12 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
         LOGGER.debugCr(reconciliation, "Waiting for pod {} to be deleted", podName);
         Future<Void> podReconcileFuture =
                 reconcile(reconciliation, namespace, podName, null).compose(ignore -> {
-                    Future<Void> del = waitFor(reconciliation, namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                    Future<Void> del = waitFor(reconciliation,namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
                         // predicate - changed generation means pod has been updated
                         String newUid = getPodUid(get(namespace, podName));
                         boolean done = !deleted.equals(newUid);
                         if (done) {
-                            LOGGER.debugCr(reconciliation, "Rolling pod {} finished", podName);
+                            LOGGER.debugCr(reconciliation,"Rolling pod {} finished", podName);
                         }
                         return done;
                     });

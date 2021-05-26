@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import java.util.function.Function;
-
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -17,6 +15,8 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.RestartReasons;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+
+import java.util.function.Function;
 
 /**
  * Specialization of {@link StatefulSetOperator} for StatefulSets of Kafka brokers

@@ -6,9 +6,9 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlGoals;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlGoals;
 
 import java.util.Arrays;
 import java.util.Collections;
