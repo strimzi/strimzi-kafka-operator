@@ -34,7 +34,11 @@ Consider a shorter interval for fast changing clusters, although this increases 
 [discrete]
 == Contents of optimization proposals
 
-An optimization proposal consists of two main sections: the _summary_ and the _broker load_.
+An optimization proposal consists of two main sections:
+
+* The _summary_ is stored in the `status` of the `KafkaRebalance` resource.
+* The _broker load_ is stored in a ConfigMap that contains data as a JSON string.
+
 The summary provides an overview of the proposed cluster rebalance and indicates the scale of the changes involved.
 The broker load shows before and after values for the proposed rebalance, so you can see the impact on each of the brokers in the cluster.
 
@@ -105,11 +109,14 @@ m¦excludedBrokersForReplicaMove
 [discrete]
 === Broker load
 
-The broker load is a json string which consist of all broker IDs and provides a number of metrics for each broker.
+The broker load is stored in a ConfigMap (with the same name as the KafakRebalance custom resource) as a JSON formatted string. This JSON string consists of a JSON object with keys for each broker IDs linking to a number of metrics for each broker
 Each metric consist of three values.
 The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
 
-The following table explains the properties contained in the optimization proposal's broker load section:
+To extract the JSON string from the ConfigMap, use the following command:
+`kubectl describe configmap my-rebalance`
+
+The following table explains the properties contained in the optimization proposal's broker load ConfigMap:
 
 [cols="35,65",options="header",stripes="none"]
 |======================================================================================================
