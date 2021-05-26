@@ -6,9 +6,13 @@
 = Example authorization rules configuration using Keycloak Authorization Services
 
 This section provides an end-to-end example of using Keycloak Authorization Services to configure authorization rules for use with `keycloak` authorization.
+
 First, we use the Admin Console to import a preconfigured realm into a running Keycloak server.
+
 Second, we configure a Kafka cluster to use the preconfigured realm and then deploy the cluster to Kubernetes.
+
 Third, in the Admin Console, we demonstrate the parts of the Keycloak user interface that configure authorization rules.
+
 Finally, we use various Kafka CLIs to show how access to Kafka resources is limited based on the permissions granted to different personal and service accounts.
 
 .Security considerations
@@ -66,7 +70,9 @@ kubectl get -n $NS secret $SECRET_NAME -o yaml | grep PASSWORD | awk '{print $2}
 
 Log in to the Admin Console with the username `admin` and the password you obtained earlier. You must use `https://HOST` to access the Kubernetes ingress.
 
-Once logged in, click *Add Realm* to import the example realm. Select the `$EXAMPLES_DIR/security/keycloak-authorization/kafka-authz-realm.json` file from your disk, and then click *Create*.
+When you are logged in, click *Add Realm* to import the example realm.
+
+Select the `$EXAMPLES_DIR/security/keycloak-authorization/kafka-authz-realm.json` file from your disk, and then click *Create*.
 
 You should now have `kafka-authz` as your current realm in the Admin Console.
 
