@@ -99,6 +99,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getConnectBuildTimeoutMs(), is(40_000L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.featureGates().controlPlaneListenerEnabled(), is(true));
+        assertThat(config.getOperatorName(), is("ClusterOperator"));
     }
 
     @Test

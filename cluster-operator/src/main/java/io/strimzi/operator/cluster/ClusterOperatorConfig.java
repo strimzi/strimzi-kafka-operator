@@ -263,6 +263,11 @@ public class ClusterOperatorConfig {
         return createClusterRoles;
     }
 
+    public String getOperatorName() {
+        //TODO implement
+        return null;
+    }
+
     /**
      * enum to represent the various permission modes the cluster operator can be set to
      *
