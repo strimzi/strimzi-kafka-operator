@@ -11,12 +11,11 @@ Second, we configure a Kafka cluster to use the preconfigured realm and then dep
 Third, in the Admin Console, we demonstrate the parts of the Keycloak user interface that configure authorization rules.
 Finally, we use various Kafka CLIs to show how access to Kafka resources is limited based on the permissions granted to different personal and service accounts.
 
-[CAUTION]
-====
+.Security considerations
+
 This example explains how to use Keycloak Authorization Services with `keycloak` authorization.
 While TLS connectivity is used where necessary, the server certificates are auto-generated, and TLS termination for the Keycloak server is on a reverse proxy server using an Ingress, not on the Keycloak server pod. Take care when creating and reviewing any production configuration.
 Keycloak requires Kafka clients to use the same hostname and port as the Kafka brokers. This example assumes that the Ingress hostname is visible to the pods inside the Kubernetes cluster. In your cluster, the Ingress might be visible to external Kafka clients, but not to the pods. Alternatively, you can deploy the Keycloak server to a different Kubernetes cluster than the Cluster Operator.
-====
 
 == Token-based authorization with Keycloak Authorization Services
 
