@@ -124,12 +124,12 @@ function fetch_and_unpack_kafka_binaries {
         # create a file listing all the jars with colliding class files in the Kafka dist
         # (on the assumption that this is OK). This file will be used after building the images to detect any collisions
         # added by the third-party jars mechanism.
-        whilelist_file="$dist_dir.whitelist"
-        if [ ! -e $whilelist_file ]
+        ignorelist_file="$dist_dir.ignorelist"
+        if [ ! -e $ignorelist_file ]
         then
             unzipped_dir=`mktemp -d`
             ./extract-jars.sh "$dist_dir/libs" "$unzipped_dir"
-            ./find-colliding-classes.sh "$unzipped_dir" | awk '{print $1}' | $SORT | $UNIQ > "$whilelist_file" || true
+            ./find-colliding-classes.sh "$unzipped_dir" | awk '{print $1}' | $SORT | $UNIQ > "$ignorelist_file" || true
             rm -rf $unzipped_dir
         fi
     done

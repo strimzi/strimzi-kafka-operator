@@ -144,7 +144,7 @@ On the other hand you can also override it in mvn command using additional param
 
 After each test, there is a check for cluster operator logs, which searches for unexpected errors or unexpected exceptions.
 You can see the code of the Hamcrest-based matcher in the systemtest [matchers module](systemtest/src/main/java/io/strimzi/systemtest/matchers/LogHasNoUnexpectedErrors.java).
-There is a whitelist for expected errors, which occasionally happen.
+There is a list for expected errors, which occasionally happen.
 Expected errors don't have any problematic impact on cluster behavior and required action is usually executed during next reconciliation.
 
 ## Available Test groups

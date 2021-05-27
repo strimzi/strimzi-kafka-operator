@@ -68,7 +68,7 @@ public class KafkaMirrorMakerTemplates {
                     .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
                 .endProducer()
                 .withReplicas(kafkaMirrorMakerReplicas)
-                .withWhitelist(".*")
+                .withInclude(".*")
                 .withNewInlineLogging()
                     .addToLoggers("mirrormaker.root.logger", "DEBUG")
                 .endInlineLogging()
