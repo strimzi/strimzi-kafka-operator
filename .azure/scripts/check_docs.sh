@@ -30,12 +30,6 @@ grep_check '[^[:alpha:]]etc\.[^[:alpha:]]?' "Replace 'etc.'. with ' and so on.'"
 # And/or
 grep_check '[^[:alpha:]]and/or[^[:alpha:]]' "Use either 'and' or 'or', but not 'and/or'"
 
-# Contractions
-grep_check '[^[:alpha:]](do|is|are|won|have|ca|does|did|had|has|must)n'"'"'?t[^[:alpha:]]' "Avoid 'nt contraction"
-grep_check '[^[:alpha:]]it'"'"'s[^[:alpha:]]' "Avoid it's contraction"
-grep_check '[^[:alpha:]]that'"'"'s[^[:alpha:]]' "Avoid that's contraction"
-grep_check '[^[:alpha:]]can not[^[:alpha:]]' "Use 'cannot' not 'can not'"
-
 # Asciidoc standards
 grep_check '[<][<][[:alnum:]_-]+,' "Internal links should be xref:doc_id[Section title], not <<doc_id,link text>>"
 grep_check '[[]id=(["'"'"'])[[:alnum:]_-]+(?!-[{]context[}])\1' "[id=...] should end with -{context}" "-i -P -r -n"
