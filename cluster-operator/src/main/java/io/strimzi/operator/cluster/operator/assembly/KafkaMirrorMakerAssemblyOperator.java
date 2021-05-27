@@ -74,6 +74,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         try {
             mirror = KafkaMirrorMakerCluster.fromCrd(reconciliation, assemblyResource, versions);
         } catch (Exception e) {
+            LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(kafkaMirrorMakerStatus, e));
         }

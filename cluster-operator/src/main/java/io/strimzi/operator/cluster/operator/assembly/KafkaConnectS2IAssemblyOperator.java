@@ -102,6 +102,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
         try {
             connect = KafkaConnectS2ICluster.fromCrd(reconciliation, kafkaConnectS2I, versions);
         } catch (Exception e) {
+            LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnectS2I, kafkaConnectS2Istatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(kafkaConnectS2Istatus, e));
         }

@@ -250,7 +250,10 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
         kafkaConnect.setTls(spec.getTls());
-        AuthenticationUtils.validateClientAuthentication(reconciliation, spec.getAuthentication(), spec.getTls() != null);
+        String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        if (!warnMsg.isEmpty()) {
+            LOGGER.warnCr(reconciliation, warnMsg);
+        }
         kafkaConnect.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
@@ -355,7 +358,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(reconciliation, authentication, volumeList, "oauth-certs", isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
 
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
 
@@ -432,7 +435,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(reconciliation, authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
 
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 

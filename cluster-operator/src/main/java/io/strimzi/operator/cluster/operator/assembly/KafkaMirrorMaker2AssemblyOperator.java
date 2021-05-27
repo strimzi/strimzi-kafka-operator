@@ -133,6 +133,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         try {
             mirrorMaker2Cluster = KafkaMirrorMaker2Cluster.fromCrd(reconciliation, kafkaMirrorMaker2, versions);
         } catch (Exception e) {
+            LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(kafkaMirrorMaker2Status, e));
         }

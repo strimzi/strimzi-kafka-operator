@@ -174,7 +174,10 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         kafkaBridgeCluster.setTls(spec.getTls() != null ? spec.getTls() : null);
 
-        AuthenticationUtils.validateClientAuthentication(reconciliation, spec.getAuthentication(), spec.getTls() != null);
+        String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        if (!warnMsg.isEmpty()) {
+            LOGGER.warnCr(reconciliation, warnMsg);
+        }
         kafkaBridgeCluster.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
@@ -281,7 +284,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumes(reconciliation, authentication, volumeList, "oauth-certs", isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
 
         return volumeList;
     }
@@ -306,7 +309,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(reconciliation, authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
 
         return volumeMountList;
     }

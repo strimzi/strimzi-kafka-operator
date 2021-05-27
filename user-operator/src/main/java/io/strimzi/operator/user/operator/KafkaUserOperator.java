@@ -145,6 +145,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         try {
             user = KafkaUserModel.fromCrd(reconciliation, certManager, passwordGenerator, resource, clientsCaCert, clientsCaKey, userSecret, secretPrefix);
         } catch (Exception e) {
+            LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(userStatus, e));
         }
