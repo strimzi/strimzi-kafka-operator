@@ -7,8 +7,14 @@
 * Support for patching of service accounts and configuring their labels and annotations. The feature is disabled by default and enabled using the new `ServiceAccountPatching` feature gate.
 * Added support for configuring cluster-operator's worker thread pool size that is used for various sync and async tasks
 * Add Kafka Quotas plugin with produce, consume, and storage quotas
-* Remove topics and groups "blacklist" pattern from KafkaMirrorMaker2 CRD
 * Support pausing reconciliation of KafkaTopic CR with annotation `strimzi.io/pause-reconciliation`
+
+### Changes, deprecations and removals
+
+* The fields `topicsBlacklistPattern` and `groupsBlacklistPattern` in the `KafkaMirrorMaker2` resource are deprecated and will be removed in the future. 
+  They are replaced by new fields `topicsExcludePattern` and `groupsExcludePattern`.
+* The field `whitelist` in the `KafkaMirrorMaker` resource is deprecated and will be removed in the future.
+  It is replaced with a new field `include`. 
 
 ## 0.23.0
 

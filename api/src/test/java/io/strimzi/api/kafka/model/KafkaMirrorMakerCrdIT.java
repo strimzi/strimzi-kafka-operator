@@ -55,8 +55,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(),
                 "bootstrapServers",
-                "producer",
-                "whitelist");
+                "producer");
     }
 
     @Test
@@ -77,8 +76,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(),
                 "spec.producer.authentication.certificateAndKey.certificate",
-                "spec.producer.authentication.certificateAndKey.key",
-                "spec.whitelist");
+                "spec.producer.authentication.certificateAndKey.key");
     }
 
     @Test

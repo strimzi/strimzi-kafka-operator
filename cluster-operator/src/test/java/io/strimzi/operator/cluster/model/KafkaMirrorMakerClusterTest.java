@@ -87,7 +87,7 @@ public class KafkaMirrorMakerClusterTest {
     private final String consumerBootstrapServers = "source-kafka:9092";
     private final String groupId = "my-group-id";
     private final int numStreams = 2;
-    private final String whitelist = ".*";
+    private final String include = ".*";
     private final int offsetCommitInterval = 42000;
     private final boolean abortOnSendFailure = false;
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
@@ -112,7 +112,7 @@ public class KafkaMirrorMakerClusterTest {
                 .withReplicas(replicas)
                 .withProducer(producer)
                 .withConsumer(consumer)
-                .withWhitelist(whitelist)
+                .withInclude(include)
             .endSpec()
             .build();
 
@@ -162,7 +162,7 @@ public class KafkaMirrorMakerClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED).withValue("true").build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER).withValue(consumerBootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER).withValue(producerBootstrapServers).build());
-        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST).withValue(whitelist).build());
+        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_INCLUDE).withValue(include).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_GROUPID_CONSUMER).withValue(groupId).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS).withValue(Integer.toString(numStreams)).build());
         expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL).withValue(Integer.toString(offsetCommitInterval)).build());
@@ -191,6 +191,7 @@ public class KafkaMirrorMakerClusterTest {
                     .withReplicas(replicas)
                     .withProducer(producer)
                     .withConsumer(consumer)
+                    .withInclude(".*")
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(resource, VERSIONS);
@@ -205,8 +206,41 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(mm.getImage(), is(image));
         assertThat(mm.consumer.getBootstrapServers(), is(consumerBootstrapServers));
         assertThat(mm.producer.getBootstrapServers(), is(producerBootstrapServers));
-        assertThat(mm.getWhitelist(), is(whitelist));
+        assertThat(mm.getInclude(), is(include));
         assertThat(mm.consumer.getGroupId(), is(groupId));
+    }
+
+    // Tests handling of the new include field and the deprecated whitelist field
+    @ParallelTest
+    public void testIncludeHandling() {
+        KafkaMirrorMaker both = new KafkaMirrorMakerBuilder(resource)
+                .editSpec()
+                    .withInclude(include)
+                    .withWhitelist("alternative.*")
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster cluster = KafkaMirrorMakerCluster.fromCrd(both, VERSIONS);
+
+        assertThat(cluster.getInclude(), is(include));
+
+        KafkaMirrorMaker legacy = new KafkaMirrorMakerBuilder(resource)
+                .editSpec()
+                    .withWhitelist("alternative.*")
+                    .withInclude(null)
+                .endSpec()
+                .build();
+        cluster = KafkaMirrorMakerCluster.fromCrd(legacy, VERSIONS);
+
+        assertThat(cluster.getInclude(), is("alternative.*"));
+
+        KafkaMirrorMaker none = new KafkaMirrorMakerBuilder(resource)
+                .editSpec()
+                    .withWhitelist(null)
+                    .withInclude(null)
+                .endSpec()
+                .build();
+
+        assertThrows(InvalidResourceException.class, () -> KafkaMirrorMakerCluster.fromCrd(none, VERSIONS));
     }
 
     @ParallelTest
@@ -885,7 +919,7 @@ public class KafkaMirrorMakerClusterTest {
         envVar1.setValue(testEnvOneValue);
 
         ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST;
+        String testEnvTwoKey = KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_INCLUDE;
         String testEnvTwoValue = "test.env.two";
         envVar2.setName(testEnvTwoKey);
         envVar2.setValue(testEnvTwoValue);

@@ -469,14 +469,14 @@ public class MirrorMakerST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testWhiteList(ExtensionContext extensionContext) {
+    void testIncludeList(ExtensionContext extensionContext) {
         final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
 
-        String topicName = "whitelist-topic";
-        String topicNotInWhitelist = "non-whitelist-topic";
+        String topicName = "included-topic";
+        String topicNotIncluded = "not-included-topic";
 
         LOGGER.info("Creating kafka source cluster {}", kafkaClusterSourceName);
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
@@ -484,7 +484,7 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicNotInWhitelist).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicNotIncluded).build());
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
@@ -515,7 +515,7 @@ public class MirrorMakerST extends AbstractST {
                 .withNamespace(namespaceName)
             .endMetadata()
             .editSpec()
-                .withNewWhitelist(topicName)
+                .withNewInclude(topicName)
             .endSpec().build());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
@@ -534,7 +534,7 @@ public class MirrorMakerST extends AbstractST {
         internalKafkaClient.consumesPlainMessagesUntilOperationIsSuccessful(sent);
 
         internalKafkaClient = internalKafkaClient.toBuilder()
-            .withTopicName(topicNotInWhitelist)
+            .withTopicName(topicNotIncluded)
             .withClusterName(kafkaClusterSourceName)
             .build();
 
@@ -546,7 +546,7 @@ public class MirrorMakerST extends AbstractST {
             .withClusterName(kafkaClusterTargetName)
             .build();
 
-        assertThat("Received 0 messages in target kafka because topic " + topicNotInWhitelist + " is not in whitelist",
+        assertThat("Received 0 messages in target kafka because topic " + topicNotIncluded + " is not included",
             internalKafkaClient.receiveMessagesPlain(), is(0));
     }
 
