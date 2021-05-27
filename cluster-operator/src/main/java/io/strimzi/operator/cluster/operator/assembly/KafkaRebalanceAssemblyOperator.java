@@ -643,7 +643,7 @@ public class KafkaRebalanceAssemblyOperator
                 .withName(kafkaRebalance.getMetadata().getName())
                 .withLabels(Collections.singletonMap("app", "strimzi"))
                 .endMetadata()
-                .withData(Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.encodePrettily()))
+                .withData(Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.encode()))
                 .build();
 
         return new MapAndStatus<>(rebalanceMap, proposalJson.getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()).getMap());
