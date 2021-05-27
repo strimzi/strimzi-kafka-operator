@@ -184,8 +184,9 @@ For more information about each feature gate, see xref:ref-operator-cluster-feat
 Strimzi operators support _feature gates_ to enable or disable certain features and functionality. 
 When enabled, a feature gate alters the behavior of the relevant operator. 
 
-Feature gates have a default state of either enabled or disabled. 
-You can use the `STRIMZI_FEATURE_GATES` environment variable to enable or disable one or more feature gates by changing their default state.
+Feature gates have a default state of either _enabled_ or _disabled_. 
+To modify a feature gate's default state, use the `STRIMZI_FEATURE_GATES` environment variable in operator's configuration.  
+You can modify multiple feature gates in one environment variable.
 
 Feature gates have three stages of maturity:
 
@@ -196,11 +197,10 @@ Feature gates have three stages of maturity:
 Alpha stage features might be experimental or unstable, subject to change, or not sufficiently tested for production use.
 Beta stage features are well tested and their functionality is not likely to change.
 GA stage features are stable and should not change in future. 
-If a GA stage feature has been enabled by default for some time, its feature gate might be removed. 
-In this case, it will not be possible to disable the feature. 
-Alpha and beta features will be removed if they do not prove to be useful.
+We might remove a GA stage feature gate that has been enabled by default for some time, so disabling the feature will no longer be possible. 
+Alpha and beta stage features will be removed if they do not prove to be useful.
 
-.List of supported feature gates and Strimzi versions when they moved into the alpha, beta, or GA stage
+.Supported feature gates and the Strimzi versions when they moved to alpha, beta, or GA
 [cols="4*",options="header",stripes="none",separator=¦]
 |===
 
@@ -224,9 +224,9 @@ Alpha and beta features will be removed if they do not prove to be useful.
 [discrete]
 === Configuring feature gates
 
-You configure feature gates using the `STRIMZI_FEATURE_GATES` environment variable in the configuration of the relevant operator.
-The configuration contains a comma-separated list of feature gate names and prefixes.
-A prefix of `+` enables the feature gate. A prefix of `-`  disables the feature gate.
+You configure feature gates using the `STRIMZI_FEATURE_GATES` environment variable in the operator's configuration.
+Specify a comma-separated list of feature gate names and prefixes for the environment variable. 
+A `+` prefix enables the feature gate and a `-` prefix  disables it.
 
 .Example feature gate configuration that enables `FeatureGate1` and disables `FeatureGate2`
 [source,yaml,options="nowrap"]
@@ -238,19 +238,26 @@ env:
 
 === Control Plane listener feature gate
 
-You can use the `ControlPlaneListener` feature gate to change the communication paths used for inter-broker communication.
+You can use the `ControlPlaneListener` feature gate to change the communication paths used for inter-broker communications.
 
-When enabled, Kafka brokers use a separate internal _control plane listener_ for controller connections (that is, traffic from the Kubernetes control plane). 
+When `ControlPlaneListener` is enabled, Kafka brokers use a dedicated internal _control plane listener_ for controller connections (that is, traffic from the Kubernetes control plane) between brokers. 
 The control plane listener uses port 9090. 
-Data connections (data replication between the Kafka brokers) continues to use the existing internal listener on port 9091. 
+Data connections (data replication between the Kafka brokers) continues to use the internal listener on port 9091. 
 
-Control plane listeners might improve performance because important requests from the control plane, such as partition leadership changes, are not delayed by data plane traffic.
+When `ControlPlaneListener` is disabled, controller and data connections go through the same internal listener on port 9091. 
+This was the default behavior before the feature gate was introduced.
 
-The `ControlPlaneListener` feature gate is in the alpha phase and disabled by default. 
-To enable it, use `+ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-This feature gate must be disabled when upgrading from Strimzi 0.22 and earlier or when downgrading to Strimzi 0.22 and earlier.
+Control plane listeners might improve performance because important requests from the control plane, such as partition leadership changes, are not delayed by data plane traffic, such as data replication.
 
-NOTE: The `ControlPlaneListener` feature gate was introduced in Strimzi 0.23.0 and is expected to remain in the alpha phase for a number of releases before moving to the beta phase.
+The `ControlPlaneListener` feature gate is in the alpha stage and has a default state of _disabled_. 
+To enable it, specify `+ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+This feature gate must be disabled when: 
+
+* Upgrading from Strimzi 0.22 and earlier
+* Downgrading to Strimzi 0.22 and earlier
+
+NOTE: The `ControlPlaneListener` feature gate was introduced in Strimzi 0.23.0 and is expected to remain in the alpha stage for a number of releases before moving to the beta stage.
 
 === Service Account patching feature gate
 
