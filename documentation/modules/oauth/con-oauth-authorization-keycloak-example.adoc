@@ -58,7 +58,7 @@ If you used Keycloak Operator, the password is stored as a secret, so you first 
 kubectl get -n $NS pod keycloak-0 -o yaml | less
 ----
 
-Search for `KEYCLOAK_PASSWORD` and note the `secretKeyRef`.`name` (usually `credential-keycloak` or similar).
+Search for `KEYCLOAK_PASSWORD` and note the `secretKeyRef.name` (usually `credential-keycloak` or similar).
 
 You can then obtain the clear text password by running:
 
