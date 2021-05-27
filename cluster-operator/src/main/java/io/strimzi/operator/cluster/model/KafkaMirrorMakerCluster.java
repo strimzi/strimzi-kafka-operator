@@ -83,7 +83,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_ACCESS_TOKEN_PRODUCER = "KAFKA_MIRRORMAKER_OAUTH_ACCESS_TOKEN_PRODUCER";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_OAUTH_REFRESH_TOKEN_PRODUCER = "KAFKA_MIRRORMAKER_OAUTH_REFRESH_TOKEN_PRODUCER";
 
-    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST = "KAFKA_MIRRORMAKER_WHITELIST";
+    protected static final String ENV_VAR_KAFKA_MIRRORMAKER_INCLUDE = "KAFKA_MIRRORMAKER_INCLUDE";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS = "KAFKA_MIRRORMAKER_NUMSTREAMS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL = "KAFKA_MIRRORMAKER_OFFSET_COMMIT_INTERVAL";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE = "KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE";
@@ -92,7 +92,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String ENV_VAR_STRIMZI_LIVENESS_PERIOD = "STRIMZI_LIVENESS_PERIOD";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
-    protected String whitelist;
+    protected String include;
     protected Tracing tracing;
 
     protected KafkaMirrorMakerProducerSpec producer;
@@ -138,7 +138,16 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 kafkaMirrorMakerCluster.setLivenessProbe(spec.getLivenessProbe());
             }
 
-            kafkaMirrorMakerCluster.setWhitelist(spec.getWhitelist());
+            String whitelist = spec.getWhitelist();
+            String include = spec.getInclude();
+
+            if (include == null && whitelist == null)   {
+                throw new InvalidResourceException("One of the fields include or whitelist needs to be specified.");
+            } else if (whitelist != null && include != null) {
+                log.warn("Both include and whitelist fields are present. Whitelist is deprecated and will be ignored.");
+            }
+
+            kafkaMirrorMakerCluster.setInclude(include != null ? include : whitelist);
 
             AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
             kafkaMirrorMakerCluster.setProducer(spec.getProducer());
@@ -328,7 +337,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER, consumer.getBootstrapServers()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER, producer.getBootstrapServers()));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_WHITELIST, whitelist));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_INCLUDE, include));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_GROUPID_CONSUMER, consumer.getGroupId()));
         if (consumer.getNumStreams() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_NUMSTREAMS, Integer.toString(consumer.getNumStreams())));
@@ -436,8 +445,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return "mirrorMakerDefaultLoggingProperties";
     }
 
-    public void setWhitelist(String whitelist) {
-        this.whitelist = whitelist;
+    public void setInclude(String include) {
+        this.include = include;
     }
 
     public void setProducer(KafkaMirrorMakerProducerSpec producer) {
@@ -448,8 +457,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.consumer = consumer;
     }
 
-    protected String getWhitelist() {
-        return whitelist;
+    protected String getInclude() {
+        return include;
     }
 
     @Override

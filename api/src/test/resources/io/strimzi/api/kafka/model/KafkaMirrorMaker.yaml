@@ -5,7 +5,7 @@ metadata:
 spec:
   image: foo
   replicas: 1
-  whitelist: "*"
+  include: "*"
   consumer:
     numStreams: 2
     groupId: my-source-group-id

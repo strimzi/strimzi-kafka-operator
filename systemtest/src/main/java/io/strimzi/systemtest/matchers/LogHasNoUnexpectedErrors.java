@@ -39,15 +39,15 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
                 }
                 String lineLowerCase = line.toLowerCase(Locale.ENGLISH);
                 if (lineLowerCase.contains("error") || lineLowerCase.contains("exception")) {
-                    boolean whiteListResult = false;
-                    for (LogWhiteList value : LogWhiteList.values()) {
+                    boolean ignoreListResult = false;
+                    for (LogIgnoreList value : LogIgnoreList.values()) {
                         Matcher m = Pattern.compile(value.name).matcher(line);
                         if (m.find()) {
-                            whiteListResult = true;
+                            ignoreListResult = true;
                             break;
                         }
                     }
-                    if (!whiteListResult) {
+                    if (!ignoreListResult) {
                         LOGGER.error(line);
                         return false;
                     }
@@ -63,7 +63,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         description.appendText("The log should not contain unexpected errors.");
     }
 
-    enum LogWhiteList {
+    enum LogIgnoreList {
         CO_TIMEOUT_EXCEPTION("io.strimzi.operator.common.operator.resource.TimeoutException"),
         // "NO_ERROR" is necessary because DnsNameResolver prints debug information `QUERY(0), NoError(0), RD RA` after `received` operation
         NO_ERROR("NoError\\(0\\)"),
@@ -74,7 +74,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         // This happen from time to time during CO startup, it doesn't influence CO behavior
         EXIT_ON_OUT_OF_MEMORY("ExitOnOutOfMemoryError"),
         OPERATION_TIMEOUT("Util:[0-9]+ - Exceeded timeout of.*while waiting for.*"),
-        // This is whitelisted cause it's no real problem when this error appears, components are being created even after timeout
+        // This is ignored cause it's no real problem when this error appears, components are being created even after timeout
         RECONCILIATION_TIMEOUT("ERROR Abstract.*Operator:[0-9]+ - Reconciliation.*"),
         ASSEMBLY_OPERATOR_RECONCILIATION_TIMEOUT("ERROR .*AssemblyOperator:[0-9]+ - Reconciliation.*[fF]ailed.*"),
         WATCHER_CLOSED_EXCEPTION("ERROR AbstractOperator:.+ - Watcher closed with exception in namespace .*"),
@@ -83,7 +83,7 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
 
         final String name;
 
-        LogWhiteList(String name) {
+        LogIgnoreList(String name) {
             this.name = name;
         }
     }

@@ -1,9 +1,9 @@
 Configures Kafka MirrorMaker.
 
-[id='property-mm-whitelist-{context}']
-=== `whitelist`
+[id='property-mm-include-{context}']
+=== `include`
 
-Use the `whitelist` property to configure a list of topics that Kafka MirrorMaker mirrors from the source to the target Kafka cluster.
+Use the `include` property to configure a list of topics that Kafka MirrorMaker mirrors from the source to the target Kafka cluster.
 
 The property allows any regular expression from the simplest case with a single topic name to complex patterns.
 For example, you can mirror topics A and B using "A|B" or all topics using "*".

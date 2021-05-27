@@ -10,4 +10,4 @@ spec:
     groupId: my-source-group-id
   producer:
     bootstrapServers: my-target-cluster-kafka-bootstrap:9092
-  whitelist: ".*"
+  include: ".*"

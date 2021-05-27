@@ -60,9 +60,9 @@ public class Annotations {
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
 
     /**
-     * Whitelist of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
+     * List of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
      */
-    public static final List<Predicate<String>> LOADBALANCER_ANNOTATION_WHITELIST = List.of(
+    public static final List<Predicate<String>> LOADBALANCER_ANNOTATION_IGNORELIST = List.of(
         annotation -> annotation.startsWith("cattle.io/"),
         annotation -> annotation.startsWith("field.cattle.io")
     );
