@@ -5,7 +5,7 @@ clean:
 	rm -rf tmp
 	rm -f .*.tmp
 	rm -rf kafka-thirdparty-libs/*/target
-	rm -f tmp/*.whitelist
+	rm -f tmp/*.ignorelist
 
 .kafka-agent.tmp: ../../kafka-agent/target/kafka-agent-$(RELEASE_VERSION).jar
 	test -d tmp || mkdir tmp
@@ -38,6 +38,6 @@ docker_build: .kafka-agent.tmp .tracing-agent.tmp .mirror-maker-agent.tmp .third
 include ../../Makefile.docker
 
 docker_build:
-	../find-classpath-collision.sh strimzi/$(PROJECT_NAME):$(BUILD_TAG) /opt/kafka/libs "tmp/$(KAFKA_VERSION).whitelist"
+	../find-classpath-collision.sh strimzi/$(PROJECT_NAME):$(BUILD_TAG) /opt/kafka/libs "tmp/$(KAFKA_VERSION).ignorelist"
 
 .PHONY: build clean release

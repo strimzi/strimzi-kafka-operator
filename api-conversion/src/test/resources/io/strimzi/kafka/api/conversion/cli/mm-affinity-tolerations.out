@@ -19,7 +19,7 @@ spec:
       trustedCertificates:
       - secretName: my-target-cluster-cluster-ca-cert
         certificate: ca.crt
-  whitelist: .*
+  include: .*
   template:
     pod:
       affinity:
