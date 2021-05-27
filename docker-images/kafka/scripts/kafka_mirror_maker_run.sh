@@ -79,9 +79,9 @@ if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     fi
 fi
 
-if [ -n "$KAFKA_MIRRORMAKER_WHITELIST" ]; then
+if [ -n "$KAFKA_MIRRORMAKER_INCLUDE" ]; then
     # shellcheck disable=SC2089
-    whitelist="--whitelist \"${KAFKA_MIRRORMAKER_WHITELIST}\""
+    include="--whitelist \"${KAFKA_MIRRORMAKER_INCLUDE}\""
 fi
 
 if [ -n "$KAFKA_MIRRORMAKER_NUMSTREAMS" ]; then
@@ -116,7 +116,7 @@ fi
 exec /usr/bin/tini -w -e 143 -- "$KAFKA_HOME"/bin/kafka-mirror-maker.sh \
 --consumer.config /tmp/strimzi-consumer.properties \
 --producer.config /tmp/strimzi-producer.properties \
-$whitelist \
+$include \
 $numstreams \
 $offset_commit_interval \
 $abort_on_send_failure \

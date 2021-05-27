@@ -32,7 +32,7 @@ and then run a set of MirrorMaker 2.0 connectors to make the connection.
 
 Topic configuration is automatically synchronized between the source and target clusters according to the topics defined in the `KafkaMirrorMaker2` custom resource.
 Configuration changes are propagated to remote topics so that new topics and partitions are detected and created.
-Topic replication is defined using regular expression patterns to _whitelist_ or _blacklist_ topics.
+Topic replication is defined using regular expression patterns to include or exclude topics.
 
 The following MirrorMaker 2.0 connectors and related internal topics help manage the transfer and synchronization of data between the clusters.
 
@@ -103,7 +103,7 @@ MirrorMaker uses:
 
 Consumer and producer configuration includes any authentication and encryption settings.
 
-A _whitelist_ defines the topics to mirror from a source to a target cluster.
+The `include` field defines the topics to mirror from a source to a target cluster.
 
 [discrete]
 === Key Consumer configuration
@@ -137,6 +137,6 @@ spec:
     # ...
     abortOnSendFailure: false
     # ...
-  whitelist: "my-topic|other-topic"
+  include: "my-topic|other-topic"
   # ...
 ----

@@ -64,7 +64,7 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
                     .withNewProducer()
                         .withBootstrapServers("localhost:9092")
                     .endProducer()
-                    .withWhitelist(".*")
+                    .withInclude(".*")
                 .endSpec()
                 .withNewStatus()
                 .endStatus()

@@ -589,7 +589,7 @@ class MirrorMaker2ST extends AbstractST {
             .editSpec()
                 .withClusters(targetClusterWithScramSha512Auth, sourceClusterWithScramSha512Auth)
                 .editFirstMirror()
-                    .withTopicsBlacklistPattern("availability.*")
+                    .withTopicsExcludePattern("availability.*")
                 .endMirror()
             .endSpec()
             .build());
