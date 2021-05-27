@@ -79,12 +79,12 @@ public class OpenSslCertManager implements CertManager {
                             try {
                                 Files.delete(path);
                             } catch (IOException e) {
-                                log.debug("File could not be deleted: {}", fileOrDir);
+                                LOGGER.debug("File could not be deleted: {}", fileOrDir);
                             }
                         });
             } else {
                 if (!Files.deleteIfExists(fileOrDir)) {
-                    log.debug("File not deleted, because it did not exist: {}", fileOrDir);
+                    LOGGER.debug("File not deleted, because it did not exist: {}", fileOrDir);
                 }
             }
     }
@@ -534,8 +534,8 @@ public class OpenSslCertManager implements CertManager {
             return optArg(opt, file, false);
         }
         public OpensslArgs optArg(String opt, File file, boolean mayLog) throws IOException {
-            if (mayLog && log.isTraceEnabled()) {
-                log.trace("Contents of {} for option {} is:\n{}", file, opt, Files.readString(file.toPath()));
+            if (mayLog && LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Contents of {} for option {} is:\n{}", file, opt, Files.readString(file.toPath()));
             }
             opt(opt);
             pb.command().add(file.getAbsolutePath());
@@ -614,7 +614,7 @@ public class OpenSslCertManager implements CertManager {
                 pb.redirectErrorStream(true)
                         .redirectOutput(out.toFile());
 
-                log.debug("Running command {}", pb.command());
+                LOGGER.debug("Running command {}", pb.command());
 
                 Process proc = pb.start();
 
@@ -626,18 +626,18 @@ public class OpenSslCertManager implements CertManager {
 
                 if (failOnNonZero && result != 0) {
                     String output = Files.readString(out, Charset.defaultCharset());
-                    if (!log.isDebugEnabled()) {
+                    if (!LOGGER.isDebugEnabled()) {
                         // Include the command if we've not logged it already
-                        log.error("Got result {} from command {} with output\n{}", result, pb.command(), output);
+                        LOGGER.error("Got result {} from command {} with output\n{}", result, pb.command(), output);
                     } else {
-                        log.error("Got result {} with output\n{}", result, output);
+                        LOGGER.error("Got result {} with output\n{}", result, output);
                     }
                     throw new RuntimeException("openssl status code " + result);
                 } else {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Got output\n{}", Files.readString(out, Charset.defaultCharset()));
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("Got output\n{}", Files.readString(out, Charset.defaultCharset()));
                     }
-                    log.debug("Got result {}", result);
+                    LOGGER.debug("Got result {}", result);
                 }
 
             } catch (InterruptedException ignored) {
