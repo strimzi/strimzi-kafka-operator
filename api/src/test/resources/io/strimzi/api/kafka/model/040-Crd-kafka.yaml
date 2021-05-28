@@ -6129,7 +6129,6 @@ spec:
                   certificates renewal). Each time window is defined by a cron expression.
             required:
             - kafka
-            - zookeeper
             description: The specification of the Kafka and ZooKeeper clusters, and
               Topic Operator.
           status:
@@ -14667,7 +14666,6 @@ spec:
                   certificates renewal). Each time window is defined by a cron expression.
             required:
             - kafka
-            - zookeeper
             description: The specification of the Kafka and ZooKeeper clusters, and
               Topic Operator.
           status:
@@ -23205,7 +23203,6 @@ spec:
                   certificates renewal). Each time window is defined by a cron expression.
             required:
             - kafka
-            - zookeeper
             description: The specification of the Kafka and ZooKeeper clusters, and
               Topic Operator.
           status:

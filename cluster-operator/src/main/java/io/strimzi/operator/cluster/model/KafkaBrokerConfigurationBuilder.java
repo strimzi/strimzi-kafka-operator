@@ -65,6 +65,47 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
+     * Adds the node ID template. The actual node ID will be replaced in the container from the
+     * {@code STRIMZI_BROKER_ID} environment variable.
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withNodeId()   {
+        printSectionHeader("Node ID");
+        writer.println("node.id=${STRIMZI_BROKER_ID}");
+
+        writer.println();
+
+        return this;
+    }
+
+    /**
+     * Adds the Kraft configuration.
+     *
+     * @param clusterName                   Name of the cluster (important for the advertised hostnames)
+     * @param namespace                     Namespace (important for generating the advertised hostname)
+     * @param replicas Number of replicas to configure the Kraft quorum
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withKraft(String clusterName, String namespace, int replicas)   {
+        printSectionHeader("Kraft configuration");
+        writer.println("process.roles=broker,controller");
+        writer.println("controller.listener.names=CONTROLPLANE-9090");
+
+        List<String> quorum = new ArrayList<>(replicas);
+        for (int i = 0; i < replicas; i++)  {
+            quorum.add(i + "@" + KafkaCluster.podDnsName(namespace, clusterName, i) + ":9090");
+        }
+
+        writer.println("controller.quorum.voters=" + String.join(",", quorum));
+
+        writer.println();
+
+        return this;
+    }
+
+    /**
      * Configures the Cruise Control metric reporter. It is set only if user enabled the Cruise Control.
      *
      * @param clusterName Name of the cluster
@@ -157,23 +198,29 @@ public class KafkaBrokerConfigurationBuilder {
      * @param kafkaListeners                The listeners configuration from the Kafka CR
      * @param controlPlaneListenerActive    Activates the control plane listener (the listener is always configured,
      *                                      but this flag tells Kafka to use it for control plane communication)
+     * @param escapeTheZoo                  Activates the Zookeeper-less mode
      *
      * @return  Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withListeners(String clusterName, String namespace, List<GenericKafkaListener> kafkaListeners, boolean controlPlaneListenerActive)  {
+    public KafkaBrokerConfigurationBuilder withListeners(String clusterName, String namespace, List<GenericKafkaListener> kafkaListeners, boolean controlPlaneListenerActive, boolean escapeTheZoo)  {
         List<String> listeners = new ArrayList<>();
         List<String> advertisedListeners = new ArrayList<>();
         List<String> securityProtocol = new ArrayList<>();
 
         // Control Plane listener
         listeners.add("CONTROLPLANE-9090://0.0.0.0:9090");
-        advertisedListeners.add(String.format("CONTROLPLANE-9090://%s:9090",
-                // Pod name constructed to be templatable for each individual ordinal
-                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
-                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}")
-        ));
-        securityProtocol.add("CONTROLPLANE-9090:SSL");
-        configureControlPlaneListener();
+
+        if (!escapeTheZoo) {
+            advertisedListeners.add(String.format("CONTROLPLANE-9090://%s:9090",
+                    // Pod name constructed to be templatable for each individual ordinal
+                    DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
+                            KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}")
+            ));
+            securityProtocol.add("CONTROLPLANE-9090:SSL");
+            configureControlPlaneListener();
+        } else {
+            securityProtocol.add("CONTROLPLANE-9090:PLAINTEXT");
+        }
 
         // Replication listener
         listeners.add("REPLICATION-9091://0.0.0.0:9091");

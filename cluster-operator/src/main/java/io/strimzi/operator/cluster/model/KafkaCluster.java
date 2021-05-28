@@ -1969,27 +1969,40 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
-    private String generateBrokerConfiguration(boolean controlPlaneListener)   {
-        return new KafkaBrokerConfigurationBuilder()
-                .withBrokerId()
-                .withRackId(rack)
-                .withZookeeper(cluster)
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
-                .withListeners(cluster, namespace, listeners, controlPlaneListener)
-                .withAuthorization(cluster, authorization)
-                .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
-                .withUserConfiguration(configuration)
-                .build().trim();
+    private String generateBrokerConfiguration(boolean controlPlaneListener, boolean escapeTheZoo)   {
+        if (escapeTheZoo)   {
+            return new KafkaBrokerConfigurationBuilder()
+                    .withNodeId()
+                    .withKraft(cluster, namespace, replicas)
+                    .withRackId(rack)
+                    .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
+                    .withListeners(cluster, namespace, listeners, controlPlaneListener, escapeTheZoo)
+                    //.withAuthorization(cluster, authorization)
+                    //.withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
+                    .withUserConfiguration(configuration)
+                    .build().trim();
+        } else {
+            return new KafkaBrokerConfigurationBuilder()
+                    .withBrokerId()
+                    .withRackId(rack)
+                    .withZookeeper(cluster)
+                    .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
+                    .withListeners(cluster, namespace, listeners, controlPlaneListener, escapeTheZoo)
+                    .withAuthorization(cluster, authorization)
+                    .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
+                    .withUserConfiguration(configuration)
+                    .build().trim();
+        }
     }
 
     public String getBrokersConfiguration() {
         return this.brokersConfiguration;
     }
 
-    public ConfigMap generateAncillaryConfigMap(MetricsAndLogging metricsAndLogging, Set<String> advertisedHostnames, Set<String> advertisedPorts, boolean controlPlaneListener)   {
+    public ConfigMap generateAncillaryConfigMap(MetricsAndLogging metricsAndLogging, Set<String> advertisedHostnames, Set<String> advertisedPorts, boolean controlPlaneListener, boolean escapeTheZoo)   {
         ConfigMap cm = generateMetricsAndLogConfigMap(metricsAndLogging);
 
-        this.brokersConfiguration = generateBrokerConfiguration(controlPlaneListener);
+        this.brokersConfiguration = generateBrokerConfiguration(controlPlaneListener, escapeTheZoo);
 
         cm.getData().put(BROKER_CONFIGURATION_FILENAME, this.brokersConfiguration);
         cm.getData().put(BROKER_ADVERTISED_HOSTNAMES_FILENAME, String.join(" ", advertisedHostnames));

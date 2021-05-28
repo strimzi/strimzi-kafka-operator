@@ -55,7 +55,6 @@ public class KafkaSpec extends Spec {
     }
 
     @Description("Configuration of the ZooKeeper cluster")
-    @JsonProperty(required = true)
     public ZookeeperClusterSpec getZookeeper() {
         return zookeeper;
     }

@@ -18,10 +18,12 @@ public class FeatureGates {
 
     private static final String CONTROL_PLANE_LISTENER = "ControlPlaneListener";
     private static final String SERVICE_ACCOUNT_PATCHING = "ServiceAccountPatching";
+    private static final String ESCAPE_THE_ZOO = "EscapeTheZoo";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, false);
     private final FeatureGate serviceAccountPatching = new FeatureGate(SERVICE_ACCOUNT_PATCHING, false);
+    private final FeatureGate escapeTheZoo = new FeatureGate(ESCAPE_THE_ZOO, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -48,6 +50,9 @@ public class FeatureGates {
                         break;
                     case SERVICE_ACCOUNT_PATCHING:
                         setValueOnlyOnce(serviceAccountPatching, value);
+                        break;
+                    case ESCAPE_THE_ZOO:
+                        setValueOnlyOnce(escapeTheZoo, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -86,12 +91,20 @@ public class FeatureGates {
     }
 
     /**
+     * @return  Returns true when the EscapeTheZoo feature gate is enabled
+     */
+    public boolean escapeTheZooEnabled() {
+        return escapeTheZoo.isEnabled();
+    }
+
+    /**
      * Returns a list of all Feature gates. Used for testing.
      *
      * @return  List of all Feature Gates
      */
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
+                escapeTheZoo,
                 controlPlaneListener,
                 serviceAccountPatching
         );
@@ -100,6 +113,7 @@ public class FeatureGates {
     @Override
     public String toString() {
         return "FeatureGates(" +
+                "escapeTheZoo=" + escapeTheZoo.isEnabled() + "," +
                 "controlPlaneListener=" + controlPlaneListener.isEnabled() + "," +
                 "ServiceAccountPatching=" + serviceAccountPatching.isEnabled() +
                 ")";
