@@ -31,7 +31,6 @@
 .Additional general guidelines
 * Stick to one file per chapter unless the content is too long,
   excluding reusable topics.
-* Don't use contractions, ;).
 * Document IDs are book-scoped, so they don't need the book title in
   them.
 * Terminate bulleted and numbered lists with periods unless the items
