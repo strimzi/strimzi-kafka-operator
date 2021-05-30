@@ -394,7 +394,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testWithControlPlaneListenerActive() {
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", emptyList(), true)
+                .withListeners("my-cluster", "my-namespace", emptyList(), true, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -424,7 +424,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testWithNoListeners() {
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", emptyList(), false)
+                .withListeners("my-cluster", "my-namespace", emptyList(), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -491,7 +491,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", asList(listener1, listener2, listener3, listener4), false)
+                .withListeners("my-cluster", "my-namespace", asList(listener1, listener2, listener3, listener4), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -531,7 +531,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -569,7 +569,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -607,7 +607,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -648,7 +648,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -698,7 +698,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -737,7 +737,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -778,7 +778,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -823,7 +823,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -871,7 +871,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -910,7 +910,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
         
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -949,7 +949,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -985,7 +985,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -1024,7 +1024,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -1072,7 +1072,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -1121,7 +1121,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -1166,7 +1166,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -1219,7 +1219,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
         
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
@@ -1270,7 +1270,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
-                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false, false)
                 .build();
 
         assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",

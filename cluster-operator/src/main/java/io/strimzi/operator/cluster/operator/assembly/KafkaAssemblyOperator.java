@@ -1851,8 +1851,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 log.debug("{}: Creating AdminClient for clusterId using {}", reconciliation, bootstrapHostname);
                                 kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
                                 kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
-                            //} catch (KafkaException e) {
-                            //    log.warn("{}: Kafka exception getting clusterId {}", reconciliation, e.getMessage());
+                            } catch (KafkaException e) {
+                                log.warn("{}: Kafka exception getting clusterId {}", reconciliation, e.getMessage());
                             } catch (InterruptedException e) {
                                 log.warn("{}: Interrupted exception getting clusterId {}", reconciliation, e.getMessage());
                             } catch (ExecutionException e) {

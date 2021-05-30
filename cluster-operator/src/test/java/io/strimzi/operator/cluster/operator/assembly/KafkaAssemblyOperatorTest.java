@@ -655,7 +655,7 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
-        ConfigMap metricsCm = kafkaCluster.generateAncillaryConfigMap(new MetricsAndLogging(metricsCM, null), emptySet(), emptySet(), false);
+        ConfigMap metricsCm = kafkaCluster.generateAncillaryConfigMap(new MetricsAndLogging(metricsCM, null), emptySet(), emptySet(), false, false);
         when(mockCmOps.getAsync(kafkaNamespace, KafkaCluster.metricAndLogConfigsName(kafkaName))).thenReturn(Future.succeededFuture(metricsCm));
         when(mockCmOps.getAsync(kafkaNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
         when(mockCmOps.getAsync(kafkaNamespace, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
@@ -1003,7 +1003,7 @@ public class KafkaAssemblyOperatorTest {
                 .endMetadata()
                 .withData(singletonMap("metrics-config.yml", ""))
                 .build();
-        ConfigMap metricsAndLoggingCm = originalKafkaCluster.generateAncillaryConfigMap(new MetricsAndLogging(metricsCm, null), emptySet(), emptySet(), false);
+        ConfigMap metricsAndLoggingCm = originalKafkaCluster.generateAncillaryConfigMap(new MetricsAndLogging(metricsCm, null), emptySet(), emptySet(), false, false);
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsAndLoggingCm);
         when(mockCmOps.getAsync(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(Future.succeededFuture(metricsAndLoggingCm));
 
