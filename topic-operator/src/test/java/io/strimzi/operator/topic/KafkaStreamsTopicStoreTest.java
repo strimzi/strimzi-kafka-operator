@@ -4,18 +4,15 @@
  */
 package io.strimzi.operator.topic;
 
-import io.debezium.kafka.KafkaCluster;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,40 +20,15 @@ import java.util.Properties;
 import java.util.Set;
 
 public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
-
-    private static final Logger log = LoggerFactory.getLogger(KafkaStreamsTopicStoreTest.class);
     private static final Map<String, String> MANDATORY_CONFIG;
+    private static EmbeddedKafkaCluster cluster;
 
     static {
         MANDATORY_CONFIG = new HashMap<>();
         MANDATORY_CONFIG.put(Config.NAMESPACE.key, "default");
     }
 
-    private static KafkaCluster kafkaCluster;
     private static KafkaStreamsTopicStoreService service;
-
-    static KafkaCluster prepareKafkaCluster(Map<String, String> config) throws Exception {
-        kafkaCluster = new KafkaCluster();
-        kafkaCluster.addBrokers(1);
-        kafkaCluster.deleteDataPriorToStartup(true);
-        kafkaCluster.deleteDataUponShutdown(true);
-        kafkaCluster.usingDirectory(Files.createTempDirectory("kafka_ts").toFile());
-        kafkaCluster.withKafkaConfiguration(new Properties());
-        kafkaCluster.startup();
-
-        String brokerList = kafkaCluster.brokerList();
-        log.info("Starting Kafka cluster, broker list: " + brokerList);
-        config.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, brokerList);
-        config.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + kafkaCluster.zkPort());
-
-        return kafkaCluster;
-    }
-
-    static void shutdownKafkaCluster() {
-        if (kafkaCluster != null) {
-            kafkaCluster.shutdown();
-        }
-    }
 
     @Override
     protected boolean canRunTest() {
@@ -89,7 +61,12 @@ public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
 
     @BeforeAll
     public static void before() throws Exception {
-        prepareKafkaCluster(MANDATORY_CONFIG);
+        cluster = new EmbeddedKafkaCluster(1);
+        cluster.start();
+
+        MANDATORY_CONFIG.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.bootstrapServers());
+        MANDATORY_CONFIG.put(Config.ZOOKEEPER_CONNECT.key, cluster.zKConnectString());
+
         service = service(Collections.emptyMap());
     }
 
@@ -98,7 +75,6 @@ public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
         if (service != null) {
             service.stop();
         }
-        shutdownKafkaCluster();
     }
 
     @BeforeEach

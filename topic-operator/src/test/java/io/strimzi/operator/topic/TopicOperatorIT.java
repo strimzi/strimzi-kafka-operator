@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Locale;
@@ -27,8 +28,13 @@ import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.InvalidRequestException;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.emptyMap;
@@ -39,16 +45,37 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TopicOperatorIT extends TopicOperatorBaseIT {
-
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
+    protected static EmbeddedKafkaCluster kafkaCluster;
 
-    @Override
-    protected int numKafkaBrokers() {
+    @BeforeAll
+    public static void beforeAll() throws IOException {
+        kafkaCluster = new EmbeddedKafkaCluster(numKafkaBrokers(), kafkaClusterConfig());
+        kafkaCluster.start();
+
+        setupKubeCluster();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        teardownKubeCluster();
+    }
+
+    @BeforeEach
+    public void beforeEach() throws Exception {
+        setup(kafkaCluster);
+    }
+
+    @AfterEach
+    public void afterEach() throws InterruptedException, TimeoutException, ExecutionException {
+        teardown(true);
+    }
+
+    protected static int numKafkaBrokers() {
         return 1;
     }
 
-    @Override
-    protected Properties kafkaClusterConfig() {
+    protected static Properties kafkaClusterConfig() {
         Properties p = new Properties();
         p.setProperty(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
         return p;
@@ -509,7 +536,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         }
 
         // 4. Start TO
-        startTopicOperator();
+        startTopicOperator(kafkaCluster);
 
         // 5. Verify topics A, X and Y exist on both sides
         waitForTopicInKafka(topicNameA);
