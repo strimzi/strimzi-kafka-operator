@@ -562,6 +562,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     @Disabled
     // The generation from yaml adds duplicate "kind" property. When that is fixed, this test should be enabled
+    // enable when https://github.com/strimzi/strimzi-kafka-operator/issues/5053 is fixed
     @Test
     public void testUnknownPropertyInSpec(VertxTestContext context) throws IOException, URISyntaxException {
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);

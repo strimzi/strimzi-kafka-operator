@@ -161,6 +161,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
     }
 
     private static <RT> String removeDuplicateKind(RT instance) {
+        // remove when https://github.com/strimzi/strimzi-kafka-operator/issues/5053 is fixed
         // hack. For some reason, the 'kind' property is duplicated in the model yaml
         String kind = "kind: \"" + instance.getClass().getSimpleName() + "\"";
         int firstIndex = instance.toString().indexOf(kind);

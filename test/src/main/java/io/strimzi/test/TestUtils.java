@@ -323,6 +323,7 @@ public final class TestUtils {
 
     private static <T> String removeDuplicateKind(T instance, String model) {
         // hack. For some reason, the 'kind' property is duplicated in the model yaml
+        // remove when https://github.com/strimzi/strimzi-kafka-operator/issues/5053 is fixed
         String kind = "kind: \"" + instance.getClass().getSimpleName() + "\"";
         int firstIndex = model.indexOf(kind);
         int lastIndex = model.lastIndexOf(kind);
