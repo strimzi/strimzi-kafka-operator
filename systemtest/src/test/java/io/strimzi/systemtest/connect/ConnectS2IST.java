@@ -672,9 +672,9 @@ class ConnectS2IST extends AbstractST {
             kafkaConnectS2I.getSpec().setBootstrapServers(bootstrapAddress);
             kafkaConnectS2I.getSpec().setTls(new KafkaConnectTlsBuilder()
                     .addNewTrustedCertificate()
-                        .withNewSecretName(secondClusterName + "-cluster-ca-cert")
+                        .withSecretName(secondClusterName + "-cluster-ca-cert")
                         .withCertificate("ca.crt")
-                    .withNewSecretName(secondClusterName + "-cluster-ca-cert")
+                    .withSecretName(secondClusterName + "-cluster-ca-cert")
                     .withCertificate("ca.crt")
                     .endTrustedCertificate()
                     .build());

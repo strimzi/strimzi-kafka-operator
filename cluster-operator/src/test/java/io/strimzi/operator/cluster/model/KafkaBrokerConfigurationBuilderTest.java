@@ -184,8 +184,8 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testKeycloakAuthorization() {
         CertSecretSource cert = new CertSecretSourceBuilder()
-                .withNewSecretName("my-secret")
-                .withNewCertificate("my.crt")
+                .withSecretName("my-secret")
+                .withCertificate("my.crt")
                 .build();
 
         KafkaAuthorization auth = new KafkaAuthorizationKeycloakBuilder()
@@ -221,8 +221,8 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testKeycloakAuthorizationWithDefaults() {
         CertSecretSource cert = new CertSecretSourceBuilder()
-                .withNewSecretName("my-secret")
-                .withNewCertificate("my.crt")
+                .withSecretName("my-secret")
+                .withCertificate("my.crt")
                 .build();
 
         KafkaAuthorization auth = new KafkaAuthorizationKeycloakBuilder()
@@ -335,7 +335,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testEphemeralStorageLogDirs()  {
         Storage storage = new EphemeralStorageBuilder()
-                .withNewSizeLimit("5Gi")
+                .withSizeLimit("5Gi")
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder()
@@ -371,7 +371,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         SingleVolumeStorage vol2 = new EphemeralStorageBuilder()
                 .withId(2)
-                .withNewSizeLimit("5Gi")
+                .withSizeLimit("5Gi")
                 .build();
 
         SingleVolumeStorage vol5 = new PersistentClaimStorageBuilder()
@@ -691,9 +691,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
-                        .withNewSecretName("my-secret")
-                        .withNewKey("my.key")
-                        .withNewCertificate("my.crt")
+                        .withSecretName("my-secret")
+                        .withKey("my.key")
+                        .withCertificate("my.crt")
                     .endBrokerCertChainAndKey()
                 .endConfiguration()
                 .build();
@@ -864,9 +864,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .withNewConfiguration()
                     .withNewBrokerCertChainAndKey()
-                        .withNewSecretName("my-secret")
-                        .withNewKey("my.key")
-                        .withNewCertificate("my.crt")
+                        .withSecretName("my-secret")
+                        .withKey("my.key")
+                        .withCertificate("my.crt")
                     .endBrokerCertChainAndKey()
                 .endConfiguration()
                 .build();
@@ -1200,8 +1200,8 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testOauthConfigurationWithTlsConfig()  {
         CertSecretSource cert = new CertSecretSourceBuilder()
-                .withNewSecretName("my-secret")
-                .withNewCertificate("my.crt")
+                .withSecretName("my-secret")
+                .withCertificate("my.crt")
                 .build();
 
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
@@ -1258,13 +1258,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
-                    .withNewValidIssuerUri("https://valid-issuer")
-                    .withNewIntrospectionEndpointUri("https://intro")
+                    .withValidIssuerUri("https://valid-issuer")
+                    .withIntrospectionEndpointUri("https://intro")
                     .withCheckAudience(true)
                     .withCustomClaimCheck("'kafka-user' in @.roles.client-roles.kafka")
                     .withNewClientId("my-oauth-client")
                     .withNewClientSecret()
-                        .withNewSecretName("my-secret")
+                        .withSecretName("my-secret")
                         .withKey("client-secret")
                     .endClientSecret()
                 .endKafkaListenerAuthenticationOAuth()

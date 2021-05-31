@@ -71,14 +71,14 @@ public class KafkaMirrorMaker2Templates {
             targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(targetClusterSpec)
                 .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaTargetClusterName))
                 .withNewTls()
-                    .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaTargetClusterName)).withCertificate("ca.crt").build())
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaTargetClusterName)).withCertificate("ca.crt").build())
                 .endTls()
                 .build();
 
             sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(sourceClusterSpec)
                 .withBootstrapServers(KafkaResources.tlsBootstrapAddress(kafkaSourceClusterName))
                 .withNewTls()
-                    .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaSourceClusterName)).withCertificate("ca.crt").build())
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaSourceClusterName)).withCertificate("ca.crt").build())
                 .endTls()
                 .build();
         }

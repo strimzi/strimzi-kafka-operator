@@ -68,7 +68,7 @@ public class KafkaConnectS2ITemplates {
                 .withReplicas(kafkaConnectReplicas)
                 // Try it without TLS
                 .withNewTls()
-                    .withTrustedCertificates(new CertSecretSourceBuilder().withNewSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
+                    .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(kafkaClusterName + "-cluster-ca-cert").withCertificate("ca.crt").build())
                 .endTls()
                 .withInsecureSourceRepository(true)
                 .withNewInlineLogging()

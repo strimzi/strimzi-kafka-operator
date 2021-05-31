@@ -373,7 +373,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewEphemeralStorage().withNewSizeLimit(sizeLimit).endEphemeralStorage()
+                        .withNewEphemeralStorage().withSizeLimit(sizeLimit).endEphemeralStorage()
                     .endKafka()
                 .endSpec()
                 .build();

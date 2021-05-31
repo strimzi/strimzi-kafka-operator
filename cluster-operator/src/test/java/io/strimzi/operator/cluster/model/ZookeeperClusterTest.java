@@ -968,7 +968,7 @@ public class ZookeeperClusterTest {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editZookeeper()
-                        .withNewEphemeralStorage().withNewSizeLimit(sizeLimit).endEphemeralStorage()
+                        .withNewEphemeralStorage().withSizeLimit(sizeLimit).endEphemeralStorage()
                     .endZookeeper()
                 .endSpec()
                 .build();
