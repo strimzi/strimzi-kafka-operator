@@ -9,6 +9,7 @@ if [[ $(uname -s) == "Darwin" ]]; then
     alias readlink="greadlink"
     alias tar="gtar"
     alias sed="gsed"
+    alias date="gdate"
 fi
 __TMP="/tmp/cold-backup" && readonly __TMP && mkdir -p $__TMP
 __HOME="" && pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" >/dev/null \
@@ -26,6 +27,7 @@ KAFKA_PVC=()
 KAFKA_PVC_SIZE=""
 KAFKA_PVC_CLASS=""
 COMMAND=""
+INVALID=false
 INCREMENTAL=false
 CONFIRM=true
 NAMESPACE=""
@@ -118,8 +120,10 @@ __cleanup() {
     if [[ $INCREMENTAL == false ]]; then
         rm -rf $__TMP/$NAMESPACE/$CLUSTER_NAME
     fi
-    kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME 2>/dev/null ||true
-    __start_cluster
+    if [[ -n $COMMAND && $INVALID == false ]]; then
+        kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME 2>/dev/null ||true
+        __start_cluster
+    fi
 }
 
 __error() {
@@ -132,6 +136,10 @@ __confirm() {
     if [[ ! $reply =~ ^[Yy]$ ]]; then
         exit 0
     fi
+}
+
+__check_connection() {
+    kubectl version --request-timeout=10s 1>/dev/null
 }
 
 __wait_for() {
@@ -273,87 +281,112 @@ __uncompress() {
 }
 
 backup() {
-    # init context
-    local readonly tmp="$__TMP/$NAMESPACE/$CLUSTER_NAME"
-    if [[ $CONFIRM == true ]]; then
-        echo "Backup of cluster $NAMESPACE/$CLUSTER_NAME"
-        echo "The cluster won't be available for the entire duration of the process"
-        __confirm
-    fi
-    if [[ $INCREMENTAL == true ]]; then
-        echo "Starting incremental backup"
+    if [[ -n $NAMESPACE && -n $CLUSTER_NAME && -n $TARGET_FILE ]]; then
+        if [[ -d "$(dirname $TARGET_FILE)" ]]; then
+            readonly RSYNC_POD_NAME="$CLUSTER_NAME-backup"
+            __check_connection
+
+            # init context
+            local readonly tmp="$__TMP/$NAMESPACE/$CLUSTER_NAME"
+            if [[ $CONFIRM == true ]]; then
+                echo "Backup of cluster $NAMESPACE/$CLUSTER_NAME"
+                echo "The cluster won't be available for the entire duration of the process"
+                __confirm
+            fi
+            if [[ $INCREMENTAL == true ]]; then
+                echo "Starting incremental backup"
+            else
+                echo "Starting full backup"
+                rm -rf $tmp
+            fi
+            mkdir -p $tmp/resources $tmp/data
+            __export_env $tmp/env
+            __stop_cluster
+
+            # export resources
+            __export_res kafka $CLUSTER_NAME $tmp/resources
+            __export_res kafkatopics strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
+            __export_res kafkausers strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
+            __export_res kafkarebalances strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
+            # cluster configmap and secrets
+            __export_res configmaps app.kubernetes.io/instance=$CLUSTER_NAME $tmp/resources
+            __export_res secrets app.kubernetes.io/instance=$CLUSTER_NAME $tmp/resources
+            # custom configmap and secrets
+            if [[ -n $CUSTOM_CM ]]; then
+                for name in $(printf $CUSTOM_CM | sed "s/,/ /g"); do
+                    __export_res configmap $name $tmp/resources
+                done
+            fi
+            if [[ -n $CUSTOM_SE ]]; then
+                for name in $(printf $CUSTOM_SE | sed "s/,/ /g"); do
+                    __export_res secret $name $tmp/resources
+                done
+            fi
+
+            # for each PVC, rsync data from PV to backup
+            for name in "${ZK_PVC[@]}"; do
+                local path="$tmp/data/$name"
+                mkdir -p $path
+                __rsync $name $path
+            done
+            for name in "${KAFKA_PVC[@]}"; do
+                local path="$tmp/data/$name"
+                mkdir -p $path
+                __rsync $name $path
+            done
+
+            # create the archive
+            __compress $tmp $TARGET_FILE
+        else
+            __error "$(dirname $TARGET_FILE) not found"
+        fi
     else
-        echo "Starting full backup"
-        rm -rf $tmp
-    fi
-    mkdir -p $tmp/resources $tmp/data
-    __export_env $tmp/env
-    __stop_cluster
-
-    # export resources
-    __export_res kafka $CLUSTER_NAME $tmp/resources
-    __export_res kafkatopics strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
-    __export_res kafkausers strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
-    __export_res kafkarebalances strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
-    # cluster configmap and secrets
-    __export_res configmaps app.kubernetes.io/instance=$CLUSTER_NAME $tmp/resources
-    __export_res secrets app.kubernetes.io/instance=$CLUSTER_NAME $tmp/resources
-    # custom configmap and secrets
-    if [[ -n $CUSTOM_CM ]]; then
-        for name in $(printf $CUSTOM_CM | sed "s/,/ /g"); do
-            __export_res configmap $name $tmp/resources
-        done
-    fi
-    if [[ -n $CUSTOM_SE ]]; then
-        for name in $(printf $CUSTOM_SE | sed "s/,/ /g"); do
-            __export_res secret $name $tmp/resources
-        done
-    fi
-
-    # for each PVC, rsync data from PV to backup
-    for name in "${ZK_PVC[@]}"; do
-        local path="$tmp/data/$name"
-        mkdir -p $path
-        __rsync $name $path
-    done
-    for name in "${KAFKA_PVC[@]}"; do
-        local path="$tmp/data/$name"
-        mkdir -p $path
-        __rsync $name $path
-    done
-
-    # create the archive
-    __compress $tmp $TARGET_FILE
+        INVALID=true
+        __error "Specify namespace, cluster name and target file to backup"
+    fi    
 }
 
 restore() {
-    # init context
-    local readonly tmp="$__TMP/$NAMESPACE/$CLUSTER_NAME"
-    if [[ $CONFIRM == true ]]; then
-        echo "Restore of cluster $NAMESPACE/$CLUSTER_NAME"
-        __confirm
+    if  [[ -n $NAMESPACE && -n $CLUSTER_NAME && -f $SOURCE_FILE ]]; then
+        if [[ -f $SOURCE_FILE ]]; then
+            readonly RSYNC_POD_NAME="$CLUSTER_NAME-restore"
+            __check_connection
+
+            # init context
+            local readonly tmp="$__TMP/$NAMESPACE/$CLUSTER_NAME"
+            if [[ $CONFIRM == true ]]; then
+                echo "Restore of cluster $NAMESPACE/$CLUSTER_NAME"
+                __confirm
+            fi
+            __uncompress $SOURCE_FILE $tmp
+            source $tmp/env
+            __stop_cluster
+
+            # for each PVC, create it and rsync data from backup to PV
+            for name in "${ZK_PVC[@]}"; do
+                __create_pvc $name $ZK_PVC_SIZE $ZK_PVC_CLASS
+                __rsync $tmp/data/$name/. $name
+            done
+            for name in "${KAFKA_PVC[@]}"; do
+                __create_pvc $name $KAFKA_PVC_SIZE $KAFKA_PVC_CLASS
+                __rsync $tmp/data/$name/. $name
+            done
+
+            # import resources
+            # KafkaTopic resources must be created *before*
+            # deploying the Topic Operator or it will delete them
+            kubectl -n $NAMESPACE apply -f $tmp/resources
+        else
+            __error "$SOURCE_FILE file not found"
+        fi
+    else
+        INVALID=true
+        __error "Specify namespace, cluster name and source file to restore"
     fi
-    __uncompress $SOURCE_FILE $tmp
-    source $tmp/env
-    __stop_cluster
-
-    # for each PVC, create it and rsync data from backup to PV
-    for name in "${ZK_PVC[@]}"; do
-        __create_pvc $name $ZK_PVC_SIZE $ZK_PVC_CLASS
-        __rsync $tmp/data/$name/. $name
-    done
-    for name in "${KAFKA_PVC[@]}"; do
-        __create_pvc $name $KAFKA_PVC_SIZE $KAFKA_PVC_CLASS
-        __rsync $tmp/data/$name/. $name
-    done
-
-    # import resources
-    # KafkaTopic resources must be created *before*
-    # deploying the Topic Operator or it will delete them
-    kubectl -n $NAMESPACE apply -f $tmp/resources
 }
 
-readonly USAGE="Usage: $0 [commands] [options]
+readonly USAGE="
+Usage: $0 [commands] [options]
 
 Commands:
   backup   Cluster backup
@@ -378,78 +411,57 @@ Examples:
 
   # Restore to a new namespace
   $0 restore -n test-new -c my-cluster \\
-    -s /tmp/my-cluster.zip"
-
-COMMAND="${1-}"
-readonly COMMAND
-if [[ $COMMAND != "backup" && $COMMAND != "restore" ]]; then
-    __error "$USAGE"
-else
-    shift
-fi
-while getopts ":iyn:c:t:s:m:x:" opt; do
-    case "${opt-}" in
-        i)
-            INCREMENTAL=true
+    -s /tmp/my-cluster.zip
+"
+readonly OPTIONS="${@}"
+readonly ARGUMENTS=($OPTIONS)
+i=0
+for argument in $OPTIONS; do
+    i=$(($i+1))
+    case $argument in
+        -i)
+            export INCREMENTAL=true
             readonly INCREMENTAL
             ;;
-        y)
-            CONFIRM=false
+        -y)
+            export CONFIRM=false
             readonly CONFIRM
             ;;
-        n)
-            NAMESPACE=${OPTARG-}
+        -n)
+            export NAMESPACE=${ARGUMENTS[i]}
             readonly NAMESPACE
             ;;
-        c)
-            CLUSTER_NAME=${OPTARG-}
+        -c)
+            export CLUSTER_NAME=${ARGUMENTS[i]}
             readonly CLUSTER_NAME
             ;;
-        t)
-            TARGET_FILE=${OPTARG-}
+        -t)
+            export TARGET_FILE=${ARGUMENTS[i]}
             readonly TARGET_FILE
             ;;
-        s)
-            SOURCE_FILE=${OPTARG-}
+        -s)
+            export SOURCE_FILE=${ARGUMENTS[i]}
             readonly SOURCE_FILE
             ;;
-        m)
-            CUSTOM_CM=${OPTARG-}
+        -m)
+            export CUSTOM_CM=${ARGUMENTS[i]}
             readonly CUSTOM_CM
             ;;
-        x)
-            CUSTOM_SE=${OPTARG-}
+        -x)
+            export CUSTOM_SE=${ARGUMENTS[i]}
             readonly CUSTOM_SE
-            ;;
-        *)
-            __error "$USAGE"
             ;;
     esac
 done
-shift $((OPTIND-1))
-
-if [[ $COMMAND == "backup" ]]; then
-    if [[ -n $NAMESPACE && -n $CLUSTER_NAME && -n $TARGET_FILE ]]; then
-        if [[ -d "$(dirname $TARGET_FILE)" ]]; then
-            readonly RSYNC_POD_NAME="$CLUSTER_NAME-backup"
-            backup
-        else
-            __error "$(dirname $TARGET_FILE) not found"
-        fi
-    else
-        __error "Specify namespace, cluster name and target file to backup"
-    fi
-fi
-
-if [[ $COMMAND == "restore" ]]; then
-    if  [[ -n $NAMESPACE && -n $CLUSTER_NAME && -f $SOURCE_FILE ]]; then
-        if [[ -f $SOURCE_FILE ]]; then
-            readonly RSYNC_POD_NAME="$CLUSTER_NAME-restore"
-            restore
-        else
-            __error "$SOURCE_FILE file not found"
-        fi
-    else
-        __error "Specify namespace, cluster name and source file to restore"
-    fi
-fi
+readonly COMMAND="${1-}"
+case "$COMMAND" in
+    backup)
+        backup
+        ;;
+    restore)
+        restore
+        ;;
+    *)
+        __error "$USAGE"
+        ;;
+esac
