@@ -37,6 +37,7 @@ public class DockerOutput extends Output {
     private List<String> additionalKanikoOptions;
 
     @Description("Must be `" + TYPE_DOCKER + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_DOCKER;

@@ -26,6 +26,7 @@ public class AclRuleClusterResource extends AclRuleResource {
     public static final String TYPE_CLUSTER = "cluster";
 
     @Description("Must be `" + TYPE_CLUSTER + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_CLUSTER;

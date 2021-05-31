@@ -31,6 +31,7 @@ public class ExternalLogging extends Logging {
     private ExternalConfigurationReference valueFrom;
 
     @Description("Must be `" + TYPE_EXTERNAL + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_EXTERNAL;
