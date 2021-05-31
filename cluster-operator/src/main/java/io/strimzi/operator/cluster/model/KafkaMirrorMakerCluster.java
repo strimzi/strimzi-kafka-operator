@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-mirror-maker";
 
@@ -146,7 +147,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             if (include == null && whitelist == null)   {
                 throw new InvalidResourceException("One of the fields include or whitelist needs to be specified.");
             } else if (whitelist != null && include != null) {
-                log.warn("Both include and whitelist fields are present. Whitelist is deprecated and will be ignored.");
+                LOGGER.warnCr(reconciliation, "Both include and whitelist fields are present. Whitelist is deprecated and will be ignored.");
             }
 
             kafkaMirrorMakerCluster.setInclude(include != null ? include : whitelist);

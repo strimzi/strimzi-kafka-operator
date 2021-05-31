@@ -221,7 +221,7 @@ public class KafkaMirrorMakerClusterTest {
                     .withWhitelist("alternative.*")
                 .endSpec()
                 .build();
-        KafkaMirrorMakerCluster cluster = KafkaMirrorMakerCluster.fromCrd(both, VERSIONS);
+        KafkaMirrorMakerCluster cluster = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), both, VERSIONS);
 
         assertThat(cluster.getInclude(), is(include));
 
@@ -231,7 +231,7 @@ public class KafkaMirrorMakerClusterTest {
                     .withInclude(null)
                 .endSpec()
                 .build();
-        cluster = KafkaMirrorMakerCluster.fromCrd(legacy, VERSIONS);
+        cluster = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), legacy, VERSIONS);
 
         assertThat(cluster.getInclude(), is("alternative.*"));
 
@@ -242,7 +242,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
 
-        assertThrows(InvalidResourceException.class, () -> KafkaMirrorMakerCluster.fromCrd(none, VERSIONS));
+        assertThrows(InvalidResourceException.class, () -> KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), none, VERSIONS));
     }
 
     @ParallelTest
