@@ -326,8 +326,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaNodePortExternalListenerStatus())
                 .compose(state -> state.kafkaCustomCertificatesToStatus())
 
-                .compose(state -> state.checkUnsupportedTopicOperator())
-
                 .compose(state -> state.getEntityOperatorDescription())
                 .compose(state -> state.entityOperatorRole())
                 .compose(state -> state.entityTopicOperatorRole())
@@ -3077,17 +3075,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             return withVoid(CompositeFuture.all(futures));
-        }
-
-        @SuppressWarnings("deprecation")
-        Future<ReconciliationState> checkUnsupportedTopicOperator() {
-            if (kafkaAssembly.getSpec().getTopicOperator() != null) {
-                kafkaStatus.addCondition(StatusUtils.buildWarningCondition("TopicOperator",
-                        "Kafka.spec.topicOperator is not supported anymore. " +
-                                "Topic operator should be configured using spec.entityOperator.topicOperator."));
-            }
-
-            return Future.succeededFuture(this);
         }
 
         final Future<ReconciliationState> getEntityOperatorDescription() {
