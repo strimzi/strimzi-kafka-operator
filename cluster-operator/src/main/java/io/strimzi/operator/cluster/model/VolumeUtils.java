@@ -77,8 +77,6 @@ public class VolumeUtils {
                 .withConfigMap(configMapVolumeSource)
                 .build();
 
-        LOGGER.traceOp("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
-
         return volume;
     }
 
@@ -100,8 +98,6 @@ public class VolumeUtils {
                 .withName(validName)
                 .withConfigMap(configMapVolumeSource)
                 .build();
-
-        LOGGER.traceOp("Created configMap Volume named '{}' with source configMap '{}'", validName, configMapName);
 
         return volume;
     }
@@ -144,7 +140,6 @@ public class VolumeUtils {
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        LOGGER.traceOp("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -173,7 +168,6 @@ public class VolumeUtils {
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        LOGGER.traceOp("Created secret Volume named '{}' with source secret '{}'", validName, secretName);
         return volume;
     }
 
@@ -196,7 +190,6 @@ public class VolumeUtils {
                 .withName(validName)
                 .withEmptyDir(emptyDirVolumeSource)
                 .build();
-        LOGGER.traceOp("Created emptyDir Volume named '{}' with sizeLimit '{}'", validName, sizeLimit);
         return volume;
     }
 
@@ -245,7 +238,6 @@ public class VolumeUtils {
                 .withName(validName)
                 .withMountPath(path)
                 .build();
-        LOGGER.traceOp("Created volume mount {} for volume {}", volumeMount, validName);
         return volumeMount;
     }
 

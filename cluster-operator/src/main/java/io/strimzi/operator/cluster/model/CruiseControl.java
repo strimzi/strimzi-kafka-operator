@@ -203,7 +203,7 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.tlsSidecarImage = tlsSideCarImage;
             cruiseControl.setTlsSidecar(tlsSidecar);
 
-            cruiseControl = updateConfiguration(reconciliation, spec, cruiseControl);
+            cruiseControl = cruiseControl.updateConfiguration(spec);
 
             KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
             if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {
@@ -241,7 +241,7 @@ public class CruiseControl extends AbstractModel {
         return cruiseControl;
     }
 
-    public static CruiseControl updateConfiguration(Reconciliation reconciliation, CruiseControlSpec spec, CruiseControl cruiseControl) {
+    public CruiseControl updateConfiguration(CruiseControlSpec spec) {
         CruiseControlConfiguration userConfiguration = new CruiseControlConfiguration(reconciliation, spec.getConfig().entrySet());
         for (Map.Entry<String, String> defaultEntry : CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap().entrySet()) {
             if (userConfiguration.getConfigOption(defaultEntry.getKey()) == null) {
@@ -249,20 +249,19 @@ public class CruiseControl extends AbstractModel {
             }
         }
         // Ensure that the configured anomaly.detection.goals are a sub-set of the default goals
-        checkGoals(reconciliation, userConfiguration);
-        cruiseControl.setConfiguration(userConfiguration);
-        return cruiseControl;
+        checkGoals(userConfiguration);
+        this.setConfiguration(userConfiguration);
+        return this;
     }
 
     /**
      *  This method ensures that the checks in cruise-control/src/main/java/com/linkedin/kafka/cruisecontrol/config/KafkaCruiseControlConfig.java
      *  sanityCheckGoalNames() method (L118)  don't fail if a user submits custom default goals that have less members then the default
      *  anomaly.detection.goals.
-     * @param reconciliation The reconciliation
      * @param configuration The configuration instance to be checked.
      * @throws UnsupportedOperationException If the configuration contains self.healing.goals configurations.
      */
-    public static void checkGoals(Reconciliation reconciliation, CruiseControlConfiguration configuration) {
+    public void checkGoals(CruiseControlConfiguration configuration) {
         // If self healing goals are defined then these take precedence.
         // Right now, self.healing.goals must either be null or an empty list
         if (configuration.getConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY.toString()) != null) {

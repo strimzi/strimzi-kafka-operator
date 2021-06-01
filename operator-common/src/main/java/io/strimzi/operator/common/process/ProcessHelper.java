@@ -49,7 +49,6 @@ public class ProcessHelper {
 
     public static File createTmpFile(String suffix) throws IOException {
         File tmpFile = File.createTempFile(ProcessHelper.class.getName(), suffix);
-        LOGGER.traceOp("Created temporary file {}", tmpFile);
         tmpFile.deleteOnExit();
         return tmpFile;
     }

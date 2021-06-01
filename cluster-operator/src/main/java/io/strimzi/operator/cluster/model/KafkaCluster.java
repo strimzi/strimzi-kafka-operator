@@ -679,7 +679,7 @@ public class KafkaCluster extends AbstractModel {
         LOGGER.debugCr(reconciliation, "Generating certificates");
 
         try {
-            brokerCerts = clusterCa.generateBrokerCerts(reconciliation, kafka, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
+            brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }

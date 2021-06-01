@@ -471,7 +471,7 @@ public class ZookeeperCluster extends AbstractModel {
     public void generateCertificates(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         LOGGER.debugCr(reconciliation, "Generating certificates");
         try {
-            nodeCerts = clusterCa.generateZkCerts(reconciliation, kafka, isMaintenanceTimeWindowsSatisfied);
+            nodeCerts = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }

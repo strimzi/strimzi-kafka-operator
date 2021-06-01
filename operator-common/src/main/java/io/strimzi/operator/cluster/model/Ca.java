@@ -97,7 +97,7 @@ public abstract class Ca {
     public static final int INIT_GENERATION = 0;
 
     private final PasswordGenerator passwordGenerator;
-    private final Reconciliation reconciliation;
+    protected final Reconciliation reconciliation;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
