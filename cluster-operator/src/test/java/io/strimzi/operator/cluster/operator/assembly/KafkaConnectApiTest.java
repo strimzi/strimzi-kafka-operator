@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.debezium.kafka.KafkaCluster;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -20,6 +19,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -49,22 +49,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
-
-    private KafkaCluster cluster;
+    private static EmbeddedKafkaCluster cluster;
     private static Vertx vertx;
     private Connect connect;
     private static final int PORT = 18083;
 
     @BeforeEach
     public void beforeEach() throws IOException, InterruptedException {
-        // Start a 3 node Kafka cluster
-        cluster = new KafkaCluster();
-        cluster.addBrokers(3);
-        cluster.deleteDataPriorToStartup(true);
-        cluster.deleteDataUponShutdown(true);
-        cluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
-        cluster.startup();
-
         // Start a N node connect cluster
         Map<String, String> workerProps = new HashMap<>();
         workerProps.put("listeners", "http://localhost:" + PORT);
@@ -78,7 +69,7 @@ public class KafkaConnectApiTest {
         workerProps.put("offset.storage.topic", getClass().getSimpleName() + "-offsets");
         workerProps.put("config.storage.topic", getClass().getSimpleName() + "-config");
         workerProps.put("status.storage.topic", getClass().getSimpleName() + "-status");
-        workerProps.put("bootstrap.servers", cluster.brokerList());
+        workerProps.put("bootstrap.servers", cluster.bootstrapServers());
         //DistributedConfig config = new DistributedConfig(workerProps);
         //RestServer rest = new RestServer(config);
         //rest.initializeServer();
@@ -100,12 +91,14 @@ public class KafkaConnectApiTest {
             connect.stop();
             connect.awaitStop();
         }
-        cluster.shutdown();
     }
 
     @BeforeAll
-    public static void before() {
+    public static void before() throws IOException {
         vertx = Vertx.vertx();
+
+        cluster = new EmbeddedKafkaCluster(3);
+        cluster.start();
     }
 
     @AfterAll
@@ -281,7 +274,6 @@ public class KafkaConnectApiTest {
                             assertThat(map.get("org.reflections").get("level"), is("FATAL"));
                             assertThat(map.get("org.reflections.Reflection").get("level"), is("INFO"));
                             assertThat(map.get("root").get("level"), is("TRACE"));
-                            assertThat(map.get("io.debezium").get("level"), is("TRACE"));
                             assertThat(map.get("unknown"), is(nullValue()));
                             async.flag();
                         }))));

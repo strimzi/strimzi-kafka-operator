@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.debezium.kafka.KafkaCluster;
-import io.debezium.util.Testing;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.vertx.core.Vertx;
@@ -15,6 +13,7 @@ import io.vertx.junit5.VertxTestContext;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
 import org.apache.kafka.common.quota.ClientQuotaAlteration;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,35 +44,27 @@ public class KafkaUserQuotasIT {
 
     private static Vertx vertx;
 
-    private static KafkaCluster kafkaCluster;
+    private static EmbeddedKafkaCluster kafkaCluster;
 
     @BeforeAll
     public static void beforeAll() {
         vertx = Vertx.vertx();
 
         try {
-            kafkaCluster =
-                    new KafkaCluster()
-                            .usingDirectory(Testing.Files.createTestingDirectory("user-quotas-operator-integration-test"))
-                            .deleteDataPriorToStartup(true)
-                            .deleteDataUponShutdown(true)
-                            .addBrokers(1)
-                            .startup();
+            kafkaCluster = new EmbeddedKafkaCluster(1);
+            kafkaCluster.start();
         } catch (IOException e) {
             assertThat(false, is(true));
         }
 
-        zkClient = new ZkClient("localhost:" + kafkaCluster.zkPort(), 6000_0, 30_000, new BytesPushThroughSerializer());
+        zkClient = new ZkClient(kafkaCluster.zKConnectString(), 6000_0, 30_000, new BytesPushThroughSerializer());
 
         kuq = new KafkaUserQuotasOperator(vertx,
-                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.brokerList(), null, null, null));
+                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.bootstrapServers(), null, null, null));
     }
 
     @AfterAll
     public static void afterAll() {
-        if (kafkaCluster != null) {
-            kafkaCluster.shutdown();
-        }
         if (vertx != null) {
             vertx.close();
         }
@@ -400,7 +391,7 @@ public class KafkaUserQuotasIT {
 
     private void createScramShaUser(String username, String password) {
         // creating SCRAM-SHA user upfront to check it works because it shares same path in ZK as quotas
-        ScramShaCredentials scramShaCred = new ScramShaCredentials("localhost:" + kafkaCluster.zkPort(), 6_000);
+        ScramShaCredentials scramShaCred = new ScramShaCredentials(kafkaCluster.zKConnectString(), 6_000);
         scramShaCred.createOrUpdate(username, password);
         assertThat(scramShaCred.exists(username), is(true));
         assertThat(scramShaCred.isPathExist("/config/users/" + username), is(true));

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.debezium.kafka.KafkaCluster;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
 
@@ -28,8 +27,8 @@ public class ConnectCluster {
         return this;
     }
 
-    ConnectCluster usingBrokers(KafkaCluster kafkaCluster) {
-        this.brokerList = kafkaCluster.brokerList();
+    ConnectCluster usingBrokers(String bootstrapServers) {
+        this.brokerList = bootstrapServers;
         return this;
     }
 

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import io.debezium.kafka.KafkaCluster;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -24,7 +23,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
-import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -37,16 +35,11 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +82,6 @@ public abstract class TopicOperatorBaseIT {
     public static final String CLIENTID = "topic-operator-clientid-it";
 
     protected static Vertx vertx;
-    protected KafkaCluster kafkaCluster;
     protected volatile AdminClient adminClient;
     protected KubernetesClient kubeClient;
 
@@ -98,7 +90,6 @@ public abstract class TopicOperatorBaseIT {
 
     protected Session session;
 
-    @BeforeAll
     public static void setupKubeCluster() throws IOException {
         cluster = getInstance();
 
@@ -115,18 +106,13 @@ public abstract class TopicOperatorBaseIT {
         cmdKubeClient().createNamespace(NAMESPACE);
         oldNamespace = cluster.setNamespace(NAMESPACE);
         LOGGER.info("#### Creating " + "../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
-        LOGGER.info(new String(Files.readAllBytes(new File("../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml").toPath())));
         cmdKubeClient().create(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         LOGGER.info("#### Creating " + TestUtils.CRD_TOPIC);
-        LOGGER.info(new String(Files.readAllBytes(new File(TestUtils.CRD_TOPIC).toPath())));
         cmdKubeClient().create(TestUtils.CRD_TOPIC);
-        LOGGER.info("#### Creating " + "src/test/resources/TopicOperatorIT-rbac.yaml");
-        LOGGER.info(new String(Files.readAllBytes(new File("src/test/resources/TopicOperatorIT-rbac.yaml").toPath())));
-
-        cmdKubeClient().create("src/test/resources/TopicOperatorIT-rbac.yaml");
+        LOGGER.info("#### Creating " + TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
+        cmdKubeClient().create(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
-    @AfterAll
     public static void teardownKubeCluster() {
         if (cluster == null) {
             return; // assume failed
@@ -135,7 +121,7 @@ public abstract class TopicOperatorBaseIT {
         CountDownLatch latch = new CountDownLatch(1);
         if (oldNamespace != null) {
             cmdKubeClient()
-                    .delete("src/test/resources/TopicOperatorIT-rbac.yaml")
+                    .delete(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml")
                     .delete(TestUtils.CRD_TOPIC)
                     .delete(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
                     .deleteNamespace(NAMESPACE);
@@ -151,37 +137,18 @@ public abstract class TopicOperatorBaseIT {
         }
     }
 
-    @BeforeEach
-    public void setup() throws Exception {
+    public void setup(EmbeddedKafkaCluster kafkaCluster) throws Exception {
         LOGGER.info("Setting up test");
         cluster.cluster();
-        int counts = 3;
-        do {
-            try {
-                kafkaCluster = new KafkaCluster();
-                kafkaCluster.addBrokers(numKafkaBrokers());
-                kafkaCluster.deleteDataPriorToStartup(true);
-                kafkaCluster.deleteDataUponShutdown(true);
-                kafkaCluster.usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
-                kafkaCluster.withKafkaConfiguration(kafkaClusterConfig());
-                kafkaCluster.startup();
-                break;
-            } catch (kafka.zookeeper.ZooKeeperClientTimeoutException e) {
-                if (counts == 0) {
-                    throw e;
-                }
-                counts--;
-            }
-        } while (true);
 
         Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.brokerList());
+        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
         adminClient = AdminClient.create(p);
 
         kubeClient = kubeClient().getClient();
         Crds.registerCustomKinds();
         LOGGER.info("Using namespace {}", NAMESPACE);
-        startTopicOperator();
+        startTopicOperator(kafkaCluster);
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those
@@ -193,24 +160,10 @@ public abstract class TopicOperatorBaseIT {
         LOGGER.info("Finished setting up test");
     }
 
-    /**
-     * @return The number of Kafka brokers in the Kafka cluster
-     */
-    protected abstract int numKafkaBrokers();
-
-    /**
-     * @return The Kafka broker config to be used for the Kafka cluster.
-     */
-    protected abstract Properties kafkaClusterConfig();
-
-    @AfterEach
-    public void teardown() throws InterruptedException, TimeoutException, ExecutionException {
+    public void teardown(boolean deletionEnabled) throws InterruptedException, TimeoutException, ExecutionException {
         CountDownLatch latch = new CountDownLatch(1);
         try {
             LOGGER.info("Tearing down test");
-
-            boolean deletionEnabled = "true".equals(kafkaClusterConfig().getOrDefault(
-                    KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "true"));
 
             try {
                 if (deletionEnabled && kubeClient != null) {
@@ -245,25 +198,17 @@ public abstract class TopicOperatorBaseIT {
                 }
             }
         } finally {
-
             adminClient.close();
-            if (kafkaCluster != null) {
-                try {
-                    kafkaCluster.shutdown();
-                } catch (Exception e) {
-                    LOGGER.warn(e);
-                }
-            }
             LOGGER.info("Finished tearing down test");
             latch.countDown();
         }
         latch.await(30, TimeUnit.SECONDS);
     }
 
-    protected void startTopicOperator() throws InterruptedException, ExecutionException, TimeoutException {
+    protected void startTopicOperator(EmbeddedKafkaCluster kafkaCluster) throws InterruptedException, ExecutionException, TimeoutException {
 
         LOGGER.info("Starting Topic Operator");
-        session = new Session(kubeClient, new Config(topicOperatorConfig()));
+        session = new Session(kubeClient, new Config(topicOperatorConfig(kafkaCluster)));
 
         CompletableFuture<Void> async = new CompletableFuture<>();
         vertx.deployVerticle(session, ar -> {
@@ -278,20 +223,16 @@ public abstract class TopicOperatorBaseIT {
         LOGGER.info("Started Topic Operator");
     }
 
-    protected Map<String, String> topicOperatorConfig() {
+    protected Map<String, String> topicOperatorConfig(EmbeddedKafkaCluster kafkaCluster) {
         Map<String, String> m = new HashMap<>();
-        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.brokerList());
-        m.put(Config.ZOOKEEPER_CONNECT.key, "localhost:" + zkPort(kafkaCluster));
+        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.bootstrapServers());
+        m.put(Config.ZOOKEEPER_CONNECT.key, kafkaCluster.zKConnectString());
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
         m.put(Config.CLIENT_ID.key, CLIENTID);
         m.put(Config.TC_RESOURCE_LABELS, io.strimzi.operator.common.model.Labels.STRIMZI_KIND_LABEL + "=topic");
         m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
         return m;
-    }
-
-    protected static int zkPort(KafkaCluster cluster) {
-        return cluster.zkPort();
     }
 
     protected void stopTopicOperator() throws InterruptedException, ExecutionException, TimeoutException {
