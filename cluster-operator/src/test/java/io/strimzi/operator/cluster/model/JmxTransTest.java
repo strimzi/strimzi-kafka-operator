@@ -95,7 +95,7 @@ public class JmxTransTest {
             .endSpec()
             .build();
 
-    private final JmxTrans jmxTrans = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafkaAssembly, VERSIONS);
+    private final JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
     @ParallelTest
     public void testOutputDefinitionWriterDeserialization() {
@@ -257,7 +257,7 @@ public class JmxTransTest {
                     .endJmxTrans()
                 .endSpec()
                 .build();
-        JmxTrans jmxTrans = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         // Check Deployment
         Deployment dep = jmxTrans.generateDeployment(null, null);
@@ -312,7 +312,7 @@ public class JmxTransTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> envVars = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars();
+        List<EnvVar> envVars = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS).getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -347,7 +347,7 @@ public class JmxTransTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> envVars = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS).getEnvVars();
+        List<EnvVar> envVars = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS).getEnvVars();
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -379,7 +379,7 @@ public class JmxTransTest {
                 .endSpec()
                 .build();
 
-        JmxTrans jmxTrans = JmxTrans.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), resource, VERSIONS);
+        JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
         assertThat(jmxTrans.templateContainerSecurityContext, is(securityContext));
 
         Deployment deployment = jmxTrans.generateDeployment(null, null);

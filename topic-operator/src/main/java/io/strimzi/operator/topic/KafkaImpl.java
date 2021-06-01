@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -51,9 +52,9 @@ public class KafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public Future<Void> deleteTopic(TopicName topicName) {
+    public Future<Void> deleteTopic(Reconciliation reconciliation, TopicName topicName) {
         Promise<Void> handler = Promise.promise();
-        LOGGER.debugOp("Deleting topic {}", topicName);
+        LOGGER.debugCr(reconciliation, "Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
                 singleton(topicName.toString())).values().get(topicName.toString());
         mapFuture(future).onComplete(ar -> {
@@ -66,7 +67,7 @@ public class KafkaImpl implements Kafka {
     }
 
     @Override
-    public Future<Boolean> topicExists(TopicName topicName) {
+    public Future<Boolean> topicExists(Reconciliation reconciliation, TopicName topicName) {
         // Test existence by doing a validate-only creation and checking for topic exists exception.
         // This request goes to the controller, so is less susceptible to races
         // where we happen to query a broker which hasn't processed an UPDATE_METADATA
@@ -91,7 +92,7 @@ public class KafkaImpl implements Kafka {
 
     @SuppressWarnings("deprecation")
     @Override
-    public Future<Void> updateTopicConfig(Topic topic) {
+    public Future<Void> updateTopicConfig(Reconciliation reconciliation, Topic topic) {
         Map<ConfigResource, Config> configs = TopicSerialization.toTopicConfig(topic);
         KafkaFuture<Void> future = adminClient.alterConfigs(configs).values().get(configs.keySet().iterator().next());
         return mapFuture(future);
@@ -103,10 +104,10 @@ public class KafkaImpl implements Kafka {
      * The Future completes with a null result a topic with the given {@code topicName} does not exist.
      */
     @Override
-    public Future<TopicMetadata> topicMetadata(TopicName topicName) {
-        LOGGER.debugOp("Getting metadata for topic {}", topicName);
+    public Future<TopicMetadata> topicMetadata(Reconciliation reconciliation, TopicName topicName) {
+        LOGGER.debugCr(reconciliation, "Getting metadata for topic {}", topicName);
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName.toString());
-        return topicExists(topicName).compose(exists -> {
+        return topicExists(reconciliation, topicName).compose(exists -> {
             if (exists) {
                 Future<TopicDescription> topicDescriptionFuture = mapFuture(adminClient.describeTopics(
                         singleton(topicName.toString())).values().get(topicName.toString()));
@@ -133,11 +134,11 @@ public class KafkaImpl implements Kafka {
 
 
     @Override
-    public Future<Void> increasePartitions(Topic topic) {
+    public Future<Void> increasePartitions(Reconciliation reconciliation, Topic topic) {
         try {
             String topicName = topic.getTopicName().toString();
             final NewPartitions newPartitions = NewPartitions.increaseTo(topic.getNumPartitions());
-            LOGGER.debugOp("Increasing partitions {}", newPartitions);
+            LOGGER.debugCr(reconciliation, "Increasing partitions {}", newPartitions);
             final Map<String, NewPartitions> request = Collections.singletonMap(topicName, newPartitions);
             return mapFuture(adminClient.createPartitions(request).values().get(topicName));
         } catch (Exception e) {
@@ -150,10 +151,10 @@ public class KafkaImpl implements Kafka {
      * (in a different thread) with the result.
      */
     @Override
-    public Future<Void> createTopic(Topic topic) {
+    public Future<Void> createTopic(Reconciliation reconciliation, Topic topic) {
         try {
             NewTopic newTopic = TopicSerialization.toNewTopic(topic, null);
-            LOGGER.debugOp("Creating topic {}", newTopic);
+            LOGGER.debugCr(reconciliation, "Creating topic {}", newTopic);
             KafkaFuture<Void> future = adminClient.createTopics(
                     singleton(newTopic)).values().get(newTopic.name());
             return mapFuture(future);

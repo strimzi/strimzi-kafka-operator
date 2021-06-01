@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.AclResourcePatternType;
 import io.strimzi.api.kafka.model.AclRuleType;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
@@ -41,7 +40,6 @@ import static org.hamcrest.Matchers.hasSize;
 @ExtendWith(VertxExtension.class)
 public class SimpleAclOperatorIT {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(SimpleAclOperatorIT.class);
     private static final int TEST_TIMEOUT = 60;
 
     private static Vertx vertx;
@@ -69,7 +67,7 @@ public class SimpleAclOperatorIT {
         }
 
         simpleAclOperator = new SimpleAclOperator(vertx,
-                new DefaultAdminClientProvider().createAdminClient(new Reconciliation("test", "kind", "namespace", "name"), kafkaCluster.bootstrapServers(), null, null, null));
+                new DefaultAdminClientProvider().createAdminClient(Reconciliation.DUMMY_RECONCILIATION, kafkaCluster.bootstrapServers(), null, null, null));
     }
 
     @Test

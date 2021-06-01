@@ -224,17 +224,17 @@ public class ResourceUtils {
         return secrets;
     }
 
-    public static ClusterCa createInitialClusterCa(String clusterName, Secret initialClusterCaCert, Secret initialClusterCaKey) {
-        return new ClusterCa(new MockCertManager(), new PasswordGenerator(10, "a", "a"), clusterName, initialClusterCaCert, initialClusterCaKey);
+    public static ClusterCa createInitialClusterCa(Reconciliation reconciliation, String clusterName, Secret initialClusterCaCert, Secret initialClusterCaKey) {
+        return new ClusterCa(reconciliation, new MockCertManager(), new PasswordGenerator(10, "a", "a"), clusterName, initialClusterCaCert, initialClusterCaKey);
     }
 
-    public static ClientsCa createInitialClientsCa(String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
-        return new ClientsCa(new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+    public static ClientsCa createInitialClientsCa(Reconciliation reconciliation, String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
+        return new ClientsCa(reconciliation, new MockCertManager(),
+                new PasswordGenerator(10, "a", "a"),
                 KafkaCluster.clientsCaCertSecretName(clusterName),
                 initialClientsCaCert,
                 KafkaCluster.clientsCaKeySecretName(clusterName),
-                initialClientsCaKey,
-                365, 30, true, null);
+                initialClientsCaKey, 365, 30, true, null);
     }
 
     public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName,
@@ -622,12 +622,12 @@ public class ResourceUtils {
         return new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
             () -> new BackOff(5_000, 2, 4)) {
                 @Override
-                protected Future<Boolean> isLeader(Reconciliation reconciliation, Pod pod, NetClientOptions options) {
+                protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
                     return Future.succeededFuture(true);
                 }
 
                 @Override
-                protected PemTrustOptions trustOptions(Reconciliation reconciliation, Secret s) {
+                protected PemTrustOptions trustOptions(Secret s) {
                     return new PemTrustOptions();
                 }
 

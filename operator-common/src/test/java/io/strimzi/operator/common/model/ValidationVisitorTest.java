@@ -41,7 +41,7 @@ public class ValidationVisitorTest {
 
         Set<Condition> warningConditions = new HashSet<>();
 
-        ResourceVisitor.visit(new Reconciliation("test", "kind", "namespace", "name"), k, new ValidationVisitor(resource, logger, warningConditions));
+        ResourceVisitor.visit(Reconciliation.DUMMY_RECONCILIATION, k, new ValidationVisitor(resource, logger, warningConditions));
 
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
@@ -90,7 +90,7 @@ public class ValidationVisitorTest {
 
         Set<Condition> warningConditions = new HashSet<>();
 
-        ResourceVisitor.visit(new Reconciliation("test", "kind", "namespace", "name"), k, new ValidationVisitor(resource, logger, warningConditions));
+        ResourceVisitor.visit(Reconciliation.DUMMY_RECONCILIATION, k, new ValidationVisitor(resource, logger, warningConditions));
 
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 

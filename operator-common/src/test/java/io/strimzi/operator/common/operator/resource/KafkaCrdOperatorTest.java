@@ -111,7 +111,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         Checkpoint async = context.checkpoint();
 
         createResourceOperations(vertx, mockClient)
-            .updateStatusAsync(new Reconciliation("test", "kind", "ns", "name"), resource())
+            .updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, resource())
             .onComplete(context.succeeding(kafka -> async.flag()));
     }
 }

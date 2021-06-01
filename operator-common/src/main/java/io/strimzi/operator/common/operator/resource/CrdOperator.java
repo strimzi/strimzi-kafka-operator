@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -24,6 +25,8 @@ public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
             L extends CustomResourceList<T>>
         extends AbstractWatchableStatusedResourceOperator<C, T, L, Resource<T>> {
+
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CrdOperator.class);
 
     private final Class<T> cls;
     private final Class<L> listCls;
@@ -87,10 +90,10 @@ public class CrdOperator<C extends KubernetesClient,
             String name = resource.getMetadata().getName();
             try {
                 T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(resource);
-                reconciliationLogger.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
+                LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {
-                reconciliationLogger.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+                LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                 future.fail(e);
             }
         }, true, blockingPromise);
@@ -107,10 +110,10 @@ public class CrdOperator<C extends KubernetesClient,
 
             try {
                 T result = operation().inNamespace(namespace).withName(name).updateStatus(resource);
-                reconciliationLogger.infoCr(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
+                LOGGER.infoCr(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {
-                reconciliationLogger.debugCr(reconciliation, "Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
+                LOGGER.debugCr(reconciliation, "Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
                 future.fail(e);
             }
         }, true, blockingPromise);

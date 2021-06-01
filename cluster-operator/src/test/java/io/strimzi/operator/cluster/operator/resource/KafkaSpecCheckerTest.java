@@ -39,8 +39,8 @@ public class KafkaSpecCheckerTest {
 
     private KafkaSpecChecker generateChecker(Kafka kafka) {
         KafkaVersion.Lookup versions = KafkaVersionTestUtils.getKafkaVersionLookup();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, versions);
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, versions);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, versions);
+        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, versions);
         return new KafkaSpecChecker(kafka.getSpec(), versions, kafkaCluster, zkCluster);
     }
 

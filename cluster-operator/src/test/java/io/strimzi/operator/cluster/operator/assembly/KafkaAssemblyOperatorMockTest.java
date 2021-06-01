@@ -48,7 +48,6 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
@@ -57,6 +56,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -90,7 +91,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class KafkaAssemblyOperatorMockTest {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAssemblyOperatorMockTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperatorMockTest.class);
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -310,7 +311,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private Future<Void> initialReconcile(VertxTestContext context) {
-        LOGGER.infoOp("Reconciling initially -> create");
+        LOGGER.info("Reconciling initially -> create");
         return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet kafkaSts = client.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
@@ -377,7 +378,7 @@ public class KafkaAssemblyOperatorMockTest {
                     assertThat("Expected secret " + secret + " to not exist",
                             client.secrets().inNamespace(NAMESPACE).withName(secret).get(), is(nullValue()));
                 }
-                LOGGER.infoOp("Reconciling again -> update");
+                LOGGER.info("Reconciling again -> update");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -402,7 +403,7 @@ public class KafkaAssemblyOperatorMockTest {
                     assertThat("Expected service " + service + " to be not exist",
                             client.services().inNamespace(NAMESPACE).withName(service).get(), is(nullValue()));
                 }
-                LOGGER.infoOp("Reconciling again -> update");
+                LOGGER.info("Reconciling again -> update");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -461,7 +462,7 @@ public class KafkaAssemblyOperatorMockTest {
                 assertThat("Expected sts " + statefulSet + " should not exist",
                         client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(nullValue()));
 
-                LOGGER.infoOp("Reconciling again -> update");
+                LOGGER.info("Reconciling again -> update");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -499,7 +500,7 @@ public class KafkaAssemblyOperatorMockTest {
                         .build();
                 kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(patchedPersistenceKafka);
 
-                LOGGER.infoOp("Updating with changed storage class");
+                LOGGER.info("Updating with changed storage class");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -584,7 +585,7 @@ public class KafkaAssemblyOperatorMockTest {
                 }
                 kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
 
-                LOGGER.infoOp("Updating with changed storage type");
+                LOGGER.info("Updating with changed storage type");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -674,7 +675,7 @@ public class KafkaAssemblyOperatorMockTest {
                         .withDeleteClaim(!originalKafkaDeleteClaim.get())
                         .endPersistentClaimStorage().endKafka().endSpec().build();
                 kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
-                LOGGER.infoOp("Updating with changed delete claim");
+                LOGGER.info("Updating with changed delete claim");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -685,7 +686,7 @@ public class KafkaAssemblyOperatorMockTest {
                             hasEntry(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, String.valueOf(!originalKafkaDeleteClaim.get())));
                 }
                 kafkaAssembly(NAMESPACE, CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-                LOGGER.infoOp("Reconciling again -> delete");
+                LOGGER.info("Reconciling again -> delete");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> async.flag()));
@@ -723,7 +724,7 @@ public class KafkaAssemblyOperatorMockTest {
                         .build();
                 kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(scaledDownCluster);
 
-                LOGGER.infoOp("Scaling down to {} Kafka pods", scaleDownTo);
+                LOGGER.info("Scaling down to {} Kafka pods", scaleDownTo);
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -772,7 +773,7 @@ public class KafkaAssemblyOperatorMockTest {
                         .build();
                 kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(scaledUpKafka);
 
-                LOGGER.infoOp("Scaling up to {} Kafka pods", scaleUpTo);
+                LOGGER.info("Scaling up to {} Kafka pods", scaleUpTo);
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {

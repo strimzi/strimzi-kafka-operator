@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 
 import java.util.Set;
@@ -20,10 +21,11 @@ public interface Kafka {
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
      *
+     * @param reconciliation The reconciliation.
      * @param newTopic The topic to create.
      * @return A future which is completed once the topic has been created.
      */
-    Future<Void> createTopic(Topic newTopic);
+    Future<Void> createTopic(Reconciliation reconciliation, Topic newTopic);
 
     /**
      * Asynchronously delete the given topic in Kafka,
@@ -31,10 +33,11 @@ public interface Kafka {
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
      *
+     * @param reconciliation The reconciliation.
      * @param topicName The name of the topic to delete.
      * @return A future which is completed once the topic has been deleted.
      */
-    Future<Void> deleteTopic(TopicName topicName);
+    Future<Void> deleteTopic(Reconciliation reconciliation, TopicName topicName);
 
     /**
      * Wait for the given topic to not existing Kafka ,
@@ -42,10 +45,11 @@ public interface Kafka {
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
      *
+     * @param reconciliation The reconciliation.
      * @param topicName The name of the topic to delete.
      * @return A future which is completed once the topic has been deleted.
      */
-    Future<Boolean> topicExists(TopicName topicName);
+    Future<Boolean> topicExists(Reconciliation reconciliation, TopicName topicName);
 
     /**
      * Asynchronously update the topic config in Kafka,
@@ -53,10 +57,11 @@ public interface Kafka {
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
      *
+     * @param reconciliation The reconciliation.
      * @param topic The topic config to update.
      * @return A future which is completed once the topic has been updated.
      */
-    Future<Void> updateTopicConfig(Topic topic);
+    Future<Void> updateTopicConfig(Reconciliation reconciliation, Topic topic);
 
     /**
      * Asynchronously increase the topic's partitions in Kafka,
@@ -64,10 +69,11 @@ public interface Kafka {
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
      *
+     * @param reconciliation The reconciliation.
      * @param topic The topic.
      * @return A future which is completed once the topic has been updated.
      */
-    Future<Void> increasePartitions(Topic topic);
+    Future<Void> increasePartitions(Reconciliation reconciliation, Topic topic);
 
     /**
      * Asynchronously fetch the topic metadata in Kafka,
@@ -76,10 +82,11 @@ public interface Kafka {
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
      *
+     * @param reconciliation The reconciliation.
      * @param topicName The name of the topic to get the metadata of.
      * @return A future which is completed with the requested metadata.
      */
-    Future<TopicMetadata> topicMetadata(TopicName topicName);
+    Future<TopicMetadata> topicMetadata(Reconciliation reconciliation, TopicName topicName);
 
     /**
      * Asynchronously list the names of the topics available in Kafka,

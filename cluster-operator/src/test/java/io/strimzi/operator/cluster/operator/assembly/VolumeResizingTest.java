@@ -107,7 +107,7 @@ public class VolumeResizingTest {
     @Test
     public void testNoExistingVolumes()  {
         Kafka kafka = getKafkaCrd();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
@@ -154,7 +154,7 @@ public class VolumeResizingTest {
     @Test
     public void testNotBoundVolumes()  {
         Kafka kafka = getKafkaCrd();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
@@ -202,7 +202,7 @@ public class VolumeResizingTest {
     @Test
     public void testVolumesBoundExpandableStorageClass()  {
         Kafka kafka = getKafkaCrd();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
@@ -259,7 +259,7 @@ public class VolumeResizingTest {
     @Test
     public void testVolumesBoundNonExpandableStorageClass()  {
         Kafka kafka = getKafkaCrd();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
@@ -316,7 +316,7 @@ public class VolumeResizingTest {
     @Test
     public void testVolumesResizing()  {
         Kafka kafka = getKafkaCrd();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
@@ -376,7 +376,7 @@ public class VolumeResizingTest {
     @Test
     public void testVolumesWaitingForRestart()  {
         Kafka kafka = getKafkaCrd();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
@@ -442,7 +442,7 @@ public class VolumeResizingTest {
     @Test
     public void testVolumesResized()  {
         Kafka kafka = getKafkaCrd();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator

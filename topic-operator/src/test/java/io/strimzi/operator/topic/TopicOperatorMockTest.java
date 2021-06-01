@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
@@ -243,7 +244,7 @@ public class TopicOperatorMockTest {
     Topic getFromKafka(VertxTestContext context, String topicName) throws InterruptedException {
         AtomicReference<Topic> ref = new AtomicReference<>();
         Checkpoint async = context.checkpoint();
-        Future<TopicMetadata> kafkaMetadata = session.kafka.topicMetadata(new TopicName(topicName));
+        Future<TopicMetadata> kafkaMetadata = session.kafka.topicMetadata(Reconciliation.DUMMY_RECONCILIATION, new TopicName(topicName));
         kafkaMetadata.map(metadata -> TopicSerialization.fromTopicMetadata(metadata)).onComplete(fromKafka -> {
             if (fromKafka.succeeded()) {
                 ref.set(fromKafka.result());

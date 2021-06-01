@@ -339,7 +339,7 @@ public class CruiseControl extends AbstractModel {
         return CruiseControlResources.serviceName(cluster);
     }
 
-    public Service generateService(Reconciliation reconciliation) {
+    public Service generateService() {
         if (!isDeployed()) {
             return null;
         }
@@ -348,7 +348,7 @@ public class CruiseControl extends AbstractModel {
         return createService("ClusterIP", ports, templateServiceAnnotations);
     }
 
-    protected List<ContainerPort> getContainerPortList(Reconciliation reconciliation) {
+    protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(1);
 
         portList.add(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP"));
@@ -360,7 +360,7 @@ public class CruiseControl extends AbstractModel {
         return portList;
     }
 
-    protected List<Volume> getVolumes(Reconciliation reconciliation, boolean isOpenShift) {
+    protected List<Volume> getVolumes(boolean isOpenShift) {
         return Arrays.asList(createTempDirVolume(),
                 createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                 createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift),
@@ -368,14 +368,14 @@ public class CruiseControl extends AbstractModel {
                 createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
-    protected List<VolumeMount> getVolumeMounts(Reconciliation reconciliation) {
+    protected List<VolumeMount> getVolumeMounts() {
         return Arrays.asList(createTempDirVolumeMount(),
                 createVolumeMount(CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT),
                 createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
-    public Deployment generateDeployment(Reconciliation reconciliation, boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (!isDeployed()) {
             return null;
         }
@@ -395,7 +395,7 @@ public class CruiseControl extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
-                getVolumes(reconciliation, isOpenShift),
+                getVolumes(isOpenShift),
                 imagePullSecrets);
     }
 
@@ -407,11 +407,11 @@ public class CruiseControl extends AbstractModel {
                 .withImage(getImage())
                 .withCommand("/opt/cruise-control/cruise_control_run.sh")
                 .withEnv(getEnvVars())
-                .withPorts(getContainerPortList(reconciliation))
+                .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
                 .withResources(getResources())
-                .withVolumeMounts(getVolumeMounts(reconciliation))
+                .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateCruiseControlContainerSecurityContext)
                 .build();
@@ -540,13 +540,12 @@ public class CruiseControl extends AbstractModel {
      * internal communication with Kafka and Zookeeper.
      * It also contains the related Cruise Control private key.
      *
-     * @param reconciliation The reconciliation
      * @param clusterCa The cluster CA.
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
      *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateSecret(Reconciliation reconciliation, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         if (!isDeployed()) {
             return null;
         }
@@ -565,13 +564,12 @@ public class CruiseControl extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for Cruise Control
      *
-     * @param reconciliation The reconciliation
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
      *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(Reconciliation reconciliation, String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>(1);
 
         // CO can access the REST API

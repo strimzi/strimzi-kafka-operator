@@ -52,7 +52,7 @@ public class StatefulSetDiffTest {
                 .endTemplate()
             .endSpec()
             .build();
-        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesSpecTemplate(), is(false));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesSpecTemplate(), is(false));
     }
 
     public StatefulSetDiff testCpuResources(ResourceRequirements requirements1, ResourceRequirements requirements2) {
@@ -86,7 +86,7 @@ public class StatefulSetDiffTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        return new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2);
+        return new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2);
     }
 
     @Test
@@ -186,8 +186,8 @@ public class StatefulSetDiffTest {
                             .build())
                 .endSpec()
                 .build();
-        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeClaimTemplates(), is(false));
-        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeSize(), is(true));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesVolumeClaimTemplates(), is(false));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesVolumeSize(), is(true));
     }
 
     @Test
@@ -236,8 +236,8 @@ public class StatefulSetDiffTest {
                         .build())
                 .endSpec()
                 .build();
-        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeClaimTemplates(), is(false));
-        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeSize(), is(false));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesVolumeClaimTemplates(), is(false));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesVolumeSize(), is(false));
     }
 
     @Test
@@ -293,7 +293,7 @@ public class StatefulSetDiffTest {
                                     .build())
                 .endSpec()
                 .build();
-        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeClaimTemplates(), is(true));
-        assertThat(new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss1, ss2).changesVolumeSize(), is(false));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesVolumeClaimTemplates(), is(true));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesVolumeSize(), is(false));
     }
 }

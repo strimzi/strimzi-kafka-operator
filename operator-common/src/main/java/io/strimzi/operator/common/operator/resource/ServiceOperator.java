@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  */
 public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ServiceOperator.class);
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/spec/sessionAffinity" +
@@ -92,7 +94,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
 
             return super.internalPatch(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
-            reconciliationLogger.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }

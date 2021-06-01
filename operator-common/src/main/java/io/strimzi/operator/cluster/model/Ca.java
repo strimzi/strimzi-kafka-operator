@@ -97,6 +97,7 @@ public abstract class Ca {
     public static final int INIT_GENERATION = 0;
 
     private final PasswordGenerator passwordGenerator;
+    private final Reconciliation reconciliation;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -190,10 +191,11 @@ public abstract class Ca {
     private boolean caCertsRemoved;
     private final CertificateExpirationPolicy policy;
 
-    public Ca(CertManager certManager, PasswordGenerator passwordGenerator, String commonName,
+    public Ca(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName,
               String caCertSecretName, Secret caCertSecret,
               String caKeySecretName, Secret caKeySecret,
               int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
+        this.reconciliation = reconciliation;
         this.commonName = commonName;
         this.caCertSecret = caCertSecret;
         this.caCertSecretName = caCertSecretName;
@@ -249,7 +251,7 @@ public abstract class Ca {
         }
     }
 
-    public CertAndKey addKeyAndCertToKeyStore(Reconciliation reconciliation, String alias, byte[] key, byte[] cert) throws IOException {
+    public CertAndKey addKeyAndCertToKeyStore(String alias, byte[] key, byte[] cert) throws IOException {
 
         File keyFile = File.createTempFile("tls", "key");
         File certFile = File.createTempFile("tls", "cert");
@@ -275,8 +277,8 @@ public abstract class Ca {
         return result;
     }
 
-    /*test*/ CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
-                                            File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
+    /*test*/ CertAndKey generateSignedCert(Subject subject,
+                                           File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
         LOGGER.debugCr(reconciliation, "Generating certificate {} with SAN {}, signed by CA {}", subject, subject.subjectAltNames(), this);
 
         certManager.generateCsr(keyFile, csrFile, subject);
@@ -297,25 +299,23 @@ public abstract class Ca {
     /**
      * Generates a certificate signed by this CA
      *
-     * @param reconciliation The reconciliation
      * @param commonName The CN of the certificate to be generated.
      * @return The CertAndKey
      * @throws IOException If the cert could not be generated.
      */
-    public CertAndKey generateSignedCert(Reconciliation reconciliation, String commonName) throws IOException {
-        return generateSignedCert(reconciliation, commonName, null);
+    public CertAndKey generateSignedCert(String commonName) throws IOException {
+        return generateSignedCert(commonName, null);
     }
 
     /**
      * Generates a certificate signed by this CA
      *
-     * @param reconciliation The reconciliation
      * @param commonName The CN of the certificate to be generated.
      * @param organization The O of the certificate to be generated. May be null.
      * @return The CertAndKey
      * @throws IOException If the cert could not be generated.
      */
-    public CertAndKey generateSignedCert(Reconciliation reconciliation, String commonName, String organization) throws IOException {
+    public CertAndKey generateSignedCert(String commonName, String organization) throws IOException {
         File csrFile = File.createTempFile("tls", "csr");
         File keyFile = File.createTempFile("tls", "key");
         File certFile = File.createTempFile("tls", "cert");
@@ -329,7 +329,7 @@ public abstract class Ca {
 
         subject.setCommonName(commonName);
 
-        CertAndKey result = generateSignedCert(reconciliation, subject,
+        CertAndKey result = generateSignedCert(subject,
                 csrFile, keyFile, certFile, keyStoreFile);
 
         delete(reconciliation, csrFile);
@@ -383,18 +383,18 @@ public abstract class Ca {
                         podName + ".p12", podName + ".password");
             } else {
                 // coming from an older operator version, the secret exists but without keystore and password
-                certAndKey = addKeyAndCertToKeyStore(reconciliation, subject.commonName(),
+                certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
                         Base64.getDecoder().decode(secret.getData().get(podName + ".key")),
                         Base64.getDecoder().decode(secret.getData().get(podName + ".crt")));
             }
 
             List<String> reasons = new ArrayList<>(2);
 
-            if (certSubjectChanged(reconciliation, certAndKey, subject, podName))   {
+            if (certSubjectChanged(certAndKey, subject, podName))   {
                 reasons.add("DNS names changed");
             }
 
-            if (isExpiring(reconciliation, secret, podName + ".crt") && isMaintenanceTimeWindowsSatisfied)  {
+            if (isExpiring(secret, podName + ".crt") && isMaintenanceTimeWindowsSatisfied)  {
                 reasons.add("certificate is expiring");
             }
 
@@ -405,7 +405,7 @@ public abstract class Ca {
             if (!reasons.isEmpty())  {
                 LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
 
-                CertAndKey newCertAndKey = generateSignedCert(reconciliation, subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
+                CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
                 certs.put(podName, newCertAndKey);
             }   else {
                 certs.put(podName, certAndKey);
@@ -419,7 +419,7 @@ public abstract class Ca {
             String podName = podNameFn.apply(i);
 
             LOGGER.debugCr(reconciliation, "Certificate for {} to generate", podName);
-            CertAndKey k = generateSignedCert(reconciliation, subjectFn.apply(i),
+            CertAndKey k = generateSignedCert(subjectFn.apply(i),
                     brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
             certs.put(podName, k);
         }
@@ -434,17 +434,16 @@ public abstract class Ca {
     /**
      * Returns whether the certificate is expiring or not
      *
-     * @param reconciliation The reconciliation
      * @param secret  Secret with the certificate
      * @param certKey   Key under which is the certificate stored
      * @return  True when the certificate should be renewed. False otherwise.
      */
-    public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
+    public boolean isExpiring(Secret secret, String certKey)  {
         boolean isExpiring = false;
 
         try {
             X509Certificate currentCert = cert(secret, certKey);
-            isExpiring = certNeedsRenewal(reconciliation, currentCert);
+            isExpiring = certNeedsRenewal(currentCert);
         } catch (RuntimeException e) {
             // TODO: We should mock the certificates properly so that this doesn't fail in tests (not now => long term :-o)
             LOGGER.debugCr(reconciliation, "Failed to parse existing certificate", e);
@@ -456,15 +455,14 @@ public abstract class Ca {
     /**
      * Checks whether subject alternate names changed and certificate needs a renewal
      *
-     * @param reconciliation The reconciliation
      * @param certAndKey    Current certificate
      * @param desiredSubject    Desired subject alternate names
      * @param podName   Name of the pod to which this certificate belongs (used for log messages)
      * @return  True if the subjects are different, false otherwise
      */
-    /*test*/ boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+    /*test*/ boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
         Collection<String> desiredAltNames = desiredSubject.subjectAltNames().values();
-        Collection<String> currentAltNames = getSubjectAltNames(reconciliation, certAndKey.cert());
+        Collection<String> currentAltNames = getSubjectAltNames(certAndKey.cert());
 
         if (currentAltNames != null && desiredAltNames.containsAll(currentAltNames) && currentAltNames.containsAll(desiredAltNames))   {
             LOGGER.traceCr(reconciliation, "Alternate subjects match. No need to refresh cert for pod {}.", podName);
@@ -478,11 +476,10 @@ public abstract class Ca {
     /**
      * Extracts the alternate subject names out of existing certificate
      *
-     * @param reconciliation The reconciliation
      * @param certificate Existing X509 certificate as a byte array
      * @return
      */
-    protected List<String> getSubjectAltNames(Reconciliation reconciliation, byte[] certificate) {
+    protected List<String> getSubjectAltNames(byte[] certificate) {
         List<String> subjectAltNames = null;
 
         try {
@@ -505,7 +502,6 @@ public abstract class Ca {
      * or replace the CA cert and key, according to the configured policy.
      * After calling this method {@link #certRenewed()} and {@link #certsRemoved()}
      * will return whether the certificate was renewed and whether expired secrets were removed from the Secret.
-     * @param reconciliation The reconciliation
      * @param namespace The namespace containing the cluster.
      * @param clusterName The name of the cluster.
      * @param labels The labels of the {@code Secrets} created.
@@ -514,7 +510,7 @@ public abstract class Ca {
      * @param ownerRef The owner of the {@code Secrets} created.
      * @param maintenanceWindowSatisfied Flag indicating whether we are in the maintenance window
      */
-    public void createRenewOrReplace(Reconciliation reconciliation, String namespace, String clusterName, Map<String, String> labels, Map<String, String> additonalLabels, Map<String, String> additonalAnnotations, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
+    public void createRenewOrReplace(String namespace, String clusterName, Map<String, String> labels, Map<String, String> additonalLabels, Map<String, String> additonalAnnotations, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
@@ -525,40 +521,40 @@ public abstract class Ca {
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
             caCertsRemoved = false;
         } else {
-            this.renewalType = shouldCreateOrRenew(reconciliation, currentCert, namespace, clusterName, maintenanceWindowSatisfied);
+            this.renewalType = shouldCreateOrRenew(currentCert, namespace, clusterName, maintenanceWindowSatisfied);
             LOGGER.debugCr(reconciliation, "{} renewalType {}", this, renewalType);
             switch (renewalType) {
                 case CREATE:
                     keyData = new HashMap<>(1);
                     certData = new HashMap<>(3);
-                    generateCaKeyAndCert(reconciliation, nextCaSubject(caKeyGeneration), keyData, certData);
+                    generateCaKeyAndCert(nextCaSubject(caKeyGeneration), keyData, certData);
                     break;
                 case REPLACE_KEY:
                     keyData = new HashMap<>(1);
                     certData = new HashMap<>(caCertSecret.getData());
                     if (certData.containsKey(CA_CRT)) {
                         String notAfterDate = DATE_TIME_FORMATTER.format(currentCert.getNotAfter().toInstant().atZone(ZoneId.of("Z")));
-                        addCertCaToTrustStore(reconciliation, "ca-" + notAfterDate + ".crt", certData);
+                        addCertCaToTrustStore("ca-" + notAfterDate + ".crt", certData);
                         certData.put("ca-" + notAfterDate + ".crt", certData.remove(CA_CRT));
                     }
                     ++caCertGeneration;
-                    generateCaKeyAndCert(reconciliation, nextCaSubject(++caKeyGeneration), keyData, certData);
+                    generateCaKeyAndCert(nextCaSubject(++caKeyGeneration), keyData, certData);
                     break;
                 case RENEW_CERT:
                     keyData = caKeySecret.getData();
                     certData = new HashMap<>(3);
                     ++caCertGeneration;
-                    renewCaCert(reconciliation, nextCaSubject(caKeyGeneration), certData);
+                    renewCaCert(nextCaSubject(caKeyGeneration), certData);
                     break;
                 default:
                     keyData = caKeySecret.getData();
                     certData = caCertSecret.getData();
                     // coming from an older version, the secret could not have the CA truststore
                     if (!certData.containsKey(CA_STORE)) {
-                        addCertCaToTrustStore(reconciliation, CA_CRT, certData);
+                        addCertCaToTrustStore(CA_CRT, certData);
                     }
             }
-            this.caCertsRemoved = removeExpiredCerts(reconciliation, certData) > 0;
+            this.caCertsRemoved = removeExpiredCerts(certData) > 0;
         }
         SecretCertProvider secretCertProvider = new SecretCertProvider();
 
@@ -604,7 +600,7 @@ public abstract class Ca {
         return result;
     }
 
-    private RenewalType shouldCreateOrRenew(Reconciliation reconciliation, X509Certificate currentCert, String namespace, String clusterName, boolean maintenanceWindowSatisfied) {
+    private RenewalType shouldCreateOrRenew(X509Certificate currentCert, String namespace, String clusterName, boolean maintenanceWindowSatisfied) {
         String reason = null;
         RenewalType renewalType = RenewalType.NOOP;
         if (caKeySecret == null
@@ -636,7 +632,7 @@ public abstract class Ca {
                 renewalType = RenewalType.POSTPONED;
             }
         } else if (currentCert != null
-                && certNeedsRenewal(reconciliation, currentCert)) {
+                && certNeedsRenewal(currentCert)) {
             reason = "Within renewal period for CA certificate (expires on " + currentCert.getNotAfter() + ")";
 
             if (maintenanceWindowSatisfied) {
@@ -653,11 +649,11 @@ public abstract class Ca {
             }
         }
 
-        logRenewalState(reconciliation, currentCert, namespace, clusterName, renewalType, reason);
+        logRenewalState(currentCert, namespace, clusterName, renewalType, reason);
         return renewalType;
     }
 
-    private void logRenewalState(Reconciliation reconciliation, X509Certificate currentCert, String namespace, String clusterName, RenewalType renewalType, String reason) {
+    private void logRenewalState(X509Certificate currentCert, String namespace, String clusterName, RenewalType renewalType, String reason) {
         switch (renewalType) {
             case REPLACE_KEY:
             case RENEW_CERT:
@@ -737,7 +733,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(Reconciliation, String, String, Map, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in expired certificates being removed from the CA {@code Secret}.
      * @return Whether any expired certificates were removed.
      */
@@ -746,7 +742,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(Reconciliation, String, String, Map, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in a renewed CA certificate.
      * @return Whether the certificate was renewed.
      */
@@ -755,7 +751,7 @@ public abstract class Ca {
     }
 
     /**
-     * True if the last call to {@link #createRenewOrReplace(Reconciliation, String, String, Map, Map, Map, OwnerReference, boolean)}
+     * True if the last call to {@link #createRenewOrReplace(String, String, Map, Map, Map, OwnerReference, boolean)}
      * resulted in a replaced CA key.
      * @return Whether the key was replaced.
      */
@@ -767,7 +763,7 @@ public abstract class Ca {
         return renewalType.equals(RenewalType.CREATE);
     }
 
-    private int removeExpiredCerts(Reconciliation reconciliation, Map<String, String> newData) {
+    private int removeExpiredCerts(Map<String, String> newData) {
         Iterator<Map.Entry<String, String>> iter = newData.entrySet().iterator();
         List<String> removed = new ArrayList<>();
         while (iter.hasNext()) {
@@ -820,7 +816,7 @@ public abstract class Ca {
         return removed.size();
     }
 
-    public boolean certNeedsRenewal(Reconciliation reconciliation, X509Certificate cert)  {
+    public boolean certNeedsRenewal(X509Certificate cert)  {
         Date notAfter = cert.getNotAfter();
         LOGGER.traceCr(reconciliation, "Certificate {} expires on {}", cert.getSubjectDN(), notAfter);
         long msTillExpired = notAfter.getTime() - System.currentTimeMillis();
@@ -875,7 +871,7 @@ public abstract class Ca {
         return factory;
     }
 
-    private void addCertCaToTrustStore(Reconciliation reconciliation, String alias, Map<String, String> certData) {
+    private void addCertCaToTrustStore(String alias, Map<String, String> certData) {
         try {
             File certFile = File.createTempFile("tls", "-cert");
             Files.write(certFile.toPath(), Base64.getDecoder().decode(certData.get(CA_CRT)));
@@ -903,7 +899,7 @@ public abstract class Ca {
         }
     }
 
-    private void generateCaKeyAndCert(Reconciliation reconciliation, Subject subject, Map<String, String> keyData, Map<String, String> certData) {
+    private void generateCaKeyAndCert(Subject subject, Map<String, String> keyData, Map<String, String> certData) {
         try {
             LOGGER.debugCr(reconciliation, "Generating CA with subject={}", subject);
             File keyFile = File.createTempFile("tls", subject.commonName() + "-key");
@@ -946,7 +942,7 @@ public abstract class Ca {
         }
     }
 
-    private void renewCaCert(Reconciliation reconciliation, Subject subject, Map<String, String> certData) {
+    private void renewCaCert(Subject subject, Map<String, String> certData) {
         try {
             LOGGER.debugCr(reconciliation, "Renewing CA with subject={}, org={}", subject);
 

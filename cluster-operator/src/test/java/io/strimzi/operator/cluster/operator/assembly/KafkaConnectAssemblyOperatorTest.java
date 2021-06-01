@@ -173,7 +173,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, kc.getMetadata().getNamespace(), kc.getMetadata().getName()))
@@ -272,7 +272,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String kcNamespace = "test";
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
@@ -371,7 +371,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String kcNamespace = "test";
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         kc.getSpec().setImage("some/different:image"); // Change the image to generate some diff
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
@@ -454,7 +454,7 @@ public class KafkaConnectAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName), kc)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                KafkaConnectCluster compareTo = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+                KafkaConnectCluster compareTo = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -505,7 +505,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String kcNamespace = "test";
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         kc.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
@@ -572,7 +572,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String kcNamespace = "test";
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         kc.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -647,7 +647,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String kcNamespace = "test";
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         kc.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -725,12 +725,12 @@ public class KafkaConnectAssemblyOperatorTest {
         // providing the list of ALL Deployments for all the Kafka Connect clusters
         Labels newLabels = Labels.forStrimziKind(KafkaConnect.RESOURCE_KIND);
         when(mockDcOps.list(eq(kcNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
+                asList(KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
 
         // providing the list Deployments for already "existing" Kafka Connect clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(kcNamespace), eq(barLabels))).thenReturn(
-                asList(KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
+                asList(KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
         );
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -783,7 +783,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String kcNamespace = "test";
         String failureMsg = "failure";
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
@@ -891,7 +891,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, kc.getMetadata().getNamespace(), kc.getMetadata().getName()))
@@ -1036,7 +1036,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
         kc.getSpec().setRack(new RackBuilder().withNewTopologyKey("some-node-label").build());
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
@@ -1088,7 +1088,7 @@ public class KafkaConnectAssemblyOperatorTest {
         String kcNamespace = "test";
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
-        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kc, VERSIONS);
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));

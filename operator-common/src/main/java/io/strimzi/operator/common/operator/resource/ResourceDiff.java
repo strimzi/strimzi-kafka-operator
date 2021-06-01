@@ -34,9 +34,11 @@ class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
                 continue;
             }
 
-            LOGGER.debugCr(reconciliation, "{} {} differs: {}", resourceKind, resourceName, d);
-            LOGGER.debugCr(reconciliation, "Current {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(source, pathValue));
-            LOGGER.debugCr(reconciliation, "Desired {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(target, pathValue));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugCr(reconciliation, "{} {} differs: {}", resourceKind, resourceName, d);
+                LOGGER.debugCr(reconciliation, "Current {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(source, pathValue));
+                LOGGER.debugCr(reconciliation, "Desired {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(target, pathValue));
+            }
 
             num++;
             break;

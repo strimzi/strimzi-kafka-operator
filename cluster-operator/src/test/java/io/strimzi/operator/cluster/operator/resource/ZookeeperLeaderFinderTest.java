@@ -13,8 +13,6 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -27,6 +25,8 @@ import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ZookeeperLeaderFinderTest {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ZookeeperLeaderFinderTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(ZookeeperLeaderFinderTest.class);
 
     public static final String NAMESPACE = "testns";
     public static final String CLUSTER = "testcluster";
@@ -91,7 +91,7 @@ public class ZookeeperLeaderFinderTest {
         }
 
         @Override
-        NetClientOptions clientOptions(Reconciliation reconciliation, Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
+        NetClientOptions clientOptions(Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
             return new NetClientOptions()
                     .setKeyCertOptions(coCertificate.keyCertOptions())
                     .setTrustOptions(zkCertificate.trustOptions())
@@ -137,17 +137,17 @@ public class ZookeeperLeaderFinderTest {
             try {
                 countDownLatch.await(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                LOGGER.errorOp("Failed to close zk instance {}", e);
+                LOGGER.error("Failed to close zk instance {}", e);
             }
         }
 
         public Future<Integer> start() {
             Promise<Integer> promise = Promise.promise();
 
-            netServer.exceptionHandler(ex -> LOGGER.errorOp(ex))
+            netServer.exceptionHandler(ex -> LOGGER.error(ex))
                 .connectHandler(socket -> {
-                    LOGGER.debugOp("ZK {}: client connection to {}, from {}", id, socket.localAddress(), socket.remoteAddress());
-                    socket.exceptionHandler(ex -> LOGGER.errorOp(ex));
+                    LOGGER.debug("ZK {}: client connection to {}, from {}", id, socket.localAddress(), socket.remoteAddress());
+                    socket.exceptionHandler(ex -> LOGGER.error(ex));
                     StringBuffer sb = new StringBuffer();
                     socket.handler(buf -> {
                         sb.append(buf.toString());
@@ -155,14 +155,14 @@ public class ZookeeperLeaderFinderTest {
                             socket.write("vesvsebserb\n");
                             int attempt = attempts.getAndIncrement();
                             if (isLeader.apply(attempt)) {
-                                LOGGER.debugOp("ZK {}: is leader on attempt {}", id, attempt);
+                                LOGGER.debug("ZK {}: is leader on attempt {}", id, attempt);
                                 socket.write("Mode: ");
                                 socket.write("leader\n");
                             } else {
-                                LOGGER.debugOp("ZK {}: is not leader on attempt {}", id, attempt);
+                                LOGGER.debug("ZK {}: is not leader on attempt {}", id, attempt);
                             }
                             socket.write("vesvsebserb\n");
-                            LOGGER.debugOp("ZK {}: Sent response, closing", id);
+                            LOGGER.debug("ZK {}: Sent response, closing", id);
                             socket.close();
                         }
                     });
@@ -186,7 +186,7 @@ public class ZookeeperLeaderFinderTest {
             FakeZk zk = new FakeZk(id, attempt -> fn.apply(id, attempt));
             zks.add(zk);
             zk.start().onComplete(context.succeeding(port -> {
-                LOGGER.debugOp("ZK {} listening on port {}", id, port);
+                LOGGER.debug("ZK {} listening on port {}", id, port);
                 result[id] = port;
                 async.countDown();
             }));
@@ -216,7 +216,7 @@ public class ZookeeperLeaderFinderTest {
     public void test0PodsClusterReturnsUnknowLeader(VertxTestContext context) {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, emptyList(), coKeySecret())
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE, emptyList(), coKeySecret())
             .onComplete(context.succeeding(leader -> {
                 context.verify(() -> assertThat(leader, is(Integer.valueOf(ZookeeperLeaderFinder.UNKNOWN_LEADER))));
                 a.flag();
@@ -228,7 +228,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, null, this::backoff);
         Checkpoint a = context.checkpoint();
         int firstPodIndex = 0;
-        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(firstPodIndex)), coKeySecret())
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(firstPodIndex)), coKeySecret())
             .onComplete(context.succeeding(leader -> {
                 context.verify(() -> assertThat(leader, is(Integer.valueOf(firstPodIndex))));
                 a.flag();
@@ -261,7 +261,7 @@ public class ZookeeperLeaderFinderTest {
 
         Checkpoint a = context.checkpoint();
 
-        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithMissingClusterOperatorKey)
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithMissingClusterOperatorKey)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(RuntimeException.class));
                 assertThat(e.getMessage(),
@@ -299,7 +299,7 @@ public class ZookeeperLeaderFinderTest {
 
         Checkpoint a = context.checkpoint();
 
-        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithBadCertificate)
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), secretWithBadCertificate)
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e, instanceOf(RuntimeException.class));
                     assertThat(e.getMessage(), is("Bad/corrupt certificate found in data.cluster-operator\\.crt of Secret testcluster-cluster-operator-certs in namespace testns"));
@@ -338,7 +338,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE,
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
@@ -378,7 +378,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE,
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE,
                 asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(ZookeeperLeaderFinder.UNKNOWN_LEADER));
@@ -418,7 +418,7 @@ public class ZookeeperLeaderFinderTest {
         TestingZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
             .onComplete(context.succeeding(leader -> context.verify(() -> {
                 assertThat(leader, is(desiredLeaderId));
                 for (FakeZk zk : zks) {
@@ -456,7 +456,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new TestingZookeeperLeaderFinder(this::backoff, ports);
 
         Checkpoint a = context.checkpoint();
-        finder.findZookeeperLeader(new Reconciliation("test", "kind", "namespace", "name"), CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
+        finder.findZookeeperLeader(CLUSTER, NAMESPACE, asList(createPodWithId(0), createPodWithId(1)), coKeySecret())
             .onComplete(context.succeeding(l -> context.verify(() -> {
                 assertThat(l, is(leader));
                 for (FakeZk zk : zks) {

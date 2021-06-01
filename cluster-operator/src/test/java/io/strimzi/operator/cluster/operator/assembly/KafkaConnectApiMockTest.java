@@ -44,7 +44,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(new Reconciliation("test", "kind", "namespace", "name"), backOff, "some-host", 8083, "some-connector")
+        api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
             .onComplete(context.succeeding(res -> async.flag()));
     }
 
@@ -58,7 +58,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(new Reconciliation("test", "kind", "namespace", "name"), backOff, "some-host", 8083, "some-connector")
+        api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
             .onComplete(context.succeeding(res -> async.flag()));
     }
 
@@ -73,7 +73,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(new Reconciliation("test", "kind", "namespace", "name"), backOff, "some-host", 8083, "some-connector")
+        api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
             .onComplete(context.failing(res -> async.flag()));
     }
 
@@ -85,7 +85,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(new Reconciliation("test", "kind", "namespace", "name"), backOff, "some-host", 8083, "some-connector")
+        api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
             .onComplete(context.failing(res -> async.flag()));
     }
 

@@ -303,7 +303,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testEmptyUserConfiguration()  {
         Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(new Reconciliation("test", "kind", "namespace", "name"), userConfiguration.entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder()
                 .withUserConfiguration(kafkaConfiguration)
@@ -320,7 +320,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         userConfiguration.put("transaction.state.log.replication.factor", 3);
         userConfiguration.put("transaction.state.log.min.isr", 2);
 
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(new Reconciliation("test", "kind", "namespace", "name"), userConfiguration.entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder()
                 .withUserConfiguration(kafkaConfiguration)

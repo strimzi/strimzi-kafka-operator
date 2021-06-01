@@ -61,7 +61,7 @@ public class KafkaUserQuotasIT {
         zkClient = new ZkClient(kafkaCluster.zKConnectString(), 6000_0, 30_000, new BytesPushThroughSerializer());
 
         kuq = new KafkaUserQuotasOperator(vertx,
-                new DefaultAdminClientProvider().createAdminClient(new Reconciliation("test", "kind", "namespace", "name"), kafkaCluster.bootstrapServers(), null, null, null));
+                new DefaultAdminClientProvider().createAdminClient(Reconciliation.DUMMY_RECONCILIATION, kafkaCluster.bootstrapServers(), null, null, null));
     }
 
     @AfterAll

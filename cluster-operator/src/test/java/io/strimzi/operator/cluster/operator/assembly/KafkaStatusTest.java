@@ -471,7 +471,7 @@ public class KafkaStatusTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -590,7 +590,7 @@ public class KafkaStatusTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -699,7 +699,7 @@ public class KafkaStatusTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -805,7 +805,7 @@ public class KafkaStatusTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -910,7 +910,7 @@ public class KafkaStatusTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -1045,7 +1045,7 @@ public class KafkaStatusTest {
     @Test
     public void testKafkaClusterIdInStatus(VertxTestContext context) throws ParseException {
         Kafka kafka = new KafkaBuilder(getKafkaCrd()).build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -1096,7 +1096,7 @@ public class KafkaStatusTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), oldKafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 

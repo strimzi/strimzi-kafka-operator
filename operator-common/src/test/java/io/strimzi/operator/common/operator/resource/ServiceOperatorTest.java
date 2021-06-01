@@ -158,7 +158,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                 .build();
 
         ServiceOperator op = new ServiceOperator(vertx, client);
-        op.internalPatch(new Reconciliation("test", "kind", "ns", "name"), NAMESPACE, RESOURCE_NAME, current, desired);
+        op.internalPatch(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io~1publicEndpoints"), equalTo("foo"));
         assertThat(desired.getMetadata().getAnnotations().get("cattle.io/test"), equalTo("bar"));

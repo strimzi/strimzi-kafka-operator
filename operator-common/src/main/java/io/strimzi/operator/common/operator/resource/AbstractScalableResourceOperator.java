@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -26,6 +27,8 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
             L extends KubernetesResourceList<T>,
             R extends ScalableResource<T>>
         extends AbstractReadyResourceOperator<C, T, L, R> {
+
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractScalableResourceOperator.class);
 
     public static final String ANNO_STRIMZI_IO_GENERATION = Annotations.STRIMZI_DOMAIN + "generation";
     public static final String ANNO_STRIMZI_IO_DELETE_POD_AND_PVC = Annotations.STRIMZI_DOMAIN + "delete-pod-and-pvc";
@@ -63,13 +66,13 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
                 try {
                     Integer currentScale = currentScale(namespace, name);
                     if (currentScale != null && currentScale < scaleTo) {
-                        reconciliationLogger.infoCr(reconciliation, "Scaling up to {} replicas", scaleTo);
+                        LOGGER.infoCr(reconciliation, "Scaling up to {} replicas", scaleTo);
                         resource(namespace, name).scale(scaleTo, true);
                         currentScale = scaleTo;
                     }
                     future.complete(currentScale);
                 } catch (Exception e) {
-                    reconciliationLogger.errorCr(reconciliation, "Caught exception while scaling up", e);
+                    LOGGER.errorCr(reconciliation, "Caught exception while scaling up", e);
                     future.fail(e);
                 }
             },
@@ -102,13 +105,13 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
                     if (nextReplicas != null) {
                         while (nextReplicas > scaleTo) {
                             nextReplicas--;
-                            reconciliationLogger.infoCr(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
+                            LOGGER.infoCr(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
                             resource(namespace, name).scale(nextReplicas, true);
                         }
                     }
                     future.complete(nextReplicas);
                 } catch (Exception e) {
-                    reconciliationLogger.errorCr(reconciliation, "Caught exception while scaling down", e);
+                    LOGGER.errorCr(reconciliation, "Caught exception while scaling down", e);
                     future.fail(e);
                 }
             },

@@ -35,11 +35,11 @@ public class ClusterCa extends Ca {
 
     private final Pattern ipv4Address = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
 
-    public ClusterCa(CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
-        this(certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
+    public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
+        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
     }
 
-    public ClusterCa(CertManager certManager,
+    public ClusterCa(Reconciliation reconciliation, CertManager certManager,
                      PasswordGenerator passwordGenerator,
                      String clusterName,
                      Secret clusterCaCert,
@@ -48,12 +48,12 @@ public class ClusterCa extends Ca {
                      int renewalDays,
                      boolean generateCa,
                      CertificateExpirationPolicy policy) {
-        super(certManager, passwordGenerator, "cluster-ca",
+        super(reconciliation, certManager, passwordGenerator,
+                "cluster-ca",
                 AbstractModel.clusterCaCertSecretName(clusterName),
                 forceRenewal(clusterCaCert, clusterCaKey, "cluster-ca.key"),
                 AbstractModel.clusterCaKeySecretName(clusterName),
-                adapt060ClusterCaSecret(clusterCaKey),
-                validityDays, renewalDays, generateCa, policy);
+                adapt060ClusterCaSecret(clusterCaKey), validityDays, renewalDays, generateCa, policy);
         this.clusterName = clusterName;
     }
 

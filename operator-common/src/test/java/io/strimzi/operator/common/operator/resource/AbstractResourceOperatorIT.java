@@ -103,25 +103,25 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
         T newResource = getOriginal();
         T modResource = getModified();
 
-        op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, newResource)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
             .onComplete(context.succeeding(rrCreated -> {
                 T created = op.get(namespace, resourceName);
 
                 context.verify(() -> assertThat(created, is(notNullValue())));
                 assertResources(context, newResource, created);
             }))
-            .compose(rr -> op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, modResource))
+            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> {
                 T modified = op.get(namespace, resourceName);
 
                 context.verify(() -> assertThat(modified, is(notNullValue())));
                 assertResources(context, modResource, modified);
             }))
-            .compose(rr -> op.reconcile(new Reconciliation("test", "kind", "ns", "name"), namespace, resourceName, null))
+            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
             .onComplete(context.succeeding(rrDeleted -> {
                 // it seems the resource is cached for some time so we need wait for it to be null
                 context.verify(() -> {
-                        Util.waitFor(new Reconciliation("test", "kind", "namespace", "name"), vertx, "resource deletion " + resourceName, "deleted", 1000,
+                        Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
                                 30_000, () -> op.get(namespace, resourceName) == null)
                                 .onComplete(del -> {
                                     assertThat(op.get(namespace, resourceName), is(nullValue()));

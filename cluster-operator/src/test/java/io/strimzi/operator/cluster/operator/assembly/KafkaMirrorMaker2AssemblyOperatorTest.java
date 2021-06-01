@@ -143,7 +143,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name))
@@ -203,7 +203,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         String kmm2Namespace = "test";
 
         KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
         when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
         when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
         when(mockMirrorMaker2Ops.updateStatusAsync(any(), any(KafkaMirrorMaker2.class))).thenReturn(Future.succeededFuture());
@@ -284,7 +284,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         String kmm2Namespace = "test";
 
         KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
         kmm2.getSpec().setImage("some/different:image"); // Change the image to generate some diff
         when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
         when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
@@ -355,7 +355,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name), kmm2)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                KafkaMirrorMaker2Cluster compareTo = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+                KafkaMirrorMaker2Cluster compareTo = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
 
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -405,7 +405,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         String kmm2Namespace = "test";
 
         KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
         kmm2.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
         when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
@@ -467,7 +467,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         String kmm2Namespace = "test";
 
         KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
         kmm2.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
         when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
@@ -526,7 +526,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         String kmm2Namespace = "test";
 
         KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, kmm2Name);
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
         kmm2.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
         when(mockMirrorMaker2Ops.get(kmm2Namespace, kmm2Name)).thenReturn(kmm2);
@@ -587,12 +587,12 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         // providing the list of ALL Deployments for all the Kafka MirrorMaker 2.0 clusters
         Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker2.RESOURCE_KIND);
         when(mockDcOps.list(eq(kmm2Namespace), eq(newLabels))).thenReturn(
-                asList(KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
+                asList(KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
 
         // providing the list Deployments for already "existing" Kafka MirrorMaker 2.0 clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(kmm2Namespace), eq(barLabels))).thenReturn(
-                asList(KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
+                asList(KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
         );
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -716,7 +716,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name))
@@ -808,7 +808,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster mirrorMaker2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, kmm2Namespace, kmm2Name))
@@ -896,7 +896,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
         mm2AssemblyOperator.reconcile(new Reconciliation("test-exclude", KafkaMirrorMaker2.RESOURCE_KIND, targetNamespace, kmm2Name))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 KafkaMirrorMaker2MirrorSpec capturedMirrorConnector = mirrorMaker2Captor.getAllValues().get(0).getSpec().getMirrors().get(0);
@@ -946,7 +946,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        KafkaMirrorMaker2Cluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm2, VERSIONS);
+        KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS);
         mm2AssemblyOperator.reconcile(new Reconciliation("test-blacklist", KafkaMirrorMaker2.RESOURCE_KIND, targetNamespace, kmm2Name))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 KafkaMirrorMaker2MirrorSpec capturedMirrorConnector = mirrorMaker2Captor.getAllValues().get(0).getSpec().getMirrors().get(0);

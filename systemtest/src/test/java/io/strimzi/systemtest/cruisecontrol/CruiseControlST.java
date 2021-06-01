@@ -107,14 +107,14 @@ public class CruiseControlST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
 
-        KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", "kind", "ns", "name"), NAMESPACE, clusterName);
+        KafkaRebalanceUtils.doRebalancingProcess(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, clusterName);
 
         LOGGER.info("Annotating KafkaRebalance: {} with 'refresh' anno", clusterName);
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", "kind", "ns", "name"), clusterName, KafkaRebalanceAnnotation.refresh);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(Reconciliation.DUMMY_RECONCILIATION, clusterName, KafkaRebalanceAnnotation.refresh);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Trying rebalancing process again");
-        KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", "kind", "ns", "name"), NAMESPACE, clusterName);
+        KafkaRebalanceUtils.doRebalancingProcess(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, clusterName);
     }
 
     @ParallelNamespaceTest
@@ -171,7 +171,7 @@ public class CruiseControlST extends AbstractST {
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic2));
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), not(containsString(includedTopic)));
 
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", "kind", "ns", "name"), namespaceName, clusterName, KafkaRebalanceAnnotation.approve);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(Reconciliation.DUMMY_RECONCILIATION, namespaceName, clusterName, KafkaRebalanceAnnotation.approve);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.Ready);
     }
 

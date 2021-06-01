@@ -139,7 +139,7 @@ public class ModelUtils {
             reasons.add("certificate doesn't exist yet");
             shouldBeRegenerated = true;
         } else {
-            if (clusterCa.keyCreated() || clusterCa.certRenewed() || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(reconciliation, secret, keyCertName + ".crt"))) {
+            if (clusterCa.keyCreated() || clusterCa.certRenewed() || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt"))) {
                 reasons.add("certificate needs to be renewed");
                 shouldBeRegenerated = true;
             }
@@ -149,7 +149,7 @@ public class ModelUtils {
             LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", keyCertName, String.join(", ", reasons));
 
             try {
-                certAndKey = clusterCa.generateSignedCert(reconciliation, commonName, Ca.IO_STRIMZI);
+                certAndKey = clusterCa.generateSignedCert(commonName, Ca.IO_STRIMZI);
             } catch (IOException e) {
                 LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
             }
@@ -170,7 +170,7 @@ public class ModelUtils {
             } else {
                 try {
                     // coming from an older operator version, the secret exists but without keystore and password
-                    certAndKey = clusterCa.addKeyAndCertToKeyStore(reconciliation, commonName,
+                    certAndKey = clusterCa.addKeyAndCertToKeyStore(commonName,
                             decodeFromSecret(secret, keyCertName + ".key"),
                             decodeFromSecret(secret, keyCertName + ".crt"));
                 } catch (IOException e) {

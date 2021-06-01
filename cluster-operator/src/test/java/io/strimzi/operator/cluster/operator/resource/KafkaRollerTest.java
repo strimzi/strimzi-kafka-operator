@@ -25,7 +25,6 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
@@ -38,6 +37,8 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +63,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaRollerTest {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRollerTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaRollerTest.class);
 
     private static Vertx vertx;
     private List<String> restarted;
@@ -298,7 +299,7 @@ public class KafkaRollerTest {
             brokerId -> {
                 if (brokerId == 2) {
                     boolean b = count.getAndDecrement() == 0;
-                    LOGGER.infoOp("Can broker {} be rolled now ? {}", brokerId, b);
+                    LOGGER.info("Can broker {} be rolled now ? {}", brokerId, b);
                     return succeededFuture(b);
                 } else {
                     return succeededFuture(true);

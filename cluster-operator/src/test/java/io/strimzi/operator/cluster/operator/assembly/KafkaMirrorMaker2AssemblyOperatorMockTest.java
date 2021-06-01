@@ -26,7 +26,6 @@ import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
@@ -37,6 +36,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,7 +66,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2AssemblyOperatorMockTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMaker2AssemblyOperatorMockTest.class);
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
@@ -127,7 +128,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
             config,
             foo -> kafkaConnectApi);
 
-        LOGGER.infoOp("Reconciling initially -> create");
+        LOGGER.info("Reconciling initially -> create");
         Promise created = Promise.promise();
         Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -168,7 +169,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         createMirrorMaker2Cluster(context, mock, false)
             .onComplete(context.succeeding())
             .compose(v -> {
-                LOGGER.infoOp("Reconciling again -> update");
+                LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
             })
             .onComplete(context.succeeding(v -> async.flag()));
@@ -195,7 +196,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         createMirrorMaker2Cluster(context, mock, true)
                 .onComplete(context.succeeding())
                 .compose(v -> {
-                    LOGGER.infoOp("Reconciling again -> update");
+                    LOGGER.info("Reconciling again -> update");
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
                 })
                 .onComplete(context.succeeding(v -> context.verify(() -> {

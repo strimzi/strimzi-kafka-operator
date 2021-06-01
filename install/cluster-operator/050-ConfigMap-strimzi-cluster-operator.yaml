@@ -19,7 +19,7 @@ data:
     appender.console.filter.filter1.onMismatch = DENY
     appender.console.filter.filter1.marker = Kafka(myproject/my-cluster)
 
-    rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-DEBUG}
+    rootLogger.level = ${env:STRIMZI_LOG_LEVEL:-INFO}
     rootLogger.appenderRefs = stdout
     rootLogger.appenderRef.console.ref = STDOUT
     rootLogger.additivity = false

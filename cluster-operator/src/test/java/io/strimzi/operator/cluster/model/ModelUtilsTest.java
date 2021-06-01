@@ -511,7 +511,7 @@ public class ModelUtilsTest {
                 .endSpec()
                 .build();
 
-        KafkaCluster model1 = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        KafkaCluster model1 = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
         /*AbstractModel model1 = new AbstractModel(kafka, "test") {
             @Override
             protected String getDefaultLogConfigFileName() {
@@ -525,7 +525,7 @@ public class ModelUtilsTest {
         };*/
         ModelUtils.parsePodTemplate(model1, pt1);
 
-        KafkaCluster model2 = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        KafkaCluster model2 = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
         /*AbstractModel model2 = new AbstractModel(kafka, "test") {
             @Override
             protected String getDefaultLogConfigFileName() {

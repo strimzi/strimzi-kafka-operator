@@ -30,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class CaRenewalTest {
     @ParallelTest
     public void renewalOfStatefulSetCertificatesWithNullSecret() throws IOException {
-        Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
+        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
@@ -39,12 +39,12 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
+            public boolean isExpiring(Secret secret, String certKey)  {
                 return false;
             }
 
             @Override
-            protected CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
+            protected CertAndKey generateSignedCert(Subject subject,
                                                     File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
                 int index = invocationCount.getAndIncrement();
 
@@ -63,7 +63,7 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(new Reconciliation("test", "kind", "namespace", "name"), replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION, replicas,
                 subjectFn,
                 null,
                 podNameFn,
@@ -87,7 +87,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesWithCaRenewal() throws IOException {
-        Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
+        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
@@ -96,12 +96,12 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
+            public boolean isExpiring(Secret secret, String certKey)  {
                 return false;
             }
 
             @Override
-            protected CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
+            protected CertAndKey generateSignedCert(Subject subject,
                                                     File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
                 int index = invocationCount.getAndIncrement();
 
@@ -138,7 +138,7 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(new Reconciliation("test", "kind", "namespace", "name"),
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
                 replicas,
                 subjectFn,
                 initialSecret,
@@ -163,7 +163,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalInWindow() throws IOException {
-        Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
+        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
@@ -172,12 +172,12 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
+            public boolean isExpiring(Secret secret, String certKey)  {
                 return true;
             }
 
             @Override
-            protected boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+            protected boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
                 return false;
             }
 
@@ -187,7 +187,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
+            protected CertAndKey generateSignedCert(Subject subject,
                                                     File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
                 int index = invocationCount.getAndIncrement();
 
@@ -224,7 +224,7 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(new Reconciliation("test", "kind", "namespace", "name"),
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
                 replicas,
                 subjectFn,
                 initialSecret,
@@ -249,7 +249,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalOutsideWindow() throws IOException {
-        Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
+        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
@@ -258,12 +258,12 @@ public class CaRenewalTest {
             }
 
             @Override
-            public boolean isExpiring(Reconciliation reconciliation, Secret secret, String certKey)  {
+            public boolean isExpiring(Secret secret, String certKey)  {
                 return true;
             }
 
             @Override
-            protected boolean certSubjectChanged(Reconciliation reconciliation, CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+            protected boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
                 return false;
             }
 
@@ -273,7 +273,7 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected CertAndKey generateSignedCert(Reconciliation reconciliation, Subject subject,
+            protected CertAndKey generateSignedCert(Subject subject,
                                                     File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
                 int index = invocationCount.getAndIncrement();
 
@@ -310,7 +310,7 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = false;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(new Reconciliation("test", "kind", "namespace", "name"),
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
                 replicas,
                 subjectFn,
                 initialSecret,

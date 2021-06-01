@@ -627,12 +627,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             clusterCaCertAnnotations = kafkaAssembly.getSpec().getKafka().getTemplate().getClusterCaCert().getMetadata().getAnnotations();
                         }
 
-                        this.clusterCa = new ClusterCa(certManager, passwordGenerator, name, clusterCaCertSecret, clusterCaKeySecret,
+                        this.clusterCa = new ClusterCa(reconciliation, certManager, passwordGenerator, name, clusterCaCertSecret,
+                                clusterCaKeySecret,
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
                                 ModelUtils.getRenewalDays(clusterCaConfig),
-                                clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(),
-                                clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
-                        clusterCa.createRenewOrReplace(reconciliation,
+                                clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(), clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
+                        clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
                                 clusterCaCertLabels, clusterCaCertAnnotations,
                                 clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
@@ -645,14 +645,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         // When we are not supposed to generate the CA but it does not exist, we should just throw an error
                         checkCustomCaSecret(clientsCaConfig, clientsCaCertSecret, clientsCaKeySecret, "Clients CA");
 
-                        this.clientsCa = new ClientsCa(certManager, passwordGenerator,
-                                clientsCaCertName, clientsCaCertSecret,
-                                clientsCaKeyName, clientsCaKeySecret,
+                        this.clientsCa = new ClientsCa(reconciliation, certManager,
+                                passwordGenerator, clientsCaCertName,
+                                clientsCaCertSecret, clientsCaKeyName,
+                                clientsCaKeySecret,
                                 ModelUtils.getCertificateValidity(clientsCaConfig),
                                 ModelUtils.getRenewalDays(clientsCaConfig),
-                                clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
-                                clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
-                        clientsCa.createRenewOrReplace(reconciliation, reconciliation.namespace(), reconciliation.name(),
+                                clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(), clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
+                        clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                                 caLabels.toMap(), emptyMap(), emptyMap(),
                                 clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                                 isMaintenanceTimeWindowsSatisfied(dateSupplier));
@@ -3359,7 +3359,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             this.cruiseControl = cruiseControl;
 
-                            this.ccDeployment = cruiseControl.generateDeployment(reconciliation, pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
+                            this.ccDeployment = cruiseControl.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
                             return Future.succeededFuture(this);
                         });
             }
@@ -3380,7 +3380,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(reconciliation, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
                     .map(changed -> {
                         existingCruiseControlCertsChanged = changed;
                         return this;
@@ -3413,7 +3413,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlService() {
-            return withVoid(serviceOperations.reconcile(reconciliation, namespace, CruiseControl.cruiseControlServiceName(name), cruiseControl != null ? cruiseControl.generateService(reconciliation) : null));
+            return withVoid(serviceOperations.reconcile(reconciliation, namespace, CruiseControl.cruiseControlServiceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
         }
 
         Future<ReconciliationState> cruiseControlReady() {
@@ -3430,7 +3430,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> cruiseControlNetPolicy() {
             return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, CruiseControl.policyName(name),
-                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(reconciliation, operatorNamespace, operatorNamespaceLabels) : null));
+                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null));
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {

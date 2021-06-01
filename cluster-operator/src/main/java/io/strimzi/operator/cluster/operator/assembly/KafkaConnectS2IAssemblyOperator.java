@@ -151,7 +151,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractConnectOperator<Ope
                     return configMapOperations.reconcile(reconciliation, namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, connect.getName(), connect))
-                .compose(i -> deploymentConfigOperations.reconcile(reconciliation, namespace, connect.getName(), connect.generateDeploymentConfig(reconciliation, annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+                .compose(i -> deploymentConfigOperations.reconcile(reconciliation, namespace, connect.getName(), connect.generateDeploymentConfig(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> imagesStreamOperations.reconcile(reconciliation, namespace, KafkaConnectS2IResources.sourceImageStreamName(connect.getCluster()), connect.generateSourceImageStream()))
                 .compose(i -> imagesStreamOperations.reconcile(reconciliation, namespace, KafkaConnectS2IResources.targetImageStreamName(connect.getCluster()), connect.generateTargetImageStream()))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()))

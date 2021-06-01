@@ -190,15 +190,15 @@ public class KafkaUserModel {
         } else if (clientsCaKeySecret == null) {
             throw new NoCertificateSecretException("The Clients CA Key Secret is missing");
         } else {
-            ClientsCa clientsCa = new ClientsCa(certManager, passwordGenerator,
+            ClientsCa clientsCa = new ClientsCa(reconciliation, certManager,
+                    passwordGenerator,
                     clientsCaCertSecret.getMetadata().getName(),
                     clientsCaCertSecret,
                     clientsCaCertSecret.getMetadata().getName(),
                     clientsCaKeySecret,
                     validityDays,
                     renewalDays,
-                    false,
-                    null);
+                    false, null);
             this.caCert = clientsCa.currentCaCertBase64();
             if (userSecret != null) {
                 // Secret already exists -> lets verify if it has keys from the same CA
@@ -214,7 +214,7 @@ public class KafkaUserModel {
                         && !userCrt.isEmpty()
                         && userKey != null
                         && !userKey.isEmpty()
-                        && !clientsCa.isExpiring(reconciliation, userSecret, "user.crt")) {
+                        && !clientsCa.isExpiring(userSecret, "user.crt")) {
 
                     if (userKeyStore != null
                             && !userKeyStore.isEmpty()
@@ -230,7 +230,7 @@ public class KafkaUserModel {
                     } else {
                         // coming from an older operator version, the user secret exists but without keystore and password
                         try {
-                            this.userCertAndKey = clientsCa.addKeyAndCertToKeyStore(reconciliation, name,
+                            this.userCertAndKey = clientsCa.addKeyAndCertToKeyStore(name,
                                     decodeFromSecret(userSecret, "user.key"),
                                     decodeFromSecret(userSecret, "user.crt"));
                         } catch (IOException e) {
@@ -242,7 +242,7 @@ public class KafkaUserModel {
             }
 
             try {
-                this.userCertAndKey = clientsCa.generateSignedCert(reconciliation, name);
+                this.userCertAndKey = clientsCa.generateSignedCert(name);
             } catch (IOException e) {
                 LOGGER.errorCr(reconciliation, "Error generating signed certificate for user {}", name, e);
             }

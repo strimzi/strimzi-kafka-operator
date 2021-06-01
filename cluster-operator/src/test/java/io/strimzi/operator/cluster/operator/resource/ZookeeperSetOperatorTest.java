@@ -31,9 +31,8 @@ public class ZookeeperSetOperatorTest {
     @BeforeEach
     public void before() {
         KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-        Reconciliation r = new Reconciliation("test", "kind", "namespace", "name");
-        a = ZookeeperCluster.fromCrd(r, getResource(), versions).generateStatefulSet(true, null, null);
-        b = ZookeeperCluster.fromCrd(r, getResource(), versions).generateStatefulSet(true, null, null);
+        a = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, getResource(), versions).generateStatefulSet(true, null, null);
+        b = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, getResource(), versions).generateStatefulSet(true, null, null);
     }
 
     private Kafka getResource() {
@@ -47,18 +46,18 @@ public class ZookeeperSetOperatorTest {
     }
 
     private StatefulSetDiff diff() {
-        return new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), a, b);
+        return new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, a, b);
     }
 
     @Test
     public void testNotNeedsRollingUpdateIdentical() {
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), diff()), is(false));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, diff()), is(false));
     }
 
     @Test
     public void testNotNeedsRollingUpdateReplicas() {
         a.getSpec().setReplicas(b.getSpec().getReplicas() + 1);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), diff()), is(false));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, diff()), is(false));
     }
 
     @Test
@@ -66,28 +65,28 @@ public class ZookeeperSetOperatorTest {
         Map<String, String> labels = new HashMap<>(b.getMetadata().getLabels());
         labels.put("foo", "bar");
         a.getMetadata().setLabels(labels);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, diff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateImage() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo");
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, diff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateReadinessDelay() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setInitialDelaySeconds(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds() + 1);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, diff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateReadinessTimeout() {
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(
                 a.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1);
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, diff()), is(true));
     }
 
     @Test
@@ -95,7 +94,7 @@ public class ZookeeperSetOperatorTest {
         String envVar = ENV_VAR_ZOOKEEPER_METRICS_ENABLED;
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 containerEnvVars(a.getSpec().getTemplate().getSpec().getContainers().get(0)).get(envVar) + "-foo", null));
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, diff()), is(true));
     }
 
     @Test
@@ -103,6 +102,6 @@ public class ZookeeperSetOperatorTest {
         String envVar = "SOME_RANDOM_ENV";
         a.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
-        assertThat(ZookeeperSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), diff()), is(true));
+        assertThat(ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, diff()), is(true));
     }
 }

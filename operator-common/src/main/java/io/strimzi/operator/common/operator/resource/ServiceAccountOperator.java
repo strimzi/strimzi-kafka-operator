@@ -10,10 +10,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ServiceAccountOperator.class);
     private final boolean patching;
 
     /**
@@ -50,7 +52,7 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
             return super.internalPatch(reconciliation, namespace, name, current, desired);
         } else {
             // Patching an SA causes new tokens to be created, which we should avoid
-            reconciliationLogger.debugCr(reconciliation, "{} {} in namespace {} has not been patched: patching service accounts generates new tokens which should be avoided.", resourceKind, name, namespace);
+            LOGGER.debugCr(reconciliation, "{} {} in namespace {} has not been patched: patching service accounts generates new tokens which should be avoided.", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }

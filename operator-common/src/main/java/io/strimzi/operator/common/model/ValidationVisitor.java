@@ -22,14 +22,14 @@ import java.util.Map;
 import java.util.Set;
 
 public class ValidationVisitor implements ResourceVisitor.Visitor {
-    private final ReconciliationLogger reconciliationLogger;
+    private final ReconciliationLogger logger;
     private final HasMetadata resource;
     private final Set<Condition> warningConditions;
     private final String transitionTime = StatusUtils.iso8601Now();
 
     public ValidationVisitor(HasMetadata resource, ReconciliationLogger logger, Set<Condition> warningConditions) {
         this.resource = resource;
-        this.reconciliationLogger = logger;
+        this.logger = logger;
         this.warningConditions = warningConditions;
     }
 
@@ -91,7 +91,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
             }
 
             warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", msg, transitionTime));
-            reconciliationLogger.warnCr(reconciliation, msg);
+            logger.warnCr(reconciliation, msg);
         }
 
         // Look for deprecated objects. With OneOf, the field might not be deprecated, but the used value might be
@@ -113,7 +113,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                 msg += ".";
 
                 warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedObjects", msg, transitionTime));
-                reconciliationLogger.warnCr(reconciliation, msg);
+                logger.warnCr(reconciliation, msg);
             }
         }
     }
@@ -138,7 +138,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));
 
-                reconciliationLogger.warnCr(reconciliation, msg);
+                logger.warnCr(reconciliation, msg);
                 warningConditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg, transitionTime));
             }
         }

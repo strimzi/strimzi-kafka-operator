@@ -160,11 +160,11 @@ public class ReconciliationST extends AbstractST {
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.ReconciliationPaused);
 
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", "kind", "ns", "name"), namespaceName, clusterName, KafkaRebalanceAnnotation.approve);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(Reconciliation.DUMMY_RECONCILIATION, namespaceName, clusterName, KafkaRebalanceAnnotation.approve);
 
         // unfortunately we don't have any option to check, if something is changed when reconciliations are paused
         // so we will check stability of status
-        KafkaRebalanceUtils.waitForRebalanceStatusStability(new Reconciliation("test", "kind", "ns", "name"), namespaceName, clusterName);
+        KafkaRebalanceUtils.waitForRebalanceStatusStability(Reconciliation.DUMMY_RECONCILIATION, namespaceName, clusterName);
 
         LOGGER.info("Setting annotation to \"false\" and waiting for KafkaRebalance to be in {} state", KafkaRebalanceState.Ready);
         KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(clusterName,
@@ -173,7 +173,7 @@ public class ReconciliationST extends AbstractST {
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.ProposalReady);
 
         // because approve annotation wasn't reflected, approving again
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", "kind", "ns", "name"), namespaceName, clusterName, KafkaRebalanceAnnotation.approve);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(Reconciliation.DUMMY_RECONCILIATION, namespaceName, clusterName, KafkaRebalanceAnnotation.approve);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.Ready);
     }
 

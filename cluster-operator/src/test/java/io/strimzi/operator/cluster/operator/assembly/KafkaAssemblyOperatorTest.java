@@ -416,9 +416,9 @@ public class KafkaAssemblyOperatorTest {
     }
 
     private void createCluster(VertxTestContext context, Kafka kafka, List<Secret> secrets) {
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
-        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
-        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kafka, VERSIONS);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        EntityOperator entityOperator = EntityOperator.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -911,13 +911,13 @@ public class KafkaAssemblyOperatorTest {
     }
 
     private void updateCluster(VertxTestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
-        KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), originalAssembly, VERSIONS);
-        KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), updatedAssembly, VERSIONS);
-        ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), originalAssembly, VERSIONS);
-        ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), updatedAssembly, VERSIONS);
+        KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalAssembly, VERSIONS);
+        KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, updatedAssembly, VERSIONS);
+        ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalAssembly, VERSIONS);
+        ZookeeperCluster updatedZookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, updatedAssembly, VERSIONS);
         EntityOperator originalEntityOperator = EntityOperator.fromCrd(new Reconciliation("test", originalAssembly.getKind(), originalAssembly.getMetadata().getNamespace(), originalAssembly.getMetadata().getName()), originalAssembly, VERSIONS);
         KafkaExporter originalKafkaExporter = KafkaExporter.fromCrd(new Reconciliation("test", originalAssembly.getKind(), originalAssembly.getMetadata().getNamespace(), originalAssembly.getMetadata().getName()), originalAssembly, VERSIONS);
-        CruiseControl originalCruiseControl = CruiseControl.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), originalAssembly, VERSIONS);
+        CruiseControl originalCruiseControl = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalAssembly, VERSIONS);
 
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
@@ -1178,10 +1178,10 @@ public class KafkaAssemblyOperatorTest {
 
         if (originalCruiseControl != null) {
             when(mockDepOps.get(clusterNamespace, CruiseControl.cruiseControlName(clusterName))).thenReturn(
-                    originalCruiseControl.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), true, Collections.EMPTY_MAP, null, null)
+                    originalCruiseControl.generateDeployment(true, Collections.EMPTY_MAP, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalCruiseControl.generateDeployment(new Reconciliation("test", "kind", "namespace", "name"), true, Collections.EMPTY_MAP, null, null))
+                    Future.succeededFuture(originalCruiseControl.generateDeployment(true, Collections.EMPTY_MAP, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()
@@ -1295,14 +1295,13 @@ public class KafkaAssemblyOperatorTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // rolling restart
                 Set<String> expectedRollingRestarts = set();
-                Reconciliation r = new Reconciliation("test", "kind", "namespace", "name");
-                if (KafkaSetOperator.needsRollingUpdate(r,
-                        new StatefulSetDiff(r, originalKafkaCluster.generateStatefulSet(openShift, null, null),
+                if (KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION,
+                        new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, originalKafkaCluster.generateStatefulSet(openShift, null, null),
                         updatedKafkaCluster.generateStatefulSet(openShift, null, null)))) {
                     expectedRollingRestarts.add(originalKafkaCluster.getName());
                 }
-                if (ZookeeperSetOperator.needsRollingUpdate(r,
-                        new StatefulSetDiff(r, originalZookeeperCluster.generateStatefulSet(openShift, null, null),
+                if (ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION,
+                        new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, originalZookeeperCluster.generateStatefulSet(openShift, null, null),
                                 updatedZookeeperCluster.generateStatefulSet(openShift, null, null)))) {
                     expectedRollingRestarts.add(originalZookeeperCluster.getName());
                 }
@@ -1350,17 +1349,17 @@ public class KafkaAssemblyOperatorTest {
         List<Secret> barSecrets = ResourceUtils.createKafkaSecretsWithReplicas(kafkaNamespace, "bar",
                 bar.getSpec().getKafka().getReplicas(),
                 bar.getSpec().getZookeeper().getReplicas());
-        ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa("bar",
-                findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")),
-                findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
-        ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa("bar",
-                findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")),
-                findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
+        ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa(Reconciliation.DUMMY_RECONCILIATION,
+                "bar",
+                findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")), findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
+        ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa(Reconciliation.DUMMY_RECONCILIATION,
+                "bar",
+                findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")), findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(kafkaNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateStatefulSet(openShift, null, null))
+                asList(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
 
         when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
@@ -1370,7 +1369,7 @@ public class KafkaAssemblyOperatorTest {
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
-        KafkaCluster barCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS);
+        KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
         when(mockKsOps.list(eq(kafkaNamespace), eq(barLabels))).thenReturn(
                 asList(barCluster.generateStatefulSet(openShift, null, null))
         );
@@ -1443,22 +1442,22 @@ public class KafkaAssemblyOperatorTest {
         List<Secret> barSecrets = ResourceUtils.createKafkaSecretsWithReplicas("namespace2", "bar",
                 bar.getSpec().getKafka().getReplicas(),
                 bar.getSpec().getZookeeper().getReplicas());
-        ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa("bar",
-                findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")),
-                findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
-        ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa("bar",
-                findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")),
-                findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
+        ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa(Reconciliation.DUMMY_RECONCILIATION,
+                "bar",
+                findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")), findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
+        ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa(Reconciliation.DUMMY_RECONCILIATION,
+                "bar",
+                findSecretWithName(barSecrets, KafkaCluster.clientsCaCertSecretName("bar")), findSecretWithName(barSecrets, KafkaCluster.clientsCaKeySecretName("bar")));
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq("*"), eq(newLabels))).thenReturn(
-                asList(KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS).generateStatefulSet(openShift, null, null))
+                asList(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
-        KafkaCluster barCluster = KafkaCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar, VERSIONS);
+        KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
         when(mockKsOps.list(eq("*"), eq(barLabels))).thenReturn(
                 asList(barCluster.generateStatefulSet(openShift, null, null))
         );

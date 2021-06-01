@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -474,7 +475,7 @@ public class TopicOperatorTest {
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
-                .createTopic(kafkaTopic);
+                .createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
         mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kafkaTopic), null);
         //mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
@@ -611,7 +612,7 @@ public class TopicOperatorTest {
         mockTopicStore.setCreateTopicResponse(topicName, null);
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
         async0.await();
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         CountDownLatch async = new CountDownLatch(2);
@@ -672,7 +673,7 @@ public class TopicOperatorTest {
         Topic privateTopic = kafkaTopic;
 
         CountDownLatch async0 = new CountDownLatch(2);
-        mockKafka.createTopic(kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
         mockKafka.setDeleteTopicResponse(topicName, null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
         mockTopicStore.create(kafkaTopic).onComplete(ar -> async0.countDown());
@@ -702,7 +703,7 @@ public class TopicOperatorTest {
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
         KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
@@ -757,7 +758,7 @@ public class TopicOperatorTest {
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName_ -> Future.succeededFuture());
-        mockKafka.createTopic(kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
         mockK8s.setCreateResponse(kubeName, null);
         KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
@@ -806,7 +807,7 @@ public class TopicOperatorTest {
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, labels);
@@ -865,7 +866,7 @@ public class TopicOperatorTest {
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
 
         KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
@@ -917,7 +918,7 @@ public class TopicOperatorTest {
 
         CountDownLatch async0 = new CountDownLatch(3);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
@@ -969,7 +970,7 @@ public class TopicOperatorTest {
         Topic privateTopic = kubeTopic;
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
-                .createTopic(kafkaTopic);
+                .createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
         mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kubeTopic), null);
         mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
 
@@ -1028,7 +1029,7 @@ public class TopicOperatorTest {
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
-                .createTopic(kafkaTopic);
+                .createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
         mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kafkaTopic), null);
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 

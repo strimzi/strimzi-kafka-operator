@@ -36,7 +36,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -48,6 +47,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ConnectorMockTest {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ConnectorMockTest.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(ConnectorMockTest.class.getName());
 
     private static final String NAMESPACE = "ns";
 
@@ -237,9 +238,9 @@ public class ConnectorMockTest {
                     "tasks", emptyMap()));
         });
         when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenAnswer(invocation -> {
-            LOGGER.infoOp((String) invocation.getArgument(1) + invocation.getArgument(2) + invocation.getArgument(3) + invocation.getArgument(4));
+            LOGGER.info((String) invocation.getArgument(1) + invocation.getArgument(2) + invocation.getArgument(3) + invocation.getArgument(4));
             String host = invocation.getArgument(1);
-            LOGGER.infoOp("###### create " + host);
+            LOGGER.info("###### create " + host);
             String connectorName = invocation.getArgument(3);
             JsonObject connectorConfig = invocation.getArgument(4);
             runningConnectors.putIfAbsent(key(host, connectorName), new ConnectorState(false, connectorConfig));
@@ -247,20 +248,20 @@ public class ConnectorMockTest {
         });
         when(api.delete(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
-            LOGGER.infoOp("###### delete " + host);
+            LOGGER.info("###### delete " + host);
             String connectorName = invocation.getArgument(3);
             ConnectorState remove = runningConnectors.remove(key(host, connectorName));
             return remove != null ? Future.succeededFuture() : Future.failedFuture("No such connector " + connectorName);
         });
         when(api.statusWithBackOff(any(), any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(2);
-            LOGGER.infoOp("###### status " + host);
+            LOGGER.info("###### status " + host);
             String connectorName = invocation.getArgument(4);
             return kafkaConnectApiStatusMock(host, connectorName);
         });
         when(api.status(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(1);
-            LOGGER.infoOp("###### status " + host);
+            LOGGER.info("###### status " + host);
             String connectorName = invocation.getArgument(3);
             return kafkaConnectApiStatusMock(host, connectorName);
         });

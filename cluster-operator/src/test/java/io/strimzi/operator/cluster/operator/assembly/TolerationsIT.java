@@ -87,7 +87,7 @@ public class TolerationsIT {
 
         client.apps().statefulSets().inNamespace(namespace).create(ss);
         StatefulSet stsk8s = client.apps().statefulSets().inNamespace(namespace).withName("foo").get();
-        StatefulSetDiff diff = new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), ss, stsk8s);
+        StatefulSetDiff diff = new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss, stsk8s);
         Checkpoint checkpoint = context.checkpoint();
         context.verify(() -> {
                 assertThat(diff.changesSpecTemplate(), is(false));

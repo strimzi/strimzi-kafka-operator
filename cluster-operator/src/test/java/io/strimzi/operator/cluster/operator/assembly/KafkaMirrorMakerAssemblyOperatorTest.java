@@ -142,7 +142,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm,
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm,
                 VERSIONS);
 
         Checkpoint async = context.checkpoint();
@@ -206,7 +206,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         metricsCm.put("foo", "bar");
         KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, include, metricsCm);
 
-        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm,
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm,
                 VERSIONS);
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
@@ -281,7 +281,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Map<String, Object> metricsCmP = new HashMap<>();
         metricsCmP.put("foo", "bar");
         KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, include, metricsCmP);
-        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm,
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm,
                 VERSIONS);
         kmm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
@@ -344,7 +344,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                KafkaMirrorMakerCluster compareTo = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm,
+                KafkaMirrorMakerCluster compareTo = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm,
                         VERSIONS);
 
                 // Verify Deployment
@@ -395,7 +395,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, include, metricsCm);
-        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm,
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm,
                 VERSIONS);
         kmm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
@@ -461,7 +461,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, include, metricsCm);
-        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm,
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm,
                 VERSIONS);
         kmm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
@@ -522,7 +522,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Map<String, Object> metricsCm = new HashMap<>();
         metricsCm.put("foo", "bar");
         KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, include, metricsCm);
-        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), kmm,
+        KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm,
                 VERSIONS);
         kmm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
@@ -590,13 +590,13 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         // providing the list of ALL Deployments for all the Kafka Mirror Maker clusters
         Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker.RESOURCE_KIND);
         when(mockDcOps.list(eq(kmmNamespace), eq(newLabels))).thenReturn(
-                asList(KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar,
+                asList(KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null)));
 
         // providing the list Deployments for already "existing" Kafka Mirror Maker clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(kmmNamespace), eq(barLabels))).thenReturn(
-                asList(KafkaMirrorMakerCluster.fromCrd(new Reconciliation("test", "kind", "namespace", "name"), bar,
+                asList(KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar,
                         VERSIONS).generateDeployment(new HashMap<String, String>(), true, null, null))
         );
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());

@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -19,11 +20,13 @@ import java.util.regex.Pattern;
  * Operations for {@code PersistentVolumeClaim}s.
  */
 public class PvcOperator extends AbstractResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PvcOperator.class);
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/metadata/annotations/pv.kubernetes.io~1bind-completed" +
                     "|/metadata/finalizers" +
                     "|/status)$");
+
 
     /**
      * Constructor
@@ -70,7 +73,7 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
 
             return super.internalPatch(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
-            reconciliationLogger.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }

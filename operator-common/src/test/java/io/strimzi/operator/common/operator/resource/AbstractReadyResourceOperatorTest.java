@@ -51,7 +51,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
         Checkpoint async = context.checkpoint();
-        op.readiness(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, 20, 100)
+        op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, atLeastOnce()).get();
@@ -81,7 +81,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.readiness(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, 20, 100)
+        op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, never()).isReady();
@@ -133,7 +133,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.readiness(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, 20, 5_000)
+        op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 5_000)
             .onComplete(context.succeeding(v -> {
                 verify(mockResource, times(unreadyCount + 1)).isReady();
                 async.flag();
@@ -160,7 +160,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.readiness(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, 20, 100)
+        op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, atLeastOnce()).get();
@@ -191,7 +191,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.readiness(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, 20, 100)
+        op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 async.flag();

@@ -39,9 +39,8 @@ public class KafkaSetOperatorTest {
     @BeforeEach
     public void before() {
         KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap());
-        Reconciliation r = new Reconciliation("test", "kind", "namespace", "name");
-        currectSts = KafkaCluster.fromCrd(r, getResource(), versions).generateStatefulSet(true, null, null);
-        desiredSts = KafkaCluster.fromCrd(r, getResource(), versions).generateStatefulSet(true, null, null);
+        currectSts = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, getResource(), versions).generateStatefulSet(true, null, null);
+        desiredSts = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, getResource(), versions).generateStatefulSet(true, null, null);
     }
 
     private Kafka getResource() {
@@ -70,18 +69,18 @@ public class KafkaSetOperatorTest {
     }
 
     private StatefulSetDiff createDiff() {
-        return new StatefulSetDiff(new Reconciliation("test", "kind", "namespace", "name"), currectSts, desiredSts);
+        return new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, currectSts, desiredSts);
     }
 
     @Test
     public void testNotNeedsRollingUpdateWhenIdentical() {
-        assertThat(KafkaSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), createDiff()), is(false));
+        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(false));
     }
 
     @Test
     public void testNotNeedsRollingUpdateWhenReplicasDecrease() {
         currectSts.getSpec().setReplicas(desiredSts.getSpec().getReplicas() + 1);
-        assertThat(KafkaSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), createDiff()), is(false));
+        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(false));
     }
 
     @Test
@@ -89,28 +88,28 @@ public class KafkaSetOperatorTest {
         Map<String, String> labels = new HashMap(desiredSts.getMetadata().getLabels());
         labels.put("foo", "bar");
         currectSts.getMetadata().setLabels(labels);
-        assertThat(KafkaSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), createDiff()), is(true));
+        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenImageChanges() {
         String newImage = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo";
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(newImage);
-        assertThat(KafkaSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), createDiff()), is(true));
+        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenReadinessDelayChanges() {
         Integer newDelay = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds() + 1;
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setInitialDelaySeconds(newDelay);
-        assertThat(KafkaSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), createDiff()), is(true));
+        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenReadinessTimeoutChanges() {
         Integer newTimeout = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1;
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(newTimeout);
-        assertThat(KafkaSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), createDiff()), is(true));
+        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
@@ -118,6 +117,6 @@ public class KafkaSetOperatorTest {
         String envVar = "SOME_RANDOM_ENV";
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
-        assertThat(KafkaSetOperator.needsRollingUpdate(new Reconciliation("test", "kind", "namespace", "name"), createDiff()), is(true));
+        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 }

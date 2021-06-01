@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -57,7 +58,7 @@ public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicM
      * Schedules this handler to execute again after a delay defined by the {@code BackOff}.
      * Calls {@link #onMaxAttemptsExceeded} if the backoff has reached its permitted number of retries.
      */
-    protected void retry() {
+    protected void retry(Reconciliation reconciliation) {
 
         long delay;
         try {
@@ -71,10 +72,10 @@ public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicM
 
         if (delay < 1) {
             // vertx won't tolerate a zero delay
-            vertx.runOnContext(timerId -> kafka.topicMetadata(topicName).onComplete(this));
+            vertx.runOnContext(timerId -> kafka.topicMetadata(reconciliation, topicName).onComplete(this));
         } else {
             vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
-                timerId -> kafka.topicMetadata(topicName).onComplete(this));
+                timerId -> kafka.topicMetadata(reconciliation, topicName).onComplete(this));
         }
     }
 

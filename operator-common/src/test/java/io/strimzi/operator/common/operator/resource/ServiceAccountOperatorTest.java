@@ -108,7 +108,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
         ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(new Reconciliation("test", "kind", "ns", "name"), resource)
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .onComplete(context.succeeding(rr -> {
                 context.verify(() -> assertThat(rr, instanceOf(ReconcileResult.Noop.class)));
                 verify(mockResource).get();
@@ -163,7 +163,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
         ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, true);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, desired)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)
                 .onComplete(context.succeeding(rr -> {
                     verify(mockResource, times(1)).patch(any());
 

@@ -28,7 +28,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
@@ -36,6 +35,8 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,7 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaUpgradeDowngradeMockTest {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaUpgradeDowngradeMockTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeMockTest.class);
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -125,7 +126,7 @@ public class KafkaUpgradeDowngradeMockTest {
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
 
-        LOGGER.infoOp("Reconciling initially -> create");
+        LOGGER.info("Reconciling initially -> create");
         return operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
 
     }

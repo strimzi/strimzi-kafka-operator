@@ -20,7 +20,7 @@ public class KafkaConfigurationTests {
     KafkaVersion kafkaVersion = KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion();
 
     void assertConfigError(String key, Object value, String errorMsg) {
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(new Reconciliation("test", "kind", "namespace", "name"), singletonMap(key, value).entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, singletonMap(key, value).entrySet());
         assertThat(kafkaConfiguration.validate(kafkaVersion), is(singletonList(errorMsg)));
     }
 
@@ -30,7 +30,7 @@ public class KafkaConfigurationTests {
     }
 
     private void assertNoError(String foo, Object value) {
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(new Reconciliation("test", "kind", "namespace", "name"), singletonMap(foo, value).entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, singletonMap(foo, value).entrySet());
         kafkaConfiguration.validate(kafkaVersion);
     }
 
