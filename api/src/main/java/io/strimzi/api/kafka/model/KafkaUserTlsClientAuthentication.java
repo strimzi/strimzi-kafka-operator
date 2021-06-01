@@ -22,6 +22,7 @@ public class KafkaUserTlsClientAuthentication extends KafkaUserAuthentication {
     public static final String TYPE_TLS = "tls";
 
     @Description("Must be `" + TYPE_TLS + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_TLS;

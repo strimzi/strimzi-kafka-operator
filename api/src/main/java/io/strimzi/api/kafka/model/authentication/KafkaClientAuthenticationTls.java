@@ -30,6 +30,7 @@ public class KafkaClientAuthenticationTls extends KafkaClientAuthentication {
     private CertAndKeySecretSource certificateAndKey;
 
     @Description("Must be `" + TYPE_TLS + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_TLS;

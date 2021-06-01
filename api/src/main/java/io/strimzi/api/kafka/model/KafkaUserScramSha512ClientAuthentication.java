@@ -21,6 +21,7 @@ public class KafkaUserScramSha512ClientAuthentication extends KafkaUserAuthentic
     public static final String TYPE_SCRAM_SHA_512 = "scram-sha-512";
 
     @Description("Must be `" + TYPE_SCRAM_SHA_512 + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_SCRAM_SHA_512;
