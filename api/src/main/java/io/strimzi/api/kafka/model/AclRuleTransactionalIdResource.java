@@ -31,6 +31,7 @@ public class AclRuleTransactionalIdResource extends AclRuleResource {
     private String name;
 
     @Description("Must be `" + TYPE_TRANSACTIONAL_ID + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_TRANSACTIONAL_ID;

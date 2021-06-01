@@ -31,6 +31,7 @@ public class KafkaClientAuthenticationPlain extends KafkaClientAuthentication {
     private PasswordSecretSource passwordSecret;
 
     @Description("Must be `" + TYPE_PLAIN + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_PLAIN;

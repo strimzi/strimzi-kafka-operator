@@ -26,6 +26,7 @@ public class KafkaListenerAuthenticationScramSha512 extends KafkaListenerAuthent
     public static final String SCRAM_SHA_512 = "scram-sha-512";
 
     @Description("Must be `" + SCRAM_SHA_512 + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return SCRAM_SHA_512;

@@ -78,7 +78,6 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
     @SuppressWarnings({"rawtypes", "unchecked"})
     protected CustomResource replace(String kind, CustomResource cr) {
         MixedOperation<CustomResource, CustomResourceList, ?> op = VERSIONED_OPERATIONS.get(kind).apply(client, TO_API_VERSION.toString());
-
         return op.inNamespace(cr.getMetadata().getNamespace()).withName(cr.getMetadata().getName()).replace(cr);
     }
 
@@ -130,6 +129,12 @@ public class ConvertResourceCommand extends AbstractConversionCommand {
         try {
             getConverter(cr.getClass()).convertTo(cr, TO_API_VERSION);
             println(cr.getKind() + " resource named " + cr.getMetadata().getName() + " in namespace " + cr.getMetadata().getNamespace() + " has been converted");
+
+            if (debug) {
+                println("Converted custom resource:");
+                println(cr);
+            }
+
             return cr;
         } catch (ApiConversionFailedException e)    {
             println("Failed to convert " + cr.getKind() + " resource named " + cr.getMetadata().getName() + " in namespace " + cr.getMetadata().getNamespace() + ": " + e.getMessage());
