@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.debezium.kafka.KafkaCluster;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.api.kafka.Crds;
@@ -30,8 +29,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +39,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -58,20 +55,20 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
-
-    private static final Logger log = LogManager.getLogger(KafkaConnectorIT.class.getName());
-
-    private KafkaCluster cluster;
+    private static EmbeddedKafkaCluster cluster;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
 
     @BeforeAll
-    public static void before() {
+    public static void before() throws IOException {
         vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
                         .setEnabled(true)
         ));
+
+        cluster = new EmbeddedKafkaCluster(3);
+        cluster.start();
     }
 
     @AfterAll
@@ -81,21 +78,12 @@ public class KafkaConnectorIT {
 
     @BeforeEach
     public void beforeEach() throws IOException, InterruptedException {
-        // Start a 3 node Kafka cluster
-        cluster = new KafkaCluster()
-            .addBrokers(3)
-            .deleteDataPriorToStartup(true)
-            .deleteDataUponShutdown(true)
-            .usingDirectory(Files.createTempDirectory("operator-integration-test").toFile());
-
-        cluster.startup();
-
         String connectClusterName = getClass().getSimpleName();
         cluster.createTopics(connectClusterName + "-offsets", connectClusterName + "-config", connectClusterName + "-status");
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
-                .usingBrokers(cluster)
+                .usingBrokers(cluster.bootstrapServers())
                 .addConnectNodes(3);
         connectCluster.startup();
     }
@@ -104,9 +92,6 @@ public class KafkaConnectorIT {
     public void afterEach() {
         if (connectCluster != null) {
             connectCluster.shutdown();
-        }
-        if (cluster != null) {
-            cluster.shutdown();
         }
     }
 
