@@ -28,6 +28,7 @@ public class ImageStreamOutput extends Output {
     private String image;
 
     @Description("Must be `" + TYPE_IMAGESTREAM + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_IMAGESTREAM;

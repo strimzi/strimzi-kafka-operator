@@ -41,3 +41,17 @@ spec:
         name: my-topic
         patternType: literal
       operation: Describe
+    - resource:
+        type: transactionalId
+        name: schema-registry-
+        patternType: prefix
+      operation: Describe
+    - resource:
+        type: transactionalId
+        name: schema-registry-
+        patternType: prefix
+      operation: Write
+  quotas:
+    producerByteRate: 1048576
+    consumerByteRate: 2097152
+    requestPercentage: 55

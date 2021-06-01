@@ -24,6 +24,7 @@ public class KafkaJmxAuthenticationPassword extends KafkaJmxAuthentication {
     public static final String TYPE_PASSWORD = "password";
 
     @Description("Must be `" + TYPE_PASSWORD + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_PASSWORD;

@@ -31,6 +31,7 @@ public class KafkaClientAuthenticationScramSha512 extends KafkaClientAuthenticat
     private PasswordSecretSource passwordSecret;
 
     @Description("Must be `" + TYPE_SCRAM_SHA_512 + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_SCRAM_SHA_512;
