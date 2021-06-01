@@ -27,6 +27,7 @@ public class JaegerTracing extends Tracing {
     public static final String TYPE_JAEGER = "jaeger";
 
     @Description("Must be `" + TYPE_JAEGER + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_JAEGER;

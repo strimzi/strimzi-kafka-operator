@@ -43,6 +43,7 @@ public class JmxPrometheusExporterMetrics extends MetricsConfig {
     }
 
     @Description("Must be `" + TYPE_JMX_EXPORTER + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_JMX_EXPORTER;

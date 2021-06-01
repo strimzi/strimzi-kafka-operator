@@ -26,6 +26,7 @@ public class JbodStorage extends Storage {
     private List<SingleVolumeStorage> volumes;
 
     @Description("Must be `" + TYPE_JBOD + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_JBOD;

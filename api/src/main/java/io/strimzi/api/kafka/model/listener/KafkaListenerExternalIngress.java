@@ -37,6 +37,7 @@ public class KafkaListenerExternalIngress extends KafkaListenerExternal {
     private String ingressClass;
 
     @Description("Must be `" + TYPE_INGRESS + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_INGRESS;
