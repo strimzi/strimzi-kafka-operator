@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.debezium.kafka.KafkaCluster;
-import io.debezium.util.Testing;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclResourcePatternType;
 import io.strimzi.api.kafka.model.AclRuleType;
@@ -16,8 +14,7 @@ import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,13 +38,11 @@ import static org.hamcrest.Matchers.hasSize;
 
 @ExtendWith(VertxExtension.class)
 public class SimpleAclOperatorIT {
-
-    private static final Logger log = LogManager.getLogger(SimpleAclOperatorIT.class);
     private static final int TEST_TIMEOUT = 60;
 
     private static Vertx vertx;
 
-    private static KafkaCluster kafkaCluster;
+    private static EmbeddedKafkaCluster kafkaCluster;
 
     private static SimpleAclOperator simpleAclOperator;
 
@@ -63,20 +58,14 @@ public class SimpleAclOperatorIT {
         vertx = Vertx.vertx();
 
         try {
-            kafkaCluster =
-                    new KafkaCluster()
-                            .usingDirectory(Testing.Files.createTestingDirectory("simple-acl-operator-integration-test"))
-                            .deleteDataPriorToStartup(true)
-                            .deleteDataUponShutdown(true)
-                            .addBrokers(1)
-                            .withKafkaConfiguration(kafkaClusterConfig())
-                            .startup();
+            kafkaCluster = new EmbeddedKafkaCluster(1, kafkaClusterConfig());
+            kafkaCluster.start();
         } catch (IOException e) {
             assertThat(false, is(true));
         }
 
         simpleAclOperator = new SimpleAclOperator(vertx,
-                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.brokerList(), null, null, null));
+                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.bootstrapServers(), null, null, null));
     }
 
     @Test
@@ -223,9 +212,6 @@ public class SimpleAclOperatorIT {
 
     @AfterAll
     public static void afterAll() {
-        if (kafkaCluster != null) {
-            kafkaCluster.shutdown();
-        }
         if (vertx != null) {
             vertx.close();
         }

@@ -10,37 +10,66 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import kafka.admin.ReassignPartitionsCommand;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
-
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorReplicationIT.class);
+    protected static EmbeddedKafkaCluster kafkaCluster;
 
-    @Override
-    protected int numKafkaBrokers() {
+    @BeforeAll
+    public static void beforeAll() throws IOException {
+        kafkaCluster = new EmbeddedKafkaCluster(numKafkaBrokers(), kafkaClusterConfig());
+        kafkaCluster.start();
+
+        setupKubeCluster();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        teardownKubeCluster();
+    }
+
+    @BeforeEach
+    public void beforeEach() throws Exception {
+        setup(kafkaCluster);
+    }
+
+    @AfterEach
+    public void afterEach() throws InterruptedException, TimeoutException, ExecutionException {
+        teardown(true);
+    }
+
+    protected static int numKafkaBrokers() {
         return 2;
     }
 
-    @Override
-    protected Properties kafkaClusterConfig() {
+    protected static Properties kafkaClusterConfig() {
         return new Properties();
     }
 
     @Override
-    protected Map<String, String> topicOperatorConfig() {
-        Map<String, String> m = super.topicOperatorConfig();
+    protected Map<String, String> topicOperatorConfig(EmbeddedKafkaCluster kafkaCluster) {
+        Map<String, String> m = super.topicOperatorConfig(kafkaCluster);
         m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
         return m;
     }
@@ -75,21 +104,23 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
                     .put("topic", topicName)
                     .put("partition", 0)
                     .putArray("replicas")
-                        .add(1)
-                        .add(2);
+                        .add(0)
+                        .add(1);
         mapper.writeValue(file, root);
         LOGGER.info("Creating 2nd replica: {}", mapper.writeValueAsString(root));
 
         // Now change it in Kafka
-        doReassignmentCommand(
-                "--bootstrap-server", kafkaCluster.brokerList(),
+        String reassignmentOutput = doReassignmentCommand(
+                "--bootstrap-server", kafkaCluster.bootstrapServers(),
                 "--reassignment-json-file", file.getAbsolutePath(),
                 "--execute");
+
+        LOGGER.info(reassignmentOutput);
 
         LOGGER.info("Waiting for reassignment completion");
         waitFor(() -> {
             String output = doReassignmentCommand(
-                    "--bootstrap-server", kafkaCluster.brokerList(),
+                    "--bootstrap-server", kafkaCluster.bootstrapServers(),
                     "--reassignment-json-file", file.getAbsolutePath(),
                     "--verify");
             LOGGER.info(output);
