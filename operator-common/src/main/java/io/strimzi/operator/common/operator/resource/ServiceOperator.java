@@ -39,6 +39,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     private final EndpointOperator endpointOperations;
     /**
      * Constructor
+     *
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */

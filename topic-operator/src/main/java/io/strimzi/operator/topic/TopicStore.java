@@ -34,6 +34,7 @@ interface TopicStore {
      * completing the returned future when done.
      * If no topic with the given name exists, the future will complete with
      * a null result.
+     *
      * @param name The name of the topic.
      * @return A future which completes with the given topic.
      */
@@ -44,6 +45,7 @@ interface TopicStore {
      * completing the returned future when done.
      * If a topic with the given name already exists, the future will complete with an
      * {@link EntityExistsException}.
+     *
      * @param topic The topic.
      * @return A future which completes when the given topic has been created.
      */
@@ -54,6 +56,7 @@ interface TopicStore {
      * completing the returned future when done.
      * If no topic with the given name exists, the future will complete with a
      * {@link NoSuchEntityExistsException}.
+     *
      * @param topic The topic.
      * @return A future which completes when the given topic has been updated.
      */
@@ -64,6 +67,7 @@ interface TopicStore {
      * completing the returned future when done.
      * If no topic with the given name exists, the future will complete with a
      * {@link NoSuchEntityExistsException}.
+     *
      * @param topic The topic.
      * @return A future which completes when the given topic has been deleted.
      */

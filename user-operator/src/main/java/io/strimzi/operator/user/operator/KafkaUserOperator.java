@@ -127,6 +127,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * Creates or updates the user. The implementation
      * should not assume that any resources are in any particular state (e.g. that the absence on
      * one resource means that all resources need to be created).
+     *
      * @param reconciliation Unique identification for the reconciliation
      * @param resource KafkaUser resources with the desired user configuration.
      * @return a Future

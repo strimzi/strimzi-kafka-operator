@@ -113,6 +113,7 @@ public class ClusterOperatorTest {
 
     /**
      * Asserts that Cluster Operator starts and then stops a verticle in each namespace
+     *
      * @param context test context passed in for assertions
      * @param namespaces namespaces the operator should be watching and operating on
      */
@@ -193,6 +194,7 @@ public class ClusterOperatorTest {
 
     /**
      * Asserts that Cluster Operator starts and then stops a verticle in every namespace using the namespace wildcard (*)
+     *
      * @param context test context passed in for assertions
      * @param namespaces namespaces the operator should be watching and operating on
      */

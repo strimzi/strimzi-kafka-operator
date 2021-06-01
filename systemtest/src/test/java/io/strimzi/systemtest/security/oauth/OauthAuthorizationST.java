@@ -417,7 +417,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
      * 6) Try to send messages to topic with `a-` -> we should still be able to sent messages, because we didn't changed the permissions
      * 6) Change the permissions back and check that the messages are correctly sent
      *
-     *
      * The re-authentication can be seen in the log of team-a-producer pod.
      */
     @IsolatedTest("Modification of shared Kafka cluster")

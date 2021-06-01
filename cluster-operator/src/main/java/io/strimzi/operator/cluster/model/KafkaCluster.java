@@ -667,7 +667,8 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Manage certificates generation based on those already present in the Secrets
-     *  @param kafka                    The Kafka custom resource
+     *
+     * @param kafka                    The Kafka custom resource
      * @param clusterCa                The CA for cluster certificates
      * @param externalBootstrapDnsName The set of DNS names for bootstrap service (should be appended to every broker certificate)
      * @param externalDnsNames         The list of DNS names for broker pods (should be appended only to specific certificates for given broker)

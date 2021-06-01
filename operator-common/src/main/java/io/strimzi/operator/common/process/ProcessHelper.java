@@ -18,6 +18,7 @@ public class ProcessHelper {
      * Execute the command given in {@code args}.
      * Apply the given {@code sanitizer} function to the
      * {@code args} when logging, so that security-sensitive information is not logged.
+     *
      * @param args The executable and its arguments.
      * @return The result of the subprocess
      * @throws IOException Reading/writing to the subprocess

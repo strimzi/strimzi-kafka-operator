@@ -15,6 +15,7 @@ import io.vertx.core.Vertx;
 /**
  * Specializes {@link AbstractResourceOperator} for resources which also have a notion
  * of being "ready".
+ *
  * @param <C> The type of client used to interact with kubernetes.
  * @param <T> The Kubernetes resource type.
  * @param <L> The list variant of the Kubernetes resource type.

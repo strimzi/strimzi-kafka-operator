@@ -25,6 +25,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
 
     /**
      * Constructor
+     *
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
@@ -55,6 +56,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
     /**
      * Asynchronously roll the deployment returning a Future which will complete once all the pods have been rolled
      * and the Deployment is ready.
+     *
      * @param reconciliation The reconciliation
      * @param namespace The namespace of the deployment
      * @param name The name of the deployment

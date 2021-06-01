@@ -783,7 +783,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * Tests the transition from 'New' to to 'ProposalReady'
      * The rebalance proposal is approved and the resource moves to 'Rebalancing' then to 'Stopped' (via annotation)
      *
-     *
      * 1. A new KafkaRebalance resource is created; it is in the 'New' state
      * 2. The operator requests a rebalance proposal through the Cruise Control REST API
      * 3. The rebalance proposal is ready on the first call

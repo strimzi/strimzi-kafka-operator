@@ -440,6 +440,7 @@ public abstract class AbstractModel {
 
     /**
      * Transforms map to log4j properties file format.
+     *
      * @param properties map of log4j properties.
      * @return log4j properties as a String.
      */
@@ -695,6 +696,7 @@ public abstract class AbstractModel {
 
     /**
      * Checks if the supplied PersistentClaimStorage has a valid size
+     *
      * @param storage
      *
      * @throws InvalidResourceException if the persistent storage size is not valid

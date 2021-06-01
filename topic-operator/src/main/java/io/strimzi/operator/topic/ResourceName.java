@@ -31,6 +31,7 @@ class ResourceName {
 
     /**
      * Create a MapName from the name of the given resource
+     *
      * @param resource
      */
     public ResourceName(HasMetadata resource) {

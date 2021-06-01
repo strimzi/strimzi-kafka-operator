@@ -219,6 +219,7 @@ public abstract class Ca {
      * or null if the given {@code secret} is null.
      * An exception is thrown if the given {@code secret} is non-null, but does not contain the given
      * entries in its {@code data}.
+     *
      * @param secret The secret.
      * @param key The key.
      * @param cert The cert.
@@ -295,6 +296,7 @@ public abstract class Ca {
 
     /**
      * Generates a certificate signed by this CA
+     *
      * @param reconciliation The reconciliation
      * @param commonName The CN of the certificate to be generated.
      * @return The CertAndKey
@@ -306,6 +308,7 @@ public abstract class Ca {
 
     /**
      * Generates a certificate signed by this CA
+     *
      * @param reconciliation The reconciliation
      * @param commonName The CN of the certificate to be generated.
      * @param organization The O of the certificate to be generated. May be null.

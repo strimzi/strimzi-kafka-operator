@@ -19,6 +19,7 @@ public interface Kafka {
      * completing the returned Future when the topic has been created.
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
+     *
      * @param newTopic The topic to create.
      * @return A future which is completed once the topic has been created.
      */
@@ -29,6 +30,7 @@ public interface Kafka {
      * completing the returned Future when the topic has been deleted.
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
+     *
      * @param topicName The name of the topic to delete.
      * @return A future which is completed once the topic has been deleted.
      */
@@ -39,6 +41,7 @@ public interface Kafka {
      * completing the returned Future when the topic does not exists.
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
+     *
      * @param topicName The name of the topic to delete.
      * @return A future which is completed once the topic has been deleted.
      */
@@ -49,6 +52,7 @@ public interface Kafka {
      * completing the returned Future when the topic has been updated.
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
+     *
      * @param topic The topic config to update.
      * @return A future which is completed once the topic has been updated.
      */
@@ -59,6 +63,7 @@ public interface Kafka {
      * completing the returned Future when the topic has been updated.
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
+     *
      * @param topic The topic.
      * @return A future which is completed once the topic has been updated.
      */
@@ -70,6 +75,7 @@ public interface Kafka {
      * If the topic does not exist the returned Future will be completed with null result.
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
+     *
      * @param topicName The name of the topic to get the metadata of.
      * @return A future which is completed with the requested metadata.
      */
@@ -80,6 +86,7 @@ public interface Kafka {
      * completing the returned Future with the topic names.
      * If the operation fails the returned Future will be failed with the
      * KafkaException (not an ExecutionException).
+     *
      * @return A future which is completed with the list of topics.
      */
     Future<Set<String>> listTopics();

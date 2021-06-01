@@ -96,7 +96,8 @@ public class AuthenticationUtils {
 
     /**
      * Creates the Volumes used for authentication of Kafka client based components
-     *  @param authentication    Authentication object from CRD
+     *
+     * @param authentication    Authentication object from CRD
      * @param volumeList    List where the volumes will be added
      * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
      * @param isOpenShift   Indicates whether we run on OpenShift or not
@@ -311,7 +312,6 @@ public class AuthenticationUtils {
     /**
      * Generates volume mounts needed for certificates needed to connect to OAuth server.
      * This is used in both OAuth servers and clients.
-     *
      *
      * @param volumeNamePrefix   Prefix which was used to name the secret volumes
      * @param trustedCertificates   List of certificates which should be mounted

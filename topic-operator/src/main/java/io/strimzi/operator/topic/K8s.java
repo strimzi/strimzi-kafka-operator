@@ -16,6 +16,7 @@ public interface K8s {
 
     /**
      * Asynchronously create the given resource.
+     *
      * @param topicResource The resource to be created.
      * @return A future which completes when the topic has been created.
      */
@@ -23,6 +24,7 @@ public interface K8s {
 
     /**
      * Asynchronously update the given resource.
+     *
      * @param topicResource The topic.
      * @return A future which completes when the topic has been updated.
      */
@@ -30,6 +32,7 @@ public interface K8s {
 
     /**
      * Asynchronously update the given resource's status.
+     *
      * @param reconciliation The reconciliation
      * @param topicResource The topic.
      * @return A future which completes when the topic's status has been updated.
@@ -38,6 +41,7 @@ public interface K8s {
 
     /**
      * Asynchronously delete the given resource.
+     *
      * @param reconciliation The reconciliation
      * @param resourceName The name of the resource to be deleted.
      * @return A future which completes when the topic has been deleted.
@@ -54,6 +58,7 @@ public interface K8s {
      * Get the resource with the given name, invoking the given handler with the result.
      * If a resource with the given name does not exist, the handler will be called with
      * a null {@link AsyncResult#result() result()}.
+     *
      * @param resourceName The name of the resource to get.
      * @return A future which completes with the topic
      */
@@ -61,6 +66,7 @@ public interface K8s {
 
     /**
      * Create an event.
+     *
      * @param event The event.
      * @return A future which completes when the event has been created.
      */

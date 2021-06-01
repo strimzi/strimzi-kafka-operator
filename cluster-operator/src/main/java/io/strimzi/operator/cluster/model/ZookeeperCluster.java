@@ -463,7 +463,8 @@ public class ZookeeperCluster extends AbstractModel {
 
     /**
      * Generates the ZooKeeper nodes certificates
-     *  @param kafka The Kafka custom resource
+     *
+     * @param kafka The Kafka custom resource
      * @param clusterCa The CA for cluster certificates
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
      */

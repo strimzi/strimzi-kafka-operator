@@ -675,6 +675,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
     /**
      * Set the bootstrap servers to connect to
+     *
      * @param bootstrapServers bootstrap servers comma separated list
      */
     protected void setBootstrapServers(String bootstrapServers) {

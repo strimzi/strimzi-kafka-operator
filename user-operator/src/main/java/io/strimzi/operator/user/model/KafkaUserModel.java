@@ -282,6 +282,7 @@ public class KafkaUserModel {
 
     /**
      * Creates secret with the data
+     *
      * @param data Map with the Secret content
      * @return The secret.
      */

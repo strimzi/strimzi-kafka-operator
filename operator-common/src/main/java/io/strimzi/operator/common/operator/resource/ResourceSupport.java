@@ -38,6 +38,7 @@ public class ResourceSupport {
     /**
      * Asynchronously close the given {@code closeable} on a worker thread,
      * returning a Future which completes with the outcome.
+     *
      * @param closeable The closeable
      * @return The Future
      */
@@ -66,6 +67,7 @@ public class ResourceSupport {
      * a single cause, possibly with suppressed exception.
      * If both AsyncResults have failed {@code primary} will be the main cause of failure and
      * {@code secondary} will be a suppressed exception.
+     *
      * @param primary The primary failure.
      * @param secondary The secondary failure.
      * @return The cause.
@@ -93,6 +95,7 @@ public class ResourceSupport {
      * Kubernetes resources changes, so may block.
      * When the {@code watchFn} returns non-null the watch will be closed and then
      * the future returned from this method will be completed on the context thread.
+     *
      * @param watchable The watchable.
      * @param operationTimeoutMs The timeout in ms.
      * @param watchFnDescription A description of what {@code watchFn} is watching for.
