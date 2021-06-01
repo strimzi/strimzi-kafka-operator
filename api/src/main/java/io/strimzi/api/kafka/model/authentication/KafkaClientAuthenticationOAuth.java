@@ -42,6 +42,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private boolean accessTokenIsJwt = true;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_OAUTH;

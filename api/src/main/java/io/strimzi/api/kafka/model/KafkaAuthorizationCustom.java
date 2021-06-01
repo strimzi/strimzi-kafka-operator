@@ -35,6 +35,7 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
     private List<String> superUsers;
 
     @Description("Must be `" + TYPE_CUSTOM + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_CUSTOM;
