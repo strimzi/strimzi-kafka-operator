@@ -37,6 +37,7 @@ public class KafkaListenerExternalRoute extends KafkaListenerExternal {
     private KafkaListenerExternalConfiguration configuration;
 
     @Description("Must be `" + TYPE_ROUTE + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_ROUTE;

@@ -30,6 +30,7 @@ public class EphemeralStorage extends SingleVolumeStorage {
     private String sizeLimit;
 
     @Description("Must be `" + TYPE_EPHEMERAL + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_EPHEMERAL;

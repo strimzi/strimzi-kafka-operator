@@ -38,6 +38,7 @@ public class KafkaListenerExternalNodePort extends KafkaListenerExternal {
     private NodePortListenerConfiguration configuration;
 
     @Description("Must be `" + TYPE_NODEPORT + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_NODEPORT;

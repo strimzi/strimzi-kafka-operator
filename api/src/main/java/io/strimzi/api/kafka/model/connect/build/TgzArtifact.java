@@ -25,6 +25,7 @@ public class TgzArtifact extends DownloadableArtifact {
     private static final long serialVersionUID = 1L;
 
     @Description("Must be `" + TYPE_TGZ + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_TGZ;

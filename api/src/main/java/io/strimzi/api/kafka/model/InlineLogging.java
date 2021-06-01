@@ -29,6 +29,7 @@ public class InlineLogging extends Logging {
     private Map<String, String> loggers = null;
 
     @Description("Must be `" + TYPE_INLINE + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_INLINE;

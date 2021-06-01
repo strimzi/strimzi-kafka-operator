@@ -61,6 +61,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String customClaimCheck;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_OAUTH;

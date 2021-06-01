@@ -38,6 +38,7 @@ public class KafkaListenerExternalLoadBalancer extends KafkaListenerExternal {
     private KafkaListenerExternalConfiguration configuration;
 
     @Description("Must be `" + TYPE_LOADBALANCER + "`")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_LOADBALANCER;
