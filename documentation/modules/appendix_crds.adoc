@@ -2705,6 +2705,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
 |xref:type-KafkaClientAuthenticationTls-{context}[`KafkaClientAuthenticationTls`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`]
 |http              1.2+<.<a|The HTTP related configuration.
 |xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
+|adminClient       1.2+<.<a|Kafka AdminClient related configuration.
+|xref:type-KafkaBridgeAdminClientSpec-{context}[`KafkaBridgeAdminClientSpec`]
 |consumer          1.2+<.<a|Kafka consumer related configuration.
 |xref:type-KafkaBridgeConsumerSpec-{context}[`KafkaBridgeConsumerSpec`]
 |producer          1.2+<.<a|Kafka producer related configuration.
@@ -2777,6 +2779,19 @@ Used in: xref:type-KafkaBridgeHttpConfig-{context}[`KafkaBridgeHttpConfig`]
 |string array
 |allowedMethods  1.2+<.<a|List of allowed HTTP methods.
 |string array
+|====
+
+[id='type-KafkaBridgeAdminClientSpec-{context}']
+### `KafkaBridgeAdminClientSpec` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
+
+
+[options="header"]
+|====
+|Property       |Description
+|config  1.2+<.<a|The Kafka AdminClient configuration used for AdminClient instances created by the bridge.
+|map
 |====
 
 [id='type-KafkaBridgeConsumerSpec-{context}']
