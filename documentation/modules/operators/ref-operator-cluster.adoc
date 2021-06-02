@@ -197,8 +197,9 @@ Feature gates have three stages of maturity:
 Alpha stage features might be experimental or unstable, subject to change, or not sufficiently tested for production use.
 Beta stage features are well tested and their functionality is not likely to change.
 GA stage features are stable and should not change in future. 
-We might remove a GA stage feature gate that has been enabled by default for some time, so disabling the feature will no longer be possible. 
 Alpha and beta stage features are removed if they do not prove to be useful.
+
+NOTE: If a GA feature has been enabled by default for some time, its feature gate might be removed.  
 
 .Supported feature gates and the Strimzi versions when they moved to alpha, beta, or GA
 [cols="4*",options="header",stripes="none",separator=¦]
@@ -236,18 +237,26 @@ env:
     value: +FeatureGate1,-FeatureGate2
 ----
 
-=== Control Plane listener feature gate
+=== Control plane listener feature gate
 
-Use the `ControlPlaneListener` feature gate to change the communication paths used for inter-broker communications.
+Use the `ControlPlaneListener` feature gate to change the communication paths used for inter-broker communications within your Kafka cluster.
 
-When `ControlPlaneListener` is enabled, Kafka brokers use a dedicated internal _control plane listener_ for controller connections (that is, traffic from the Kubernetes control plane) between brokers. 
-The control plane listener uses port 9090. 
-Data connections (data replication between the Kafka brokers) continue to use the internal listener on port 9091. 
+The Kubernetes control plane manages the workloads running on the worker nodes. 
+Services such as the Kubernetes API server and the controller manager run on the control plane. 
+The Kubernetes data plane provides resources to containers, including CPU, memory, network, and storage.
 
-When `ControlPlaneListener` is disabled, controller and data connections go through the same internal listener on port 9091. 
+In Strimzi, control plane traffic consists of controller connections that maintain the desired state of the Kafka cluster. 
+Data plane traffic mainly consists of data replication between the leader broker and the follower brokers.
+
+When the `ControlPlaneListener` feature gate is disabled, control plane and data plane traffic go through the same internal listener on port 9091. 
 This was the default behavior before the feature gate was introduced.
 
-Control plane listeners might improve performance because important requests from the control plane, such as partition leadership changes, are not delayed by data plane traffic, such as data replication.
+When `ControlPlaneListener` is enabled, control plane traffic goes through a dedicated _control plane listener_ on port 9090. 
+Data plane traffic continues to use the internal listener on port 9091.
+
+Using control plane listeners can provide increased performance because important controller connections, such as partition leadership changes, are not delayed by data replication across brokers.
+
+.Enabling the control plane listener feature gate
 
 The `ControlPlaneListener` feature gate is in the alpha stage and has a default state of _disabled_. 
 To enable it, specify `+ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
