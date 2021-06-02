@@ -238,7 +238,7 @@ env:
 
 === Control Plane listener feature gate
 
-You can use the `ControlPlaneListener` feature gate to change the communication paths used for inter-broker communications.
+Use the `ControlPlaneListener` feature gate to change the communication paths used for inter-broker communications.
 
 When `ControlPlaneListener` is enabled, Kafka brokers use a dedicated internal _control plane listener_ for controller connections (that is, traffic from the Kubernetes control plane) between brokers. 
 The control plane listener uses port 9090. 
