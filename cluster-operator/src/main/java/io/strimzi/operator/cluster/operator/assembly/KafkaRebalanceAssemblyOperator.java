@@ -358,7 +358,7 @@ public class KafkaRebalanceAssemblyOperator
         RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
 
         return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
-           .compose(desiredStatusandMap -> {
+           .compose(desiredStatusAndMap -> {
                // More events related to resource modification might be queued with a stale state. (potentially updated by the rebalance holding the lock)
                // Due to possible long rebalancing operations that take the lock for the entire period,
                // do a new get to retrieve the current resource state.
@@ -366,8 +366,8 @@ public class KafkaRebalanceAssemblyOperator
                             .compose(currentKafkaRebalance -> {
                                 if (currentKafkaRebalance != null) {
                                     return configMapOperator.reconcile(kafkaRebalance.getMetadata().getNamespace(),
-                                            kafkaRebalance.getMetadata().getName(), desiredStatusandMap.getLoadMap())
-                                            .compose(i -> updateStatus(currentKafkaRebalance, desiredStatusandMap.getStatus(), null))
+                                            kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
+                                            .compose(i -> updateStatus(currentKafkaRebalance, desiredStatusAndMap.getStatus(), null))
                                             .compose(updatedKafkaRebalance -> {
                                                 log.info("{}: State updated to [{}] with annotation {}={} ",
                                                         reconciliation,
@@ -585,7 +585,6 @@ public class KafkaRebalanceAssemblyOperator
     /**
      * A wrapper class containing used to bind the ConfigMap and the status together.
      */
-
     static class MapAndStatus<T, K> {
 
         T loadMap;

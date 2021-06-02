@@ -113,7 +113,7 @@ The broker load is stored in a ConfigMap (with the same name as the KafakRebalan
 Each metric consist of three values.
 The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
 
-To extract the JSON string from the ConfigMap, use the following command:
+To extract the JSON string from the ConfigMap you could use the following command, which uses the jq command line JSON parser tool:
 
 [source,shell,subs=+quotes]
 ----
