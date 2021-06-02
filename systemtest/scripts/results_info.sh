@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+mkdir -p ./systemtest/target/failsafe-reports/
+
 RESULTS_PATH=${1}
 TEST_CASE=${2}
 TEST_PROFILE=${3}
