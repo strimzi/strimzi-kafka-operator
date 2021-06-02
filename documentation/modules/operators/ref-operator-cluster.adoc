@@ -198,7 +198,7 @@ Alpha stage features might be experimental or unstable, subject to change, or no
 Beta stage features are well tested and their functionality is not likely to change.
 GA stage features are stable and should not change in future. 
 We might remove a GA stage feature gate that has been enabled by default for some time, so disabling the feature will no longer be possible. 
-Alpha and beta stage features will be removed if they do not prove to be useful.
+Alpha and beta stage features are removed if they do not prove to be useful.
 
 .Supported feature gates and the Strimzi versions when they moved to alpha, beta, or GA
 [cols="4*",options="header",stripes="none",separator=¦]
