@@ -20,8 +20,8 @@ import java.util.Map;
 public class KafkaBridgeAdminClientSpec extends KafkaBridgeClientSpec {
     private static final long serialVersionUID = 1L;
 
-    public static final String FORBIDDEN_PREFIXES = "";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "";
+    public static final String FORBIDDEN_PREFIXES = "ssl., bootstrap.servers, group.id, sasl., security.";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     @Override
     @Description("The Kafka AdminClient configuration used for AdminClient instances created by the bridge.")
