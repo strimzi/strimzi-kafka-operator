@@ -117,7 +117,7 @@ To extract the JSON string from the ConfigMap you could use the following comman
 
 [source,shell,subs=+quotes]
 ----
-kubectl get configmap _my-rebalance_ -o json | jq '.["data"]["brokerLoad.json"]|fromjson|.'
+kubectl get configmap _MY-REBALANCE_ -o json | jq '.["data"]["brokerLoad.json"]|fromjson|.'
 ----
 
 The following table explains the properties contained in the optimization proposal's broker load ConfigMap:
