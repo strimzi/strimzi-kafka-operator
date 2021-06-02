@@ -142,7 +142,7 @@ public class KafkaBridgeSpec extends Spec {
         return adminClient;
     }
 
-    public void setConsumer(KafkaBridgeAdminClientSpec adminClient) {
+    public void setAdminClient(KafkaBridgeAdminClientSpec adminClient) {
         this.adminClient = adminClient;
     }
 

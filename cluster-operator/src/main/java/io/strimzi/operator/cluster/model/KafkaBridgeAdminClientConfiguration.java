@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Class for handling Kafka Bridge consumer configuration passed by the user
+ * Class for handling Kafka Bridge Admin Client configuration passed by the user
  */
 public class KafkaBridgeAdminClientConfiguration extends AbstractConfiguration {
 
