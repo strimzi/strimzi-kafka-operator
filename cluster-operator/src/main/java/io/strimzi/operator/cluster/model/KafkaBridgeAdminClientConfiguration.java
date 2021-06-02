@@ -6,7 +6,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.KafkaBridgeAdminClientSpec;
-import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +22,7 @@ public class KafkaBridgeAdminClientConfiguration extends AbstractConfiguration {
 
     static {
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaBridgeAdminClientSpec.FORBIDDEN_PREFIXES);
-        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaBridgeConsumerSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
+        FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(KafkaBridgeAdminClientSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
         DEFAULTS = new HashMap<>(0);
     }
 
