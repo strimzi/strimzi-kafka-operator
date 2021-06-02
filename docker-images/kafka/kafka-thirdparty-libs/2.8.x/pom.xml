@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.7.2</strimzi-oauth.version>
+        <strimzi-oauth.version>1.0.0-SNAPSHOT</strimzi-oauth.version>
         <cruise-control.version>2.5.55</cruise-control.version>
         <opa-authorizer.version>0.4.2</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>
@@ -124,6 +124,10 @@
                 <exclusion>
                     <groupId>com.sun.activation</groupId>
                     <artifactId>jakarta.activation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.stephenc.jcip</groupId>
+                    <artifactId>jcip-annotations</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

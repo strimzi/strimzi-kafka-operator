@@ -11,6 +11,7 @@
 * Support pausing reconciliation of KafkaTopic CR with annotation `strimzi.io/pause-reconciliation`
 * Update cruise control to 2.5.55
 * Support for broker load information added to the rebalance optimization proposal. Information on the load difference, before and after a rebalance is stored in a ConfigMap
+* The option `enableECDSA` of Kafka CR `authentication` of type `oauth` has been deprecated and is ignored. ECDSA token signature support is now always enabled without the need for Strimzi Cluster Operator installing the BouncyCastle JCE crypto provider. BouncyCastle library is no longer packaged with Strimzi Kafka images.
 
 ### Changes, deprecations and removals
 

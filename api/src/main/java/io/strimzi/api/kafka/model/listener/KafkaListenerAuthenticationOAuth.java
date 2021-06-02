@@ -5,11 +5,13 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
@@ -53,7 +55,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
-    private boolean enableECDSA = false;
+    private boolean enableECDSA = true;
     private Integer maxSecondsWithoutReauthentication;
     private boolean enablePlain = false;
     private String tokenEndpointUri;
@@ -278,8 +280,12 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.disableTlsHostnameVerification = disableTlsHostnameVerification;
     }
 
+    @DeprecatedProperty
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     @Description("Enable or disable ECDSA support by installing BouncyCastle crypto provider. " +
-            "Default value is `false`.")
+            "Since version 0.24.0 BouncyCastle crypto provider is no longer needed for ECDSA. " +
+            "As a result ECDSA is always enabled and BouncyCastle is not packaged with Strimzi. Value is ignored.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isEnableECDSA() {
         return enableECDSA;
