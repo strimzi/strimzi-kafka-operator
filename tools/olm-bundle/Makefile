@@ -1,7 +1,6 @@
 PROJECT_NAME=olm-bundle
 
-BUNDLE_VERSION ?= $(shell cat ../../release.version | cut -d'-' -f1)
-
+BUNDLE_VERSION ?= $(shell cat $(dirname $(realpath $0))../../release.version | cut -d'-' -f1)
 .DEFAULT_GOAL := default
 
 include ../../Makefile.docker

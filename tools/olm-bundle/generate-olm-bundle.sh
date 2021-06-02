@@ -6,7 +6,6 @@
 source $(dirname $(realpath $0))/../multi-platform-support.sh
 
 PACKAGE_NAME=strimzi-cluster-operator
-
 CHANNELS=latest
 PREVIOUS_BUNDLE_VERSION=$(curl -s https://raw.githubusercontent.com/operator-framework/community-operators/master/community-operators/strimzi-kafka-operator/strimzi-kafka-operator.package.yaml | yq e '.channels[0].currentCSV' -)
 
@@ -18,7 +17,6 @@ BUNDLE=$(dirname $(realpath $0))/bundle
 MANIFESTS=${BUNDLE}/manifests
 METADATA=${BUNDLE}/metadata
 DOCKERFILE=${BUNDLE}/bundle.Dockerfile
-CSV_FILE=${MANIFESTS}/${PACKAGE_NAME}.v${VERSION}.clusterserviceversion.yaml
 
 for ARGUMENT in "$@"
 do
@@ -33,6 +31,8 @@ do
     *)
   esac
 done
+
+CSV_FILE=${MANIFESTS}/${PACKAGE_NAME}.v${BUNDLE_VERSION}.clusterserviceversion.yaml
 
 if [[ -z $BUNDLE_VERSION || -z $DOCKER_REGISTRY || -z $DOCKER_ORG || -z $DOCKER_TAG ]]; then
   echo "One or more arguments have not been supplied
