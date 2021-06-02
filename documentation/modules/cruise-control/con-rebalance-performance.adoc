@@ -38,7 +38,7 @@ Cruise Control provides four alternative replica movement strategies that can be
 * `PrioritizeSmallReplicaMovementStrategy`: Order reassignments in order of ascending size.
 * `PrioritizeLargeReplicaMovementStrategy`: Order reassignments in order of descending size. 
 * `PostponeUrpReplicaMovementStrategy`: Prioritize reassignments for replicas of partitions which have no out-of-sync replicas.
-* `PrioritizeMinIsrWithOfflineReplicasStrategy`: Prioritize reassignments with (At/Under)MinISR partitions with offline replicas.
+* `PrioritizeMinIsrWithOfflineReplicasStrategy`: Prioritize reassignments with (At/Under)MinISR partitions with offline replicas.  This strategy will only work if Cruise Control has been configured with `min_isr_based_concurrency_adjustment` set to true.
 
 These strategies can be configured as a sequence.
 The first strategy attempts to compare two partition reassignments using its internal logic. 
