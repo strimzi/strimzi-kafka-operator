@@ -185,7 +185,7 @@ Strimzi operators support _feature gates_ to enable or disable certain features 
 When enabled, a feature gate alters the behavior of the relevant operator. 
 
 Feature gates have a default state of either _enabled_ or _disabled_. 
-To modify a feature gate's default state, use the `STRIMZI_FEATURE_GATES` environment variable in operator's configuration.  
+To modify a feature gate's default state, use the `STRIMZI_FEATURE_GATES` environment variable in the operator's configuration.  
 You can modify multiple feature gates in one environment variable.
 
 Feature gates have three stages of maturity:
