@@ -33,11 +33,12 @@ Cluster rebalance performance is also influenced by the _replica movement strate
 By default, Cruise Control uses the `BaseReplicaMovementStrategy`, which simply applies the commands in the order they were generated.
 However, if there are some very large partition reassignments early in the proposal, this strategy can slow down the application of the other reassignments.
 
-Cruise Control provides three alternative replica movement strategies that can be applied to optimization proposals:
+Cruise Control provides four alternative replica movement strategies that can be applied to optimization proposals:
 
 * `PrioritizeSmallReplicaMovementStrategy`: Order reassignments in order of ascending size.
 * `PrioritizeLargeReplicaMovementStrategy`: Order reassignments in order of descending size. 
 * `PostponeUrpReplicaMovementStrategy`: Prioritize reassignments for replicas of partitions which have no out-of-sync replicas.
+* `PrioritizeMinIsrWithOfflineReplicasStrategy`: Prioritize reassignments with (At/Under)MinISR partitions with offline replicas.
 
 These strategies can be configured as a sequence.
 The first strategy attempts to compare two partition reassignments using its internal logic. 
