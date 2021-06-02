@@ -242,7 +242,7 @@ Use the `ControlPlaneListener` feature gate to change the communication paths us
 
 When `ControlPlaneListener` is enabled, Kafka brokers use a dedicated internal _control plane listener_ for controller connections (that is, traffic from the Kubernetes control plane) between brokers. 
 The control plane listener uses port 9090. 
-Data connections (data replication between the Kafka brokers) continues to use the internal listener on port 9091. 
+Data connections (data replication between the Kafka brokers) continue to use the internal listener on port 9091. 
 
 When `ControlPlaneListener` is disabled, controller and data connections go through the same internal listener on port 9091. 
 This was the default behavior before the feature gate was introduced.
