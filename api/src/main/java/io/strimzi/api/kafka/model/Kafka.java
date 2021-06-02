@@ -108,6 +108,7 @@ public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Nam
     public static final List<String> RESOURCE_SHORTNAMES = unmodifiableList(singletonList(SHORT_NAME));
 
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
     private ObjectMeta metadata; // leave it for the generator / builder
     private KafkaSpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

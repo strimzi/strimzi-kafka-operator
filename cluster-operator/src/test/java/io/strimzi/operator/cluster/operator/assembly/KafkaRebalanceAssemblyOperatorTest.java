@@ -50,7 +50,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
@@ -560,9 +559,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             })));
     }
 
-    @Disabled
-    // The generation from yaml adds duplicate "kind" property. When that is fixed, this test should be enabled
-    // enable when https://github.com/strimzi/strimzi-kafka-operator/issues/5053 is fixed
+
     @Test
     public void testUnknownPropertyInSpec(VertxTestContext context) throws IOException, URISyntaxException {
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);

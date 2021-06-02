@@ -110,6 +110,7 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
     private Map<String, Object> additionalProperties;
     private ObjectMeta metadata;
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
 
     @Override
     public String getApiVersion() {

@@ -315,22 +315,9 @@ public final class TestUtils {
                 .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
                 .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         try {
-            return removeDuplicateKind(instance, mapper.writeValueAsString(instance));
+            return mapper.writeValueAsString(instance);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static <T> String removeDuplicateKind(T instance, String model) {
-        // hack. For some reason, the 'kind' property is duplicated in the model yaml
-        // remove when https://github.com/strimzi/strimzi-kafka-operator/issues/5053 is fixed
-        String kind = "kind: \"" + instance.getClass().getSimpleName() + "\"";
-        int firstIndex = model.indexOf(kind);
-        int lastIndex = model.lastIndexOf(kind);
-        if (firstIndex == lastIndex) {
-            return model;
-        } else {
-            return model.substring(0, lastIndex);
         }
     }
 

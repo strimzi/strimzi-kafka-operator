@@ -88,6 +88,7 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
 
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
     private ObjectMeta metadata;
     private KafkaRebalanceSpec spec;
     private KafkaRebalanceStatus status;

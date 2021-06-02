@@ -103,6 +103,7 @@ public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectS
     public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
     private KafkaConnectSpec spec;
     private ObjectMeta metadata;
     private KafkaConnectStatus status;

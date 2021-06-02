@@ -106,6 +106,7 @@ public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> im
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
 
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
     private ObjectMeta metadata;
     private KafkaUserSpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

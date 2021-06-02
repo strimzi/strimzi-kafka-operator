@@ -107,6 +107,7 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
     private ObjectMeta metadata;
     private KafkaBridgeSpec spec;
     private KafkaBridgeStatus status;

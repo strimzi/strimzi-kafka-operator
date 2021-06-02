@@ -101,6 +101,7 @@ public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, Kaf
     public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
     private KafkaMirrorMaker2Spec spec;
     private ObjectMeta metadata;
     private KafkaMirrorMaker2Status status;
