@@ -54,7 +54,6 @@ public class FeatureGatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
 
     protected void deployClusterOperatorWithEnvVars(ExtensionContext extensionContext, List<EnvVar> envVars) {
-        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
         prepareEnvForOperator(extensionContext, NAMESPACE, Arrays.asList(NAMESPACE, NAMESPACE));
         applyBindings(extensionContext, NAMESPACE);
         resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE, envVars).build());
@@ -66,7 +65,9 @@ public class FeatureGatesST extends AbstractST {
      */
     @IsolatedTest("Feature Gates test for ControlPlainListener")
     @Tag(INTERNAL_CLIENTS_USED)
-    public void testControlPlaneListenerFeatureGate(ExtensionContext extensionContext) throws InterruptedException {
+    public void testControlPlaneListenerFeatureGate(ExtensionContext extensionContext) {
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String producerName = "producer-test-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-test-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -75,10 +76,7 @@ public class FeatureGatesST extends AbstractST {
         List<EnvVar> testEnvVars = new ArrayList<>();
         int kafkaReplicas = 3;
 
-        String systemEnvFG = System.getenv(Environment.STRIMZI_FEATURE_GATES_ENV);
-        if (systemEnvFG == null || !systemEnvFG.contains("ControlPlaneListener")) {
-            testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+ControlPlaneListener", null));
-        }
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+ControlPlaneListener", null));
         deployClusterOperatorWithEnvVars(extensionContext, testEnvVars);
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas).build());
 
@@ -90,7 +88,7 @@ public class FeatureGatesST extends AbstractST {
 
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(clusterName));
 
-        LOGGER.info("Try to send some messages to Kafka over the next {} seconds.", messageCount);
+        LOGGER.info("Try to send some messages to Kafka over next few minutes.");
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(clusterName, topicName)
                 .editSpec()
                     .withReplicas(kafkaReplicas)
@@ -131,7 +129,5 @@ public class FeatureGatesST extends AbstractST {
         LOGGER.info("Waiting for clients to finish sending/receiving messages.");
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
         ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
-        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
     }
 }
