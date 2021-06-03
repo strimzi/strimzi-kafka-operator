@@ -18,6 +18,7 @@ function install_helm3 {
     curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
     # we need to modify the script with a different path because on the Azure pipelines the HELM_INSTALL_DIR env var is not honoured
     sed -i 's#/usr/local/bin#/usr/bin#g' get_helm.sh
+    sed -i 's~https://get.helm.sh~https://repo.phenix.carrefour.com/common/helm~g' get_helm.sh
     chmod 700 get_helm.sh
 
     echo "Installing helm 3..."
