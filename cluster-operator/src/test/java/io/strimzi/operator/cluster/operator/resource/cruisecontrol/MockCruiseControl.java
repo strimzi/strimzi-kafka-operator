@@ -40,7 +40,7 @@ public class MockCruiseControl {
     private static final String VERBOSE = "verbose";
     private static final String USER_TASK = "user-task";
     private static final String RESPONSE = "response";
-
+    
     public static final String REBALANCE_NO_GOALS_RESPONSE_UTID = REBALANCE + SEP + NO_GOALS + SEP + RESPONSE;
     public static final String REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID = REBALANCE + SEP + NO_GOALS + SEP + VERBOSE + SEP + RESPONSE;
     public static final String USER_TASK_REBALANCE_NO_GOALS = USER_TASK + SEP + REBALANCE + SEP + NO_GOALS;
@@ -190,7 +190,7 @@ public class MockCruiseControl {
                                 .withMethod("POST")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
                                 .withPath(CruiseControlEndpoints.REBALANCE.path),
                         Times.exactly(pendingCalls))
                 .respond(
@@ -251,7 +251,7 @@ public class MockCruiseControl {
                                 .withMethod("POST")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.GOALS.key, ".+"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key, "false"))
                                 .withPath(CruiseControlEndpoints.REBALANCE.path))
@@ -264,7 +264,7 @@ public class MockCruiseControl {
 
         // Response if the user has set custom goals which do not include all configured hard.goals
         // Note: This uses the no-goals example response but the difference between custom goals and default goals is not tested here
-        JsonBody jsonSummary = getJsonFromResource("CC-Rebalance-no-goals.json");
+        JsonBody jsonSummary = getJsonFromResource("CC-Rebalance-no-goals-verbose.json");
 
         ccServer
                 .when(
@@ -272,7 +272,7 @@ public class MockCruiseControl {
                                 .withMethod("POST")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
-                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.GOALS.key, ".+"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key, "true"))
                                 .withPath(CruiseControlEndpoints.REBALANCE.path))
@@ -350,8 +350,26 @@ public class MockCruiseControl {
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         // User tasks response for the rebalance request with no goals set (verbose)
+        JsonBody jsonActiveVerbose = getJsonFromResource("CC-User-task-rebalance-no-goals-verbose-Active.json");
         JsonBody jsonInExecutionVerbose = getJsonFromResource("CC-User-task-rebalance-no-goals-verbose-inExecution.json");
         JsonBody jsonCompletedVerbose = getJsonFromResource("CC-User-task-rebalance-no-goals-verbose-completed.json");
+
+        // The first activeCalls times respond that with a status of "Active"
+        ccServer
+                .when(
+                        request()
+                                .withMethod("GET")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
+                                .withQueryStringParameter(
+                                        Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                        Times.exactly(activeCalls))
+                .respond(
+                        response()
+                                .withBody(jsonActiveVerbose)
+                                .withHeaders(header("User-Task-ID", USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
         ccServer
                 .when(

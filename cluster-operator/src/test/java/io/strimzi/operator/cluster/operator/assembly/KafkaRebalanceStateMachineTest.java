@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.KafkaRebalance;
@@ -26,11 +27,11 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOpti
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -45,7 +46,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,6 +58,8 @@ public class KafkaRebalanceStateMachineTest {
     private static final String RESOURCE_NAME = "my-rebalance";
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
+
+    ConfigMapOperator mockCmOps;
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
 
@@ -136,6 +138,7 @@ public class KafkaRebalanceStateMachineTest {
 
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        mockCmOps = supplier.configMapOperations;
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
             @Override
@@ -162,15 +165,18 @@ public class KafkaRebalanceStateMachineTest {
                 KafkaRebalance,
                 KafkaRebalanceList> mockRebalanceOps = supplier.kafkaRebalanceOperator;
 
+        when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(new ConfigMap()));
         when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);
         when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(kcRebalance));
 
         return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions)
                 .compose(result -> {
                     context.verify(() -> {
-                        assertThat(result.getConditions(), StateMatchers.hasStateInConditions(nextState));
+                        System.out.println(result.getStatus().getConditions());
+                        assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
                     });
-                    return Future.succeededFuture(result);
+                    System.out.println(result.getStatus());
+                    return Future.succeededFuture(result.getStatus());
                 });
     }
 
@@ -418,14 +424,13 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     @Test
-    @Timeout(value = 30, timeUnit = TimeUnit.SECONDS)
     public void testRebalancingCompleted(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Ready,
                 KafkaRebalanceAnnotation.none, null,
-                MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID)
+                MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID)
                 .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
@@ -440,7 +445,7 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceState.Rebalancing, KafkaRebalanceState.Rebalancing,
                 KafkaRebalanceAnnotation.none, null,
-                MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID)
+                MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID)
                 .onComplete(result -> checkOptimizationResults(result, context, false));
 
     }
