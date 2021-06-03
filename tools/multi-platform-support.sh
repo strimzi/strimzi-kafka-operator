@@ -12,6 +12,7 @@ GREP=grep
 WC=wc
 UNIQ=uniq
 SORT=sort
+HEAD=head
 
 UNAME_S=$(uname -s)
 if [ $UNAME_S = "Darwin" ];
@@ -24,4 +25,5 @@ then
     WC=gwc
     UNIQ=guniq
     SORT=gsort
+		HEAD=ghead
 fi

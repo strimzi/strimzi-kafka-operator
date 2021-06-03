@@ -82,8 +82,8 @@ generate_olm_bundle() {
   mv ./bundle.Dockerfile $DOCKERFILE
   
   # Remove last three lines of Dockerfile with incorrectly generated paths
-  head -n -3 $DOCKERFILE | tee $DOCKERFILE 1> /dev/null 
-  
+  $HEAD -n -3 $DOCKERFILE | tee $DOCKERFILE 1> /dev/null
+
   # Add copy commands with correct paths
   echo "COPY ./manifests/ /manifests/" >> $DOCKERFILE
   echo "COPY ./metadata/ /metadata/" >> $DOCKERFILE
@@ -164,13 +164,11 @@ validate_olm_bundle() {
 generate_related_images() {
   yq ea -i '.spec.relatedImages = null' ${CSV_FILE}
 
-  ENV="*-operator *BRIDGE_IMAGE *JMXTRANS_IMAGE *EXECUTOR_IMAGE"
+  ENV="*TOPIC_OPERATOR_IMAGE *BRIDGE_IMAGE *JMXTRANS_IMAGE *EXECUTOR_IMAGE"
   for env in $ENV; 
   do
     image=$(yq ea ".. | select(has(\"name\")).env[] | (select (.name == \"$env\")).value" ${CSV_FILE})
-    if [ -z "$image" ]; then
-      # Find operator image
-      image=$(yq ea ".. | select(has(\"image\")) | (select (.name == \"$env\")).image" ${CSV_FILE} | head -n 1) 
+    if [[ $env == *TOPIC_OPERATOR_IMAGE ]]; then
       # Set operator image in annotations
       yq ea -i ".metadata.annotations.containerImage = \"$image\"" ${CSV_FILE}
     fi
@@ -215,11 +213,12 @@ generate_image_digests() {
       echo "ERROR: Could not find image in remote registry: '$registry/$org/$repo:$tag'"
       exit 1;
     fi
-    digest=$(echo -n "$body" | sha256sum | head -c 64);
+    digest=$(echo -n "$body" | sha256sum | $HEAD -c 64);
     
     image_digest="${image}@sha256:${digest}"
     echo "Replacing $image_tag with $image_digest"
-    $SED -i "s|${image_tag}|${image_digest}|g" ${CSV_FILE};
+    $SED -i.bak "s|${image_tag}|${image_digest}|g" ${CSV_FILE};
+		rm ${CSV_FILE}.bak
   done
 }
 
