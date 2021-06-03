@@ -175,14 +175,14 @@ The timeout for building new Kafka Connect images with additional connectots, in
 This value should be increased when using Strimzi to build container images containing many connectors or using a slow container registry.
 
 `STRIMZI_FEATURE_GATES`:: Optional.
-Enables or disables feature gates that activate new features or change the behavior of the operator.
+Enables or disables features and functionality controlled by feature gates.
 For more information about each feature gate, see xref:ref-operator-cluster-feature-gates-{context}[].
 
 [id='ref-operator-cluster-feature-gates-{context}']
 == Feature gates
 
 Strimzi operators support _feature gates_ to enable or disable certain features and functionality. 
-When enabled, a feature gate alters the behavior of the relevant operator. 
+Enabling a feature gate changes the behavior of the relevant operator and introduces the feature to your Strimzi deployment.
 
 Feature gates have a default state of either _enabled_ or _disabled_. 
 To modify a feature gate's default state, use the `STRIMZI_FEATURE_GATES` environment variable in the operator's configuration.  
@@ -199,9 +199,9 @@ Beta stage features are well tested and their functionality is not likely to cha
 GA stage features are stable and should not change in future. 
 Alpha and beta stage features are removed if they do not prove to be useful.
 
-NOTE: Feature gates might be removed when they reach GA.
+NOTE: Feature gates might be removed when they reach GA. This means that the feature was incorporated into the Strimzi core features and can no longer be disabled.
 
-.Supported feature gates and the Strimzi versions when they moved to alpha, beta, or GA
+.All feature gates and the Strimzi versions when they moved to alpha, beta, or GA
 [cols="4*",options="header",stripes="none",separator=¦]
 |===
 
@@ -226,7 +226,7 @@ NOTE: Feature gates might be removed when they reach GA.
 === Configuring feature gates
 
 You configure feature gates using the `STRIMZI_FEATURE_GATES` environment variable in the operator's configuration.
-Specify a comma-separated list of feature gate names and prefixes for the environment variable. 
+Specify a comma-separated list of feature gate names and prefixes. 
 A `+` prefix enables the feature gate and a `-` prefix  disables it.
 
 .Example feature gate configuration that enables `FeatureGate1` and disables `FeatureGate2`
@@ -254,7 +254,7 @@ This was the default behavior before the feature gate was introduced.
 When `ControlPlaneListener` is enabled, control plane traffic goes through a dedicated _control plane listener_ on port 9090. 
 Data plane traffic continues to use the internal listener on port 9091.
 
-Using control plane listeners can provide increased performance because important controller connections, such as partition leadership changes, are not delayed by data replication across brokers.
+Using control plane listeners might improve performance because important controller connections, such as partition leadership changes, are not delayed by data replication across brokers.
 
 .Enabling the control plane listener feature gate
 
