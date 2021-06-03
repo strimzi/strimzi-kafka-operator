@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -x
 
+function install_nsenter {
+    # Pre-req for helm
+    curl https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v${TEST_NSENTER_VERSION}/util-linux-${TEST_NSENTER_VERSION}.tar.gz -k | tar -zxf-
+    cd util-linux-${TEST_NSENTER_VERSION}
+    ./configure --without-ncurses
+    make nsenter
+    sudo cp nsenter /usr/bin
+}
+
 function install_helm3 {
     install_nsenter
 
