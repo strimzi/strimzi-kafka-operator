@@ -949,7 +949,7 @@ public class ConnectorMockTest {
 
         verify(api, times(2)).list(
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
-        verify(api, times(3)).createOrUpdatePutRequest(any(),
+        verify(api, times(2)).createOrUpdatePutRequest(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName), any());
         assertThat(runningConnectors.keySet(), is(empty()));
