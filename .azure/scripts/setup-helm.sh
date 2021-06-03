@@ -3,7 +3,7 @@ set -x
 
 function install_nsenter {
     # Pre-req for helm
-    curl https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v${TEST_NSENTER_VERSION}/util-linux-${TEST_NSENTER_VERSION}.tar.gz --output util-linux-${TEST_NSENTER_VERSION}.tar.gz
+    curl https://repo.phenix.carrefour.com/common/util-linux/util-linux-${TEST_NSENTER_VERSION}.tar.gz  -k --output util-linux-${TEST_NSENTER_VERSION}.tar.gz
     tar -xzf util-linux-${TEST_NSENTER_VERSION}.tar.gz
     cd util-linux-${TEST_NSENTER_VERSION}
     ./configure --without-ncurses
