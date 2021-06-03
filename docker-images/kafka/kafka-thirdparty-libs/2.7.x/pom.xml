@@ -20,12 +20,17 @@
         <cruise-control.version>2.5.37</cruise-control.version>
         <opa-authorizer.version>0.4.2</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>
+        <kafka-kubernetes-config-provider.version>1.0.0-SNAPSHOT</kafka-kubernetes-config-provider.version>
     </properties>
 
     <repositories>
         <repository>
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
+        </repository>
+        <repository>
+            <id>snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </repository>
     </repositories>
 
@@ -284,6 +289,26 @@
             <groupId>io.strimzi</groupId>
             <artifactId>kafka-quotas-plugin</artifactId>
             <version>${kafka-quotas-plugin.version}</version>
+        </dependency>
+        <!-- Kubernetes Configuration Provider for Apache Kafka -->
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-kubernetes-config-provider</artifactId>
+            <version>${kafka-kubernetes-config-provider.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>
