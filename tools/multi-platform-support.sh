@@ -25,5 +25,5 @@ then
     WC=gwc
     UNIQ=guniq
     SORT=gsort
-		HEAD=ghead
+    HEAD=ghead
 fi
