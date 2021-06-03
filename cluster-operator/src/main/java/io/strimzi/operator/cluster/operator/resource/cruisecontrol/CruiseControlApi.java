@@ -14,7 +14,6 @@ public interface CruiseControlApi {
     String CC_REST_API_ERROR_KEY = "errorMessage";
     String CC_REST_API_PROGRESS_KEY = "progress";
     String CC_REST_API_USER_ID_HEADER = "User-Task-ID";
-    String CC_REST_API_SUMMARY = "summary";
 
     /**
      *  Gets the state of the Cruise Control server.

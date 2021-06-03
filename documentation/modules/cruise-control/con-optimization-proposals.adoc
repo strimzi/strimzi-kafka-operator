@@ -34,7 +34,18 @@ Consider a shorter interval for fast changing clusters, although this increases 
 [discrete]
 == Contents of optimization proposals
 
-The following table describes the properties contained in an optimization proposal:
+An optimization proposal consists of two main sections:
+
+* The _summary_ is stored in the `status` of the `KafkaRebalance` resource.
+* The _broker load_ is stored in a ConfigMap that contains data as a JSON string.
+
+The summary provides an overview of the proposed cluster rebalance and indicates the scale of the changes involved.
+The broker load shows before and after values for the proposed rebalance, so you can see the impact on each of the brokers in the cluster.
+
+[discrete]
+=== Summary
+
+The following table explains the properties contained in the optimization proposal's summary section:
 
 .Properties contained in an optimization proposal
 [cols="35,65",options="header",stripes="none",separator=¦]
@@ -94,10 +105,52 @@ m¦excludedBrokersForReplicaMove
 
 |===
 
+
+[discrete]
+=== Broker load
+
+The broker load is stored in a ConfigMap (with the same name as the KafakRebalance custom resource) as a JSON formatted string. This JSON string consists of a JSON object with keys for each broker IDs linking to a number of metrics for each broker.
+Each metric consist of three values.
+The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
+
+To extract the JSON string from the ConfigMap you could use the following command, which uses the jq command line JSON parser tool:
+
+[source,shell,subs=+quotes]
+----
+kubectl get configmap _MY-REBALANCE_ -o json | jq '.["data"]["brokerLoad.json"]|fromjson|.'
+----
+
+The following table explains the properties contained in the optimization proposal's broker load ConfigMap:
+
+[cols="35,65",options="header",stripes="none"]
+|======================================================================================================
+
+| JSON property               | Description
+
+m| leaders                     | The number of replicas on this broker that are partition leaders.
+
+m| replicas                    | The number of replicas on this broker.
+
+m| cpuPercentage               | The CPU utilization as a percentage of the defined capacity.
+
+m| diskUsedPercentage          | The disk utilization as a percentage of the defined capacity.
+
+m| diskUsedMB                  | The absolute disk usage in MB.
+
+m| networkOutRate              | The total network output rate for the broker.
+
+m| leaderNetworkInRate         | The network input rate for all partition leader replicas on this broker.
+
+m| followerNetworkInRate       | The network input rate for all follower replicas on this broker.
+
+m| potentialMaxNetworkOutRate  | The hypothetical maximum network output rate that would be realized if this broker became the leader of all the replicas it currently hosts.
+
+|======================================================================================================
+
 .Additional resources
 
 * xref:con-optimization-goals-{context}[] 
 
 * xref:proc-generating-optimization-proposals-{context}[] 
 
-* xref:proc-approving-optimization-proposal-{context}[] 
+* xref:proc-approving-optimization-proposal-{context}[]
