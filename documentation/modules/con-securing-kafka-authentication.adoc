@@ -38,7 +38,7 @@ The following example shows:
 
 Each listener is configured with a unique name and port within a Kafka cluster.
 
-NOTE: Listeners cannot be configured to use the ports set aside for interbroker communication (9091) and metrics (9404).
+NOTE: Listeners cannot be configured to use the ports reserved for inter-broker communication (9091 or 9090) and metrics (9404).
 
 .An example showing listener authentication configuration
 [source,yaml,subs="attributes+"]
