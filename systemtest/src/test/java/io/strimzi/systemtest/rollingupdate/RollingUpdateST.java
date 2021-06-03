@@ -662,14 +662,14 @@ class RollingUpdateST extends AbstractST {
                 .withNewMetadata()
                 .withName(metricsCMNameK)
                 .endMetadata()
-                .withData(singletonMap("metrics-config.yml", yaml))
+                .withData(singletonMap("metrics-config.json", yaml))
                 .build();
 
         JmxPrometheusExporterMetrics kafkaMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
                             .withName(metricsCMNameK)
-                            .withKey("metrics-config.yml")
+                            .withKey("metrics-config.json")
                             .withOptional(true)
                             .build())
                 .endValueFrom()
@@ -693,14 +693,14 @@ class RollingUpdateST extends AbstractST {
                 .withNewMetadata()
                 .withName(metricsCMNameZk)
                 .endMetadata()
-                .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(zookeeperMetrics)))
+                .withData(singletonMap("metrics-config.json", mapper.writeValueAsString(zookeeperMetrics)))
                 .build();
 
         JmxPrometheusExporterMetrics zkMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
                     .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
                             .withName(metricsCMNameZk)
-                            .withKey("metrics-config.yml")
+                            .withKey("metrics-config.json")
                             .withOptional(true)
                             .build())
                 .endValueFrom()
@@ -753,14 +753,14 @@ class RollingUpdateST extends AbstractST {
                 .withNewMetadata()
                 .withName(metricsCMNameZk)
                 .endMetadata()
-                .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(zookeeperMetrics)))
+                .withData(singletonMap("metrics-config.json", mapper.writeValueAsString(zookeeperMetrics)))
                 .build();
 
         metricsCMK = new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(metricsCMNameK)
                 .endMetadata()
-                .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(kafkaMetrics)))
+                .withData(singletonMap("metrics-config.json", mapper.writeValueAsString(kafkaMetrics)))
                 .build();
 
         kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(metricsCMK);
@@ -775,14 +775,14 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if Kafka and Zookeeper metrics are changed");
         ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-        String kafkaMetricsConf = kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).withName(metricsCMNameK).get().getData().get("metrics-config.yml");
-        String zkMetricsConf = kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).withName(metricsCMNameZk).get().getData().get("metrics-config.yml");
+        String kafkaMetricsConf = kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).withName(metricsCMNameK).get().getData().get("metrics-config.json");
+        String zkMetricsConf = kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).withName(metricsCMNameZk).get().getData().get("metrics-config.json");
         Object kafkaMetricsJsonToYaml = yamlReader.readValue(kafkaMetricsConf, Object.class);
         Object zkMetricsJsonToYaml = yamlReader.readValue(zkMetricsConf, Object.class);
         ObjectMapper jsonWriter = new ObjectMapper();
-        assertThat(kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).withName(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).get().getData().get("metrics-config.yml"),
+        assertThat(kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).withName(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).get().getData().get("metrics-config.json"),
                 is(jsonWriter.writeValueAsString(kafkaMetricsJsonToYaml)));
-        assertThat(kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName)).get().getData().get("metrics-config.yml"),
+        assertThat(kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName)).get().getData().get("metrics-config.json"),
                 is(jsonWriter.writeValueAsString(zkMetricsJsonToYaml)));
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");

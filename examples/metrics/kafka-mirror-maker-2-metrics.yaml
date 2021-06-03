@@ -38,7 +38,7 @@ spec:
     valueFrom:
       configMapKeyRef:
         name: mirror-maker-2-metrics
-        key: metrics-config.yml
+        key: metrics-config.json
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -47,7 +47,7 @@ metadata:
   labels:
     app: strimzi
 data:
-  metrics-config.yml: |
+  metrics-config.json: |
     # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
     lowercaseOutputName: true
     lowercaseOutputLabelNames: true

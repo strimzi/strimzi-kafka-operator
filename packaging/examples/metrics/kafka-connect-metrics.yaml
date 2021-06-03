@@ -13,7 +13,7 @@ spec:
     valueFrom:
       configMapKeyRef:
         name: connect-metrics
-        key: metrics-config.yml
+        key: metrics-config.json
 
 ---
 kind: ConfigMap
@@ -23,7 +23,7 @@ metadata:
   labels:
     app: strimzi
 data:
-  metrics-config.yml: |
+  metrics-config.json: |
     # Inspired by kafka-connect rules
     # https://github.com/prometheus/jmx_exporter/blob/master/example_configs/kafka-connect.yml
     # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics

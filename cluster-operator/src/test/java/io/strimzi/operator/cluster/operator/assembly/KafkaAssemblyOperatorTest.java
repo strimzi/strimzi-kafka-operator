@@ -988,7 +988,7 @@ public class KafkaAssemblyOperatorTest {
                 .withNewMetadata()
                     .withName("metrics-cm")
                 .endMetadata()
-                .withData(singletonMap("metrics-config.yml", ""))
+                .withData(singletonMap("metrics-config.json", ""))
                 .build();
         ConfigMap metricsAndLoggingCm = originalKafkaCluster.generateAncillaryConfigMap(new MetricsAndLogging(metricsCm, null), emptySet(), emptySet(), false);
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsAndLoggingCm);
