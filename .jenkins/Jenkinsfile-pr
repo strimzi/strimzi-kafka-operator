@@ -32,6 +32,7 @@ pipeline {
         TEST_HELM2_VERSION = "v2.17.0"
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
+        TEST_NSENTER_VERSION = "v2.17"
     }
     stages {
         stage('Clean WS') {
