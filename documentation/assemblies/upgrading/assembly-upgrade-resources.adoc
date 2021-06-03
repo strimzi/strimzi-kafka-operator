@@ -6,13 +6,13 @@
 = Strimzi custom resource upgrades
 
 [role="_abstract"]
-After you have upgraded Strimzi to {ProductVersion}, you must ensure that your custom resources are using API version `{ApiVersion}`.
-You can do this any time after upgrading to {ProductVersion}, but the upgrades must be completed before the next Strimzi minor version update.
+Before upgrading Strimzi to {ProductVersion}, you must ensure that your custom resources are using API version `{ApiVersion}`.
+You can do this any time after upgrading to Strimzi {PreviousProductVersion}, but the upgrades must be completed before upgrading to {ProductVersion}.
 
-IMPORTANT: Upgrade of the custom resources to `{ApiVersion}` _must_ be performed after xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
+IMPORTANT: Upgrade of the custom resources to `{ApiVersion}` _must_ be performed before xref:assembly-upgrade-{context}[upgrading the Cluster Operator], so the Cluster Operator can understand the resources.
 
 NOTE: Upgrade of the custom resources to `{ApiVersion}` prepares Strimzi for a move to Kubernetes CRD `v1`,
-which will be required for Kubernetes 1.22.
+which is required for Kubernetes 1.22.
 
 .CLI upgrades to custom resources
 
@@ -42,11 +42,11 @@ Instead of using the API conversion tool to update custom resources to `{ApiVers
 Update the `Kafka` custom resource, including the configurations for the other components:
 
 * xref:proc-upgrade-kafka-resources-{context}[]
-* xref:proc-upgrade-zookeeper-api-version-{context}[] 
-* xref:proc-upgrade-topic-operator-api-version-{context}[] 
-* xref:proc-upgrade-entity-operator-api-version-{context}[] 
+* xref:proc-upgrade-zookeeper-api-version-{context}[]
+* xref:proc-upgrade-topic-operator-api-version-{context}[]
+* xref:proc-upgrade-entity-operator-api-version-{context}[]
 * xref:proc-upgrade-cruise-control-api-version-{context}[] (if Cruise Control is deployed)
-* xref:proc-upgrade-kafka-api-version-{context}[] 
+* xref:proc-upgrade-kafka-api-version-{context}[]
 
 Update the other custom resources that apply to your deployment:
 
