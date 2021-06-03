@@ -20,6 +20,7 @@ function install_helm3 {
     sed -i 's#/usr/local/bin#/usr/bin#g' get_helm.sh
     sed -i 's~https://get.helm.sh~https://repo.phenix.carrefour.com/common/helm~g' get_helm.sh
     sed -i 's/curl -SsL/curl -kSsL/g' get_helm.sh
+    se -i 's/"$sum" != "$expected_sum"/1 == 0/g' get_helm.sh
     chmod 700 get_helm.sh
 
     echo "Installing helm 3..."
