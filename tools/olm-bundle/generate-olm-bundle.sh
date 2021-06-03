@@ -82,7 +82,7 @@ generate_olm_bundle() {
   mv ./bundle.Dockerfile $DOCKERFILE
   
   # Remove last three lines of Dockerfile with incorrectly generated paths
-  $HEAD -n -3 $DOCKERFILE | tee $DOCKERFILE 1> /dev/null
+  $HEAD -n -3 $DOCKERFILE | $TEE $DOCKERFILE 1> /dev/null
 
   # Add copy commands with correct paths
   echo "COPY ./manifests/ /manifests/" >> $DOCKERFILE
