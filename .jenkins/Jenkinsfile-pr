@@ -139,6 +139,7 @@ pipeline {
         }
         stage('Build project') {
             steps {
+                print("BUILD START")
                 script {
                     withMaven(mavenOpts: '-Djansi.force=true') {
                         sh(script: "mvn clean install -DskipTests -Dstyle.color=always --no-transfer-progress")
