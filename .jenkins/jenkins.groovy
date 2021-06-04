@@ -36,7 +36,6 @@ def runSystemTests(String workspace, String testCases, String testProfile, Strin
             "-Djava.net.preferIPv4Stack=true " +
             "-DtrimStackTrace=false " +
             "-Dstyle.color=always " +
-            "--no-transfer-progress " +
             "-Dfailsafe.rerunFailingTestsCount=2")
 }
 
