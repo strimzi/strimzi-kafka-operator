@@ -12,7 +12,7 @@ def clearImages() {
 }
 
 def installMaven() {
-    sh(script: "sudo yum install maven")
+    sh(script: "sudo yum install -y maven")
 }
 
 def installHelm(String workspace) {
