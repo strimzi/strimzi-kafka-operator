@@ -137,6 +137,15 @@ pipeline {
                 }
             }
         }
+        stage('Install maven') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        lib.installMaven()
+                    }
+                }
+            }
+        }
         stage('Build project') {
             steps {
                 script {

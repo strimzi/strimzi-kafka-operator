@@ -11,6 +11,10 @@ def clearImages() {
     sh(script: "docker rmi -f \$(docker images -q) 2>/dev/null || echo 'No more images to remove.'")
 }
 
+def installMaven() {
+    sh(script: "sudo yum install maven")
+}
+
 def installHelm(String workspace) {
     sh(script: "${workspace}/.azure/scripts/setup-helm.sh")
 }
