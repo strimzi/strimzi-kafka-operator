@@ -12,7 +12,11 @@ def clearImages() {
 }
 
 def installMaven() {
-    sh(script: "sudo yum install -y maven")
+    //sh(script: "sudo yum install -y maven")
+    sh(script: "curl -ks https://repo.phenix.carrefour.com/common/apache/maven/apache-maven-3.8.1-bin.tar.gz --output apache-maven-3.8.1-bin.tar.gz")
+    sh(script: "tar -xvf apache-maven-3.8.1-bin.tar.gz")
+    sh(script: "export PATH=$PATH:./apache-maven-3.8.1/bin")
+    sh(script: "./apache-maven-3.8.1/bin/mvn -v")
 }
 
 def installHelm(String workspace) {
@@ -29,7 +33,7 @@ def buildStrimziImages() {
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
-    sh(script: "mvn -Djansi.force=true -f ${workspace}/systemtest/pom.xml -P all verify " +
+    sh(script: "./apache-maven-3.8.1/bin/mvn -Djansi.force=true -f ${workspace}/systemtest/pom.xml -P all verify " +
             "-Dgroups=${testProfile} " +
             "-DexcludedGroups=${excludeGroups} " +
             "-Dit.test=${testCases} " +

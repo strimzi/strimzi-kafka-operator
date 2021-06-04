@@ -33,6 +33,7 @@ pipeline {
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
         TEST_NSENTER_VERSION = "2.37"
+        MVN_BIN="./apache-maven-3.8.1/bin/mvn"
     }
     stages {
         stage('Clean WS') {
@@ -149,7 +150,7 @@ pipeline {
         stage('Build project') {
             steps {
                 script {
-                	sh(script: "mvn clean install -Djansi.force=true -DskipTests -Dstyle.color=always")
+                	sh(script: "${MVN_BIN} clean install -Djansi.force=true -DskipTests -Dstyle.color=always")
                 	env.BUILD_PROJECT_STATUS = true
                 }
             }
