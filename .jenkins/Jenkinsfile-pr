@@ -48,6 +48,16 @@ pipeline {
         }
         stage('force install of java 11') {
             steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    script {
+                        lib.removeDefaultJavaInstallJava11()
+                    }
+                }
+            }
+        }
+        /*
+        stage('force install of java 11') {
+            steps {
                     script {
                         sh(script: "sudo yum remove -y jdk1.8.0_66")
                         sh(script: "sudo yum install -y java-11-openjdk-devel")
@@ -55,6 +65,7 @@ pipeline {
                     }
             }
         }
+        */
         stage('Parse parameters from comment') {
             steps {
                 script {
@@ -159,8 +170,8 @@ pipeline {
         stage('Build project') {
             steps {
                 script {
-                	sh(script: "${MVN_BIN} clean install -Djansi.force=true -DskipTests -Dstyle.color=always")
-                	env.BUILD_PROJECT_STATUS = true
+                    sh(script: "${MVN_BIN} clean install -Djansi.force=true -DskipTests -Dstyle.color=always")
+                    env.BUILD_PROJECT_STATUS = true
                 }
             }
         }
