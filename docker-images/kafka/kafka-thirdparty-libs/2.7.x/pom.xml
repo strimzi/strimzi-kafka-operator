@@ -20,6 +20,7 @@
         <cruise-control.version>2.5.55</cruise-control.version>
         <opa-authorizer.version>0.4.2</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>
+        <kafka-kubernetes-config-provider.version>0.1.0</kafka-kubernetes-config-provider.version>
     </properties>
 
     <repositories>
@@ -284,6 +285,26 @@
             <groupId>io.strimzi</groupId>
             <artifactId>kafka-quotas-plugin</artifactId>
             <version>${kafka-quotas-plugin.version}</version>
+        </dependency>
+        <!-- Kubernetes Configuration Provider for Apache Kafka -->
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-kubernetes-config-provider</artifactId>
+            <version>${kafka-kubernetes-config-provider.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>
