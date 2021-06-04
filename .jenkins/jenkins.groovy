@@ -18,6 +18,7 @@ def installMaven() {
     sh(script: "tar -xvf apache-maven-3.8.1-bin.tar.gz")
     sh(script: "export PATH=$PATH:./apache-maven-3.8.1/bin")
     sh(script: "./apache-maven-3.8.1/bin/mvn -v")
+    env.PATH = env.PATH + ":./apache-maven-3.8.1/bin"
 }
 
 def removeDefaultJavaInstallJava11() {
