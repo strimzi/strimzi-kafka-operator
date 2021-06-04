@@ -170,7 +170,6 @@ public class KafkaRebalanceStateMachineTest {
         return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions)
                 .compose(result -> {
                     context.verify(() -> {
-                        System.out.println(result.getStatus().getConditions());
                         assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
                     });
                     return Future.succeededFuture(result.getStatus());
