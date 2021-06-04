@@ -140,7 +140,7 @@ pipeline {
         stage('Build project') {
             steps {
                 script {
-                	sh(script: "mvn clean install -Djansi.force=true' -DskipTests -Dstyle.color=always --no-transfer-progress")
+                	sh(script: "mvn clean install -Djansi.force=true -DskipTests -Dstyle.color=always --no-transfer-progress")
                 	env.BUILD_PROJECT_STATUS = true
                 }
             }
