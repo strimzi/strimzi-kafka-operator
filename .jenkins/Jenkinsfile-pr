@@ -49,12 +49,13 @@ pipeline {
         stage('install java 11') {
             steps {
                 script {
+                    sh(script: "sudo yum remove -y jdk1.8.0_66")
                     sh(script: "sudo yum install -y java-11-openjdk-devel")
                     sh(script: "java -version")
                     sh(script: "which java")
-                    sh(script: "find / -name java")
-                    sh(script: "echo \${JAVA_HOME}")
-                    sh(script: "echo \${JDK_HOME}")
+                    sh(script: "find / -name java 2>/dev/null")
+                    //sh(script: "echo \${JAVA_HOME}")
+                    //sh(script: "echo \${JDK_HOME}")
                 }
             }
         }
