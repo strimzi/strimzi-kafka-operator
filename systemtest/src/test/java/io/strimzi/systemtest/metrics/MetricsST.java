@@ -437,7 +437,7 @@ public class MetricsST extends AbstractST {
         );
 
         ConfigMap externalMetricsCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_JSON_NAME, metricsConfigYaml))
+                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(SECOND_NAMESPACE)
@@ -449,7 +449,7 @@ public class MetricsST extends AbstractST {
         // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
                 .withName("external-metrics-cm")
-                .withKey(Constants.METRICS_CONFIG_JSON_NAME)
+                .withKey(Constants.METRICS_CONFIG_YAML_NAME)
                 .build();
         JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -462,11 +462,11 @@ public class MetricsST extends AbstractST {
 
         PodUtils.verifyThatRunningPodsAreStable(SECOND_NAMESPACE, SECOND_CLUSTER);
         ConfigMap actualCm = kubeClient(SECOND_NAMESPACE).getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson));
 
         // update metrics
         ConfigMap externalMetricsUpdatedCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_JSON_NAME, metricsConfigYaml.replace("true", "false")))
+                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml.replace("true", "false")))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(SECOND_NAMESPACE)
@@ -476,7 +476,7 @@ public class MetricsST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(SECOND_NAMESPACE).createOrReplace(externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(SECOND_NAMESPACE, SECOND_CLUSTER);
         actualCm = kubeClient(SECOND_NAMESPACE).getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(SECOND_CLUSTER));
-        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
+        assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_YAML_NAME), is(metricsConfigJson.replace("true", "false")));
     }
 
     @IsolatedTest

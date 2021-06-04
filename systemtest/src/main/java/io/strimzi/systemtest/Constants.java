@@ -137,7 +137,7 @@ public interface Constants {
     String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-connect-metrics.yaml";
     String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-mirror-maker-2-metrics.yaml";
 
-    String METRICS_CONFIG_JSON_NAME = "metrics-config.json";
+    String METRICS_CONFIG_YAML_NAME = "metrics-config.yml";
 
     /**
      * Default value which allows execution of tests with any tags

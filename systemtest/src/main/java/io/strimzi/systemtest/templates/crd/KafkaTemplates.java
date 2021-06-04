@@ -143,7 +143,7 @@ public class KafkaTemplates {
                     .withName("cruise-control-metrics-test")
                     .withLabels(Collections.singletonMap("app", "strimzi"))
                 .endMetadata()
-                .withData(Collections.singletonMap("metrics-config.json",
+                .withData(Collections.singletonMap("metrics-config.yml",
                         "lowercaseOutputName: true\n" +
                         "rules:\n" +
                         "- pattern: kafka.cruisecontrol<name=(.+)><>(\\w+)\n" +
@@ -154,7 +154,7 @@ public class KafkaTemplates {
 
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
                 .withName("cruise-control-metrics-test")
-                .withKey("metrics-config.json")
+                .withKey("metrics-config.yml")
                 .build();
         JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
