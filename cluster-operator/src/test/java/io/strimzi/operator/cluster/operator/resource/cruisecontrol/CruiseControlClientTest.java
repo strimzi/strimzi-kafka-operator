@@ -19,9 +19,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
-import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKey;
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKeys;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi.CC_REST_API_SUMMARY;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -143,30 +141,10 @@ public class CruiseControlClientTest {
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
         Checkpoint checkpoint = context.checkpoint();
-        client.getUserTaskStatus(HOST, PORT, userTaskID)
-            .onComplete(context.succeeding(result -> context.verify(() -> {
-                assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID));
-                assertThat(result.getJson().getJsonObject(CC_REST_API_SUMMARY), is(notNullValue()));
-                checkpoint.flag();
-            })));
+        client.getUserTaskStatus(HOST, PORT, userTaskID).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID)));
+            context.verify(() -> assertThat(result.getJson().getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue())));
+            checkpoint.flag();
+        }));
     }
-
-    @Test
-    public void testCCGetRebalanceVerboseUserTask(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-
-        MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
-
-        CruiseControlApi client = new CruiseControlApiImpl(vertx);
-        String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID;
-
-        Checkpoint checkpoint = context.checkpoint();
-        client.getUserTaskStatus(HOST, PORT, userTaskID)
-            .onComplete(context.succeeding(result -> context.verify(() -> {
-                assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID));
-                assertThat(result.getJson(), hasKey(CC_REST_API_SUMMARY));
-                assertThat(result.getJson().getJsonObject(CC_REST_API_SUMMARY), is(notNullValue()));
-                checkpoint.flag();
-            })));
-    }
-
 }
