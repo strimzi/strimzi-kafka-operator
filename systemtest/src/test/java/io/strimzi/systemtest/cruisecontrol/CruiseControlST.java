@@ -105,14 +105,14 @@ public class CruiseControlST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
 
-        KafkaRebalanceUtils.doRebalancingProcess(clusterName);
+        KafkaRebalanceUtils.doRebalancingProcess(NAMESPACE, clusterName);
 
         LOGGER.info("Annotating KafkaRebalance: {} with 'refresh' anno", clusterName);
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.refresh);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Trying rebalancing process again");
-        KafkaRebalanceUtils.doRebalancingProcess(clusterName);
+        KafkaRebalanceUtils.doRebalancingProcess(NAMESPACE, clusterName);
     }
 
     @ParallelNamespaceTest
