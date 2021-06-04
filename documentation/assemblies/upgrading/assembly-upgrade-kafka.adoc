@@ -7,9 +7,17 @@
 
 To upgrade brokers and clients without downtime, you _must_ complete the Strimzi upgrade procedures in the following order:
 
-. Update existing custom resources to handle deprecated custom resource properties.
+. Update existing custom resources to support the `v1beta2` API version.
 +
+--
 * xref:assembly-upgrade-resources-{context}[]
+--
++
+Do this after upgrading to Strimzi 0.22.0, but before upgrading to Strimzi 0.23.0 or newer.
+For a multi-version upgrade from a version prior to version 0.22.0:
++
+.. Skip this step and continue with the following steps to upgrade to version 0.22.0.
+.. Return to this step and perform all the steps in this upgrade sequence to upgrade to 0.23.0 or newer.
 
 . Update your Cluster Operator to a new Strimzi version.
 +

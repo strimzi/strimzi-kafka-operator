@@ -14,7 +14,8 @@
 
 //Latest Strimzi version
 :ProductVersion: 0.24.0
-:PreviousProductVersion: 0.23.0
+:ConvertAfterProductVersion: 0.22.0
+:ConvertBeforeProductVersion: 0.23.0
 
 // Kubernetes and OpenShift versions
 :OpenShiftVersion: 4.3 and later
