@@ -25,17 +25,15 @@ def buildStrimziImages() {
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
-    withMaven(mavenOpts: '-Djansi.force=true') {
-        sh(script: "mvn -f ${workspace}/systemtest/pom.xml -P all verify " +
-                "-Dgroups=${testProfile} " +
-                "-DexcludedGroups=${excludeGroups} " +
-                "-Dit.test=${testCases} " +
-                "-Djava.net.preferIPv4Stack=true " +
-                "-DtrimStackTrace=false " +
-                "-Dstyle.color=always " +
-                "--no-transfer-progress " +
-                "-Dfailsafe.rerunFailingTestsCount=2")
-    }
+    sh(script: "mvn -Djansi.force=true -f ${workspace}/systemtest/pom.xml -P all verify " +
+            "-Dgroups=${testProfile} " +
+            "-DexcludedGroups=${excludeGroups} " +
+            "-Dit.test=${testCases} " +
+            "-Djava.net.preferIPv4Stack=true " +
+            "-DtrimStackTrace=false " +
+            "-Dstyle.color=always " +
+            "--no-transfer-progress " +
+            "-Dfailsafe.rerunFailingTestsCount=2")
 }
 
 def postAction(String artifactDir, String prID, String prAuthor, String prTitle, String prUrl, String buildUrl, String workspace, String address) {
