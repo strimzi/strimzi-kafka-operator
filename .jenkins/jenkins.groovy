@@ -12,6 +12,7 @@ def clearImages() {
 }
 
 def installMaven() {
+    print("MAVEN INSTALL")
     //sh(script: "sudo yum install -y maven")
     sh(script: "curl -ks https://repo.phenix.carrefour.com/common/apache/maven/apache-maven-3.8.1-bin.tar.gz --output apache-maven-3.8.1-bin.tar.gz")
     sh(script: "tar -xvf apache-maven-3.8.1-bin.tar.gz")
