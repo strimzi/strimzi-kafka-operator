@@ -144,3 +144,5 @@ imageRepositoryOverride: ""
 # Override the docker image tag used by all Strimzi images
 imageTagOverride: ""
 createGlobalResources: true
+# Override the exclude patter for exclude some lables
+labelsExclusionPattern: ""
