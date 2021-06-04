@@ -1249,7 +1249,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 return Future.failedFuture(e);
             }
         });
-        when(mockCmOps.reconcile(eq(CLUSTER_NAMESPACE), eq(RESOURCE_NAME), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), eq(CLUSTER_NAMESPACE), eq(RESOURCE_NAME), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
         when(mockRebalanceOps.patchAsync(any(), any(KafkaRebalance.class))).thenAnswer(invocation -> {
             try {

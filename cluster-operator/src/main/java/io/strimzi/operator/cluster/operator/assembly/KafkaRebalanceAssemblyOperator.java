@@ -365,7 +365,7 @@ public class KafkaRebalanceAssemblyOperator
                return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), reconciliation.name())
                             .compose(currentKafkaRebalance -> {
                                 if (currentKafkaRebalance != null) {
-                                    return configMapOperator.reconcile(kafkaRebalance.getMetadata().getNamespace(),
+                                    return configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(),
                                             kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
                                             .compose(i -> updateStatus(reconciliation, currentKafkaRebalance, desiredStatusAndMap.getStatus(), null))
                                             .compose(updatedKafkaRebalance -> {
@@ -547,7 +547,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     brokerStats.put(intLoadParameter.getKafkaRebalanceStatusKey(), intStats);
                 } else {
-                    log.warn("{} information was missing from the broker before/after load information",
+                    LOGGER.warnOp("{} information was missing from the broker before/after load information",
                             intLoadParameter.getKafkaRebalanceStatusKey());
                 }
 
@@ -569,7 +569,7 @@ public class KafkaRebalanceAssemblyOperator
 
                     brokerStats.put(doubleLoadParameter.getKafkaRebalanceStatusKey(), doubleStats);
                 } else {
-                    log.warn("{} information was missing from the broker before/after load information",
+                    LOGGER.warnOp("{} information was missing from the broker before/after load information",
                             doubleLoadParameter.getKafkaRebalanceStatusKey());
                 }
 
