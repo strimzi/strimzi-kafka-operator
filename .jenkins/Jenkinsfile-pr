@@ -46,10 +46,18 @@ pipeline {
                 checkout scm
             }
         }
+        stage('load jenkins.groovy') {
+            steps {
+                script {
+                    lib = evaluate readFile('./.jenkins/jenkins.groovy')
+                }
+            }
+        }
         stage('force install of java 11') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
+                        lib = evaluate readFile('./.jenkins/jenkins.groovy')
                         lib.removeDefaultJavaInstallJava11()
                     }
                 }
@@ -134,7 +142,7 @@ pipeline {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
-                        lib = evaluate readFile('./.jenkins/jenkins.groovy')
+                        //lib = evaluate readFile('./.jenkins/jenkins.groovy')
                         lib.setupKubernetes()
                     }
                 }
