@@ -36,7 +36,7 @@ spec:
       valueFrom:
         configMapKeyRef:
           name: cruise-control-metrics
-          key: metrics-config.json
+          key: metrics-config.yml
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -45,7 +45,7 @@ metadata:
   labels:
     app: strimzi
 data:
-  metrics-config.json: |
+  metrics-config.yml: |
     # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
     lowercaseOutputName: true
     rules:
