@@ -31,7 +31,7 @@ For Strimzi 0.23, `v1alpha1` and `v1beta1` API versions were removed from all St
 If you are upgrading from a Strimzi version prior to version {ConvertAfterProductVersion}:
 
 . Upgrade to {ConvertAfterProductVersion}
-. Convert the custom resources for `v1beta2`
+. Convert the custom resources to `v1beta2`
 . Upgrade to {ConvertBeforeProductVersion} or newer
 
 NOTE: As an alternative, you can install the custom resources from version {ConvertAfterProductVersion}, convert the resources and upgrade to {ConvertBeforeProductVersion} or newer.
@@ -68,9 +68,6 @@ include::assembly-upgrade-resources.adoc[leveloffset=+1]
 include::modules/proc-upgrade-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
-
-//how to upgrade to generic listener config
-include::modules/con-upgrade-listeners.adoc[leveloffset=+1]
 
 //how to upgrade clients and kafka streams to use the incremental cooperative rebalance protocol
 include::modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]

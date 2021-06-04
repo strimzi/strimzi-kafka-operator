@@ -50,10 +50,6 @@ You can access the CRDs from {ReleaseDownload} or find them in the `crd` subdire
 * xref:assembly-upgrading-kafka-versions-{context}[]
 * xref:con-strategies-for-upgrading-clients-{context}[]
 
-. If applicable, update listeners to use the `GenericKafkaListener` schema
-+
-* xref:con-upgrade-listeners-{context}[]
-
 .Optional: incremental cooperative rebalance upgrade
 
 Consider upgrading consumers and Kafka Streams applications to use the _incremental cooperative rebalance_ protocol for partition rebalances.
