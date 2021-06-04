@@ -162,26 +162,29 @@ validate_olm_bundle() {
 }
 
 generate_related_images() {
+  # Create relatedImages section
   yq ea -i '.spec.relatedImages = null' ${CSV_FILE}
 
-  ENV="*TOPIC_OPERATOR_IMAGE *BRIDGE_IMAGE *JMXTRANS_IMAGE *EXECUTOR_IMAGE"
-  for env in $ENV; 
-  do
-    image=$(yq ea ".. | select(has(\"name\")).env[] | (select (.name == \"$env\")).value" ${CSV_FILE})
-    if [[ $env == *TOPIC_OPERATOR_IMAGE ]]; then
-      # Set operator image in annotations
-      yq ea -i ".metadata.annotations.containerImage = \"$image\"" ${CSV_FILE}
-    fi
-    name="strimzi-$(echo $image | cut -d':' -f1 | cut -d'@' -f1 | rev | cut -d'/' -f1 | rev)";
-    yq ea -i ".spec.relatedImages += [{\"name\": \"$name\", \"image\": \"$image\"}]" ${CSV_FILE};
-  done
+  # Add operator image
+  image=$(yq ea ".. | select(has(\"image\")) | (select (.name == \"strimzi-cluster-operator\")).image" ${CSV_FILE})
+  yq ea -i ".spec.relatedImages += [{\"name\": \"strimzi-operator\", \"image\": \"$image\"}]" ${CSV_FILE};
+  yq ea -i ".metadata.annotations.containerImage = \"$image\"" ${CSV_FILE}
 
-  # Add Kafka images to relatedImages section.
+  # Add Kafka images
   KAFKA_IMAGE_VALUES=$(yq eval '.. | select(has("name")).env[] | (select (.name == "STRIMZI_KAFKA_IMAGES")).value' ${CSV_FILE})
   for val in $KAFKA_IMAGE_VALUES;
   do
     name="strimzi-kafka-$(echo "$val" | cut -d'=' -f1 | tr -d '.')";
     image=$(echo "${val}" | cut -d'=' -f2);
+    yq ea -i ".spec.relatedImages += [{\"name\": \"$name\", \"image\": \"$image\"}]" ${CSV_FILE};
+  done
+
+  # Add auxiliary images
+  ENV="*BRIDGE* *JMXTRANS* *KANIKO_EXECUTOR*"
+  for env in $ENV;
+  do
+    image=$(yq ea ".. | select(has(\"name\")).env[] | (select (.name == \"$env\")).value" ${CSV_FILE})
+    name="strimzi-$(echo $env | $SED 's/*//g' | $SED 's/_/-/g' | tr '[:upper:]' '[:lower:]')"
     yq ea -i ".spec.relatedImages += [{\"name\": \"$name\", \"image\": \"$image\"}]" ${CSV_FILE};
   done
 }
