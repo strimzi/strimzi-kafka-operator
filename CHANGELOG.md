@@ -12,10 +12,11 @@
 
 ### Changes, deprecations and removals
 
-* The fields `topicsBlacklistPattern` and `groupsBlacklistPattern` in the `KafkaMirrorMaker2` resource are deprecated and will be removed in the future. 
+* The fields `topicsBlacklistPattern` and `groupsBlacklistPattern` in the `KafkaMirrorMaker2` resource are deprecated and will be removed in the future.
   They are replaced by new fields `topicsExcludePattern` and `groupsExcludePattern`.
 * The field `whitelist` in the `KafkaMirrorMaker` resource is deprecated and will be removed in the future.
-  It is replaced with a new field `include`. 
+  It is replaced with a new field `include`.
+* `bind-utils` removed from containers to improve security posture.
 
 ## 0.23.0
 
