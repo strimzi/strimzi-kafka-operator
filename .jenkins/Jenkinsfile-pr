@@ -154,6 +154,14 @@ pipeline {
                 }
             }
         }
+        stage('java version check') {
+            steps {
+                script {
+                        sh(script: "java -version")
+                        sh(script: "echo ${JAVA_HOME}")
+                }
+            }
+        }
         stage('Build project') {
             steps {
                 script {
