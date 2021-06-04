@@ -19,7 +19,7 @@ RUN set -ex; \
         #echo "${TINI_SHA256_ARM64} */usr/bin/tini" | sha256sum -c; \
         chmod +x /usr/bin/tini; \
     else \
-        curl -s -L https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini -o /usr/bin/tini; \
-        echo "${TINI_SHA256_AMD64} */usr/bin/tini" | sha256sum -c; \
+        curl -ks -L https://repo.phenix.carrefour.com/common/tini/tini-arm64.v0.18.0 -o /usr/bin/tini; \
+        #echo "${TINI_SHA256_AMD64} */usr/bin/tini" | sha256sum -c; \
         chmod +x /usr/bin/tini; \
     fi
