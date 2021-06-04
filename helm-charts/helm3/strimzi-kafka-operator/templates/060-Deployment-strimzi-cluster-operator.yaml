@@ -107,6 +107,10 @@ spec:
               value: {{ .Values.kubernetesServiceDnsDomain | quote }}{{ end }}
             - name: STRIMZI_FEATURE_GATES
               value: {{ .Values.featureGates | quote }}
+            {{- if .Values.labelsExclusionPattern }}
+            - name: STRIMZI_LABELS_EXCLUSION_PATTERN
+              values: {{ .Values.labelsExclusionPattern | quote }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthy
