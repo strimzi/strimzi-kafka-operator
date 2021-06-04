@@ -170,6 +170,7 @@ the documentation for more details.
 | `imageRegistryOverride`              | Override all image registry config        | `nil`                                                |
 | `imageRepositoryOverride`            | Override all image repository config      | `nil`                                                |
 | `imageTagOverride`                   | Override all image tag config             | `nil`                                                |
+| `labelsExclusionPattern`             | Override the exclude patter for exclude some lables             | `""`                                                |
 | `createGlobalResources`              | Allow creation of cluster-scoped resources| `true`                                               |
 | `tolerations`                        | Add tolerations to Operator Pod           | `[]`                                                 |
 | `affinity`                           | Add affinities to Operator Pod            | `{}`                                                 |
