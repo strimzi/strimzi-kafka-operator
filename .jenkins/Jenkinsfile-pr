@@ -47,7 +47,11 @@ pipeline {
             }
         }
         stage('install java 11') {
-            sh(script: "sudo yum install -y java-11-openjdk-devel")
+            steps {
+                script {
+                    sh(script: "sudo yum install -y java-11-openjdk-devel")
+                }
+            }
         }
         stage('Parse parameters from comment') {
             steps {
