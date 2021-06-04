@@ -110,6 +110,16 @@ pipeline {
                 }
             }
         }
+        stage('Install maven') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        lib.installMaven()
+                    }
+                }
+            }
+        }
+
         stage('Start Minikube') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
@@ -134,15 +144,6 @@ pipeline {
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
                         lib.installYq(env.WORKSPACE)
-                    }
-                }
-            }
-        }
-        stage('Install maven') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    script {
-                        lib.installMaven()
                     }
                 }
             }
