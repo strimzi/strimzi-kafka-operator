@@ -22,19 +22,19 @@ Upgrading Strimzi from the previous minor version to version {ProductVersion}.
 Multi-version::
 Upgrading Strimzi from an old version to version {ProductVersion} within a single upgrade (skipping one or more intermediate versions).
 +
-For example, upgrading from Strimzi 0.20.0 directly to Strimzi 0.22.0.
+For example, upgrading from Strimzi 0.20.0 directly to Strimzi {ConvertAfterProductVersion}.
 
-.Upgrading from a version earlier than 0.22.0
-The `v1beta2` API version for all custom resources was introduced with Strimzi 0.22.0.
+.Upgrading from a version earlier than {ConvertAfterProductVersion}
+The `v1beta2` API version for all custom resources was introduced with Strimzi {ConvertAfterProductVersion}.
 For Strimzi 0.23, `v1alpha1` and `v1beta1` API versions were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser`.
 
-If you are upgrading from a Strimzi version prior to version 0.22.0:
+If you are upgrading from a Strimzi version prior to version {ConvertAfterProductVersion}:
 
-. Upgrade to 0.22.0
+. Upgrade to {ConvertAfterProductVersion}
 . Convert the custom resources for `v1beta2`
-. Upgrade to 0.23.0 or newer
+. Upgrade to {ConvertBeforeProductVersion} or newer
 
-NOTE: As an alternative, you can install the custom resources from version 0.22, convert the resources and upgrade to 0.23.0 or newer.
+NOTE: As an alternative, you can install the custom resources from version {ConvertAfterProductVersion}, convert the resources and upgrade to {ConvertBeforeProductVersion} or newer.
 
 .Kafka version support
 
