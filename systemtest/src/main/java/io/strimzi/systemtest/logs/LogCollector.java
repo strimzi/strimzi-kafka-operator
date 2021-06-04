@@ -45,7 +45,7 @@ public class LogCollector implements LogCollect {
 
     static {
         // Get current date to create a unique folder
-        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         CURRENT_DATE = simpleDateFormat.format(Calendar.getInstance().getTime());
     }
@@ -68,6 +68,7 @@ public class LogCollector implements LogCollect {
 
         this.testSuite = new File(logSuiteDir);
 
+        // @BeforeAll in AbstractST always pass, and I ensure that we always deploy CO and after that some error can occur
         this.clusterOperatorPod = kubeClient.getClient().pods().inAnyNamespace().list().getItems().stream()
             .filter(pod -> pod.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
             // contract only one Cluster Operator deployment inside all namespaces
