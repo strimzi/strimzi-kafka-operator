@@ -48,11 +48,11 @@ pipeline {
         }
         stage('force install of java 11') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
                     script {
-                        lib.removeDefaultJavaInstallJava11()
+                        sh(script: "sudo yum remove -y jdk1.8.0_66")
+                        sh(script: "sudo yum install -y java-11-openjdk-devel")
+                        sh(script: "java -version")
                     }
-                }
             }
         }
         stage('Parse parameters from comment') {
