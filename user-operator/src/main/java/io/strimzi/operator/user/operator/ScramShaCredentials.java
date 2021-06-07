@@ -90,12 +90,11 @@ public class ScramShaCredentials {
     /**
      * Determine whether the given user has SCRAM-SHA credentials.
      *
-     * @param reconciliation The reconcilitation
      * @param username Name of the user
      *
      * @return True if the user exists and is configured for given mechanism
      */
-    public boolean exists(Reconciliation reconciliation, String username) {
+    public boolean exists(String username) {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
@@ -112,7 +111,7 @@ public class ScramShaCredentials {
                         ScramCredentialUtils.credentialFromString(scramCredentials);
                         return true;
                     } catch (IllegalArgumentException e) {
-                        LOGGER.warnCr(reconciliation, "Invalid {} credentials for user {}", mechanism.mechanismName(), username);
+                        LOGGER.warnOp("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
                     }
                 }
             }
@@ -124,17 +123,16 @@ public class ScramShaCredentials {
     /**
      * List users with SCRAM-SHA credentials
      *
-     * @param reconciliation The reconciliation
      * @return List of usernames configured for given mechanism
      */
-    public List<String> list(Reconciliation reconciliation) {
+    public List<String> list() {
         List<String> result = new ArrayList<>();
 
         if (zkClient.exists("/config/users"))   {
             List<String> nodes = zkClient.getChildren("/config/users");
 
             for (String node : nodes)   {
-                if (exists(reconciliation, node))   {
+                if (exists(node))   {
                     result.add(node);
                 }
             }

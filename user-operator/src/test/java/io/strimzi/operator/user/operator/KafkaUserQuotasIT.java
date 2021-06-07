@@ -89,9 +89,9 @@ public class KafkaUserQuotasIT {
     }
 
     public void testUserExistsAfterCreate(String username) throws Exception {
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(false));
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
     }
 
     @Test
@@ -105,7 +105,7 @@ public class KafkaUserQuotasIT {
     }
 
     public void testUserDoesNotExistPriorToCreate(String username) throws Exception {
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(false));
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class KafkaUserQuotasIT {
         KafkaUserQuotas newQuotas = new KafkaUserQuotas();
         newQuotas.setConsumerByteRate(1000);
         newQuotas.setProducerByteRate(2000);
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, newQuotas);
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, newQuotas);
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
         testDescribeUserQuotas(username, newQuotas);
     }
@@ -147,10 +147,10 @@ public class KafkaUserQuotasIT {
 
     public void testCreateOrUpdateTwice(String username) throws Exception {
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(false));
-        assertThat(kuq.describeUserQuotas(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(nullValue()));
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username), is(nullValue()));
 
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
         testDescribeUserQuotas(username, defaultQuotas);
     }
@@ -166,12 +166,12 @@ public class KafkaUserQuotasIT {
     }
 
     public void testDelete(String username) throws Exception {
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
 
-        kuq.delete(new Reconciliation("test", "KafkaUser", "namespace", username), username);
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(false));
+        kuq.delete(Reconciliation.DUMMY_RECONCILIATION, username);
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
     }
 
     @Test
@@ -185,31 +185,31 @@ public class KafkaUserQuotasIT {
     }
 
     public void testDeleteTwice(String username) throws Exception {
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
 
-        kuq.delete(new Reconciliation("test", "KafkaUser", "namespace", username), username);
-        kuq.delete(new Reconciliation("test", "KafkaUser", "namespace", username), username);
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(false));
+        kuq.delete(Reconciliation.DUMMY_RECONCILIATION, username);
+        kuq.delete(Reconciliation.DUMMY_RECONCILIATION, username);
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
     }
 
     @Test
     public void testUpdateConsumerByteRate() throws Exception {
         String username = "changeConsumerByteRate";
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
         defaultQuotas.setConsumerByteRate(4000);
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
-        assertThat(kuq.describeUserQuotas(new Reconciliation("test", "KafkaUser", "namespace", username), username).getConsumerByteRate(), is(4000));
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getConsumerByteRate(), is(4000));
     }
 
     @Test
     public void testUpdateProducerByteRate() throws Exception {
         String username = "changeProducerByteRate";
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
         defaultQuotas.setProducerByteRate(8000);
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, defaultQuotas);
-        assertThat(kuq.describeUserQuotas(new Reconciliation("test", "KafkaUser", "namespace", username), username).getProducerByteRate(), is(8000));
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getProducerByteRate(), is(8000));
     }
 
     @Test
@@ -270,12 +270,12 @@ public class KafkaUserQuotasIT {
         quotas.setProducerByteRate(1_000_000);
         quotas.setRequestPercentage(50);
 
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(false));
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
 
         Checkpoint async = testContext.checkpoint();
-        kuq.reconcile(new Reconciliation("test", "KafkaUser", "namespace", username), username, quotas)
+        kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, quotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
-                assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+                assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
                 testDescribeUserQuotas(username, quotas);
                 async.flag();
@@ -298,8 +298,8 @@ public class KafkaUserQuotasIT {
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
 
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, initialQuotas);
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, initialQuotas);
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
         testDescribeUserQuotas(username, initialQuotas);
 
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
@@ -308,9 +308,9 @@ public class KafkaUserQuotasIT {
         updatedQuotas.setRequestPercentage(75);
 
         Checkpoint async = testContext.checkpoint();
-        kuq.reconcile(new Reconciliation("test", "KafkaUser", "namespace", username), username, updatedQuotas)
+        kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, updatedQuotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
-                assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+                assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
                 testDescribeUserQuotas(username, updatedQuotas);
                 async.flag();
@@ -333,8 +333,8 @@ public class KafkaUserQuotasIT {
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
 
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, initialQuotas);
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, initialQuotas);
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
         testDescribeUserQuotas(username, initialQuotas);
 
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
@@ -342,9 +342,9 @@ public class KafkaUserQuotasIT {
         updatedQuotas.setProducerByteRate(3_000_000);
 
         Checkpoint async = testContext.checkpoint();
-        kuq.reconcile(new Reconciliation("test", "KafkaUser", "namespace", username), username, updatedQuotas)
+        kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, updatedQuotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
-                assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+                assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
                 testDescribeUserQuotas(username, updatedQuotas);
                 async.flag();
@@ -368,14 +368,14 @@ public class KafkaUserQuotasIT {
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
 
-        kuq.createOrUpdate(new Reconciliation("test", "KafkaUser", "namespace", username), username, initialQuotas);
-        assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(true));
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, initialQuotas);
+        assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
         testDescribeUserQuotas(username, initialQuotas);
 
         Checkpoint async = testContext.checkpoint();
-        kuq.reconcile(new Reconciliation("test", "KafkaUser", "namespace", username), username, null)
+        kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
-                assertThat(kuq.exists(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(false));
+                assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
                 async.flag();
             })));
     }
@@ -396,19 +396,19 @@ public class KafkaUserQuotasIT {
         // creating SCRAM-SHA user upfront to check it works because it shares same path in ZK as quotas
         ScramShaCredentials scramShaCred = new ScramShaCredentials(kafkaCluster.zKConnectString(), 6_000);
         scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, password);
-        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
+        assertThat(scramShaCred.exists(username), is(true));
         assertThat(scramShaCred.isPathExist("/config/users/" + username), is(true));
     }
 
     private void testUserQuotasNotExist(String username) throws Exception {
-        assertThat(kuq.describeUserQuotas(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(nullValue()));
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username), is(nullValue()));
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(false));
     }
 
     private void testDescribeUserQuotas(String username, KafkaUserQuotas quotas) throws Exception {
-        assertThat(kuq.describeUserQuotas(new Reconciliation("test", "KafkaUser", "namespace", username), username), is(notNullValue()));
-        assertThat(kuq.describeUserQuotas(new Reconciliation("test", "KafkaUser", "namespace", username), username).getConsumerByteRate(), is(quotas.getConsumerByteRate()));
-        assertThat(kuq.describeUserQuotas(new Reconciliation("test", "KafkaUser", "namespace", username), username).getProducerByteRate(), is(quotas.getProducerByteRate()));
-        assertThat(kuq.describeUserQuotas(new Reconciliation("test", "KafkaUser", "namespace", username), username).getRequestPercentage(), is(quotas.getRequestPercentage()));
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username), is(notNullValue()));
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getConsumerByteRate(), is(quotas.getConsumerByteRate()));
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getProducerByteRate(), is(quotas.getProducerByteRate()));
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getRequestPercentage(), is(quotas.getRequestPercentage()));
     }
 }

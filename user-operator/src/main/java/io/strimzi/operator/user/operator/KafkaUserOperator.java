@@ -95,7 +95,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
         return CompositeFuture.join(super.allResourceNames(namespace),
                 invokeAsync(aclOperations::getUsersWithAcls),
-                invokeAsync(() -> scramShaCredentialOperator.list(new Reconciliation("list", KafkaUser.RESOURCE_KIND, namespace, "all-users")))).map(compositeFuture -> {
+                invokeAsync(() -> scramShaCredentialOperator.list())).map(compositeFuture -> {
                     Set<NamespaceAndName> names = compositeFuture.resultAt(0);
                     names.addAll(toResourceRef(namespace, compositeFuture.resultAt(1)));
                     names.addAll(toResourceRef(namespace, compositeFuture.resultAt(2)));

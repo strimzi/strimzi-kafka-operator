@@ -9,6 +9,8 @@ import io.strimzi.operator.cluster.model.Ca;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -16,7 +18,7 @@ import java.util.Properties;
 
 public class DefaultAdminClientProvider implements AdminClientProvider {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(DefaultAdminClientProvider.class);
+    private static final Logger LOGGER = LogManager.getLogger(DefaultAdminClientProvider.class);
 
     /**
      * Create a Kafka Admin interface instance handling the following different scenarios:
@@ -88,12 +90,12 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
                 ac = Admin.create(p);
             } finally {
                 if (keystoreFile != null && !keystoreFile.delete()) {
-                    LOGGER.warnOp("Unable to delete keystore file {}", keystoreFile);
+                    LOGGER.warn("Unable to delete keystore file {}", keystoreFile);
                 }
             }
         } finally {
             if (truststoreFile != null && !truststoreFile.delete()) {
-                LOGGER.warnOp("Unable to delete truststore file {}", truststoreFile);
+                LOGGER.warn("Unable to delete truststore file {}", truststoreFile);
             }
         }
         return ac;

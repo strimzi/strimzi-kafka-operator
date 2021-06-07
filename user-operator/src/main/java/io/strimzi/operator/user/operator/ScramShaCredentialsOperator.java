@@ -26,7 +26,7 @@ public class ScramShaCredentialsOperator {
         Promise<Void> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
-                boolean exists = credsManager.exists(reconciliation, username);
+                boolean exists = credsManager.exists(username);
                 if (password != null) {
                     credsManager.createOrUpdate(reconciliation, username, password);
                     future.complete(null);
@@ -44,7 +44,7 @@ public class ScramShaCredentialsOperator {
         return promise.future();
     }
 
-    public List<String> list(Reconciliation reconciliation) {
-        return credsManager.list(reconciliation);
+    public List<String> list() {
+        return credsManager.list();
     }
 }
