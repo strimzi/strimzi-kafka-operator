@@ -61,6 +61,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String tokenEndpointUri;
     private boolean enableOauthBearer = true;
     private String customClaimCheck;
+    private String useScope = null;
+    private String useAudience = null;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -132,6 +134,26 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setCustomClaimCheck(String customClaimCheck) {
         this.customClaimCheck = customClaimCheck;
+    }
+
+    @Description("Scope to use when making a request to authorization server's token endpoint. Used for inter-broker authentication, and for OAuth over PLAIN with `clientId` and `secret`.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getUseScope() {
+        return useScope;
+    }
+
+    public void setUseScope(String scope) {
+        this.useScope = scope;
+    }
+
+    @Description("Audience to use when making a request to authorization server's token endpoint. Used for inter-broker authentication, and for OAuth over PLAIN with `clientId` and `secret`.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getUseAudience() {
+        return useAudience;
+    }
+
+    public void setUseAudience(String audience) {
+
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")

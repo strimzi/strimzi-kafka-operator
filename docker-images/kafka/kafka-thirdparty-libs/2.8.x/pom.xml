@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.8.0-rc1-pre</strimzi-oauth.version>
+        <strimzi-oauth.version>0.8.0-rc1-pre2</strimzi-oauth.version>
         <cruise-control.version>2.5.55</cruise-control.version>
         <opa-authorizer.version>0.4.2</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>

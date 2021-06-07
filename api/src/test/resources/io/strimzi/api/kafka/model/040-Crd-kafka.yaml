@@ -280,6 +280,17 @@ spec:
                                 uses SASL SCRAM-SHA-512 Authentication. `tls` type
                                 uses TLS Client Authentication. `tls` type is supported
                                 only on TLS listeners.
+                            useAudience:
+                              type: string
+                              description: Audience to use when making a request to
+                                authorization server's token endpoint. Used for inter-broker
+                                authentication, and for OAuth over PLAIN with `clientId`
+                                and `secret`.
+                            useScope:
+                              type: string
+                              description: Scope to use when making a request to authorization
+                                server's token endpoint. Used for inter-broker authentication,
+                                and for OAuth over PLAIN with `clientId` and `secret`.
                             userInfoEndpointUri:
                               type: string
                               description: 'URI of the User Info Endpoint to use as
@@ -6452,6 +6463,18 @@ spec:
                                   type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                   type uses TLS Client Authentication. `tls` type
                                   is supported only on TLS listeners.
+                              useAudience:
+                                type: string
+                                description: Audience to use when making a request
+                                  to authorization server's token endpoint. Used for
+                                  inter-broker authentication, and for OAuth over
+                                  PLAIN with `clientId` and `secret`.
+                              useScope:
+                                type: string
+                                description: Scope to use when making a request to
+                                  authorization server's token endpoint. Used for
+                                  inter-broker authentication, and for OAuth over
+                                  PLAIN with `clientId` and `secret`.
                               userInfoEndpointUri:
                                 type: string
                                 description: 'URI of the User Info Endpoint to use
@@ -6937,6 +6960,18 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
+                                useAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
+                                useScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -7200,6 +7235,18 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
+                                useAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
+                                useScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -7486,6 +7533,18 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
+                                useAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
+                                useScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -15003,6 +15062,18 @@ spec:
                                   type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                   type uses TLS Client Authentication. `tls` type
                                   is supported only on TLS listeners.
+                              useAudience:
+                                type: string
+                                description: Audience to use when making a request
+                                  to authorization server's token endpoint. Used for
+                                  inter-broker authentication, and for OAuth over
+                                  PLAIN with `clientId` and `secret`.
+                              useScope:
+                                type: string
+                                description: Scope to use when making a request to
+                                  authorization server's token endpoint. Used for
+                                  inter-broker authentication, and for OAuth over
+                                  PLAIN with `clientId` and `secret`.
                               userInfoEndpointUri:
                                 type: string
                                 description: 'URI of the User Info Endpoint to use
@@ -15488,6 +15559,18 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
+                                useAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
+                                useScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -15751,6 +15834,18 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
+                                useAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
+                                useScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -16037,6 +16132,18 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
+                                useAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
+                                useScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use

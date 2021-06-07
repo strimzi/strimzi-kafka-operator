@@ -223,6 +223,10 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |type                               1.2+<.<a|Must be `oauth`.
 |string
+|useAudience                        1.2+<.<a|Audience to use when making a request to authorization server's token endpoint. Used for inter-broker authentication, and for OAuth over PLAIN with `clientId` and `secret`.
+|string
+|useScope                           1.2+<.<a|Scope to use when making a request to authorization server's token endpoint. Used for inter-broker authentication, and for OAuth over PLAIN with `clientId` and `secret`.
+|string
 |userInfoEndpointUri                1.2+<.<a|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
 |string
 |userNameClaim                      1.2+<.<a|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
