@@ -214,7 +214,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(Reconciliation.DUMMY_RECONCILIATION)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
@@ -354,7 +354,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(Reconciliation.DUMMY_RECONCILIATION)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.failing(v -> context.verify(() -> {
                 async.flag();
             })));
@@ -504,7 +504,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(Reconciliation.DUMMY_RECONCILIATION)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
@@ -631,7 +631,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(Reconciliation.DUMMY_RECONCILIATION)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
@@ -781,7 +781,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(Reconciliation.DUMMY_RECONCILIATION)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
@@ -975,7 +975,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(Reconciliation.DUMMY_RECONCILIATION)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
@@ -1167,7 +1167,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(Reconciliation.DUMMY_RECONCILIATION)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
@@ -1361,7 +1361,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         Checkpoint async = context.checkpoint();
-        ops.reconcile(Reconciliation.DUMMY_RECONCILIATION)
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
                 List<Deployment> capturedDeps = depCaptor.getAllValues();
