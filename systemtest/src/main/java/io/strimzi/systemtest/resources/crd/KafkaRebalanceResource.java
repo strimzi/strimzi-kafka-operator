@@ -41,7 +41,7 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
     }
     @Override
     public boolean waitForReadiness(KafkaRebalance resource) {
-        return KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(resource.getMetadata().getName(), KafkaRebalanceState.PendingProposal);
+        return KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), KafkaRebalanceState.PendingProposal);
     }
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {
