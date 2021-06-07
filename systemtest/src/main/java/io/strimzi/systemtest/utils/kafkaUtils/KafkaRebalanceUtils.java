@@ -30,9 +30,9 @@ public class KafkaRebalanceUtils {
 
     private KafkaRebalanceUtils() {}
 
-    private static Condition rebalanceStateCondition(String resourceName) {
+    private static Condition rebalanceStateCondition(String namespaceName, String resourceName) {
 
-        List<Condition> statusConditions = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(kubeClient().getNamespace())
+        List<Condition> statusConditions = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName)
                 .withName(resourceName).get().getStatus().getConditions().stream()
                 .filter(condition -> condition.getType() != null)
                 .filter(condition -> Arrays.stream(KafkaRebalanceState.values()).anyMatch(stateValue -> stateValue.toString().equals(condition.getType())))
@@ -70,31 +70,31 @@ public class KafkaRebalanceUtils {
         return annotateKafkaRebalanceResource(kubeClient().getNamespace(), resourceName, annotation);
     }
 
-    public static void doRebalancingProcess(String rebalanceName) {
+    public static void doRebalancingProcess(String namespaceName, String rebalanceName) {
         // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
-        if (!rebalanceStateCondition(rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
+        if (!rebalanceStateCondition(namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
             LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
-            waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.PendingProposal);
+            waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.PendingProposal);
 
             LOGGER.info("Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
 
-            waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.ProposalReady);
+            waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);
         }
 
         LOGGER.info("Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
-        String response = annotateKafkaRebalanceResource(rebalanceName, KafkaRebalanceAnnotation.approve);
+        String response = annotateKafkaRebalanceResource(namespaceName, rebalanceName, KafkaRebalanceAnnotation.approve);
 
         LOGGER.info("Response from the annotation process {}", response);
 
         LOGGER.info("Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
 
-        waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.Rebalancing);
+        waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.Rebalancing);
 
         LOGGER.info("Verifying that KafkaRebalance is in the {} state", KafkaRebalanceState.Ready);
 
-        waitForKafkaRebalanceCustomResourceState(rebalanceName, KafkaRebalanceState.Ready);
+        waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.Ready);
     }
 
     public static void waitForRebalanceStatusStability(String namespaceName, String resourceName) {

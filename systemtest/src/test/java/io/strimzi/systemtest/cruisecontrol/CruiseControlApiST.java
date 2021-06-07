@@ -4,9 +4,9 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
@@ -35,15 +35,17 @@ public class CruiseControlApiST extends AbstractST {
 
     @Tag(ACCEPTANCE)
     @ParallelTest
-    void testCruiseControlBasicAPIRequests()  {
+    void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
+
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
 
-        String response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STATE);
+        String response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STATE);
 
         assertThat(response, is("Unrecognized endpoint in request '/state'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE);
 
         LOGGER.info("Verifying that {} REST API is available", CRUISE_CONTROL_NAME);
 
@@ -55,15 +57,15 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("----> KAFKA REBALANCE <----");
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REBALANCE);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REBALANCE);
 
         assertThat(response, is("Unrecognized endpoint in request '/rebalance'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
         LOGGER.info("Waiting for CC will have for enough metrics to be recorded to make a proposal ");
-        CruiseControlUtils.waitForRebalanceEndpointIsReady();
+        CruiseControlUtils.waitForRebalanceEndpointIsReady(NAMESPACE);
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
 
         // all goals stats that contains
         assertThat(response, containsString("RackAwareGoal"));
@@ -86,23 +88,23 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("----> EXECUTION OF STOP PROPOSAL <----");
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STOP);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STOP);
 
         assertThat(response, is("Unrecognized endpoint in request '/stop_proposal_execution'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STOP);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STOP);
 
         assertThat(response, containsString("Proposal execution stopped."));
 
         LOGGER.info("----> USER TASKS <----");
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.USER_TASKS);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.USER_TASKS);
 
         assertThat(response, is("Unrecognized endpoint in request '/user_tasks'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
-        response = CruiseControlUtils.callApi(CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.USER_TASKS);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.USER_TASKS);
 
         assertThat(response, containsString("GET"));
         assertThat(response, containsString(CruiseControlEndpoints.STATE.toString()));
@@ -115,7 +117,5 @@ public class CruiseControlApiST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws Exception {
         installClusterOperator(extensionContext, NAMESPACE);
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
     }
 }
