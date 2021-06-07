@@ -89,7 +89,7 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             // Find the leader
             Promise<Void> promise = Promise.promise();
             rollFuture = promise.future();
-            Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(cluster, namespace, pods, coKeySecret);
+            Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(reconciliation, cluster, namespace, pods, coKeySecret);
             leaderFuture.compose(leader -> {
                 LOGGER.debugCr(reconciliation, "Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
                 Future<Void> fut = Future.succeededFuture();

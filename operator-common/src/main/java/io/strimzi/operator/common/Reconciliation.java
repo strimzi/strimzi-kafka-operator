@@ -20,7 +20,7 @@ public class Reconciliation {
 
     private static final AtomicInteger IDS = new AtomicInteger();
 
-    public static final Reconciliation DUMMY_RECONCILIATION = new Reconciliation("test", "kind", "namespace", "name");
+    /* test */ public static final Reconciliation DUMMY_RECONCILIATION = new Reconciliation("test", "kind", "namespace", "name");
 
     private final String trigger;
     private final String kind;

@@ -622,12 +622,12 @@ public class ResourceUtils {
         return new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
             () -> new BackOff(5_000, 2, 4)) {
                 @Override
-                protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
+                protected Future<Boolean> isLeader(Reconciliation reconciliation, Pod pod, NetClientOptions options) {
                     return Future.succeededFuture(true);
                 }
 
                 @Override
-                protected PemTrustOptions trustOptions(Secret s) {
+                protected PemTrustOptions trustOptions(Reconciliation reconciliation, Secret s) {
                     return new PemTrustOptions();
                 }
 
@@ -641,7 +641,7 @@ public class ResourceUtils {
     public static AdminClientProvider adminClientProvider() {
         return new AdminClientProvider() {
             @Override
-            public Admin createAdminClient(Reconciliation reconciliation, String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
                 Admin mock = mock(AdminClient.class);
                 DescribeClusterResult dcr;
                 try {

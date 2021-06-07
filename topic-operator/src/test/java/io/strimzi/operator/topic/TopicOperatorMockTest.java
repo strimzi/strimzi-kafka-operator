@@ -244,7 +244,7 @@ public class TopicOperatorMockTest {
     Topic getFromKafka(VertxTestContext context, String topicName) throws InterruptedException {
         AtomicReference<Topic> ref = new AtomicReference<>();
         Checkpoint async = context.checkpoint();
-        Future<TopicMetadata> kafkaMetadata = session.kafka.topicMetadata(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, "test", topicName), new TopicName(topicName));
+        Future<TopicMetadata> kafkaMetadata = session.kafka.topicMetadata(Reconciliation.DUMMY_RECONCILIATION, new TopicName(topicName));
         kafkaMetadata.map(metadata -> TopicSerialization.fromTopicMetadata(metadata)).onComplete(fromKafka -> {
             if (fromKafka.succeeded()) {
                 ref.set(fromKafka.result());

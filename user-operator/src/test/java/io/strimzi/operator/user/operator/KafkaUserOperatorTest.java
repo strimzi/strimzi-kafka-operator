@@ -88,10 +88,10 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
         KafkaUser user = ResourceUtils.createKafkaUserTls();
@@ -163,11 +163,11 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaUser user = ResourceUtils.createKafkaUserTls();
 
@@ -182,7 +182,7 @@ public class KafkaUserOperatorTest {
         when(mockSecretOps.get(anyString(), eq("user-key"))).thenReturn(clientsCaKey);
         when(mockSecretOps.get(anyString(), eq(KafkaUserModel.getSecretName(UserOperatorConfig.DEFAULT_SECRET_PREFIX, user.getMetadata().getName())))).thenReturn(userCert);
 
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
@@ -242,11 +242,11 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         user.getSpec().setAuthorization(null);
@@ -257,7 +257,7 @@ public class KafkaUserOperatorTest {
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
 
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
@@ -307,10 +307,10 @@ public class KafkaUserOperatorTest {
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
@@ -369,12 +369,12 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        when(quotasOps.reconcile(anyString(), eq(null))).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), anyString(), eq(null))).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
 
@@ -420,9 +420,9 @@ public class KafkaUserOperatorTest {
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(ResourceUtils.CA_CERT_NAME))).thenReturn(clientsCa);
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(ResourceUtils.CA_KEY_NAME))).thenReturn(clientsCaKey);
@@ -431,7 +431,7 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
@@ -502,11 +502,11 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCaKey.getMetadata().getName()))).thenReturn(clientsCaKey);
@@ -515,7 +515,7 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
@@ -584,17 +584,17 @@ public class KafkaUserOperatorTest {
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
 
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(null);
 
-        when(quotasOps.reconcile(anyString(), eq(null))).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), anyString(), eq(null))).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
@@ -643,7 +643,7 @@ public class KafkaUserOperatorTest {
                 Future.succeededFuture(Arrays.asList(newTlsUser, newScramShaUser, existingTlsUser, existingScramShaUser)));
         when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.fromMap(ResourceUtils.LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
         when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user")));
-        when(scramOps.list()).thenReturn(asList("existing-tls-user", "deleted-scram-sha-user"));
+        when(scramOps.list(any())).thenReturn(asList("existing-tls-user", "deleted-scram-sha-user"));
 
         when(mockCrdOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(newTlsUser);
         when(mockCrdOps.get(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(newScramShaUser);
@@ -710,18 +710,18 @@ public class KafkaUserOperatorTest {
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> scramUserCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> scramPasswordCaptor = ArgumentCaptor.forClass(String.class);
-        when(scramOps.reconcile(scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(null);
 
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
@@ -794,18 +794,18 @@ public class KafkaUserOperatorTest {
 
         ArgumentCaptor<String> scramUserCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> scramPasswordCaptor = ArgumentCaptor.forClass(String.class);
-        when(scramOps.reconcile(scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
 
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
@@ -876,16 +876,16 @@ public class KafkaUserOperatorTest {
 
         ArgumentCaptor<String> scramUserCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> scramPasswordCaptor = ArgumentCaptor.forClass(String.class);
-        when(scramOps.reconcile(scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(aclOps.reconcile(aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
         when(mockSecretOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(userCert);
 
         when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(null);
 
-        when(quotasOps.reconcile(anyString(), eq(null))).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), anyString(), eq(null))).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
@@ -929,11 +929,11 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.get(anyString(), anyString())).thenReturn(user);
 
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any(Secret.class))).thenReturn(Future.failedFuture(failureMsg));
-        when(aclOps.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<KafkaUser> userCaptor = ArgumentCaptor.forClass(KafkaUser.class);
         when(mockCrdOps.updateStatusAsync(any(), userCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
                 Labels.fromMap(ResourceUtils.LABELS),
@@ -968,11 +968,11 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.get(anyString(), anyString())).thenReturn(user);
 
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any(Secret.class))).thenReturn(Future.succeededFuture());
-        when(aclOps.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
-        when(scramOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(aclOps.reconcile(any(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<KafkaUser> userCaptor = ArgumentCaptor.forClass(KafkaUser.class);
         when(mockCrdOps.updateStatusAsync(any(), userCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(quotasOps.reconcile(any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps,
                 Labels.fromMap(ResourceUtils.LABELS),

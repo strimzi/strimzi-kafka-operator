@@ -5,6 +5,7 @@
 package io.strimzi.operator.user.operator;
 
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.Future;
@@ -33,19 +34,19 @@ public class KafkaUserQuotasOperator {
         this.adminClient = adminClient;
     }
 
-    Future<ReconcileResult<KafkaUserQuotas>> reconcile(String username, KafkaUserQuotas quotas) {
+    Future<ReconcileResult<KafkaUserQuotas>> reconcile(Reconciliation reconciliation, String username, KafkaUserQuotas quotas) {
         Promise<ReconcileResult<KafkaUserQuotas>> prom = Promise.promise();
         
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
                 try {
-                    boolean exists = exists(username);
+                    boolean exists = exists(reconciliation, username);
                     if (quotas != null) {
-                        createOrUpdate(username, quotas);
+                        createOrUpdate(reconciliation, username, quotas);
                         future.complete(exists ? ReconcileResult.created(quotas) : ReconcileResult.patched(quotas));
                     } else {
                         if (exists) {
-                            delete(username);
+                            delete(reconciliation, username);
                             future.complete(ReconcileResult.deleted());
                         } else {
                             future.complete(ReconcileResult.noop(null));
@@ -64,69 +65,72 @@ public class KafkaUserQuotasOperator {
     /**
      * Create or update the quotas for the given user.
      *
+     * @param reconciliation The reconciliation
      * @param username The name of the user which should be created or updated
      * @param quotas The desired user quotas
      * @throws Exception when altering quotas fails
      */
-    public void createOrUpdate(String username, KafkaUserQuotas quotas) throws Exception {
-        KafkaUserQuotas current = describeUserQuotas(username);
+    public void createOrUpdate(Reconciliation reconciliation, String username, KafkaUserQuotas quotas) throws Exception {
+        KafkaUserQuotas current = describeUserQuotas(reconciliation, username);
         if (current != null) {
-            LOGGER.debugOp("Checking quota updates for user {}", username);
+            LOGGER.debugCr(reconciliation, "Checking quota updates for user {}", username);
             if (!quotasEquals(current, quotas)) {
-                LOGGER.debugOp("Updating quotas for user {}", username);
-                alterUserQuotas(username, toClientQuotaAlterationOps(quotas));
+                LOGGER.debugCr(reconciliation, "Updating quotas for user {}", username);
+                alterUserQuotas(reconciliation, username, toClientQuotaAlterationOps(quotas));
             } else {
-                LOGGER.debugOp("Nothing to update in quotas for user {}", username);
+                LOGGER.debugCr(reconciliation, "Nothing to update in quotas for user {}", username);
             }
         } else {
-            LOGGER.debugOp("Creating quotas for user {}", username);
-            alterUserQuotas(username, toClientQuotaAlterationOps(quotas));
+            LOGGER.debugCr(reconciliation, "Creating quotas for user {}", username);
+            alterUserQuotas(reconciliation, username, toClientQuotaAlterationOps(quotas));
         }
     }
 
     /**
      * Determine whether the given user has quotas.
      *
+     * @param reconciliation The reconciliation
      * @param username Name of the user
      *
      * @return True if the user exists
      */
-    boolean exists(String username) throws Exception {
-        return describeUserQuotas(username) != null;
+    boolean exists(Reconciliation reconciliation, String username) throws Exception {
+        return describeUserQuotas(reconciliation, username) != null;
     }
 
     /**
      * Delete the quotas for the given user.
      * It is not an error if the user doesn't exist, or doesn't currently have any quotas.
      *
+     * @param reconciliation The reconciliation
      * @param username Name of the user
      * @throws Exception when altering quotas fails
      */
-    public void delete(String username) throws Exception {
-        KafkaUserQuotas current = describeUserQuotas(username);
+    public void delete(Reconciliation reconciliation, String username) throws Exception {
+        KafkaUserQuotas current = describeUserQuotas(reconciliation, username);
         if (current != null) {
-            LOGGER.debugOp("Deleting quotas for user {}", username);
+            LOGGER.debugCr(reconciliation, "Deleting quotas for user {}", username);
             current.setProducerByteRate(null);
             current.setConsumerByteRate(null);
             current.setRequestPercentage(null);
-            alterUserQuotas(username, toClientQuotaAlterationOps(current));
+            alterUserQuotas(reconciliation, username, toClientQuotaAlterationOps(current));
         } else {
-            LOGGER.warnOp("Quotas for user {} already don't exist", username);
+            LOGGER.warnCr(reconciliation, "Quotas for user {} already don't exist", username);
         }
     }
 
-    protected void alterUserQuotas(String username, Set<ClientQuotaAlteration.Op> ops) throws Exception {
+    protected void alterUserQuotas(Reconciliation reconciliation, String username, Set<ClientQuotaAlteration.Op> ops) throws Exception {
         ClientQuotaEntity cqe = new ClientQuotaEntity(Collections.singletonMap(ClientQuotaEntity.USER, username));
         ClientQuotaAlteration cqa = new ClientQuotaAlteration(cqe, ops);
         try {
             adminClient.alterClientQuotas(Collections.singleton(cqa)).all().get();
         } catch (Exception e) {
-            LOGGER.errorOp("Creating/Altering quotas for user {} failed", username, e);
+            LOGGER.errorCr(reconciliation, "Creating/Altering quotas for user {} failed", username, e);
             throw e;
         }
     }
 
-    protected KafkaUserQuotas describeUserQuotas(String username) throws Exception {
+    protected KafkaUserQuotas describeUserQuotas(Reconciliation reconciliation, String username) throws Exception {
         ClientQuotaFilterComponent c = ClientQuotaFilterComponent.ofEntity(ClientQuotaEntity.USER, username);
         ClientQuotaFilter f =  ClientQuotaFilter.contains(Collections.singleton(c));
         KafkaUserQuotas current = null;
@@ -137,7 +141,7 @@ public class KafkaUserQuotasOperator {
                 current = fromClientQuota(map.get(cqe));
             }
         } catch (Exception e) {
-            LOGGER.errorOp("Getting quotas for user {} failed", username, e);
+            LOGGER.errorCr(reconciliation, "Getting quotas for user {} failed", username, e);
             throw e;
         }
         return current;

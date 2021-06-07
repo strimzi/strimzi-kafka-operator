@@ -67,12 +67,12 @@ public class SimpleAclOperatorIT {
         }
 
         simpleAclOperator = new SimpleAclOperator(vertx,
-                new DefaultAdminClientProvider().createAdminClient(Reconciliation.DUMMY_RECONCILIATION, kafkaCluster.bootstrapServers(), null, null, null));
+                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.bootstrapServers(), null, null, null));
     }
 
     @Test
     public void testNoAclRules(VertxTestContext context) {
-        Set<SimpleAclRule> acls = simpleAclOperator.getAcls("no-acls-user");
+        Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "no-acls-user");
         context.verify(() -> {
             assertThat(acls, IsEmptyCollection.empty());
         });
@@ -88,9 +88,9 @@ public class SimpleAclOperatorIT {
                 AclOperation.READ);
 
         CountDownLatch async = new CountDownLatch(1);
-        simpleAclOperator.reconcile("my-user", Collections.singleton(rule))
+        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", Collections.singleton(rule))
                 .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
+                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule));
                     async.countDown();
@@ -109,9 +109,9 @@ public class SimpleAclOperatorIT {
                 AclOperation.READ);
 
         CountDownLatch async1 = new CountDownLatch(1);
-        simpleAclOperator.reconcile("my-user", Collections.singleton(rule1))
+        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", Collections.singleton(rule1))
                 .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
+                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule1));
                     async1.countDown();
@@ -126,9 +126,9 @@ public class SimpleAclOperatorIT {
                 AclOperation.WRITE);
 
         CountDownLatch async2 = new CountDownLatch(1);
-        simpleAclOperator.reconcile("my-user", new HashSet<>(asList(rule1, rule2)))
+        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", new HashSet<>(asList(rule1, rule2)))
                 .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
+                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
                     assertThat(acls, hasSize(2));
                     assertThat(acls, hasItems(rule1, rule2));
                     async2.countDown();
@@ -147,9 +147,9 @@ public class SimpleAclOperatorIT {
                 AclOperation.READ);
 
         CountDownLatch async1 = new CountDownLatch(1);
-        simpleAclOperator.reconcile("my-user", Collections.singleton(rule1))
+        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", Collections.singleton(rule1))
                 .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
+                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule1));
                     async1.countDown();
@@ -158,9 +158,9 @@ public class SimpleAclOperatorIT {
         async1.await(TEST_TIMEOUT, TimeUnit.SECONDS);
 
         CountDownLatch async2 = new CountDownLatch(1);
-        simpleAclOperator.reconcile("my-user", null)
+        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", null)
                 .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
+                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
                     assertThat(acls, IsEmptyCollection.empty());
                     async2.countDown();
                 }));
@@ -178,9 +178,9 @@ public class SimpleAclOperatorIT {
                 AclOperation.READ);
 
         CountDownLatch async1 = new CountDownLatch(1);
-        simpleAclOperator.reconcile("my-user", Collections.singleton(rule1))
+        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", Collections.singleton(rule1))
                 .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user");
+                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule1));
                     async1.countDown();
@@ -195,9 +195,9 @@ public class SimpleAclOperatorIT {
                 AclOperation.WRITE);
 
         CountDownLatch async2 = new CountDownLatch(1);
-        simpleAclOperator.reconcile("my-user-2", Collections.singleton(rule2))
+        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user-2", Collections.singleton(rule2))
                 .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls("my-user-2");
+                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user-2");
                     assertThat(acls, hasSize(1));
                     assertThat(acls, hasItem(rule2));
                     async2.countDown();

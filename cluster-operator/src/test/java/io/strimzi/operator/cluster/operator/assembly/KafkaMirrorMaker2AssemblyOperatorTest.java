@@ -84,7 +84,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     protected static Vertx vertx;
     private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
-    private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties("kafkaMirrorMaker2DefaultLoggingProperties")
+    private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties(Reconciliation.DUMMY_RECONCILIATION, "kafkaMirrorMaker2DefaultLoggingProperties")
             .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;

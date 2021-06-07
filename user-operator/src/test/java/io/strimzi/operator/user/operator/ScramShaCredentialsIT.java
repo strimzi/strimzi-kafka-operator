@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.user.operator;
 
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.EmbeddedZooKeeper;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
@@ -46,74 +47,74 @@ public class ScramShaCredentialsIT {
 
     @Test
     public void testUserExistsAfterCreate() {
-        assertThat(scramShaCred.exists("userExists"), is(false));
-        scramShaCred.createOrUpdate("userExists", "foo-password");
-        assertThat(scramShaCred.exists("userExists"), is(true));
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "userExists"), is(false));
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "userExists", "foo-password");
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "userExists"), is(true));
     }
 
     @Test
     public void testUserDoeNotExistPriorToCreate() {
-        assertThat(scramShaCred.exists("userNotExists"), is(false));
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "userNotExists"), is(false));
     }
 
     @Test
     public void testCreateOrUpdate() {
-        scramShaCred.createOrUpdate("normalCreate", "foo-password");
-        assertThat(scramShaCred.exists("normalCreate"), is(true));
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "normalCreate", "foo-password");
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "normalCreate"), is(true));
         assertThat(scramShaCred.isPathExist("/config/users/normalCreate"), is(true));
     }
 
     @Test
     public void testCreateOrUpdateTwice() {
-        scramShaCred.createOrUpdate("doubleCreate", "foo-password");
-        scramShaCred.createOrUpdate("doubleCreate", "foo-password");
-        assertThat(scramShaCred.exists("doubleCreate"), is(true));
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "doubleCreate", "foo-password");
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "doubleCreate", "foo-password");
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "doubleCreate"), is(true));
         assertThat(scramShaCred.isPathExist("/config/users/doubleCreate"), is(true));
     }
 
     @Test
     public void testDelete() {
-        scramShaCred.createOrUpdate("normalDelete", "foo-password");
-        assertThat(scramShaCred.exists("normalDelete"), is(true));
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "normalDelete", "foo-password");
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "normalDelete"), is(true));
         assertThat(scramShaCred.isPathExist("/config/users/normalDelete"), is(true));
-        scramShaCred.delete("normalDelete");
-        assertThat(scramShaCred.exists("normalDelete"), is(false));
+        scramShaCred.delete(Reconciliation.DUMMY_RECONCILIATION, "normalDelete");
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "normalDelete"), is(false));
         assertThat(scramShaCred.isPathExist("/config/users/normalDelete"), is(false));
     }
 
     @Test
     public void testDeleteTwice() {
-        scramShaCred.createOrUpdate("doubleDelete", "foo-password");
-        assertThat(scramShaCred.exists("doubleDelete"), is(true));
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "doubleDelete", "foo-password");
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "doubleDelete"), is(true));
         assertThat(scramShaCred.isPathExist("/config/users/doubleDelete"), is(true));
 
-        scramShaCred.delete("doubleDelete");
-        scramShaCred.delete("doubleDelete");
-        assertThat(scramShaCred.exists("doubleDelete"), is(false));
+        scramShaCred.delete(Reconciliation.DUMMY_RECONCILIATION, "doubleDelete");
+        scramShaCred.delete(Reconciliation.DUMMY_RECONCILIATION, "doubleDelete");
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "doubleDelete"), is(false));
         assertThat(scramShaCred.isPathExist("/config/users/doubleDelete"), is(false));
     }
 
     @Test
     public void testCreateOrUpdatePasswordUpdate() {
-        scramShaCred.createOrUpdate("changePassword", "changePassword-password");
-        scramShaCred.createOrUpdate("changePassword", "changePassword-password2");
-        assertThat(scramShaCred.exists("changePassword"), is(true));
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "changePassword", "changePassword-password");
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "changePassword", "changePassword-password2");
+        assertThat(scramShaCred.exists(Reconciliation.DUMMY_RECONCILIATION, "changePassword"), is(true));
         assertThat(scramShaCred.isPathExist("/config/users/changePassword"), is(true));
     }
 
     @Test
     public void testListListsCreatedUsers() {
-        scramShaCred.createOrUpdate("listSome", "foo-password");
-        assertThat(scramShaCred.list(), hasItem("listSome"));
+        scramShaCred.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, "listSome", "foo-password");
+        assertThat(scramShaCred.list(Reconciliation.DUMMY_RECONCILIATION), hasItem("listSome"));
     }
 
     @Test
     public void testListWithNoUsersReturnsEmptyList() {
         // Ensure all users deleted from other tests
-        for (String user : scramShaCred.list()) {
-            scramShaCred.delete(user);
+        for (String user : scramShaCred.list(Reconciliation.DUMMY_RECONCILIATION)) {
+            scramShaCred.delete(Reconciliation.DUMMY_RECONCILIATION, user);
         }
-        assertThat(scramShaCred.list(), is(empty()));
+        assertThat(scramShaCred.list(Reconciliation.DUMMY_RECONCILIATION), is(empty()));
     }
 
     @Test

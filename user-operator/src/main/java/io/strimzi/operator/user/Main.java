@@ -14,8 +14,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -32,25 +30,27 @@ import io.vertx.core.VertxOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.security.Security;
 
 @SuppressFBWarnings("DM_EXIT")
 @SuppressWarnings("deprecation")
 public class Main {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Main.class.getName());
+    private final static Logger LOGGER = LogManager.getLogger(Main.class);
 
     static {
         try {
             Crds.registerCustomKinds();
         } catch (Error | RuntimeException t) {
-            LOGGER.errorOp("Failed to register CRDs", t);
+            LOGGER.error("Failed to register CRDs", t);
             throw t;
         }
     }
 
     public static void main(String[] args) {
-        LOGGER.infoOp("UserOperator {} is starting", Main.class.getPackage().getImplementationVersion());
+        LOGGER.info("UserOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
         //Setup Micrometer metrics options
         VertxOptions options = new VertxOptions().setMetricsOptions(
@@ -65,7 +65,7 @@ public class Main {
 
         run(vertx, client, adminClientProvider, config).onComplete(ar -> {
             if (ar.failed()) {
-                LOGGER.errorOp("Unable to start operator", ar.cause());
+                LOGGER.error("Unable to start operator", ar.cause());
                 System.exit(1);
             }
         });
@@ -100,9 +100,9 @@ public class Main {
                     vertx.deployVerticle(operator,
                         res -> {
                             if (res.succeeded()) {
-                                LOGGER.infoOp("User Operator verticle started in namespace {}", config.getNamespace());
+                                LOGGER.info("User Operator verticle started in namespace {}", config.getNamespace());
                             } else {
-                                LOGGER.errorOp("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
+                                LOGGER.error("User Operator verticle in namespace {} failed to start", config.getNamespace(), res.cause());
                                 System.exit(1);
                             }
                             promise.handle(res);
@@ -130,7 +130,7 @@ public class Main {
         CompositeFuture.join(clusterCaCertSecretFuture, eoKeySecretFuture)
                 .onComplete(ar -> {
                     if (ar.succeeded()) {
-                        Admin adminClient = adminClientProvider.createAdminClient(new Reconciliation("user-operator-start", "Kafka", config.getNamespace(), "user-operator"), config.getKafkaBootstrapServers(),
+                        Admin adminClient = adminClientProvider.createAdminClient(config.getKafkaBootstrapServers(),
                                 clusterCaCertSecretFuture.result(), eoKeySecretFuture.result(), eoKeySecretFuture.result() != null ? "entity-operator" : null);
                         promise.complete(adminClient);
                     } else {

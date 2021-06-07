@@ -7,7 +7,6 @@ package io.strimzi.operator.topic;
 import java.util.Map;
 import java.util.Optional;
 
-import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -177,7 +176,7 @@ public class KafkaImplTest {
                 Either.ofRight(new UnknownTopicOrPartitionException())));
 
         KafkaImpl impl = new KafkaImpl(admin, vertx);
-        impl.topicMetadata(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, "test", "test"), new TopicName("test")).onComplete(testContext.succeeding(topicMetadata -> testContext.verify(() -> {
+        impl.topicMetadata(Reconciliation.DUMMY_RECONCILIATION, new TopicName("test")).onComplete(testContext.succeeding(topicMetadata -> testContext.verify(() -> {
             assertNull(topicMetadata);
             testContext.completeNow();
         })));
@@ -193,7 +192,7 @@ public class KafkaImplTest {
                 Either.ofLeft(mock(Config.class))));
 
         KafkaImpl impl = new KafkaImpl(admin, vertx);
-        impl.topicMetadata(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, "test", "test"), new TopicName("test")).onComplete(testContext.succeeding(topicMetadata -> testContext.verify(() -> {
+        impl.topicMetadata(Reconciliation.DUMMY_RECONCILIATION, new TopicName("test")).onComplete(testContext.succeeding(topicMetadata -> testContext.verify(() -> {
             assertNull(topicMetadata);
             testContext.completeNow();
         })));
@@ -209,7 +208,7 @@ public class KafkaImplTest {
                 Either.ofRight(new UnknownTopicOrPartitionException())));
 
         KafkaImpl impl = new KafkaImpl(admin, vertx);
-        impl.topicMetadata(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, "test", "test"), new TopicName("test")).onComplete(testContext.succeeding(topicMetadata -> testContext.verify(() -> {
+        impl.topicMetadata(Reconciliation.DUMMY_RECONCILIATION, new TopicName("test")).onComplete(testContext.succeeding(topicMetadata -> testContext.verify(() -> {
             assertNull(topicMetadata);
             testContext.completeNow();
         })));
@@ -224,7 +223,7 @@ public class KafkaImplTest {
                 Either.ofLeft(mock(Config.class))));
 
         KafkaImpl impl = new KafkaImpl(admin, vertx);
-        impl.topicMetadata(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, "test", "test"), new TopicName("test")).onComplete(testContext.succeeding(topicMetadata -> testContext.verify(() -> {
+        impl.topicMetadata(Reconciliation.DUMMY_RECONCILIATION, new TopicName("test")).onComplete(testContext.succeeding(topicMetadata -> testContext.verify(() -> {
             assertNotNull(topicMetadata);
             assertNotNull(topicMetadata.getDescription());
             assertNotNull(topicMetadata.getConfig());
@@ -241,7 +240,7 @@ public class KafkaImplTest {
                     Either.ofRight(new TimeoutException())));
 
         KafkaImpl impl = new KafkaImpl(admin, vertx);
-        impl.topicMetadata(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, "test", "test"), new TopicName("test")).onComplete(testContext.failing(error -> testContext.verify(() -> {
+        impl.topicMetadata(Reconciliation.DUMMY_RECONCILIATION, new TopicName("test")).onComplete(testContext.failing(error -> testContext.verify(() -> {
             assertTrue(error instanceof TimeoutException);
             testContext.completeNow();
         })));
@@ -254,7 +253,7 @@ public class KafkaImplTest {
         mockDeleteTopics(admin, singletonMap("test", Either.ofLeft(null)));
 
         KafkaImpl impl = new KafkaImpl(admin, vertx);
-        impl.deleteTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, "test", "test"), new TopicName("test"))
+        impl.deleteTopic(Reconciliation.DUMMY_RECONCILIATION, new TopicName("test"))
                 .onComplete(testContext.succeeding(error ->
                         testContext.verify(testContext::completeNow)));
     }
@@ -266,7 +265,7 @@ public class KafkaImplTest {
         mockDeleteTopics(admin, singletonMap("test", Either.ofRight(new TimeoutException())));
 
         KafkaImpl impl = new KafkaImpl(admin, vertx);
-        impl.deleteTopic(new Reconciliation("test", KafkaTopic.RESOURCE_KIND, "test", "test"), new TopicName("test")).onComplete(testContext.failing(error -> testContext.verify(() -> {
+        impl.deleteTopic(Reconciliation.DUMMY_RECONCILIATION, new TopicName("test")).onComplete(testContext.failing(error -> testContext.verify(() -> {
             assertTrue(error instanceof TimeoutException);
             testContext.completeNow();
         })));

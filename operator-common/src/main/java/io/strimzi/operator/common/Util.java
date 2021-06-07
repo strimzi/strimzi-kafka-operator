@@ -198,13 +198,12 @@ public class Util {
      * Create a file with Keystore or Truststore from the given {@code bytes}.
      * The file will be set to get deleted when the JVM exist.
      *
-     * @param reconciliation The reconciliation
      * @param prefix    Prefix which will be used for the filename
      * @param suffix    Suffix which will be used for the filename
      * @param bytes     Byte array with the certificate store
      * @return          File with the certificate store
      */
-    public static File createFileStore(Reconciliation reconciliation, String prefix, String suffix, byte[] bytes) {
+    public static File createFileStore(String prefix, String suffix, byte[] bytes) {
         File f = null;
         try {
             f = File.createTempFile(prefix, suffix);
@@ -215,7 +214,7 @@ public class Util {
             return f;
         } catch (IOException e) {
             if (f != null && !f.delete()) {
-                LOGGER.warnCr(reconciliation, "Failed to delete temporary file in exception handler");
+                LOGGER.warnOp("Failed to delete temporary file in exception handler");
             }
             throw new RuntimeException(e);
         }
@@ -236,26 +235,25 @@ public class Util {
      * Create a Truststore file containing the given {@code certificate} and protected with {@code password}.
      * The file will be set to get deleted when the JVM exist.
      *
-     * @param reconciliation The reconciliation
      * @param prefix Prefix which will be used for the filename
      * @param suffix Suffix which will be used for the filename
      * @param certificate X509 certificate to put inside the Truststore
      * @param password Password protecting the Truststore
      * @return File with the Truststore
      */
-    public static File createFileTrustStore(Reconciliation reconciliation, String prefix, String suffix, X509Certificate certificate, char[] password) {
+    public static File createFileTrustStore(String prefix, String suffix, X509Certificate certificate, char[] password) {
         try {
             KeyStore trustStore = null;
             trustStore = KeyStore.getInstance("PKCS12");
             trustStore.load(null, password);
             trustStore.setEntry(certificate.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(certificate), null);
-            return store(reconciliation, prefix, suffix, trustStore, password);
+            return store(prefix, suffix, trustStore, password);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static File store(Reconciliation reconciliation, String prefix, String suffix, KeyStore trustStore, char[] password) throws Exception {
+    private static File store(String prefix, String suffix, KeyStore trustStore, char[] password) throws Exception {
         File f = null;
         try {
             f = File.createTempFile(prefix, suffix);
@@ -266,7 +264,7 @@ public class Util {
             return f;
         } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
             if (f != null && !f.delete()) {
-                LOGGER.warnCr(reconciliation, "Failed to delete temporary file in exception handler");
+                LOGGER.warnOp("Failed to delete temporary file in exception handler");
             }
             throw e;
         }

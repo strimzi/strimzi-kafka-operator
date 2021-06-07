@@ -17,7 +17,6 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramS
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
-import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 public class AuthenticationUtils {
-    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AuthenticationUtils.class.getName());
 
     public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
     public static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";

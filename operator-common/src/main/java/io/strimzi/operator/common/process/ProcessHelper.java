@@ -4,7 +4,8 @@
  */
 package io.strimzi.operator.common.process;
 
-import io.strimzi.operator.common.ReconciliationLogger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +13,7 @@ import java.util.List;
 
 public class ProcessHelper {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ProcessHelper.class);
+    private static final Logger LOGGER = LogManager.getLogger(ProcessHelper.class);
 
     /**
      * Execute the command given in {@code args}.
@@ -39,11 +40,11 @@ public class ProcessHelper {
         pb.redirectError(stderr);
         pb.redirectOutput(stdout);
         Process p = pb.start();
-        LOGGER.infoOp("Started process {} with command line {}", p, args);
+        LOGGER.info("Started process {} with command line {}", p, args);
         p.getOutputStream().close();
         int exitCode = p.waitFor();
         // TODO timeout on wait
-        LOGGER.infoOp("Process {}: exited with status {}", p, exitCode);
+        LOGGER.info("Process {}: exited with status {}", p, exitCode);
         return new ProcessResult(p, stdout, stderr);
     }
 
@@ -55,7 +56,7 @@ public class ProcessHelper {
 
     public static void delete(File file) {
         if (!file.delete()) {
-            LOGGER.warnOp("Unable to delete temporary file {}", file);
+            LOGGER.warn("Unable to delete temporary file {}", file);
         }
     }
 

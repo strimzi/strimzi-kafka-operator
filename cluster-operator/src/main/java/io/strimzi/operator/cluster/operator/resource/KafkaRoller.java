@@ -698,7 +698,7 @@ public class KafkaRoller {
         try {
             String bootstrapHostnames = podNames.stream().map(podName -> KafkaCluster.podDnsName(this.namespace, this.cluster, podName) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
             LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
-            return adminClientProvider.createAdminClient(reconciliation, bootstrapHostnames, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
+            return adminClientProvider.createAdminClient(bootstrapHostnames, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
         } catch (KafkaException e) {
             if (ceShouldBeFatal && (e instanceof ConfigException
                     || e.getCause() instanceof ConfigException)) {

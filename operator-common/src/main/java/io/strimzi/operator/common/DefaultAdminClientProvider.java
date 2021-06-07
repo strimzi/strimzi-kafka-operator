@@ -40,7 +40,7 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
      * TLS encrypted connection and with TLS client authentication.
      */
     @Override
-    public Admin createAdminClient(Reconciliation reconciliation, String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+    public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
         Admin ac;
         String trustStorePassword = null;
         File truststoreFile = null;
@@ -48,7 +48,7 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
         if (clusterCaCertSecret != null) {
             PasswordGenerator pg = new PasswordGenerator(12);
             trustStorePassword = pg.generate();
-            truststoreFile = Util.createFileTrustStore(reconciliation, getClass().getName(), "ts", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
+            truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
         }
 
         try {
@@ -57,7 +57,7 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
             // provided Secret and related key for getting the private key for TLS client authentication
             if (keyCertSecret != null && keyCertName != null && !keyCertName.isEmpty()) {
                 keyStorePassword = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".password"), StandardCharsets.US_ASCII);
-                keystoreFile = Util.createFileStore(reconciliation, getClass().getName(), "ts", Util.decodeFromSecret(keyCertSecret, keyCertName + ".p12"));
+                keystoreFile = Util.createFileStore(getClass().getName(), "ts", Util.decodeFromSecret(keyCertSecret, keyCertName + ".p12"));
             }
 
             try {
@@ -88,12 +88,12 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
                 ac = Admin.create(p);
             } finally {
                 if (keystoreFile != null && !keystoreFile.delete()) {
-                    LOGGER.warnCr(reconciliation, "Unable to delete keystore file {}", keystoreFile);
+                    LOGGER.warnOp("Unable to delete keystore file {}", keystoreFile);
                 }
             }
         } finally {
             if (truststoreFile != null && !truststoreFile.delete()) {
-                LOGGER.warnCr(reconciliation, "Unable to delete truststore file {}", truststoreFile);
+                LOGGER.warnOp("Unable to delete truststore file {}", truststoreFile);
             }
         }
         return ac;

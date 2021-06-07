@@ -405,33 +405,34 @@ public abstract class AbstractModel {
         if (logConfigFileName == null || logConfigFileName.isEmpty()) {
             return new OrderedProperties();
         }
-        return getOrderedProperties(getDefaultLogConfigFileName());
+        return getOrderedProperties(reconciliation, getDefaultLogConfigFileName());
     }
 
     /**
      * Read a config file and returns the properties in a deterministic order.
      *
+     * @param reconciliation The reconciliation
      * @param configFileName The filename.
      * @return The OrderedProperties of the inputted file.
      */
-    public static OrderedProperties getOrderedProperties(String configFileName) {
+    public static OrderedProperties getOrderedProperties(Reconciliation reconciliation, String configFileName) {
         if (configFileName == null || configFileName.isEmpty()) {
             throw new IllegalArgumentException("configFileName must be non-empty string");
         }
         OrderedProperties properties = new OrderedProperties();
         InputStream is = AbstractModel.class.getResourceAsStream("/" + configFileName);
         if (is == null) {
-            LOGGER.warnOp("Cannot find resource '{}'", configFileName);
+            LOGGER.warnCr(reconciliation, "Cannot find resource '{}'", configFileName);
         } else {
             try {
                 properties.addStringPairs(is);
             } catch (IOException e) {
-                LOGGER.warnOp("Unable to read default log config from '{}'", configFileName);
+                LOGGER.warnCr(reconciliation, "Unable to read default log config from '{}'", configFileName);
             } finally {
                 try {
                     is.close();
                 } catch (IOException e) {
-                    LOGGER.errorOp("Failed to close stream. Reason: " + e.getMessage());
+                    LOGGER.errorCr(reconciliation, "Failed to close stream. Reason: " + e.getMessage());
                 }
             }
         }

@@ -1763,7 +1763,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             try {
                                 String bootstrapHostname = KafkaResources.bootstrapServiceName(this.name) + "." + this.namespace + ".svc:" + KafkaCluster.REPLICATION_PORT;
                                 LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
-                                kafkaAdmin = adminClientProvider.createAdminClient(reconciliation, bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
+                                kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
                                 kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
                             } catch (KafkaException e) {
                                 LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
