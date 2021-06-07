@@ -14,10 +14,8 @@ import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.opentest4j.TestAbortedException;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.TimeZone;
+import java.io.IOException;
+import java.util.Random;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -27,9 +25,9 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     @Override
     public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         if (!(throwable instanceof TestAbortedException)) {
-            String testClass = extensionContext.getRequiredTestClass().getName();
-            String testMethod = extensionContext.getRequiredTestMethod().getName();
-            collectLogs(testClass, testMethod);
+            final String testClass = extensionContext.getRequiredTestClass().getName();
+            final String testMethod = extensionContext.getRequiredTestMethod().getName();
+            collectLogs(extensionContext, testClass, testMethod);
         }
         throw throwable;
     }
@@ -38,7 +36,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     public void handleBeforeAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         if (!(throwable instanceof TestAbortedException)) {
             String testClass = extensionContext.getRequiredTestClass().getName();
-            collectLogs(testClass, testClass);
+            collectLogs(extensionContext, testClass, testClass);
         }
         throw throwable;
     }
@@ -46,47 +44,38 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     @Override
     public void handleBeforeEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         if (!(throwable instanceof TestAbortedException)) {
-            String testClass = extensionContext.getRequiredTestClass().getName();
-            String testMethod = extensionContext.getRequiredTestMethod().getName();
-            collectLogs(testClass, testMethod);
+            final String testClass = extensionContext.getRequiredTestClass().getName();
+            final String testMethod = extensionContext.getRequiredTestMethod().getName();
+            collectLogs(extensionContext, testClass, testMethod);
         }
         throw throwable;
     }
 
     @Override
     public void handleAfterEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
-        String testClass = extensionContext.getRequiredTestClass().getName();
-        String testMethod = extensionContext.getRequiredTestMethod().getName();
-        collectLogs(testClass, testMethod);
+        final String testClass = extensionContext.getRequiredTestClass().getName();
+        final String testMethod = extensionContext.getRequiredTestMethod().getName();
+        collectLogs(extensionContext, testClass, testMethod);
         throw throwable;
     }
 
     @Override
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
-        String testClass = extensionContext.getRequiredTestClass().getName();
-        collectLogs(testClass, "");
+        final String testClass = extensionContext.getRequiredTestClass().getName();
+        collectLogs(extensionContext, testClass, "");
         throw throwable;
     }
 
-    public static void collectLogs(String testClass, String testMethod) {
+    public synchronized static void collectLogs(ExtensionContext extensionContext, String testClass, String testMethod) throws IOException {
+        final String namespaceName;
+        final LogCollector logCollector;
+
         // Stop test execution time counter in case of failures
         TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION, testClass, testMethod);
-        // Get current date to create a unique folder
-        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        String currentDate = simpleDateFormat.format(Calendar.getInstance().getTime());
-        String logDir = !testMethod.isEmpty() ?
-                Environment.TEST_LOG_DIR + testClass + "." + testMethod + "_" + currentDate
-                : Environment.TEST_LOG_DIR + testClass + currentDate;
 
-        LogCollector logCollector = new LogCollector(kubeClient(), new File(logDir));
-        logCollector.collectEvents();
-        logCollector.collectConfigMaps();
-        logCollector.collectLogsFromPods();
-        logCollector.collectDeployments();
-        logCollector.collectStatefulSets();
-        logCollector.collectReplicaSets();
-        logCollector.collectStrimzi();
-        logCollector.collectClusterInfo();
+        testMethod = testMethod.isEmpty() ? "class-context-" + new Random().nextInt(Integer.MAX_VALUE) : testMethod;
+        logCollector = new LogCollector(testClass, testMethod, kubeClient(), Environment.TEST_LOG_DIR);
+        // collecting logs for all resources inside Kubernetes cluster
+        logCollector.collect();
     }
 }

@@ -252,7 +252,7 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-        cluster.createNamespaces(clientNamespace, namespaces);
+        cluster.createNamespaces(extensionContext, clientNamespace, namespaces);
         cluster.createCustomResources(resources);
         applyClusterOperatorInstallFiles(clientNamespace);
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
@@ -782,25 +782,25 @@ public abstract class AbstractST implements TestSeparator {
         testDockerImagesForKafkaCluster(clusterName, namespaceName, namespaceName, kafkaPods, zkPods, rackAwareEnabled);
     }
 
-    protected void afterEachMayOverride(ExtensionContext testContext) throws Exception {
+    protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
-            ResourceManager.getInstance().deleteResources(testContext);
+            ResourceManager.getInstance().deleteResources(extensionContext);
 
             // if 'parallel namespace test' we are gonna delete namespace
-            if (StUtils.isParallelNamespaceTest(testContext)) {
+            if (StUtils.isParallelNamespaceTest(extensionContext)) {
 
-                final String namespaceToDelete = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
-                LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, testContext.getDisplayName());
-                cluster.deleteNamespace(namespaceToDelete);
+                LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
+                cluster.deleteNamespace(extensionContext, namespaceToDelete);
             }
         }
     }
 
-    protected void afterAllMayOverride(ExtensionContext testContext) throws Exception {
+    protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             teardownEnvForOperator();
-            ResourceManager.getInstance().deleteResources(testContext);
+            ResourceManager.getInstance().deleteResources(extensionContext);
         }
     }
 
@@ -814,11 +814,11 @@ public abstract class AbstractST implements TestSeparator {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
         String testName = null;
+        String testClass = null;
 
         synchronized (lock) {
-            if (extensionContext.getTestMethod().isPresent()) {
-                testName = extensionContext.getTestMethod().get().getName();
-            }
+            if (extensionContext.getTestClass().isPresent()) testClass = extensionContext.getTestClass().get().getName();
+            if (extensionContext.getTestMethod().isPresent()) testName = extensionContext.getTestMethod().get().getName();
 
             LOGGER.info("Not first test we are gonna generate cluster name");
             String clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
@@ -863,30 +863,30 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     @BeforeEach
-    void setUpTestCase(ExtensionContext testContext) {
+    void setUpTestCase(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [BEFORE EACH] has been called", this.getClass().getName());
-        beforeEachMayOverride(testContext);
+        beforeEachMayOverride(extensionContext);
     }
 
     @BeforeAll
-    void setUpTestSuite(ExtensionContext testContext) {
+    void setUpTestSuite(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
-        beforeAllMayOverride(testContext);
+        beforeAllMayOverride(extensionContext);
     }
 
     @AfterEach
-    void tearDownTestCase(ExtensionContext testContext) throws Exception {
+    void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER EACH] has been called", this.getClass().getName());
-        afterEachMayOverride(testContext);
+        afterEachMayOverride(extensionContext);
     }
 
     @AfterAll
-    void tearDownTestSuite(ExtensionContext testContext) throws Exception {
+    void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER ALL] has been called", this.getClass().getName());
-        afterAllMayOverride(testContext);
+        afterAllMayOverride(extensionContext);
     }
 }
