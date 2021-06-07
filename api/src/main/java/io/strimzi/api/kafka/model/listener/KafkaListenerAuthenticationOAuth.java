@@ -153,7 +153,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     }
 
     public void setUseAudience(String audience) {
-
+        this.useAudience = audience;
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")
