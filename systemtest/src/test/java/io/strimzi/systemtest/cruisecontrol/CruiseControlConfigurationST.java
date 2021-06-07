@@ -297,7 +297,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         performanceTuningOpts.forEach((key, value) ->
                 assertThat(containerConfiguration, hasEntry(key, value.toString())));
     }
-    
+
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws Exception {
         installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);

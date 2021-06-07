@@ -175,7 +175,7 @@ public abstract class AbstractST implements TestSeparator {
         installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public void installClusterWideClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
+    public synchronized void installClusterWideClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
         prepareEnvForOperator(extensionContext, namespace);
         // Apply role bindings in CO namespace
         applyBindings(extensionContext, namespace);

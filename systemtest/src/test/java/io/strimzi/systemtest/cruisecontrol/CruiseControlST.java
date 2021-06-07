@@ -8,11 +8,12 @@ import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -47,20 +48,23 @@ import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
-public class CruiseControlIsolatedST extends AbstractST {
+public class CruiseControlST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(CruiseControlIsolatedST.class);
-    private static final String NAMESPACE = "cruise-control-isolated-test";
+    private static final Logger LOGGER = LogManager.getLogger(CruiseControlST.class);
+    private static final String NAMESPACE = "cruise-control-test";
 
     private static final String CRUISE_CONTROL_METRICS_TOPIC = "strimzi.cruisecontrol.metrics"; // partitions 1 , rf - 1
     private static final String CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC = "strimzi.cruisecontrol.modeltrainingsamples"; // partitions 32 , rf - 2
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @IsolatedTest
     void testAutoCreationOfCruiseControlTopics(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
             .editOrNewSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
@@ -68,15 +72,15 @@ public class CruiseControlIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_METRICS_TOPIC);
+        KafkaTopicUtils.waitForKafkaTopicReady(NAMESPACE, CRUISE_CONTROL_METRICS_TOPIC);
         KafkaTopicSpec metricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE)
             .withName(CRUISE_CONTROL_METRICS_TOPIC).get().getSpec();
 
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
+        KafkaTopicUtils.waitForKafkaTopicReady(NAMESPACE, CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
         KafkaTopicSpec modelTrainingTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE)
             .withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get().getSpec();
 
-        KafkaTopicUtils.waitForKafkaTopicReady(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
+        KafkaTopicUtils.waitForKafkaTopicReady(NAMESPACE, CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
         KafkaTopicSpec partitionMetricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE)
             .withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get().getSpec();
 
@@ -101,48 +105,50 @@ public class CruiseControlIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
 
-        KafkaRebalanceUtils.doRebalancingProcess(clusterName);
+        KafkaRebalanceUtils.doRebalancingProcess(NAMESPACE, clusterName);
 
         LOGGER.info("Annotating KafkaRebalance: {} with 'refresh' anno", clusterName);
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.refresh);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Trying rebalancing process again");
-        KafkaRebalanceUtils.doRebalancingProcess(clusterName);
+        KafkaRebalanceUtils.doRebalancingProcess(NAMESPACE, clusterName);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testCruiseControlWithSingleNodeKafka(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        String errMessage =  "Kafka " + NAMESPACE + "/" + clusterName + " has invalid configuration." +
+        final String errMessage =  "Kafka " + namespaceName + "/" + clusterName + " has invalid configuration." +
             " Cruise Control cannot be deployed with a single-node Kafka cluster. It requires " +
             "at least two Kafka nodes.";
 
         LOGGER.info("Deploying single node Kafka with CruiseControl");
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaWithCruiseControl(clusterName, 1, 1).build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, errMessage, Duration.ofMinutes(6).toMillis());
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName, errMessage, Duration.ofMinutes(6).toMillis());
 
-        KafkaStatus kafkaStatus = KafkaTemplates.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
+        KafkaStatus kafkaStatus = KafkaTemplates.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
 
         assertThat(kafkaStatus.getConditions().get(0).getReason(), is("InvalidResourceException"));
 
         LOGGER.info("Increasing Kafka nodes to 3");
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getSpec().getKafka().setReplicas(3));
-        KafkaUtils.waitForKafkaReady(clusterName);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().getKafka().setReplicas(3), namespaceName);
+        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
-        kafkaStatus = KafkaTemplates.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
+        kafkaStatus = KafkaTemplates.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is(not(errMessage)));
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testCruiseControlTopicExclusion(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        String excludedTopic1 = "excluded-topic-1";
-        String excludedTopic2 = "excluded-topic-2";
-        String includedTopic = "included-topic";
+        final String excludedTopic1 = "excluded-topic-1";
+        final String excludedTopic2 = "excluded-topic-2";
+        final String includedTopic = "included-topic";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, excludedTopic1).build());
@@ -155,61 +161,62 @@ public class CruiseControlIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Checking status of KafkaRebalance");
-        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus();
+        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic1));
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), containsString(excludedTopic2));
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("excludedTopics").toString(), not(containsString(includedTopic)));
 
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(clusterName, KafkaRebalanceAnnotation.approve);
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.Ready);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(namespaceName, clusterName, KafkaRebalanceAnnotation.approve);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.Ready);
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelNamespaceTest
     void testCruiseControlReplicaMovementStrategy(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         final String replicaMovementStrategies = "default.replica.movement.strategies";
-        String newReplicaMovementStrategies = "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeSmallReplicaMovementStrategy," +
+        final String newReplicaMovementStrategies = "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeSmallReplicaMovementStrategy," +
                 "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeLargeReplicaMovementStrategy," +
                 "com.linkedin.kafka.cruisecontrol.executor.strategy.PostponeUrpReplicaMovementStrategy";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(kafkaClientsName).build());
 
-        String ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        String ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
 
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in pod configuration file.");
-        Map<String, Object> actualStrategies = KafkaTemplates.kafkaClient().inNamespace(NAMESPACE)
+        Map<String, Object> actualStrategies = KafkaTemplates.kafkaClient().inNamespace(namespaceName)
                 .withName(clusterName).get().getSpec().getCruiseControl().getConfig();
         assertThat(actualStrategies, anEmptyMap());
 
-        String ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        String ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
 
-        Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(CruiseControlResources.deploymentName(clusterName));
+        Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
 
         Map<String, Object> ccConfigMap = new HashMap<>();
         ccConfigMap.put(replicaMovementStrategies, newReplicaMovementStrategies);
 
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             LOGGER.info("Set non-default CruiseControl replicaMovementStrategies to KafkaRebalance resource.");
             kafka.getSpec().getCruiseControl().setConfig(ccConfigMap);
-        });
+        }, namespaceName);
 
         LOGGER.info("Verifying that CC pod is rolling, because of change size of disk");
-        DeploymentUtils.waitTillDepHasRolled(CruiseControlResources.deploymentName(clusterName), 1, kafkaRebalanceSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kafkaRebalanceSnapshot);
 
-        ccPodName = kubeClient().listPodsByPrefixInName(CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
-        ccConfFileContent = cmdKubeClient().execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        installClusterOperator(extensionContext, NAMESPACE);
+        installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 }
