@@ -320,8 +320,12 @@ public class KubeClient {
     /**
      * Gets pod
      */
+    public PodResource<Pod> getPodResource(String namespaceName, String name) {
+        return client.pods().inNamespace(namespaceName).withName(name);
+    }
+
     public PodResource<Pod> getPodResource(String name) {
-        return client.pods().inNamespace(getNamespace()).withName(name);
+        return getPodResource(kubeClient().getNamespace(), name);
     }
 
     /**
