@@ -48,19 +48,19 @@ public class CruiseControlUtils {
 
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String callApi(SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
+    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
         String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
 
-        return cmdKubeClient().execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+        return cmdKubeClient(namespaceName).execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
     }
 
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String callApi(SupportedHttpMethods method, String endpoint) {
+    public static String callApi(String namespaceName, SupportedHttpMethods method, String endpoint) {
         String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
 
-        return cmdKubeClient().execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+        return cmdKubeClient(namespaceName).execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_METRICS_PORT + endpoint).out();
     }
 
@@ -149,10 +149,10 @@ public class CruiseControlUtils {
         return cruiseControlProperties;
     }
 
-    public static void waitForRebalanceEndpointIsReady() {
+    public static void waitForRebalanceEndpointIsReady(String namespaceName) {
         TestUtils.waitFor("Wait for rebalance endpoint is ready",
             Constants.API_CRUISE_CONTROL_POLL, Constants.API_CRUISE_CONTROL_TIMEOUT, () -> {
-                String response = callApi(SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
+                String response = callApi(namespaceName, SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
                 LOGGER.debug("API response {}", response);
                 return !response.contains("Error processing POST request '/rebalance' due to: " +
                     "'com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException: " +
