@@ -7,6 +7,12 @@
 
 This procedure describes how to upgrade a Cluster Operator deployment to use Strimzi {ProductVersion}.
 
+Follow this procedure if you deployed the Cluster Operator using the installation YAML files rather than {OperatorHub}.
+
+The availability of Kafka clusters managed by the Cluster Operator is not affected by the upgrade operation.
+
+NOTE: Refer to the documentation supporting a specific version of Strimzi for information on how to upgrade to that version.
+
 .Prerequisites
 
 * An existing Cluster Operator deployment is available.
@@ -37,7 +43,7 @@ kubectl replace -f install/cluster-operator
 +
 Wait for the rolling updates to complete.
 
-. If the new Operator version no longer supports the Kafka version you are upgrading from, the Cluster Operator returns a "Version not found" error message. 
+. If the new Operator version no longer supports the Kafka version you are upgrading from, the Cluster Operator returns a "Version not found" error message.
 Otherwise, no error message is returned.
 +
 For example:
@@ -53,7 +59,7 @@ For example:
 
 .. Change the `spec.kafka.version` property to a supported Kafka version.
 
-* If the error message is _not_ returned, go to the next step. 
+* If the error message is _not_ returned, go to the next step.
 You will upgrade the Kafka version later.
 
 . Get the image for the Kafka pod to ensure the upgrade was successful:
@@ -63,7 +69,7 @@ You will upgrade the Kafka version later.
 kubectl get pods my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the new Operator version. For example: 
+The image tag shows the new Operator version. For example:
 +
 [source,shell,subs="+quotes,attributes"]
 ----

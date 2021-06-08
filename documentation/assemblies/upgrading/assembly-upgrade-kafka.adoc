@@ -3,16 +3,31 @@
 // assembly-upgrade.adoc
 
 [id='assembly-upgrade-kafka-{context}']
-= Strimzi and Kafka upgrades
+= Required upgrade sequence
 
-Upgrading Strimzi is a three-stage process. 
-To upgrade brokers and clients without downtime, you _must_ complete the upgrade procedures in the following order:
+To upgrade brokers and clients without downtime, you _must_ complete the Strimzi upgrade procedures in the following order:
+
+. Update existing custom resources to support the `v1beta2` API version.
++
+--
+* xref:assembly-upgrade-resources-{context}[]
+--
++
+Do this after upgrading to Strimzi {ConvertAfterProductVersion}, but before upgrading to Strimzi {ConvertBeforeProductVersion} or newer.
+For a multi-version upgrade from a version prior to version {ConvertAfterProductVersion}:
++
+.. Skip this step and continue with the following steps to upgrade to version {ConvertAfterProductVersion}.
+.. Return to this step and perform all the steps in this upgrade sequence to upgrade to {ConvertBeforeProductVersion} or newer.
 
 . Update your Cluster Operator to a new Strimzi version.
 +
+--
+* xref:proc-upgrading-the-co-{context}[]
+--
++
 The approach you take depends on how you xref:cluster-operator-{context}[deployed the Cluster Operator].
 +
-* If you deployed the Cluster Operator using the installation YAML files, perform your upgrade by modifying the Operator installation files, as described in xref:assembly-upgrade-cluster-operator-{context}[Upgrading the Cluster Operator]. 
+* If you deployed the Cluster Operator using the installation YAML files, perform your upgrade by modifying the Operator installation files, as described in xref:proc-upgrading-the-co-{context}[Upgrading the Cluster Operator].
 +
 * If you deployed the Cluster Operator from {OperatorHub}, use the Operator Lifecycle Manager (OLM) to change the update channel for the Strimzi Operators to a new Strimzi version.
 +
@@ -33,34 +48,10 @@ You can access the CRDs from {ReleaseDownload} or find them in the `crd` subdire
 . Upgrade all Kafka brokers and client applications to the latest supported Kafka version.
 +
 * xref:assembly-upgrading-kafka-versions-{context}[]
-* xref:con-strategies-for-upgrading-clients-{context}[] 
-
-. If applicable, perform the following tasks:
-+
-.. Update existing custom resources to handle deprecated custom resource properties
-+
-* xref:assembly-upgrade-resources-{context}[]
-+
-NOTE: Custom resources can also be updated _before_ the Kafka upgrade.
-+
-.. Update listeners to use the `GenericKafkaListener` schema
-+
-* xref:con-upgrade-listeners-{context}[]
+* xref:con-strategies-for-upgrading-clients-{context}[]
 
 .Optional: incremental cooperative rebalance upgrade
 
 Consider upgrading consumers and Kafka Streams applications to use the _incremental cooperative rebalance_ protocol for partition rebalances.
 
-* xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[] 
-
-include::modules/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
-
-include::assembly-upgrade-kafka-cluster-operator.adoc[leveloffset=+1]
-
-include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
-
-//how to upgrade to generic listener config
-include::modules/con-upgrade-listeners.adoc[leveloffset=+1]
-
-//strategies for upgrading clients - concept
-include::modules/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
+* xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[]
