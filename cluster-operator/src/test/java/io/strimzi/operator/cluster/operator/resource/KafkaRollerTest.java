@@ -63,6 +63,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaRollerTest {
 
+    private static final Logger LOGGER = LogManager.getLogger(KafkaRollerTest.class);
+
     private static Vertx vertx;
     private List<String> restarted;
 
@@ -287,8 +289,6 @@ public class KafkaRollerTest {
                 asList(0, 3, 4, 1, 2));
     }
 
-    private static final Logger log = LogManager.getLogger(KafkaRollerTest.class);
-
     @Test
     public void testControllerNotInitiallyRollable(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
@@ -299,7 +299,7 @@ public class KafkaRollerTest {
             brokerId -> {
                 if (brokerId == 2) {
                     boolean b = count.getAndDecrement() == 0;
-                    log.info("Can broker {} be rolled now ? {}", brokerId, b);
+                    LOGGER.info("Can broker {} be rolled now ? {}", brokerId, b);
                     return succeededFuture(b);
                 } else {
                     return succeededFuture(true);
@@ -529,8 +529,8 @@ public class KafkaRollerTest {
                     .endMetadata()
                 .build()
         );
-        when(podOps.readiness(any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock ->  {
-            String podName = invocationOnMock.getArgument(1);
+        when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock ->  {
+            String podName = invocationOnMock.getArgument(2);
             return readiness.apply(podName2Number(podName));
         });
         when(podOps.isReady(anyString(), anyString())).thenAnswer(invocationOnMock ->  {
@@ -583,7 +583,7 @@ public class KafkaRollerTest {
                                    Function<Integer, ForceableProblem> getConfigsException,
                                    Function<Integer, Future<Boolean>> canRollFn,
                                   int... controllers) {
-            super(KafkaRollerTest.vertx, new Reconciliation("test", "Kafka", stsNamespace(), clusterName()), podOps, 500, 1000,
+            super(new Reconciliation("test", "Kafka", stsNamespace(), clusterName()), KafkaRollerTest.vertx, podOps, 500, 1000,
                 () -> new BackOff(10L, 2, 4),
                 sts, clusterCaCertSecret, coKeySecret, "", "", KafkaVersionTestUtils.getLatestVersion(), true);
             this.controllers = controllers;

@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.model;
 
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -22,14 +23,14 @@ public class ResourceVisitorTest {
     public void testDoesNotThrow() {
         Kafka k = TestUtils.fromYaml("/example.yaml", Kafka.class, true);
         assertThat(k, is(notNullValue()));
-        ResourceVisitor.visit(k, new ResourceVisitor.Visitor() {
+        ResourceVisitor.visit(new Reconciliation("test", "kind", "namespace", "name"), k, new ResourceVisitor.Visitor() {
             @Override
-            public <M extends AnnotatedElement & Member> void visitProperty(List<String> path, Object owner, M member, ResourceVisitor.Property<M> property, Object propertyValue) {
+            public <M extends AnnotatedElement & Member> void visitProperty(Reconciliation reconciliation, List<String> path, Object owner, M member, ResourceVisitor.Property<M> property, Object propertyValue) {
 
             }
 
             @Override
-            public void visitObject(List<String> path, Object object) {
+            public void visitObject(Reconciliation reconciliation, List<String> path, Object object) {
 
             }
         });
@@ -39,14 +40,14 @@ public class ResourceVisitorTest {
     public void testDoesNotThrowWithListenerList() {
         Kafka k = TestUtils.fromYaml("/example2.yaml", Kafka.class, true);
         assertThat(k, is(notNullValue()));
-        ResourceVisitor.visit(k, new ResourceVisitor.Visitor() {
+        ResourceVisitor.visit(new Reconciliation("test", "kind", "namespace", "name"), k, new ResourceVisitor.Visitor() {
             @Override
-            public <M extends AnnotatedElement & Member> void visitProperty(List<String> path, Object owner, M member, ResourceVisitor.Property<M> property, Object propertyValue) {
+            public <M extends AnnotatedElement & Member> void visitProperty(Reconciliation reconciliation, List<String> path, Object owner, M member, ResourceVisitor.Property<M> property, Object propertyValue) {
 
             }
 
             @Override
-            public void visitObject(List<String> path, Object object) {
+            public void visitObject(Reconciliation reconciliation, List<String> path, Object object) {
 
             }
         });

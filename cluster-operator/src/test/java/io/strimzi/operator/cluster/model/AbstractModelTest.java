@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 
@@ -35,7 +36,7 @@ public class AbstractModelTest {
     // Implement AbstractModel to test the abstract class
     private class Model extends AbstractModel   {
         public Model(HasMetadata resource) {
-            super(resource, "model-app");
+            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, "model-app");
         }
 
         @Override

@@ -163,7 +163,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
             .build());
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
         when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mock.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mock.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock, false)
@@ -190,7 +190,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 .build());
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
         when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mock.updateConnectLoggers(anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        when(mock.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock, true)

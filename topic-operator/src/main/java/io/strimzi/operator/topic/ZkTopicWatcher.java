@@ -19,11 +19,11 @@ public class ZkTopicWatcher extends ZkWatcher {
 
     @Override
     protected void notifyOperator(String child) {
-        LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "=" + child);
-        log.info("{}: Partitions change", logContext);
+        LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, "=" + child, topicOperator.getNamespace(), child);
+        logger.infoCr(logContext.toReconciliation(), "Partitions change");
         topicOperator.onTopicPartitionsChanged(logContext,
             new TopicName(child)).onComplete(ar -> {
-                log.info("{}: Reconciliation result due to topic partitions change on topic {}: {}", logContext, child, ar);
+                logger.infoCr(logContext.toReconciliation(), "Reconciliation result due to topic partitions change on topic {}: {}", child, ar);
             });
     }
 }

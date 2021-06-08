@@ -32,7 +32,7 @@ import static io.strimzi.kafka.api.conversion.converter.ConversionUtil.pathToken
  * @param <T> The converted type
  */
 public interface Conversion<T> {
-    Logger log = LogManager.getLogger(Conversion.class);
+    Logger LOGGER = LogManager.getLogger(Conversion.class);
 
     Conversion<Object> NOOP = new Conversion<>() {
         @Override

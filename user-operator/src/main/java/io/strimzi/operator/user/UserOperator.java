@@ -11,19 +11,19 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.TimeUnit;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.micrometer.backends.BackendRegistries;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
  */
 public class UserOperator extends AbstractVerticle {
 
-    private static final Logger log = LogManager.getLogger(UserOperator.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(UserOperator.class.getName());
 
     private static final int HEALTH_SERVER_PORT = 8081;
 
@@ -41,7 +41,7 @@ public class UserOperator extends AbstractVerticle {
                         UserOperatorConfig config,
                         KubernetesClient client,
                         KafkaUserOperator kafkaUserOperator) {
-        log.info("Creating UserOperator for namespace {}", namespace);
+        LOGGER.info("Creating UserOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.reconciliationInterval = config.getReconciliationIntervalMs();
         this.client = client;
@@ -51,19 +51,19 @@ public class UserOperator extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> start) {
-        log.info("Starting UserOperator for namespace {}", namespace);
+        LOGGER.info("Starting UserOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
         kafkaUserOperator.createWatch(namespace, kafkaUserOperator.recreateWatch(namespace))
             .compose(w -> {
-                log.info("Started operator for {} kind", "KafkaUser");
+                LOGGER.info("Started operator for {} kind", "KafkaUser");
                 watch = w;
 
-                log.info("Setting up periodic reconciliation for namespace {}", namespace);
+                LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
-                    log.info("Triggering periodic reconciliation for namespace {}...", namespace);
+                    LOGGER.info("Triggering periodic reconciliation for namespace {}...", namespace);
                     reconcileAll("timer");
                 });
 
@@ -74,7 +74,7 @@ public class UserOperator extends AbstractVerticle {
 
     @Override
     public void stop(Promise<Void> stop) {
-        log.info("Stopping UserOperator for namespace {}", namespace);
+        LOGGER.info("Stopping UserOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
 
         if (watch != null) {
@@ -109,9 +109,9 @@ public class UserOperator extends AbstractVerticle {
                 })
                 .listen(HEALTH_SERVER_PORT, ar -> {
                     if (ar.succeeded()) {
-                        log.info("UserOperator is now ready (health server listening on {})", HEALTH_SERVER_PORT);
+                        LOGGER.info("UserOperator is now ready (health server listening on {})", HEALTH_SERVER_PORT);
                     } else {
-                        log.error("Unable to bind health server on {}", HEALTH_SERVER_PORT, ar.cause());
+                        LOGGER.error("Unable to bind health server on {}", HEALTH_SERVER_PORT, ar.cause());
                     }
                     result.handle(ar);
                 });

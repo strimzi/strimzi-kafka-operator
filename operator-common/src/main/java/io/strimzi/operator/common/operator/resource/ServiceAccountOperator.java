@@ -9,10 +9,13 @@ import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ServiceAccountOperator.class);
     private final boolean patching;
 
     /**
@@ -41,16 +44,15 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
     }
 
     @Override
-    protected Future<ReconcileResult<ServiceAccount>> internalPatch(String namespace, String name, ServiceAccount current, ServiceAccount desired) {
+    protected Future<ReconcileResult<ServiceAccount>> internalPatch(Reconciliation reconciliation, String namespace, String name, ServiceAccount current, ServiceAccount desired) {
         if (patching)   {
             if (desired.getSecrets() == null || desired.getSecrets().isEmpty())    {
                 desired.setSecrets(current.getSecrets());
             }
-
-            return super.internalPatch(namespace, name, current, desired);
+            return super.internalPatch(reconciliation, namespace, name, current, desired);
         } else {
             // Patching an SA causes new tokens to be created, which we should avoid
-            log.debug("{} {} in namespace {} has not been patched: patching service accounts generates new tokens which should be avoided.", resourceKind, name, namespace);
+            LOGGER.debugCr(reconciliation, "{} {} in namespace {} has not been patched: patching service accounts generates new tokens which should be avoided.", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }

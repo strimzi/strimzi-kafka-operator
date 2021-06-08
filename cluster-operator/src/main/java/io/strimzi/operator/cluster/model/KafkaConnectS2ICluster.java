@@ -31,6 +31,7 @@ import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
 import java.util.List;
@@ -50,15 +51,15 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
      *
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    private KafkaConnectS2ICluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    private KafkaConnectS2ICluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
     }
 
     // Deprecation is suppressed because of KafkaConnectS2I
     @SuppressWarnings("deprecation")
-    public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2I kafkaConnectS2I, KafkaVersion.Lookup versions) {
+    public static KafkaConnectS2ICluster fromCrd(Reconciliation reconciliation, KafkaConnectS2I kafkaConnectS2I, KafkaVersion.Lookup versions) {
         KafkaConnectS2ISpec spec = kafkaConnectS2I.getSpec();
-        KafkaConnectS2ICluster cluster = fromSpec(spec, versions, new KafkaConnectS2ICluster(kafkaConnectS2I));
+        KafkaConnectS2ICluster cluster = fromSpec(reconciliation, spec, versions, new KafkaConnectS2ICluster(reconciliation, kafkaConnectS2I));
 
         if (spec.getBuild() != null)  {
             throw new InvalidResourceException(".spec.build can be used only with KafkaConnect and is not supported with KafkaConnectS2I.");

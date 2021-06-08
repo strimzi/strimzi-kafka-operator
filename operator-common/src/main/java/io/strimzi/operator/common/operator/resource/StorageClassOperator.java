@@ -16,6 +16,7 @@ public class StorageClassOperator extends AbstractNonNamespacedResourceOperator<
 
     /**
      * Constructor.
+     *
      * @param vertx The Vertx instance.
      * @param client The Kubernetes client.
      */

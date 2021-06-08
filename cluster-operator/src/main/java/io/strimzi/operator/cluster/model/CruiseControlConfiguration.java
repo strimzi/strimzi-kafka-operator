@@ -8,6 +8,7 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlGoals;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -106,14 +107,15 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *
+     * @param reconciliation  The reconciliation
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public CruiseControlConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
+    public CruiseControlConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
-    private CruiseControlConfiguration(String configuration, List<String> forbiddenPrefixes) {
-        super(configuration, forbiddenPrefixes);
+    private CruiseControlConfiguration(Reconciliation reconciliation, String configuration, List<String> forbiddenPrefixes) {
+        super(reconciliation, configuration, forbiddenPrefixes);
     }
 
     public static Map<String, String> getCruiseControlDefaultPropertiesMap() {

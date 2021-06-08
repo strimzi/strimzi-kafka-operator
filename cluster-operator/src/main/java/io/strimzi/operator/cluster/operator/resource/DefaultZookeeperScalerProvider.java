@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 
 import java.util.function.Function;
@@ -18,6 +19,7 @@ public class DefaultZookeeperScalerProvider implements ZookeeperScalerProvider {
     /**
      * Creates an instance of ZookeeperScaler
      *
+     * @param reconciliation                The reconciliation
      * @param vertx                         Vertx instance
      * @param zookeeperConnectionString     Connection string to connect to the right Zookeeper
      * @param zkNodeAddress                 Function for generating the Zookeeper node addresses
@@ -27,7 +29,7 @@ public class DefaultZookeeperScalerProvider implements ZookeeperScalerProvider {
      *
      * @return  ZookeeperScaler instance
      */
-    public ZookeeperScaler createZookeeperScaler(Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
-        return new ZookeeperScaler(vertx, zooAdminProvider, zookeeperConnectionString, zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
+    public ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
+        return new ZookeeperScaler(reconciliation, vertx, zooAdminProvider, zookeeperConnectionString, zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
     }
 }

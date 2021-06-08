@@ -10,6 +10,7 @@ import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -43,15 +44,16 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
     }
 
     @Override
-    protected Future<ReconcileResult<DeploymentConfig>> internalPatch(String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
+    protected Future<ReconcileResult<DeploymentConfig>> internalPatch(Reconciliation reconciliation, String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
         desired.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(current.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        return super.internalPatch(namespace, name, current, desired);
+        return super.internalPatch(reconciliation, namespace, name, current, desired);
     }
 
     /**
      * Asynchronously polls the deployment configuration until either the observed generation matches the desired
      * generation sequence number or timeout.
      *
+     * @param reconciliation The reconciliation
      * @param namespace The namespace.
      * @param name The resource name.
      * @param pollIntervalMs The polling interval
@@ -59,8 +61,8 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
      * @return  A future which completes when the observed generation of the deployment configuration matches the
      * generation sequence number of the desired state.
      */
-    public Future<Void> waitForObserved(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
+    public Future<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 
     /**

@@ -78,6 +78,7 @@ import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -237,10 +238,11 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    private KafkaCluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = kafkaClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
@@ -358,13 +360,13 @@ public class KafkaCluster extends AbstractModel {
         return KafkaResources.clientsCaCertificateSecretName(cluster);
     }
 
-    public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        return fromCrd(kafkaAssembly, versions, null, 0);
+    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+        return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS", "deprecation"})
-    public static KafkaCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
-        KafkaCluster result = new KafkaCluster(kafkaAssembly);
+    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
+        KafkaCluster result = new KafkaCluster(reconciliation, kafkaAssembly);
 
         result.setOwnerReference(kafkaAssembly);
 
@@ -413,9 +415,9 @@ public class KafkaCluster extends AbstractModel {
 
         // Handle Kafka broker configuration
         KafkaVersion desiredVersion = versions.version(kafkaClusterSpec.getVersion());
-        KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
+        KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
         configureCruiseControlMetrics(kafkaAssembly, result, configuration);
-        validateConfiguration(kafkaAssembly, desiredVersion, configuration);
+        validateConfiguration(reconciliation, kafkaAssembly, desiredVersion, configuration);
         result.setConfiguration(configuration);
 
         // Parse different types of metrics configurations
@@ -425,15 +427,15 @@ public class KafkaCluster extends AbstractModel {
             Storage newStorage = kafkaClusterSpec.getStorage();
             AbstractModel.validatePersistentStorage(newStorage);
 
-            StorageDiff diff = new StorageDiff(oldStorage, newStorage, oldReplicas, kafkaClusterSpec.getReplicas());
+            StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, oldReplicas, kafkaClusterSpec.getReplicas());
 
             if (!diff.isEmpty()) {
-                log.warn("Only the following changes to Kafka storage are allowed: " +
+                LOGGER.warnCr(reconciliation, "Only the following changes to Kafka storage are allowed: " +
                         "changing the deleteClaim flag, " +
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
                         "changing overrides to nodes which do not exist yet" +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                log.warn("The desired Kafka storage configuration in the custom resource {}/{} contains changes which are not allowed. As a " +
+                LOGGER.warnCr(reconciliation, "The desired Kafka storage configuration in the custom resource {}/{} contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
@@ -457,11 +459,11 @@ public class KafkaCluster extends AbstractModel {
 
         // Configure listeners
         if (kafkaClusterSpec.getListeners() == null || kafkaClusterSpec.getListeners().getGenericKafkaListeners() == null) {
-            log.error("The required field .spec.kafka.listeners is missing");
+            LOGGER.errorCr(reconciliation, "The required field .spec.kafka.listeners is missing");
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
         List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners().getGenericKafkaListeners();
-        ListenersValidator.validate(kafkaClusterSpec.getReplicas(), listeners);
+        ListenersValidator.validate(reconciliation, kafkaClusterSpec.getReplicas(), listeners);
         result.setListeners(listeners);
 
         // Set authorization
@@ -471,7 +473,7 @@ public class KafkaCluster extends AbstractModel {
             } else {
                 KafkaAuthorizationKeycloak authorizationKeycloak = (KafkaAuthorizationKeycloak) kafkaClusterSpec.getAuthorization();
                 if (authorizationKeycloak.getClientId() == null || authorizationKeycloak.getTokenEndpointUri() == null) {
-                    log.error("Keycloak Authorization: Token Endpoint URI and clientId are both required");
+                    LOGGER.errorCr(reconciliation, "Keycloak Authorization: Token Endpoint URI and clientId are both required");
                     throw new InvalidResourceException("Keycloak Authorization: Token Endpoint URI and clientId are both required");
                 }
             }
@@ -626,16 +628,17 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Validates the Kafka broker configuration against the configuration options of the desired Kafka version.
      *
+     * @param reconciliation    The reconciliation
      * @param kafkaAssembly     Kafka custom resource
      * @param desiredVersion    Desired Kafka version
      * @param configuration     Kafka broker configuration
      */
-    private static void validateConfiguration(Kafka kafkaAssembly, KafkaVersion desiredVersion, KafkaConfiguration configuration) {
+    private static void validateConfiguration(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion desiredVersion, KafkaConfiguration configuration) {
         List<String> errorsInConfig = configuration.validate(desiredVersion);
 
         if (!errorsInConfig.isEmpty()) {
             for (String error : errorsInConfig) {
-                log.warn("Kafka {}/{} has invalid spec.kafka.config: {}",
+                LOGGER.warnCr(reconciliation, "Kafka {}/{} has invalid spec.kafka.config: {}",
                         kafkaAssembly.getMetadata().getNamespace(),
                         kafkaAssembly.getMetadata().getName(),
                         error);
@@ -670,19 +673,18 @@ public class KafkaCluster extends AbstractModel {
      * @param externalBootstrapDnsName The set of DNS names for bootstrap service (should be appended to every broker certificate)
      * @param externalDnsNames         The list of DNS names for broker pods (should be appended only to specific certificates for given broker)
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
      */
     public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName,
-            Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
-        log.debug("Generating certificates");
+                                     Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+        LOGGER.debugCr(reconciliation, "Generating certificates");
 
         try {
             brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
-            log.warn("Error while generating certificates", e);
+            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }
 
-        log.debug("End generating certificates");
+        LOGGER.debugCr(reconciliation, "End generating certificates");
     }
 
     /**
@@ -845,7 +847,8 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
 
             List<ServicePort> ports = Collections.singletonList(
-                    createServicePort(ListenersUtils.backwardsCompatiblePortName(listener),
+                    createServicePort(
+                            ListenersUtils.backwardsCompatiblePortName(listener),
                             listener.getPort(),
                             listener.getPort(),
                             ListenersUtils.brokerNodePort(listener, pod),
@@ -1801,7 +1804,7 @@ public class KafkaCluster extends AbstractModel {
                 .endSpec()
                 .build();
 
-        log.trace("Created network policy {}", networkPolicy);
+        LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
         return networkPolicy;
     }
 

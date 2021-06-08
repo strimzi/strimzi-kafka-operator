@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage;
  * Migration tool to move ZkTopicStore to KafkaStreamsTopicStore.
  */
 public class Zk2KafkaStreams {
-    private static final Logger log = LoggerFactory.getLogger(Zk2KafkaStreams.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Zk2KafkaStreams.class);
 
     public static CompletionStage<KafkaStreamsTopicStoreService> upgrade(
             Zk zk,
@@ -31,17 +31,17 @@ public class Zk2KafkaStreams {
     ) {
         String topicsPath = config.get(Config.TOPICS_PATH);
 
-        log.info("Upgrading topic store [{}]: {}", doStop, topicsPath);
+        LOGGER.info("Upgrading topic store [{}]: {}", doStop, topicsPath);
 
         TopicStore zkTopicStore = new TempZkTopicStore(zk, topicsPath);
         KafkaStreamsTopicStoreService service = new KafkaStreamsTopicStoreService();
         return service.start(config, kafkaProperties)
                 .thenCompose(ksTopicStore -> {
-                    log.info("Starting upgrade ...");
+                    LOGGER.info("Starting upgrade ...");
                     @SuppressWarnings("rawtypes")
                     List<Future> results = new ArrayList<>();
                     List<String> list = zk.getChildren(topicsPath);
-                    log.info("Topics to upgrade: {}", list);
+                    LOGGER.info("Topics to upgrade: {}", list);
                     list.forEach(topicName -> {
                         TopicName tn = new TopicName(topicName);
                         Future<Topic> ft = zkTopicStore.read(tn);
@@ -65,7 +65,7 @@ public class Zk2KafkaStreams {
                     return result;
                 })
                 .thenRun(() -> {
-                    log.info("Deleting ZK topics path: {}", topicsPath);
+                    LOGGER.info("Deleting ZK topics path: {}", topicsPath);
                     zk.delete(topicsPath, -1);
                 })
                 .whenCompleteAsync((v, t) -> {
@@ -73,7 +73,7 @@ public class Zk2KafkaStreams {
                     if (doStop || t != null) {
                         service.stop();
                     }
-                    log.info("Upgrade complete", t);
+                    LOGGER.info("Upgrade complete", t);
                 })
                 .thenApply(v -> service);
     }

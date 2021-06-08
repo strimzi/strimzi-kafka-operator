@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -38,8 +39,8 @@ public class KafkaSpecCheckerTest {
 
     private KafkaSpecChecker generateChecker(Kafka kafka) {
         KafkaVersion.Lookup versions = KafkaVersionTestUtils.getKafkaVersionLookup();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(kafka, versions);
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(kafka, versions);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, versions);
+        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, versions);
         return new KafkaSpecChecker(kafka.getSpec(), versions, kafkaCluster, zkCluster);
     }
 

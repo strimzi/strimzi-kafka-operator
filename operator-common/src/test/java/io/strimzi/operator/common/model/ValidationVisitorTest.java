@@ -8,11 +8,10 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.logging.TestLogger;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Logger;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -31,7 +30,7 @@ public class ValidationVisitorTest {
     public void testValidationErrorsAreLogged() {
         Kafka k = TestUtils.fromYaml("/example.yaml", Kafka.class, true);
         assertThat(k, is(notNullValue()));
-        TestLogger logger = new TestLogger((Logger) LogManager.getLogger(ValidationVisitorTest.class));
+        TestLogger logger = TestLogger.create(ValidationVisitorTest.class);
         HasMetadata resource = new KafkaBuilder()
                 .withNewMetadata()
                     .withName("testname")
@@ -42,7 +41,7 @@ public class ValidationVisitorTest {
 
         Set<Condition> warningConditions = new HashSet<>();
 
-        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, warningConditions));
+        ResourceVisitor.visit(Reconciliation.DUMMY_RECONCILIATION, k, new ValidationVisitor(resource, logger, warningConditions));
 
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
@@ -54,32 +53,33 @@ public class ValidationVisitorTest {
         assertThat(warningMessages, hasItem("In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
                 "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2."));
 
+        logger.assertLoggedAtLeastOnce(lm ->
+                lm.level() == Level.WARN
+            && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
+                "Contains object at path spec.kafka with an unknown property: foo"));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-            && ("Kafka resource testname in namespace testnamespace: " +
-                "Contains object at path spec.kafka with an unknown property: foo").equals(lm.formattedMessage()));
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
-                "and should now be configured using spec.entityOperator.topicOperator. This property is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "and should now be configured using spec.entityOperator.topicOperator. This property is removed in API version v1beta2."));
         logger.assertNotLogged(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the tolerations property at path spec.zookeeper.tolerations has been deprecated, " +
-                "and should now be configured using spec.zookeeper.template.pod.tolerations. This property is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "and should now be configured using spec.zookeeper.template.pod.tolerations. This property is removed in API version v1beta2."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
-                "This object has been replaced with GenericKafkaListener and is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "This object has been replaced with GenericKafkaListener and is removed in API version v1beta2."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
-                "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2."));
     }
 
     @Test
     public void testV1Beta1Deprecations() {
         Kafka k = TestUtils.fromYaml("/v1beta1Deprecations.yaml", Kafka.class, true);
         assertThat(k, is(notNullValue()));
-        TestLogger logger = new TestLogger((Logger) LogManager.getLogger(ValidationVisitorTest.class));
+        TestLogger logger = TestLogger.create(ValidationVisitorTest.class);
         HasMetadata resource = new KafkaBuilder()
                 .withNewMetadata()
                     .withName("testname")
@@ -90,7 +90,7 @@ public class ValidationVisitorTest {
 
         Set<Condition> warningConditions = new HashSet<>();
 
-        ResourceVisitor.visit(k, new ValidationVisitor(resource, logger, warningConditions));
+        ResourceVisitor.visit(Reconciliation.DUMMY_RECONCILIATION, k, new ValidationVisitor(resource, logger, warningConditions));
 
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
@@ -100,34 +100,34 @@ public class ValidationVisitorTest {
                 "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2."));
 
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the affinity property at path spec.zookeeper.affinity has been deprecated, and " +
                 "should now be configured using spec.zookeeper.template.pod.affinity. " +
-                "This property is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "This property is removed in API version v1beta2."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the tolerations property at path spec.zookeeper.tolerations has been deprecated, " +
                 "and should now be configured using spec.zookeeper.template.pod.tolerations. " +
-                "This property is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "This property is removed in API version v1beta2."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the affinity property at path spec.kafka.affinity has been deprecated, " +
                 "and should now be configured using spec.kafka.template.pod.affinity. " +
-                "This property is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "This property is removed in API version v1beta2."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the tolerations property at path spec.kafka.tolerations has been deprecated, " +
                 "and should now be configured using spec.kafka.template.pod.tolerations. " +
-                "This property is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "This property is removed in API version v1beta2."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
                 "and should now be configured using spec.entityOperator.topicOperator. " +
-                "This property is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "This property is removed in API version v1beta2."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && ("Kafka resource testname in namespace testnamespace: " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
-                "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2.").equals(lm.formattedMessage()));
+                "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2."));
     }
 
 

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -43,8 +44,9 @@ public abstract class AbstractWatchableStatusedResourceOperator<
     /**
      * Updates status of the resource
      *
+     * @param reconciliation Reconciliation object
      * @param resource  Resource with the status which should be updated in the Kube API server
      * @return          Future with the updated resource
      */
-    public abstract Future<T> updateStatusAsync(T resource);
+    public abstract Future<T> updateStatusAsync(Reconciliation reconciliation, T resource);
 }

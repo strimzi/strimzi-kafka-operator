@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.hamcrest.Description;
@@ -302,7 +303,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testEmptyUserConfiguration()  {
         Map<String, Object> userConfiguration = new HashMap<>();
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(userConfiguration.entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder()
                 .withUserConfiguration(kafkaConfiguration)
@@ -319,7 +320,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         userConfiguration.put("transaction.state.log.replication.factor", 3);
         userConfiguration.put("transaction.state.log.min.isr", 2);
 
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(userConfiguration.entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder()
                 .withUserConfiguration(kafkaConfiguration)

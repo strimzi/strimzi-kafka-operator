@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class InitWriter {
 
-    private static final Logger log = LogManager.getLogger(InitWriter.class);
+    private static final Logger LOGGER = LogManager.getLogger(InitWriter.class);
 
     private KubernetesClient client;
     private InitWriterConfig config;
@@ -41,12 +41,12 @@ public class InitWriter {
     public boolean writeRack() {
 
         Map<String, String> nodeLabels = client.nodes().withName(config.getNodeName()).get().getMetadata().getLabels();
-        log.info("NodeLabels = {}", nodeLabels);
+        LOGGER.info("NodeLabels = {}", nodeLabels);
         String rackId = nodeLabels.get(config.getRackTopologyKey());
-        log.info("Rack: {} = {}", config.getRackTopologyKey(), rackId);
+        LOGGER.info("Rack: {} = {}", config.getRackTopologyKey(), rackId);
 
         if (rackId == null) {
-            log.error("Node {} doesn't have the label {} for getting the rackid",
+            LOGGER.error("Node {} doesn't have the label {} for getting the rackid",
                     config.getNodeName(), config.getRackTopologyKey());
             return false;
         }
@@ -66,16 +66,16 @@ public class InitWriter {
         String address = NodeUtils.findAddress(addresses, null);
 
         if (address == null) {
-            log.error("External address not found");
+            LOGGER.error("External address not found");
             return false;
         } else  {
-            log.info("Default External address found {}", address);
+            LOGGER.info("Default External address found {}", address);
             externalAddresses.append(externalAddressExport(null, address));
         }
 
         for (NodeAddressType type : NodeAddressType.values())   {
             address = NodeUtils.findAddress(addresses, type);
-            log.info("External {} address found {}", type.toValue(), address);
+            LOGGER.info("External {} address found {}", type.toValue(), address);
             externalAddresses.append(externalAddressExport(type, address));
         }
 
@@ -115,14 +115,14 @@ public class InitWriter {
             writer.write(information);
 
             if (writer.checkError())    {
-                log.error("Failed to write the information {} to file {}", information, file);
+                LOGGER.error("Failed to write the information {} to file {}", information, file);
                 isWritten = false;
             } else {
-                log.info("Information {} written successfully to file {}", information, file);
+                LOGGER.info("Information {} written successfully to file {}", information, file);
                 isWritten = true;
             }
         } catch (IOException e) {
-            log.error("Error writing the information {} to file {}", information, file, e);
+            LOGGER.error("Error writing the information {} to file {}", information, file, e);
             isWritten = false;
         }
 

@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
@@ -79,12 +80,12 @@ public class K8sImpl implements K8s {
     }
 
     @Override
-    public Future<KafkaTopic> updateResourceStatus(KafkaTopic topicResource) {
-        return crdOperator.updateStatusAsync(topicResource);
+    public Future<KafkaTopic> updateResourceStatus(Reconciliation ctx, KafkaTopic topicResource) {
+        return crdOperator.updateStatusAsync(ctx, topicResource);
     }
 
     @Override
-    public Future<Void> deleteResource(ResourceName resourceName) {
+    public Future<Void> deleteResource(Reconciliation reconciliation, ResourceName resourceName) {
         Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
@@ -93,7 +94,7 @@ public class K8sImpl implements K8s {
                     LOGGER.warn("KafkaTopic {} could not be deleted, since it doesn't seem to exist", resourceName.toString());
                     future.complete();
                 } else {
-                    Util.waitFor(vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
+                    Util.waitFor(reconciliation, vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
                         KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(resourceName.toString()).get();
                         boolean notExists = kafkaTopic == null;
                         LOGGER.debug("KafkaTopic {} deleted {}", resourceName.toString(), notExists);
