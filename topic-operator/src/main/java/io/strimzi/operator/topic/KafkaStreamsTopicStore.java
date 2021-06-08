@@ -8,8 +8,8 @@ import io.apicurio.registry.utils.kafka.ProducerActions;
 import io.vertx.core.Future;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
@@ -19,7 +19,7 @@ import java.util.function.BiFunction;
  * Apicurio Registry's gRPC based Kafka Streams ReadOnlyKeyValueStore
  */
 public class KafkaStreamsTopicStore implements TopicStore {
-    private static final Logger log = LoggerFactory.getLogger(KafkaStreamsTopicStore.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaStreamsTopicStore.class);
 
     private final ReadOnlyKeyValueStore<String, Topic> topicStore;
 
@@ -79,7 +79,7 @@ public class KafkaStreamsTopicStore implements TopicStore {
     }
 
     private Future<Void> handleTopicCommand(TopicCommand cmd) {
-        log.debug("Handling topic command [{}]: {}", cmd.getType(), cmd.getKey());
+        LOGGER.debug("Handling topic command [{}]: {}", cmd.getType(), cmd.getKey());
         String key = cmd.getKey();
         CompletionStage<Throwable> result = resultService.apply(key, cmd.getUuid())
                 .thenApply(KafkaStreamsTopicStore::toThrowable);
@@ -87,7 +87,7 @@ public class KafkaStreamsTopicStore implements TopicStore {
         producer.apply(new ProducerRecord<>(storeTopic, key, cmd))
                 .whenComplete((r, t) -> {
                     if (t != null) {
-                        log.error("Error sending topic command", t);
+                        LOGGER.error("Error sending topic command", t);
                     }
                 });
         return Future.fromCompletionStage(result).compose(

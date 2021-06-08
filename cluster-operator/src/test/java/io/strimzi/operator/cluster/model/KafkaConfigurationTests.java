@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -19,7 +20,7 @@ public class KafkaConfigurationTests {
     KafkaVersion kafkaVersion = KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion();
 
     void assertConfigError(String key, Object value, String errorMsg) {
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(singletonMap(key, value).entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, singletonMap(key, value).entrySet());
         assertThat(kafkaConfiguration.validate(kafkaVersion), is(singletonList(errorMsg)));
     }
 
@@ -29,7 +30,7 @@ public class KafkaConfigurationTests {
     }
 
     private void assertNoError(String foo, Object value) {
-        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(singletonMap(foo, value).entrySet());
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, singletonMap(foo, value).entrySet());
         kafkaConfiguration.validate(kafkaVersion);
     }
 

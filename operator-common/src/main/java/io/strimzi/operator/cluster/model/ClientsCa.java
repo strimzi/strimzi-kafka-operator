@@ -8,15 +8,16 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 
 public class ClientsCa extends Ca {
-    public ClientsCa(CertManager certManager, PasswordGenerator passwordGenerator, String caCertSecretName, Secret clientsCaCert,
+    public ClientsCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String caCertSecretName, Secret clientsCaCert,
                      String caSecretKeyName, Secret clientsCaKey,
                      int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
-        super(certManager, passwordGenerator, "clients-ca",
-                caCertSecretName, forceRenewal(clientsCaCert, clientsCaKey, "clients-ca.key"),
-                caSecretKeyName, adapt060ClientsCaSecret(clientsCaKey),
-                validityDays, renewalDays, generateCa, policy);
+        super(reconciliation, certManager, passwordGenerator,
+                "clients-ca", caCertSecretName,
+                forceRenewal(clientsCaCert, clientsCaKey, "clients-ca.key"), caSecretKeyName,
+                adapt060ClientsCaSecret(clientsCaKey), validityDays, renewalDays, generateCa, policy);
     }
 
     /**

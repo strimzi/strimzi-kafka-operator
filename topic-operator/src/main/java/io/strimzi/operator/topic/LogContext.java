@@ -6,8 +6,11 @@ package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.Watcher;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.Reconciliation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,20 +22,24 @@ public class LogContext {
     private static AtomicInteger ctx = new AtomicInteger();
     private final String base;
     private final String trigger;
+    private final String namespace;
+    private final String topicName;
     private String resourceVersion;
 
-    private LogContext(String trigger) {
+    private LogContext(String trigger, String namespace, String topicName) {
         base = ctx.getAndIncrement() + "|" + trigger;
+        this.namespace = namespace;
+        this.topicName = topicName;
         this.trigger = trigger;
     }
 
 
-    static LogContext zkWatch(String znode, String childAction) {
-        return new LogContext(znode + " " + childAction);
+    static LogContext zkWatch(String znode, String childAction, String namespace, String topicName) {
+        return new LogContext(znode + " " + childAction, namespace, topicName);
     }
 
     static LogContext kubeWatch(Watcher.Action action, KafkaTopic kafkaTopic) {
-        LogContext logContext = new LogContext("kube " + action(action) + kafkaTopic.getMetadata().getName());
+        LogContext logContext = new LogContext("kube " + action(action) + kafkaTopic.getMetadata().getName(), kafkaTopic.getMetadata().getNamespace(), kafkaTopic.getMetadata().getName());
         logContext.resourceVersion = kafkaTopic.getMetadata().getResourceVersion();
         return logContext;
     }
@@ -49,8 +56,8 @@ public class LogContext {
         return "!";
     }
 
-    static LogContext periodic(String periodicType) {
-        return new LogContext(periodicType);
+    static LogContext periodic(String periodicType, String namespace, String topicName) {
+        return new LogContext(periodicType, namespace, topicName);
     }
 
     public String trigger() {
@@ -66,6 +73,12 @@ public class LogContext {
         }
     }
 
+    public Marker getMarker() {
+        String marker = "KafkaTopic(" + namespace + "/" + topicName + ")";
+        LOGGER.trace("marker is {}", marker);
+        return MarkerManager.getMarker(marker);
+    }
+
     public LogContext withKubeTopic(KafkaTopic kafkaTopic) {
         String newResourceVersion = kafkaTopic == null ? null : kafkaTopic.getMetadata().getResourceVersion();
         if (!Objects.equals(resourceVersion, newResourceVersion)) {
@@ -73,5 +86,9 @@ public class LogContext {
         }
         this.resourceVersion = newResourceVersion;
         return this;
+    }
+
+    public Reconciliation toReconciliation() {
+        return new Reconciliation(trigger, "KafkaTopic", namespace, topicName);
     }
 }

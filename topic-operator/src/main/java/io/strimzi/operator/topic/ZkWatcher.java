@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class ZkWatcher {
 
-    protected Logger log = LogManager.getLogger(getClass());
+    protected ReconciliationLogger logger = ReconciliationLogger.create(getClass());
 
     protected final TopicOperator topicOperator;
     private volatile ZkWatcherState state = ZkWatcherState.NOT_STARTED;
@@ -26,6 +25,8 @@ public abstract class ZkWatcher {
 
     private final ConcurrentHashMap<String, Boolean> children = new ConcurrentHashMap<>();
     private final String rootZNode;
+
+    protected static final String CONFIGS_ZNODE = "/config/topics";
 
     /**
      * Constructor
@@ -69,8 +70,9 @@ public abstract class ZkWatcher {
      */
     protected void addChild(String child) {
         this.children.put(child, false);
+        LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child, topicOperator.getNamespace(), child);
         String path = getPath(child);
-        log.debug("Watching znode {} for changes", path);
+        logger.debugCr(logContext.toReconciliation(), "Watching znode {} for changes", path);
         Handler<AsyncResult<byte[]>> handler = dataResult -> {
             if (dataResult.succeeded()) {
                 this.children.compute(child, (k, v) -> {
@@ -80,7 +82,7 @@ public abstract class ZkWatcher {
                     return true;
                 });
             } else {
-                log.error("While getting or watching znode {}", path, dataResult.cause());
+                logger.errorCr(logContext.toReconciliation(), "While getting or watching znode {}", path, dataResult.cause());
             }
         };
         zk.watchData(path, handler).compose(zk2 -> {
@@ -95,7 +97,8 @@ public abstract class ZkWatcher {
      * @param child child to unwatch
      */
     protected void removeChild(String child) {
-        log.debug("Unwatching znode {} for changes", child);
+        LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child, topicOperator.getNamespace(), child);
+        logger.debugCr(logContext.toReconciliation(), "Unwatching znode {} for changes", child);
         this.children.remove(child);
         zk.unwatchData(getPath(child));
     }

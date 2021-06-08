@@ -7,6 +7,7 @@ package io.strimzi.operator.user.operator;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclResourcePatternType;
 import io.strimzi.api.kafka.model.AclRuleType;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
@@ -130,7 +131,7 @@ public class SimpleAclOperatorTest {
         });
 
         Checkpoint async = context.checkpoint();
-        aclOp.reconcile("CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
+        aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
                 .onComplete(context.succeeding(rr -> context.verify(() -> {
                     Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
                     assertThat(capturedAclBindings, hasSize(3));
@@ -169,7 +170,7 @@ public class SimpleAclOperatorTest {
         });
 
         Checkpoint async = context.checkpoint();
-        aclOp.reconcile("CN=foo", new LinkedHashSet(asList(rule1)))
+        aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet(asList(rule1)))
                 .onComplete(context.succeeding(rr -> context.verify(() -> {
 
                     // Create Write rule for resource 2
@@ -212,7 +213,7 @@ public class SimpleAclOperatorTest {
         });
 
         Checkpoint async = context.checkpoint();
-        aclOp.reconcile("CN=foo", null)
+        aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", null)
                 .onComplete(context.succeeding(rr -> context.verify(() -> {
 
                     Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();

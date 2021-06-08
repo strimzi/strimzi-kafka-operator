@@ -60,6 +60,7 @@ import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
@@ -143,20 +144,22 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaConnectCluster(HasMetadata resource) {
-        this(resource, APPLICATION_NAME);
+    protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource) {
+        this(reconciliation, resource, APPLICATION_NAME);
     }
 
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      * @param applicationName configurable allow other classes to extend this class
      */
-    protected KafkaConnectCluster(HasMetadata resource, String applicationName) {
-        super(resource, applicationName);
+    protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource, String applicationName) {
+        super(reconciliation, resource, applicationName);
         this.name = KafkaConnectResources.deploymentName(cluster);
         this.serviceName = KafkaConnectResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
@@ -172,10 +175,10 @@ public class KafkaConnectCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
-    public static KafkaConnectCluster fromCrd(KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
+    public static KafkaConnectCluster fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
 
-        KafkaConnectCluster cluster = fromSpec(kafkaConnect.getSpec(), versions,
-                new KafkaConnectCluster(kafkaConnect));
+        KafkaConnectCluster cluster = fromSpec(reconciliation, kafkaConnect.getSpec(), versions,
+                new KafkaConnectCluster(reconciliation, kafkaConnect));
 
         cluster.setOwnerReference(kafkaConnect);
 
@@ -188,7 +191,8 @@ public class KafkaConnectCluster extends AbstractModel {
      * thus permitting reuse of the setter-calling code for subclasses.
      */
     @SuppressWarnings("deprecation")
-    protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectSpec spec,
+    protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
+                                                                KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
                                                                 C kafkaConnect) {
         kafkaConnect.setReplicas(spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
@@ -196,7 +200,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         AbstractConfiguration config = kafkaConnect.getConfiguration();
         if (config == null) {
-            config = new KafkaConnectConfiguration(spec.getConfig().entrySet());
+            config = new KafkaConnectConfiguration(reconciliation, spec.getConfig().entrySet());
             kafkaConnect.setConfiguration(config);
         }
         if (kafkaConnect.tracing != null)   {
@@ -246,7 +250,10 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
         kafkaConnect.setTls(spec.getTls());
-        AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        if (!warnMsg.isEmpty()) {
+            LOGGER.warnCr(reconciliation, warnMsg);
+        }
         kafkaConnect.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
@@ -371,7 +378,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             if (name != null) {
                 if (volume.getConfigMap() != null && volume.getSecret() != null) {
-                    log.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                    LOGGER.warnCr(reconciliation, "Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
                 } else  {
                     if (volume.getConfigMap() != null) {
                         ConfigMapVolumeSource source = volume.getConfigMap();
@@ -443,7 +450,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             if (name != null)   {
                 if (volume.getConfigMap() != null && volume.getSecret() != null) {
-                    log.warn("Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
+                    LOGGER.warnCr(reconciliation, "Volume {} with external Kafka Connect configuration has to contain exactly one volume source reference to either ConfigMap or Secret", name);
                 } else  if (volume.getConfigMap() != null || volume.getSecret() != null) {
                     VolumeMount volumeMount = new VolumeMountBuilder()
                             .withName(VolumeUtils.getValidVolumeName(EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + name))
@@ -628,7 +635,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
                 if (valueFrom != null)  {
                     if (valueFrom.getConfigMapKeyRef() != null && valueFrom.getSecretKeyRef() != null) {
-                        log.warn("Environment variable {} with external Kafka Connect configuration has to contain exactly one reference to either ConfigMap or Secret", name);
+                        LOGGER.warnCr(reconciliation, "Environment variable {} with external Kafka Connect configuration has to contain exactly one reference to either ConfigMap or Secret", name);
                     } else {
                         if (valueFrom.getConfigMapKeyRef() != null) {
                             EnvVarSource envVarSource = new EnvVarSourceBuilder()
@@ -646,7 +653,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     }
                 }
             } else {
-                log.warn("Name of an environment variable with external Kafka Connect configuration cannot start with `KAFKA_` or `STRIMZI`.");
+                LOGGER.warnCr(reconciliation, "Name of an environment variable with external Kafka Connect configuration cannot start with `KAFKA_` or `STRIMZI`.");
             }
         }
 
@@ -668,6 +675,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
     /**
      * Set the bootstrap servers to connect to
+     *
      * @param bootstrapServers bootstrap servers comma separated list
      */
     protected void setBootstrapServers(String bootstrapServers) {
@@ -834,7 +842,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     .endSpec()
                     .build();
 
-            log.trace("Created network policy {}", networkPolicy);
+            LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
             return networkPolicy;
         } else {
             return null;

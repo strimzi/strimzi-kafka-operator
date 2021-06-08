@@ -5,13 +5,13 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -24,10 +24,12 @@ import java.util.Map;
 
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
-    private static final Logger log = LogManager.getLogger(KafkaBrokerLoggingConfigurationDiff.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
+    private final Reconciliation reconciliation;
 
-    public KafkaBrokerLoggingConfigurationDiff(Config brokerConfigs, String desired, int brokerId) {
+    public KafkaBrokerLoggingConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, int brokerId) {
+        this.reconciliation = reconciliation;
         this.diff = diff(brokerId, desired, brokerConfigs);
     }
 
@@ -53,7 +55,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
      * @param brokerConfigs current configuration
      * @return Collection of AlterConfigOp containing all entries which were changed from current in desired configuration
      */
-    private static Collection<AlterConfigOp> diff(int brokerId, String desired,
+    private Collection<AlterConfigOp> diff(int brokerId, String desired,
                                                   Config brokerConfigs) {
         if (brokerConfigs == null || desired == null) {
             return Collections.emptyList();
@@ -66,20 +68,20 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
             desiredMap.put("root", LoggingLevel.WARN.name());
         }
 
-        LoggingLevelResolver levelResolver = new LoggingLevelResolver(desiredMap);
+        LoggingLevelResolver levelResolver = new LoggingLevelResolver(reconciliation, desiredMap);
 
         for (ConfigEntry entry: brokerConfigs.entries()) {
             LoggingLevel desiredLevel;
             try {
                 desiredLevel = levelResolver.resolveLevel(entry.name());
             } catch (IllegalArgumentException e) {
-                log.warn("Skipping {} - it is configured with an unsupported value (\"{}\")", entry.name(), e.getMessage());
+                LOGGER.warnCr(reconciliation, "Skipping {} - it is configured with an unsupported value (\"{}\")", entry.name(), e.getMessage());
                 continue;
             }
 
             if (!desiredLevel.name().equals(entry.value())) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(entry.name(), desiredLevel.name()), AlterConfigOp.OpType.SET));
-                log.trace("{} has an outdated value. Setting to {}", entry.name(), desiredLevel.name());
+                LOGGER.traceCr(reconciliation, "{} has an outdated value. Setting to {}", entry.name(), desiredLevel.name());
             }
         }
 
@@ -87,16 +89,15 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
             String name = ent.getKey();
             ConfigEntry configEntry = brokerConfigs.get(name);
             if (configEntry == null) {
-                String level = LoggingLevel.nameOrDefault(LoggingLevel.ofLog4jConfig(ent.getValue()), LoggingLevel.WARN);
+                String level = LoggingLevel.nameOrDefault(LoggingLevel.ofLog4jConfig(reconciliation, ent.getValue()), LoggingLevel.WARN);
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(name, level), AlterConfigOp.OpType.SET));
-                log.trace("{} not set. Setting to {}", name, level);
+                LOGGER.traceCr(reconciliation, "{} not set. Setting to {}", name, level);
             }
         }
 
         return updatedCE;
     }
-
-    protected static Map<String, String> readLog4jConfig(String config) {
+    protected Map<String, String> readLog4jConfig(String config) {
         Map<String, String> parsed = new LinkedHashMap<>();
         Map<String, String> env = new HashMap<>();
         BufferedReader firstPassReader = new BufferedReader(new StringReader(config));
@@ -121,12 +122,12 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     } else {
                         env.put(line.trim(), "");
                     }
-                    log.debug("Treating the line as ENV var declaration: {}", line);
+                    LOGGER.debugCr(reconciliation, "Treating the line as ENV var declaration: {}", line);
                     continue;
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to parse logging configuration: " + config, e);
+            LOGGER.errorCr(reconciliation, "Failed to parse logging configuration: " + config, e);
             return Collections.emptyMap();
         }
 
@@ -145,7 +146,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     int startIdx = "log4j.logger.".length();
                     int endIdx = line.indexOf("=", startIdx);
                     if (endIdx == -1) {
-                        log.debug("Skipping log4j.logger.* declaration without level: {}", line);
+                        LOGGER.debugCr(reconciliation, "Skipping log4j.logger.* declaration without level: {}", line);
                         continue;
                     }
                     String name = line.substring(startIdx, endIdx).trim();
@@ -159,11 +160,11 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     parsed.put("root", Util.expandVar(line.substring(startIdx).split(",")[0].trim(), env));
 
                 } else {
-                    log.debug("Skipping log4j line: {}", line);
+                    LOGGER.debugCr(reconciliation, "Skipping log4j line: {}", line);
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to parse logging configuration: " + config, e);
+            LOGGER.errorCr(reconciliation, "Failed to parse logging configuration: " + config, e);
             return Collections.emptyMap();
         }
         return parsed;
@@ -187,8 +188,10 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
     static class LoggingLevelResolver {
 
         private final Map<String, String> config;
+        private final Reconciliation reconciliation;
 
-        LoggingLevelResolver(Map<String, String> loggingConfig) {
+        LoggingLevelResolver(Reconciliation reconciliation, Map<String, String> loggingConfig) {
+            this.reconciliation = reconciliation;
             this.config = loggingConfig;
         }
 
@@ -221,7 +224,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
         LoggingLevel resolveLevel(String name) {
             String level = config.get(name);
             if (level != null) {
-                LoggingLevel result = LoggingLevel.ofLog4jConfig(level);
+                LoggingLevel result = LoggingLevel.ofLog4jConfig(reconciliation, level);
                 return result != null ? result : LoggingLevel.WARN;
             }
 
@@ -234,7 +237,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     level = config.get(name.substring(0, endIdx));
                 }
                 if (level != null) {
-                    LoggingLevel result = LoggingLevel.ofLog4jConfig(level);
+                    LoggingLevel result = LoggingLevel.ofLog4jConfig(reconciliation, level);
                     return result != null ? result : LoggingLevel.WARN;
                 }
                 endIdx -= 1;
@@ -254,7 +257,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
         TRACE,
         ALL;
 
-        static LoggingLevel ofLog4jConfig(String value) {
+        static LoggingLevel ofLog4jConfig(Reconciliation reconciliation, String value) {
             if (value != null && !"".equals(value)) {
                 String v = value.split(",")[0].trim();
                 if ("ALL".equals(v)) {
@@ -265,7 +268,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
                     try {
                         return valueOf(v);
                     } catch (RuntimeException e) {
-                        log.warn("Invalid logging level: {}. Using WARN as a failover.", v);
+                        LOGGER.warnCr(reconciliation, "Invalid logging level: {}. Using WARN as a failover.", v);
                     }
                 }
             }

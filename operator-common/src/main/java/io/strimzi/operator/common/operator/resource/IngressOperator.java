@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.IngressList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -34,14 +35,15 @@ public class IngressOperator extends AbstractResourceOperator<KubernetesClient, 
     /**
      * Succeeds when the Service has an assigned address
      *
+     * @param reconciliation The reconciliation
      * @param namespace     Namespace
      * @param name          Name of the service
      * @param pollIntervalMs    Interval in which we poll
      * @param timeoutMs     Timeout
      * @return A future that succeeds when the Service has an assigned address.
      */
-    public Future<Void> hasIngressAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isIngressAddressReady);
+    public Future<Void> hasIngressAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(reconciliation, namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isIngressAddressReady);
     }
 
     /**

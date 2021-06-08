@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -18,11 +20,13 @@ import java.util.regex.Pattern;
  * Operations for {@code PersistentVolumeClaim}s.
  */
 public class PvcOperator extends AbstractResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PvcOperator.class);
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/metadata/annotations/pv.kubernetes.io~1bind-completed" +
                     "|/metadata/finalizers" +
                     "|/status)$");
+
 
     /**
      * Constructor
@@ -52,6 +56,7 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
      *
      * PvcOperator needs to patch the volumeName field in spec which is immutable and which should contain the same value as the existing resource.
      *
+     * @param reconciliation The reconciliation
      * @param namespace Namespace of the pvc
      * @param name      Name of the pvc
      * @param current   Current pvc
@@ -60,15 +65,15 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<PersistentVolumeClaim>> internalPatch(String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
+    protected Future<ReconcileResult<PersistentVolumeClaim>> internalPatch(Reconciliation reconciliation, String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null)   {
                 revertImmutableChanges(current, desired);
             }
 
-            return super.internalPatch(namespace, name, current, desired);
+            return super.internalPatch(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
-            log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }

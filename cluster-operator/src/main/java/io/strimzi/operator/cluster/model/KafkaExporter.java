@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,10 +69,11 @@ public class KafkaExporter extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaExporter(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaExporterResources.deploymentName(cluster);
         this.replicas = 1;
         this.readinessPath = "/metrics";
@@ -87,8 +89,8 @@ public class KafkaExporter extends AbstractModel {
 
     }
 
-    public static KafkaExporter fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        KafkaExporter kafkaExporter = new KafkaExporter(kafkaAssembly);
+    public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+        KafkaExporter kafkaExporter = new KafkaExporter(reconciliation, kafkaAssembly);
 
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
         if (spec != null) {
@@ -318,7 +320,7 @@ public class KafkaExporter extends AbstractModel {
             return null;
         }
         Secret secret = clusterCa.kafkaExporterSecret();
-        return ModelUtils.buildSecret(clusterCa, secret, namespace, KafkaExporter.secretName(cluster), name,
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporter.secretName(cluster), name,
                 "kafka-exporter", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 }

@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
 import io.strimzi.operator.cluster.model.components.JmxTransServers;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,10 +80,11 @@ public class JmxTrans extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected JmxTrans(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected JmxTrans(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = JmxTransResources.deploymentName(cluster);
         this.clusterName = cluster;
         this.replicas = 1;
@@ -99,7 +101,7 @@ public class JmxTrans extends AbstractModel {
         this.isMetricsEnabled = true;
     }
 
-    public static JmxTrans fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+    public static JmxTrans fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         JmxTrans result = null;
         JmxTransSpec spec = kafkaAssembly.getSpec().getJmxTrans();
         if (spec != null) {
@@ -107,10 +109,10 @@ public class JmxTrans extends AbstractModel {
                 String error = String.format("Can't start up JmxTrans '%s' in '%s' as Kafka spec.kafka.jmxOptions is not specified",
                         JmxTransResources.deploymentName(kafkaAssembly.getMetadata().getName()),
                         kafkaAssembly.getMetadata().getNamespace());
-                log.warn(error);
+                LOGGER.warnCr(reconciliation, error);
                 throw new InvalidResourceException(error);
             }
-            result = new JmxTrans(kafkaAssembly);
+            result = new JmxTrans(reconciliation, kafkaAssembly);
             result.isDeployed = true;
 
             if (kafkaAssembly.getSpec().getKafka().getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword) {
@@ -202,7 +204,7 @@ public class JmxTrans extends AbstractModel {
         try {
             return mapper.writeValueAsString(servers);
         } catch (JsonProcessingException e) {
-            log.error("Could not create JmxTrans config json because: " + e.getMessage());
+            LOGGER.errorCr(reconciliation, "Could not create JmxTrans config json because: " + e.getMessage());
             throw e;
         }
     }

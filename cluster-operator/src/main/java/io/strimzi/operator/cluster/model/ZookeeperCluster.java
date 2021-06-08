@@ -44,6 +44,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.MetricsAndLogging;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -168,10 +169,11 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    private ZookeeperCluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = zookeeperClusterName(cluster);
         this.serviceName = serviceName(cluster);
         this.headlessServiceName = headlessServiceName(cluster);
@@ -191,13 +193,13 @@ public class ZookeeperCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
-    public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        return fromCrd(kafkaAssembly, versions, null, 0);
+    public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+        return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "deprecation"})
-    public static ZookeeperCluster fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
-        ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly);
+    public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
+        ZookeeperCluster zk = new ZookeeperCluster(reconciliation, kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
 
@@ -206,7 +208,7 @@ public class ZookeeperCluster extends AbstractModel {
             replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         }
         if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
-            log.warn("A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
+            LOGGER.warnCr(reconciliation, "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
         zk.setReplicas(replicas);
 
@@ -243,14 +245,14 @@ public class ZookeeperCluster extends AbstractModel {
             Storage newStorage = zookeeperClusterSpec.getStorage();
             AbstractModel.validatePersistentStorage(newStorage);
 
-            StorageDiff diff = new StorageDiff(oldStorage, newStorage, oldReplicas, zookeeperClusterSpec.getReplicas());
+            StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, oldReplicas, zookeeperClusterSpec.getReplicas());
 
             if (!diff.isEmpty()) {
-                log.warn("Only the following changes to Zookeeper storage are allowed: " +
+                LOGGER.warnCr(reconciliation, "Only the following changes to Zookeeper storage are allowed: " +
                         "changing the deleteClaim flag, " +
                         "changing overrides to nodes which do not exist yet " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                log.warn("The desired ZooKeeper storage configuration in the custom resource {}/{} contains changes which are not allowed. As " +
+                LOGGER.warnCr(reconciliation, "The desired ZooKeeper storage configuration in the custom resource {}/{} contains changes which are not allowed. As " +
                         "a result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.", kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName());
 
@@ -268,7 +270,7 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setStorage(zookeeperClusterSpec.getStorage());
         }
 
-        zk.setConfiguration(new ZookeeperConfiguration(zookeeperClusterSpec.getConfig().entrySet()));
+        zk.setConfiguration(new ZookeeperConfiguration(reconciliation, zookeeperClusterSpec.getConfig().entrySet()));
 
         zk.setResources(zookeeperClusterSpec.getResources());
 
@@ -437,7 +439,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .endSpec()
                 .build();
 
-        log.trace("Created network policy {}", networkPolicy);
+        LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
         return networkPolicy;
     }
 
@@ -465,16 +467,15 @@ public class ZookeeperCluster extends AbstractModel {
      * @param kafka The Kafka custom resource
      * @param clusterCa The CA for cluster certificates
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
      */
     public void generateCertificates(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        log.debug("Generating certificates");
+        LOGGER.debugCr(reconciliation, "Generating certificates");
         try {
             nodeCerts = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
-            log.warn("Error while generating certificates", e);
+            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
         }
-        log.debug("End generating certificates");
+        LOGGER.debugCr(reconciliation, "End generating certificates");
     }
 
     /**

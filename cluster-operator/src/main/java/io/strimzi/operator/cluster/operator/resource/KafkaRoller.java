@@ -41,6 +41,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -60,8 +61,6 @@ import org.apache.kafka.common.Node;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import static java.util.Collections.singletonList;
 
@@ -106,7 +105,7 @@ import static java.util.Collections.singletonList;
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ParameterNumber"})
 public class KafkaRoller {
 
-    private static final Logger log = LogManager.getLogger(KafkaRoller.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRoller.class);
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
@@ -126,19 +125,19 @@ public class KafkaRoller {
     private final boolean allowReconfiguration;
     private Admin allClient;
 
-    public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
-                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                        StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-                        String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
-        this(vertx, reconciliation, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
+    public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
+                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
+                       StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
+                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
+        this(reconciliation, vertx, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
                 sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaLogging, kafkaVersion, allowReconfiguration);
     }
 
-    public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
-                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                        StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-                        AdminClientProvider adminClientProvider,
-                        String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
+    public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
+                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
+                       StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
+                       AdminClientProvider adminClientProvider,
+                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
         this.namespace = sts.getMetadata().getNamespace();
         this.cluster = Labels.cluster(sts);
         this.numPods = sts.getSpec().getReplicas();
@@ -205,7 +204,7 @@ public class KafkaRoller {
                 // only for it not to become ready and thus drive the cluster to a worse state.
                 podIds.add(podOperations.isReady(namespace, podName(podId)) ? podIds.size() : 0, podId);
             }
-            log.debug("{}: Initial order for rolling restart {}", reconciliation, podIds);
+            LOGGER.debugCr(reconciliation, "Initial order for rolling restart {}", podIds);
             List<Future> futures = new ArrayList<>(numPods);
             for (Integer podId: podIds) {
                 futures.add(schedule(podId, 0, TimeUnit.MILLISECONDS));
@@ -217,7 +216,7 @@ public class KafkaRoller {
                         allClient.close(Duration.ofSeconds(30));
                     }
                 } catch (RuntimeException e) {
-                    log.debug("{}: Exception closing admin client", reconciliation, e);
+                    LOGGER.debugCr(reconciliation, "Exception closing admin client", e);
                 }
                 vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
             });
@@ -273,7 +272,7 @@ public class KafkaRoller {
         RestartContext ctx = podToContext.computeIfAbsent(podId,
             k -> new RestartContext(backoffSupplier));
         singleExecutor.schedule(() -> {
-            log.debug("{}: Considering restart of pod {} after delay of {} {}", reconciliation, podId, delay, unit);
+            LOGGER.debugCr(reconciliation, "Considering restart of pod {} after delay of {} {}", podId, delay, unit);
             try {
                 restartIfNecessary(podId, ctx);
                 ctx.promise.complete();
@@ -281,8 +280,8 @@ public class KafkaRoller {
                 // Let the executor deal with interruption.
                 Thread.currentThread().interrupt();
             } catch (FatalProblem e) {
-                log.info("{}: Could not restart pod {}, giving up after {} attempts. Total delay between attempts {}ms",
-                        reconciliation, podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
+                LOGGER.infoCr(reconciliation, "Could not restart pod {}, giving up after {} attempts. Total delay between attempts {}ms",
+                        podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                 ctx.promise.fail(e);
                 singleExecutor.shutdownNow();
                 podToContext.forEachValue(Integer.MAX_VALUE, f -> {
@@ -290,15 +289,15 @@ public class KafkaRoller {
                 });
             } catch (Exception e) {
                 if (ctx.backOff.done()) {
-                    log.info("{}: Could not roll pod {}, giving up after {} attempts. Total delay between attempts {}ms",
-                            reconciliation, podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
+                    LOGGER.infoCr(reconciliation, "Could not roll pod {}, giving up after {} attempts. Total delay between attempts {}ms",
+                            podId, ctx.backOff.maxAttempts(), ctx.backOff.totalDelayMs(), e);
                     ctx.promise.fail(e instanceof TimeoutException ?
                             new io.strimzi.operator.common.operator.resource.TimeoutException() :
                             e);
                 } else {
                     long delay1 = ctx.backOff.delayMs();
-                    log.info("{}: Could not roll pod {} due to {}, retrying after at least {}ms",
-                            reconciliation, podId, e, delay1);
+                    LOGGER.infoCr(reconciliation, "Could not roll pod {} due to {}, retrying after at least {}ms",
+                            podId, e, delay1);
                     schedule(podId, delay1, TimeUnit.MILLISECONDS);
                 }
             }
@@ -355,19 +354,19 @@ public class KafkaRoller {
             RestartPlan restartPlan = restartPlan(podId, pod, restartContext);
             if (restartPlan.forceRestart || restartPlan.needsRestart || restartPlan.needsReconfig) {
                 if (!restartPlan.forceRestart && deferController(podId, restartContext)) {
-                    log.debug("{}: Pod {} is controller and there are other pods to roll", reconciliation, podId);
+                    LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to roll", podId);
                     throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
                 } else {
                     if (restartPlan.forceRestart || canRoll(podId, 60_000, TimeUnit.MILLISECONDS, false)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
                         if (restartPlan.forceRestart || !maybeDynamicUpdateBrokerConfig(podId, restartPlan)) {
-                            log.debug("{}: Pod {} can be rolled now", reconciliation, podId);
+                            LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", podId);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         } else {
                             awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         }
                     } else {
-                        log.debug("{}: Pod {} cannot be rolled right now", reconciliation, podId);
+                        LOGGER.debugCr(reconciliation, "Pod {} cannot be rolled right now", podId);
                         throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
                     }
                 }
@@ -375,18 +374,18 @@ public class KafkaRoller {
                 // By testing even pods which don't need needsRestart for readiness we prevent successive reconciliations
                 // from taking out a pod each time (due, e.g. to a configuration error).
                 // We rely on Kube to try restarting such pods.
-                log.debug("{}: Pod {} does not need to be restarted", reconciliation, podId);
-                log.debug("{}: Waiting for non-restarted pod {} to become ready", reconciliation, podId);
+                LOGGER.debugCr(reconciliation, "Pod {} does not need to be restarted", podId);
+                LOGGER.debugCr(reconciliation, "Waiting for non-restarted pod {} to become ready", podId);
                 await(isReady(namespace, KafkaCluster.kafkaPodName(cluster, podId)), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
-                log.debug("{}: Pod {} is now ready", reconciliation, podId);
+                LOGGER.debugCr(reconciliation, "Pod {} is now ready", podId);
             }
         } catch (ForceableProblem e) {
             if (isPodStuck(pod) || restartContext.backOff.done() || e.forceNow) {
                 if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
-                    log.warn("{}: Pod {} will be force-rolled, due to error: {}", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                    LOGGER.warnCr(reconciliation, "Pod {} will be force-rolled, due to error: {}", podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
-                    log.warn("{}: Pod {} can't be safely force-rolled; original error: ", reconciliation, podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                    LOGGER.warnCr(reconciliation, "Pod {} can't be safely force-rolled; original error: ", podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     throw e;
                 }
             } else {
@@ -436,7 +435,7 @@ public class KafkaRoller {
                 dynamicUpdateBrokerConfig(podId, allClient, restartPlan.diff, restartPlan.logDiff);
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
-                log.debug("{}: Pod {} could not be updated dynamically ({}), will restart", reconciliation, podId, e);
+                LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", podId, e);
                 updatedDynamically = false;
             }
         } else {
@@ -487,25 +486,25 @@ public class KafkaRoller {
         }
 
         if (!needsRestart && allowReconfiguration) {
-            log.trace("{}: Broker {}: description {}", reconciliation, podId, brokerConfig);
-            diff = new KafkaBrokerConfigurationDiff(brokerConfig, kafkaConfig, kafkaVersion, podId);
+            LOGGER.traceCr(reconciliation, "Broker {}: description {}", podId, brokerConfig);
+            diff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfig, kafkaVersion, podId);
             loggingDiff = logging(podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
-                    log.debug("{}: Pod {} needs to be reconfigured.", reconciliation, podId);
+                    LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", podId);
                     needsReconfig = true;
                 } else {
-                    log.debug("{}: Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", reconciliation, podId);
+                    LOGGER.debugCr(reconciliation, "Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", podId);
                     needsRestart = true;
                 }
             }
 
             if (loggingDiff.getDiffSize() > 0) {
-                log.debug("{}: Pod {} logging needs to be reconfigured.", reconciliation, podId);
+                LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", podId);
                 needsReconfig = true;
             }
         } else if (needsRestart) {
-            log.info("{}: Pod {} needs to be restarted. Reason: {}", reconciliation, podId, reasonToRestartPod);
+            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod);
         }
         return new RestartPlan(needsRestart, needsReconfig, podStuck, diff, loggingDiff);
     }
@@ -517,7 +516,7 @@ public class KafkaRoller {
      */
     protected Config brokerConfig(int brokerId) throws ForceableProblem, InterruptedException {
         ConfigResource resource = new ConfigResource(ConfigResource.Type.BROKER, String.valueOf(brokerId));
-        return await(Util.kafkaFutureToVertxFuture(vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
+        return await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
             30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error getting broker config", error)
         );
@@ -530,7 +529,7 @@ public class KafkaRoller {
      */
     protected Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
         ConfigResource resource = Util.getBrokersLogging(brokerId);
-        return await(Util.kafkaFutureToVertxFuture(vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
+        return await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, allClient.describeConfigs(singletonList(resource)).values().get(resource)),
                 30, TimeUnit.SECONDS,
             error -> new ForceableProblem("Error getting broker logging", error)
         );
@@ -542,31 +541,31 @@ public class KafkaRoller {
         updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
         updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
 
-        log.debug("{}: Altering broker configuration {}", reconciliation, podId);
-        log.trace("{}: Altering broker configuration {} with {}", reconciliation, podId, updatedConfig);
+        LOGGER.debugCr(reconciliation, "Altering broker configuration {}", podId);
+        LOGGER.traceCr(reconciliation, "Altering broker configuration {} with {}", podId, updatedConfig);
 
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
         KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
-        await(Util.kafkaFutureToVertxFuture(vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
+        await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                log.error("Error doing dynamic config update", error);
+                LOGGER.errorCr(reconciliation, "Error doing dynamic config update", error);
                 return new ForceableProblem("Error doing dynamic update", error);
             });
-        await(Util.kafkaFutureToVertxFuture(vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
+        await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                log.error("Error performing dynamic logging update for pod {}", podId, error);
+                LOGGER.errorCr(reconciliation, "Error performing dynamic logging update for pod {}", podId, error);
                 return new ForceableProblem("Error performing dynamic logging update for pod " + podId, error);
             });
 
-        log.info("{}: Dynamic reconfiguration for broker {} was successful.", reconciliation, podId);
+        LOGGER.infoCr(reconciliation, "Dynamic reconfiguration for broker {} was successful.", podId);
     }
 
     private KafkaBrokerLoggingConfigurationDiff logging(int podId)
             throws ForceableProblem, InterruptedException {
         Config brokerLogging = brokerLogging(podId);
-        log.trace("{}: Broker {}: logging description {}", reconciliation, podId, brokerLogging);
-        return new KafkaBrokerLoggingConfigurationDiff(brokerLogging, kafkaLogging, podId);
+        LOGGER.traceCr(reconciliation, "Broker {}: logging description {}", podId, brokerLogging);
+        return new KafkaBrokerLoggingConfigurationDiff(reconciliation, brokerLogging, kafkaLogging, podId);
     }
 
     /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */
@@ -636,16 +635,16 @@ public class KafkaRoller {
     private void restartAndAwaitReadiness(Pod pod, long timeout, TimeUnit unit)
             throws InterruptedException, UnforceableProblem, FatalProblem {
         String podName = pod.getMetadata().getName();
-        log.debug("{}: Rolling pod {}", reconciliation, podName);
+        LOGGER.debugCr(reconciliation, "Rolling pod {}", podName);
         await(restart(pod), timeout, unit, e -> new UnforceableProblem("Error while trying to restart pod " + podName + " to become ready", e));
         awaitReadiness(pod, timeout, unit);
     }
 
     private void awaitReadiness(Pod pod, long timeout, TimeUnit unit) throws FatalProblem, InterruptedException {
         String podName = pod.getMetadata().getName();
-        log.debug("{}: Waiting for restarted pod {} to become ready", reconciliation, podName);
+        LOGGER.debugCr(reconciliation, "Waiting for restarted pod {} to become ready", podName);
         await(isReady(pod), timeout, unit, e -> new FatalProblem("Error while waiting for restarted pod " + podName + " to become ready", e));
-        log.debug("{}: Pod {} is now ready", reconciliation, podName);
+        LOGGER.debugCr(reconciliation, "Pod {} is now ready", podName);
     }
 
     /**
@@ -688,7 +687,7 @@ public class KafkaRoller {
      * @return a Future which completes when the Pod has been recreated
      */
     protected Future<Void> restart(Pod pod) {
-        return podOperations.restart("Rolling update of " + namespace + "/" + KafkaCluster.kafkaClusterName(cluster), pod, operationTimeoutMs);
+        return podOperations.restart(reconciliation, pod, operationTimeoutMs);
     }
 
     /**
@@ -698,7 +697,7 @@ public class KafkaRoller {
         List<String> podNames = bootstrapPods.stream().map(podId -> podName(podId)).collect(Collectors.toList());
         try {
             String bootstrapHostnames = podNames.stream().map(podName -> KafkaCluster.podDnsName(this.namespace, this.cluster, podName) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
-            log.debug("{}: Creating AdminClient for {}", reconciliation, bootstrapHostnames);
+            LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
             return adminClientProvider.createAdminClient(bootstrapHostnames, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
         } catch (KafkaException e) {
             if (ceShouldBeFatal && (e instanceof ConfigException
@@ -713,7 +712,7 @@ public class KafkaRoller {
     }
 
     protected KafkaAvailability availability(Admin ac) {
-        return new KafkaAvailability(ac, reconciliation);
+        return new KafkaAvailability(reconciliation, ac);
     }
 
     String podName(int podId) {
@@ -751,7 +750,7 @@ public class KafkaRoller {
                 maybeTcpProbe(podId, e, restartContext);
             }
             int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
-            log.debug("{}: Controller is {}", reconciliation, id);
+            LOGGER.debugCr(reconciliation, "Controller is {}", id);
             return id;
         }
     }
@@ -764,7 +763,7 @@ public class KafkaRoller {
     private void maybeTcpProbe(int podId, Exception executionException, RestartContext restartContext) throws Exception {
         if (restartContext.connectionError() + numPods * 120_000L >= System.currentTimeMillis()) {
             try {
-                log.debug("{}: Probing TCP port due to previous problems connecting to pod {}", reconciliation, podId);
+                LOGGER.debugCr(reconciliation, "Probing TCP port due to previous problems connecting to pod {}", podId);
                 // do a tcp connect and close (with a short connect timeout)
                 tcpProbe(podName(podId), KafkaCluster.REPLICATION_PORT);
             } catch (IOException connectionException) {
@@ -802,9 +801,9 @@ public class KafkaRoller {
     }
 
     protected Future<Void> isReady(String namespace, String podName) {
-        return podOperations.readiness(namespace, podName, pollingIntervalMs, operationTimeoutMs)
+        return podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, operationTimeoutMs)
             .recover(error -> {
-                log.warn("{}: Error waiting for pod {}/{} to become ready: {}", reconciliation, namespace, podName, error);
+                LOGGER.warnCr(reconciliation, "Error waiting for pod {}/{} to become ready: {}", namespace, podName, error);
                 return Future.failedFuture(error);
             });
     }

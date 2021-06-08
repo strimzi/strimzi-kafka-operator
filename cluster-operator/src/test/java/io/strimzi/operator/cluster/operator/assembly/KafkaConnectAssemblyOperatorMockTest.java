@@ -59,6 +59,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -159,7 +160,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
             .build());
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
         when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mock.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, false)
@@ -187,7 +188,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .build());
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
         when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
-        when(mock.listConnectorPlugins(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, true)

@@ -11,18 +11,16 @@ package io.strimzi.operator.topic;
  */
 class TopicConfigsWatcher extends ZkWatcher {
 
-    private static final String CONFIGS_ZNODE = "/config/topics";
-
     TopicConfigsWatcher(TopicOperator topicOperator) {
         super(topicOperator, CONFIGS_ZNODE);
     }
 
     @Override
     protected void notifyOperator(String child) {
-        LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child);
-        log.info("{}: Topic config change", logContext);
+        LogContext logContext = LogContext.zkWatch(CONFIGS_ZNODE, "=" + child, topicOperator.getNamespace(), child);
+        logger.infoCr(logContext.toReconciliation(), "Topic config change");
         topicOperator.onTopicConfigChanged(logContext, new TopicName(child)).onComplete(ar2 -> {
-            log.info("{}: Reconciliation result due to topic config change on topic {}: {}", logContext, child, ar2);
+            logger.infoCr(logContext.toReconciliation(), "Reconciliation result due to topic config change on topic {}: {}", child, ar2);
         });
     }
 }

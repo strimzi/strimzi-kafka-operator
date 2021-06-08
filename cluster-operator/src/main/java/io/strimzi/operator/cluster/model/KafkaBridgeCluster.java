@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -120,10 +121,11 @@ public class KafkaBridgeCluster extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaBridgeCluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaBridgeResources.deploymentName(cluster);
         this.serviceName = KafkaBridgeResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
@@ -139,9 +141,9 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/strimzi/custom-config/";
     }
 
-    public static KafkaBridgeCluster fromCrd(KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
+    public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
 
-        KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(kafkaBridge);
+        KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(reconciliation, kafkaBridge);
 
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         kafkaBridgeCluster.tracing = spec.getTracing();
@@ -172,7 +174,10 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         kafkaBridgeCluster.setTls(spec.getTls() != null ? spec.getTls() : null);
 
-        AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        if (!warnMsg.isEmpty()) {
+            LOGGER.warnCr(reconciliation, warnMsg);
+        }
         kafkaBridgeCluster.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
@@ -207,7 +212,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.setHttpEnabled(true);
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
         } else {
-            log.warn("No protocol specified.");
+            LOGGER.warnCr(reconciliation, "No protocol specified.");
             throw new InvalidResourceException("No protocol for communication with Bridge specified. Use HTTP.");
         }
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);
@@ -355,8 +360,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG, kafkaBridgeConsumer == null ? "" : new KafkaBridgeConsumerConfiguration(reconciliation, kafkaBridgeConsumer.getConfig().entrySet()).getConfiguration()));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(reconciliation, kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_ID, cluster));
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));

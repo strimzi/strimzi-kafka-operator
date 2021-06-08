@@ -23,7 +23,7 @@ import java.util.Map;
  * Gives a info about certain features availability regarding to kubernetes version
  */
 public class PlatformFeaturesAvailability {
-    private static final Logger log = LogManager.getLogger(PlatformFeaturesAvailability.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(PlatformFeaturesAvailability.class.getName());
 
     private boolean routes = false;
     private boolean builds = false;
@@ -67,7 +67,7 @@ public class PlatformFeaturesAvailability {
         if (client.isAdaptable(OkHttpClient.class)) {
             return client.adapt(OkHttpClient.class);
         } else {
-            log.error("Cannot adapt KubernetesClient to OkHttpClient");
+            LOGGER.error("Cannot adapt KubernetesClient to OkHttpClient");
             throw new RuntimeException("Cannot adapt KubernetesClient to OkHttpClient");
         }
     }
@@ -149,7 +149,7 @@ public class PlatformFeaturesAvailability {
             try {
                 request.complete(client.getVersion());
             } catch (Exception e) {
-                log.error("Detection of Kubernetes version failed.", e);
+                LOGGER.error("Detection of Kubernetes version failed.", e);
                 request.fail(e);
             }
         }, promise);
@@ -166,17 +166,17 @@ public class PlatformFeaturesAvailability {
 
                 Response resp = httpClient.newCall(new Request.Builder().get().url(masterUrl + "apis/" + api + "/" + version).build()).execute();
                 if (resp.code() >= 200 && resp.code() < 300) {
-                    log.debug("{} returned {}. This API is supported.", resp.request().url(), resp.code());
+                    LOGGER.debug("{} returned {}. This API is supported.", resp.request().url(), resp.code());
                     isSupported = true;
                 } else {
-                    log.debug("{} returned {}. This API is not supported.", resp.request().url(), resp.code());
+                    LOGGER.debug("{} returned {}. This API is not supported.", resp.request().url(), resp.code());
                     isSupported = false;
                 }
 
                 resp.close();
                 request.complete(isSupported);
             } catch (Exception e) {
-                log.error("Detection of {}/{} API failed. This API will be disabled.", api, version, e);
+                LOGGER.error("Detection of {}/{} API failed. This API will be disabled.", api, version, e);
                 request.complete(false);
             }
         }, promise);

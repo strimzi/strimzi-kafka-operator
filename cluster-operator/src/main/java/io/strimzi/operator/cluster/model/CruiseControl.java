@@ -44,6 +44,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 
@@ -134,10 +135,11 @@ public class CruiseControl extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected CruiseControl(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = CruiseControlResources.deploymentName(cluster);
         this.serviceName = CruiseControlResources.serviceName(cluster);
         this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
@@ -171,13 +173,13 @@ public class CruiseControl extends AbstractModel {
     }
 
     @SuppressWarnings("deprecation")
-    public static CruiseControl fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+    public static CruiseControl fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         CruiseControl cruiseControl = null;
         CruiseControlSpec spec = kafkaAssembly.getSpec().getCruiseControl();
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
 
         if (spec != null) {
-            cruiseControl = new CruiseControl(kafkaAssembly);
+            cruiseControl = new CruiseControl(reconciliation, kafkaAssembly);
             cruiseControl.isDeployed = true;
 
             cruiseControl.setReplicas(DEFAULT_REPLICAS);
@@ -201,9 +203,9 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.tlsSidecarImage = tlsSideCarImage;
             cruiseControl.setTlsSidecar(tlsSidecar);
 
-            cruiseControl = updateConfiguration(spec, cruiseControl);
+            cruiseControl = cruiseControl.updateConfiguration(spec);
 
-            KafkaConfiguration configuration = new KafkaConfiguration(kafkaClusterSpec.getConfig().entrySet());
+            KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
             if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {
                 cruiseControl.minInsyncReplicas = configuration.getConfigOption(MIN_INSYNC_REPLICAS);
             }
@@ -239,8 +241,8 @@ public class CruiseControl extends AbstractModel {
         return cruiseControl;
     }
 
-    public static CruiseControl updateConfiguration(CruiseControlSpec spec, CruiseControl cruiseControl) {
-        CruiseControlConfiguration userConfiguration = new CruiseControlConfiguration(spec.getConfig().entrySet());
+    public CruiseControl updateConfiguration(CruiseControlSpec spec) {
+        CruiseControlConfiguration userConfiguration = new CruiseControlConfiguration(reconciliation, spec.getConfig().entrySet());
         for (Map.Entry<String, String> defaultEntry : CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap().entrySet()) {
             if (userConfiguration.getConfigOption(defaultEntry.getKey()) == null) {
                 userConfiguration.setConfigOption(defaultEntry.getKey(), defaultEntry.getValue());
@@ -248,8 +250,8 @@ public class CruiseControl extends AbstractModel {
         }
         // Ensure that the configured anomaly.detection.goals are a sub-set of the default goals
         checkGoals(userConfiguration);
-        cruiseControl.setConfiguration(userConfiguration);
-        return cruiseControl;
+        this.setConfiguration(userConfiguration);
+        return this;
     }
 
     /**
@@ -259,7 +261,7 @@ public class CruiseControl extends AbstractModel {
      * @param configuration The configuration instance to be checked.
      * @throws UnsupportedOperationException If the configuration contains self.healing.goals configurations.
      */
-    public static void checkGoals(CruiseControlConfiguration configuration) {
+    public void checkGoals(CruiseControlConfiguration configuration) {
         // If self healing goals are defined then these take precedence.
         // Right now, self.healing.goals must either be null or an empty list
         if (configuration.getConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY.toString()) != null) {
@@ -285,7 +287,7 @@ public class CruiseControl extends AbstractModel {
             // If the anomaly detection goals contain goals which are not in the default goals then the CC startup
             // checks will fail, so we make the anomaly goals match the default goals
             configuration.setConfigOption(CruiseControlConfigurationParameters.CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.toString(), defaultGoalsString);
-            log.warn("Anomaly goals contained goals which are not in the configured default goals. Anomaly goals have " +
+            LOGGER.warnCr(reconciliation, "Anomaly goals contained goals which are not in the configured default goals. Anomaly goals have " +
                     "been changed to match the specified default goals.");
         }
     }
@@ -547,7 +549,7 @@ public class CruiseControl extends AbstractModel {
             return null;
         }
         Secret secret = clusterCa.cruiseControlSecret();
-        return ModelUtils.buildSecret(clusterCa, secret, namespace, CruiseControl.secretName(cluster), name, "cruise-control", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, CruiseControl.secretName(cluster), name, "cruise-control", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 
     /**
@@ -615,7 +617,7 @@ public class CruiseControl extends AbstractModel {
                 .endSpec()
                 .build();
 
-        log.trace("Created network policy {}", networkPolicy);
+        LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
         return networkPolicy;
     }
 
