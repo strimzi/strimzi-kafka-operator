@@ -80,7 +80,7 @@ Use `replica.fetch.max.bytes` to set the maximum size, in bytes, of messages fet
 Change this value according to the average message size and throughput. When considering the total memory allocation required for read/write buffering, the memory available must also be able to accommodate the maximum replicated message size when multiplied by all followers.
 
 The `delete.topic.enable` property is enabled by default to allow topics to be deleted.
-In a production environment, you should disable this property to avoid accidental topic deletion resulting in data loss.
+In a production environment, you should disable this property to avoid accidental topic deletion, resulting in data loss.
 You can, however, temporarily enable it and delete topics and then disable it again.
 If `delete.topic.enable` is enabled, you can delete topics using the `KafkaTopic` resource.
 
@@ -293,7 +293,7 @@ Otherwise, if the log cleaner is not enabled, and there are no log retention lim
 If cleanup policy is set for log compaction, the _head_ of the log operates as a standard Kafka log, with writes for new messages appended in order.
 In the _tail_ of a compacted log, where the log cleaner operates, records will be deleted if another record with the same key occurs later in the log.
 Messages with null values are also deleted.
-If you're not using keys, you can't use compaction as keys are needed to identify related messages.
+If you're not using keys, you can't use compaction because keys are needed to identify related messages.
 While Kafka guarantees that the latest messages for each key will be retained, it does not guarantee that the whole compacted log will not contain duplicates.
 
 .Log showing key value writes with offset positions before compaction
