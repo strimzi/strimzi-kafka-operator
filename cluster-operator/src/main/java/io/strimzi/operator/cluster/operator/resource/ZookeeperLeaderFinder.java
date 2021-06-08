@@ -11,6 +11,8 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -23,8 +25,6 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
@@ -43,7 +43,7 @@ import static java.lang.Integer.parseInt;
  */
 public class ZookeeperLeaderFinder {
 
-    private static final Logger log = LogManager.getLogger(ZookeeperLeaderFinder.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ZookeeperLeaderFinder.class);
 
     private static final Pattern LEADER_MODE_PATTERN = Pattern.compile("^Mode: leader$", Pattern.MULTILINE);
 
@@ -59,13 +59,13 @@ public class ZookeeperLeaderFinder {
         this.backOffSupplier = backOffSupplier;
     }
 
-    /*test*/ NetClientOptions clientOptions(Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
+    /*test*/ NetClientOptions clientOptions(Reconciliation reconciliation, Secret coCertKeySecret, Secret clusterCaCertificateSecret) {
         return new NetClientOptions()
                 .setConnectTimeout(10_000)
                 .setSsl(true)
                 .setHostnameVerificationAlgorithm("HTTPS")
                 .setPemKeyCertOptions(keyCertOptions(coCertKeySecret))
-                .setPemTrustOptions(trustOptions(clusterCaCertificateSecret));
+                .setPemTrustOptions(trustOptions(reconciliation, clusterCaCertificateSecret));
     }
 
     private CertificateFactory x509Factory() {
@@ -82,14 +82,14 @@ public class ZookeeperLeaderFinder {
      * Validate the cluster CA certificate(s) passed in the given Secret
      * and return the PemTrustOptions for trusting them.
      */
-    protected PemTrustOptions trustOptions(Secret clusterCaCertificateSecret) {
+    protected PemTrustOptions trustOptions(Reconciliation reconciliation, Secret clusterCaCertificateSecret) {
         Base64.Decoder decoder = Base64.getDecoder();
         CertificateFactory x509 = x509Factory();
         PemTrustOptions pto = new PemTrustOptions();
         for (Map.Entry<String, String> entry : clusterCaCertificateSecret.getData().entrySet()) {
             String entryName = entry.getKey();
             if (entryName.endsWith(".crt")) {
-                log.info("Trusting certificate {} from Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
+                LOGGER.infoCr(reconciliation, "Trusting certificate {} from Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
                 byte[] certBytes = decoder.decode(entry.getValue());
                 try {
                     x509.generateCertificate(new ByteArrayInputStream(certBytes));
@@ -98,7 +98,7 @@ public class ZookeeperLeaderFinder {
                 }
                 pto.addCertValue(Buffer.buffer(certBytes));
             } else {
-                log.warn("Ignoring non-certificate {} in Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
+                LOGGER.warnCr(reconciliation, "Ignoring non-certificate {} in Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
             }
         }
         return pto;
@@ -136,7 +136,7 @@ public class ZookeeperLeaderFinder {
      * An exponential backoff is used if no ZK node is leader on the attempt to find it.
      * If there is no leader after 3 attempts then the returned Future completes with {@link #UNKNOWN_LEADER}.
      */
-    Future<Integer> findZookeeperLeader(String cluster, String namespace, List<Pod> pods, Secret coKeySecret) {
+    Future<Integer> findZookeeperLeader(Reconciliation reconciliation, String cluster, String namespace, List<Pod> pods, Secret coKeySecret) {
         if (pods.size() <= 1) {
             return Future.succeededFuture(pods.size() - 1);
         }
@@ -147,48 +147,48 @@ public class ZookeeperLeaderFinder {
                 return Future.failedFuture(Util.missingSecretException(namespace, clusterCaSecretName));
             }
             try {
-                NetClientOptions netClientOptions = clientOptions(coKeySecret, clusterCaCertificateSecret);
-                return zookeeperLeader(cluster, namespace, pods, netClientOptions);
+                NetClientOptions netClientOptions = clientOptions(reconciliation, coKeySecret, clusterCaCertificateSecret);
+                return zookeeperLeader(reconciliation, cluster, namespace, pods, netClientOptions);
             } catch (Throwable e) {
                 return Future.failedFuture(e);
             }
         });
 
     }
-    private Future<Integer> zookeeperLeader(String cluster, String namespace, List<Pod> pods,
+    private Future<Integer> zookeeperLeader(Reconciliation reconciliation, String cluster, String namespace, List<Pod> pods,
                                             NetClientOptions netClientOptions) {
         Promise<Integer> result = Promise.promise();
         BackOff backOff = backOffSupplier.get();
         Handler<Long> handler = new Handler<Long>() {
             @Override
             public void handle(Long tid) {
-                zookeeperLeader(pods, netClientOptions).onComplete(leader -> {
+                zookeeperLeader(reconciliation, pods, netClientOptions).onComplete(leader -> {
                     if (leader.succeeded()) {
                         if (leader.result() != UNKNOWN_LEADER) {
                             result.complete(leader.result());
                         } else {
-                            rescheduleOrComplete(tid);
+                            rescheduleOrComplete(reconciliation, tid);
                         }
                     } else {
-                        log.debug("Ignoring error", leader.cause());
+                        LOGGER.debugOp("Ignoring error", leader.cause());
                         if (backOff.done()) {
                             result.complete(UNKNOWN_LEADER);
                         } else {
-                            rescheduleOrComplete(tid);
+                            rescheduleOrComplete(reconciliation, tid);
                         }
                     }
                 });
             }
 
-            void rescheduleOrComplete(Long tid) {
+            void rescheduleOrComplete(Reconciliation reconciliation, Long tid) {
                 if (backOff.done()) {
-                    log.warn("Giving up trying to find the leader of {}/{} after {} attempts taking {}ms",
+                    LOGGER.warnCr(reconciliation, "Giving up trying to find the leader of {}/{} after {} attempts taking {}ms",
                             namespace, cluster, backOff.maxAttempts(), backOff.totalDelayMs());
                     result.complete(UNKNOWN_LEADER);
                 } else {
                     // Schedule ourselves to run again
                     long delay = backOff.delayMs();
-                    log.info("No leader found for cluster {} in namespace {}; " +
+                    LOGGER.infoCr(reconciliation, "No leader found for cluster {} in namespace {}; " +
                                     "backing off for {}ms (cumulative {}ms)",
                             cluster, namespace, delay, backOff.cumulativeDelayMs());
                     if (delay < 1) {
@@ -205,9 +205,9 @@ public class ZookeeperLeaderFinder {
 
     /**
      * Synchronously find the leader by testing each pod in the given list
-     * using {@link #isLeader(Pod, NetClientOptions)}.
+     * using {@link #isLeader(Reconciliation, Pod, NetClientOptions)}.
      */
-    private Future<Integer> zookeeperLeader(List<Pod> pods, NetClientOptions netClientOptions) {
+    private Future<Integer> zookeeperLeader(Reconciliation reconciliation, List<Pod> pods, NetClientOptions netClientOptions) {
         try {
             Future<Integer> f = Future.succeededFuture(UNKNOWN_LEADER);
             for (int i = 0; i < pods.size(); i++) {
@@ -216,13 +216,13 @@ public class ZookeeperLeaderFinder {
                 String podName = pod.getMetadata().getName();
                 f = f.compose(leader -> {
                     if (leader == UNKNOWN_LEADER) {
-                        log.debug("Checker whether {} is leader", podName);
-                        return isLeader(pod, netClientOptions).map(isLeader -> {
+                        LOGGER.debugCr(reconciliation, "Checker whether {} is leader", podName);
+                        return isLeader(reconciliation, pod, netClientOptions).map(isLeader -> {
                             if (isLeader != null && isLeader) {
-                                log.info("Pod {} is leader", podName);
+                                LOGGER.infoCr(reconciliation, "Pod {} is leader", podName);
                                 return podNum;
                             } else {
-                                log.info("Pod {} is not a leader", podName);
+                                LOGGER.infoCr(reconciliation, "Pod {} is not a leader", podName);
                                 return UNKNOWN_LEADER;
                             }
                         });
@@ -240,23 +240,23 @@ public class ZookeeperLeaderFinder {
     /**
      * Returns whether the given pod is the zookeeper leader.
      */
-    protected Future<Boolean> isLeader(Pod pod, NetClientOptions netClientOptions) {
+    protected Future<Boolean> isLeader(Reconciliation reconciliation, Pod pod, NetClientOptions netClientOptions) {
 
         Promise<Boolean> promise = Promise.promise();
         String host = host(pod);
         int port = port(pod);
-        log.debug("Connecting to zookeeper on {}:{}", host, port);
+        LOGGER.debugCr(reconciliation, "Connecting to zookeeper on {}:{}", host, port);
         vertx.createNetClient(netClientOptions)
             .connect(port, host, ar -> {
                 if (ar.failed()) {
-                    log.warn("ZK {}:{}: failed to connect to zookeeper:", host, port, ar.cause().getMessage());
+                    LOGGER.warnCr(reconciliation, "ZK {}:{}: failed to connect to zookeeper:", host, port, ar.cause().getMessage());
                     promise.fail(ar.cause());
                 } else {
-                    log.debug("ZK {}:{}: connected", host, port);
+                    LOGGER.debugCr(reconciliation, "ZK {}:{}: connected", host, port);
                     NetSocket socket = ar.result();
                     socket.exceptionHandler(ex -> {
                         if (!promise.tryFail(ex)) {
-                            log.debug("ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
+                            LOGGER.debugCr(reconciliation, "ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
                                     host, port, pod.getMetadata().getName(), ex);
                         }
                     });
@@ -264,7 +264,7 @@ public class ZookeeperLeaderFinder {
                     // We could use socket idle timeout, but this times out even if the server just responds
                     // very slowly
                     long timerId = vertx.setTimer(10_000, tid -> {
-                        log.debug("ZK {}:{}: Timeout waiting for Zookeeper {} to close socket",
+                        LOGGER.debugCr(reconciliation, "ZK {}:{}: Timeout waiting for Zookeeper {} to close socket",
                                 host, port, socket.remoteAddress());
                         socket.close();
                     });
@@ -272,24 +272,24 @@ public class ZookeeperLeaderFinder {
                         vertx.cancelTimer(timerId);
                         Matcher matcher = LEADER_MODE_PATTERN.matcher(sb);
                         boolean isLeader = matcher.find();
-                        log.debug("ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
+                        LOGGER.debugCr(reconciliation, "ZK {}:{}: {} leader", host, port, isLeader ? "is" : "is not");
                         if (!promise.tryComplete(isLeader)) {
-                            log.debug("ZK {}:{}: Ignoring leader result: Future is already complete",
+                            LOGGER.debugCr(reconciliation, "ZK {}:{}: Ignoring leader result: Future is already complete",
                                     host, port);
                         }
                     });
-                    log.debug("ZK {}:{}: upgrading to TLS", host, port);
+                    LOGGER.debugCr(reconciliation, "ZK {}:{}: upgrading to TLS", host, port);
                     socket.handler(buffer -> {
-                        log.trace("buffer: {}", buffer);
+                        LOGGER.traceCr(reconciliation, "buffer: {}", buffer);
                         sb.append(buffer.toString());
                     });
-                    log.debug("ZK {}:{}: sending stat", host, port);
+                    LOGGER.debugCr(reconciliation, "ZK {}:{}: sending stat", host, port);
                     socket.write("stat");
                 }
 
             });
         return promise.future().recover(error -> {
-            log.debug("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
+            LOGGER.debugOp("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
             return Future.succeededFuture(Boolean.FALSE);
         });
     }

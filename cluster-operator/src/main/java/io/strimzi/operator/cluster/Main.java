@@ -20,14 +20,13 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOp
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,10 +42,12 @@ import java.util.stream.Collectors;
 import io.vertx.core.VertxOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @SuppressFBWarnings("DM_EXIT")
 public class Main {
-    private static final Logger log = LogManager.getLogger(Main.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
 
     static {
         try {
@@ -57,9 +58,9 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        log.info("ClusterOperator {} is starting", Main.class.getPackage().getImplementationVersion());
+        LOGGER.info("ClusterOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
-        log.info("Cluster Operator configuration is {}", config);
+        LOGGER.info("Cluster Operator configuration is {}", config);
 
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
@@ -78,21 +79,21 @@ public class Main {
             if (crs.succeeded())    {
                 PlatformFeaturesAvailability.create(vertx, client).onComplete(pfa -> {
                     if (pfa.succeeded()) {
-                        log.info("Environment facts gathered: {}", pfa.result());
+                        LOGGER.info("Environment facts gathered: {}", pfa.result());
 
                         run(vertx, client, pfa.result(), config).onComplete(ar -> {
                             if (ar.failed()) {
-                                log.error("Unable to start operator for 1 or more namespace", ar.cause());
+                                LOGGER.error("Unable to start operator for 1 or more namespace", ar.cause());
                                 System.exit(1);
                             }
                         });
                     } else {
-                        log.error("Failed to gather environment facts", pfa.cause());
+                        LOGGER.error("Failed to gather environment facts", pfa.cause());
                         System.exit(1);
                     }
                 });
             } else  {
-                log.error("Failed to create Cluster Roles", crs.cause());
+                LOGGER.error("Failed to create Cluster Roles", crs.cause());
                 System.exit(1);
             }
         });
@@ -119,7 +120,7 @@ public class Main {
         if (pfa.supportsS2I()) {
             kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
         } else {
-            log.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
+            LOGGER.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
         }
 
         KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
@@ -152,9 +153,9 @@ public class Main {
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {
-                        log.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
+                        LOGGER.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
                     } else {
-                        log.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
+                        LOGGER.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
                         System.exit(1);
                     }
                     prom.handle(res);
@@ -176,17 +177,17 @@ public class Main {
             clusterRoles.put("strimzi-kafka-client", "033-ClusterRole-strimzi-kafka-client.yaml");
 
             for (Map.Entry<String, String> clusterRole : clusterRoles.entrySet()) {
-                log.info("Creating cluster role {}", clusterRole.getKey());
+                LOGGER.info("Creating cluster role {}", clusterRole.getKey());
 
                 try (BufferedReader br = new BufferedReader(
                         new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()),
                                 StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     ClusterRole role = ClusterRoleOperator.convertYamlToClusterRole(yaml);
-                    Future fut = cro.reconcile(role.getMetadata().getName(), role);
+                    Future fut = cro.reconcile(new Reconciliation("start-cluster-operator", "Deployment", config.getOperatorNamespace(), "cluster-operator"), role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {
-                    log.error("Failed to create Cluster Roles.", e);
+                    LOGGER.error("Failed to create Cluster Roles.", e);
                     throw new RuntimeException(e);
                 }
 

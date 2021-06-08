@@ -53,6 +53,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
@@ -117,7 +118,7 @@ public class ZookeeperClusterTest {
 
     private final Kafka ka = ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson, null, null);
 
-    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
     @ParallelTest
     public void testMetricsConfigMap() {
@@ -171,7 +172,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         Service headful = zc.generateService();
 
         assertThat(headful.getSpec().getType(), is("ClusterIP"));
@@ -230,7 +231,7 @@ public class ZookeeperClusterTest {
                                 .endTemplate()
                             .endZookeeper()
                         .endSpec().build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(editZooAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, editZooAssembly, VERSIONS);
         StatefulSet sts = zc.generateStatefulSet(false, null, null);
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
     }
@@ -250,7 +251,7 @@ public class ZookeeperClusterTest {
                     .endSpec()
                     .build();
 
-            ZookeeperCluster.fromCrd(ka, VERSIONS);
+            ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
         });
     }
 
@@ -314,7 +315,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
         PersistentVolumeClaim pvc = zc.getVolumeClaims().get(0);
 
@@ -326,13 +327,13 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void withAffinity() throws IOException {
-        ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, ZookeeperCluster::fromCrd, this.getClass().getSimpleName() + ".withAffinity");
+        ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly, versions) -> ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, versions), this.getClass().getSimpleName() + ".withAffinity");
         resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @ParallelTest
     public void withTolerations() throws IOException {
-        ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, ZookeeperCluster::fromCrd, this.getClass().getSimpleName() + ".withTolerations");
+        ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly, versions) -> ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, versions), this.getClass().getSimpleName() + ".withTolerations");
         resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
@@ -342,7 +343,7 @@ public class ZookeeperClusterTest {
     }
 
     private Secret generateNodeSecret() {
-        ClusterCa clusterCa = new ClusterCa(new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
 
         zc.generateCertificates(ka, clusterCa, true);
@@ -473,7 +474,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
@@ -528,7 +529,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
@@ -539,7 +540,7 @@ public class ZookeeperClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
@@ -562,7 +563,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
@@ -581,7 +582,7 @@ public class ZookeeperClusterTest {
 
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap());
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, secrets);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
@@ -606,7 +607,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, singletonList(secret1));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
@@ -619,7 +620,7 @@ public class ZookeeperClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
@@ -639,7 +640,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
@@ -653,7 +654,7 @@ public class ZookeeperClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
@@ -673,7 +674,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
@@ -684,7 +685,7 @@ public class ZookeeperClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap()))
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
@@ -695,7 +696,7 @@ public class ZookeeperClusterTest {
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap());
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
-        ZookeeperCluster kc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster kc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
@@ -709,7 +710,7 @@ public class ZookeeperClusterTest {
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, emptyMap());
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Other namespace
         NetworkPolicy np = zc.generateNetworkPolicy("operator-namespace", null);
@@ -795,7 +796,7 @@ public class ZookeeperClusterTest {
                 .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
         // Check Storage annotation on STS
         assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
@@ -824,7 +825,7 @@ public class ZookeeperClusterTest {
                 .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
         // Check Storage annotation on STS
         assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
@@ -861,7 +862,7 @@ public class ZookeeperClusterTest {
                 .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
         // Check Storage annotation on STS
         assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
@@ -911,7 +912,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
@@ -934,7 +935,7 @@ public class ZookeeperClusterTest {
                 .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
         // Check Storage annotation on STS
         assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
@@ -955,7 +956,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(false, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(nullValue()));
@@ -971,7 +972,7 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(false, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
@@ -991,7 +992,7 @@ public class ZookeeperClusterTest {
                 .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ka, VERSIONS, persistent, replicas);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS, persistent, replicas);
         assertThat(zc.getStorage(), is(persistent));
 
         ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
@@ -1001,7 +1002,7 @@ public class ZookeeperClusterTest {
                 .endZookeeper()
                 .endSpec()
                 .build();
-        zc = ZookeeperCluster.fromCrd(ka, VERSIONS, ephemeral, replicas);
+        zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS, ephemeral, replicas);
 
         // Storage is reverted
         assertThat(zc.getStorage(), is(ephemeral));
@@ -1026,7 +1027,7 @@ public class ZookeeperClusterTest {
                         .endZookeeper()
                     .endSpec()
                     .build();
-            ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS, oldStorage, replicas);
+            ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, oldStorage, replicas);
         });
     }
 
@@ -1062,7 +1063,7 @@ public class ZookeeperClusterTest {
                 .endSpec()
                 .build();
 
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         List<EnvVar> zkEnvVars = zc.getEnvVars();
 
@@ -1106,7 +1107,7 @@ public class ZookeeperClusterTest {
                 .endSpec()
                 .build();
 
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         List<EnvVar> zkEnvVars = zc.getEnvVars();
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
@@ -1144,7 +1145,7 @@ public class ZookeeperClusterTest {
                 .endSpec()
                 .build();
 
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
         StatefulSet sts = zc.generateStatefulSet(false, null, null);
 
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
@@ -1171,7 +1172,7 @@ public class ZookeeperClusterTest {
                 .endSpec()
                 .build();
 
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         assertThat(zc.isMetricsEnabled(), is(true));
         assertThat(zc.getMetricsConfigInCm(), is(metrics));
@@ -1179,7 +1180,7 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(ResourceUtils.createKafka(namespace, cluster, replicas,
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout), VERSIONS);
 
         assertThat(zc.isMetricsEnabled(), is(false));

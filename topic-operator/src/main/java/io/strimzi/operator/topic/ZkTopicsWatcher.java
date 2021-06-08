@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.List;
@@ -22,7 +21,7 @@ import java.util.Set;
  */
 class ZkTopicsWatcher {
 
-    private final static Logger LOGGER = LogManager.getLogger(ZkTopicsWatcher.class);
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(ZkTopicsWatcher.class);
 
     private static final String TOPICS_ZNODE = "/brokers/topics";
 
@@ -66,11 +65,11 @@ class ZkTopicsWatcher {
         zk.watchChildren(TOPICS_ZNODE, new ChildrenWatchHandler(zk)).<Void>compose(zk2 -> {
             zk.children(TOPICS_ZNODE, childResult -> {
                 if (childResult.failed()) {
-                    LOGGER.error("Error on znode {} children", TOPICS_ZNODE, childResult.cause());
+                    LOGGER.errorOp("Error on znode {} children", TOPICS_ZNODE, childResult.cause());
                     return;
                 }
                 List<String> result = childResult.result();
-                LOGGER.debug("Setting initial children {}", result);
+                LOGGER.debugOp("Setting initial children {}", result);
                 synchronized (this) {
                     this.children = result;
                 }
@@ -104,7 +103,7 @@ class ZkTopicsWatcher {
                 return;
             }
             if (childResult.failed()) {
-                LOGGER.error("Error on znode {} children", TOPICS_ZNODE, childResult.cause());
+                LOGGER.errorOp("Error on znode {} children", TOPICS_ZNODE, childResult.cause());
                 return;
             }
             ++watchCount;
@@ -112,7 +111,7 @@ class ZkTopicsWatcher {
             Set<String> deleted;
             Set<String> created;
             synchronized (ZkTopicsWatcher.this) {
-                LOGGER.debug("{}: znode {} now has children {}, previous children {}", watchCount, TOPICS_ZNODE, result, ZkTopicsWatcher.this.children);
+                LOGGER.debugOp("{}: znode {} now has children {}, previous children {}", watchCount, TOPICS_ZNODE, result, ZkTopicsWatcher.this.children);
                 List<String> oldChildren = ZkTopicsWatcher.this.children;
                 if (oldChildren == null) {
                     return;
@@ -124,33 +123,33 @@ class ZkTopicsWatcher {
                 ZkTopicsWatcher.this.children = result;
             }
 
-            LOGGER.info("Topics deleted from ZK for watch {}: {}", watchCount, deleted);
+            LOGGER.infoOp("Topics deleted from ZK for watch {}: {}", watchCount, deleted);
             if (!deleted.isEmpty()) {
                 for (String topicName : deleted) {
                     tcw.removeChild(topicName);
                     tw.removeChild(topicName);
-                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":-" + topicName);
+                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":-" + topicName, topicOperator.getNamespace(), topicName);
                     topicOperator.onTopicDeleted(logContext, new TopicName(topicName)).onComplete(ar -> {
                         if (ar.succeeded()) {
-                            LOGGER.debug("{}: Success responding to deletion of topic {}", logContext, topicName);
+                            LOGGER.debugCr(logContext.toReconciliation(), "Success responding to deletion of topic {}", topicName);
                         } else {
-                            LOGGER.warn("{}: Error responding to deletion of topic {}", logContext, topicName, ar.cause());
+                            LOGGER.warnCr(logContext.toReconciliation(), "Error responding to deletion of topic {}", topicName, ar.cause());
                         }
                     });
                 }
             }
 
-            LOGGER.info("Topics created in ZK for watch {}: {}", watchCount, created);
+            LOGGER.infoOp("Topics created in ZK for watch {}: {}", watchCount, created);
             if (!created.isEmpty()) {
                 for (String topicName : created) {
                     tcw.addChild(topicName);
                     tw.addChild(topicName);
-                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":+" + topicName);
+                    LogContext logContext = LogContext.zkWatch(TOPICS_ZNODE, watchCount + ":+" + topicName, topicOperator.getNamespace(), topicName);
                     topicOperator.onTopicCreated(logContext, new TopicName(topicName)).onComplete(ar -> {
                         if (ar.succeeded()) {
-                            LOGGER.debug("{}: Success responding to creation of topic {}", logContext, topicName);
+                            LOGGER.debugCr(logContext.toReconciliation(), "Success responding to creation of topic {}", topicName);
                         } else {
-                            LOGGER.warn("{}: Error responding to creation of topic {}", logContext, topicName, ar.cause());
+                            LOGGER.warnCr(logContext.toReconciliation(), "Error responding to creation of topic {}", topicName, ar.cause());
                         }
                     });
                 }

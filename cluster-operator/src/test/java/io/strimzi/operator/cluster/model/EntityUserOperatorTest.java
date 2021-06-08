@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -108,7 +109,7 @@ public class EntityUserOperatorTest {
                     .endSpec()
                     .build();
 
-    private final EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
+    private final EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -184,7 +185,7 @@ public class EntityUserOperatorTest {
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
                         .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
 
         assertThat(entityUserOperator.getWatchedNamespace(), is(namespace));
         assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
@@ -204,7 +205,7 @@ public class EntityUserOperatorTest {
     public void testFromCrdNoEntityOperator() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
         assertThat(entityUserOperator, is(nullValue()));
     }
 
@@ -217,7 +218,7 @@ public class EntityUserOperatorTest {
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
                         .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(resource);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
         assertThat(entityUserOperator, is(nullValue()));
     }
 
@@ -262,7 +263,7 @@ public class EntityUserOperatorTest {
                         .withClientsCa(ca)
                         .endSpec()
                         .build();
-        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(customValues);
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), customValues);
 
         Kafka defaultValues =
                 new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
@@ -270,7 +271,7 @@ public class EntityUserOperatorTest {
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
                         .build();
-        EntityUserOperator entityUserOperator2 = EntityUserOperator.fromCrd(defaultValues);
+        EntityUserOperator entityUserOperator2 = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), defaultValues);
 
         assertThat(entityUserOperator.getClientsCaValidityDays(), is(42L));
         assertThat(entityUserOperator.getClientsCaRenewalDays(), is(69L));
@@ -297,7 +298,7 @@ public class EntityUserOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityUserOperator f = EntityUserOperator.fromCrd(kafkaAssembly);
+        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly);
         List<EnvVar> envvar = f.getEnvVars();
         assertThat(Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY)).findFirst().get().getValue()), is(validity));
         assertThat(Integer.parseInt(envvar.stream().filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL)).findFirst().get().getValue()), is(renewal));

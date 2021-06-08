@@ -20,6 +20,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
@@ -31,8 +32,6 @@ import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 
@@ -43,7 +42,7 @@ import java.util.Collections;
  * </ul>
  */
 public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>, KafkaBridgeSpec, KafkaBridgeStatus> {
-    private static final Logger log = LogManager.getLogger(KafkaBridgeAssemblyOperator.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBridgeAssemblyOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
@@ -73,8 +72,9 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         KafkaBridgeCluster bridge;
 
         try {
-            bridge = KafkaBridgeCluster.fromCrd(assemblyResource, versions);
+            bridge = KafkaBridgeCluster.fromCrd(reconciliation, assemblyResource, versions);
         } catch (Exception e) {
+            LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
@@ -82,17 +82,17 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 
         boolean bridgeHasZeroReplicas = bridge.getReplicas() == 0;
-        log.debug("{}: Updating Kafka Bridge cluster", reconciliation);
-        kafkaBridgeServiceAccount(namespace, bridge)
-            .compose(i -> deploymentOperations.scaleDown(namespace, bridge.getName(), bridge.getReplicas()))
-            .compose(scale -> serviceOperations.reconcile(namespace, bridge.getServiceName(), bridge.generateService()))
-            .compose(i -> Util.metricsAndLogging(configMapOperations, namespace, bridge.getLogging(), null))
-            .compose(metricsAndLogging -> configMapOperations.reconcile(namespace, bridge.getAncillaryConfigMapName(), bridge.generateMetricsAndLogConfigMap(metricsAndLogging)))
-            .compose(i -> podDisruptionBudgetOperator.reconcile(namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
-            .compose(i -> deploymentOperations.reconcile(namespace, bridge.getName(), bridge.generateDeployment(Collections.emptyMap(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-            .compose(i -> deploymentOperations.scaleUp(namespace, bridge.getName(), bridge.getReplicas()))
-            .compose(i -> deploymentOperations.waitForObserved(namespace, bridge.getName(), 1_000, operationTimeoutMs))
-            .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(namespace, bridge.getName(), 1_000, operationTimeoutMs))
+        LOGGER.debugCr(reconciliation, "Updating Kafka Bridge cluster");
+        kafkaBridgeServiceAccount(reconciliation, namespace, bridge)
+            .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, bridge.getName(), bridge.getReplicas()))
+            .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, bridge.getServiceName(), bridge.generateService()))
+            .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, bridge.getLogging(), null))
+            .compose(metricsAndLogging -> configMapOperations.reconcile(reconciliation, namespace, bridge.getAncillaryConfigMapName(), bridge.generateMetricsAndLogConfigMap(metricsAndLogging)))
+            .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
+            .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, bridge.getName(), bridge.generateDeployment(Collections.emptyMap(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+            .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, bridge.getName(), bridge.getReplicas()))
+            .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, bridge.getName(), 1_000, operationTimeoutMs))
+            .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .onComplete(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
                 if (!bridgeHasZeroReplicas) {
@@ -121,8 +121,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         return new KafkaBridgeStatus();
     }
 
-    Future<ReconcileResult<ServiceAccount>> kafkaBridgeServiceAccount(String namespace, KafkaBridgeCluster bridge) {
-        return serviceAccountOperations.reconcile(namespace,
+    Future<ReconcileResult<ServiceAccount>> kafkaBridgeServiceAccount(Reconciliation reconciliation, String namespace, KafkaBridgeCluster bridge) {
+        return serviceAccountOperations.reconcile(reconciliation, namespace,
                 KafkaBridgeResources.serviceAccountName(bridge.getCluster()),
                 bridge.generateServiceAccount());
     }

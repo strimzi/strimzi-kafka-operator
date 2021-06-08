@@ -33,7 +33,8 @@ import static java.util.Collections.unmodifiableSet;
  * Cluster Operator configuration
  */
 public class ClusterOperatorConfig {
-    private static final Logger log = LogManager.getLogger(ClusterOperatorConfig.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorConfig.class.getName());
+
 
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -159,7 +160,7 @@ public class ClusterOperatorConfig {
      */
     private static void warningsForRemovedEndVars(Map<String, String> map) {
         if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE))    {
-            log.warn("Kafka TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
+            LOGGER.warn("Kafka TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
                     "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE);
         }
     }

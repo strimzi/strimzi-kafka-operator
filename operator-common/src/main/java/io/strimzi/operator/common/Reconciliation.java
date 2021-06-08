@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.common;
 
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -17,11 +20,14 @@ public class Reconciliation {
 
     private static final AtomicInteger IDS = new AtomicInteger();
 
+    /* test */ public static final Reconciliation DUMMY_RECONCILIATION = new Reconciliation("test", "kind", "namespace", "name");
+
     private final String trigger;
     private final String kind;
     private final String namespace;
     private final String name;
     private final int id;
+    private final Marker marker;
 
     public Reconciliation(String trigger, String kind, String namespace, String assemblyName) {
         this.trigger = trigger;
@@ -29,6 +35,7 @@ public class Reconciliation {
         this.namespace = namespace;
         this.name = assemblyName;
         this.id = IDS.getAndIncrement();
+        this.marker = MarkerManager.getMarker(this.kind + "(" + this.namespace + "/" + this.name + ")");
     }
 
     public String kind() {
@@ -41,6 +48,10 @@ public class Reconciliation {
 
     public String name() {
         return name;
+    }
+
+    public Marker getMarker() {
+        return marker;
     }
 
     public String toString() {

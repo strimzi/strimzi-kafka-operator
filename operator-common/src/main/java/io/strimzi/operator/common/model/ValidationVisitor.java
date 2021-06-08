@@ -10,8 +10,9 @@ import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
-import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
@@ -21,20 +22,15 @@ import java.util.Map;
 import java.util.Set;
 
 public class ValidationVisitor implements ResourceVisitor.Visitor {
-    private final Logger logger;
+    private final ReconciliationLogger logger;
     private final HasMetadata resource;
     private final Set<Condition> warningConditions;
     private final String transitionTime = StatusUtils.iso8601Now();
 
-    public ValidationVisitor(HasMetadata resource, Logger logger, Set<Condition> warningConditions) {
+    public ValidationVisitor(HasMetadata resource, ReconciliationLogger logger, Set<Condition> warningConditions) {
         this.resource = resource;
         this.logger = logger;
         this.warningConditions = warningConditions;
-    }
-
-    String context() {
-        return resource.getKind() + " resource " + resource.getMetadata().getName()
-                + " in namespace " + resource.getMetadata().getNamespace();
     }
 
     <M extends AnnotatedElement & Member> boolean isPresent(M member,
@@ -70,7 +66,8 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
         return propertyValue != null;
     }
 
-    private <M extends AnnotatedElement & Member> void checkForDeprecated(List<String> path,
+    private <M extends AnnotatedElement & Member> void checkForDeprecated(Reconciliation reconciliation,
+                                                                          List<String> path,
                                                                           M member,
                                                                           Object propertyValue,
                                                                           String propertyName) {
@@ -94,7 +91,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
             }
 
             warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedFields", msg, transitionTime));
-            logger.warn("{}: {}", context(), msg);
+            logger.warnCr(reconciliation, msg);
         }
 
         // Look for deprecated objects. With OneOf, the field might not be deprecated, but the used value might be
@@ -116,7 +113,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                 msg += ".";
 
                 warningConditions.add(StatusUtils.buildWarningCondition("DeprecatedObjects", msg, transitionTime));
-                logger.warn("{}: {}", context(), msg);
+                logger.warnCr(reconciliation, msg);
             }
         }
     }
@@ -126,13 +123,13 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
     }
 
     @Override
-    public <M extends AnnotatedElement & Member> void visitProperty(List<String> path, Object resource,
+    public <M extends AnnotatedElement & Member> void visitProperty(Reconciliation reconciliation, List<String> path, Object resource,
                                     M method, ResourceVisitor.Property<M> property, Object propertyValue) {
-        checkForDeprecated(path, method, propertyValue, property.propertyName(method));
+        checkForDeprecated(reconciliation, path, method, propertyValue, property.propertyName(method));
     }
 
     @Override
-    public void visitObject(List<String> path, Object object) {
+    public void visitObject(Reconciliation reconciliation, List<String> path, Object object) {
         if (object instanceof UnknownPropertyPreserving) {
             Map<String, Object> properties = ((UnknownPropertyPreserving) object).getAdditionalProperties();
             if (properties != null && !properties.isEmpty()) {
@@ -141,7 +138,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));
 
-                logger.warn("{}: {}", context(), msg);
+                logger.warnCr(reconciliation, msg);
                 warningConditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg, transitionTime));
             }
         }

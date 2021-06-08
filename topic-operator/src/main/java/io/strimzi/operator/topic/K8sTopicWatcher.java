@@ -8,19 +8,18 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Annotations;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.Objects;
 
 class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
-    private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
+    private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(K8sTopicWatcher.class);
     private final Future<Void> initReconcileFuture;
     private final Runnable onHttpGoneTask;
 
@@ -41,11 +40,11 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
             if (!initReconcileFuture.isComplete()) {
-                LOGGER.debug("Ignoring initial event for {} {} during initial reconcile", kind, name);
+                LOGGER.debugCr(logContext.toReconciliation(), "Ignoring initial event for {} {} during initial reconcile", kind, name);
                 return;
             }
             if (action.equals(Action.ERROR)) {
-                LOGGER.error("{}: Watch received action=ERROR for {} {} {}", logContext, kind, name, kafkaTopic);
+                LOGGER.errorCr(logContext.toReconciliation(), "Watch received action=ERROR for {} {} {}", kind, name, kafkaTopic);
             } else {
                 PauseAnnotationChanges pauseAnnotationChanges = pausedAnnotationChanged(kafkaTopic);
                 if (action.equals(Action.DELETED) || shouldReconcile(kafkaTopic, metadata, pauseAnnotationChanges.isChanged())) {
@@ -54,28 +53,28 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                     } else if (pauseAnnotationChanges.isResourceUnpausedByAnno()) {
                         topicOperator.pausedTopicCounter.getAndDecrement();
                     }
-                    LOGGER.info("{}: event {} on resource {} generation={}, labels={}", logContext, action, name,
+                    LOGGER.infoCr(logContext.toReconciliation(), "event {} on resource {} generation={}, labels={}", action, name,
                             metadata.getGeneration(), labels);
                     Handler<AsyncResult<Void>> resultHandler = ar -> {
                         if (ar.succeeded()) {
-                            LOGGER.info("{}: Success processing event {} on resource {} with labels {}", logContext, action, name, labels);
+                            LOGGER.infoCr(logContext.toReconciliation(), "Success processing event {} on resource {} with labels {}", action, name, labels);
                         } else {
                             String message;
                             if (ar.cause() instanceof InvalidTopicException) {
                                 message = kind + " " + name + " has an invalid spec section: " + ar.cause().getMessage();
-                                LOGGER.error("{}", message);
+                                LOGGER.errorCr(logContext.toReconciliation(), message);
 
                             } else {
                                 message = "Failure processing " + kind + " watch event " + action + " on resource " + name + " with labels " + labels + ": " + ar.cause().getMessage();
-                                LOGGER.error("{}: {}", logContext, message, ar.cause());
+                                LOGGER.errorCr(logContext.toReconciliation(), message, ar.cause());
                             }
-                            topicOperator.enqueue(topicOperator.new Event(kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> {
+                            topicOperator.enqueue(logContext, topicOperator.new Event(logContext, kafkaTopic, message, TopicOperator.EventType.WARNING, errorResult -> {
                             }));
                         }
                     };
                     topicOperator.onResourceEvent(logContext, kafkaTopic, action).onComplete(resultHandler);
                 } else {
-                    LOGGER.debug("{}: Ignoring {} to {} {} because metadata.generation==status.observedGeneration", logContext, action, kind, name);
+                    LOGGER.debugCr(logContext.toReconciliation(), "Ignoring {} to {} {} because metadata.generation==status.observedGeneration", action, kind, name);
                 }
             }
         }
@@ -101,9 +100,9 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     @Override
     public void onClose(WatcherException exception) {
-        LOGGER.debug("Closing {}", this);
+        LOGGER.debugOp("Closing {}", this);
         if (exception != null) {
-            LOGGER.debug("Restarting  topic watcher due to ", exception);
+            LOGGER.debugOp("Restarting  topic watcher due to ", exception);
             onHttpGoneTask.run();
         }
     }

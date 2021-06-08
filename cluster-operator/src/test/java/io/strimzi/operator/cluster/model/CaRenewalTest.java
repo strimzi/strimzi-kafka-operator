@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.junit5.VertxExtension;
@@ -29,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class CaRenewalTest {
     @ParallelTest
     public void renewalOfStatefulSetCertificatesWithNullSecret() throws IOException {
-        Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
+        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
@@ -62,7 +63,7 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION, replicas,
                 subjectFn,
                 null,
                 podNameFn,
@@ -86,7 +87,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesWithCaRenewal() throws IOException {
-        Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
+        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
@@ -137,7 +138,8 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
+                replicas,
                 subjectFn,
                 initialSecret,
                 podNameFn,
@@ -161,7 +163,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalInWindow() throws IOException {
-        Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
+        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
@@ -222,7 +224,8 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
+                replicas,
                 subjectFn,
                 initialSecret,
                 podNameFn,
@@ -246,7 +249,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalOutsideWindow() throws IOException {
-        Ca mockedCa = new Ca(null, null, null, null, null, null, null, 2, 1, true, null) {
+        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
             private AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
@@ -307,7 +310,8 @@ public class CaRenewalTest {
         Function<Integer, String> podNameFn = i -> "pod" + i;
         boolean isMaintenanceTimeWindowsSatisfied = false;
 
-        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(replicas,
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
+                replicas,
                 subjectFn,
                 initialSecret,
                 podNameFn,

@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -56,10 +57,11 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    private KafkaMirrorMaker2Cluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaMirrorMaker2Resources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
@@ -68,13 +70,15 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     /**
      * Creates instance of KafkaMirrorMaker2Cluster from CRD definition.
      *
+     * @param reconciliation    The reconciliation
      * @param kafkaMirrorMaker2 The Custom Resource based on which the cluster model should be created.
      * @param versions The image versions for MirrorMaker 2.0 clusters.
      * @return The MirrorMaker 2.0 cluster model.
      */
-    public static KafkaMirrorMaker2Cluster fromCrd(KafkaMirrorMaker2 kafkaMirrorMaker2, 
+    public static KafkaMirrorMaker2Cluster fromCrd(Reconciliation reconciliation,
+                                                   KafkaMirrorMaker2 kafkaMirrorMaker2,
                                                    KafkaVersion.Lookup versions) {
-        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(kafkaMirrorMaker2);
+        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
         cluster.setOwnerReference(kafkaMirrorMaker2);
 
@@ -95,8 +99,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .findFirst()
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));
         }        
-        cluster.setConfiguration(new KafkaMirrorMaker2Configuration(connectCluster.getConfig().entrySet()));
-        return fromSpec(buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
+        cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
+        return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
     }
 
     @SuppressWarnings("deprecation")
@@ -211,7 +215,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
     protected List<EnvVar> getEnvVars() {
-        List<EnvVar> varList = super.getEnvVars();        
+        List<EnvVar> varList = super.getEnvVars();
 
         final StringBuilder clusterAliases = new StringBuilder();
         final StringBuilder clustersTrustedCerts = new StringBuilder();

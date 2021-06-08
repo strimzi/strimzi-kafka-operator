@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -67,10 +68,10 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
 
         List<ObjectReference> secrets = new ArrayList<>();
 
-        op.reconcile(namespace, resourceName, newResource)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
                 .compose(rr -> {
                     // Wait for the service account to be created and secrets added
-                    return Util.waitFor(vertx, "token secrets created for service account " + resourceName, "has tokens", 1000,
+                    return Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "token secrets created for service account " + resourceName, "has tokens", 1000,
                             30_000, () -> !op.get(namespace, resourceName).getSecrets().isEmpty());
                 })
                 .onComplete(context.succeeding(rrCreated -> {
@@ -80,7 +81,7 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
                     assertResources(context, newResource, created);
                     secrets.addAll(created.getSecrets());
                 }))
-                .compose(rr -> op.reconcile(namespace, resourceName, modResource))
+                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
                 .onComplete(context.succeeding(rrModified -> {
                     ServiceAccount modified = op.get(namespace, resourceName);
 
@@ -88,10 +89,10 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
                     assertResources(context, modResource, modified);
                     context.verify(() -> assertThat(modified.getSecrets(), is(secrets)));
                 }))
-                .compose(rr -> op.reconcile(namespace, resourceName, null))
+                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
                 .onComplete(context.succeeding(rrDeleted -> {
                     // it seems the resource is cached for some time so we need wait for it to be null
-                    context.verify(() -> Util.waitFor(vertx, "resource deletion " + resourceName, "deleted", 1000,
+                    context.verify(() -> Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
                             30_000, () -> op.get(namespace, resourceName) == null)
                             .onComplete(del -> {
                                 assertThat(op.get(namespace, resourceName), Matchers.is(nullValue()));

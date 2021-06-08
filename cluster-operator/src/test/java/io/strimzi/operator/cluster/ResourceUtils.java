@@ -69,6 +69,7 @@ import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
@@ -223,17 +224,17 @@ public class ResourceUtils {
         return secrets;
     }
 
-    public static ClusterCa createInitialClusterCa(String clusterName, Secret initialClusterCaCert, Secret initialClusterCaKey) {
-        return new ClusterCa(new MockCertManager(), new PasswordGenerator(10, "a", "a"), clusterName, initialClusterCaCert, initialClusterCaKey);
+    public static ClusterCa createInitialClusterCa(Reconciliation reconciliation, String clusterName, Secret initialClusterCaCert, Secret initialClusterCaKey) {
+        return new ClusterCa(reconciliation, new MockCertManager(), new PasswordGenerator(10, "a", "a"), clusterName, initialClusterCaCert, initialClusterCaKey);
     }
 
-    public static ClientsCa createInitialClientsCa(String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
-        return new ClientsCa(new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+    public static ClientsCa createInitialClientsCa(Reconciliation reconciliation, String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
+        return new ClientsCa(reconciliation, new MockCertManager(),
+                new PasswordGenerator(10, "a", "a"),
                 KafkaCluster.clientsCaCertSecretName(clusterName),
                 initialClientsCaCert,
                 KafkaCluster.clientsCaKeySecretName(clusterName),
-                initialClientsCaKey,
-                365, 30, true, null);
+                initialClientsCaKey, 365, 30, true, null);
     }
 
     public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName,
@@ -621,12 +622,12 @@ public class ResourceUtils {
         return new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
             () -> new BackOff(5_000, 2, 4)) {
                 @Override
-                protected Future<Boolean> isLeader(Pod pod, NetClientOptions options) {
+                protected Future<Boolean> isLeader(Reconciliation reconciliation, Pod pod, NetClientOptions options) {
                     return Future.succeededFuture(true);
                 }
 
                 @Override
-                protected PemTrustOptions trustOptions(Secret s) {
+                protected PemTrustOptions trustOptions(Reconciliation reconciliation, Secret s) {
                     return new PemTrustOptions();
                 }
 
@@ -692,7 +693,7 @@ public class ResourceUtils {
     public static ZookeeperScalerProvider zookeeperScalerProvider() {
         return new ZookeeperScalerProvider() {
             @Override
-            public ZookeeperScaler createZookeeperScaler(Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
+            public ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
                 ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
                 when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
                 return mockZooScaler;
@@ -769,14 +770,14 @@ public class ResourceUtils {
                 metricsProvider(),
                 adminClientProvider());
 
-        when(supplier.serviceAccountOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleBindingOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.clusterRoleBindingOperator.reconcile(anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleBindingOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.clusterRoleBindingOperator.reconcile(any(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         if (openShift) {
-            when(supplier.routeOperations.reconcile(anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.hasAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
             when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
                 return new RouteBuilder()
                         .withNewStatus()
@@ -788,8 +789,8 @@ public class ResourceUtils {
             });
         }
 
-        when(supplier.serviceOperations.hasIngressAddress(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.hasNodePort(anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.hasNodePort(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i ->
              new ServiceBuilder()
                     .withNewStatus()

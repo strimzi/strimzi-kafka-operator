@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -86,7 +87,7 @@ public class TolerationsIT {
 
         client.apps().statefulSets().inNamespace(namespace).create(ss);
         StatefulSet stsk8s = client.apps().statefulSets().inNamespace(namespace).withName("foo").get();
-        StatefulSetDiff diff = new StatefulSetDiff(ss, stsk8s);
+        StatefulSetDiff diff = new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss, stsk8s);
         Checkpoint checkpoint = context.checkpoint();
         context.verify(() -> {
                 assertThat(diff.changesSpecTemplate(), is(false));

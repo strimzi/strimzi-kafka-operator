@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.user.operator;
 
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.json.JsonObject;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.serialize.BytesPushThroughSerializer;
@@ -11,8 +13,6 @@ import org.apache.kafka.common.security.scram.ScramCredential;
 import org.apache.kafka.common.security.scram.internals.ScramCredentialUtils;
 import org.apache.kafka.common.security.scram.internals.ScramFormatter;
 import org.apache.kafka.common.security.scram.internals.ScramMechanism;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
@@ -23,7 +23,7 @@ import java.util.List;
  * Utility class for managing Scram credentials
  */
 public class ScramShaCredentials {
-    private static final Logger log = LogManager.getLogger(ScramShaCredentials.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ScramShaCredentials.class.getName());
 
     private final static int ITERATIONS = 4096;
     private final static int CONNECTION_TIMEOUT = 30_000;
@@ -38,22 +38,23 @@ public class ScramShaCredentials {
     /**
      * Create or update the SCRAM-SHA credentials for the given user.
      *
+     * @param reconciliation The reconciliation
      * @param username The name of the user which should be created or updated
      * @param password The desired user password
      */
-    public void createOrUpdate(String username, String password) {
+    public void createOrUpdate(Reconciliation reconciliation, String username, String password) {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
-            log.debug("Updating {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debugCr(reconciliation, "Updating {} credentials for user {}", mechanism.mechanismName(), username);
             zkClient.writeData("/config/users/" + username, updateUserJson(data, password));
         } else {
-            log.debug("Creating {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debugCr(reconciliation, "Creating {} credentials for user {}", mechanism.mechanismName(), username);
             ensurePath("/config/users");
             zkClient.createPersistent("/config/users/" + username, createUserJson(password));
         }
 
-        notifyChanges(username);
+        notifyChanges(reconciliation, username);
     }
 
     private boolean configJsonIsEmpty(JsonObject json) {
@@ -66,22 +67,23 @@ public class ScramShaCredentials {
      * Delete the SCRAM-SHA credentials for the given user.
      * It is not an error if the user doesn't exist, or doesn't currently have any SCRAM-SHA credentials.
      *
+     * @param reconciliation The reconciliation
      * @param username Name of the user
      */
-    public void delete(String username) {
+    public void delete(Reconciliation reconciliation, String username) {
         byte[] data = zkClient.readData("/config/users/" + username, true);
 
         if (data != null)   {
-            log.debug("Deleting {} credentials for user {}", mechanism.mechanismName(), username);
+            LOGGER.debugCr(reconciliation, "Deleting {} credentials for user {}", mechanism.mechanismName(), username);
             JsonObject deletedJson = removeScramCredentialsFromUserJson(data);
             if (configJsonIsEmpty(deletedJson)) {
                 zkClient.deleteRecursive("/config/users/" + username);
             } else {
                 zkClient.writeData("/config/users/" + username, deletedJson.toBuffer().getBytes());
             }
-            notifyChanges(username);
+            notifyChanges(reconciliation, username);
         } else {
-            log.warn("Credentials for user {} already don't exist", username);
+            LOGGER.warnCr(reconciliation, "Credentials for user {} already don't exist", username);
         }
     }
 
@@ -109,7 +111,7 @@ public class ScramShaCredentials {
                         ScramCredentialUtils.credentialFromString(scramCredentials);
                         return true;
                     } catch (IllegalArgumentException e) {
-                        log.warn("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
+                        LOGGER.warnOp("Invalid {} credentials for user {}", mechanism.mechanismName(), username);
                     }
                 }
             }
@@ -142,10 +144,11 @@ public class ScramShaCredentials {
     /**
      * This notifies Kafka about the changes we have made
      *
+     * @param reconciliation The reconciliation
      * @param username  Name of the user whose configuration changed
      */
-    private void notifyChanges(String username) {
-        log.debug("Notifying changes for user {}", username);
+    private void notifyChanges(Reconciliation reconciliation, String username) {
+        LOGGER.debugCr(reconciliation, "Notifying changes for user {}", username);
 
         ensurePath("/config/changes");
 

@@ -783,7 +783,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * Tests the transition from 'New' to to 'ProposalReady'
      * The rebalance proposal is approved and the resource moves to 'Rebalancing' then to 'Stopped' (via annotation)
      *
-     *
      * 1. A new KafkaRebalance resource is created; it is in the 'New' state
      * 2. The operator requests a rebalance proposal through the Cruise Control REST API
      * 3. The rebalance proposal is ready on the first call
@@ -1240,24 +1239,24 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 return Future.failedFuture(e);
             }
         });
-        when(mockRebalanceOps.updateStatusAsync(any(KafkaRebalance.class))).thenAnswer(invocation -> {
+        when(mockRebalanceOps.updateStatusAsync(any(), any(KafkaRebalance.class))).thenAnswer(invocation -> {
             try {
                 return Future.succeededFuture(Crds.kafkaRebalanceOperation(client)
                         .inNamespace(namespace)
                         .withName(resource)
-                        .patch(invocation.getArgument(0)));
+                        .patch(invocation.getArgument(1)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }
         });
-        when(mockCmOps.reconcile(eq(CLUSTER_NAMESPACE), eq(RESOURCE_NAME), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), eq(CLUSTER_NAMESPACE), eq(RESOURCE_NAME), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
-        when(mockRebalanceOps.patchAsync(any(KafkaRebalance.class))).thenAnswer(invocation -> {
+        when(mockRebalanceOps.patchAsync(any(), any(KafkaRebalance.class))).thenAnswer(invocation -> {
             try {
                 return Future.succeededFuture(Crds.kafkaRebalanceOperation(client)
                         .inNamespace(namespace)
                         .withName(resource)
-                        .patch(invocation.getArgument(0)));
+                        .patch(invocation.getArgument(1)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }

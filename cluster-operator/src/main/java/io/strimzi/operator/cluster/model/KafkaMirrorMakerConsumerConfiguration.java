@@ -6,6 +6,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,9 +30,10 @@ public class KafkaMirrorMakerConsumerConfiguration extends AbstractConfiguration
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *
+     * @param reconciliation  The reconciliation
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public KafkaMirrorMakerConsumerConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
+    public KafkaMirrorMakerConsumerConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
     }
 }

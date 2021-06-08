@@ -17,8 +17,6 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramS
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 public class AuthenticationUtils {
-    protected static final Logger log = LogManager.getLogger(AuthenticationUtils.class.getName());
 
     public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
     public static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
@@ -43,30 +40,29 @@ public class AuthenticationUtils {
      *
      * @param authentication    The authentication object from CRD
      * @param tls   Indicates whether TLS is enabled or not
+     * @return a warn message
      */
     @SuppressWarnings("BooleanExpressionComplexity")
-    public static void validateClientAuthentication(KafkaClientAuthentication authentication, boolean tls)    {
+    public static String validateClientAuthentication(KafkaClientAuthentication authentication, boolean tls) {
+        String warnMsg = "";
         if (authentication != null)   {
             if (authentication instanceof KafkaClientAuthenticationTls) {
                 KafkaClientAuthenticationTls auth = (KafkaClientAuthenticationTls) authentication;
                 if (auth.getCertificateAndKey() != null) {
                     if (!tls) {
-                        log.warn("TLS configuration missing: related TLS client authentication will not work properly");
+                        warnMsg = "TLS configuration missing: related TLS client authentication will not work properly";
                     }
                 } else {
-                    log.warn("TLS Client authentication selected, but no certificate and key configured.");
                     throw new InvalidResourceException("TLS Client authentication selected, but no certificate and key configured.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationScramSha512)    {
                 KafkaClientAuthenticationScramSha512 auth = (KafkaClientAuthenticationScramSha512) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    log.warn("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                     throw new InvalidResourceException("SCRAM-SHA-512 authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain auth = (KafkaClientAuthenticationPlain) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    log.warn("PLAIN authentication selected, but username or password configuration is missing.");
                     throw new InvalidResourceException("PLAIN authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
@@ -78,16 +74,15 @@ public class AuthenticationUtils {
                     // Valid options, lets just pass it through.
                     // This way the condition is easier to read and understand.
                 } else {
-                    log.warn("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
                     throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
                 }
             }
         }
+        return warnMsg;
     }
 
     /**
      * Creates the Volumes used for authentication of Kafka client based components
-     *
      * @param authentication    Authentication object from CRD
      * @param volumeList    List where the volumes will be added
      * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
@@ -150,7 +145,6 @@ public class AuthenticationUtils {
 
     /**
      * Creates the VolumeMounts used for authentication of Kafka client based components
-     *
      * @param authentication    Authentication object from CRD
      * @param volumeMountList    List where the volumes will be added
      * @param tlsVolumeMount    Path where the TLS certs should be mounted
@@ -164,7 +158,6 @@ public class AuthenticationUtils {
 
     /**
      * Creates the VolumeMounts used for authentication of Kafka client based components
-     *
      * @param authentication    Authentication object from CRD
      * @param volumeMountList    List where the volume mounts will be added
      * @param tlsVolumeMount    Path where the TLS certs should be mounted

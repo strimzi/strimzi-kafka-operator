@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
  */
 public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ServiceOperator.class);
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/spec/sessionAffinity" +
@@ -38,6 +41,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     private final EndpointOperator endpointOperations;
     /**
      * Constructor
+     *
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
@@ -66,6 +70,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * Patching the service with service definition without the NodePort would cause regenerating the node port
      * which triggers rolling update.
      *
+     * @param reconciliation The reconciliation
      * @param namespace Namespace of the service
      * @param name      Name of the service
      * @param current   Current servicve
@@ -74,7 +79,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<Service>> internalPatch(String namespace, String name, Service current, Service desired) {
+    protected Future<ReconcileResult<Service>> internalPatch(Reconciliation reconciliation, String namespace, String name, Service current, Service desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null) {
                 if (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
@@ -87,9 +92,9 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
                 patchDualStackNetworking(current, desired);
             }
 
-            return super.internalPatch(namespace, name, current, desired);
+            return super.internalPatch(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
-            log.error("Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
+            LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);
         }
     }
@@ -177,30 +182,32 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * Deletes the resource with the given namespace and name and completes the given future accordingly.
      * This method will do a cascading delete.
      *
+     * @param reconciliation The reconciliation
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
      *
      * @return Future with result of the reconciliation
      */
-    protected Future<ReconcileResult<Service>> internalDelete(String namespace, String name) {
-        return internalDelete(namespace, name, true);
+    protected Future<ReconcileResult<Service>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
+        return internalDelete(reconciliation, namespace, name, true);
     }
 
-    public Future<Void> endpointReadiness(String namespace, String name, long pollInterval, long operationTimeoutMs) {
-        return endpointOperations.readiness(namespace, name, pollInterval, operationTimeoutMs);
+    public Future<Void> endpointReadiness(Reconciliation reconciliation, String namespace, String name, long pollInterval, long operationTimeoutMs) {
+        return endpointOperations.readiness(reconciliation, namespace, name, pollInterval, operationTimeoutMs);
     }
 
     /**
      * Succeeds when the Service has an assigned address
      *
+     * @param reconciliation The reconciliation
      * @param namespace     Namespace
      * @param name          Name of the service
      * @param pollIntervalMs    Interval in which we poll
      * @param timeoutMs     Timeout
      * @return A future that succeeds when the Service has an assigned address.
      */
-    public Future<Void> hasIngressAddress(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isIngressAddressReady);
+    public Future<Void> hasIngressAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(reconciliation, namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isIngressAddressReady);
     }
 
     /**
@@ -226,14 +233,15 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     /**
      * Succeeds when the Service has an assigned node port
      *
+     * @param reconciliation The reconciliation
      * @param namespace     Namespace
      * @param name          Name of the service
      * @param pollIntervalMs    Interval in which we poll
      * @param timeoutMs     Timeout
      * @return A future that succeeds when the Service has an assigned node port
      */
-    public Future<Void> hasNodePort(String namespace, String name, long pollIntervalMs, long timeoutMs) {
-        return waitFor(namespace, name, pollIntervalMs, timeoutMs, this::isNodePortReady);
+    public Future<Void> hasNodePort(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(reconciliation, namespace, name, pollIntervalMs, timeoutMs, this::isNodePortReady);
     }
 
     /**

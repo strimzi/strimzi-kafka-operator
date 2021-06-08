@@ -9,9 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.regex.Pattern;
 
@@ -19,7 +18,7 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 public class StatusDiff extends AbstractJsonDiff {
 
-    private static final Logger log = LogManager.getLogger(StatusDiff.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatusDiff.class.getName());
 
     // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
     public static final ObjectMapper PATCH_MAPPER = patchMapper().copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
@@ -40,15 +39,13 @@ public class StatusDiff extends AbstractJsonDiff {
             String pathValue = d.get("path").asText();
 
             if (IGNORABLE_PATHS.matcher(pathValue).matches()) {
-                log.debug("Ignoring Status diff {}", d);
+                LOGGER.debugOp("Ignoring Status diff {}", d);
                 continue;
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("Status differs: {}", d);
-                log.debug("Current Status path {} has value {}", pathValue, lookupPath(source, pathValue));
-                log.debug("Desired Status path {} has value {}", pathValue, lookupPath(target, pathValue));
-            }
+            LOGGER.debugOp("Status differs: {}", d);
+            LOGGER.debugOp("Current Status path {} has value {}", pathValue, lookupPath(source, pathValue));
+            LOGGER.debugOp("Desired Status path {} has value {}", pathValue, lookupPath(target, pathValue));
 
             num++;
         }

@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -110,7 +111,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(modifiedResource())
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource())
                 .onComplete(context.succeeding(ar -> {
                     verify(mockResource).get();
                     verify(mockResource).patch(any());
@@ -142,7 +143,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource())
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource())
                 .onComplete(context.succeeding(ar -> {
                     verify(mockResource).get();
                     verify(mockResource, never()).patch(any());
@@ -174,7 +175,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).onComplete(context.failing(e -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -200,7 +201,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
                 vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).onComplete(context.succeeding(rr -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.succeeding(rr -> {
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
             async.flag();
@@ -228,7 +229,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).onComplete(context.failing(e -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -251,7 +252,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).get();
             verify(mockResource, never()).delete();
             async.flag();
@@ -287,7 +288,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
@@ -321,7 +322,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, instanceOf(TimeoutException.class));
             verify(mockResource).delete();
             assertThat("Watch was not closed", watchWasClosed.get(), is(true));
@@ -358,7 +359,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
@@ -395,7 +396,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, is(ex));
             assertThat("Watch was not closed", watchWasClosed.get(), is(true));
             async.flag();
@@ -424,7 +425,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -460,7 +461,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();

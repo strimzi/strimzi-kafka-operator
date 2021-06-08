@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -111,7 +112,7 @@ public class CruiseControlTest {
     private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, minInsyncReplicas);
     private final Map<String, Object> zooConfig = singletonMap("foo", "bar");
 
-    CruiseControlConfiguration configuration = new CruiseControlConfiguration(new HashMap<String, Object>() {{
+    CruiseControlConfiguration configuration = new CruiseControlConfiguration(Reconciliation.DUMMY_RECONCILIATION, new HashMap<String, Object>() {{
             putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
             put("num.partition.metrics.windows", "2");
         }}.entrySet()
@@ -146,7 +147,7 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-    private final CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+    private final CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
     private Map<String, String> expectedLabels(String name)    {
         return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
@@ -184,7 +185,7 @@ public class CruiseControlTest {
     }
 
     public String getCapacityConfigurationFromEnvVar(Kafka resource, String envVar) {
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
         Deployment dep = cc.generateDeployment(true, null, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -391,7 +392,7 @@ public class CruiseControlTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         List<EnvVar> envVarList = cc.getEnvVars();
 
@@ -425,7 +426,7 @@ public class CruiseControlTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         List<EnvVar> envVarList = cc.getEnvVars();
 
@@ -438,7 +439,7 @@ public class CruiseControlTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null,  null);
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         try {
             assertThat(cc.generateDeployment(true, null, null, null), is(nullValue()));
@@ -471,7 +472,7 @@ public class CruiseControlTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         assertThrows(NullPointerException.class, () -> cc.generateService());
     }
@@ -561,7 +562,7 @@ public class CruiseControlTest {
                 .endSpec()
                 .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         // Check Deployment
         Deployment dep = cc.generateDeployment(true, depAnots, null, null);
@@ -615,7 +616,7 @@ public class CruiseControlTest {
                         .endSpec()
                         .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
         Deployment dep = cc.generateDeployment(true,  null, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
@@ -649,7 +650,7 @@ public class CruiseControlTest {
                 .endSpec()
                 .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
         Deployment dep = cc.generateDeployment(true, null, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
@@ -682,7 +683,7 @@ public class CruiseControlTest {
                 .endSpec()
                 .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
         Deployment dep = cc.generateDeployment(true, null, null, null);
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -717,7 +718,7 @@ public class CruiseControlTest {
                         .endSpec()
                         .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         Deployment dep = cc.generateDeployment(true, null, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
@@ -764,7 +765,7 @@ public class CruiseControlTest {
                         .endSpec()
                         .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         Deployment dep = cc.generateDeployment(true, null, null, null);
 
@@ -807,7 +808,7 @@ public class CruiseControlTest {
                         .endSpec()
                         .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         Deployment dep = cc.generateDeployment(true, null, null, null);
 
@@ -901,7 +902,7 @@ public class CruiseControlTest {
                         .endSpec()
                         .build();
 
-        CruiseControl cruiseControlWithCustomGoals = CruiseControl.fromCrd(resourceWithCustomGoals, VERSIONS);
+        CruiseControl cruiseControlWithCustomGoals = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithCustomGoals, VERSIONS);
 
         String anomalyDetectionGoals =  cruiseControlWithCustomGoals
                 .getConfiguration().asOrderedProperties().asMap()
@@ -927,7 +928,7 @@ public class CruiseControlTest {
                 .endSpec()
                 .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(kafkaAssembly, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         assertThat(cc.isMetricsEnabled(), is(true));
         assertThat(cc.getMetricsConfigInCm(), is(metrics));
@@ -943,7 +944,7 @@ public class CruiseControlTest {
                     .endSpec()
                 .build();
 
-        CruiseControl cc = CruiseControl.fromCrd(kafkaAssembly, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         assertThat(cc.isMetricsEnabled(), is(false));
         assertThat(cc.getMetricsConfigInCm(), is(nullValue()));

@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
@@ -76,10 +77,11 @@ public class EntityTopicOperator extends AbstractModel {
     protected SecurityContext templateContainerSecurityContext;
 
     /**
+     * @param reconciliation   The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected EntityTopicOperator(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected EntityTopicOperator(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = topicOperatorName(cluster);
         this.readinessPath = "/";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -200,10 +202,11 @@ public class EntityTopicOperator extends AbstractModel {
     /**
      * Create an Entity Topic Operator from given desired resource
      *
+     * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
      * @return Entity Topic Operator instance, null if not configured in the ConfigMap
      */
-    public static EntityTopicOperator fromCrd(Kafka kafkaAssembly) {
+    public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
         EntityTopicOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
@@ -212,7 +215,7 @@ public class EntityTopicOperator extends AbstractModel {
             if (topicOperatorSpec != null) {
 
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityTopicOperator(kafkaAssembly);
+                result = new EntityTopicOperator(reconciliation, kafkaAssembly);
 
                 result.setOwnerReference(kafkaAssembly);
                 String image = topicOperatorSpec.getImage();

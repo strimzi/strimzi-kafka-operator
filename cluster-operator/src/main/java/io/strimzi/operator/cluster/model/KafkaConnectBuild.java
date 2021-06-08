@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,10 +58,11 @@ public class KafkaConnectBuild extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaConnectBuild(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected KafkaConnectBuild(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaConnectResources.buildPodName(cluster);
         this.image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE, DEFAULT_KANIKO_EXECUTOR_IMAGE);
     }
@@ -68,12 +70,13 @@ public class KafkaConnectBuild extends AbstractModel {
     /**
      * Created the KafkaConnectBuild instance from the Kafka Connect Custom Resource
      *
+     * @param reconciliation The reconciliation
      * @param kafkaConnect  Kafka Connect CR with the build configuration
      * @param versions      Kafka versions configuration
      * @return              Instance of KafkaConnectBuild class
      */
-    public static KafkaConnectBuild fromCrd(KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
-        KafkaConnectBuild build = new KafkaConnectBuild(kafkaConnect);
+    public static KafkaConnectBuild fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
+        KafkaConnectBuild build = new KafkaConnectBuild(reconciliation, kafkaConnect);
         KafkaConnectSpec spec = kafkaConnect.getSpec();
 
         if (spec == null) {

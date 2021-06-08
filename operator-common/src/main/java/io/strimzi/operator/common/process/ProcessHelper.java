@@ -19,6 +19,7 @@ public class ProcessHelper {
      * Execute the command given in {@code args}.
      * Apply the given {@code sanitizer} function to the
      * {@code args} when logging, so that security-sensitive information is not logged.
+     *
      * @param args The executable and its arguments.
      * @return The result of the subprocess
      * @throws IOException Reading/writing to the subprocess
@@ -39,9 +40,7 @@ public class ProcessHelper {
         pb.redirectError(stderr);
         pb.redirectOutput(stdout);
         Process p = pb.start();
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Started process {} with command line {}", p, args);
-        }
+        LOGGER.info("Started process {} with command line {}", p, args);
         p.getOutputStream().close();
         int exitCode = p.waitFor();
         // TODO timeout on wait
@@ -51,9 +50,6 @@ public class ProcessHelper {
 
     public static File createTmpFile(String suffix) throws IOException {
         File tmpFile = File.createTempFile(ProcessHelper.class.getName(), suffix);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Created temporary file {}", tmpFile);
-        }
         tmpFile.deleteOnExit();
         return tmpFile;
     }

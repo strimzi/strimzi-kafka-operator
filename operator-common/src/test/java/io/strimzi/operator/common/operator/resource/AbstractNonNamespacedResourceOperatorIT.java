@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
@@ -75,25 +76,25 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         T newResource = getOriginal();
         T modResource = getModified();
 
-        op.reconcile(resourceName, newResource)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, newResource)
             .onComplete(context.succeeding(rrCreate -> context.verify(() -> {
                 T created = op.get(resourceName);
 
                 assertThat("Failed to get created Resource", created, is(notNullValue()));
                 assertResources(context, newResource, created);
             })))
-            .compose(rr -> op.reconcile(resourceName, modResource))
+            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> context.verify(() -> {
                 T modified = (T) op.get(resourceName);
 
                 assertThat("Failed to get modified Resource", modified, is(notNullValue()));
                 assertResources(context, modResource, modified);
             })))
-            .compose(rr -> op.reconcile(resourceName, null))
+            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, null))
             .onComplete(context.succeeding(rrDelete -> context.verify(() -> {
                 // it seems the resource is cached for some time so we need wait for it to be null
                 context.verify(() -> {
-                        Util.waitFor(vertx, "resource deletion " + resourceName, "deleted", 1000,
+                        Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
                                 30_000, () -> op.get(resourceName) == null)
                                 .onComplete(del -> {
                                     assertThat(op.get(resourceName), is(nullValue()));

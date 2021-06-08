@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
@@ -82,10 +83,11 @@ public class EntityUserOperator extends AbstractModel {
     protected SecurityContext templateContainerSecurityContext;
 
     /**
+     * @param reconciliation   The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected EntityUserOperator(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected EntityUserOperator(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = userOperatorName(cluster);
         this.readinessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -210,10 +212,11 @@ public class EntityUserOperator extends AbstractModel {
     /**
      * Create an Entity User Operator from given desired resource
      *
+     * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity User Operator one
      * @return Entity User Operator instance, null if not configured in the ConfigMap
      */
-    public static EntityUserOperator fromCrd(Kafka kafkaAssembly) {
+    public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
         EntityUserOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
@@ -222,7 +225,7 @@ public class EntityUserOperator extends AbstractModel {
             if (userOperatorSpec != null) {
 
                 String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityUserOperator(kafkaAssembly);
+                result = new EntityUserOperator(reconciliation, kafkaAssembly);
 
                 result.setOwnerReference(kafkaAssembly);
                 String image = userOperatorSpec.getImage();

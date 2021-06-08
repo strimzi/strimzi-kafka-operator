@@ -7,19 +7,19 @@ package io.strimzi.operator.common.operator.resource;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.zjsonpatch.JsonDiff;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.util.regex.Pattern;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 
 class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
-    private static final Logger log = LogManager.getLogger(ResourceDiff.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceDiff.class.getName());
 
     private final boolean isEmpty;
 
-    public ResourceDiff(String resourceKind, String resourceName, T current, T desired, Pattern ignorableFields) {
+    public ResourceDiff(Reconciliation reconciliation, String resourceKind, String resourceName, T current, T desired, Pattern ignorableFields) {
         JsonNode source = patchMapper().valueToTree(current == null ? "{}" : current);
         JsonNode target = patchMapper().valueToTree(desired == null ? "{}" : desired);
         JsonNode diff = JsonDiff.asJson(source, target);
@@ -30,14 +30,14 @@ class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
             String pathValue = d.get("path").asText();
 
             if (ignorableFields.matcher(pathValue).matches()) {
-                log.debug("Ignoring {} {} diff {}", resourceKind, resourceName, d);
+                LOGGER.debugCr(reconciliation, "Ignoring {} {} diff {}", resourceKind, resourceName, d);
                 continue;
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("{} {} differs: {}", resourceKind, resourceName, d);
-                log.debug("Current {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(source, pathValue));
-                log.debug("Desired {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(target, pathValue));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugCr(reconciliation, "{} {} differs: {}", resourceKind, resourceName, d);
+                LOGGER.debugCr(reconciliation, "Current {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(source, pathValue));
+                LOGGER.debugCr(reconciliation, "Desired {} {} path {} has value {}", resourceKind, resourceName, pathValue, lookupPath(target, pathValue));
             }
 
             num++;

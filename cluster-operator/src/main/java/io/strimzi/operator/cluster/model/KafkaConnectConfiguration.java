@@ -6,6 +6,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +37,10 @@ public class KafkaConnectConfiguration extends AbstractConfiguration {
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *
+     * @param reconciliation  The reconciliation
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public KafkaConnectConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
-        super(jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
+    public KafkaConnectConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
+        super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS, DEFAULTS);
     }
 }
