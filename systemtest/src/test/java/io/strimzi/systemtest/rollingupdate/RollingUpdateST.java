@@ -274,6 +274,7 @@ class RollingUpdateST extends AbstractST {
             .endSpec()
             .build());
 
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
 
         KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
         resourceManager.createResource(extensionContext, user);
@@ -315,7 +316,8 @@ class RollingUpdateST extends AbstractST {
             kafka.getSpec().getKafka().setReplicas(scaleTo);
         }, namespaceName);
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, kafkaStsName, scaleTo, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStsName, scaleTo, kafkaPods);
+
         LOGGER.info("Kafka scale up to {} finished", scaleTo);
 
         internalKafkaClient = internalKafkaClient.toBuilder()
@@ -346,7 +348,9 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
         operationId = timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(initialReplicas), namespaceName);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, kafkaStsName, initialReplicas, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+
+        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStsName, initialReplicas, kafkaPods);
+
         LOGGER.info("Kafka scale down to {} finished", initialReplicas);
         //Test that CO doesn't have any exceptions in log
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
