@@ -166,7 +166,7 @@ public class KafkaUserQuotasOperator {
             kuq.setRequestPercentage(map.get("request_percentage").intValue());
         }
         if (map.containsKey("controller_mutation_rate")) {
-            kuq.setControllerMutationRate(map.get("controller_mutation_rate").intValue());
+            kuq.setControllerMutationRate(map.get("controller_mutation_rate"));
         }
         return kuq;
     }
@@ -186,7 +186,7 @@ public class KafkaUserQuotasOperator {
         ops.add(new ClientQuotaAlteration.Op("request_percentage",
                 quotas.getRequestPercentage() != null ? Double.valueOf(quotas.getRequestPercentage()) : null));
         ops.add(new ClientQuotaAlteration.Op("controller_mutation_rate",
-                quotas.getControllerMutationRate() != null ? Double.valueOf(quotas.getControllerMutationRate()) : null));
+                quotas.getControllerMutationRate() != null ? quotas.getControllerMutationRate() : null));
         return ops;
     }
 

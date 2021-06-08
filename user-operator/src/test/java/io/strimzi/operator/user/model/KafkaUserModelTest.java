@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaUserModelTest {
     private final KafkaUser tlsUser = ResourceUtils.createKafkaUserTls();
     private final KafkaUser scramShaUser = ResourceUtils.createKafkaUserScramSha();
-    private final KafkaUser quotasUser = ResourceUtils.createKafkaUserQuotas(1000, 2000, 42, 10);
+    private final KafkaUser quotasUser = ResourceUtils.createKafkaUserQuotas(1000, 2000, 42, 10d);
     private final Secret clientsCaCert = ResourceUtils.createClientsCaCertSecret();
     private final Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
     private final CertManager mockCertManager = new MockCertManager();
@@ -90,8 +90,9 @@ public class KafkaUserModelTest {
 
     @Test
     public void testFromCrdQuotaUserWithNullValues()   {
-        KafkaUser quotasUserWithNulls = ResourceUtils.createKafkaUserQuotas(null, 2000, null, 10);
+        KafkaUser quotasUserWithNulls = ResourceUtils.createKafkaUserQuotas(null, 2000, null, 10d);
         KafkaUserModel model = KafkaUserModel.fromCrd(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, quotasUserWithNulls, clientsCaCert, clientsCaKey, null, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
+
         assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
         assertThat(model.name, is(ResourceUtils.NAME));
         assertThat(model.labels, is(Labels.fromMap(ResourceUtils.LABELS)
@@ -103,7 +104,7 @@ public class KafkaUserModelTest {
         assertThat(model.getQuotas().getConsumerByteRate(), is(nullValue()));
         assertThat(model.getQuotas().getProducerByteRate(), is(2000));
         assertThat(model.getQuotas().getRequestPercentage(), is(nullValue()));
-        assertThat(model.getQuotas().getControllerMutationRate(), is(10));
+        assertThat(model.getQuotas().getControllerMutationRate(), is(10d));
 
     }
 

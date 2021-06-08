@@ -219,7 +219,7 @@ class UserST extends AbstractST {
         Integer prodRate = 1111;
         Integer consRate = 2222;
         Integer reqPerc = 42;
-        Integer mutRate = 10;
+        Double mutRate = 10d;
 
         // Create user with correct name
         resourceManager.createResource(extensionContext, KafkaUserTemplates.userWithQuotas(user, prodRate, consRate, reqPerc, mutRate)
