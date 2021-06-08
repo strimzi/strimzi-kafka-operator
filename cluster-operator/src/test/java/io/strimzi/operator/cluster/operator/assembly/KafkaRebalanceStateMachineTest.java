@@ -59,8 +59,6 @@ public class KafkaRebalanceStateMachineTest {
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
 
-    ConfigMapOperator mockCmOps;
-
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
 
     private static ClientAndServer ccServer;
@@ -138,7 +136,7 @@ public class KafkaRebalanceStateMachineTest {
 
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        mockCmOps = supplier.configMapOperations;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
             @Override
@@ -175,7 +173,6 @@ public class KafkaRebalanceStateMachineTest {
                         System.out.println(result.getStatus().getConditions());
                         assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
                     });
-                    System.out.println(result.getStatus());
                     return Future.succeededFuture(result.getStatus());
                 });
     }

@@ -648,10 +648,13 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     private MapAndStatus<ConfigMap, KafkaRebalanceStatus> buildRebalanceStatus(KafkaRebalance kafkaRebalance, String sessionID, KafkaRebalanceState cruiseControlState, JsonObject proposalJson, Set<Condition> validation) {
+        List<Condition> conditions = new ArrayList<>();
+        conditions.add(StatusUtils.buildRebalanceCondition(cruiseControlState.toString()));
+        conditions.addAll(validation);
         MapAndStatus<ConfigMap, Map<String, Object>> optimizationProposalMapAndStatus = processOptimizationProposal(kafkaRebalance, proposalJson);
         return new MapAndStatus<>(optimizationProposalMapAndStatus.getLoadMap(), new KafkaRebalanceStatusBuilder()
                 .withSessionId(sessionID)
-                .withConditions(StatusUtils.buildRebalanceCondition(cruiseControlState.toString()))
+                .withConditions(conditions)
                 .withOptimizationResult(optimizationProposalMapAndStatus.getStatus())
                 .build());
 
@@ -700,7 +703,7 @@ public class KafkaRebalanceAssemblyOperator
             return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
         } else {
             // Stay in the current NotReady state, returning null as next state
-            return Future.succeededFuture();
+            return Future.succeededFuture(new MapAndStatus<>(null, null));
         }
     }
 
@@ -819,13 +822,9 @@ public class KafkaRebalanceAssemblyOperator
                 LOGGER.debugCr(reconciliation, "Annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh);
                 return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
             default:
-<<<<<<< HEAD
                 LOGGER.warnCr(reconciliation, "Ignore annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotation);
-                return Future.succeededFuture(new MapAndStatus<>(null, kafkaRebalance.getStatus()));
-=======
-                log.warn("{}: Ignore annotation {}={}", reconciliation, ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotation);
-                return Future.succeededFuture(new MapAndStatus<>(null, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(),validate(kafkaRebalance))));
->>>>>>> 0add94a41... patch
+                return Future.succeededFuture(new MapAndStatus<>(null, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), validate(kafkaRebalance))));
+
         }
     }
 
