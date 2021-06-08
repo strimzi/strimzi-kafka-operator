@@ -113,11 +113,12 @@ public class ResourceUtils {
         return createKafkaUser(new KafkaUserScramSha512ClientAuthentication());
     }
 
-    public static KafkaUser createKafkaUserQuotas(Integer consumerByteRate, Integer producerByteRate, Integer requestPercentage) {
+    public static KafkaUser createKafkaUserQuotas(Integer consumerByteRate, Integer producerByteRate, Integer requestPercentage, Integer controllerMutationRate) {
         KafkaUserQuotas kuq = new KafkaUserQuotasBuilder()
                 .withConsumerByteRate(consumerByteRate)
                 .withProducerByteRate(producerByteRate)
                 .withRequestPercentage(requestPercentage)
+                .withControllerMutationRate(controllerMutationRate)
                 .build();
 
         return createKafkaUser(kuq);

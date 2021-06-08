@@ -113,6 +113,7 @@ public class KafkaUserQuotasOperator {
             current.setProducerByteRate(null);
             current.setConsumerByteRate(null);
             current.setRequestPercentage(null);
+            current.setControllerMutationRate(null);
             alterUserQuotas(reconciliation, username, toClientQuotaAlterationOps(current));
         } else {
             LOGGER.warnCr(reconciliation, "Quotas for user {} already don't exist", username);
@@ -164,6 +165,9 @@ public class KafkaUserQuotasOperator {
         if (map.containsKey("request_percentage")) {
             kuq.setRequestPercentage(map.get("request_percentage").intValue());
         }
+        if (map.containsKey("controller_mutation_rate")) {
+            kuq.setControllerMutationRate(map.get("controller_mutation_rate").intValue());
+        }
         return kuq;
     }
 
@@ -181,6 +185,8 @@ public class KafkaUserQuotasOperator {
                 quotas.getConsumerByteRate() != null ? Double.valueOf(quotas.getConsumerByteRate()) : null));
         ops.add(new ClientQuotaAlteration.Op("request_percentage",
                 quotas.getRequestPercentage() != null ? Double.valueOf(quotas.getRequestPercentage()) : null));
+        ops.add(new ClientQuotaAlteration.Op("controller_mutation_rate",
+                quotas.getControllerMutationRate() != null ? Double.valueOf(quotas.getControllerMutationRate()) : null));
         return ops;
     }
 
@@ -194,6 +200,7 @@ public class KafkaUserQuotasOperator {
     private boolean quotasEquals(KafkaUserQuotas kuq1, KafkaUserQuotas kuq2) {
         return Objects.equals(kuq1.getProducerByteRate(), kuq2.getProducerByteRate()) &&
                 Objects.equals(kuq1.getConsumerByteRate(), kuq2.getConsumerByteRate()) &&
-                Objects.equals(kuq1.getRequestPercentage(), kuq2.getRequestPercentage());
+                Objects.equals(kuq1.getRequestPercentage(), kuq2.getRequestPercentage()) &&
+                Objects.equals(kuq1.getControllerMutationRate(), kuq2.getControllerMutationRate());
     }
 }

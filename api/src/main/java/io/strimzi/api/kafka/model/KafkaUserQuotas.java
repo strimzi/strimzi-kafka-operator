@@ -34,6 +34,17 @@ public class KafkaUserQuotas implements UnknownPropertyPreserving, Serializable 
     private Integer producerByteRate;
     private Integer consumerByteRate;
     private Integer requestPercentage;
+    private Integer controllerMutationRate;
+
+    @Description(" The quota on rate at which mutations are accepted for the create topics request, the create partitions request and the delete topics request. The rate is accumulated by the number of partitions created or deleted.")
+    @Minimum(0)
+    public Integer getControllerMutationRate() {
+        return controllerMutationRate;
+    }
+
+    public void setControllerMutationRate(Integer controllerMutationRate) {
+        this.controllerMutationRate = controllerMutationRate;
+    }
 
     private Map<String, Object> additionalProperties;
 
