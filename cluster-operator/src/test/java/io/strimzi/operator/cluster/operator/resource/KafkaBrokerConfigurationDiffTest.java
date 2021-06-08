@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
@@ -84,14 +85,14 @@ public class KafkaBrokerConfigurationDiffTest {
 
     @Test
     public void testDefaultValue() {
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), kafkaVersion, brokerId);
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), kafkaVersion, brokerId);
         assertThat(kcd.isDesiredPropertyDefaultValue("offset.metadata.max.bytes", getCurrentConfiguration(emptyList())), is(true));
     }
 
     @Test
     public void testNonDefaultValue() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("offset.metadata.max.bytes", "4097"));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(emptyList()), kafkaVersion, brokerId);
         assertThat(kcd.isDesiredPropertyDefaultValue("offset.metadata.max.bytes", getCurrentConfiguration(ces)), is(false));
     }
@@ -100,7 +101,7 @@ public class KafkaBrokerConfigurationDiffTest {
     public void testCustomPropertyAdded() {
         ArrayList<ConfigEntry> ces = new ArrayList<>();
         ces.add(new ConfigEntry("custom.property", "42"));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(new ArrayList<>()), getDesiredConfiguration(ces), kafkaVersion, brokerId);
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(new ArrayList<>()), getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
 
@@ -109,7 +110,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testCustomPropertyRemoved() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("custom.property", "42", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(emptyList()), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -119,7 +120,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testCustomPropertyKept() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("custom.property", "42", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -129,7 +130,7 @@ public class KafkaBrokerConfigurationDiffTest {
     public void testCustomPropertyChanged() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("custom.property", "42", false, true, false));
         List<ConfigEntry> ces2 = singletonList(new ConfigEntry("custom.property", "43", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(ces2), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -138,7 +139,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedPresentValue() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("min.insync.replicas", "2", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -148,7 +149,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedPresentValueToDefault() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("min.insync.replicas", "1", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -157,7 +158,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedAdvertisedListener() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("advertised.listeners", "karel", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -166,7 +167,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedAdvertisedListenerFromNothingToDefault() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("advertised.listeners", "null", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -176,7 +177,7 @@ public class KafkaBrokerConfigurationDiffTest {
     public void testChangedAdvertisedListenerFromNonDefaultToDefault() {
         // advertised listeners are filled after the pod started
         List<ConfigEntry> ces = singletonList(new ConfigEntry("advertised.listeners", "null", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -185,7 +186,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedZookeeperConnect() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("zookeeper.connect", "karel", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -194,7 +195,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedLogDirs() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("log.dirs", "/var/lib/kafka/data/karel", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(false));
@@ -204,7 +205,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testLogDirsNonDefaultToDefault() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("log.dirs", "null", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(false));
@@ -214,7 +215,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testLogDirsDefaultToDefault() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("log.dirs", "null", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -223,7 +224,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testUnchangedLogDirs() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("log.dirs", "null", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -232,7 +233,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedInterBrokerListenerName() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("inter.broker.listener.name", "david", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(false));
@@ -241,7 +242,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedListenerSecurityProtocolMap() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("listener.security.protocol.map", "david", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -251,7 +252,7 @@ public class KafkaBrokerConfigurationDiffTest {
     public void testChangedListenerSecurityProtocolMapFromNonDefault() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("listener.security.protocol.map", "REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT,TLS-9093:SSL,EXTERNAL-9094:SSL", false, true, false));
         List<ConfigEntry> ces2 = singletonList(new ConfigEntry("listener.security.protocol.map", "REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT,TLS-9093:SSL", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(ces2), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
@@ -264,7 +265,7 @@ public class KafkaBrokerConfigurationDiffTest {
         ces.add(new ConfigEntry("inter.broker.listener.name", "david", false, true, false));
         ces.add(new ConfigEntry("group.min.session.timeout.ms", "42", false, true, false));
         ces.add(new ConfigEntry("host.name", "honza", false, true, false));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(emptyList()),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(3));
         assertThat(kcd.canBeUpdatedDynamically(), is(false));
@@ -274,7 +275,7 @@ public class KafkaBrokerConfigurationDiffTest {
     public void testRemoveDefaultPropertyWhichIsNotDefault() {
         // it is not seen as default because the ConfigEntry.ConfigSource.DEFAULT_CONFIG is not set
         List<ConfigEntry> ces = singletonList(new ConfigEntry("log.retention.hours", "168"));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(getCurrentConfiguration(ces),
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(emptyList()), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(1));
         assertThat(kcd.canBeUpdatedDynamically(), is(false));

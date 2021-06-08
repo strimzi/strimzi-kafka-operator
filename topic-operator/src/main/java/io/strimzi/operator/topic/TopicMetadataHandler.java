@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -20,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicMetadata>> {
 
-    private static final Logger log = LogManager.getLogger(TopicMetadataHandler.class);
+    private static final Logger LOGGER = LogManager.getLogger(TopicMetadataHandler.class);
 
     private final BackOff backOff;
 
@@ -58,24 +59,24 @@ public abstract class TopicMetadataHandler implements Handler<AsyncResult<TopicM
      * Schedules this handler to execute again after a delay defined by the {@code BackOff}.
      * Calls {@link #onMaxAttemptsExceeded} if the backoff has reached its permitted number of retries.
      */
-    protected void retry() {
+    protected void retry(Reconciliation reconciliation) {
 
         long delay;
         try {
             delay = backOff.delayMs();
-            log.debug("Backing off for {}ms on getting metadata for {}", delay, topicName);
+            LOGGER.debug("Backing off for {}ms on getting metadata for {}", delay, topicName);
         } catch (MaxAttemptsExceededException e) {
-            log.info("Max attempts reached on getting metadata for {} after {}ms, giving up for now", topicName, backOff.totalDelayMs());
+            LOGGER.info("Max attempts reached on getting metadata for {} after {}ms, giving up for now", topicName, backOff.totalDelayMs());
             this.onMaxAttemptsExceeded(e);
             return;
         }
 
         if (delay < 1) {
             // vertx won't tolerate a zero delay
-            vertx.runOnContext(timerId -> kafka.topicMetadata(topicName).onComplete(this));
+            vertx.runOnContext(timerId -> kafka.topicMetadata(reconciliation, topicName).onComplete(this));
         } else {
             vertx.setTimer(TimeUnit.MILLISECONDS.convert(delay, TimeUnit.MILLISECONDS),
-                timerId -> kafka.topicMetadata(topicName).onComplete(this));
+                timerId -> kafka.topicMetadata(reconciliation, topicName).onComplete(this));
         }
     }
 

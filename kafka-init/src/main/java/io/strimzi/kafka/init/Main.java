@@ -11,16 +11,16 @@ import org.apache.logging.log4j.Logger;
 
 public class Main {
 
-    private static final Logger log = LogManager.getLogger(Main.class);
+    private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
     public static void main(String[] args) {
 
-        log.info("Init-kafka {} is starting", Main.class.getPackage().getImplementationVersion());
+        LOGGER.info("Init-kafka {} is starting", Main.class.getPackage().getImplementationVersion());
         InitWriterConfig config = InitWriterConfig.fromMap(System.getenv());
 
         KubernetesClient client = new DefaultKubernetesClient();
 
-        log.info("Init-kafka started with config: {}", config);
+        LOGGER.info("Init-kafka started with config: {}", config);
 
         InitWriter writer = new InitWriter(client, config);
 

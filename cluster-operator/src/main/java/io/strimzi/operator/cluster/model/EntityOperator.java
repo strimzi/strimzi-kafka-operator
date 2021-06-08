@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Main;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -79,8 +80,8 @@ public class EntityOperator extends AbstractModel {
     /**
 
      */
-    protected EntityOperator(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected EntityOperator(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = entityOperatorName(cluster);
         this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
@@ -137,21 +138,22 @@ public class EntityOperator extends AbstractModel {
     /**
      * Create a Entity Operator from given desired resource
      *
+     * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
      * @param versions The versions.
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
-    public static EntityOperator fromCrd(Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+    public static EntityOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         EntityOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
 
-            result = new EntityOperator(kafkaAssembly);
+            result = new EntityOperator(reconciliation, kafkaAssembly);
 
             result.setOwnerReference(kafkaAssembly);
 
-            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(kafkaAssembly);
-            EntityUserOperator userOperator = EntityUserOperator.fromCrd(kafkaAssembly);
+            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly);
+            EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly);
             TlsSidecar tlsSidecar = entityOperatorSpec.getTlsSidecar();
 
             if (entityOperatorSpec.getTemplate() != null) {
@@ -217,7 +219,7 @@ public class EntityOperator extends AbstractModel {
     public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
 
         if (!isDeployed()) {
-            log.warn("Topic and/or User Operators not declared: Entity Operator will not be deployed");
+            LOGGER.warnCr(reconciliation, "Topic and/or User Operators not declared: Entity Operator will not be deployed");
             return null;
         }
 
@@ -321,7 +323,7 @@ public class EntityOperator extends AbstractModel {
             return null;
         }
         Secret secret = clusterCa.entityOperatorSecret();
-        return ModelUtils.buildSecret(clusterCa, secret, namespace, EntityOperator.secretName(cluster), name,
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, EntityOperator.secretName(cluster), name,
                 "entity-operator", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 
@@ -386,7 +388,7 @@ public class EntityOperator extends AbstractModel {
             ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
             rules = cr.getRules();
         } catch (IOException e) {
-            log.error("Failed to read entity-operator ClusterRole.", e);
+            LOGGER.errorCr(reconciliation, "Failed to read entity-operator ClusterRole.", e);
             throw new RuntimeException(e);
         }
 

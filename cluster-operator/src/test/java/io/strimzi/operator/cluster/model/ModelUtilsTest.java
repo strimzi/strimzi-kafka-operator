@@ -38,6 +38,7 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -111,7 +112,7 @@ public class ModelUtilsTest {
                 .withMaxUnavailable(2)
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, template);
         assertThat(model.templatePodDisruptionBudgetLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -128,7 +129,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
 
         ModelUtils.parsePodDisruptionBudgetTemplate(model, null);
         assertThat(model.templatePodDisruptionBudgetLabels, is(nullValue()));
@@ -181,7 +182,7 @@ public class ModelUtilsTest {
                 .withTolerations(tolerations)
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
 
         ModelUtils.parsePodTemplate(model, template);
         assertThat(model.templatePodLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -207,7 +208,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
 
         ModelUtils.parsePodTemplate(model, null);
         assertThat(model.templatePodLabels, is(nullValue()));
@@ -234,7 +235,7 @@ public class ModelUtilsTest {
                 .withDeploymentStrategy(DeploymentStrategy.RECREATE)
                 .build();
 
-        Model model = new Model(connect);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, connect);
 
         ModelUtils.parseDeploymentTemplate(model, template);
         assertThat(model.templateDeploymentLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -251,7 +252,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(connect);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, connect);
 
         ModelUtils.parseDeploymentTemplate(model, null);
         assertThat(model.templateDeploymentAnnotations, is(nullValue()));
@@ -277,7 +278,7 @@ public class ModelUtilsTest {
                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
 
         ModelUtils.parseInternalServiceTemplate(model, template);
         assertThat(model.templateServiceLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -295,7 +296,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
 
         ModelUtils.parseInternalServiceTemplate(model, null);
         assertThat(model.templateServiceLabels, is(nullValue()));
@@ -322,7 +323,7 @@ public class ModelUtilsTest {
                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
 
         ModelUtils.parseInternalHeadlessServiceTemplate(model, template);
         assertThat(model.templateHeadlessServiceLabels, is(Collections.singletonMap("labelKey", "labelValue")));
@@ -340,7 +341,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        Model model = new Model(kafka);
+        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
 
         ModelUtils.parseInternalHeadlessServiceTemplate(model, null);
         assertThat(model.templateHeadlessServiceLabels, is(nullValue()));
@@ -350,8 +351,8 @@ public class ModelUtilsTest {
     }
 
     private class Model extends AbstractModel   {
-        public Model(HasMetadata resource) {
-            super(resource, "model-app");
+        public Model(Reconciliation reconciliation, HasMetadata resource) {
+            super(reconciliation, resource, "model-app");
         }
 
         @Override
@@ -510,7 +511,7 @@ public class ModelUtilsTest {
                 .endSpec()
                 .build();
 
-        KafkaCluster model1 = KafkaCluster.fromCrd(kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        KafkaCluster model1 = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
         /*AbstractModel model1 = new AbstractModel(kafka, "test") {
             @Override
             protected String getDefaultLogConfigFileName() {
@@ -524,7 +525,7 @@ public class ModelUtilsTest {
         };*/
         ModelUtils.parsePodTemplate(model1, pt1);
 
-        KafkaCluster model2 = KafkaCluster.fromCrd(kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        KafkaCluster model2 = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
         /*AbstractModel model2 = new AbstractModel(kafka, "test") {
             @Override
             protected String getDefaultLogConfigFileName() {

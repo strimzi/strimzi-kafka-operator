@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -112,7 +113,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(modifiedResource()).onComplete(context.succeeding(rr -> context.verify(() -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource).patch(any());
             verify(mockResource, never()).create(any());
@@ -147,7 +148,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource()).onComplete(context.succeeding(rr -> context.verify(() -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource, never()).patch(any());
             verify(mockResource, never()).create(any());
@@ -178,7 +179,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).onComplete(context.failing(e -> context.verify(() -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, is(ex));
             async.flag();
         })));
@@ -203,7 +204,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).onComplete(context.succeeding(rr -> context.verify(() -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
             async.flag();
@@ -231,7 +232,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(resource).onComplete(context.failing(e -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             async.flag();
         }));
@@ -254,7 +255,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockResource).get();
                 verify(mockResource, never()).delete();
@@ -295,7 +296,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
                 async.flag();
@@ -335,7 +336,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
                 async.flag();
@@ -378,7 +379,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, is(ex));
                 async.flag();
@@ -419,7 +420,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e.getMessage(), endsWith("could not be deleted (returned false)"));
                     async.flag();

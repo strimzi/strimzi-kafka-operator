@@ -26,7 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaConnect, KafkaConnectList> {
-    protected static final Logger log = LogManager.getLogger(KafkaConnectCrdOperatorIT.class);
+    protected static final Logger LOGGER = LogManager.getLogger(KafkaConnectCrdOperatorIT.class);
 
     @Override
     protected CrdOperator operator() {

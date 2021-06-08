@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
@@ -11,8 +12,6 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +24,7 @@ import java.util.Map;
  */
 public class TestingConnector extends SourceConnector {
 
-    private static final Logger LOGGER = LogManager.getLogger(TestingConnector.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(TestingConnector.class);
     public static final String START_TIME_MS = "start.time.ms";
     public static final String STOP_TIME_MS = "stop.time.ms";
     public static final String TASK_START_TIME_MS = "task.start.time.ms";
@@ -59,22 +58,22 @@ public class TestingConnector extends SourceConnector {
 
         @Override
         public void start(Map<String, String> map) {
-            LOGGER.info("Starting task {}", this);
+            LOGGER.infoOp("Starting task {}", this);
             long taskStartTime = getLong(map, "task.start.time.ms");
             taskStopTime = getLong(map, "task.stop.time.ms");
             taskPollTime = getLong(map, "task.poll.time.ms");
             taskPollRecords = getLong(map, "task.poll.records");
             topicName = map.get("topic.name");
             numPartitions = Integer.parseInt(map.get("num.partitions"));
-            LOGGER.info("Sleeping for {}ms", taskStartTime);
+            LOGGER.infoOp("Sleeping for {}ms", taskStartTime);
             sleep(taskStartTime);
-            LOGGER.info("Started task {}", this);
+            LOGGER.infoOp("Started task {}", this);
         }
 
         @Override
         public List<SourceRecord> poll() throws InterruptedException {
-            LOGGER.info("Poll {}", this);
-            LOGGER.info("Sleeping for {}ms in poll", taskPollTime);
+            LOGGER.infoOp("Poll {}", this);
+            LOGGER.infoOp("Sleeping for {}ms in poll", taskPollTime);
             sleep(taskPollTime);
             Schema valueSchema = new SchemaBuilder(Schema.Type.INT64).valueSchema();
             List<SourceRecord> records = new ArrayList<>();
@@ -85,20 +84,20 @@ public class TestingConnector extends SourceConnector {
                         null, null,
                         valueSchema, record++));
             }
-            LOGGER.warn("Returning {} records for topic {} from poll", taskPollRecords, topicName);
+            LOGGER.warnOp("Returning {} records for topic {} from poll", taskPollRecords, topicName);
             return records;
         }
 
         @Override
         public void stop() {
-            LOGGER.info("Stopping task {}", this);
+            LOGGER.infoOp("Stopping task {}", this);
             sleep(taskStopTime);
         }
     }
 
     @Override
     public void start(Map<String, String> map) {
-        LOGGER.info("Starting connector {}", this);
+        LOGGER.infoOp("Starting connector {}", this);
         long startTime = getLong(map, START_TIME_MS);
         stopTime = getLong(map, STOP_TIME_MS);
         taskStartTime = getLong(map, TASK_START_TIME_MS);
@@ -108,7 +107,7 @@ public class TestingConnector extends SourceConnector {
         topicName = map.get(TOPIC_NAME);
         numPartitions = Integer.parseInt(map.get(NUM_PARTITIONS));
         sleep(startTime);
-        LOGGER.info("Started connector {}", this);
+        LOGGER.infoOp("Started connector {}", this);
     }
 
     private static void sleep(long ms) {
@@ -116,7 +115,7 @@ public class TestingConnector extends SourceConnector {
             try {
                 Thread.sleep(ms);
             } catch (InterruptedException e) {
-                LOGGER.warn("Interrupted during sleep", e);
+                LOGGER.warnOp("Interrupted during sleep", e);
             }
         }
     }
@@ -148,9 +147,9 @@ public class TestingConnector extends SourceConnector {
 
     @Override
     public void stop() {
-        LOGGER.info("Stopping connector {}", this);
+        LOGGER.infoOp("Stopping connector {}", this);
         sleep(stopTime);
-        LOGGER.info("Stopped connector {}", this);
+        LOGGER.infoOp("Stopped connector {}", this);
     }
 
     @Override

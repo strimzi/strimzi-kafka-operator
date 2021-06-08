@@ -215,6 +215,7 @@ class TopicDiff {
 
     /**
      * Return the TopicDiff that will transform the given source topic into the given target topic.
+     *
      * @param source
      * @param target
      * @return The difference between the source and target.
@@ -318,6 +319,7 @@ class TopicDiff {
 
     /**
      * Apply this diff to this given topic, returning a new topic.
+     *
      * @param topic
      * @return
      */
@@ -361,6 +363,7 @@ class TopicDiff {
     /**
      * Merge this TopicDiff with the given other TopicDiff, returning a
      * single diff which combines the two.
+     *
      * @param other The diff to merge with.
      * @return
      * @throws IllegalArgumentException if the topics conflict.

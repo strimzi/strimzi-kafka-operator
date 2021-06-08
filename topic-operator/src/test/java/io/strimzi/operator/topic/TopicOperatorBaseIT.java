@@ -332,6 +332,7 @@ public abstract class TopicOperatorBaseIT {
 
     /**
      * Create a topic in Kafka with default partitions and replicas from broker settings.
+     *
      * @param topicName The name of the topic.
      * @return The name of the KafkaTopic resource that was created in Kube.
      * @throws InterruptedException
@@ -343,6 +344,7 @@ public abstract class TopicOperatorBaseIT {
 
     /**
      * Create a topic in Kafka with a single partition and RF=1.
+     *
      * @param topicName The name of the topic.
      * @return The name of the KafkaTopic resource that was created in Kube.
      * @throws InterruptedException
@@ -354,6 +356,7 @@ public abstract class TopicOperatorBaseIT {
 
     /**
      * Create a topic in Kafka with a single partition and the given replica assignments
+     *
      * @param topicName The name of the topic.
      * @param replicaAssignments The replica assignments.
      * @return The name of the KafkaTopic resource that was created in Kube.

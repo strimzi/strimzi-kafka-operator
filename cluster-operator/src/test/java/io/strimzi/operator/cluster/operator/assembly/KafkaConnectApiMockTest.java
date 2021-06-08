@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -43,7 +44,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
+        api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
             .onComplete(context.succeeding(res -> async.flag()));
     }
 
@@ -57,7 +58,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
+        api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
             .onComplete(context.succeeding(res -> async.flag()));
     }
 
@@ -72,7 +73,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
+        api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
             .onComplete(context.failing(res -> async.flag()));
     }
 
@@ -84,7 +85,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         Checkpoint async = context.checkpoint();
 
-        api.statusWithBackOff(backOff, "some-host", 8083, "some-connector")
+        api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
             .onComplete(context.failing(res -> async.flag()));
     }
 
@@ -97,7 +98,7 @@ public class KafkaConnectApiMockTest {
         }
 
         @Override
-        public Future<Map<String, Object>> status(String host, int port, String connectorName) {
+        public Future<Map<String, Object>> status(Reconciliation reconciliation, String host, int port, String connectorName) {
             return statusResults.remove();
         }
     }

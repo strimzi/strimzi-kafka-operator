@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -129,7 +130,7 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public Future<Void> createTopic(Topic t) {
+    public Future<Void> createTopic(Reconciliation reconciliation, Topic t) {
         NewTopic newTopic = TopicSerialization.toNewTopic(t, null);
         Future<Void> event = createTopicResponse.apply(newTopic.name());
         if (event.succeeded()) {
@@ -152,7 +153,7 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public Future<Void> deleteTopic(TopicName topicName) {
+    public Future<Void> deleteTopic(Reconciliation reconciliation, TopicName topicName) {
         Future<Void> event = deleteTopicResponse.apply(topicName);
         if (event.succeeded()) {
             topics.remove(topicName);
@@ -161,7 +162,7 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public Future<Boolean> topicExists(TopicName topicName) {
+    public Future<Boolean> topicExists(Reconciliation reconciliation, TopicName topicName) {
         Future<Boolean> event = topicExistsResult.apply(topicName);
         if (event == null) {
             throw new IllegalStateException();
@@ -176,7 +177,7 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public Future<Void> updateTopicConfig(Topic topic) {
+    public Future<Void> updateTopicConfig(Reconciliation reconciliation, Topic topic) {
         Future<Void> event = updateTopicResponse.apply(topic.getTopicName());
         if (event.succeeded()) {
             Topic t = topics.get(topic.getTopicName());
@@ -190,7 +191,7 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public Future<Void> increasePartitions(Topic topic) {
+    public Future<Void> increasePartitions(Reconciliation reconciliation, Topic topic) {
         Future<Void> event = updateTopicResponse.apply(topic.getTopicName());
         if (event.succeeded()) {
             Topic t = topics.get(topic.getTopicName());
@@ -204,7 +205,7 @@ public class MockKafka implements Kafka {
     }
 
     @Override
-    public Future<TopicMetadata> topicMetadata(TopicName topicName) {
+    public Future<TopicMetadata> topicMetadata(Reconciliation reconciliation, TopicName topicName) {
         return getTopicNameFutureFunction().apply(topicName);
     }
 

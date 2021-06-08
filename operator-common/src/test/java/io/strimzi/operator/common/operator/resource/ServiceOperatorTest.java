@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
 
@@ -157,7 +158,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                 .build();
 
         ServiceOperator op = new ServiceOperator(vertx, client);
-        op.internalPatch(NAMESPACE, RESOURCE_NAME, current, desired);
+        op.internalPatch(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io~1publicEndpoints"), equalTo("foo"));
         assertThat(desired.getMetadata().getAnnotations().get("cattle.io/test"), equalTo("bar"));

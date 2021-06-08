@@ -9,12 +9,12 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.function.Function;
  */
 public class ZookeeperSetOperator extends StatefulSetOperator {
 
-    private static final Logger log = LogManager.getLogger(ZookeeperSetOperator.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ZookeeperSetOperator.class);
     private final ZookeeperLeaderFinder leaderFinder;
 
     /**
@@ -43,36 +43,36 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
     }
 
     @Override
-    protected boolean shouldIncrementGeneration(StatefulSetDiff diff) {
-        return !diff.isEmpty() && needsRollingUpdate(diff);
+    protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
+        return !diff.isEmpty() && needsRollingUpdate(reconciliation, diff);
     }
 
-    public static boolean needsRollingUpdate(StatefulSetDiff diff) {
+    public static boolean needsRollingUpdate(Reconciliation reconciliation, StatefulSetDiff diff) {
         if (diff.changesLabels()) {
-            log.debug("Changed labels => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed labels => needs rolling update");
             return true;
         }
         if (diff.changesSpecTemplate()) {
-            log.debug("Changed template spec => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed template spec => needs rolling update");
             return true;
         }
         if (diff.changesVolumeClaimTemplates()) {
-            log.debug("Changed volume claim template => needs rolling update");
+            LOGGER.debugCr(reconciliation, "Changed volume claim template => needs rolling update");
             return true;
         }
         if (diff.changesVolumeSize()) {
-            log.debug("Changed size of the volume claim template => no need for rolling update");
+            LOGGER.debugCr(reconciliation, "Changed size of the volume claim template => no need for rolling update");
             return false;
         }
         return false;
     }
 
     @Override
-    public Future<Void> maybeRollingUpdate(StatefulSet sts, Function<Pod, List<String>> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
+    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podRestart, Secret clusterCaSecret, Secret coKeySecret) {
         String namespace = sts.getMetadata().getNamespace();
         String name = sts.getMetadata().getName();
         final int replicas = sts.getSpec().getReplicas();
-        log.debug("Considering rolling update of {}/{}", namespace, name);
+        LOGGER.debugCr(reconciliation, "Considering rolling update of {}/{}", namespace, name);
 
         boolean zkRoll = false;
         ArrayList<Pod> pods = new ArrayList<>(replicas);
@@ -89,20 +89,20 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
             // Find the leader
             Promise<Void> promise = Promise.promise();
             rollFuture = promise.future();
-            Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(cluster, namespace, pods, coKeySecret);
+            Future<Integer> leaderFuture = leaderFinder.findZookeeperLeader(reconciliation, cluster, namespace, pods, coKeySecret);
             leaderFuture.compose(leader -> {
-                log.debug("Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
+                LOGGER.debugCr(reconciliation, "Zookeeper leader is " + (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER ? "unknown" : "pod " + leader));
                 Future<Void> fut = Future.succeededFuture();
                 // Then roll each non-leader pod
                 for (int i = 0; i < replicas; i++) {
                     String podName = KafkaResources.zookeeperPodName(cluster, i);
                     if (i != leader) {
-                        log.debug("Possibly restarting non-leader pod {}", podName);
+                        LOGGER.debugCr(reconciliation, "Possibly restarting non-leader pod {}", podName);
                         // roll the pod and wait until it is ready
                         // this prevents rolling into faulty state (note: this applies just for ZK pods)
-                        fut = fut.compose(ignore -> maybeRestartPod(sts, podName, podRestart));
+                        fut = fut.compose(ignore -> maybeRestartPod(reconciliation, sts, podName, podRestart));
                     } else {
-                        log.debug("Deferring restart of leader {}", podName);
+                        LOGGER.debugCr(reconciliation, "Deferring restart of leader {}", podName);
                     }
                 }
                 if (leader == ZookeeperLeaderFinder.UNKNOWN_LEADER) {
@@ -111,8 +111,8 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
                     // Finally roll the leader pod
                     return fut.compose(ar -> {
                         // the leader is rolled as the last
-                        log.debug("Possibly restarting leader pod (previously deferred) {}", leader);
-                        return maybeRestartPod(sts, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
+                        LOGGER.debugCr(reconciliation, "Possibly restarting leader pod (previously deferred) {}", leader);
+                        return maybeRestartPod(reconciliation, sts, KafkaResources.zookeeperPodName(cluster, leader), podRestart);
                     });
                 }
             }).onComplete(promise);

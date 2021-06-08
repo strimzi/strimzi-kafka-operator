@@ -74,7 +74,8 @@ public class OperatorMetricsTest {
                 return Future.succeededFuture();
             }
 
-            public Set<Condition> validate(CustomResource resource) {
+            @Override
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 return emptySet();
             }
 
@@ -125,7 +126,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -178,7 +179,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 return new HashSet<>();
             }
 
@@ -230,7 +231,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -279,7 +280,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Future updateStatusAsync(HasMetadata resource) {
+            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
             }
         };
@@ -291,7 +292,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -354,7 +355,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -425,7 +426,7 @@ public class OperatorMetricsTest {
     protected AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
         return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
             @Override
-            public Future updateStatusAsync(HasMetadata resource) {
+            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
             }
 
@@ -491,7 +492,7 @@ public class OperatorMetricsTest {
     private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource()    {
         return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
             @Override
-            public Future updateStatusAsync(HasMetadata resource) {
+            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return Future.succeededFuture();
             }
 

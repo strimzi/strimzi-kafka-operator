@@ -52,6 +52,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -72,8 +73,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -100,7 +99,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         L extends CustomResourceList<T>, R extends Resource<T>, P extends AbstractKafkaConnectSpec, S extends KafkaConnectStatus>
         extends AbstractOperator<T, P, S, CrdOperator<C, T, L>> {
 
-    private static final Logger log = LogManager.getLogger(AbstractConnectOperator.class.getName());
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
@@ -233,8 +232,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                             KafkaConnectS2I connectS2i = cf.resultAt(1);
                                             KafkaConnectApi apiClient = connectOperator.connectClientProvider.apply(connectOperator.vertx);
                                             if (connect == null && connectS2i == null) {
-                                                log.info("{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
-                                                updateStatus(noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                Reconciliation r = new Reconciliation("connector-watch", connectOperator.kind(),
+                                                        kafkaConnector.getMetadata().getNamespace(), connectName);
+                                                updateStatus(r, noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                LOGGER.infoCr(r, "{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                 return Future.succeededFuture();
                                             } else if (connect != null && isOlderOrAlone(connect.getMetadata().getCreationTimestamp(), connectS2i)) {
                                                 // grab the lock and call reconcileConnectors()
@@ -243,14 +244,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
 
                                                 if (!Util.matchesSelector(selector, connect))   {
-                                                    log.debug("{}: {} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName, selectorLabels);
+                                                    LOGGER.debugCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", connectorKind, connectorName, connectorNamespace, action, connectName, selectorLabels);
                                                     return Future.succeededFuture();
                                                 } else if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
-                                                    log.info("{}: {} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
-                                                    updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                    LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, connectorNamespace, action, connectName);
+                                                    updateStatus(reconciliation, zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                     return Future.succeededFuture();
                                                 } else {
-                                                    log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
+                                                    LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", connectorKind, connectorName, connectorNamespace, action);
 
                                                     return connectOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
                                                         () -> connectOperator.reconcileConnectorAndHandleResult(reconciliation,
@@ -258,7 +259,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                                     isUseResources(connect),
                                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
                                                                     .compose(reconcileResult -> {
-                                                                        log.info("{}: reconciled", reconciliation);
+                                                                        LOGGER.infoCr(reconciliation, "reconciled");
                                                                         return Future.succeededFuture(reconcileResult);
                                                                     }));
                                                 }
@@ -269,14 +270,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
 
                                                 if (!Util.matchesSelector(selector, connectS2i)) {
-                                                    log.debug("{}: {} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName, selectorLabels);
+                                                    LOGGER.debugCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", connectorKind, connectorName, connectorNamespace, action, connectName, selectorLabels);
                                                     return Future.succeededFuture();
                                                 } else if (connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0)    {
-                                                    log.info("{}: {} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", reconciliation, connectorKind, connectorName, connectorNamespace, action, connectName);
-                                                    updateStatus(zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                    LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, connectorNamespace, action, connectName);
+                                                    updateStatus(reconciliation, zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                     return Future.succeededFuture();
                                                 } else {
-                                                    log.info("{}: {} {} in namespace {} was {}", reconciliation, connectorKind, connectorName, connectorNamespace, action);
+                                                    LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", connectorKind, connectorName, connectorNamespace, action);
 
                                                     return connectS2IOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
                                                         () -> connectS2IOperator.reconcileConnectorAndHandleResult(reconciliation,
@@ -284,14 +285,16 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                                     isUseResources(connectS2i),
                                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
                                                                     .compose(reconcileResult -> {
-                                                                        log.info("{}: reconciled", reconciliation);
+                                                                        LOGGER.infoCr(reconciliation, "reconciled");
                                                                         return Future.succeededFuture(reconcileResult);
                                                                     }));
                                                 }
                                             }
                                         });
                             } else {
-                                updateStatus(new InvalidResourceException("Resource lacks label '"
+                                updateStatus(new Reconciliation("connector-watch", connectOperator.kind(),
+                                        kafkaConnector.getMetadata().getNamespace(), null),
+                                        new InvalidResourceException("Resource lacks label '"
                                                 + Labels.STRIMZI_CLUSTER_LABEL
                                                 + "': No connect cluster in which to create this connector."),
                                         kafkaConnector, connectOperator.connectorOperator);
@@ -299,10 +302,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
                             break;
                         case ERROR:
-                            log.error("Failed {} {} in namespace {} ", connectorKind, connectorName, connectorNamespace);
+                            LOGGER.errorCr(new Reconciliation("connector-watch", connectorKind, connectName, connectorNamespace), "Failed {} {} in namespace {} ", connectorKind, connectorName, connectorNamespace);
                             break;
                         default:
-                            log.error("Unknown action: {} {} in namespace {}", connectorKind, connectorName, connectorNamespace);
+                            LOGGER.errorCr(new Reconciliation("connector-watch", connectorKind, connectName, connectorNamespace), "Unknown action: {} {} in namespace {}", connectorKind, connectorName, connectorNamespace);
                     }
                 }
 
@@ -376,14 +379,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return CompositeFuture.join(
                 apiClient.list(host, port),
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
-                apiClient.listConnectorPlugins(host, port),
-                apiClient.updateConnectLoggers(host, port, desiredLogging, defaultLogging)
+                apiClient.listConnectorPlugins(reconciliation, host, port),
+                apiClient.updateConnectLoggers(reconciliation, host, port, desiredLogging, defaultLogging)
         ).compose(cf -> {
             List<String> runningConnectorNames = cf.resultAt(0);
             List<KafkaConnector> desiredConnectors = cf.resultAt(1);
             List<ConnectorPlugin> connectorPlugins = cf.resultAt(2);
 
-            log.debug("{}: Setting list of connector plugins in Kafka Connect status", reconciliation);
+            LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
             connectStatus.setConnectorPlugins(connectorPlugins);
 
             if (connectorsResourceCounter != null)  {
@@ -392,12 +395,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
             Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
             deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
-            log.debug("{}: {} cluster: delete connectors: {}", reconciliation, kind(), deleteConnectorNames);
+            LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
             Stream<Future<Void>> deletionFutures = deleteConnectorNames.stream().map(connectorName ->
                     reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connectorName, null)
             );
 
-            log.debug("{}: {} cluster: required connectors: {}", reconciliation, kind(), desiredConnectors);
+            LOGGER.debugCr(reconciliation, "{} cluster: required connectors: {}", kind(), desiredConnectors);
             Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
                     .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
 
@@ -405,7 +408,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }).recover(error -> {
             if (error instanceof ConnectTimeoutException) {
                 Promise<Void> connectorStatuses = Promise.promise();
-                log.warn("{}: Failed to connect to the REST API => trying to update the connector status", reconciliation);
+                LOGGER.warnCr(reconciliation, "Failed to connect to the REST API => trying to update the connector status");
 
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
                         .compose(connectors -> CompositeFuture.join(
@@ -463,13 +466,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                              boolean useResources, String connectorName, KafkaConnector connector) {
         if (connector == null) {
             if (useResources) {
-                log.info("{}: deleting connector: {}", reconciliation, connectorName);
-                return apiClient.delete(host, port, connectorName);
+                LOGGER.infoCr(reconciliation, "deleting connector: {}", connectorName);
+                return apiClient.delete(reconciliation, host, port, connectorName);
             } else {
                 return Future.succeededFuture();
             }
         } else {
-            log.info("{}: creating/updating connector: {}", reconciliation, connectorName);
+            LOGGER.infoCr(reconciliation, "creating/updating connector: {}", connectorName);
             if (connector.getSpec() == null) {
                 return maybeUpdateConnectorStatus(reconciliation, connector, null,
                         new InvalidResourceException("spec property is required"));
@@ -509,32 +512,32 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                                 String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
-        return apiClient.getConnectorConfig(new BackOff(200L, 2, 6), host, port, connectorName).compose(
+        return apiClient.getConnectorConfig(reconciliation, new BackOff(200L, 2, 6), host, port, connectorName).compose(
             config -> {
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, config)) {
-                    log.debug("{}: Connector {} exists and has desired config, {}=={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
-                    return apiClient.status(host, port, connectorName)
+                    LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, connectorSpec.getConfig(), config);
+                    return apiClient.status(reconciliation, host, port, connectorName)
                         .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
                         .compose(ignored -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, new ArrayList<>()))
                         .compose(conditions -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions ->
-                            apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port, connectorName)
+                            apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port, connectorName)
                                 .compose(createConnectorStatusAndConditions(conditions)))
-                        .compose(status -> updateConnectorTopics(host, apiClient, connectorName, status));
+                        .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
-                    log.debug("{}: Connector {} exists but does not have desired config, {}!={}", reconciliation, connectorName, connectorSpec.getConfig(), config);
+                    LOGGER.debugCr(reconciliation, "Connector {} exists but does not have desired config, {}!={}", connectorName, connectorSpec.getConfig(), config);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
                         .compose(createConnectorStatusAndConditions())
-                        .compose(status -> updateConnectorTopics(host, apiClient, connectorName, status));
+                        .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 }
             },
             error -> {
                 if (error instanceof ConnectRestException
                         && ((ConnectRestException) error).getStatusCode() == 404) {
-                    log.debug("{}: Connector {} does not exist", reconciliation, connectorName);
+                    LOGGER.debugCr(reconciliation, "Connector {} does not exist", connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
                         .compose(createConnectorStatusAndConditions())
-                        .compose(status -> updateConnectorTopics(host, apiClient, connectorName, status));
+                        .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
                     return Future.failedFuture(error);
                 }
@@ -555,20 +558,20 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         for (Map.Entry<String, Object> entry : connectorSpec.getConfig().entrySet()) {
             desired.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("{}: Desired: {}", reconciliation, new TreeMap<>(desired));
-            log.debug("{}: Actual:  {}", reconciliation, new TreeMap<>(actual));
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugCr(reconciliation, "Desired: {}", new TreeMap<>(desired));
+            LOGGER.debugCr(reconciliation, "Actual:  {}", new TreeMap<>(actual));
         }
         return !desired.equals(actual);
     }
 
     protected Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                   String connectorName, KafkaConnectorSpec connectorSpec) {
-        return apiClient.createOrUpdatePutRequest(host, port, connectorName, asJson(connectorSpec))
-            .compose(ignored -> apiClient.statusWithBackOff(new BackOff(200L, 2, 10), host, port,
+        return apiClient.createOrUpdatePutRequest(reconciliation, host, port, connectorName, asJson(reconciliation, connectorSpec))
+            .compose(ignored -> apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port,
                     connectorName))
             .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
-            .compose(ignored ->  apiClient.status(host, port, connectorName));
+            .compose(ignored ->  apiClient.status(reconciliation, host, port, connectorName));
     }
 
     private Future<Void> pauseResume(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> status) {
@@ -579,10 +582,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             String state = (String) path;
             boolean shouldPause = Boolean.TRUE.equals(connectorSpec.getPause());
             if ("RUNNING".equals(state) && shouldPause) {
-                log.debug("{}: Pausing connector {}", reconciliation, connectorName);
+                LOGGER.debugCr(reconciliation, "Pausing connector {}", connectorName);
                 return apiClient.pause(host, port, connectorName);
             } else if ("PAUSED".equals(state) && !shouldPause) {
-                log.debug("{}: Resuming connector {}", reconciliation, connectorName);
+                LOGGER.debugCr(reconciliation, "Resuming connector {}", connectorName);
                 return apiClient.resume(host, port, connectorName);
             } else {
                 return Future.succeededFuture();
@@ -592,14 +595,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
-            log.debug("{}: Restarting connector {}", reconciliation, connectorName);
+            LOGGER.debugCr(reconciliation, "Restarting connector {}", connectorName);
             return apiClient.restart(host, port, connectorName)
                     .compose(ignored -> removeRestartAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
                         throwable -> {
                             // Ignore restart failures - add a warning and try again on the next reconcile
                             String message = "Failed to restart connector " + connectorName + ". " + throwable.getMessage();
-                            log.warn("{}: {}", reconciliation, message);
+                            LOGGER.warnCr(reconciliation, message);
                             conditions.add(StatusUtils.buildWarningCondition("RestartConnector", message));
                             return Future.succeededFuture(conditions);
                         });
@@ -611,14 +614,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Future<List<Condition>> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         int taskID = getRestartTaskAnnotationTaskID(resource, connectorName);
         if (taskID >= 0) {
-            log.debug("{}: Restarting connector task {}:{}", reconciliation, connectorName, taskID);
+            LOGGER.debugCr(reconciliation, "Restarting connector task {}:{}", connectorName, taskID);
             return apiClient.restartTask(host, port, connectorName, taskID)
                     .compose(ignored -> removeRestartTaskAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
                         throwable -> {
                             // Ignore restart failures - add a warning and try again on the next reconcile
                             String message = "Failed to restart connector task " + connectorName + ":" + taskID + ". " + throwable.getMessage();
-                            log.warn("{}: {}", reconciliation, message);
+                            LOGGER.warnCr(reconciliation, message);
                             conditions.add(StatusUtils.buildWarningCondition("RestartConnectorTask", message));
                             return Future.succeededFuture(conditions);
                         });
@@ -627,8 +630,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
-    private Future<ConnectorStatusAndConditions> updateConnectorTopics(String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status) {
-        return apiClient.getConnectorTopics(host, port, connectorName)
+    private Future<ConnectorStatusAndConditions> updateConnectorTopics(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status) {
+        return apiClient.getConnectorTopics(reconciliation, host, port, connectorName)
             .compose(updateConnectorStatusAndConditions(status));
     }
 
@@ -674,24 +677,24 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Patches the KafkaConnector CR to remove the supplied annotation.
      */
     private Future<Void> removeAnnotation(Reconciliation reconciliation, KafkaConnector resource, String annotationKey) {
-        log.debug("{}: Removing annotation {}", reconciliation, annotationKey);
+        LOGGER.debugCr(reconciliation, "Removing annotation {}", annotationKey);
         KafkaConnector patchedKafkaConnector = new KafkaConnectorBuilder(resource)
             .editMetadata()
             .removeFromAnnotations(annotationKey)
             .endMetadata()
             .build();
-        return connectorOperator.patchAsync(patchedKafkaConnector)
+        return connectorOperator.patchAsync(reconciliation, patchedKafkaConnector)
             .compose(ignored -> Future.succeededFuture());
     }
 
-    public static void updateStatus(Throwable error, KafkaConnector kafkaConnector2, CrdOperator<?, KafkaConnector, ?> connectorOperations) {
+    public static void updateStatus(Reconciliation reconciliation, Throwable error, KafkaConnector kafkaConnector2, CrdOperator<?, KafkaConnector, ?> connectorOperations) {
         KafkaConnectorStatus status = new KafkaConnectorStatus();
         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnector2, status, error);
         StatusDiff diff = new StatusDiff(kafkaConnector2.getStatus(), status);
         if (!diff.isEmpty()) {
             KafkaConnector copy = new KafkaConnectorBuilder(kafkaConnector2).build();
             copy.setStatus(status);
-            connectorOperations.updateStatusAsync(copy);
+            connectorOperations.updateStatusAsync(reconciliation, copy);
         }
     }
 
@@ -727,11 +730,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return topics -> Future.succeededFuture(new ConnectorStatusAndConditions(status.statusResult, topics, status.conditions));
     }
 
-    public Set<Condition> validate(KafkaConnector resource) {
+    public Set<Condition> validate(Reconciliation reconciliation, KafkaConnector resource) {
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0);
 
-            ResourceVisitor.visit(resource, new ValidationVisitor(resource, log, warningConditions));
+            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, LOGGER, warningConditions));
 
             return warningConditions;
         }
@@ -742,7 +745,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     Future<Void> maybeUpdateConnectorStatus(Reconciliation reconciliation, KafkaConnector connector, ConnectorStatusAndConditions connectorStatus, Throwable error) {
         KafkaConnectorStatus status = new KafkaConnectorStatus();
         if (error != null) {
-            log.warn("{}: Error reconciling connector {}", reconciliation, connector.getMetadata().getName(), error);
+            LOGGER.warnCr(reconciliation, "Error reconciling connector {}", connector.getMetadata().getName(), error);
         }
 
         Map<String, Object> statusResult = null;
@@ -755,7 +758,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             connectorStatus.conditions.forEach(condition -> conditions.add(condition));
         }
 
-        Set<Condition> unknownAndDeprecatedConditions = validate(connector);
+        Set<Condition> unknownAndDeprecatedConditions = validate(reconciliation, connector);
         unknownAndDeprecatedConditions.forEach(condition -> conditions.add(condition));
 
         if (!Annotations.isReconciliationPausedWithAnnotation(connector)) {
@@ -797,7 +800,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
-    protected JsonObject asJson(KafkaConnectorSpec spec) {
+    protected JsonObject asJson(Reconciliation reconciliation, KafkaConnectorSpec spec) {
         JsonObject connectorConfigJson = new JsonObject();
         if (spec.getConfig() != null) {
             for (Map.Entry<String, Object> cf : spec.getConfig().entrySet()) {
@@ -805,7 +808,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 if ("connector.class".equals(name)
                         || "tasks.max".equals(name)) {
                     // TODO include resource namespace and name in this message
-                    log.warn("Configuration parameter {} in KafkaConnector.spec.config will be ignored and the value from KafkaConnector.spec will be used instead",
+                    LOGGER.warnCr(reconciliation, "Configuration parameter {} in KafkaConnector.spec.config will be ignored and the value from KafkaConnector.spec will be used instead",
                             name);
                 }
                 connectorConfigJson.put(name, cf.getValue());
@@ -845,8 +848,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     if ((!(fetchedResource instanceof KafkaConnector))
                             && (!(fetchedResource instanceof KafkaMirrorMaker2))
                             && StatusUtils.isResourceV1alpha1(fetchedResource)) {
-                        log.warn("{}: {} {} needs to be upgraded from version {} to 'v1beta1' to use the status field",
-                                reconciliation, fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());
+                        LOGGER.warnCr(reconciliation, "{} {} needs to be upgraded from version {} to 'v1beta1' to use the status field",
+                                fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());
                         updateStatusPromise.complete();
                     } else {
                         S currentStatus = fetchedResource.getStatus();
@@ -856,26 +859,26 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         if (!ksDiff.isEmpty()) {
                             T resourceWithNewStatus = copyWithStatus.apply(fetchedResource, desiredStatus);
 
-                            resourceOperator.updateStatusAsync(resourceWithNewStatus).onComplete(updateRes -> {
+                            resourceOperator.updateStatusAsync(reconciliation, resourceWithNewStatus).onComplete(updateRes -> {
                                 if (updateRes.succeeded()) {
-                                    log.debug("{}: Completed status update", reconciliation);
+                                    LOGGER.debugCr(reconciliation, "Completed status update");
                                     updateStatusPromise.complete();
                                 } else {
-                                    log.error("{}: Failed to update status", reconciliation, updateRes.cause());
+                                    LOGGER.errorCr(reconciliation, "Failed to update status", updateRes.cause());
                                     updateStatusPromise.fail(updateRes.cause());
                                 }
                             });
                         } else {
-                            log.debug("{}: Status did not change", reconciliation);
+                            LOGGER.debugCr(reconciliation, "Status did not change");
                             updateStatusPromise.complete();
                         }
                     }
                 } else {
-                    log.error("{}: Current {} resource not found", reconciliation, resource.getKind());
+                    LOGGER.errorCr(reconciliation, "Current {} resource not found", resource.getKind());
                     updateStatusPromise.fail("Current " + resource.getKind() + " resource not found");
                 }
             } else {
-                log.error("{}: Failed to get the current {} resource and its status", reconciliation, resource.getKind(), getRes.cause());
+                LOGGER.errorCr(reconciliation, "Failed to get the current {} resource and its status", resource.getKind(), getRes.cause());
                 updateStatusPromise.fail(getRes.cause());
             }
         });
@@ -883,17 +886,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return updateStatusPromise.future();
     }
 
-    Future<ReconcileResult<Secret>> kafkaConnectJmxSecret(String namespace, String name, KafkaConnectCluster connectCluster) {
+    Future<ReconcileResult<Secret>> kafkaConnectJmxSecret(Reconciliation reconciliation, String namespace, String name, KafkaConnectCluster connectCluster) {
         if (connectCluster.isJmxAuthenticated()) {
             Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaConnectCluster.jmxSecretName(name));
             return secretFuture.compose(res -> {
                 if (res == null) {
-                    return secretOperations.reconcile(namespace, KafkaConnectCluster.jmxSecretName(name), connectCluster.generateJmxSecret());
+                    return secretOperations.reconcile(reconciliation, namespace, KafkaConnectCluster.jmxSecretName(name), connectCluster.generateJmxSecret());
                 }
                 return Future.succeededFuture(ReconcileResult.noop(res));
             });
         }
-        return secretOperations.reconcile(namespace, KafkaConnectCluster.jmxSecretName(name), null);
+        return secretOperations.reconcile(reconciliation, namespace, KafkaConnectCluster.jmxSecretName(name), null);
     }
 
 }

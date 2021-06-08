@@ -24,8 +24,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -55,7 +53,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Util {
-    private static final Logger LOGGER = LogManager.getLogger(Util.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Util.class);
 
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
         Promise<T> result = Promise.promise();
@@ -74,6 +72,7 @@ public class Util {
     /**
      * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
      * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
+     * @param reconciliation The reconciliation
      * @param vertx The vertx instance.
      * @param logContext A string used for context in logging.
      * @param logState The state we are waiting for use in log messages
@@ -82,13 +81,14 @@ public class Util {
      * @param completed Determines when the wait is complete by returning true.
      * @return A future that completes when the given {@code completed} indicates readiness.
      */
-    public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed) {
-        return waitFor(vertx, logContext, logState, pollIntervalMs, timeoutMs, completed, error -> false);
+    public static Future<Void> waitFor(Reconciliation reconciliation, Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed) {
+        return waitFor(reconciliation, vertx, logContext, logState, pollIntervalMs, timeoutMs, completed, error -> false);
     }
 
     /**
      * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
      * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
+     * @param reconciliation The reconciliation
      * @param vertx The vertx instance.
      * @param logContext A string used for context in logging.
      * @param logState The state we are waiting for use in log messages
@@ -99,10 +99,10 @@ public class Util {
      *                    should result in the immediate completion of the returned Future.
      * @return A future that completes when the given {@code completed} indicates readiness.
      */
-    public static Future<Void> waitFor(Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed,
+    public static Future<Void> waitFor(Reconciliation reconciliation, Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed,
                                        Predicate<Throwable> failOnError) {
         Promise<Void> promise = Promise.promise();
-        LOGGER.debug("Waiting for {} to get {}", logContext, logState);
+        LOGGER.debugCr(reconciliation, "Waiting for {} to get {}", logContext, logState);
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<Long>() {
             @Override
@@ -113,18 +113,18 @@ public class Util {
                             if (completed.getAsBoolean())   {
                                 future.complete();
                             } else {
-                                LOGGER.trace("{} is not {}", logContext, logState);
+                                LOGGER.traceCr(reconciliation, "{} is not {}", logContext, logState);
                                 future.fail("Not " + logState + " yet");
                             }
                         } catch (Throwable e) {
-                            LOGGER.warn("Caught exception while waiting for {} to get {}", logContext, logState, e);
+                            LOGGER.warnCr(reconciliation, "Caught exception while waiting for {} to get {}", logContext, logState, e);
                             future.fail(e);
                         }
                     },
                     true,
                     res -> {
                         if (res.succeeded()) {
-                            LOGGER.debug("{} is {}", logContext, logState);
+                            LOGGER.debugCr(reconciliation, "{} is {}", logContext, logState);
                             promise.complete();
                         } else {
                             if (failOnError.test(res.cause())) {
@@ -133,7 +133,7 @@ public class Util {
                                 long timeLeft = deadline - System.currentTimeMillis();
                                 if (timeLeft <= 0) {
                                     String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
-                                    LOGGER.error(exceptionMessage);
+                                    LOGGER.errorCr(reconciliation, exceptionMessage);
                                     promise.fail(new TimeoutException(exceptionMessage));
                                 } else {
                                     // Schedule ourselves to run again
@@ -214,7 +214,7 @@ public class Util {
             return f;
         } catch (IOException e) {
             if (f != null && !f.delete()) {
-                LOGGER.warn("Failed to delete temporary file in exception handler");
+                LOGGER.warnOp("Failed to delete temporary file in exception handler");
             }
             throw new RuntimeException(e);
         }
@@ -264,7 +264,7 @@ public class Util {
             return f;
         } catch (IOException | KeyStoreException | NoSuchAlgorithmException | CertificateException | RuntimeException e) {
             if (f != null && !f.delete()) {
-                LOGGER.warn("Failed to delete temporary file in exception handler");
+                LOGGER.warnOp("Failed to delete temporary file in exception handler");
             }
             throw e;
         }
@@ -281,7 +281,7 @@ public class Util {
             sb.append("\t").append(entry.getKey()).append(": ").append(maskPassword(entry.getKey(), entry.getValue())).append("\n");
         }
 
-        LOGGER.info("Using config:\n" + sb.toString());
+        LOGGER.infoOp("Using config:\n" + sb.toString());
     }
 
     /**
@@ -346,7 +346,7 @@ public class Util {
         return merged;
     }
 
-    public static <T> Future<T> kafkaFutureToVertxFuture(Vertx vertx, KafkaFuture<T> kf) {
+    public static <T> Future<T> kafkaFutureToVertxFuture(Reconciliation reconciliation, Vertx vertx, KafkaFuture<T> kf) {
         Promise<T> promise = Promise.promise();
         if (kf != null) {
             kf.whenComplete((result, error) -> {
@@ -360,7 +360,7 @@ public class Util {
             });
             return promise.future();
         } else {
-            LOGGER.trace("KafkaFuture is null");
+            LOGGER.traceCr(reconciliation, "KafkaFuture is null");
             return Future.succeededFuture();
         }
     }
@@ -499,7 +499,8 @@ public class Util {
         return loggingCmFut;
     }
 
-    public static Future<MetricsAndLogging> metricsAndLogging(ConfigMapOperator configMapOperations,
+    public static Future<MetricsAndLogging> metricsAndLogging(Reconciliation reconciliation,
+                                                              ConfigMapOperator configMapOperations,
                                                               String namespace,
                                                               Logging logging, MetricsConfig metricsConfigInCm) {
         List<Future> configMaps = new ArrayList<>(2);
@@ -508,7 +509,7 @@ public class Util {
         } else if (metricsConfigInCm == null) {
             configMaps.add(Future.succeededFuture(null));
         } else {
-            LOGGER.warn("Unknown metrics type {}", metricsConfigInCm.getType());
+            LOGGER.warnCr(reconciliation, "Unknown metrics type {}", metricsConfigInCm.getType());
             throw new InvalidResourceException("Unknown metrics type " + metricsConfigInCm.getType());
         }
 

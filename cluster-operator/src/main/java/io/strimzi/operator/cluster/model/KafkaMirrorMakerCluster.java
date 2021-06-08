@@ -27,12 +27,14 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-mirror-maker";
 
@@ -103,10 +105,11 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     /**
      * Constructor
      *
+     * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaMirrorMakerCluster(HasMetadata resource) {
-        super(resource, APPLICATION_NAME);
+    protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource) {
+        super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaMirrorMakerResources.deploymentName(cluster);
         this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
@@ -122,8 +125,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     @SuppressWarnings("deprecation")
-    public static KafkaMirrorMakerCluster fromCrd(KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
-        KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(kafkaMirrorMaker);
+    public static KafkaMirrorMakerCluster fromCrd(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
+        KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(reconciliation, kafkaMirrorMaker);
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
         if (spec != null) {
@@ -144,14 +147,20 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             if (include == null && whitelist == null)   {
                 throw new InvalidResourceException("One of the fields include or whitelist needs to be specified.");
             } else if (whitelist != null && include != null) {
-                log.warn("Both include and whitelist fields are present. Whitelist is deprecated and will be ignored.");
+                LOGGER.warnCr(reconciliation, "Both include and whitelist fields are present. Whitelist is deprecated and will be ignored.");
             }
 
             kafkaMirrorMakerCluster.setInclude(include != null ? include : whitelist);
 
-            AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
+            String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
+            if (!warnMsg.isEmpty()) {
+                LOGGER.warnCr(reconciliation, warnMsg);
+            }
             kafkaMirrorMakerCluster.setProducer(spec.getProducer());
-            AuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
+            warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
+            if (!warnMsg.isEmpty()) {
+                LOGGER.warnCr(reconciliation, warnMsg);
+            }
             kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
 
             kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion()));
@@ -307,8 +316,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return containers;
     }
 
-    private KafkaMirrorMakerConsumerConfiguration getConsumerConfiguration()    {
-        KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(consumer.getConfig().entrySet());
+    private KafkaMirrorMakerConsumerConfiguration getConsumerConfiguration() {
+        KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(reconciliation, consumer.getConfig().entrySet());
 
         if (tracing != null) {
             config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
@@ -318,7 +327,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     private KafkaMirrorMakerProducerConfiguration getProducerConfiguration()    {
-        KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(producer.getConfig().entrySet());
+        KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(reconciliation, producer.getConfig().entrySet());
 
         if (tracing != null) {
             config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");

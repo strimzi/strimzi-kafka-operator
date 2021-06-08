@@ -85,6 +85,7 @@ public class AclBuilder {
 
     /**
      * Set the given permissions for all users (including unauthenticated users).
+     *
      * @param permissions The permissions.
      * @return This instance.
      */
@@ -107,6 +108,7 @@ public class AclBuilder {
     /**
      * Set the given permissions for users connecting from the most
      * significant {@code bits} given IP {@code address}.
+     *
      * @param address The IP address to add.
      * @param bits The number of bits in the IP address.
      * @param permissions The permissions for users connecting from matching IP addresses.

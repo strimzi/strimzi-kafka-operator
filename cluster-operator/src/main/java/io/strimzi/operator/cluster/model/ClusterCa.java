@@ -12,6 +12,7 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,11 +35,11 @@ public class ClusterCa extends Ca {
 
     private final Pattern ipv4Address = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
 
-    public ClusterCa(CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
-        this(certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
+    public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
+        this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
     }
 
-    public ClusterCa(CertManager certManager,
+    public ClusterCa(Reconciliation reconciliation, CertManager certManager,
                      PasswordGenerator passwordGenerator,
                      String clusterName,
                      Secret clusterCaCert,
@@ -47,12 +48,12 @@ public class ClusterCa extends Ca {
                      int renewalDays,
                      boolean generateCa,
                      CertificateExpirationPolicy policy) {
-        super(certManager, passwordGenerator, "cluster-ca",
+        super(reconciliation, certManager, passwordGenerator,
+                "cluster-ca",
                 AbstractModel.clusterCaCertSecretName(clusterName),
                 forceRenewal(clusterCaCert, clusterCaKey, "cluster-ca.key"),
                 AbstractModel.clusterCaKeySecretName(clusterName),
-                adapt060ClusterCaSecret(clusterCaKey),
-                validityDays, renewalDays, generateCa, policy);
+                adapt060ClusterCaSecret(clusterCaKey), validityDays, renewalDays, generateCa, policy);
         this.clusterName = clusterName;
     }
 
@@ -143,8 +144,9 @@ public class ClusterCa extends Ca {
             return subject;
         };
 
-        log.debug("{}: Reconciling zookeeper certificates", this);
+        LOGGER.debugCr(reconciliation, "{}: Reconciling zookeeper certificates", this);
         return maybeCopyOrGenerateCerts(
+            reconciliation,
             kafka.getSpec().getZookeeper().getReplicas(),
             subjectFn,
             zkNodesSecret,
@@ -153,7 +155,7 @@ public class ClusterCa extends Ca {
     }
 
     public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, Set<String> externalBootstrapAddresses,
-            Map<Integer, Set<String>> externalAddresses, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
+                                                       Map<Integer, Set<String>> externalAddresses, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
 
@@ -202,8 +204,9 @@ public class ClusterCa extends Ca {
 
             return subject;
         };
-        log.debug("{}: Reconciling kafka broker certificates", this);
+        LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
         return maybeCopyOrGenerateCerts(
+            reconciliation,
             kafka.getSpec().getKafka().getReplicas(),
             subjectFn,
             brokersSecret,

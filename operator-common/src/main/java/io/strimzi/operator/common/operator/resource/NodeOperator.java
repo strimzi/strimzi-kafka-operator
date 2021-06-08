@@ -16,6 +16,7 @@ public class NodeOperator extends AbstractNonNamespacedResourceOperator<Kubernet
 
     /**
      * Constructor.
+     *
      * @param vertx The Vertx instance.
      * @param client The Kubernetes client.
      */

@@ -11,8 +11,8 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.kafka.oauth.jsonpath.JsonPathFilterQuery;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +26,7 @@ import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAu
  * Util methods for validating Kafka listeners
  */
 public class ListenersValidator {
-    protected static final Logger LOG = LogManager.getLogger(ListenersValidator.class.getName());
+    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ListenersValidator.class.getName());
     private final static Pattern LISTENER_NAME_PATTERN = Pattern.compile(GenericKafkaListener.LISTENER_NAME_REGEX);
     public final static List<Integer> FORBIDDEN_PORTS = List.of(9404, 9999);
     public final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;
@@ -34,14 +34,15 @@ public class ListenersValidator {
     /**
      * Validated the listener configuration. If the configuration is not valid, InvalidResourceException will be thrown.
      *
+     * @param reconciliation The reconciliation
      * @param replicas   Number of replicas (required for Ingress validation)
      * @param listeners  Listeners which should be validated
      */
-    public static void validate(int replicas, List<GenericKafkaListener> listeners) throws InvalidResourceException {
+    public static void validate(Reconciliation reconciliation, int replicas, List<GenericKafkaListener> listeners) throws InvalidResourceException {
         Set<String> errors = validateAndGetErrorMessages(replicas, listeners);
 
         if (!errors.isEmpty())  {
-            LOG.error("Listener configuration is not valid: {}", errors);
+            LOGGER.errorCr(reconciliation, "Listener configuration is not valid: {}", errors);
             throw new InvalidResourceException("Listener configuration is not valid: " + errors);
         }
     }
