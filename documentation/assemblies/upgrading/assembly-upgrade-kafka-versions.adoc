@@ -37,8 +37,13 @@ As part of the Kafka upgrade, the Cluster Operator initiates rolling updates for
 
 .Additional resources
 
-* xref:assembly-upgrade-cluster-operator-str[]
+* xref:proc-upgrading-the-co-{context}[]
 * xref:ref-kafka-versions-{context}[]
+
+include::modules/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
+
+//strategies for upgrading clients - concept
+include::modules/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
 
 include::modules/con-upgrade-versions-and-images.adoc[leveloffset=+1]
 
