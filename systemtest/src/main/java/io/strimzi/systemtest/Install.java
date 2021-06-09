@@ -171,7 +171,7 @@ public class Install {
      */
     public void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-        cluster.createNamespaces(clientNamespace, namespaces);
+        cluster.createNamespaces(extensionContext, clientNamespace, namespaces);
         cluster.createCustomResources(resources);
         applyClusterOperatorInstallFiles(clientNamespace);
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
