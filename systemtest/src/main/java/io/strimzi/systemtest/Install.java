@@ -41,7 +41,7 @@ public class Install {
 
     private KubeClusterResource cluster = KubeClusterResource.getInstance();
     private Stack<String> clusterOperatorConfigs = new Stack<>();
-    private HelmResource helmResource = new HelmResource();
+    private HelmResource helmResource;
     private OlmResource olmResource;
 
     private ExtensionContext extensionContext;
@@ -61,8 +61,6 @@ public class Install {
         this.bindingsNamespaces = builder.bindingsNamespaces;
         this.operationTimeout = builder.operationTimeout;
         this.reconciliationInterval = builder.reconciliationInterval;
-
-        this.olmResource = new OlmResource(namespaceName);
     }
 
     /**
@@ -74,19 +72,15 @@ public class Install {
     public Install runInstallation() {
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
+            olmResource = new OlmResource(namespaceName, namespaceEnv);
             cluster.setNamespace(namespaceName);
             cluster.createNamespace(namespaceName);
-            // TODO: cluster-wide here just change some envs in olm installation...
-//            if (namespaceEnv.equals("*")) {
-//            }
             olmResource.create(extensionContext, namespaceName, operationTimeout, reconciliationInterval);
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
+            helmResource = new HelmResource(namespaceEnv);
             cluster.setNamespace(namespaceName);
             cluster.createNamespace(namespaceName);
-            // TODO: cluster-wide
-//            if (namespaceEnv.equals("*")) {
-//            }
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");

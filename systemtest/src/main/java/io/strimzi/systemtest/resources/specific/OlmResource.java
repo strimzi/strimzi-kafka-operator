@@ -48,6 +48,7 @@ public class OlmResource implements SpecificResourceType {
 
     private String deploymentName;
     private String namespace;
+    private String namespaceEnv;
     private String csvName;
 
     @Override
@@ -72,8 +73,9 @@ public class OlmResource implements SpecificResourceType {
 
     public OlmResource() { }
 
-    public OlmResource(String namespace) {
+    public OlmResource(String namespace, String namespaceEnv) {
         this.namespace = namespace;
+        this.namespaceEnv = namespaceEnv;
     }
 
     private void clusterOperator(String namespace) {
@@ -98,11 +100,11 @@ public class OlmResource implements SpecificResourceType {
         }
 
         if (fromVersion != null) {
-            createAndModifySubscription(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy, fromVersion);
+            createAndModifySubscription(namespace, this.namespaceEnv, operationTimeout, reconciliationInterval, olmInstallationStrategy, fromVersion);
             // must be strimzi-cluster-operator.v0.18.0
             csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + fromVersion;
         } else {
-            createAndModifySubscriptionLatestRelease(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy);
+            createAndModifySubscriptionLatestRelease(namespace, this.namespaceEnv, operationTimeout, reconciliationInterval, olmInstallationStrategy);
             csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION;
         }
 
@@ -246,11 +248,12 @@ public class OlmResource implements SpecificResourceType {
      * Creates Subscription from "olm/subscription.yaml" and modify "${OPERATOR_NAMESPACE}", "${OLM_OPERATOR_NAME}...
      * attributes.
      * @param namespace namespace where you want to apply Subscription kind
+     * @param namespaceEnv additional config for cluster operator for watching namespaces
      * @param reconciliationInterval reconciliation interval of cluster operator
      * @param operationTimeout operation timeout  of cluster operator
      * @param installationStrategy type of installation
      */
-    private static void createAndModifySubscription(String namespace, long reconciliationInterval, long operationTimeout,
+    private static void createAndModifySubscription(String namespace, String namespaceEnv, long reconciliationInterval, long operationTimeout,
                                                     OlmInstallationStrategy installationStrategy, String version) {
         try {
             File subscriptionFile = File.createTempFile("subscription", ".yaml");
@@ -276,9 +279,9 @@ public class OlmResource implements SpecificResourceType {
         }
     }
 
-    private static void createAndModifySubscriptionLatestRelease(String namespace, long reconciliationInterval,
+    private static void createAndModifySubscriptionLatestRelease(String namespace, String namespaceEnv, long reconciliationInterval,
                                                                  long operationTimeout, OlmInstallationStrategy installationStrategy) {
-        createAndModifySubscription(namespace, reconciliationInterval, operationTimeout, installationStrategy,
+        createAndModifySubscription(namespace, namespaceEnv, reconciliationInterval, operationTimeout, installationStrategy,
             Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION);
     }
 

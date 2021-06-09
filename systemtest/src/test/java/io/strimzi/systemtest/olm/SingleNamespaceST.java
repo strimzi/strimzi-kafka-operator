@@ -84,7 +84,7 @@ public class SingleNamespaceST extends OlmAbstractST {
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
 
-        olmResource = new OlmResource(NAMESPACE);
+        olmResource = new OlmResource(NAMESPACE, NAMESPACE);
         olmResource.create(extensionContext);
     }
 }

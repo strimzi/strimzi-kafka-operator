@@ -38,6 +38,13 @@ public class HelmResource implements SpecificResourceType {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
+    private String namespaceEnv;
+
+    public HelmResource() { }
+    public HelmResource(String namespaceEnv) {
+        this.namespaceEnv = namespaceEnv;
+    }
+
     public void create(ExtensionContext extensionContext) {
         this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
@@ -119,6 +126,10 @@ public class HelmResource implements SpecificResourceType {
                 entry("featureGates", Environment.STRIMZI_FEATURE_GATES))
                 .collect(TestUtils.entriesToMap()));
 
+        if (namespaceEnv.equals("*")) {
+            values.put("watchAnyNamespace", "true");
+        }
+
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = KubeClusterResource.getInstance().setNamespace("kube-system");
         InputStream helmAccountAsStream = HelmResource.class.getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
@@ -136,5 +147,9 @@ public class HelmResource implements SpecificResourceType {
         ResourceManager.helmClient().delete(HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
         cmdKubeClient().delete(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
+    }
+
+    public String getNamespaceEnv() {
+        return namespaceEnv;
     }
 }
