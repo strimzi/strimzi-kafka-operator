@@ -45,7 +45,7 @@ public class LogCollector implements LogCollect {
 
     static {
         // Get current date to create a unique folder
-        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         CURRENT_DATE = simpleDateFormat.format(Calendar.getInstance().getTime());
     }
@@ -63,7 +63,7 @@ public class LogCollector implements LogCollect {
         this.kubeClient = kubeClient;
         this.testSuiteName = testSuiteName;
 
-        this.logDir = new File(logDir + "/ " + CURRENT_DATE);
+        this.logDir = new File(logDir + "/" + CURRENT_DATE);
         final String logSuiteDir = this.logDir + "/" + this.testSuiteName;
 
         this.testSuite = new File(logSuiteDir);
