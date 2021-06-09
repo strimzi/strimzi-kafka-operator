@@ -162,6 +162,13 @@ spec:
                   description: A quota on the maximum bytes per-second that each client
                     group can fetch from a broker before the clients in the group
                     are throttled. Defined on a per-broker basis.
+                controllerMutationRate:
+                  type: number
+                  minimum: 0
+                  description: A quota on the rate at which mutations are accepted
+                    for the create topics request, the create partitions request and
+                    the delete topics request. The rate is accumulated by the number
+                    of partitions created or deleted.
                 producerByteRate:
                   type: integer
                   minimum: 0
