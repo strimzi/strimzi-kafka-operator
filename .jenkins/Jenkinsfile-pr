@@ -7,7 +7,7 @@ def DEFAULT_EXCLUDED_GROUPS = "loadbalancer,networkpolicies"
 pipeline {
     agent {
         node {
-            label "slave"
+            label "staticslave"
         }
     }
     parameters {
