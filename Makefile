@@ -16,7 +16,7 @@ endif
 SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images packaging/helm-charts/helm3 packaging/install packaging/examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
-all: prerequisites_check $(SUBDIRS) crd_install helm_install shellcheck docu_versions docu_check
+all: prerequisites_check $(SUBDIRS) crd_install helm_install shellcheck publish_check docu_versions docu_check
 clean: prerequisites_check $(SUBDIRS) docu_clean
 $(DOCKER_TARGETS): prerequisites_check $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_test_container release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
@@ -138,6 +138,9 @@ docu_check:
 
 shellcheck:
 	./.azure/scripts/shellcheck.sh
+
+publish_check:
+	./.azure/scripts/publish_check.sh
 
 spotbugs: $(SUBDIRS) systemtest_make
 
