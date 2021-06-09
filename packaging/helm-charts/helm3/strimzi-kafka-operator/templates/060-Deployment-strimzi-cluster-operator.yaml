@@ -32,6 +32,9 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.image.imagePullSecrets }}
       {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext: {{ toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: strimzi-tmp
           emptyDir:
@@ -119,6 +122,9 @@ spec:
               port: http
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          {{- with .Values.securityContext }}
+          securityContext: {{ toYaml .| nindent 12 }}
+          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       {{- with .Values.nodeSelector }}
