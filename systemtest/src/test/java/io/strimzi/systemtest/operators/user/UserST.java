@@ -219,9 +219,10 @@ class UserST extends AbstractST {
         Integer prodRate = 1111;
         Integer consRate = 2222;
         Integer reqPerc = 42;
+        Double mutRate = 10d;
 
         // Create user with correct name
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.userWithQuotas(user, prodRate, consRate, reqPerc)
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.userWithQuotas(user, prodRate, consRate, reqPerc, mutRate)
             .editMetadata()
                 .withNamespace(NAMESPACE)
             .endMetadata()
@@ -235,6 +236,7 @@ class UserST extends AbstractST {
         assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
         assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
+        assertThat(result.out().contains("controller_mutation_rate=" + mutRate), is(true));
 
         // delete user
         KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).delete();
@@ -245,6 +247,7 @@ class UserST extends AbstractST {
         assertThat(resultAfterDelete.out(), not(containsString("request_percentage")));
         assertThat(resultAfterDelete.out(), not(containsString("producer_byte_rate")));
         assertThat(resultAfterDelete.out(), not(containsString("consumer_byte_rate")));
+        assertThat(resultAfterDelete.out(), not(containsString("controller_mutation_rate")));
     }
 
     @ParallelNamespaceTest
