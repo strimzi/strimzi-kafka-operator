@@ -119,7 +119,7 @@
         <jaeger.version>1.3.2</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.13</opentracing-kafka.version>
-        <strimzi-oauth.version>0.8.0-rc1-pre2</strimzi-oauth.version>
+        <strimzi-oauth.version>0.8.0</strimzi-oauth.version>
         <commons-codec.version>1.13</commons-codec.version>
         <registry.version>1.3.0.Final</registry.version>
 
@@ -157,8 +157,8 @@
 
     <repositories>
         <repository>
-            <id>oauth-pre</id>
-            <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
+            <id>staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1103</url>
         </repository>
     </repositories>
 

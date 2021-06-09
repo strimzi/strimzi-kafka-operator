@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.8.0-rc1-pre2</strimzi-oauth.version>
+        <strimzi-oauth.version>0.8.0</strimzi-oauth.version>
         <cruise-control.version>2.5.55</cruise-control.version>
         <opa-authorizer.version>0.4.2</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>
@@ -29,8 +29,8 @@
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
         </repository>
         <repository>
-            <id>oauth-pre</id>
-            <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
+            <id>staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1103</url>
         </repository>
     </repositories>
 
