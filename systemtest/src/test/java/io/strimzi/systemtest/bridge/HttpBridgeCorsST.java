@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -113,7 +114,17 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void beforeAll(ExtensionContext extensionContext) {
-        installClusterOperator(extensionContext, NAMESPACE);
+        install = new Install.InstallBuilder()
+            .withExtensionContext(extensionContext)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withNamespaceEnv(NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .createInstallation()
+            .runInstallation();
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1).build());
 
         kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeCorsClusterName)).build();

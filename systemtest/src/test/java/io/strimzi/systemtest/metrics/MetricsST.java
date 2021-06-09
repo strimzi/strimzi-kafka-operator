@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -604,7 +605,16 @@ public class MetricsST extends AbstractST {
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         LOGGER.info("Setting up Environment for MetricsST");
-        installClusterWideClusterOperator(extensionContext, FIRST_NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        install = new Install.InstallBuilder()
+            .withExtensionContext(extensionContext)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(FIRST_NAMESPACE)
+            .withNamespaceEnv("*")
+            .withBindingsNamespaces(Collections.singletonList(FIRST_NAMESPACE))
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .createInstallation()
+            .runInstallation();
 
         cluster.createNamespace(SECOND_NAMESPACE);
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(SECOND_NAMESPACE));

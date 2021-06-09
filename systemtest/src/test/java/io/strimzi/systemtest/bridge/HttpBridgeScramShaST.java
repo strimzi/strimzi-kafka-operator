@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
@@ -28,6 +29,8 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import java.util.Collections;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -98,7 +101,16 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        installClusterOperator(extensionContext, NAMESPACE);
+        install = new Install.InstallBuilder()
+            .withExtensionContext(extensionContext)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withNamespaceEnv(NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .createInstallation()
+            .runInstallation();
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka

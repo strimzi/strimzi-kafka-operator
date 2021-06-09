@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -45,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.RECONCILIATION_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.k8s.Events.Created;
@@ -320,6 +320,15 @@ public class KafkaRollerST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_MEDIUM, RECONCILIATION_INTERVAL);
+        new Install.InstallBuilder()
+            .withExtensionContext(extensionContext)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withNamespaceEnv("*")
+            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
+            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .createInstallation()
+            .runInstallation();
     }
 }

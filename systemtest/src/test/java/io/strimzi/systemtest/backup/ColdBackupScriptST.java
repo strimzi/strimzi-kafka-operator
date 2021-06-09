@@ -10,8 +10,10 @@ import static io.strimzi.test.TestUtils.USER_PATH;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
+import java.util.Collections;
 import java.util.Map;
 
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import org.apache.logging.log4j.LogManager;
@@ -43,7 +45,17 @@ public class ColdBackupScriptST extends AbstractST {
         String backupFilePath = USER_PATH + "/target/" + clusterName + ".zip";
 
         // deploy a test cluster
-        installClusterOperator(context, NAMESPACE);
+        install = new Install.InstallBuilder()
+            .withExtensionContext(context)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withNamespaceEnv(NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .createInstallation()
+            .runInstallation();
+
         resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1).build());
         String clientsPodName = deployAndGetInternalClientsPodName(context);
         InternalKafkaClient clients = buildInternalClients(context, clientsPodName, groupName, firstBatchSize);
@@ -69,7 +81,17 @@ public class ColdBackupScriptST extends AbstractST {
         // recreate the namespace and deploy the operator
         ResourceManager.kubeClient().deleteNamespace(NAMESPACE);
         NamespaceUtils.waitForNamespaceDeletion(NAMESPACE);
-        installClusterOperator(context, NAMESPACE);
+
+        install = new Install.InstallBuilder()
+            .withExtensionContext(context)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withNamespaceEnv(NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .createInstallation()
+            .runInstallation();
 
         // run restore procedure and wait for provisioning
         LOGGER.info("Running restore procedure for {}/{}", NAMESPACE, clusterName);

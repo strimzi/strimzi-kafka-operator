@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -32,9 +33,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_DEFAULT;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.RECONCILIATION_INTERVAL;
 import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -208,11 +212,17 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, String topicName, int messageCount) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        // Setup Test environment with Kafka and store some messages
-        prepareEnvForOperator(extensionContext, NAMESPACE);
-        applyBindings(extensionContext, NAMESPACE);
-        // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        new Install.InstallBuilder()
+            .withExtensionContext(extensionContext)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withNamespaceEnv(NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
+            .withOperationTimeout(CO_OPERATION_TIMEOUT_DEFAULT)
+            .withReconciliationInterval(RECONCILIATION_INTERVAL)
+            .createInstallation()
+            .runInstallation();
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
@@ -265,10 +275,20 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     private void recreateClusterOperator(ExtensionContext extensionContext) {
         // Recreate CO
-        applyClusterOperatorInstallFiles(NAMESPACE);
-        applyBindings(extensionContext, NAMESPACE);
+
+        install.applyClusterOperatorInstallFiles(NAMESPACE);
+        Install.applyBindings(extensionContext, NAMESPACE);
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withNamespaceEnv(NAMESPACE)
+                .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
     }
 
     private void deleteAndRecreateNamespace() {

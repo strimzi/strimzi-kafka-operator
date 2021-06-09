@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
@@ -345,10 +346,15 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        prepareEnvForOperator(extensionContext, NAMESPACE);
+        install.prepareEnvForOperator(extensionContext, NAMESPACE);
 
-        applyBindings(extensionContext, NAMESPACE);
+        Install.applyBindings(extensionContext, NAMESPACE);
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .defaultConfigurationWithNamespace(NAMESPACE)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
     }
 }

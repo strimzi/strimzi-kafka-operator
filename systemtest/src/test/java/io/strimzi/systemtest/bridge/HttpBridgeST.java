@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -351,33 +352,41 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
-        prepareEnvForOperator(extensionContext, NAMESPACE);
+        install.prepareEnvForOperator(extensionContext, NAMESPACE);
         // Apply role bindings in CO namespace
-        applyBindings(extensionContext, NAMESPACE);
+        Install.applyBindings(extensionContext, NAMESPACE);
 
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
         List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(NAMESPACE);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
             ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
         // deploy CO with service labels and annotations envs
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL)
-            .editSpec()
-                .editTemplate()
-                    .editSpec()
-                        .editFirstContainer()
-                            .addNewEnv()
-                                .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS")
-                                .withValue("app=bar")
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS")
-                                .withValue("bar=app")
-                            .endEnv()
-                        .endContainer()
-                    .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
+        resourceManager.createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withNamespaceEnv(NAMESPACE)
+                .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .editSpec()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .addNewEnv()
+                                    .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS")
+                                    .withValue("app=bar")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS")
+                                    .withValue("bar=app")
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec()
+                .build());
 
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;

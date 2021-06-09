@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -16,24 +15,17 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
-import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
-import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.specific.HelmResource;
 import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
 import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.Minishift;
-import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,10 +38,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -70,7 +59,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(TestExecutionWatcher.class)
@@ -88,6 +76,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
     protected final HelmResource helmResource = new HelmResource();
+    protected Install install = new Install();
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
@@ -123,222 +112,12 @@ public abstract class AbstractST implements TestSeparator {
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
 
     /**
-     * This method install Strimzi Cluster Operator based on environment variable configuration.
-     * It can install operator by classic way (apply bundle yamls) or use OLM. For OLM you need to set all other OLM env variables.
-     * Don't use this method in tests, where specific configuration of CO is needed.
-     * @param namespace namespace where CO should be installed into
-     */
-    protected void installClusterOperator(ExtensionContext extensionContext, String clusterOperatorName, String namespace, List<String> bindingsNamespaces, long operationTimeout, long reconciliationInterval) {
-        if (Environment.isOlmInstall()) {
-            LOGGER.info("Going to install ClusterOperator via OLM");
-            cluster.setNamespace(namespace);
-            cluster.createNamespace(namespace);
-            olmResource = new OlmResource(namespace);
-            olmResource.create(extensionContext, namespace, operationTimeout, reconciliationInterval);
-        } else if (Environment.isHelmInstall()) {
-            LOGGER.info("Going to install ClusterOperator via Helm");
-            cluster.setNamespace(namespace);
-            cluster.createNamespace(namespace);
-            helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
-        } else {
-            LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-            prepareEnvForOperator(extensionContext,  namespace, bindingsNamespaces);
-            if (Environment.isNamespaceRbacScope()) {
-                // if roles only, only deploy the rolebindings
-                applyRoleBindings(extensionContext, namespace, namespace);
-            } else {
-                applyBindings(extensionContext, namespace, bindingsNamespaces);
-            }
-            // 060-Deployment
-            ResourceManager.setCoDeploymentName(clusterOperatorName);
-            ResourceManager.getInstance().createResource(extensionContext, BundleResource.clusterOperator(clusterOperatorName, namespace, namespace, operationTimeout, reconciliationInterval).build());
-        }
-    }
-
-    protected void installClusterOperator(ExtensionContext extensionContext, String clusterOperatorName, String namespace, long operationTimeout, long reconciliationInterval) {
-        installClusterOperator(extensionContext, clusterOperatorName, namespace, Collections.singletonList(namespace), operationTimeout, reconciliationInterval);
-    }
-
-    protected void installClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
-        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, reconciliationInterval);
-    }
-
-    protected void installClusterOperator(ExtensionContext extensionContext, String name, String namespace) {
-        installClusterOperator(extensionContext, name, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    protected void installClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout) {
-        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    protected void installClusterOperator(ExtensionContext extensionContext, String namespace) {
-        installClusterOperator(extensionContext, Constants.STRIMZI_DEPLOYMENT_NAME, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    public synchronized void installClusterWideClusterOperator(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
-        prepareEnvForOperator(extensionContext, namespace);
-        // Apply role bindings in CO namespace
-        applyBindings(extensionContext, namespace);
-
-        // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-        List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespace);
-        clusterRoleBindingList.forEach(clusterRoleBinding ->
-            ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
-        // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(namespace, "*", operationTimeout, reconciliationInterval).build());
-    }
-
-    /**
-     * Perform application of ServiceAccount, Roles and CRDs needed for proper cluster operator deployment.
-     * Configuration files are loaded from packaging/install/cluster-operator directory.
-     */
-    public void applyClusterOperatorInstallFiles(String namespace) {
-        clusterOperatorConfigs.clear();
-        List<File> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
-                .filter(File::isFile)
-                .filter(file ->
-                        !file.getName().matches(".*(Binding|Deployment)-.*"))
-                .collect(Collectors.toList());
-
-        for (File operatorFile : operatorFiles) {
-            File createFile = operatorFile;
-            if (operatorFile.getName().contains("ClusterRole-")) {
-                createFile = switchClusterRolesToRolesIfNeeded(createFile);
-            }
-
-            LOGGER.info("Creating configuration file: {}", createFile.getAbsolutePath());
-            cmdKubeClient().namespace(namespace).createOrReplace(createFile);
-            clusterOperatorConfigs.push(createFile.getPath());
-        }
-    }
-
-    /**
-     * Replace all references to ClusterRole to Role.
-     * This includes ClusterRoles themselves as well as RoleBindings that reference them.
-     */
-    public static File switchClusterRolesToRolesIfNeeded(File oldFile) {
-        if (Environment.isNamespaceRbacScope()) {
-            try {
-                File tmpFile = File.createTempFile("rbac-" + oldFile.getName().replace(".yaml", ""), ".yaml");
-                TestUtils.writeFile(tmpFile.getAbsolutePath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
-                LOGGER.info("Replaced ClusterRole for Role in {}", oldFile.getAbsolutePath());
-
-                return tmpFile;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            return oldFile;
-        }
-    }
-
-    /**
-     * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
-     */
-    public void deleteClusterOperatorInstallFiles() {
-        while (!clusterOperatorConfigs.empty()) {
-            String clusterOperatorConfig = clusterOperatorConfigs.pop();
-            LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
-            cmdKubeClient().delete(clusterOperatorConfig);
-        }
-    }
-
-    /**
-     * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
-     * specific config files such as ServiceAccount, Roles and CRDs.
-     * @param clientNamespace namespace which will be created and used as default by kube client
-     * @param namespaces list of namespaces which will be created
-     * @param resources list of path to yaml files with resources specifications
-     */
-    protected void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
-        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-        cluster.createNamespaces(extensionContext, clientNamespace, namespaces);
-        cluster.createCustomResources(resources);
-        applyClusterOperatorInstallFiles(clientNamespace);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
-
-        if (cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift) {
-            // This is needed in case you are using internal kubernetes registry and you want to pull images from there
-            if (kubeClient().getNamespace(Environment.STRIMZI_ORG) != null) {
-                for (String namespace : namespaces) {
-                    LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
-                    Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
-                }
-            }
-        }
-    }
-
-    /**
-     * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
-     * specific config files such as ServiceAccount, Roles and CRDs.
-     * @param clientNamespace namespace which will be created and used as default by kube client
-     * @param resources list of path to yaml files with resources specifications
-     */
-    protected void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, String... resources) {
-        prepareEnvForOperator(extensionContext, clientNamespace, Collections.singletonList(clientNamespace), resources);
-    }
-
-    /**
-     * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
-     * specific config files such as ServiceAccount, Roles and CRDs.
-     * @param clientNamespace namespace which will be created and used as default by kube client
-     */
-    protected void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace) {
-        prepareEnvForOperator(extensionContext, clientNamespace, Collections.singletonList(clientNamespace));
-    }
-
-    /**
      * Clear cluster from all created namespaces and configurations files for cluster operator.
      */
     protected void teardownEnvForOperator() {
-        deleteClusterOperatorInstallFiles();
+        install.deleteClusterOperatorInstallFiles();
         cluster.deleteCustomResources();
         cluster.deleteNamespaces();
-    }
-
-    /**
-     * Method to apply Strimzi cluster operator specific RoleBindings and ClusterRoleBindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
-     */
-    public static void applyBindings(ExtensionContext extensionContext, String namespace, List<String> bindingsNamespaces) {
-        for (String bindingsNamespace : bindingsNamespaces) {
-            applyClusterRoleBindings(extensionContext, namespace);
-            applyRoleBindings(extensionContext, namespace, bindingsNamespace);
-        }
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     */
-    public static void applyBindings(ExtensionContext extensionContext, String namespace) {
-        applyBindings(extensionContext, namespace, Collections.singletonList(namespace));
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
-     */
-    public static void applyBindings(ExtensionContext extensionContext, String namespace, String... bindingsNamespaces) {
-        applyBindings(extensionContext, namespace, Arrays.asList(bindingsNamespaces));
-    }
-
-    private static void applyClusterRoleBindings(ExtensionContext extensionContext, String namespace) {
-        // 021-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
-        // 030-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
-        // 033-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
-    }
-
-    protected static void applyRoleBindings(ExtensionContext extensionContext, String namespace, String bindingsNamespace) {
-        // 020-RoleBinding
-        RoleBindingResource.roleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
-        // 031-RoleBinding
-        RoleBindingResource.roleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
     }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {

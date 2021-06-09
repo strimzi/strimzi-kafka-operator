@@ -15,6 +15,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -35,6 +36,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import static org.hamcrest.CoreMatchers.is;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -184,10 +186,10 @@ public class MultipleClusterOperatorsST extends AbstractST {
         String namespace = multipleNamespaces ? "*" : coNamespace;
 
         if (multipleNamespaces) {
-            prepareEnvForOperator(extensionContext, coNamespace);
+            install.prepareEnvForOperator(extensionContext, coNamespace);
 
             // Apply rolebindings in CO namespace
-            applyBindings(extensionContext, coNamespace);
+            Install.applyBindings(extensionContext, coNamespace);
 
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
             List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
@@ -197,32 +199,40 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         LOGGER.info("Creating {} in {} namespace", coName, coNamespace);
 
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(coNamespace, namespace, Constants.RECONCILIATION_INTERVAL)
-            .editOrNewMetadata()
-                .withName(coName)
-            .endMetadata()
-            .editOrNewSpec()
-                .editOrNewSelector()
-                    .addToMatchLabels("app.kubernetes.io/operator", coName)
-                .endSelector()
-                .editOrNewTemplate()
-                    .editOrNewMetadata()
-                        .addToLabels("app.kubernetes.io/operator", coName)
+        resourceManager.createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespaceName(coNamespace)
+                .withNamespaceEnv(namespace)
+                .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .editOrNewMetadata()
+                    .withName(coName)
                     .endMetadata()
                     .editOrNewSpec()
-                        .editContainer(0)
-                            .addToEnv(selectorEnv)
-                        .endContainer()
+                        .editOrNewSelector()
+                            .addToMatchLabels("app.kubernetes.io/operator", coName)
+                        .endSelector()
+                        .editOrNewTemplate()
+                            .editOrNewMetadata()
+                                .addToLabels("app.kubernetes.io/operator", coName)
+                            .endMetadata()
+                            .editOrNewSpec()
+                                .editContainer(0)
+                                    .addToEnv(selectorEnv)
+                                .endContainer()
+                            .endSpec()
+                        .endTemplate()
                     .endSpec()
-                .endTemplate()
-            .endSpec()
-            .build());
+                .build());
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-        prepareEnvForOperator(extensionContext, DEFAULT_NAMESPACE);
-        applyBindings(extensionContext, DEFAULT_NAMESPACE);
+        install.prepareEnvForOperator(extensionContext, DEFAULT_NAMESPACE);
+        Install.applyBindings(extensionContext, DEFAULT_NAMESPACE);
     }
 }

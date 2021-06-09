@@ -7,10 +7,10 @@ package io.strimzi.systemtest.watcher;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import org.apache.logging.log4j.LogManager;
@@ -88,12 +88,16 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     }
 
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
-        prepareEnvForOperator(extensionContext, CO_NAMESPACE, Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE));
-
-        applyBindings(extensionContext, CO_NAMESPACE);
-        applyBindings(extensionContext, CO_NAMESPACE, SECOND_NAMESPACE);
-        // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(CO_NAMESPACE, String.join(",", CO_NAMESPACE, SECOND_NAMESPACE), Constants.RECONCILIATION_INTERVAL).build());
+        new Install.InstallBuilder()
+            .withExtensionContext(extensionContext)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(CO_NAMESPACE)
+            .withNamespaceEnv(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE))
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .createInstallation()
+            .runInstallation();
 
         cluster.setNamespace(SECOND_NAMESPACE);
 

@@ -21,6 +21,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.Install;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -154,7 +155,15 @@ public class SpecificST extends AbstractST {
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
 
-        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
+        resourceManager.createResource(sharedExtensionContext, new BundleResource.BundleResourceBuilder()
+            .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespaceName(NAMESPACE)
+            .withNamespaceEnv(NAMESPACE)
+            .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
+            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .buildBundleInstance()
+            .buildBundleDeployment()
+            .build());
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String wrongRackKey = "wrong-key";
@@ -222,7 +231,12 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
-        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(sharedExtensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .defaultConfigurationWithNamespace(NAMESPACE)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         // check the ClusterRoleBinding annotations and labels in Kafka cluster
@@ -246,7 +260,16 @@ public class SpecificST extends AbstractST {
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
-        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE, CO_OPERATION_TIMEOUT_SHORT).build());
+        resourceManager.createResource(sharedExtensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withNamespaceEnv(NAMESPACE)
+                .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
+                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
 
         coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
@@ -302,7 +325,12 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
-        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(sharedExtensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .defaultConfigurationWithNamespace(NAMESPACE)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }
 
@@ -457,10 +485,15 @@ public class SpecificST extends AbstractST {
 
 
         LOGGER.info(BridgeUtils.getBridgeVersion());
-        prepareEnvForOperator(sharedExtensionContext, NAMESPACE);
+        install.prepareEnvForOperator(sharedExtensionContext, NAMESPACE);
 
-        applyBindings(sharedExtensionContext, NAMESPACE);
+        Install.applyBindings(sharedExtensionContext, NAMESPACE);
         // 060-Deployment
-        resourceManager.createResource(sharedExtensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(sharedExtensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .defaultConfigurationWithNamespace(NAMESPACE)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
     }
 }

@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators;
 
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -48,7 +49,12 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         applyRoleBindingsWithoutCRBs(extensionContext);
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .defaultConfigurationWithNamespace(NAMESPACE)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
 
         String coPodName = kubeClient().getClusterOperatorPodName();
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
@@ -77,7 +83,16 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         applyRoleBindingsWithoutCRBs(extensionContext);
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespaceName(NAMESPACE)
+                .withNamespaceEnv(NAMESPACE)
+                .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
 
         String rackKey = "rack-key";
 
@@ -119,6 +134,6 @@ public class ClusterOperatorRbacST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        prepareEnvForOperator(extensionContext, NAMESPACE);
+        install.prepareEnvForOperator(extensionContext, NAMESPACE);
     }
 }
