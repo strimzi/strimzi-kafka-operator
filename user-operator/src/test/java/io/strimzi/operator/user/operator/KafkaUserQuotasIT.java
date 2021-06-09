@@ -76,6 +76,7 @@ public class KafkaUserQuotasIT {
         defaultQuotas = new KafkaUserQuotas();
         defaultQuotas.setConsumerByteRate(1000);
         defaultQuotas.setProducerByteRate(2000);
+        defaultQuotas.setControllerMutationRate(10d);
     }
 
     @Test
@@ -130,6 +131,7 @@ public class KafkaUserQuotasIT {
         KafkaUserQuotas newQuotas = new KafkaUserQuotas();
         newQuotas.setConsumerByteRate(1000);
         newQuotas.setProducerByteRate(2000);
+        newQuotas.setControllerMutationRate(10d);
         kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, newQuotas);
         assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
         testDescribeUserQuotas(username, newQuotas);
@@ -213,25 +215,40 @@ public class KafkaUserQuotasIT {
     }
 
     @Test
+    public void testUpdateControllerMutationRate() throws Exception {
+        String username = "changeControllerMutationRate";
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
+        defaultQuotas.setControllerMutationRate(20d);
+        kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, defaultQuotas);
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getControllerMutationRate(), is(20d));
+    }
+
+    @Test
     public void testUserQuotasToClientQuotaAlterationOps() {
         KafkaUserQuotas quotas = new KafkaUserQuotas();
         quotas.setConsumerByteRate(2000);
         quotas.setProducerByteRate(4000);
         quotas.setRequestPercentage(40);
+        quotas.setControllerMutationRate(10d);
         Set<ClientQuotaAlteration.Op> ops = kuq.toClientQuotaAlterationOps(quotas);
-        assertThat(ops, hasSize(3));
+        assertThat(ops, hasSize(4));
         assertThat(ops.contains(new ClientQuotaAlteration.Op("consumer_byte_rate", 2000d)), is(true));
         assertThat(ops.contains(new ClientQuotaAlteration.Op("producer_byte_rate", 4000d)), is(true));
         assertThat(ops.contains(new ClientQuotaAlteration.Op("request_percentage", 40d)), is(true));
+        assertThat(ops.contains(new ClientQuotaAlteration.Op("controller_mutation_rate", 10d)), is(true));
 
         quotas.setConsumerByteRate(null);
         quotas.setProducerByteRate(null);
         quotas.setRequestPercentage(null);
+        quotas.setControllerMutationRate(null);
+
         ops = kuq.toClientQuotaAlterationOps(quotas);
-        assertThat(ops, hasSize(3));
+        assertThat(ops, hasSize(4));
         assertThat(ops.contains(new ClientQuotaAlteration.Op("consumer_byte_rate", null)), is(true));
         assertThat(ops.contains(new ClientQuotaAlteration.Op("producer_byte_rate", null)), is(true));
         assertThat(ops.contains(new ClientQuotaAlteration.Op("request_percentage", null)), is(true));
+        assertThat(ops.contains(new ClientQuotaAlteration.Op("controller_mutation_rate", null)), is(true));
+
     }
 
     @Test
@@ -240,18 +257,23 @@ public class KafkaUserQuotasIT {
         map.put("consumer_byte_rate", 2000d);
         map.put("producer_byte_rate", 4000d);
         map.put("request_percentage", 40d);
+        map.put("controller_mutation_rate", 10d);
         KafkaUserQuotas quotas = kuq.fromClientQuota(map);
         assertThat(quotas.getConsumerByteRate(), is(2000));
         assertThat(quotas.getProducerByteRate(), is(4000));
         assertThat(quotas.getRequestPercentage(), is(40));
+        assertThat(quotas.getControllerMutationRate(), is(10d));
 
         map.remove("consumer_byte_rate");
         map.remove("producer_byte_rate");
         map.remove("request_percentage");
+        map.remove("controller_mutation_rate");
         quotas = kuq.fromClientQuota(map);
         assertThat(quotas.getConsumerByteRate(), is(nullValue()));
         assertThat(quotas.getProducerByteRate(), is(nullValue()));
         assertThat(quotas.getRequestPercentage(), is(nullValue()));
+        assertThat(quotas.getControllerMutationRate(), is(nullValue()));
+
     }
 
     @Test
@@ -269,6 +291,7 @@ public class KafkaUserQuotasIT {
         quotas.setConsumerByteRate(2_000_000);
         quotas.setProducerByteRate(1_000_000);
         quotas.setRequestPercentage(50);
+        quotas.setControllerMutationRate(10d);
 
         assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
 
@@ -297,6 +320,7 @@ public class KafkaUserQuotasIT {
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
+        initialQuotas.setControllerMutationRate(10d);
 
         kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, initialQuotas);
         assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
@@ -306,6 +330,7 @@ public class KafkaUserQuotasIT {
         updatedQuotas.setConsumerByteRate(4_000_000);
         updatedQuotas.setProducerByteRate(3_000_000);
         updatedQuotas.setRequestPercentage(75);
+        updatedQuotas.setControllerMutationRate(10d);
 
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, updatedQuotas)
@@ -332,6 +357,7 @@ public class KafkaUserQuotasIT {
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
+        initialQuotas.setControllerMutationRate(10d);
 
         kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, initialQuotas);
         assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
@@ -340,6 +366,7 @@ public class KafkaUserQuotasIT {
         KafkaUserQuotas updatedQuotas = new KafkaUserQuotas();
         updatedQuotas.setConsumerByteRate(4_000_000);
         updatedQuotas.setProducerByteRate(3_000_000);
+        updatedQuotas.setControllerMutationRate(20d);
 
         Checkpoint async = testContext.checkpoint();
         kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, updatedQuotas)
@@ -367,6 +394,7 @@ public class KafkaUserQuotasIT {
         initialQuotas.setConsumerByteRate(2_000_000);
         initialQuotas.setProducerByteRate(1_000_000);
         initialQuotas.setRequestPercentage(50);
+        initialQuotas.setControllerMutationRate(10d);
 
         kuq.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, username, initialQuotas);
         assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
@@ -410,5 +438,6 @@ public class KafkaUserQuotasIT {
         assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getConsumerByteRate(), is(quotas.getConsumerByteRate()));
         assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getProducerByteRate(), is(quotas.getProducerByteRate()));
         assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getRequestPercentage(), is(quotas.getRequestPercentage()));
+        assertThat(kuq.describeUserQuotas(Reconciliation.DUMMY_RECONCILIATION, username).getControllerMutationRate(), is(quotas.getControllerMutationRate()));
     }
 }

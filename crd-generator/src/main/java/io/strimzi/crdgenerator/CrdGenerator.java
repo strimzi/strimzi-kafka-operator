@@ -1037,6 +1037,11 @@ public class CrdGenerator {
             return "array";
         } else if (type.isEnum()) {
             return "string";
+        } else if (Double.class.equals(type)
+                || double.class.equals(type)
+                || float.class.equals(type)
+                || Float.class.equals(type)) {
+            return "number";
         } else {
             throw new RuntimeException(type.getName());
         }
