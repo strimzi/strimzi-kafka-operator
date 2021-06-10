@@ -510,6 +510,11 @@ public class DocGenerator {
                 || long.class.equals(cls)
                 || Long.class.equals(cls)) {
             out.append("integer");
+        } else if (Float.class.equals(cls)
+                || float.class.equals(cls)
+                || Double.class.equals(cls)
+                || double.class.equals(cls)) {
+            out.append("number");
         } else if (Object.class.equals(cls)
                 || String.class.equals(cls)
                 || Map.class.equals(cls)
