@@ -138,11 +138,22 @@ spec:
                               description: Enable or disable issuer checking. By default
                                 issuer is checked using the value configured by `validIssuerUri`.
                                 Default value is `true`.
+                            clientAudience:
+                              type: string
+                              description: Audience to use when making a request to
+                                authorization server's token endpoint. Used for inter-broker
+                                authentication, and for OAuth over PLAIN with `clientId`
+                                and `secret`.
                             clientId:
                               type: string
                               description: OAuth Client ID which the Kafka broker
                                 can use to authenticate against the authorization
                                 server and use the introspect endpoint URI.
+                            clientScope:
+                              type: string
+                              description: Scope to use when making a request to authorization
+                                server's token endpoint. Used for inter-broker authentication,
+                                and for OAuth over PLAIN with `clientId` and `secret`.
                             clientSecret:
                               type: object
                               properties:
@@ -280,17 +291,6 @@ spec:
                                 uses SASL SCRAM-SHA-512 Authentication. `tls` type
                                 uses TLS Client Authentication. `tls` type is supported
                                 only on TLS listeners.
-                            useAudience:
-                              type: string
-                              description: Audience to use when making a request to
-                                authorization server's token endpoint. Used for inter-broker
-                                authentication, and for OAuth over PLAIN with `clientId`
-                                and `secret`.
-                            useScope:
-                              type: string
-                              description: Scope to use when making a request to authorization
-                                server's token endpoint. Used for inter-broker authentication,
-                                and for OAuth over PLAIN with `clientId` and `secret`.
                             userInfoEndpointUri:
                               type: string
                               description: 'URI of the User Info Endpoint to use as
@@ -6320,11 +6320,23 @@ spec:
                                 description: Enable or disable issuer checking. By
                                   default issuer is checked using the value configured
                                   by `validIssuerUri`. Default value is `true`.
+                              clientAudience:
+                                type: string
+                                description: Audience to use when making a request
+                                  to authorization server's token endpoint. Used for
+                                  inter-broker authentication, and for OAuth over
+                                  PLAIN with `clientId` and `secret`.
                               clientId:
                                 type: string
                                 description: OAuth Client ID which the Kafka broker
                                   can use to authenticate against the authorization
                                   server and use the introspect endpoint URI.
+                              clientScope:
+                                type: string
+                                description: Scope to use when making a request to
+                                  authorization server's token endpoint. Used for
+                                  inter-broker authentication, and for OAuth over
+                                  PLAIN with `clientId` and `secret`.
                               clientSecret:
                                 type: object
                                 properties:
@@ -6463,18 +6475,6 @@ spec:
                                   type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                   type uses TLS Client Authentication. `tls` type
                                   is supported only on TLS listeners.
-                              useAudience:
-                                type: string
-                                description: Audience to use when making a request
-                                  to authorization server's token endpoint. Used for
-                                  inter-broker authentication, and for OAuth over
-                                  PLAIN with `clientId` and `secret`.
-                              useScope:
-                                type: string
-                                description: Scope to use when making a request to
-                                  authorization server's token endpoint. Used for
-                                  inter-broker authentication, and for OAuth over
-                                  PLAIN with `clientId` and `secret`.
                               userInfoEndpointUri:
                                 type: string
                                 description: 'URI of the User Info Endpoint to use
@@ -6814,11 +6814,23 @@ spec:
                                   description: Enable or disable issuer checking.
                                     By default issuer is checked using the value configured
                                     by `validIssuerUri`. Default value is `true`.
+                                clientAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientId:
                                   type: string
                                   description: OAuth Client ID which the Kafka broker
                                     can use to authenticate against the authorization
                                     server and use the introspect endpoint URI.
+                                clientScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientSecret:
                                   type: object
                                   properties:
@@ -6960,18 +6972,6 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
-                                useAudience:
-                                  type: string
-                                  description: Audience to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
-                                useScope:
-                                  type: string
-                                  description: Scope to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -7089,11 +7089,23 @@ spec:
                                   description: Enable or disable issuer checking.
                                     By default issuer is checked using the value configured
                                     by `validIssuerUri`. Default value is `true`.
+                                clientAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientId:
                                   type: string
                                   description: OAuth Client ID which the Kafka broker
                                     can use to authenticate against the authorization
                                     server and use the introspect endpoint URI.
+                                clientScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientSecret:
                                   type: object
                                   properties:
@@ -7235,18 +7247,6 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
-                                useAudience:
-                                  type: string
-                                  description: Audience to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
-                                useScope:
-                                  type: string
-                                  description: Scope to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -7387,11 +7387,23 @@ spec:
                                   description: Enable or disable issuer checking.
                                     By default issuer is checked using the value configured
                                     by `validIssuerUri`. Default value is `true`.
+                                clientAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientId:
                                   type: string
                                   description: OAuth Client ID which the Kafka broker
                                     can use to authenticate against the authorization
                                     server and use the introspect endpoint URI.
+                                clientScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientSecret:
                                   type: object
                                   properties:
@@ -7533,18 +7545,6 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
-                                useAudience:
-                                  type: string
-                                  description: Audience to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
-                                useScope:
-                                  type: string
-                                  description: Scope to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -14919,11 +14919,23 @@ spec:
                                 description: Enable or disable issuer checking. By
                                   default issuer is checked using the value configured
                                   by `validIssuerUri`. Default value is `true`.
+                              clientAudience:
+                                type: string
+                                description: Audience to use when making a request
+                                  to authorization server's token endpoint. Used for
+                                  inter-broker authentication, and for OAuth over
+                                  PLAIN with `clientId` and `secret`.
                               clientId:
                                 type: string
                                 description: OAuth Client ID which the Kafka broker
                                   can use to authenticate against the authorization
                                   server and use the introspect endpoint URI.
+                              clientScope:
+                                type: string
+                                description: Scope to use when making a request to
+                                  authorization server's token endpoint. Used for
+                                  inter-broker authentication, and for OAuth over
+                                  PLAIN with `clientId` and `secret`.
                               clientSecret:
                                 type: object
                                 properties:
@@ -15062,18 +15074,6 @@ spec:
                                   type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                   type uses TLS Client Authentication. `tls` type
                                   is supported only on TLS listeners.
-                              useAudience:
-                                type: string
-                                description: Audience to use when making a request
-                                  to authorization server's token endpoint. Used for
-                                  inter-broker authentication, and for OAuth over
-                                  PLAIN with `clientId` and `secret`.
-                              useScope:
-                                type: string
-                                description: Scope to use when making a request to
-                                  authorization server's token endpoint. Used for
-                                  inter-broker authentication, and for OAuth over
-                                  PLAIN with `clientId` and `secret`.
                               userInfoEndpointUri:
                                 type: string
                                 description: 'URI of the User Info Endpoint to use
@@ -15413,11 +15413,23 @@ spec:
                                   description: Enable or disable issuer checking.
                                     By default issuer is checked using the value configured
                                     by `validIssuerUri`. Default value is `true`.
+                                clientAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientId:
                                   type: string
                                   description: OAuth Client ID which the Kafka broker
                                     can use to authenticate against the authorization
                                     server and use the introspect endpoint URI.
+                                clientScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientSecret:
                                   type: object
                                   properties:
@@ -15559,18 +15571,6 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
-                                useAudience:
-                                  type: string
-                                  description: Audience to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
-                                useScope:
-                                  type: string
-                                  description: Scope to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -15688,11 +15688,23 @@ spec:
                                   description: Enable or disable issuer checking.
                                     By default issuer is checked using the value configured
                                     by `validIssuerUri`. Default value is `true`.
+                                clientAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientId:
                                   type: string
                                   description: OAuth Client ID which the Kafka broker
                                     can use to authenticate against the authorization
                                     server and use the introspect endpoint URI.
+                                clientScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientSecret:
                                   type: object
                                   properties:
@@ -15834,18 +15846,6 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
-                                useAudience:
-                                  type: string
-                                  description: Audience to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
-                                useScope:
-                                  type: string
-                                  description: Scope to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
@@ -15986,11 +15986,23 @@ spec:
                                   description: Enable or disable issuer checking.
                                     By default issuer is checked using the value configured
                                     by `validIssuerUri`. Default value is `true`.
+                                clientAudience:
+                                  type: string
+                                  description: Audience to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientId:
                                   type: string
                                   description: OAuth Client ID which the Kafka broker
                                     can use to authenticate against the authorization
                                     server and use the introspect endpoint URI.
+                                clientScope:
+                                  type: string
+                                  description: Scope to use when making a request
+                                    to authorization server's token endpoint. Used
+                                    for inter-broker authentication, and for OAuth
+                                    over PLAIN with `clientId` and `secret`.
                                 clientSecret:
                                   type: object
                                   properties:
@@ -16132,18 +16144,6 @@ spec:
                                     type uses SASL SCRAM-SHA-512 Authentication. `tls`
                                     type uses TLS Client Authentication. `tls` type
                                     is supported only on TLS listeners.
-                                useAudience:
-                                  type: string
-                                  description: Audience to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
-                                useScope:
-                                  type: string
-                                  description: Scope to use when making a request
-                                    to authorization server's token endpoint. Used
-                                    for inter-broker authentication, and for OAuth
-                                    over PLAIN with `clientId` and `secret`.
                                 userInfoEndpointUri:
                                   type: string
                                   description: 'URI of the User Info Endpoint to use
