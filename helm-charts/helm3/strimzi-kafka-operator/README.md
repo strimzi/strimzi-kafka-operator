@@ -169,7 +169,6 @@ the documentation for more details.
 | `readinessProbe.periodSeconds`       | Readiness probe period in seconds         | 30                                                   |
 | `imageRegistryOverride`              | Override all image registry config        | `nil`                                                |
 | `imageRepositoryOverride`            | Override all image repository config      | `nil`                                                |
-| `labelsExclusionPattern`             | Override the exclude pattern for exclude some labels             | `""`  
 | `imageTagOverride`                   | Override all image tag config             | `nil`                                                |
 | `createGlobalResources`              | Allow creation of cluster-scoped resources| `true`                                               |
 | `tolerations`                        | Add tolerations to Operator Pod           | `[]`                                                 |
