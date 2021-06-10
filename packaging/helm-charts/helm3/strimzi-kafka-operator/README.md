@@ -177,6 +177,7 @@ the documentation for more details.
 | `labels`                             | Add labels to Operator Pod                | `{}`                                                 |
 | `nodeSelector`                       | Add a node selector to Operator Pod       | `{}`                                                 |
 | `featureGates`                       | Feature Gates configuration               | ``                                                   |
+| `labelsExclusionPattern`             | Override the exclude pattern for exclude some labels             | `""`  
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
