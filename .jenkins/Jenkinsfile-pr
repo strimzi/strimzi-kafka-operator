@@ -130,11 +130,11 @@ pipeline {
                 }
             }
         }
+        /*
         stage('Start Minikube') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
-                        //lib = evaluate readFile('./.jenkins/jenkins.groovy')
                         lib.setupKubernetes()
                     }
                 }
@@ -175,7 +175,6 @@ pipeline {
                 }
             }
         }
-        /*
         stage('Build images') {
             when {
                 environment name: 'TEST_ONLY', value: 'false'
