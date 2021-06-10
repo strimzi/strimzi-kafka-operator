@@ -33,7 +33,9 @@ pipeline {
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
         TEST_NSENTER_VERSION = "2.37"
-        MVN_BIN="./apache-maven-3.8.1/bin/mvn"
+        MVN_BIN = "./apache-maven-3.8.1/bin/mvn"
+        STRIMZI_MAILING_LIST = "samuel_cytarzynski@carrefour.com"
+        
     }
     stages {
         stage('Clean WS') {
@@ -63,17 +65,6 @@ pipeline {
                 }
             }
         }
-        /*
-        stage('force install of java 11') {
-            steps {
-                    script {
-                        sh(script: "sudo yum remove -y jdk1.8.0_66")
-                        sh(script: "sudo yum install -y java-11-openjdk-devel")
-                        sh(script: "java -version")
-                    }
-            }
-        }
-        */
         stage('Parse parameters from comment') {
             steps {
                 script {
@@ -183,6 +174,7 @@ pipeline {
                 }
             }
         }
+        /*
         stage('Build images') {
             when {
                 environment name: 'TEST_ONLY', value: 'false'
@@ -215,7 +207,9 @@ pipeline {
                 }
             }
         }
+        */
     }
+
     post {
         always {
             script {
