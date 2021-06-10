@@ -7,7 +7,7 @@ source ./.checksums
 RETURN_CODE=0
 
 # Helm Charts
-CHECKSUM="$(find ./helm-charts/ -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum)"
+CHECKSUM="$(find ./helm-charts/ -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum)"
 echo "checksum of ./helm-charts/ is CHECKSUM=${CHECKSUM}"
 
 if [ "$CHECKSUM" != "$HELM_CHART_CHECKSUM" ]; then
@@ -27,7 +27,7 @@ fi
 
 
 # install
-CHECKSUM="$(find ./install/ -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum)"
+CHECKSUM="$(find ./install/ -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum)"
 echo "checksum of ./install/ is CHECKSUM=${CHECKSUM}"
 
 if [ "$CHECKSUM" != "$INSTALL_CHECKSUM" ]; then
@@ -46,7 +46,7 @@ if [ "$CHECKSUM" != "$INSTALL_CHECKSUM" ]; then
 fi
 
 # examples
-CHECKSUM="$(find ./examples/ -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum)"
+CHECKSUM="$(find ./examples/ -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum)"
 echo "checksum of ./examples/ is CHECKSUM=${CHECKSUM}"
 
 if [ "$CHECKSUM" != "$EXAMPLES_CHECKSUM" ]; then

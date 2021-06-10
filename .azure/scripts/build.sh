@@ -25,6 +25,8 @@ make docker_build
 make docu_html
 make docu_htmlnoheader
 
+source .azure/scripts/release_files_check.sh
+
 # Run tests for strimzi-test-container
 # We need to tag built images even in fork repos to make images available for test container locally
 DOCKER_REGISTRY=quay.io DOCKER_ORG=strimzi DOCKER_TAG=latest make docker_tag
@@ -56,8 +58,6 @@ if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
     echo "    && git commit -s -m 'Update derived resources'"
     exit 1
 fi
-
-source .azure/scripts/publish_check.sh
 
 # Push artifatcs (Docker containers, JARs, docs)
 if [ "$BUILD_REASON" == "PullRequest" ] ; then
