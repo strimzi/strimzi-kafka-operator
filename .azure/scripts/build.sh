@@ -57,6 +57,8 @@ if [ -n "$CHANGED_DERIVED" ] || [ -n "$GENERATED_FILES" ] ; then
     exit 1
 fi
 
+source .azure/scripts/publish_check.sh
+
 # Push artifatcs (Docker containers, JARs, docs)
 if [ "$BUILD_REASON" == "PullRequest" ] ; then
     echo "Building Pull Request - nothing to push"

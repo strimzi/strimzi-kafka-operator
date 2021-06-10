@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+### IMPORTANT ###
+# if the below line has changed, this means the ./helm-charts directory has changed
+#   the checksum and ./helm-charts directory should only be modified on official releases as part of a release
+# if this checksum has changed as part of any non-release specific changes, please apply your changes to the
+#   development version of the helm charts in ./packaging/helm-charts
+### IMPORTANT ###
+HELM_CHART_CHECKSUM="5c7c8dd53dede7f412f02760d66c3396e3c4ed5c  -"
+
+### IMPORTANT ###
+# if the below line has changed, this means the ./install directory has changed
+#   the checksum and ./install directory should only be modified on official releases as part of a release
+# if this checksum has changed as part of any non-release specific changes, please apply your changes to the
+#   development version of the helm charts in ./packaging/install
+### IMPORTANT ###
+INSTALL_CHECKSUM="25ae931bed16aa1fa162711bbd1d2041b6c3c45a  -"
+
+### IMPORTANT ###
+# if the below line has changed, this means the ./examples directory has changed
+#   the checksum and ./examples directory should only be modified on official releases as part of a release
+# if this checksum has changed as part of any non-release specific changes, please apply your changes to the
+#   development version of the helm charts in ./packaging/examples
+### IMPORTANT ###
+EXAMPLES_CHECKSUM="768665e35e75c792d983f48211821b5c71d41bef  -"

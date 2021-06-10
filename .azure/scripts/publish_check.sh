@@ -2,16 +2,12 @@
 
 set -eu
 
-### IMPORTANT ###
-# if the below line has changed, this means the ./helm-charts directory has changed
-#   the checksum and ./helm-charts directory should only be modified on official releases as part of a release
-# if this checksum has changed as part of any non-release specific changes, please apply your changes to the
-#   development version of the helm charts in ./packaging/helm-charts
-### IMPORTANT ###
-HELM_CHART_CHECKSUM="5c7c8dd53dede7f412f02760d66c3396e3c4ed5c  -"
+source ./.checksums
 
+RETURN_CODE=0
+
+# Helm Charts
 CHECKSUM="$(find ./helm-charts/ -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum)"
-
 echo "checksum of ./helm-charts/ is CHECKSUM=${CHECKSUM}"
 
 if [ "$CHECKSUM" != "$HELM_CHART_CHECKSUM" ]; then
@@ -26,5 +22,46 @@ if [ "$CHECKSUM" != "$HELM_CHART_CHECKSUM" ]; then
   echo "HELM_CHART_CHECKSUM=${HELM_CHART_CHECKSUM}"
   echo "->"
   echo "HELM_CHART_CHECKSUM=${CHECKSUM}"
-  exit 1
+  RETURN_CODE=$((RETURN_CODE+1))
 fi
+
+
+# install
+CHECKSUM="$(find ./install/ -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum)"
+echo "checksum of ./install/ is CHECKSUM=${CHECKSUM}"
+
+if [ "$CHECKSUM" != "$INSTALL_CHECKSUM" ]; then
+  echo "ERROR checksum of ./install does not match expected"
+  echo "expected ${INSTALL_CHECKSUM}"
+  echo "found ${CHECKSUM}"
+  echo "if your changes are not related to a release please check your changes into"
+  echo "./packaging/install"
+  echo "instead of ./install"
+  echo ""
+  echo "if this is part of a release instead update the checksum i.e."
+  echo "INSTALL_CHECKSUM=${INSTALL_CHECKSUM}"
+  echo "->"
+  echo "INSTALL_CHECKSUM=${CHECKSUM}"
+  RETURN_CODE=$((RETURN_CODE+1))
+fi
+
+# examples
+CHECKSUM="$(find ./examples/ -type f -print0 | sort -z | xargs -0 sha1sum | sha1sum)"
+echo "checksum of ./examples/ is CHECKSUM=${CHECKSUM}"
+
+if [ "$CHECKSUM" != "$EXAMPLES_CHECKSUM" ]; then
+  echo "ERROR checksum of ./install does not match expected"
+  echo "expected ${EXAMPLES_CHECKSUM}"
+  echo "found ${CHECKSUM}"
+  echo "if your changes are not related to a release please check your changes into"
+  echo "./packaging/examples"
+  echo "instead of ./examples"
+  echo ""
+  echo "if this is part of a release instead update the checksum i.e."
+  echo "EXAMPLES_CHECKSUM=${EXAMPLES_CHECKSUM}"
+  echo "->"
+  echo "EXAMPLES_CHECKSUM=${CHECKSUM}"
+  RETURN_CODE=$((RETURN_CODE+1))
+fi
+
+exit $RETURN_CODE
