@@ -16,6 +16,7 @@ pipeline {
         string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
         string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
         string(name: 'ghprbCommentBody', defaultValue: "", description: 'PR comment test')
+        string(name: 'ghprbPullId', defaultValue: "7", description: 'PR ID')
     }
     options {
         timeout(time: 24, unit: 'HOURS')
