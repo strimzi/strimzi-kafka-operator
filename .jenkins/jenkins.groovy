@@ -24,9 +24,8 @@ def installMaven() {
 def removeDefaultJavaInstallJava11() {
     //sh(script: "sudo yum remove -y jdk1.8.0_66")
     sh(script: "sudo yum install -y java-11-openjdk-devel java-11-openjdk-devel")
-    sh(script: "sudo update-alternatives --auto java")
+    sh(script: "echo 2 | sudo update-alternatives --config java")
     sh(script: "java -version")
-    sh(script: "sleep 1000")
 }
 
 def installHelm(String workspace) {
