@@ -101,10 +101,14 @@ public abstract class AbstractOperator<
         this.selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
         this.metrics = metrics;
 
-        System.out.println(selectorLabels.toSelectorString());
         // Setup metrics
-        Tags metricTags = Tags.of(Tag.of("kind", kind()), Tag.of("selector", selectorLabels.toSelectorString()));
+        Tags metricTags;
 
+        if (selectorLabels != null) {
+            metricTags = Tags.of(Tag.of("kind", kind()), Tag.of("selector", selectorLabels.toSelectorString()));
+        } else {
+            metricTags = Tags.of(Tag.of("kind", kind()));
+        }
         periodicReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.periodical",
                 "Number of periodical reconciliations done by the operator",
                 metricTags);
