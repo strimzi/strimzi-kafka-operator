@@ -144,9 +144,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.pfa = pfa;
         this.port = port;
-
+        System.out.println(config.getCustomResourceSelector().toSelectorString());
         // Setup metrics for connectors
-        Tags metricTags = Tags.of(Tag.of("kind", KafkaConnector.RESOURCE_KIND));
+        Tags metricTags = Tags.of(Tag.of("kind", KafkaConnector.RESOURCE_KIND), Tag.of("selector", config.getCustomResourceSelector().toSelectorString()));
 
         connectorsReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",
                 "Number of reconciliations done by the operator for individual resources",

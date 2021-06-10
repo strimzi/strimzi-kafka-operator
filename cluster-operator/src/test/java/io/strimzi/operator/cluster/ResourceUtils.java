@@ -819,7 +819,7 @@ public class ResourceUtils {
                 null,
                 null,
                 ClusterOperatorConfig.RbacScope.CLUSTER,
-                null,
+                Labels.fromMap(emptyMap()),
                 "",
                 10);
     }

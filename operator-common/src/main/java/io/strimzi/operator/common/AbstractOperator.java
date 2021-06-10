@@ -101,8 +101,9 @@ public abstract class AbstractOperator<
         this.selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
         this.metrics = metrics;
 
+        System.out.println(selectorLabels.toSelectorString());
         // Setup metrics
-        Tags metricTags = Tags.of(Tag.of("kind", kind()));
+        Tags metricTags = Tags.of(Tag.of("kind", kind()), Tag.of("selector", selectorLabels.toSelectorString()));
 
         periodicReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.periodical",
                 "Number of periodical reconciliations done by the operator",
