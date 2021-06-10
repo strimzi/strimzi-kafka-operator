@@ -22,8 +22,8 @@ def installMaven() {
 }
 
 def removeDefaultJavaInstallJava11() {
-    sh(script: "sudo yum remove -y jdk1.8.0_66")
-    sh(script: "sudo yum install -y java-11-openjdk-devel")
+    //sh(script: "sudo yum remove -y jdk1.8.0_66")
+    sh(script: "sudo yum install -y java-11-openjdk-devel java-11-openjdk-devel")
     sh(script: "java -version")
 }
 
