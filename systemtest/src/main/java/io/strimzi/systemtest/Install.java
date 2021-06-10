@@ -46,8 +46,8 @@ public class Install {
 
     private ExtensionContext extensionContext;
     private String clusterOperatorName;
-    private String namespaceName;
-    private String namespaceEnv;
+    private String namespace;
+    private String namespaceToWatch;
     private List<String> bindingsNamespaces;
     private long operationTimeout;
     private long reconciliationInterval;
@@ -56,8 +56,8 @@ public class Install {
     Install(InstallBuilder builder) {
         this.extensionContext = builder.extensionContext;
         this.clusterOperatorName = builder.clusterOperatorName;
-        this.namespaceName = builder.namespaceName;
-        this.namespaceEnv = builder.namespaceEnv;
+        this.namespace = builder.namespace;
+        this.namespaceToWatch = builder.namespaceToWatch;
         this.bindingsNamespaces = builder.bindingsNamespaces;
         this.operationTimeout = builder.operationTimeout;
         this.reconciliationInterval = builder.reconciliationInterval;
@@ -72,29 +72,29 @@ public class Install {
     public Install runInstallation() {
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
-            olmResource = new OlmResource(namespaceName, namespaceEnv);
-            cluster.setNamespace(namespaceName);
-            cluster.createNamespace(namespaceName);
-            olmResource.create(extensionContext, namespaceName, operationTimeout, reconciliationInterval);
+            olmResource = new OlmResource(namespace, namespaceToWatch);
+            cluster.setNamespace(namespace);
+            cluster.createNamespace(namespace);
+            olmResource.create(extensionContext, namespace, operationTimeout, reconciliationInterval);
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
-            helmResource = new HelmResource(namespaceEnv);
-            cluster.setNamespace(namespaceName);
-            cluster.createNamespace(namespaceName);
+            helmResource = new HelmResource(namespaceToWatch);
+            cluster.setNamespace(namespace);
+            cluster.createNamespace(namespace);
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-            prepareEnvForOperator(extensionContext, namespaceName, bindingsNamespaces);
+            prepareEnvForOperator(extensionContext, namespace, bindingsNamespaces);
             if (Environment.isNamespaceRbacScope()) {
                 // if roles only, only deploy the rolebindings
-                applyRoleBindings(extensionContext, namespaceName, namespaceName);
+                applyRoleBindings(extensionContext, namespace, namespace);
             } else {
-                applyBindings(extensionContext, namespaceName, bindingsNamespaces);
+                applyBindings(extensionContext, namespace, bindingsNamespaces);
             }
             // cluster-wide installation
-            if (namespaceEnv.equals("*")) {
+            if (namespaceToWatch.equals("*")) {
                 // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-                List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespaceName);
+                List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespace);
                 clusterRoleBindingList.forEach(clusterRoleBinding ->
                     ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
             }
@@ -103,8 +103,8 @@ public class Install {
             ResourceManager.getInstance().createResource(extensionContext,
                 new BundleResource.BundleResourceBuilder()
                     .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-                    .withNamespaceName(namespaceName)
-                    .withNamespaceEnv(namespaceEnv)
+                    .withNamespace(namespace)
+                    .withWatchingNamespaces(namespaceToWatch)
                     .withOperationTimeout(operationTimeout)
                     .withReconciliationInterval(reconciliationInterval)
                     .buildBundleInstance()
@@ -118,8 +118,8 @@ public class Install {
 
         private ExtensionContext extensionContext;
         private String clusterOperatorName;
-        private String namespaceName;
-        private String namespaceEnv;
+        private String namespace;
+        private String namespaceToWatch;
         private List<String> bindingsNamespaces;
         private long operationTimeout;
         private long reconciliationInterval;
@@ -132,12 +132,12 @@ public class Install {
             this.clusterOperatorName = clusterOperatorName;
             return self();
         }
-        public InstallBuilder withNamespaceName(String namespaceName) {
-            this.namespaceName = namespaceName;
+        public InstallBuilder withNamespace(String namespace) {
+            this.namespace = namespace;
             return self();
         }
-        public InstallBuilder withNamespaceEnv(String namespaceEnv) {
-            this.namespaceEnv = namespaceEnv;
+        public InstallBuilder withWatchingNamespaces(String namespaceToWatch) {
+            this.namespaceToWatch = namespaceToWatch;
             return self();
         }
         public InstallBuilder withBindingsNamespaces(List<String> bindingsNamespaces) {

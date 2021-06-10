@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -73,10 +72,10 @@ class RecoveryST extends AbstractST {
         // kafka cluster already deployed
         String kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
         String kafkaStatefulSetUid = kubeClient().getStatefulSetUid(kafkaStatefulSetName);
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
         kubeClient().deleteStatefulSet(kafkaStatefulSetName);
         PodUtils.waitForPodsWithPrefixDeletion(kafkaStatefulSetName);
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(1, true);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
         StatefulSetUtils.waitForStatefulSetRecovery(kafkaStatefulSetName, kafkaStatefulSetUid);
@@ -93,10 +92,10 @@ class RecoveryST extends AbstractST {
         LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", sharedClusterName);
         String zookeeperStatefulSetName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);
         String zookeeperStatefulSetUid = kubeClient().getStatefulSetUid(zookeeperStatefulSetName);
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(0, true);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
         kubeClient().deleteStatefulSet(zookeeperStatefulSetName);
         PodUtils.waitForPodsWithPrefixDeletion(zookeeperStatefulSetName);
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).scale(1, true);
+        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
         StatefulSetUtils.waitForStatefulSetRecovery(zookeeperStatefulSetName, zookeeperStatefulSetUid);
@@ -303,8 +302,8 @@ class RecoveryST extends AbstractST {
         install = new Install.InstallBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(clusterOperatorName)
-            .withNamespaceName(NAMESPACE)
-            .withNamespaceEnv(NAMESPACE)
+            .withNamespace(NAMESPACE)
+            .withWatchingNamespaces(NAMESPACE)
             .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
             .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)

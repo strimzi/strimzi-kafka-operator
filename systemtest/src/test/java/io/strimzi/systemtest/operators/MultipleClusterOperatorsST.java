@@ -202,8 +202,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
         resourceManager.createResource(extensionContext,
             new BundleResource.BundleResourceBuilder()
                 .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-                .withNamespaceName(coNamespace)
-                .withNamespaceEnv(namespace)
+                .withNamespace(coNamespace)
+                .withWatchingNamespaces(namespace)
                 .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
                 .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
                 .buildBundleInstance()

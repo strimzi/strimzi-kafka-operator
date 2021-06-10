@@ -21,16 +21,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.Objects;
 
-public class BundleResource extends DeploymentBuilder implements ResourceType<Deployment> {
+public class BundleResource implements ResourceType<Deployment> {
     private static final Logger LOGGER = LogManager.getLogger(BundleResource.class);
 
     public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
     private String name;
-    private String namespaceName;
-    private String namespaceEnv;
+    private String namespace;
+    private String namespaceToWatch;
     private long operationTimeout;
     private long reconciliationInterval;
     private List<EnvVar> extraEnvVars;
@@ -68,8 +67,8 @@ public class BundleResource extends DeploymentBuilder implements ResourceType<De
 
     private BundleResource(BundleResourceBuilder builder) {
         this.name = builder.name;
-        this.namespaceName = builder.namespaceName;
-        this.namespaceEnv = builder.namespaceEnv;
+        this.namespace = builder.namespace;
+        this.namespaceToWatch = builder.namespaceToWatch;
         this.operationTimeout = builder.operationTimeout;
         this.reconciliationInterval = builder.reconciliationInterval;
         this.extraEnvVars = builder.extraEnvVars;
@@ -78,8 +77,8 @@ public class BundleResource extends DeploymentBuilder implements ResourceType<De
     public static class BundleResourceBuilder {
 
         private String name;
-        private String namespaceName;
-        private String namespaceEnv;
+        private String namespace;
+        private String namespaceToWatch;
         private long operationTimeout;
         private long reconciliationInterval;
         private List<EnvVar> extraEnvVars;
@@ -89,12 +88,12 @@ public class BundleResource extends DeploymentBuilder implements ResourceType<De
             return self();
         }
 
-        public BundleResourceBuilder withNamespaceName(String namespaceName) {
-            this.namespaceName = namespaceName;
+        public BundleResourceBuilder withNamespace(String namespace) {
+            this.namespace = namespace;
             return self();
         }
-        public BundleResourceBuilder withNamespaceEnv(String namespaceEnv) {
-            this.namespaceEnv = namespaceEnv;
+        public BundleResourceBuilder withWatchingNamespaces(String namespaceToWatch) {
+            this.namespaceToWatch = namespaceToWatch;
             return self();
         }
         public BundleResourceBuilder withOperationTimeout(long operationTimeout) {
@@ -113,8 +112,8 @@ public class BundleResource extends DeploymentBuilder implements ResourceType<De
 
         public BundleResourceBuilder defaultConfigurationWithNamespace(String namespaceName) {
             this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
-            this.namespaceName = namespaceName;
-            this.namespaceEnv = this.namespaceName;
+            this.namespace = namespace;
+            this.namespaceToWatch = this.namespace;
             this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
             this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
             return self();
@@ -136,8 +135,8 @@ public class BundleResource extends DeploymentBuilder implements ResourceType<De
     protected BundleResourceBuilder toBuilder() {
         return newBuilder()
             .withName(name)
-            .withNamespaceName(namespaceName)
-            .withNamespaceEnv(namespaceEnv)
+            .withNamespace(namespace)
+            .withWatchingNamespaces(namespaceToWatch)
             .withOperationTimeout(operationTimeout)
             .withReconciliationInterval(reconciliationInterval);
     }
@@ -154,7 +153,7 @@ public class BundleResource extends DeploymentBuilder implements ResourceType<De
         for (EnvVar envVar : envVars) {
             switch (envVar.getName()) {
                 case "STRIMZI_NAMESPACE":
-                    envVar.setValue(namespaceEnv);
+                    envVar.setValue(namespaceToWatch);
                     envVar.setValueFrom(null);
                     break;
                 case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
@@ -194,7 +193,7 @@ public class BundleResource extends DeploymentBuilder implements ResourceType<De
         return new DeploymentBuilder(clusterOperator)
             .editMetadata()
                 .withName(name)
-                .withNamespace(namespaceName)
+                .withNamespace(namespace)
                 .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.BundleClusterOperator.name())
             .endMetadata()
             .editSpec()
@@ -210,18 +209,5 @@ public class BundleResource extends DeploymentBuilder implements ResourceType<De
                     .endSpec()
                 .endTemplate()
             .endSpec();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        BundleResource that = (BundleResource) o;
-        return operationTimeout == that.operationTimeout && reconciliationInterval == that.reconciliationInterval && Objects.equals(name, that.name) && Objects.equals(namespaceName, that.namespaceName) && Objects.equals(namespaceEnv, that.namespaceEnv);
-    }
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), name, namespaceName, namespaceEnv, operationTimeout, reconciliationInterval);
     }
 }

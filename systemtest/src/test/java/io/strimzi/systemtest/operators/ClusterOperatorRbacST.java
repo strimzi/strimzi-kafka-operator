@@ -86,8 +86,8 @@ public class ClusterOperatorRbacST extends AbstractST {
         resourceManager.createResource(extensionContext,
             new BundleResource.BundleResourceBuilder()
                 .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withNamespaceEnv(NAMESPACE)
+                .withNamespace(NAMESPACE)
+                .withWatchingNamespaces(NAMESPACE)
                 .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
                 .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
                 .buildBundleInstance()

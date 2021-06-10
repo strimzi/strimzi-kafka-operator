@@ -157,8 +157,8 @@ public class SpecificST extends AbstractST {
 
         resourceManager.createResource(sharedExtensionContext, new BundleResource.BundleResourceBuilder()
             .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-            .withNamespaceName(NAMESPACE)
-            .withNamespaceEnv(NAMESPACE)
+            .withNamespace(NAMESPACE)
+            .withWatchingNamespaces(NAMESPACE)
             .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
             .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .buildBundleInstance()
@@ -263,8 +263,8 @@ public class SpecificST extends AbstractST {
         resourceManager.createResource(sharedExtensionContext,
             new BundleResource.BundleResourceBuilder()
                 .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-                .withNamespaceName(NAMESPACE)
-                .withNamespaceEnv(NAMESPACE)
+                .withNamespace(NAMESPACE)
+                .withWatchingNamespaces(NAMESPACE)
                 .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
                 .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
                 .buildBundleInstance()

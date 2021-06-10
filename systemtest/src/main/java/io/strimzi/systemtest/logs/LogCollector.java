@@ -92,22 +92,24 @@ public class LogCollector implements LogCollect {
     public void collect() {
         final Set<String> namespaces = KubeClusterResource.getInstance().getMapWithSuiteNamespaces().get(this.testSuiteName);
 
-        // collect logs for all namespace related to test suite
-        namespaces.stream().forEach(namespace -> {
-            namespaceFile = new File(testCase + "/" + namespace);
+        if (namespaces != null) {
+            // collect logs for all namespace related to test suite
+            namespaces.stream().forEach(namespace -> {
+                namespaceFile = new File(testCase + "/" + namespace);
 
-            boolean namespaceLogDirExist = this.namespaceFile.exists() || this.namespaceFile.mkdirs();
-            if (!namespaceLogDirExist) throw new RuntimeException("Unable to create path");
+                boolean namespaceLogDirExist = this.namespaceFile.exists() || this.namespaceFile.mkdirs();
+                if (!namespaceLogDirExist) throw new RuntimeException("Unable to create path");
 
-            this.collectEvents();
-            this.collectConfigMaps();
-            this.collectLogsFromPods();
-            this.collectDeployments();
-            this.collectStatefulSets();
-            this.collectReplicaSets();
-            this.collectStrimzi();
-            this.collectClusterInfo();
-        });
+                this.collectEvents();
+                this.collectConfigMaps();
+                this.collectLogsFromPods();
+                this.collectDeployments();
+                this.collectStatefulSets();
+                this.collectReplicaSets();
+                this.collectStrimzi();
+                this.collectClusterInfo();
+            });
+        }
     }
 
     @Override
