@@ -14,10 +14,10 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
-import java.util.TimeZone;
 
 import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -45,9 +45,9 @@ public class LogCollector implements LogCollect {
 
     static {
         // Get current date to create a unique folder
-        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        CURRENT_DATE = simpleDateFormat.format(Calendar.getInstance().getTime());
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+        dateTimeFormatter = dateTimeFormatter.withZone(ZoneId.of("GMT"));
+        CURRENT_DATE = dateTimeFormatter.format(LocalDate.now());
     }
 
     private final KubeClient kubeClient;
@@ -63,7 +63,7 @@ public class LogCollector implements LogCollect {
         this.kubeClient = kubeClient;
         this.testSuiteName = testSuiteName;
 
-        this.logDir = new File(logDir + "/ " + CURRENT_DATE);
+        this.logDir = new File(logDir + "/" + CURRENT_DATE);
         final String logSuiteDir = this.logDir + "/" + this.testSuiteName;
 
         this.testSuite = new File(logSuiteDir);
