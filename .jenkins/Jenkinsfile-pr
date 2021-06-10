@@ -130,7 +130,6 @@ pipeline {
                 }
             }
         }
-        /*
         stage('Start Minikube') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
@@ -207,7 +206,6 @@ pipeline {
                 }
             }
         }
-        */
     }
 
     post {
