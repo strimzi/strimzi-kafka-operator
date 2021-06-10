@@ -66,6 +66,7 @@ pipeline {
                 }
             }
         }
+        /*
         stage('Parse parameters from comment') {
             steps {
                 script {
@@ -206,6 +207,7 @@ pipeline {
                 }
             }
         }
+        */
     }
 
     post {
