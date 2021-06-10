@@ -30,7 +30,7 @@
         </repository>
         <repository>
             <id>staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1103</url>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1104</url>
         </repository>
     </repositories>
 
