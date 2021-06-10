@@ -19,9 +19,9 @@ if [ "$CHECKSUM" != "$HELM_CHART_CHECKSUM" ]; then
   echo "instead of ./helm-charts"
   echo ""
   echo "if this is part of a release instead update the checksum i.e."
-  echo "HELM_CHART_CHECKSUM=${HELM_CHART_CHECKSUM}"
+  echo "HELM_CHART_CHECKSUM=\"${HELM_CHART_CHECKSUM}\""
   echo "->"
-  echo "HELM_CHART_CHECKSUM=${CHECKSUM}"
+  echo "HELM_CHART_CHECKSUM=\"${CHECKSUM}\""
   RETURN_CODE=$((RETURN_CODE+1))
 fi
 
@@ -39,9 +39,9 @@ if [ "$CHECKSUM" != "$INSTALL_CHECKSUM" ]; then
   echo "instead of ./install"
   echo ""
   echo "if this is part of a release instead update the checksum i.e."
-  echo "INSTALL_CHECKSUM=${INSTALL_CHECKSUM}"
+  echo "INSTALL_CHECKSUM=\"${INSTALL_CHECKSUM}\""
   echo "->"
-  echo "INSTALL_CHECKSUM=${CHECKSUM}"
+  echo "INSTALL_CHECKSUM=\"${CHECKSUM}\""
   RETURN_CODE=$((RETURN_CODE+1))
 fi
 
@@ -58,9 +58,9 @@ if [ "$CHECKSUM" != "$EXAMPLES_CHECKSUM" ]; then
   echo "instead of ./examples"
   echo ""
   echo "if this is part of a release instead update the checksum i.e."
-  echo "EXAMPLES_CHECKSUM=${EXAMPLES_CHECKSUM}"
+  echo "EXAMPLES_CHECKSUM=\"${EXAMPLES_CHECKSUM}\""
   echo "->"
-  echo "EXAMPLES_CHECKSUM=${CHECKSUM}"
+  echo "EXAMPLES_CHECKSUM=\"${CHECKSUM}\""
   RETURN_CODE=$((RETURN_CODE+1))
 fi
 

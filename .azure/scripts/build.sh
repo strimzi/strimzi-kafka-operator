@@ -18,14 +18,13 @@ export DOCKER_TAG=$COMMIT
 make docu_check
 make spotbugs
 make shellcheck
+make release_files_check
 
 make crd_install
 make helm_install
 make docker_build
 make docu_html
 make docu_htmlnoheader
-
-source .azure/scripts/release_files_check.sh
 
 # Run tests for strimzi-test-container
 # We need to tag built images even in fork repos to make images available for test container locally
