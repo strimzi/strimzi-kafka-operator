@@ -38,11 +38,11 @@ public class HelmResource implements SpecificResourceType {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
-    private String namespaceEnv;
+    private String namespaceToWatch;
 
     public HelmResource() { }
-    public HelmResource(String namespaceEnv) {
-        this.namespaceEnv = namespaceEnv;
+    public HelmResource(String namespaceToWatch) {
+        this.namespaceToWatch = namespaceToWatch;
     }
 
     public void create(ExtensionContext extensionContext) {
@@ -126,7 +126,7 @@ public class HelmResource implements SpecificResourceType {
                 entry("featureGates", Environment.STRIMZI_FEATURE_GATES))
                 .collect(TestUtils.entriesToMap()));
 
-        if (namespaceEnv.equals(Constants.WATCH_ALL_NAMESPACES)) {
+        if (this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
             values.put("watchAnyNamespace", "true");
         }
 
@@ -150,6 +150,6 @@ public class HelmResource implements SpecificResourceType {
     }
 
     public String getNamespaceEnv() {
-        return namespaceEnv;
+        return this.namespaceToWatch;
     }
 }
