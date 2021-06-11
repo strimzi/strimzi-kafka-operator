@@ -123,9 +123,10 @@ spec:
                           type: string
                           description: OAuth audience to use when authenticating against
                             the authorization server. Some authorization servers require
-                            this to be set. The possible values depend on how authorization
-                            server is configured. By default `audience` is not specified
-                            when doing the token endpoint request.
+                            the audience to be explicitly set. The possible values
+                            depend on how the authorization server is configured.
+                            By default, `audience` is not specified when performing
+                            the token endpoint request.
                         certificateAndKey:
                           type: object
                           properties:
@@ -1982,9 +1983,10 @@ spec:
                           type: string
                           description: OAuth audience to use when authenticating against
                             the authorization server. Some authorization servers require
-                            this to be set. The possible values depend on how authorization
-                            server is configured. By default `audience` is not specified
-                            when doing the token endpoint request.
+                            the audience to be explicitly set. The possible values
+                            depend on how the authorization server is configured.
+                            By default, `audience` is not specified when performing
+                            the token endpoint request.
                         certificateAndKey:
                           type: object
                           properties:
