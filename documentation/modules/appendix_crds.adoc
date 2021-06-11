@@ -1755,6 +1755,8 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
 |accessTokenIsJwt                1.2+<.<a|Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
 |boolean
+|audience                        1.2+<.<a|OAuth audience to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `audience` is not specified when doing the token endpoint request.
+|string
 |clientId                        1.2+<.<a|OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
 |string
 |clientSecret                    1.2+<.<a|Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
