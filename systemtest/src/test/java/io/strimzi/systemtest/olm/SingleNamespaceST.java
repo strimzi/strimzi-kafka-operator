@@ -21,7 +21,7 @@ import static io.strimzi.systemtest.Constants.OLM;
 @Tag(OLM)
 public class SingleNamespaceST extends OlmAbstractST {
 
-    public static final String NAMESPACE = "openshift-operators";
+    public static final String NAMESPACE = "olm-namespace";
 
     private static final Logger LOGGER = LogManager.getLogger(SingleNamespaceST.class);
 
