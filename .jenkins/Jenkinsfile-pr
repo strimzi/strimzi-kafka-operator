@@ -201,6 +201,8 @@ pipeline {
                             sh(script: "cat ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
                         }
+
+                        sh(script:" sleep 3600")
                         lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
                     }
                 }
