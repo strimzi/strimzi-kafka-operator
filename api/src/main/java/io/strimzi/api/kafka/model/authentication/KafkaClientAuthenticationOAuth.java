@@ -70,8 +70,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.scope = scope;
     }
 
-    @Description("OAuth audience to use when authenticating against the authorization server. Some authorization servers require this to be set. "
-            + "The possible values depend on how authorization server is configured. By default `audience` is not specified when doing the token endpoint request.")
+    @Description("OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. "
+            + "The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getAudience() {
         return audience;

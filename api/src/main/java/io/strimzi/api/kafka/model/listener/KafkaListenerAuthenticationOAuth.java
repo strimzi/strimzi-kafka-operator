@@ -136,7 +136,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.customClaimCheck = customClaimCheck;
     }
 
-    @Description("Scope to use when making a request to authorization server's token endpoint. Used for inter-broker authentication, and for OAuth over PLAIN with `clientId` and `secret`.")
+    @Description("The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getClientScope() {
         return clientScope;
@@ -146,7 +146,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.clientScope = scope;
     }
 
-    @Description("Audience to use when making a request to authorization server's token endpoint. Used for inter-broker authentication, and for OAuth over PLAIN with `clientId` and `secret`.")
+    @Description("The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getClientAudience() {
         return clientAudience;
