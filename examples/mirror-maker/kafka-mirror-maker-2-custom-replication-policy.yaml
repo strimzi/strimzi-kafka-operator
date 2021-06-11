@@ -7,25 +7,30 @@ spec:
   replicas: 1
   connectCluster: "my-target-cluster"
   clusters:
-  - alias: "my-source-cluster"
-    bootstrapServers: my-source-cluster-kafka-bootstrap:9092
-  - alias: "my-target-cluster"
-    bootstrapServers: my-target-cluster-kafka-bootstrap:9092
+  - alias: "sourceCluster"
+    bootstrapServers: my-source-cluster-bootstrap:9094
     config:
-      # -1 means it will use the default replication factor configured in the broker
-      config.storage.replication.factor: -1
-      offset.storage.replication.factor: -1
-      status.storage.replication.factor: -1
+      config.storage.replication.factor: 1
+      offset.storage.replication.factor: 1
+      status.storage.replication.factor: 1
+  - alias: "targetCluster"
+    bootstrapServers: my-target-cluster-bootstrap:9092
+    config:
+      producer.compression.type: zstd
+    
+  
   mirrors:
-  - sourceCluster: "my-source-cluster"
-    targetCluster: "my-target-cluster"
+  - sourceCluster: "sourceCluster"
+    targetCluster: "targetCluster"
     sourceConnector:
       config:
-        replication.factor: 1
-        offset-syncs.topic.replication.factor: 1
         sync.topic.acls.enabled: "false"
-        replication.policy.separator: ""
-        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy"
+        consumer.fetch.min.bytes: 262144
+        consumer.fetch.max.wait.ms: 10000
+        consumer.max.poll.records: 5000
+        # -1 means it will use the default replication factor configured in the broker
+        consumer.receive.buffer.bytes: -1
+        consumer.send.buffer.bytes: -1
     heartbeatConnector:
       config:
         heartbeats.topic.replication.factor: 1
