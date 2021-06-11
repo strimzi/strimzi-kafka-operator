@@ -101,6 +101,9 @@ spec:
                         accessTokenIsJwt:
                           type: boolean
                           description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                        audience:
+                          type: string
+                          description: OAuth audience to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `audience` is not specified when doing the token endpoint request.
                         certificateAndKey:
                           type: object
                           properties:
@@ -256,6 +259,9 @@ spec:
                         accessTokenIsJwt:
                           type: boolean
                           description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                        audience:
+                          type: string
+                          description: OAuth audience to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `audience` is not specified when doing the token endpoint request.
                         certificateAndKey:
                           type: object
                           properties:

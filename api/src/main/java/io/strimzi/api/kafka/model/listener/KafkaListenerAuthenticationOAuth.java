@@ -306,8 +306,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
     @Description("Enable or disable ECDSA support by installing BouncyCastle crypto provider. " +
-            "Since version 0.24.0 BouncyCastle crypto provider is no longer needed for ECDSA. " +
-            "As a result ECDSA is always enabled and BouncyCastle is not packaged with Strimzi. Value is ignored.")
+            "ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isEnableECDSA() {
         return enableECDSA;

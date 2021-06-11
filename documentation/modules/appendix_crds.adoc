@@ -199,7 +199,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |disableTlsHostnameVerification     1.2+<.<a|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|enableECDSA                        1.2+<.<a|*The `enableECDSA` property has been deprecated.* Enable or disable ECDSA support by installing BouncyCastle crypto provider. Since version 0.24.0 BouncyCastle crypto provider is no longer needed for ECDSA. As a result ECDSA is always enabled and BouncyCastle is not packaged with Strimzi. Value is ignored.
+|enableECDSA                        1.2+<.<a|*The `enableECDSA` property has been deprecated.* Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
 |boolean
 |enableOauthBearer                  1.2+<.<a|Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
 |boolean

@@ -96,7 +96,7 @@ spec:
     checkAccessTokenType: false <2>
     accessTokenIsJwt: false <3>
     scope: any <4>
-    audience: audience <5>
+    audience: kafka <5>
 ----
 <1> (Optional) Disable TLS hostname verification. Default is `false`.
 <2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
