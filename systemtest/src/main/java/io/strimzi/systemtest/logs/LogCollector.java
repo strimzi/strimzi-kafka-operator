@@ -45,7 +45,7 @@ public class LogCollector implements LogCollect {
 
     static {
         // Get current date to create a unique folder
-        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
         dateTimeFormatter = dateTimeFormatter.withZone(ZoneId.of("GMT"));
         CURRENT_DATE = dateTimeFormatter.format(LocalDate.now());
     }

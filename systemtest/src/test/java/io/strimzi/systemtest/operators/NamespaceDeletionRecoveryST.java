@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -212,7 +212,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, String topicName, int messageCount) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
@@ -277,15 +277,12 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Recreate CO
 
         install.applyClusterOperatorInstallFiles(NAMESPACE);
-        Install.applyBindings(extensionContext, NAMESPACE);
+        SetupClusterOperator.applyBindings(extensionContext, NAMESPACE);
         // 060-Deployment
         resourceManager.createResource(extensionContext,
             new BundleResource.BundleResourceBuilder()
                 .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
                 .withNamespace(NAMESPACE)
-                .withWatchingNamespaces(NAMESPACE)
-                .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
                 .buildBundleInstance()
                 .buildBundleDeployment()
                 .build());

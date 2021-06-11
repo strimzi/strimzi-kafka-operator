@@ -22,7 +22,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -815,14 +815,11 @@ class RollingUpdateST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
-            .withWatchingNamespaces("*")
-            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()
             .runInstallation();
     }

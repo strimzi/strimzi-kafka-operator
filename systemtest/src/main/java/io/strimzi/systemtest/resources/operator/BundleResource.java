@@ -28,7 +28,7 @@ public class BundleResource implements ResourceType<Deployment> {
     public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
     private String name;
-    private String namespace;
+    private String namespaceInstallTo;
     private String namespaceToWatch;
     private long operationTimeout;
     private long reconciliationInterval;
@@ -67,17 +67,22 @@ public class BundleResource implements ResourceType<Deployment> {
 
     private BundleResource(BundleResourceBuilder builder) {
         this.name = builder.name;
-        this.namespace = builder.namespace;
+        this.namespaceInstallTo = builder.namespaceInstallTo;
         this.namespaceToWatch = builder.namespaceToWatch;
         this.operationTimeout = builder.operationTimeout;
         this.reconciliationInterval = builder.reconciliationInterval;
         this.extraEnvVars = builder.extraEnvVars;
+
+        // assign defaults is something is not specified
+        if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
+        if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
+        if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
     }
 
     public static class BundleResourceBuilder {
 
         private String name;
-        private String namespace;
+        private String namespaceInstallTo;
         private String namespaceToWatch;
         private long operationTimeout;
         private long reconciliationInterval;
@@ -88,8 +93,8 @@ public class BundleResource implements ResourceType<Deployment> {
             return self();
         }
 
-        public BundleResourceBuilder withNamespace(String namespace) {
-            this.namespace = namespace;
+        public BundleResourceBuilder withNamespace(String namespaceInstallTo) {
+            this.namespaceInstallTo = namespaceInstallTo;
             return self();
         }
         public BundleResourceBuilder withWatchingNamespaces(String namespaceToWatch) {
@@ -112,8 +117,8 @@ public class BundleResource implements ResourceType<Deployment> {
 
         public BundleResourceBuilder defaultConfigurationWithNamespace(String namespaceName) {
             this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
-            this.namespace = namespace;
-            this.namespaceToWatch = this.namespace;
+            this.namespaceInstallTo = namespaceName;
+            this.namespaceToWatch = this.namespaceInstallTo;
             this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
             this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
             return self();
@@ -135,7 +140,7 @@ public class BundleResource implements ResourceType<Deployment> {
     protected BundleResourceBuilder toBuilder() {
         return newBuilder()
             .withName(name)
-            .withNamespace(namespace)
+            .withNamespace(namespaceInstallTo)
             .withWatchingNamespaces(namespaceToWatch)
             .withOperationTimeout(operationTimeout)
             .withReconciliationInterval(reconciliationInterval);
@@ -193,7 +198,7 @@ public class BundleResource implements ResourceType<Deployment> {
         return new DeploymentBuilder(clusterOperator)
             .editMetadata()
                 .withName(name)
-                .withNamespace(namespace)
+                .withNamespace(namespaceInstallTo)
                 .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.BundleClusterOperator.name())
             .endMetadata()
             .editSpec()

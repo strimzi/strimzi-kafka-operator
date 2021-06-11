@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -236,14 +236,12 @@ class AllNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
 
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(CO_NAMESPACE)
-            .withWatchingNamespaces("*")
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withBindingsNamespaces(Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
             .runInstallation();
 

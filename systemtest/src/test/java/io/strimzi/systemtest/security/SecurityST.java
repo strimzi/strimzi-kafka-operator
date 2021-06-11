@@ -26,7 +26,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -72,7 +72,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1809,14 +1808,11 @@ class SecurityST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
-            .withWatchingNamespaces("*")
-            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()
             .runInstallation();
     }

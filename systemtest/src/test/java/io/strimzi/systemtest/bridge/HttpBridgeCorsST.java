@@ -8,7 +8,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -114,14 +114,10 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void beforeAll(ExtensionContext extensionContext) {
-        install = new Install.InstallBuilder()
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
-            .withWatchingNamespaces(NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
             .runInstallation();
 

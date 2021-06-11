@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -62,14 +62,10 @@ public class NetworkPoliciesST extends AbstractST {
     void testNetworkPoliciesWithPlainListener(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
-            .withWatchingNamespaces(NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
             .runInstallation();
 
@@ -169,7 +165,7 @@ public class NetworkPoliciesST extends AbstractST {
     void testNetworkPoliciesWithTlsListener(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
@@ -265,14 +261,10 @@ public class NetworkPoliciesST extends AbstractST {
 
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
-            .withWatchingNamespaces(NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
             .runInstallation();
 
@@ -297,14 +289,12 @@ public class NetworkPoliciesST extends AbstractST {
             .withValue(labels.toString().replaceAll("\\{|}", ""))
             .build();
 
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
-            .withWatchingNamespaces("*")
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withBindingsNamespaces(Arrays.asList(NAMESPACE, secondNamespace))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
             .runInstallation();
 

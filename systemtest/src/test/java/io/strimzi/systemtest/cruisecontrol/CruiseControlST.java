@@ -14,7 +14,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -35,7 +35,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -221,14 +220,11 @@ public class CruiseControlST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        install = new Install.InstallBuilder()
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
-            .withWatchingNamespaces("*")
-            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()
             .runInstallation();
     }

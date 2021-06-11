@@ -48,22 +48,21 @@ public class OlmResource implements SpecificResourceType {
 
     private String deploymentName;
     private String namespace;
-    private String namespaceEnv;
     private String csvName;
 
     @Override
     public void create(ExtensionContext extensionContext) {
-        this.create(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public void create(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
+    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval) {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(this::delete));
-        this.clusterOperator(namespace, operationTimeout, reconciliationInterval);
+        this.clusterOperator(this.namespace, operationTimeout, reconciliationInterval);
     }
 
-    public void create(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
-        this.clusterOperator(namespace, olmInstallationStrategy, fromVersion);
+    public void create(OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+        this.clusterOperator(this.namespace, olmInstallationStrategy, fromVersion);
     }
 
     @Override
@@ -73,9 +72,8 @@ public class OlmResource implements SpecificResourceType {
 
     public OlmResource() { }
 
-    public OlmResource(String namespace, String namespaceEnv) {
+    public OlmResource(String namespace) {
         this.namespace = namespace;
-        this.namespaceEnv = namespaceEnv;
     }
 
     private void clusterOperator(String namespace) {
@@ -100,11 +98,11 @@ public class OlmResource implements SpecificResourceType {
         }
 
         if (fromVersion != null) {
-            createAndModifySubscription(namespace, this.namespaceEnv, operationTimeout, reconciliationInterval, olmInstallationStrategy, fromVersion);
+            createAndModifySubscription(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy, fromVersion);
             // must be strimzi-cluster-operator.v0.18.0
             csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + fromVersion;
         } else {
-            createAndModifySubscriptionLatestRelease(namespace, this.namespaceEnv, operationTimeout, reconciliationInterval, olmInstallationStrategy);
+            createAndModifySubscriptionLatestRelease(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy);
             csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION;
         }
 
@@ -117,9 +115,9 @@ public class OlmResource implements SpecificResourceType {
 
         // Make sure that operator will be deleted
         TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
-            () -> ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null);
+            () -> kubeClient(namespace).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null);
 
-        deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
+        deploymentName = kubeClient(namespace).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);
 
         // Wait for operator creation
@@ -248,12 +246,11 @@ public class OlmResource implements SpecificResourceType {
      * Creates Subscription from "olm/subscription.yaml" and modify "${OPERATOR_NAMESPACE}", "${OLM_OPERATOR_NAME}...
      * attributes.
      * @param namespace namespace where you want to apply Subscription kind
-     * @param namespaceEnv additional config for cluster operator for watching namespaces
      * @param reconciliationInterval reconciliation interval of cluster operator
      * @param operationTimeout operation timeout  of cluster operator
      * @param installationStrategy type of installation
      */
-    private static void createAndModifySubscription(String namespace, String namespaceEnv, long reconciliationInterval, long operationTimeout,
+    private static void createAndModifySubscription(String namespace, long reconciliationInterval, long operationTimeout,
                                                     OlmInstallationStrategy installationStrategy, String version) {
         try {
             File subscriptionFile = File.createTempFile("subscription", ".yaml");
@@ -272,16 +269,15 @@ public class OlmResource implements SpecificResourceType {
                     .replace("${STRIMZI_RBAC_SCOPE}", Environment.STRIMZI_RBAC_SCOPE)
                     .replace("${STRIMZI_FEATURE_GATES}", Environment.STRIMZI_FEATURE_GATES));
 
-
-            ResourceManager.cmdKubeClient().apply(subscriptionFile);
+            cmdKubeClient(namespace).apply(subscriptionFile);
         }  catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static void createAndModifySubscriptionLatestRelease(String namespace, String namespaceEnv, long reconciliationInterval,
+    private static void createAndModifySubscriptionLatestRelease(String namespace, long reconciliationInterval,
                                                                  long operationTimeout, OlmInstallationStrategy installationStrategy) {
-        createAndModifySubscription(namespace, namespaceEnv, reconciliationInterval, operationTimeout, installationStrategy,
+        createAndModifySubscription(namespace, reconciliationInterval, operationTimeout, installationStrategy,
             Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION);
     }
 
@@ -294,7 +290,7 @@ public class OlmResource implements SpecificResourceType {
 
     private static void waitFor(String deploymentName, String namespace, int replicas) {
         LOGGER.info("Waiting for deployment {} in namespace {}", deploymentName, namespace);
-        DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, replicas);
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespace, deploymentName, replicas);
         LOGGER.info("Deployment {} in namespace {} is ready", deploymentName, namespace);
     }
 

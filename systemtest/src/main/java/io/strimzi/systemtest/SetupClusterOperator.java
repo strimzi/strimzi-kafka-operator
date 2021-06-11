@@ -34,9 +34,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public class Install {
+public class SetupClusterOperator {
 
-    private static final Logger LOGGER = LogManager.getLogger(Install.class);
+    private static final Logger LOGGER = LogManager.getLogger(SetupClusterOperator.class);
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator";
 
     private KubeClusterResource cluster = KubeClusterResource.getInstance();
@@ -46,21 +46,27 @@ public class Install {
 
     private ExtensionContext extensionContext;
     private String clusterOperatorName;
-    private String namespace;
+    private String namespaceInstallTo;
     private String namespaceToWatch;
     private List<String> bindingsNamespaces;
     private long operationTimeout;
     private long reconciliationInterval;
 
-    Install() {}
-    Install(InstallBuilder builder) {
+    SetupClusterOperator() {}
+    SetupClusterOperator(SetupClusterOperatorBuilder builder) {
         this.extensionContext = builder.extensionContext;
         this.clusterOperatorName = builder.clusterOperatorName;
-        this.namespace = builder.namespace;
+        this.namespaceInstallTo = builder.namespaceInstallTo;
         this.namespaceToWatch = builder.namespaceToWatch;
         this.bindingsNamespaces = builder.bindingsNamespaces;
         this.operationTimeout = builder.operationTimeout;
         this.reconciliationInterval = builder.reconciliationInterval;
+
+        // assign defaults is something is not specified
+        if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
+        if (this.bindingsNamespaces == null) this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
+        if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
+        if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
     }
 
     /**
@@ -69,41 +75,46 @@ public class Install {
      * Don't use this method in tests, where specific configuration of CO is needed.
      * @param namespace namespace where CO should be installed into
      */
-    public Install runInstallation() {
+    public SetupClusterOperator runInstallation() {
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
-            olmResource = new OlmResource(namespace, namespaceToWatch);
-            cluster.setNamespace(namespace);
-            cluster.createNamespace(namespace);
-            olmResource.create(extensionContext, namespace, operationTimeout, reconciliationInterval);
+            // cluster-wide olm co-operator
+            if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+                createClusterRoleBindings();
+                olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
+                olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+            // single-namespace olm co-operator
+            } else {
+                cluster.setNamespace(namespaceInstallTo);
+                cluster.createNamespace(namespaceInstallTo);
+                olmResource = new OlmResource(namespaceInstallTo);
+                olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+            }
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             helmResource = new HelmResource(namespaceToWatch);
-            cluster.setNamespace(namespace);
-            cluster.createNamespace(namespace);
+            cluster.setNamespace(namespaceInstallTo);
+            cluster.createNamespace(namespaceInstallTo);
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-            prepareEnvForOperator(extensionContext, namespace, bindingsNamespaces);
+            prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
             if (Environment.isNamespaceRbacScope()) {
                 // if roles only, only deploy the rolebindings
-                applyRoleBindings(extensionContext, namespace, namespace);
+                applyRoleBindings(extensionContext, namespaceInstallTo, namespaceInstallTo);
             } else {
-                applyBindings(extensionContext, namespace, bindingsNamespaces);
+                applyBindings(extensionContext, namespaceInstallTo, bindingsNamespaces);
             }
             // cluster-wide installation
-            if (namespaceToWatch.equals("*")) {
-                // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
-                List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespace);
-                clusterRoleBindingList.forEach(clusterRoleBinding ->
-                    ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
+            if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+                createClusterRoleBindings();
             }
             // 060-Deployment
             ResourceManager.setCoDeploymentName(clusterOperatorName);
             ResourceManager.getInstance().createResource(extensionContext,
                 new BundleResource.BundleResourceBuilder()
                     .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-                    .withNamespace(namespace)
+                    .withNamespace(namespaceInstallTo)
                     .withWatchingNamespaces(namespaceToWatch)
                     .withOperationTimeout(operationTimeout)
                     .withReconciliationInterval(reconciliationInterval)
@@ -114,51 +125,58 @@ public class Install {
         return this;
     }
 
-    public static class InstallBuilder {
+    private void createClusterRoleBindings() {
+        // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
+        List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespaceInstallTo);
+        clusterRoleBindingList.forEach(clusterRoleBinding ->
+            ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
+    }
+
+    public static class SetupClusterOperatorBuilder {
 
         private ExtensionContext extensionContext;
         private String clusterOperatorName;
-        private String namespace;
+        private String namespaceInstallTo;
         private String namespaceToWatch;
         private List<String> bindingsNamespaces;
         private long operationTimeout;
         private long reconciliationInterval;
 
-        public InstallBuilder withExtensionContext(ExtensionContext extensionContext) {
+        public SetupClusterOperatorBuilder withExtensionContext(ExtensionContext extensionContext) {
             this.extensionContext = extensionContext;
             return self();
         }
-        public InstallBuilder withClusterOperatorName(String clusterOperatorName) {
+        public SetupClusterOperatorBuilder withClusterOperatorName(String clusterOperatorName) {
             this.clusterOperatorName = clusterOperatorName;
             return self();
         }
-        public InstallBuilder withNamespace(String namespace) {
-            this.namespace = namespace;
+        public SetupClusterOperatorBuilder withNamespace(String namespaceInstallTo) {
+            this.namespaceInstallTo = namespaceInstallTo;
             return self();
         }
-        public InstallBuilder withWatchingNamespaces(String namespaceToWatch) {
+        public SetupClusterOperatorBuilder withWatchingNamespaces(String namespaceToWatch) {
             this.namespaceToWatch = namespaceToWatch;
             return self();
         }
-        public InstallBuilder withBindingsNamespaces(List<String> bindingsNamespaces) {
+        public SetupClusterOperatorBuilder withBindingsNamespaces(List<String> bindingsNamespaces) {
             this.bindingsNamespaces = bindingsNamespaces;
             return self();
         }
-        public InstallBuilder withOperationTimeout(long operationTimeout) {
+        public SetupClusterOperatorBuilder withOperationTimeout(long operationTimeout) {
             this.operationTimeout = operationTimeout;
             return self();
         }
-        public InstallBuilder withReconciliationInterval(long reconciliationInterval) {
+        public SetupClusterOperatorBuilder withReconciliationInterval(long reconciliationInterval) {
             this.reconciliationInterval = reconciliationInterval;
             return self();
         }
 
-        private InstallBuilder self() {
+        private SetupClusterOperatorBuilder self() {
             return this;
         }
 
-        public Install createInstallation() {
-            return new Install(this);
+        public SetupClusterOperator createInstallation() {
+            return new SetupClusterOperator(this);
         }
     }
 

@@ -80,7 +80,7 @@ public class AllNamespacesST extends OlmAbstractST {
     void setup(ExtensionContext extensionContext) {
         cluster.setNamespace(cluster.getDefaultOlmNamespace());
 
-        olmResource = new OlmResource(cluster.getDefaultOlmNamespace(), cluster.getDefaultOlmNamespace());
+        olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
         olmResource.create(extensionContext);
 
         cluster.setNamespace(NAMESPACE);

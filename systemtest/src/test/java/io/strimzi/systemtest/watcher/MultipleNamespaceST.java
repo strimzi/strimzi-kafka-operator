@@ -7,7 +7,7 @@ package io.strimzi.systemtest.watcher;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -88,14 +88,12 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     }
 
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
-        new Install.InstallBuilder()
+        new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(CO_NAMESPACE)
             .withWatchingNamespaces(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE))
             .withBindingsNamespaces(Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE))
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
             .runInstallation();
 

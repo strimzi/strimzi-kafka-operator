@@ -126,7 +126,7 @@ public class HelmResource implements SpecificResourceType {
                 entry("featureGates", Environment.STRIMZI_FEATURE_GATES))
                 .collect(TestUtils.entriesToMap()));
 
-        if (namespaceEnv.equals("*")) {
+        if (namespaceEnv.equals(Constants.WATCH_ALL_NAMESPACES)) {
             values.put("watchAnyNamespace", "true");
         }
 

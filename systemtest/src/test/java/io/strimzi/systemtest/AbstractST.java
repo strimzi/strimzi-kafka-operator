@@ -76,7 +76,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
     protected final HelmResource helmResource = new HelmResource();
-    protected Install install = new Install();
+    protected SetupClusterOperator install = new SetupClusterOperator();
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();

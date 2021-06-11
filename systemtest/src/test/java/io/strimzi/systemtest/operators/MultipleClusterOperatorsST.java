@@ -15,7 +15,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -183,13 +183,13 @@ public class MultipleClusterOperatorsST extends AbstractST {
     }
 
     void deployCOInNamespace(ExtensionContext extensionContext, String coName, String coNamespace, EnvVar selectorEnv, boolean multipleNamespaces) {
-        String namespace = multipleNamespaces ? "*" : coNamespace;
+        String namespace = multipleNamespaces ? Constants.WATCH_ALL_NAMESPACES : coNamespace;
 
         if (multipleNamespaces) {
             install.prepareEnvForOperator(extensionContext, coNamespace);
 
             // Apply rolebindings in CO namespace
-            Install.applyBindings(extensionContext, coNamespace);
+            SetupClusterOperator.applyBindings(extensionContext, coNamespace);
 
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
             List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
@@ -204,8 +204,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
                 .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
                 .withNamespace(coNamespace)
                 .withWatchingNamespaces(namespace)
-                .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
-                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
                 .buildBundleInstance()
                 .buildBundleDeployment()
                 .editOrNewMetadata()
@@ -233,6 +231,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         install.prepareEnvForOperator(extensionContext, DEFAULT_NAMESPACE);
-        Install.applyBindings(extensionContext, DEFAULT_NAMESPACE);
+        SetupClusterOperator.applyBindings(extensionContext, DEFAULT_NAMESPACE);
     }
 }

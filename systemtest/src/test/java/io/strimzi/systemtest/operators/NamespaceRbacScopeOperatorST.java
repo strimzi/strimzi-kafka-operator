@@ -6,8 +6,9 @@ package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -64,11 +65,12 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     private void prepareEnvironment(ExtensionContext extensionContext) {
         install.prepareEnvForOperator(extensionContext, NAMESPACE);
-        Install.applyBindings(extensionContext, NAMESPACE);
+        SetupClusterOperator.applyBindings(extensionContext, NAMESPACE);
         // 060-Deployment
         resourceManager.createResource(extensionContext,
             new BundleResource.BundleResourceBuilder()
-                .defaultConfigurationWithNamespace(NAMESPACE)
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespace(NAMESPACE)
                 .buildBundleInstance()
                 .buildBundleDeployment()
                 .build());

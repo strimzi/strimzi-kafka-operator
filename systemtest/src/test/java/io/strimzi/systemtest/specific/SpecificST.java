@@ -21,7 +21,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.Install;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -233,7 +233,8 @@ public class SpecificST extends AbstractST {
         // Revert changes for CO deployment
         resourceManager.createResource(sharedExtensionContext,
             new BundleResource.BundleResourceBuilder()
-                .defaultConfigurationWithNamespace(NAMESPACE)
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespace(NAMESPACE)
                 .buildBundleInstance()
                 .buildBundleDeployment()
                 .build());
@@ -327,7 +328,8 @@ public class SpecificST extends AbstractST {
         // Revert changes for CO deployment
         resourceManager.createResource(sharedExtensionContext,
             new BundleResource.BundleResourceBuilder()
-                .defaultConfigurationWithNamespace(NAMESPACE)
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespace(NAMESPACE)
                 .buildBundleInstance()
                 .buildBundleDeployment()
                 .build());
@@ -487,11 +489,12 @@ public class SpecificST extends AbstractST {
         LOGGER.info(BridgeUtils.getBridgeVersion());
         install.prepareEnvForOperator(sharedExtensionContext, NAMESPACE);
 
-        Install.applyBindings(sharedExtensionContext, NAMESPACE);
+        SetupClusterOperator.applyBindings(sharedExtensionContext, NAMESPACE);
         // 060-Deployment
         resourceManager.createResource(sharedExtensionContext,
             new BundleResource.BundleResourceBuilder()
-                .defaultConfigurationWithNamespace(NAMESPACE)
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespace(NAMESPACE)
                 .buildBundleInstance()
                 .buildBundleDeployment()
                 .build());

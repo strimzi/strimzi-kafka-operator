@@ -326,4 +326,9 @@ public interface Constants {
      * Auxiliary variables for storing data across our tests
      */
     String NAMESPACE_KEY = "NAMESPACE_NAME";
+
+    /**
+     * Auxiliary variable for cluster operator deployment
+     */
+    String WATCH_ALL_NAMESPACES = "*";
 }

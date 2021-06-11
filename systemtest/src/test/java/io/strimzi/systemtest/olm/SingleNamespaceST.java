@@ -21,7 +21,7 @@ import static io.strimzi.systemtest.Constants.OLM;
 @Tag(OLM)
 public class SingleNamespaceST extends OlmAbstractST {
 
-    public static final String NAMESPACE = "olm-namespace";
+    public static final String NAMESPACE = "openshift-operators";
 
     private static final Logger LOGGER = LogManager.getLogger(SingleNamespaceST.class);
 
@@ -84,7 +84,7 @@ public class SingleNamespaceST extends OlmAbstractST {
         cluster.setNamespace(NAMESPACE);
         cluster.createNamespace(NAMESPACE);
 
-        olmResource = new OlmResource(NAMESPACE, NAMESPACE);
+        olmResource = new OlmResource(NAMESPACE);
         olmResource.create(extensionContext);
     }
 }
