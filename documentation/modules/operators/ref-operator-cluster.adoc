@@ -356,7 +356,7 @@ When the Cluster Operator deploys resources for a desired `Kafka` resource it al
 
 * The Kafka broker pods use a `ServiceAccount` called `_cluster-name_-kafka`
   - When the rack feature is used, the `strimzi-_cluster-name_-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
-  - When the rack feature is not used no binding is created
+  - When the rack feature is not used and the cluster is not exposed via nodeport, no binding is created
 * The ZooKeeper pods use a `ServiceAccount` called `_cluster-name_-zookeeper`
 * The Entity Operator pod uses a `ServiceAccount` called `_cluster-name_-entity-operator`
     - The Topic Operator produces Kubernetes events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-entity-operator` which grants this access via the `strimzi-entity-operator` `RoleBinding`
