@@ -190,7 +190,7 @@ pipeline {
                 script {
                     catchError {
                         // For upgrade tests running with locally built images we need to change tag in StrimziUpgradeST.json
-                        if ("${env.TEST_PROFILE}".contains("upgrade")) {
+                        if ("${env.TEST_PROFILE}".contains("upgrade")||"${env.TEST_PROFILE}".contains("acceptance") {
                             println("[INFO] Update files for upgrade procedure")
                             sh(script: """
                                 sed -i 's#:latest#:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
@@ -202,7 +202,7 @@ pipeline {
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
                         }
 
-                        sh(script:" sleep 3600")
+                        //sh(script:" sleep 3600")
                         lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
                     }
                 }
