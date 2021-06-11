@@ -37,8 +37,8 @@ def installYq(String workspace) {
 }
 
 def buildStrimziImages() {
-    sh(script: "MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2 -Dskip.surefire.tests' make docker_build")
-    sh(script: "make docker_tag")
+    sh(script: "MVN_ARGS='-Dskip.surefire.tests' make docker_build")
+    sh(script: "MVN_ARGS='-Dskip.surefire.tests' make docker_tag")
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String excludeGroups) {
