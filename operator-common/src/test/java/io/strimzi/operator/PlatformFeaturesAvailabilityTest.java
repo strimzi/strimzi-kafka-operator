@@ -22,6 +22,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -56,17 +57,52 @@ public class PlatformFeaturesAvailabilityTest {
                 "  \"platform\": \"linux/amd64\"\n" +
                 "}";
 
-        HttpServer mockHttp = startMockApi(context, version, Collections.EMPTY_LIST);
+        CountDownLatch latch = new CountDownLatch(1);
+        Checkpoint start = context.checkpoint();
+        Checkpoint a = context.checkpoint();
+        List<String> apis = Collections.EMPTY_LIST;
+
+        HttpServer mockHttp = vertx.createHttpServer().requestHandler(request -> {
+            if (HttpMethod.GET.equals(request.method()) && apis.contains(request.uri()))   {
+                request.response().setStatusCode(200).end();
+            } else if (HttpMethod.GET.equals(request.method()) && "/version".equals(request.uri())) {
+                request.response().setStatusCode(200).end(version);
+            } else {
+                request.response().setStatusCode(404).end();
+            }
+        }).exceptionHandler(ex -> {
+            System.out.println("EXCEEEEEEPTION: " + ex);
+        }).listen(0, res -> {
+            if (res.succeeded())    {
+                latch.countDown();
+                start.flag();
+            } else {
+                throw new RuntimeException(res.cause());
+            }
+        });
+
+        /*if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }*/
+
+        if (!latch.await(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
+
+        //HttpServer mockHttp = startMockApi(context, version, Collections.EMPTY_LIST);
 
         KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
 
-        Checkpoint a = context.checkpoint();
-
+        System.out.println("BBBBBBBB");
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_20));
+            System.out.println("AAAAAAAAA");
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_16));
             stopMockApi(context, mockHttp);
             a.flag();
+            context.completeNow();
         })));
+
+        context.awaitCompletion(60, TimeUnit.SECONDS);
     }
 
     @Test
@@ -83,14 +119,14 @@ public class PlatformFeaturesAvailabilityTest {
                 "  \"platform\": \"linux/amd64\"\n" +
                 "}";
 
+        Checkpoint async = context.checkpoint();
+
         HttpServer mockHttp = startMockApi(context, version, Collections.EMPTY_LIST);
 
         KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
 
-        Checkpoint async = context.checkpoint();
-
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_20));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_16));
             stopMockApi(context, mockHttp);
             async.flag();
         })));
@@ -126,15 +162,15 @@ public class PlatformFeaturesAvailabilityTest {
         apis.add("/apis/apps.openshift.io/v1");
         apis.add("/apis/image.openshift.io/v1");
 
+        Checkpoint async = context.checkpoint();
+
         HttpServer mockHttp = startMockApi(context, apis);
 
         KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + mockHttp.actualPort());
 
-        Checkpoint async = context.checkpoint();
-
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
             assertThat(pfa.hasRoutes(), is(true));
-            assertThat(pfa.hasBuilds(), is(true));
+            assertThat(pfa.hasBuilds(), is(false));
             assertThat(pfa.hasImages(), is(true));
             assertThat(pfa.hasApps(), is(true));
             stopMockApi(context, mockHttp);
@@ -182,6 +218,7 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     public HttpServer startMockApi(VertxTestContext context, String version, List<String> apis) throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
         Checkpoint start = context.checkpoint();
 
         HttpServer server = vertx.createHttpServer().requestHandler(request -> {
@@ -192,8 +229,11 @@ public class PlatformFeaturesAvailabilityTest {
             } else {
                 request.response().setStatusCode(404).end();
             }
+        }).exceptionHandler(ex -> {
+            System.out.println("EXCEEEEEEPTION: " + ex);
         }).listen(0, res -> {
             if (res.succeeded())    {
+                latch.countDown();
                 start.flag();
             } else {
                 throw new RuntimeException(res.cause());
@@ -201,6 +241,10 @@ public class PlatformFeaturesAvailabilityTest {
         });
 
         if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
+            context.failNow(new Throwable("Test timeout"));
+        }
+
+        if (!latch.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
 
@@ -224,10 +268,11 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     public void stopMockApi(VertxTestContext context, HttpServer server) throws InterruptedException {
-        Checkpoint async = context.checkpoint();
-
-        server.close(res -> {
+        //Checkpoint async = context.checkpoint();
+        server.close();
+        /*server.close(res -> {
             if (res.succeeded())    {
+                System.out.println("XXXXXXXXXXXXXXXXXXXXXXXXXX");
                 async.flag();
             } else {
                 throw new RuntimeException("Failed to stop Mock HTTP server");
@@ -236,6 +281,6 @@ public class PlatformFeaturesAvailabilityTest {
 
         if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
-        }
+        }*/
     }
 }
