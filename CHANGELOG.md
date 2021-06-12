@@ -16,6 +16,8 @@
 
 ### Changes, deprecations and removals
 
+* From Strimzi 0.24 on, Kafka Connect Build is using hashes instead of the last segment of the download URL to name the downloaded files.
+  In case you need to have your artifact to use some specific name, you can use the new `type: other` artifact and its `fileName` field.
 * The fields `topicsBlacklistPattern` and `groupsBlacklistPattern` in the `KafkaMirrorMaker2` resource are deprecated and will be removed in the future.
   They are replaced by new fields `topicsExcludePattern` and `groupsExcludePattern`.
 * The field `whitelist` in the `KafkaMirrorMaker` resource is deprecated and will be removed in the future.
