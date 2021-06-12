@@ -34,14 +34,26 @@ spec:
   version: {DefaultKafkaVersion}
   connectCluster: "my-cluster-target"
   clusters:
-  - alias: "my-cluster-source"
-    bootstrapServers: my-cluster-source-kafka-bootstrap:9092
-  - alias: "my-cluster-target"
-    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+  - alias: "sourceCluster"
+    bootstrapServers: my-source-cluster-bootstrap:9094
+    config:
+      config.storage.replication.factor: 1
+      offset.storage.replication.factor: 1
+      status.storage.replication.factor: 1
+  - alias: "targetCluster"
+    bootstrapServers: my-target-cluster-bootstrap:9092
+    config:
+      producer.compression.type: zstd
   mirrors:
-  - sourceCluster: "my-cluster-source"
-    targetCluster: "my-cluster-target"
-    sourceConnector: {}
+  - sourceCluster: "my-source-cluster"
+    targetCluster: "my-target-cluster"
+    sourceConnector:
+      config:
+        replication.factor: 1
+        offset-syncs.topic.replication.factor: 1
+        sync.topic.acls.enabled: "false"
+        replication.policy.separator: ""
+        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy
 ----
 
 You can configure access control for source and target clusters using TLS or SASL authentication.
