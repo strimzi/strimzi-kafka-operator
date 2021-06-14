@@ -842,9 +842,8 @@ public class TracingST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws IOException {
-        new SetupClusterOperator.SetupClusterOperatorBuilder()
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();

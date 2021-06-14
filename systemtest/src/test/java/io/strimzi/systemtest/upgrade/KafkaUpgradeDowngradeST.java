@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -353,7 +352,6 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // 060-Deployment
         resourceManager.createResource(extensionContext,
             new BundleResource.BundleResourceBuilder()
-                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
                 .withNamespace(NAMESPACE)
                 .buildBundleInstance()
                 .buildBundleDeployment()

@@ -493,7 +493,6 @@ public class SpecificST extends AbstractST {
         // 060-Deployment
         resourceManager.createResource(sharedExtensionContext,
             new BundleResource.BundleResourceBuilder()
-                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
                 .withNamespace(NAMESPACE)
                 .buildBundleInstance()
                 .buildBundleDeployment()

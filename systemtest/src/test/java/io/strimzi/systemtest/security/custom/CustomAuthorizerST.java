@@ -189,9 +189,8 @@ public class CustomAuthorizerST extends AbstractST {
 
     @BeforeAll
     public void setup(ExtensionContext extensionContext) {
-        new SetupClusterOperator.SetupClusterOperatorBuilder()
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();

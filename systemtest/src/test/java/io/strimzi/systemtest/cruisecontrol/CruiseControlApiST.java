@@ -6,7 +6,6 @@ package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -120,7 +119,6 @@ public class CruiseControlApiST extends AbstractST {
     void setup(ExtensionContext extensionContext) throws Exception {
         install =  new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();

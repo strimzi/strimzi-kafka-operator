@@ -79,7 +79,6 @@ public class ColdBackupScriptST extends AbstractST {
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(context)
-            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();

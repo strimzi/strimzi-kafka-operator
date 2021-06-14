@@ -63,6 +63,7 @@ public class SetupClusterOperator {
         this.reconciliationInterval = builder.reconciliationInterval;
 
         // assign defaults is something is not specified
+        if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
         if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
         if (this.bindingsNamespaces == null) this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
         if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;

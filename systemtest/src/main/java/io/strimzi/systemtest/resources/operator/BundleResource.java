@@ -74,6 +74,7 @@ public class BundleResource implements ResourceType<Deployment> {
         this.extraEnvVars = builder.extraEnvVars;
 
         // assign defaults is something is not specified
+        if (this.name == null || this.name.isEmpty()) this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
         if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
         if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
         if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;

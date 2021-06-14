@@ -195,7 +195,6 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();
