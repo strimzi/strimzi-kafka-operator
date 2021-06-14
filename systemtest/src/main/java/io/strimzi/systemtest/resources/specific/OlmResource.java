@@ -52,17 +52,17 @@ public class OlmResource implements SpecificResourceType {
 
     @Override
     public void create(ExtensionContext extensionContext) {
-        this.create(extensionContext, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
 
-    public void create(ExtensionContext extensionContext, String namespace, long operationTimeout, long reconciliationInterval) {
+    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval) {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(this::delete));
-        this.clusterOperator(namespace, operationTimeout, reconciliationInterval);
+        this.clusterOperator(this.namespace, operationTimeout, reconciliationInterval);
     }
 
-    public void create(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
-        this.clusterOperator(namespace, olmInstallationStrategy, fromVersion);
+    public void create(OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+        this.clusterOperator(this.namespace, olmInstallationStrategy, fromVersion);
     }
 
     @Override
@@ -115,9 +115,9 @@ public class OlmResource implements SpecificResourceType {
 
         // Make sure that operator will be deleted
         TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
-            () -> ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null);
+            () -> kubeClient(namespace).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null);
 
-        deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
+        deploymentName = kubeClient(namespace).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);
 
         // Wait for operator creation
@@ -269,8 +269,7 @@ public class OlmResource implements SpecificResourceType {
                     .replace("${STRIMZI_RBAC_SCOPE}", Environment.STRIMZI_RBAC_SCOPE)
                     .replace("${STRIMZI_FEATURE_GATES}", Environment.STRIMZI_FEATURE_GATES));
 
-
-            ResourceManager.cmdKubeClient().apply(subscriptionFile);
+            cmdKubeClient(namespace).apply(subscriptionFile);
         }  catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -291,7 +290,7 @@ public class OlmResource implements SpecificResourceType {
 
     private static void waitFor(String deploymentName, String namespace, int replicas) {
         LOGGER.info("Waiting for deployment {} in namespace {}", deploymentName, namespace);
-        DeploymentUtils.waitForDeploymentAndPodsReady(deploymentName, replicas);
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespace, deploymentName, replicas);
         LOGGER.info("Deployment {} in namespace {} is ready", deploymentName, namespace);
     }
 
