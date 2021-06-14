@@ -195,6 +195,8 @@ pipeline {
                             sh(script: """
                                 sed -i 's#:latest#:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
                                 sed -i 's#quay.io/strimzi/test-client:${env.DOCKER_TAG}#${env.DOCKER_REGISTRY}/strimzi/test-client:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json
+                                sed -i 's#quay.io/strimzi/test-client:${env.DOCKER_TAG}#${env.DOCKER_REGISTRY}/strimzi/test-client:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json
+                                sed -i 's#quay.io/strimzi/#${env.DOCKER_REGISTRY}/strimzi/#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json
                                 sed -i 's#quay.io/strimzi/#${env.DOCKER_REGISTRY}/strimzi/#g' ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
                                 sed -i 's#/opt/${env.DOCKER_REGISTRY}#/opt#g' ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
                             """)
