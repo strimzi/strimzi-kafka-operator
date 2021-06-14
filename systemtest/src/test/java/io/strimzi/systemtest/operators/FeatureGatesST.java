@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -54,9 +55,16 @@ public class FeatureGatesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
 
     protected void deployClusterOperatorWithEnvVars(ExtensionContext extensionContext, List<EnvVar> envVars) {
-        prepareEnvForOperator(extensionContext, NAMESPACE, Arrays.asList(NAMESPACE, NAMESPACE));
-        applyBindings(extensionContext, NAMESPACE);
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE, envVars).build());
+        install.prepareEnvForOperator(extensionContext, NAMESPACE, Arrays.asList(NAMESPACE, NAMESPACE));
+        SetupClusterOperator.applyBindings(extensionContext, NAMESPACE);
+
+        resourceManager.createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .withNamespace(NAMESPACE)
+                .withExtraEnvVars(envVars)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+            .build());
     }
 
     /**

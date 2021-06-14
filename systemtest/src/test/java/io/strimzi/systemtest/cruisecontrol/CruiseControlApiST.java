@@ -6,6 +6,7 @@ package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -116,6 +117,12 @@ public class CruiseControlApiST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws Exception {
-        installClusterOperator(extensionContext, NAMESPACE);
+        install =  new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(extensionContext)
+            .withNamespace(NAMESPACE)
+            .createInstallation()
+            .runInstallation();
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
     }
 }
