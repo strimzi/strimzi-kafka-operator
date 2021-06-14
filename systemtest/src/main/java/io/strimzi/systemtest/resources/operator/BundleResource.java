@@ -111,7 +111,7 @@ public class BundleResource implements ResourceType<Deployment> {
             return self();
         }
 
-        public BundleResourceBuilder withReconciliationInterval(List<EnvVar> extraEnvVars) {
+        public BundleResourceBuilder withExtraEnvVars(List<EnvVar> extraEnvVars) {
             this.extraEnvVars = extraEnvVars;
             return self();
         }
