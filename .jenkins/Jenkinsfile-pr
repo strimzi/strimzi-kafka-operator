@@ -197,8 +197,21 @@ pipeline {
                                 sed -i 's#quay.io/strimzi/test-client:${env.DOCKER_TAG}#${env.DOCKER_REGISTRY}/strimzi/test-client:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json
                                 sed -i 's#quay.io/strimzi/test-client:${env.DOCKER_TAG}#${env.DOCKER_REGISTRY}/strimzi/test-client:${env.DOCKER_TAG}#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json
                                 sed -i 's#quay.io/strimzi/#${env.DOCKER_REGISTRY}/strimzi/#g' ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json
+                                sed -i 's#quay.io/strimzi/#${env.DOCKER_REGISTRY}/strimzi/#g' ${env.WORKSPACE}/systemtest/target/classes/StrimziUpgradeST.json
+                                sed -i 's#quay.io/strimzi/#${env.DOCKER_REGISTRY}/strimzi/#g' ${env.WORKSPACE}/install/topic-operator/05-Deployment-strimzi-topic-operator.yaml
+                                sed -i 's#quay.io/strimzi/#${env.DOCKER_REGISTRY}/strimzi/#g' ${env.WORKSPACE}/install/user-operator/05-Deployment-strimzi-user-operator.yaml
                                 sed -i 's#quay.io/strimzi/#${env.DOCKER_REGISTRY}/strimzi/#g' ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
                                 sed -i 's#/opt/${env.DOCKER_REGISTRY}#/opt#g' ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+                            """)
+                            println("[INFO] manual tag & load")
+                            sh(script: """
+                                docker tag ${env.DOCKER_REGISTRY}/strimzi/test-client:pr-kafka-2.7.0 quay.io/strimzi/test-client:latest-kafka-2.7.0
+                                minikube image load quay.io/strimzi/test-client:latest-kafka-2.7.0
+                                docker pull strimzi/kafka-bridge:0.19.0
+                                docker tag strimzi/kafka-bridge:0.19.0 quay.io/strimzi/kafka-bridge:0.19.0
+                                docker tag strimzi/kafka-bridge:0.19.0 ${env.DOCKER_REGISTRY}/strimzi/kafka-bridge:0.19.0
+                                minikube image load ${env.DOCKER_REGISTRY}/strimzi/kafka-bridge:0.19.0
+                                minikube image load quay.io/strimzi/kafka-bridge:0.19.0
                             """)
                             sh(script: "cat ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
