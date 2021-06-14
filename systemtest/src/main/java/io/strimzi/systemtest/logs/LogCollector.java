@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
@@ -47,7 +47,7 @@ public class LogCollector implements LogCollect {
         // Get current date to create a unique folder
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
         dateTimeFormatter = dateTimeFormatter.withZone(ZoneId.of("GMT"));
-        CURRENT_DATE = dateTimeFormatter.format(LocalDate.now());
+        CURRENT_DATE = dateTimeFormatter.format(LocalDateTime.now());
     }
 
     private final KubeClient kubeClient;
