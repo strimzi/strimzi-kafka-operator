@@ -96,7 +96,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // 2. Approve installation
         //   a) get name of install-plan
         //   b) approve installation
-        olmResource.create(namespace, OlmInstallationStrategy.Manual, fromVersion);
+        olmResource.create(OlmInstallationStrategy.Manual, fromVersion);
 
         String url = testParameters.getString("urlFrom");
         File dir = FileUtils.downloadAndUnzip(url);
@@ -162,7 +162,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         cluster.setNamespace(namespace);
         cluster.createNamespace(namespace);
 
-        olmResource = new OlmResource();
+        olmResource = new OlmResource(namespace);
     }
 
     @AfterAll

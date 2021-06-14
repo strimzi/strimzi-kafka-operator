@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
@@ -192,6 +193,10 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     void createClassResources(ExtensionContext extensionContext) {
         LOGGER.debug("===============================================================");
         LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
-        installClusterOperator(extensionContext, NAMESPACE);
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(extensionContext)
+            .withNamespace(NAMESPACE)
+            .createInstallation()
+            .runInstallation();
     }
 }
