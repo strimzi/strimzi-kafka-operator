@@ -125,6 +125,11 @@ public class Environment {
     private static final String LB_FINALIZERS_ENV = "LB_FINALIZERS";
 
     /**
+     * CO Features gates variable
+     */
+    public static final String STRIMZI_FEATURE_GATES_ENV = "STRIMZI_FEATURE_GATES";
+
+    /**
      * Defaults
      */
     private static final String ST_KAFKA_VERSION_DEFAULT = "2.8.0";
@@ -146,6 +151,7 @@ public class Environment {
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
+    private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
 
     /**
      * Set values
@@ -162,6 +168,7 @@ public class Environment {
     public static final String KUBERNETES_DOMAIN = getOrDefault(KUBERNETES_DOMAIN_ENV, KUBERNETES_DOMAIN_DEFAULT);
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
+    public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
     // variables for test-client image
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);

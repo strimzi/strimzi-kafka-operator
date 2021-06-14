@@ -115,7 +115,8 @@ public class HelmResource implements SpecificResourceType {
                 entry("resources.limits.cpu", LIMITS_CPU),
                 entry("logLevelOverride", Environment.STRIMZI_LOG_LEVEL),
                 entry("fullReconciliationIntervalMs", Long.toString(reconciliationInterval)),
-                entry("operationTimeoutMs", Long.toString(operationTimeout)))
+                entry("operationTimeoutMs", Long.toString(operationTimeout)),
+                entry("featureGates", Environment.STRIMZI_FEATURE_GATES))
                 .collect(TestUtils.entriesToMap()));
 
         Path pathToChart = new File(HELM_CHART).toPath();
