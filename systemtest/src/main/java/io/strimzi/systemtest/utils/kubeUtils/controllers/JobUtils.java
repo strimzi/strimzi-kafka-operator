@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
+import io.fabric8.kubernetes.api.model.batch.JobStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;
@@ -43,11 +44,26 @@ public class JobUtils {
      * Wait for specific Job failure
      * @param jobName job name
      * @param namespace namespace
-     * @param timeout timeout after which we assume that job failed
+     * @param timeout timeout in ms after which we assume that job failed
      */
     public static void waitForJobFailure(String jobName, String namespace, long timeout) {
         LOGGER.info("Waiting for job: {} will be in error state", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
             () -> !kubeClient().checkSucceededJobStatus(jobName));
+    }
+
+    /**
+     * Wait for specific Job Running active status
+     * @param jobName job name
+     * @param namespace namespace
+     * @param timeout timeout in ms after which we assume that job runs
+     */
+    public static void waitForJobRunning(String jobName, String namespace, long timeout) {
+        LOGGER.info("Waiting for job: {} will be in active state", jobName);
+        TestUtils.waitFor("job active", Constants.GLOBAL_POLL_INTERVAL, timeout,
+            () -> {
+                JobStatus jb = kubeClient().namespace(namespace).getJobStatus(jobName);
+                return jb.getActive() > 0;
+            });
     }
 }
