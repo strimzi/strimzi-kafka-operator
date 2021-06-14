@@ -67,7 +67,7 @@ public class OlmResource implements SpecificResourceType {
 
     @Override
     public void delete() {
-        this.deleteOlm(deploymentName, namespace, csvName);
+        deleteOlm(deploymentName, namespace, csvName);
     }
 
     public OlmResource() { }
@@ -97,8 +97,6 @@ public class OlmResource implements SpecificResourceType {
             createOperatorGroup(namespace);
         }
 
-        String csvName;
-
         if (fromVersion != null) {
             createAndModifySubscription(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy, fromVersion);
             // must be strimzi-cluster-operator.v0.18.0
@@ -119,7 +117,7 @@ public class OlmResource implements SpecificResourceType {
         TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
             () -> ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null);
 
-        String deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
+        deploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         ResourceManager.setCoDeploymentName(deploymentName);
 
         // Wait for operator creation
@@ -268,7 +266,8 @@ public class OlmResource implements SpecificResourceType {
                     .replace("${OLM_INSTALL_PLAN_APPROVAL}", installationStrategy.toString())
                     .replace("${STRIMZI_FULL_RECONCILIATION_INTERVAL_MS}", Long.toString(reconciliationInterval))
                     .replace("${STRIMZI_OPERATION_TIMEOUT_MS}", Long.toString(operationTimeout))
-                    .replace("${STRIMZI_RBAC_SCOPE}", Environment.STRIMZI_RBAC_SCOPE));
+                    .replace("${STRIMZI_RBAC_SCOPE}", Environment.STRIMZI_RBAC_SCOPE)
+                    .replace("${STRIMZI_FEATURE_GATES}", Environment.STRIMZI_FEATURE_GATES));
 
 
             ResourceManager.cmdKubeClient().apply(subscriptionFile);
