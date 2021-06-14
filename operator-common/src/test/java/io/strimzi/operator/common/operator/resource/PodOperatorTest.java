@@ -38,7 +38,6 @@ public class PodOperatorTest extends
         pr.list(NAMESPACE, Labels.EMPTY);
         context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY), is(emptyList())));
 
-        Checkpoint async = context.checkpoint(1);
         pr.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource()).onComplete(createResult -> {
             context.verify(() -> assertThat(createResult.succeeded(), is(true)));
             context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY).stream()
@@ -47,9 +46,9 @@ public class PodOperatorTest extends
 
             pr.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, null).onComplete(deleteResult -> {
                 context.verify(() -> assertThat(deleteResult.succeeded(), is(true)));
-                async.flag();
             });
 
+            context.completeNow();
         });
     }
 

@@ -13,7 +13,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -48,7 +47,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
 
     @BeforeAll
     public static void before() {
-        assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
+        assertDoesNotThrow(KubeCluster::bootstrap, "Could not bootstrap server");
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
     }
@@ -70,7 +69,6 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
 
     @Test
     public void testCreateModifyDelete(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = operator();
 
         T newResource = getOriginal();
@@ -85,7 +83,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
             })))
             .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, modResource))
             .onComplete(context.succeeding(rrModified -> context.verify(() -> {
-                T modified = (T) op.get(resourceName);
+                T modified = op.get(resourceName);
 
                 assertThat("Failed to get modified Resource", modified, is(notNullValue()));
                 assertResources(context, modResource, modified);
@@ -93,14 +91,17 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
             .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, null))
             .onComplete(context.succeeding(rrDelete -> context.verify(() -> {
                 // it seems the resource is cached for some time so we need wait for it to be null
-                context.verify(() -> {
-                        Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
-                                30_000, () -> op.get(resourceName) == null)
-                                .onComplete(del -> {
-                                    assertThat(op.get(resourceName), is(nullValue()));
-                                    async.flag();
-                                });
-                    }
+                context.verify(() -> Util.waitFor(Reconciliation.DUMMY_RECONCILIATION,
+                                                  vertx,
+                                        "resource deletion " + resourceName,
+                                          "deleted",
+                                      1000,
+                                        30_000,
+                                                 () -> op.get(resourceName) == null
+                        ).onComplete(del -> {
+                            assertThat(op.get(resourceName), is(nullValue()));
+                            context.completeNow();
+                        })
                 );
             })));
     }

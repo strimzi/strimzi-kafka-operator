@@ -60,7 +60,6 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
     @Test
     @Override
     public void testCreateModifyDelete(VertxTestContext context)    {
-        Checkpoint async = context.checkpoint();
         ServiceAccountOperator op = new ServiceAccountOperator(vertx, client, true);
 
         ServiceAccount newResource = getOriginal();
@@ -96,7 +95,7 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
                             30_000, () -> op.get(namespace, resourceName) == null)
                             .onComplete(del -> {
                                 assertThat(op.get(namespace, resourceName), Matchers.is(nullValue()));
-                                async.flag();
+                                context.completeNow();
                             })
                     );
                 }));
