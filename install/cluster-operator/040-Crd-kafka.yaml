@@ -174,9 +174,7 @@ spec:
                             enableECDSA:
                               type: boolean
                               description: Enable or disable ECDSA support by installing
-                                BouncyCastle crypto provider. ECDSA support is always enabled.
-                                The BouncyCastle libraries are no longer packaged with Strimzi.
-                                Value is ignored.
+                                BouncyCastle crypto provider. Default value is `false`.
                             enableOauthBearer:
                               type: boolean
                               description: Enable or disable OAuth authentication

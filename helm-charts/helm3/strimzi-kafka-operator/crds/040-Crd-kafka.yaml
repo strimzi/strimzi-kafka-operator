@@ -128,8 +128,7 @@ spec:
                                 description: Enable or disable TLS hostname verification. Default value is `false`.
                               enableECDSA:
                                 type: boolean
-                                description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled.
-                                The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
+                                description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
                               enableOauthBearer:
                                 type: boolean
                                 description: Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
