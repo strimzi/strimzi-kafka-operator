@@ -14,6 +14,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceItem;
@@ -841,7 +842,11 @@ public class TracingST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws IOException {
-        installClusterOperator(extensionContext, NAMESPACE);
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(extensionContext)
+            .withNamespace(NAMESPACE)
+            .createInstallation()
+            .runInstallation();
         // deployment of the jaeger
         deployJaegerOperator(extensionContext);
 

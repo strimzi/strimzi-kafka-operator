@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.resources.specific.HelmResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -30,6 +31,7 @@ class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
     static final String NAMESPACE = "helm-chart-cluster-test";
+    private HelmResource helmResource = new HelmResource(NAMESPACE);
 
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
