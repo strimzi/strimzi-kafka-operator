@@ -35,8 +35,8 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
                 .withNewSpec()
-                    .withNewUnschedulable(true)
-                    .withNewPodCIDR("172.16.3.0/24")
+                    .withUnschedulable(true)
+                    .withPodCIDR("172.16.3.0/24")
                 .endSpec()
                 .build();
     }
@@ -49,8 +49,8 @@ public class NodeOperatorIT extends AbstractNonNamespacedResourceOperatorIT<Kube
                     .withLabels(singletonMap("bar", "foo"))
                 .endMetadata()
                 .withNewSpec()
-                    .withNewUnschedulable(true)
-                    .withNewPodCIDR("172.16.3.0/24")
+                    .withUnschedulable(true)
+                    .withPodCIDR("172.16.3.0/24")
                 .endSpec()
                 .build();
     }

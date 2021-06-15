@@ -73,7 +73,7 @@ class DeploymentMockBuilder extends MockBuilder<Deployment, DeploymentList, Roll
 
     @Override
     protected void mockPatch(String resourceName, RollableScalableResource<Deployment> resource) {
-        when(resource.patch(any())).thenAnswer(invocation -> {
+        when(resource.patch(any(Deployment.class))).thenAnswer(invocation -> {
             Deployment deployment = invocation.getArgument(0);
             String deploymentName = deployment.getMetadata().getName();
             // Initialize the map with empty collection in cases where deployment was initialized with zero replicas

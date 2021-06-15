@@ -368,8 +368,9 @@ class MockBuilder<T extends HasMetadata,
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected void mockPatch(String resourceName, R resource) {
-        when(resource.patch(any())).thenAnswer(invocation -> {
+        when(resource.patch((T) any())).thenAnswer(invocation -> {
             return doPatch(resourceName, resource, invocation.getArgument(0));
         });
     }

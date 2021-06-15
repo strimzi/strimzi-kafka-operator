@@ -67,7 +67,7 @@ public class ProbeGeneratorTest {
         Probe probe = ProbeGenerator.httpProbe(DEFAULT_CONFIG, "path", "1001");
         assertThat(probe, is(new ProbeBuilder()
                 .withNewHttpGet()
-                    .withNewPath("path")
+                    .withPath("path")
                     .withNewPort("1001")
                 .endHttpGet()
                 .withInitialDelaySeconds(1)

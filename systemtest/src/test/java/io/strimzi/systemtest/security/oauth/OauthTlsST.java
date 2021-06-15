@@ -432,8 +432,8 @@ public class OauthTlsST extends OauthAbstractST {
         String introspectionKafka = oauthClusterName + "-intro";
 
         CertSecretSource cert = new CertSecretSourceBuilder()
-                .withNewSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                .withNewCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
+                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
                 .build();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(introspectionKafka, 1)

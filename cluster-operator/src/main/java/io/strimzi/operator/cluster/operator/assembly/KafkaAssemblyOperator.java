@@ -1793,7 +1793,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 String bootstrapAddress = getInternalServiceHostname(ListenersUtils.backwardsCompatibleBootstrapServiceName(name, listener), useServiceDnsDomain);
 
                 ListenerStatus ls = new ListenerStatusBuilder()
-                        .withNewType(listener.getName())
+                        .withType(listener.getName())
                         .withAddresses(new ListenerAddressBuilder()
                                 .withHost(bootstrapAddress)
                                 .withPort(listener.getPort())
@@ -1853,7 +1853,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withNewType(listener.getName())
+                                    .withType(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(listener.getPort())
@@ -2065,7 +2065,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
 
                                 ListenerStatus ls = new ListenerStatusBuilder()
-                                        .withNewType(listener.getName())
+                                        .withType(listener.getName())
                                         .withAddresses(new ArrayList<>(statusAddresses))
                                         .build();
                                 addListenerStatus(ls);
@@ -2104,7 +2104,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withNewType(listener.getName())
+                                    .withType(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())
@@ -2189,7 +2189,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withNewType(listener.getName())
+                                    .withType(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())
@@ -2267,7 +2267,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withNewType(listener.getName())
+                                    .withType(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())

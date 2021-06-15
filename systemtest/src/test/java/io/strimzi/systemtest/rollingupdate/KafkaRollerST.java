@@ -267,7 +267,7 @@ public class KafkaRollerST extends AbstractST {
 
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
                 .withKey("dedicated_test")
-                .withNewOperator("In")
+                .withOperator("In")
                 .withValues("Kafka")
                 .build();
 
