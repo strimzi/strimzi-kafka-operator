@@ -3346,10 +3346,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return stsGeneration == podGeneration;
         }
 
-        private final Future<ReconciliationState> getCruiseControlDescription() {
+        /*test*/ final Future<ReconciliationState> getCruiseControlDescription() {
             CruiseControl cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions);
+
             if (cruiseControl != null) {
-                Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(),
+                return Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(),
                         cruiseControl.getLogging(), cruiseControl.getMetricsConfigInCm())
                         .compose(metricsAndLogging -> {
                             ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLogging);
@@ -3358,12 +3359,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             this.cruiseControl = cruiseControl;
-
                             this.ccDeployment = cruiseControl.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
+
                             return Future.succeededFuture(this);
                         });
+            } else {
+                return withVoid(Future.succeededFuture());
             }
-            return withVoid(Future.succeededFuture());
         }
 
         Future<ReconciliationState> cruiseControlServiceAccount() {
