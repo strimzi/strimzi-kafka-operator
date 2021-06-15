@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -32,6 +33,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
@@ -311,6 +313,58 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
 
                     context.completeNow();
+                })));
+    }
+
+    /*
+     * This test covers the issue described in PR #5128 / issue #5126 where the getCruiseControlDescription returns
+     * without really waiting for the actual description. the way it is tested here is that we trigger an error when
+     * querying the metrics CM needed for the description and check that the reconciliation fails because of it which
+     * means the right outcome is returned.
+     */
+    @Test
+    public void testCruiseControlDescription(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName(NAME)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
+                    .withNewCruiseControl()
+                        .withNewJmxPrometheusExporterMetricsConfig()
+                            .withNewValueFrom()
+                                .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-cm").withKey("my-metrics.yaml").build())
+                            .endValueFrom()
+                        .endJmxPrometheusExporterMetricsConfig()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        ConfigMapOperator cmOps = supplier.configMapOperations;
+        when(cmOps.getAsync(eq(NAMESPACE), eq("my-metrics-cm"))).thenReturn(Future.failedFuture("Failed ConfigMap getAsync call"));
+
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
+                supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), 1L));
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+
+        Checkpoint async = context.checkpoint();
+
+        op.new ReconciliationState(reconciliation, kafka).getCruiseControlDescription()
+                .onComplete(context.failing(c -> context.verify(() -> {
+                    assertThat(c.getMessage(), is("Failed ConfigMap getAsync call"));
+
+                    async.flag();
                 })));
     }
 
