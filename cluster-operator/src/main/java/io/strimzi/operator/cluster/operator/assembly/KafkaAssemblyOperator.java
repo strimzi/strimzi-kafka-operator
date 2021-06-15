@@ -3346,7 +3346,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return stsGeneration == podGeneration;
         }
 
-        private final Future<ReconciliationState> getCruiseControlDescription() {
+        /*test*/ final Future<ReconciliationState> getCruiseControlDescription() {
             CruiseControl cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions);
 
             if (cruiseControl != null) {
