@@ -107,6 +107,7 @@ public class KafkaTopic extends CustomResource<KafkaTopicSpec, KafkaTopicStatus>
     public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
 
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
     private ObjectMeta metadata;
     private KafkaTopicSpec spec;
     private KafkaTopicStatus status;

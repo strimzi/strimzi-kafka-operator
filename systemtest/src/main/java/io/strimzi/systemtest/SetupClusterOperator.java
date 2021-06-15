@@ -74,7 +74,6 @@ public class SetupClusterOperator {
      * This method install Strimzi Cluster Operator based on environment variable configuration.
      * It can install operator by classic way (apply bundle yamls) or use OLM. For OLM you need to set all other OLM env variables.
      * Don't use this method in tests, where specific configuration of CO is needed.
-     * @param namespace namespace where CO should be installed into
      */
     public SetupClusterOperator runInstallation() {
         if (Environment.isOlmInstall()) {
