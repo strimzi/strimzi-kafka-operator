@@ -19,9 +19,9 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.batch.Job;
-import io.fabric8.kubernetes.api.model.batch.JobList;
-import io.fabric8.kubernetes.api.model.batch.JobStatus;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.JobList;
+import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -600,23 +600,23 @@ public class KubeClient {
     // =========================
 
     public boolean jobExists(String jobName) {
-        return client.batch().jobs().inNamespace(getNamespace()).list().getItems().stream().anyMatch(j -> j.getMetadata().getName().startsWith(jobName));
+        return client.batch().v1().jobs().inNamespace(getNamespace()).list().getItems().stream().anyMatch(j -> j.getMetadata().getName().startsWith(jobName));
     }
 
     public Job createJob(Job job) {
-        return client.batch().jobs().inNamespace(job.getMetadata().getNamespace()).createOrReplace(job);
+        return client.batch().v1().jobs().inNamespace(job.getMetadata().getNamespace()).createOrReplace(job);
     }
 
     public Job replaceJob(Job job) {
-        return client.batch().jobs().inNamespace(getNamespace()).createOrReplace(job);
+        return client.batch().v1().jobs().inNamespace(getNamespace()).createOrReplace(job);
     }
 
     public Boolean deleteJob(String jobName) {
-        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).delete();
+        return client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).delete();
     }
 
     public Job getJob(String jobName) {
-        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get();
+        return client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).get();
     }
 
     public Boolean checkSucceededJobStatus(String jobName) {
@@ -632,7 +632,7 @@ public class KubeClient {
 
     // Pods Statuses:  0 Running / 0 Succeeded / 1 Failed
     public JobStatus getJobStatus(String namespaceName, String jobName) {
-        return client.batch().jobs().inNamespace(getNamespace()).withName(jobName).get().getStatus();
+        return client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).get().getStatus();
     }
 
     public JobStatus getJobStatus(String jobName) {
@@ -640,11 +640,11 @@ public class KubeClient {
     }
 
     public JobList getJobList() {
-        return client.batch().jobs().inNamespace(getNamespace()).list();
+        return client.batch().v1().jobs().inNamespace(getNamespace()).list();
     }
 
     public List<Job> listJobs(String namePrefix) {
-        return client.batch().jobs().inNamespace(getNamespace()).list().getItems().stream()
+        return client.batch().v1().jobs().inNamespace(getNamespace()).list().getItems().stream()
             .filter(job -> job.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
     }
 

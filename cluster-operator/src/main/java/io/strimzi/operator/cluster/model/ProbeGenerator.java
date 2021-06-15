@@ -46,7 +46,7 @@ public class ProbeGenerator {
         }
         io.fabric8.kubernetes.api.model.Probe probe = defaultBuilder(probeConfig)
                 .withNewHttpGet()
-                    .withNewPath(path)
+                    .withPath(path)
                     .withNewPort(port)
                 .endHttpGet()
                 .build();

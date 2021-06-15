@@ -559,6 +559,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             })));
     }
 
+
     @Test
     public void testUnknownPropertyInSpec(VertxTestContext context) throws IOException, URISyntaxException {
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
@@ -1244,7 +1245,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 return Future.succeededFuture(Crds.kafkaRebalanceOperation(client)
                         .inNamespace(namespace)
                         .withName(resource)
-                        .patch(invocation.getArgument(1)));
+                        .patch((KafkaRebalance) invocation.getArgument(1)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }
@@ -1256,7 +1257,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 return Future.succeededFuture(Crds.kafkaRebalanceOperation(client)
                         .inNamespace(namespace)
                         .withName(resource)
-                        .patch(invocation.getArgument(1)));
+                        .patch((KafkaRebalance) invocation.getArgument(1)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }

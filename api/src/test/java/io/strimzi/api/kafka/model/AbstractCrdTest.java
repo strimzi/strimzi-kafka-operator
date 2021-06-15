@@ -24,12 +24,12 @@ public abstract class AbstractCrdTest<R extends CustomResource> {
         assertDoesNotThrow(() -> kind = crdClass.newInstance().getKind());
     }
 
-    protected void assertDesiredResource(R k, String resource) {
+    protected void assertDesiredResource(R actual, String expectedResource) {
         //assertNotNull("The resource " + resourceName + " does not exist", model);
-        String content = TestUtils.readResource(getClass(), resource);
-        assertThat("The resource " + resource + " does not exist", content, is(notNullValue()));
+        String content = TestUtils.readResource(getClass(), expectedResource);
+        assertThat("The resource " + expectedResource + " does not exist", content, is(notNullValue()));
 
-        String ssStr = TestUtils.toYamlString(k);
+        String ssStr = TestUtils.toYamlString(actual);
         assertThat(ssStr.trim(), is(content.trim()));
     }
 

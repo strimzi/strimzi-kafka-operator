@@ -672,9 +672,9 @@ class ConnectS2IST extends AbstractST {
             kafkaConnectS2I.getSpec().setBootstrapServers(bootstrapAddress);
             kafkaConnectS2I.getSpec().setTls(new KafkaConnectTlsBuilder()
                     .addNewTrustedCertificate()
-                        .withNewSecretName(secondClusterName + "-cluster-ca-cert")
+                        .withSecretName(secondClusterName + "-cluster-ca-cert")
                         .withCertificate("ca.crt")
-                    .withNewSecretName(secondClusterName + "-cluster-ca-cert")
+                    .withSecretName(secondClusterName + "-cluster-ca-cert")
                     .withCertificate("ca.crt")
                     .endTrustedCertificate()
                     .build());
@@ -1122,12 +1122,12 @@ class ConnectS2IST extends AbstractST {
             Secret pullSecret = kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
 
             kubeClient(NAMESPACE).createSecret(new SecretBuilder()
-                .withNewApiVersion("v1")
-                .withNewKind("Secret")
+                .withApiVersion("v1")
+                .withKind("Secret")
                 .withNewMetadata()
                 .withName(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
                 .endMetadata()
-                .withNewType("kubernetes.io/dockerconfigjson")
+                .withType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
                 .build());
 
