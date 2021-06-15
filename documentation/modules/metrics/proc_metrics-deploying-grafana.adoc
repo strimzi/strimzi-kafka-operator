@@ -7,7 +7,7 @@
 = Deploying Grafana
 
 To provide visualizations of Prometheus metrics,
-you can use your own Grafana installation or deploy Grafana by applying the `grafana.yaml` file provided in the `examples/metrics` directory.
+you can use your own Grafana installation or deploy Grafana by applying the `grafana.yaml` file provided in the link:/examples/metrics[examples/metrics] directory.
 
 .Prerequisites
 * xref:proc-metrics-kafka-deploy-options-{context}[Metrics are configured for the Kafka cluster resource]
