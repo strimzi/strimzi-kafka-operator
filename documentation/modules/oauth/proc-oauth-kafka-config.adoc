@@ -105,7 +105,7 @@ spec:
 An authorization server may require a client to specify the scope.
 In this case it is `any`.
 <5> (Optional) The `audience` for requesting the token from the token endpoint.
-An authorization server may require a client to specify the scope.
+An authorization server may require a client to specify the audience.
 In this case it is `kafka`.
 
 . Apply the changes to the deployment of your Kafka resource.
