@@ -40,7 +40,7 @@ spec:
 
 If you deployed Kafka Bridge with your Kafka cluster, you can enable Grafana to present the metrics data it exposes.
 
-A Kafka Bridge dashboard is provided in the link:/examples/metrics[examples/metrics] directory as a JSON file:
+A Kafka Bridge dashboard is provided in the link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics[examples/metrics] directory as a JSON file:
 
 * `strimzi-kafka-bridge.json`
 
