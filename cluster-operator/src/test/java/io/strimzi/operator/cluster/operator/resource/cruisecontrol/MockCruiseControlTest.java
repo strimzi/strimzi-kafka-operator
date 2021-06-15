@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -25,14 +24,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 public class MockCruiseControlTest {
 
-    private static final int PORT = 1080;
     private static final String HOST = "localhost";
 
     private static ClientAndServer ccServer;
 
     @BeforeAll
-    public static void startUp() throws IOException, URISyntaxException {
-        ccServer = MockCruiseControl.server(PORT);
+    public static void startUp() throws IOException {
+        ccServer = MockCruiseControl.server(0);
     }
 
     @BeforeEach
@@ -51,9 +49,7 @@ public class MockCruiseControlTest {
 
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
-
-        Checkpoint checkpoint = context.checkpoint(pendingCalls + 1);
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
 
         for (int i = 1; i <= pendingCalls; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -61,8 +57,7 @@ public class MockCruiseControlTest {
                         response.getJson().getString("Status"),
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
-                checkpoint.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
             });
         }
 
@@ -71,9 +66,8 @@ public class MockCruiseControlTest {
                     response.getJson().getString("Status"),
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
-            checkpoint.flag();
             return Future.succeededFuture(response);
-        });
+        }).onComplete(x -> context.completeNow());
     }
 
     @Test
@@ -99,17 +93,15 @@ public class MockCruiseControlTest {
     @Test
     public void testMockCCServerPendingCallsOverride(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
+        int pendingCalls1 = 2;
+        int pendingCalls2 = 4;
+
         CruiseControlApi client = new CruiseControlApiImpl(vertx);
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
-        int pendingCalls1 = 2;
-        Checkpoint firstPending = context.checkpoint(pendingCalls1);
-        int pendingCalls2 = 4;
-        Checkpoint secondPending = context.checkpoint(pendingCalls2);
-
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls1);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
 
         for (int i = 1; i <= pendingCalls1; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -117,15 +109,13 @@ public class MockCruiseControlTest {
                         response.getJson().getString("Status"),
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
-                firstPending.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
             });
         }
 
         statusFuture = statusFuture.compose(response -> {
-            context.verify(() -> assertThat(
-                    response.getJson().getString("Status"),
-                    is(CruiseControlUserTaskStatus.COMPLETED.toString()))
+            context.verify(() -> assertThat(response.getJson().getString("Status"),
+                                            is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
             return Future.succeededFuture(response);
         });
@@ -134,36 +124,30 @@ public class MockCruiseControlTest {
             try {
                 ccServer.reset();
                 MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls2);
-            } catch (IOException e) {
-                return Future.failedFuture(e);
-            } catch (URISyntaxException e) {
+            } catch (IOException | URISyntaxException e) {
                 return Future.failedFuture(e);
             }
             return Future.succeededFuture();
         });
 
-        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(HOST, PORT, userTaskID));
+        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID));
 
         for (int i = 1; i <= pendingCalls2; i++) {
             statusFuture = statusFuture.compose(response -> {
-                context.verify(() -> assertThat(
-                        response.getJson().getString("Status"),
-                        is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
+                context.verify(() -> assertThat(response.getJson().getString("Status"),
+                                                is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
-                secondPending.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, ccServer.getPort(), userTaskID);
             });
         }
 
         statusFuture.compose(response -> {
             context.verify(() -> assertThat(
-                    response.getJson().getJsonArray("userTasks").getJsonObject(0).getString("Status"),
+                    response.getJson().getString("Status"),
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
             return Future.succeededFuture(response);
-        }).onComplete(context.succeeding(result -> {
-            context.completeNow();
-        }));
+        }).onComplete(context.succeeding(result -> context.completeNow()));
     }
 
 }

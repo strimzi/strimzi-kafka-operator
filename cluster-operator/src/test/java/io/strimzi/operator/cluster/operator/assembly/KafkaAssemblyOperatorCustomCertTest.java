@@ -4,11 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.function.Function;
-
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -41,7 +36,6 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -50,13 +44,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.function.Function;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.mock;
 
 @ExtendWith(VertxExtension.class)
@@ -98,10 +92,10 @@ public class KafkaAssemblyOperatorCustomCertTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.reconcileCas(this::dateSupplier)
-                    .compose(state -> state.getKafkaClusterDescription())
-                    .compose(state -> state.customListenerCertificates())
-                    .compose(state -> state.kafkaStatefulSet())
-                    .compose(state -> state.kafkaRollingUpdate())
+                    .compose(ReconciliationState::getKafkaClusterDescription)
+                    .compose(ReconciliationState::customListenerCertificates)
+                    .compose(ReconciliationState::kafkaStatefulSet)
+                    .compose(ReconciliationState::kafkaRollingUpdate)
                     .map((Void) null);
         }
     }
@@ -231,7 +225,6 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
     @Test
     public void testPodToRestartIsEmptyWhenCustomCertAnnotationsHaveMatchingThumbprints(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
@@ -240,13 +233,12 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
                 assertThat(functionArgumentCaptor, hasSize(1));
                 assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)), empty());
-                async.flag();
+                context.completeNow();
             })));
     }
 
     @Test
     public void testPodToRestartNonemptyWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
@@ -266,13 +258,12 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         isPodToRestart.apply(pod).get(0),
                         equalTo("custom certificate one or more listeners changed"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
     @Test
     public void testPodToRestartTrueWhenCustomCertExternalListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
@@ -293,7 +284,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 assertThat(isPodToRestart.apply(pod).get(0),
                         equalTo("custom certificate one or more listeners changed"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -322,7 +313,6 @@ public class KafkaAssemblyOperatorCustomCertTest {
         Crds.kafkaOperation(client).inNamespace(namespace).withName(clusterName).patch(kafka);
 
 
-        Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(functionArgumentCaptor, hasSize(1));
@@ -336,7 +326,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 Function<Pod, List<String>> isPodToRestart = capturedFunctions.get(0);
                 assertThat(isPodToRestart.apply(getPod(reconcileSts)), empty());
 
-                async.flag();
+                context.completeNow();
             })));
     }
 }

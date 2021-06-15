@@ -8,7 +8,6 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -24,7 +23,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiMockTest {
     private static Vertx vertx;
-    private BackOff backOff = new BackOff(1L, 2, 3);
+    private final BackOff backOff = new BackOff(1L, 2, 3);
 
     @BeforeAll
     public static void before() {
@@ -42,10 +41,8 @@ public class KafkaConnectApiMockTest {
         statusResults.add(Future.succeededFuture(Collections.emptyMap()));
 
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
-        Checkpoint async = context.checkpoint();
-
         api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-            .onComplete(context.succeeding(res -> async.flag()));
+           .onComplete(context.succeeding(res -> context.completeNow()));
     }
 
     @Test
@@ -56,10 +53,9 @@ public class KafkaConnectApiMockTest {
         statusResults.add(Future.succeededFuture(Collections.emptyMap()));
 
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
-        Checkpoint async = context.checkpoint();
 
         api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-            .onComplete(context.succeeding(res -> async.flag()));
+           .onComplete(context.succeeding(res -> context.completeNow()));
     }
 
     @Test
@@ -71,10 +67,9 @@ public class KafkaConnectApiMockTest {
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 404, null, null)));
 
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
-        Checkpoint async = context.checkpoint();
 
         api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-            .onComplete(context.failing(res -> async.flag()));
+            .onComplete(context.failing(rest -> context.completeNow()));
     }
 
     @Test
@@ -83,13 +78,12 @@ public class KafkaConnectApiMockTest {
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 500, null, null)));
 
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
-        Checkpoint async = context.checkpoint();
 
         api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-            .onComplete(context.failing(res -> async.flag()));
+            .onComplete(context.failing(rest -> context.completeNow()));
     }
 
-    class MockKafkaConnectApi extends KafkaConnectApiImpl   {
+    static class MockKafkaConnectApi extends KafkaConnectApiImpl   {
         private final Queue<Future<Map<String, Object>>> statusResults;
 
         public MockKafkaConnectApi(Vertx vertx, Queue<Future<Map<String, Object>>> statusResults) {

@@ -4,15 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PodSpec;
-import io.fabric8.kubernetes.api.model.PodTemplateSpec;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
@@ -25,24 +17,11 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.storage.*;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
-import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaConfiguration;
-import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.*;
+import io.strimzi.operator.cluster.model.*;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -53,7 +32,6 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -64,13 +42,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -81,10 +53,7 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.aMapWithSize;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @ExtendWith(VertxExtension.class)
@@ -121,7 +90,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         private final int kafkaReplicas;
         private final Storage kafkaStorage;
-        private ResourceRequirements resources;
+        private final ResourceRequirements resources;
 
         public Params(int zkReplicas,
                       SingleVolumeStorage zkStorage,
@@ -180,7 +149,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .addToRequests("memory", new Quantity("5000m"))
                 .build()
         };
-        List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList();
+        List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList<>();
 
         for (int zkReplica : replicas) {
             for (SingleVolumeStorage zkStorage : zkStorageConfigs) {
@@ -344,11 +313,9 @@ public class KafkaAssemblyOperatorMockTest {
     public void testReconcile(Params params, VertxTestContext context) {
         init(params);
 
-        Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .onComplete(context.succeeding())
-            .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .onComplete(context.succeeding(v -> async.flag()));
+            .onComplete(context.succeeding(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))))
+            .onComplete(context.succeeding(v -> context.completeNow()));
     }
 
     @ParameterizedTest
@@ -369,7 +336,6 @@ public class KafkaAssemblyOperatorMockTest {
      * Test the operator re-creates secrets if they get deleted
      */
     private void initialReconcileThenDeleteSecretsThenReconcile(VertxTestContext context, String... secrets) {
-        Checkpoint async = context.checkpoint();
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -386,7 +352,7 @@ public class KafkaAssemblyOperatorMockTest {
                     assertThat("Expected secret " + secret + " to have been recreated",
                             client.secrets().inNamespace(NAMESPACE).withName(secret).get(), is(notNullValue()));
                 }
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -394,7 +360,6 @@ public class KafkaAssemblyOperatorMockTest {
      * Test the operator re-creates services if they get deleted
      */
     private void initialReconcileThenDeleteServicesThenReconcile(VertxTestContext context, String... services) {
-        Checkpoint async = context.checkpoint();
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -411,7 +376,7 @@ public class KafkaAssemblyOperatorMockTest {
                     assertThat("Expected service " + service + " to have been recreated",
                             client.services().inNamespace(NAMESPACE).withName(service).get(), is(notNullValue()));
                 }
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -454,7 +419,6 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private void initialReconcileThenDeleteStatefulSetsThenReconcile(VertxTestContext context, String statefulSet) {
-        Checkpoint async = context.checkpoint();
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -468,7 +432,7 @@ public class KafkaAssemblyOperatorMockTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("Expected sts " + statefulSet + " should have been re-created",
                         client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSet).get(), is(notNullValue()));
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -480,7 +444,6 @@ public class KafkaAssemblyOperatorMockTest {
 
         String originalStorageClass = Storage.storageClass(kafkaStorage);
 
-        Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
@@ -498,7 +461,7 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(patchedPersistenceKafka);
+                kafkaAssembly().patch(patchedPersistenceKafka);
 
                 LOGGER.info("Updating with changed storage class");
             })))
@@ -506,14 +469,15 @@ public class KafkaAssemblyOperatorMockTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Check the storage class was not changed
                 assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
-                async.flag();
+                context.completeNow();
             })));
     }
 
-    private Resource<Kafka> kafkaAssembly(String namespace, String name) {
+    @SuppressWarnings("deprecation")
+    private Resource<Kafka> kafkaAssembly() {
         CustomResourceDefinition crd = client.apiextensions().v1().customResourceDefinitions().withName(Kafka.CRD_NAME).get();
         return client.customResources(CustomResourceDefinitionContext.fromCrd(crd), Kafka.class, KafkaList.class)
-                .inNamespace(namespace).withName(name);
+                .inNamespace(KafkaAssemblyOperatorMockTest.NAMESPACE).withName(KafkaAssemblyOperatorMockTest.CLUSTER_NAME);
     }
 
     private void assertStorageClass(VertxTestContext context, String statefulSetName, String expectedClass) {
@@ -536,7 +500,6 @@ public class KafkaAssemblyOperatorMockTest {
         AtomicReference<List<Volume>> originalVolumes = new AtomicReference<>();
         AtomicReference<List<Container>> originalInitContainers = new AtomicReference<>();
 
-        Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 originalPVCs.set(Optional.ofNullable(client.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get())
@@ -583,7 +546,7 @@ public class KafkaAssemblyOperatorMockTest {
                 } else {
                     context.failNow(new Exception("If storage is not ephemeral or persistent something has gone wrong"));
                 }
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
+                kafkaAssembly().patch(updatedStorageKafka);
 
                 LOGGER.info("Updating with changed storage type");
             })))
@@ -593,7 +556,7 @@ public class KafkaAssemblyOperatorMockTest {
                 assertPVCs(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalPVCs.get());
                 assertVolumes(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalVolumes.get());
                 assertInitContainers(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalInitContainers.get());
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -651,8 +614,6 @@ public class KafkaAssemblyOperatorMockTest {
         AtomicBoolean originalKafkaDeleteClaim = new AtomicBoolean();
 
 
-        Checkpoint async = context.checkpoint();
-
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 kafkaPvcs.set(client.persistentVolumeClaims().inNamespace(NAMESPACE).withLabels(kafkaLabels).list().getItems()
@@ -674,7 +635,7 @@ public class KafkaAssemblyOperatorMockTest {
                         .withStorageClass("foo")
                         .withDeleteClaim(!originalKafkaDeleteClaim.get())
                         .endPersistentClaimStorage().endKafka().endSpec().build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
+                kafkaAssembly().patch(updatedStorageKafka);
                 LOGGER.info("Updating with changed delete claim");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
@@ -685,11 +646,11 @@ public class KafkaAssemblyOperatorMockTest {
                                     .getMetadata().getAnnotations(),
                             hasEntry(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, String.valueOf(!originalKafkaDeleteClaim.get())));
                 }
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                kafkaAssembly().withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                 LOGGER.info("Reconciling again -> delete");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
-            .onComplete(context.succeeding(v -> async.flag()));
+            .onComplete(context.succeeding(v -> context.completeNow()));
     }
 
     /** Create a cluster from a Kafka Cluster CM */
@@ -706,7 +667,6 @@ public class KafkaAssemblyOperatorMockTest {
 
         AtomicInteger brokersInternalCertsCount = new AtomicInteger();
 
-        Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
@@ -722,7 +682,7 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(scaledDownCluster);
+                kafkaAssembly().patch(scaledDownCluster);
 
                 LOGGER.info("Scaling down to {} Kafka pods", scaleDownTo);
             })))
@@ -740,7 +700,7 @@ public class KafkaAssemblyOperatorMockTest {
                         aMapWithSize(brokersInternalCertsCount.get() - 4));
 
                 // TODO assert no rolling update
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -752,7 +712,6 @@ public class KafkaAssemblyOperatorMockTest {
 
         AtomicInteger brokersInternalCertsCount = new AtomicInteger();
 
-        Checkpoint async = context.checkpoint();
         int scaleUpTo = kafkaReplicas + 1;
         String newPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
 
@@ -771,7 +730,7 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(scaledUpKafka);
+                kafkaAssembly().patch(scaledUpKafka);
 
                 LOGGER.info("Scaling up to {} Kafka pods", scaleUpTo);
             })))
@@ -788,7 +747,7 @@ public class KafkaAssemblyOperatorMockTest {
                         aMapWithSize(brokersInternalCertsCount.get() + 4));
 
                 // TODO assert no rolling update
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -797,9 +756,8 @@ public class KafkaAssemblyOperatorMockTest {
     public void testReconcileResumePartialRoll(Params params, VertxTestContext context) {
         init(params);
 
-        Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .onComplete(v -> async.flag());
+            .onComplete(v -> context.completeNow());
     }
 
     /** Test the ZK version change functions */
@@ -826,16 +784,14 @@ public class KafkaAssemblyOperatorMockTest {
         KafkaAssemblyOperator.ReconciliationState initialState = operator.new ReconciliationState(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 updatedKafka);
 
-        Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .onComplete(context.succeeding())
-            .compose(v -> initialState.getKafkaClusterDescription())
+            .onComplete(context.succeeding(v -> initialState.getKafkaClusterDescription()))
             .compose(v -> initialState.prepareVersionChange())
             .compose(v -> initialState.getZookeeperDescription())
-            .compose(state -> state.zkVersionChange())
+            .compose(KafkaAssemblyOperator.ReconciliationState::zkVersionChange)
             .onComplete(context.succeeding(state -> context.verify(() -> {
                 assertThat(state.zkCluster.getImage(), is(changedImage));
-                async.flag();
+                context.completeNow();
             })));
     }
 

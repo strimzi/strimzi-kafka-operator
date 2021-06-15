@@ -36,7 +36,6 @@ import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -67,6 +66,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("deprecation")
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorMockTest {
 
@@ -82,7 +82,6 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private KubernetesClient mockClient;
 
     private static Vertx vertx;
-    private MockKube mockKube;
     private KafkaConnectAssemblyOperator kco;
 
     @BeforeAll
@@ -96,7 +95,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     }
 
     private void setConnectResource(KafkaConnect connectResource) {
-        mockKube = new MockKube();
+        MockKube mockKube = new MockKube();
         mockClient = mockKube
                 .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, KafkaConnect::getStatus, KafkaConnect::setStatus)
                     .withInitialInstances(Collections.singleton(connectResource))
@@ -127,7 +126,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         this.kco = new KafkaConnectAssemblyOperator(vertx, pfa, supplier, config, foo -> kafkaConnectApi);
 
-        Promise created = Promise.promise();
+        Promise<Void> created = Promise.promise();
 
         LOGGER.info("Reconciling initially -> create");
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -162,14 +161,13 @@ public class KafkaConnectAssemblyOperatorMockTest {
         when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
-        Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, false)
             .onComplete(context.succeeding())
             .compose(v -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
             })
-            .onComplete(context.succeeding(v -> async.flag()));
+            .onComplete(context.succeeding(v -> context.completeNow()));
 
     }
 
@@ -190,9 +188,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
-        Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, true)
-                .onComplete(context.succeeding())
                 .compose(v -> {
                     LOGGER.info("Reconciling again -> update");
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
@@ -214,7 +210,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     }
                     assertTrue(conditionFound);
 
-                    async.flag();
+                    context.completeNow();
                 })))
                 .compose(v -> {
                     setConnectResource(new KafkaConnectBuilder()
@@ -248,7 +244,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     }
                     assertFalse(conditionFound);
 
-                    async.flag();
+                    context.completeNow();
                 })));
 
     }

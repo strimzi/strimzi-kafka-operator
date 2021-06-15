@@ -24,18 +24,13 @@ import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
@@ -46,9 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -95,6 +88,7 @@ public class KafkaConnectorIT {
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Test
     public void test(VertxTestContext context) {
         KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
@@ -157,7 +151,6 @@ public class KafkaConnectorIT {
             connectCluster.getPort() + 2
         ) { };
 
-        Checkpoint async = context.checkpoint();
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                 "localhost", connectClient, true, connectorName,
                 connector)
@@ -183,8 +176,7 @@ public class KafkaConnectorIT {
 
                 assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", KafkaConnector.RESOURCE_KIND).timer().count(), CoreMatchers.is(2L));
                 assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", KafkaConnector.RESOURCE_KIND).timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -202,6 +194,7 @@ public class KafkaConnectorIT {
                     .build();
     }
 
+    @SuppressWarnings("unchecked")
     private void assertConnectorIsRunning(VertxTestContext context, KubernetesClient client, String namespace, String connectorName) {
         context.verify(() -> {
             KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).get();
@@ -210,7 +203,7 @@ public class KafkaConnectorIT {
             assertThat(kafkaConnector.getStatus().getTasksMax(), is(1));
             assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
             assertThat(kafkaConnector.getStatus().getConnectorStatus().get("connector"), instanceOf(Map.class));
-            assertThat(((Map) kafkaConnector.getStatus().getConnectorStatus().get("connector")).get("state"), is("RUNNING"));
+            assertThat(((Map<String, String>) kafkaConnector.getStatus().getConnectorStatus().get("connector")).get("state"), is("RUNNING"));
         });
     }
 }

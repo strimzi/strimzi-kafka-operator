@@ -30,7 +30,6 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -40,7 +39,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,9 +50,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorManualRollingUpdatesTest {
@@ -77,8 +73,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         vertx.close();
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Test
-    public void testNoManualRollingUpdate(VertxTestContext context) throws ParseException {
+    public void testNoManualRollingUpdate(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(clusterName)
@@ -135,18 +132,18 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 config);
 
-        Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     Mockito.verify(mockKafkaSetOps, never()).maybeRollingUpdate(any(), any(), any());
                     Mockito.verify(mockZkSetOps, never()).maybeRollingUpdate(any(), any(), any());
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
-    public void testStatefulSetManualRollingUpdate(VertxTestContext context) throws ParseException {
+    public void testStatefulSetManualRollingUpdate(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(clusterName)
@@ -211,7 +208,6 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 config);
 
-        Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify Zookeeper rolling updates
@@ -227,12 +223,13 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(Collections.singletonList("manual rolling update")));
                     assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(Collections.singletonList("manual rolling update")));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
-    public void testPodManualRollingUpdate(VertxTestContext context) throws ParseException {
+    public void testPodManualRollingUpdate(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(clusterName)
@@ -303,7 +300,6 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 config);
 
-        Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify Zookeeper rolling updates
@@ -319,7 +315,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(Collections.singletonList("manual rolling update annotation on a pod")));
                     assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(Collections.emptyList()));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -337,7 +333,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 .build();
     }
 
-    class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+    static class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         int maybeRollKafkaInvocations = 0;
         Function<Pod, List<String>> kafkaPodNeedsRestart = null;
 
@@ -352,10 +348,10 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return Future.succeededFuture(reconcileState)
-                    .compose(state -> state.getKafkaClusterDescription())
-                    .compose(state -> state.getZookeeperDescription())
-                    .compose(state -> state.zkManualRollingUpdate())
-                    .compose(state -> state.kafkaManualRollingUpdate())
+                    .compose(ReconciliationState::getKafkaClusterDescription)
+                    .compose(ReconciliationState::getZookeeperDescription)
+                    .compose(ReconciliationState::zkManualRollingUpdate)
+                    .compose(ReconciliationState::kafkaManualRollingUpdate)
                     .mapEmpty();
         }
 

@@ -12,12 +12,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
+import io.strimzi.api.kafka.model.*;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -44,45 +39,28 @@ import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.TestUtils.waitFor;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(VertxExtension.class)
 public class ConnectorMockTest {
@@ -124,13 +102,14 @@ public class ConnectorMockTest {
         task.put("id", 0);
         task.put("state", connectorState.paused ? "PAUSED" : "RUNNING");
         task.put("worker_id", "somehost2:8083");
-        List<Map> tasks = singletonList(task);
+        List<Map<String, Object>> tasks = List.of(task);
         statusNode.put("tasks", tasks);
 
+        //noinspection ConstantConditions - Intellij thinks connectorState is never null, I'm unsure, so will disable this warning
         return connectorState != null ? Future.succeededFuture(statusNode) : Future.failedFuture("No such connector " + connectorName);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength"})
+    @SuppressWarnings({"checkstyle:MethodLength", "deprecation"})
     @BeforeEach
     public void setup(VertxTestContext testContext) {
         vertx = Vertx.vertx();
@@ -169,10 +148,8 @@ public class ConnectorMockTest {
             config,
             x -> api);
 
-        Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
-        kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e))
-            .onComplete(testContext.succeeding())
+        kafkaConnectOperator.createWatch(NAMESPACE, testContext::failNow)
             .compose(watch -> {
                 kafkaConnectS2iOperator = new KafkaConnectS2IAssemblyOperator(vertx,
                     pfa,
@@ -180,11 +157,10 @@ public class ConnectorMockTest {
                     config,
                     x -> api);
                 // Fail test if watcher closes for any reason
-                return kafkaConnectS2iOperator.createWatch(NAMESPACE, e -> testContext.failNow(e));
+                return kafkaConnectS2iOperator.createWatch(NAMESPACE, testContext::failNow);
             })
-            .onComplete(testContext.succeeding())
             .compose(watch -> AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, kafkaConnectS2iOperator, NAMESPACE, null))
-            .onComplete(testContext.succeeding(v -> async.flag()));
+            .onComplete(testContext.succeeding(v -> testContext.completeNow()));
     }
 
     private void setupMockConnectAPI() {
@@ -349,17 +325,12 @@ public class ConnectorMockTest {
                 );
     }
 
-    public <T extends CustomResource<?, ? extends Status>> void waitForStatus(Resource<T> resource, String resourceName, Predicate<T> predicate) {
+    public <T extends CustomResource<?, ? extends Status>> void waitForStatus(Resource<T> resource, Predicate<T> predicate) {
         try {
             resource.waitUntilCondition(predicate, 5, TimeUnit.SECONDS);
         } catch (Exception e) {
-            if (!(e instanceof TimeoutException)) {
-                throw new RuntimeException(e);
-            }
-            String conditions =
-                    resource.get().getStatus() == null ? "no status" :
-                            String.valueOf(resource.get().getStatus().getConditions());
-            fail(resourceName + " never matched required predicate: " + conditions);
+            //Previously we were special casing TimeoutException, but it's never thrown
+            throw new RuntimeException(e);
         }
     }
 
@@ -367,14 +338,14 @@ public class ConnectorMockTest {
         Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
-        waitForStatus(resource, connectName, ready());
+        waitForStatus(resource, ready());
     }
 
     public void waitForConnectNotReady(String connectName, String reason, String message) {
         Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectName);
-        waitForStatus(resource, connectName,
+        waitForStatus(resource,
                 ConnectorMockTest.<KafkaConnect>statusIsForCurrentGeneration().and(notReady(reason, message)));
     }
 
@@ -382,19 +353,19 @@ public class ConnectorMockTest {
         Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectorName);
-        waitForStatus(resource, connectorName, ready());
+        waitForStatus(resource, ready());
     }
 
+    @SuppressWarnings("unchecked")
     public void waitForConnectorState(String connectorName, String state) {
         Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectorName);
-        waitForStatus(resource, connectorName, s -> {
+        waitForStatus(resource, s -> {
             Map<String, Object> connector = s.getStatus().getConnectorStatus();
             if (connector != null) {
-                Object connectorState = ((Map) connector.getOrDefault("connector", emptyMap())).get("state");
-                return connectorState instanceof String
-                    && state.equals(connectorState);
+                Object connectorState = ((Map<String, String>) connector.getOrDefault("connector", Map.of())).get("state");
+                return state.equals(connectorState);
             } else {
                 return false;
             }
@@ -405,7 +376,7 @@ public class ConnectorMockTest {
         Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
             .inNamespace(NAMESPACE)
             .withName(connectorName);
-        waitForStatus(resource, connectorName, s -> {
+        waitForStatus(resource, s -> {
             Map<String, String> annotations = s.getMetadata().getAnnotations();
             if (annotations != null) {
                 return !annotations.containsKey(annotation);
@@ -419,7 +390,7 @@ public class ConnectorMockTest {
         Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
             .inNamespace(NAMESPACE)
             .withName(connectorName);
-        waitForStatus(resource, connectorName, s -> {
+        waitForStatus(resource, s -> {
             if (s.getStatus() == null) {
                 return false;
             }
@@ -441,7 +412,7 @@ public class ConnectorMockTest {
         Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectorName);
-        waitForStatus(resource, connectorName,
+        waitForStatus(resource,
                 ConnectorMockTest.<KafkaConnector>statusIsForCurrentGeneration().and(notReady(reason, message)));
     }
 
@@ -810,7 +781,7 @@ public class ConnectorMockTest {
      * check the connector is added to the new cluster
      * */
     @Test
-    public void testChangeStrimziClusterLabel(VertxTestContext context) throws InterruptedException {
+    public void testChangeStrimziClusterLabel(VertxTestContext context) {
         String oldConnectClusterName = "cluster1";
         String newConnectClusterName = "cluster2";
         String connectorName = "connector";
@@ -890,13 +861,12 @@ public class ConnectorMockTest {
                 eq(connectorName), any());
 
         // Force reconciliation to assert connector deletion request occurs for first cluster
-        Checkpoint async = context.checkpoint();
         kafkaConnectOperator.reconcile(new Reconciliation("test", "KafkaConnect", NAMESPACE, oldConnectClusterName))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 verify(api, times(1)).delete(any(),
                         eq(KafkaConnectResources.qualifiedServiceName(oldConnectClusterName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                         eq(connectorName));
-                async.flag();
+               context.completeNow();
             })));
     }
 
