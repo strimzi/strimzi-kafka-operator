@@ -79,6 +79,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
@@ -433,7 +434,7 @@ class LogSettingST extends AbstractST {
         assertThat("Bridge GC logging is disabled", checkGcLoggingDeployments(NAMESPACE, bridgeDepName), is(false));
 
         kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, bridgeName);
-        checkContainersHaveProcessOneAsTini(NAMESPACE, bridgeName);
+        checkContainersHaveProcessOneAsTiniWithoutPs(NAMESPACE, bridgeName);
     }
 
     @IsolatedTest("Updating shared Kafka")
@@ -492,6 +493,26 @@ class LogSettingST extends AbstractST {
                     LOGGER.info("Checking tini process for pod {} with container {}", podName, containerName);
                     boolean isPresent = cmdKubeClient().namespace(namespaceName).execInPodContainer(false, podName, containerName, "/bin/bash", "-c", command).out().trim().equals("1");
                     assertThat(isPresent, is(true));
+                }
+            }
+        }
+    }
+
+    // only one thread can access (eliminate data-race)
+    private synchronized void checkContainersHaveProcessOneAsTiniWithoutPs(String namespaceName, String resourceClusterName) {
+        //Used [/] in the grep command so that grep process does not return itself
+        String command = "cat /proc/1/cmdline";
+
+        for (Pod pod : kubeClient(namespaceName).listPods(Labels.STRIMZI_CLUSTER_LABEL, resourceClusterName)) {
+            String podName = pod.getMetadata().getName();
+            if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients")) {
+                for (Container container : pod.getSpec().getContainers()) {
+                    String containerName = container.getName();
+
+                    PodUtils.waitForPodContainerReady(namespaceName, podName, containerName);
+                    LOGGER.info("Checking tini process for pod {} with container {}", podName, containerName);
+                    String processOne = cmdKubeClient().namespace(namespaceName).execInPodContainer(false, podName, containerName, "/bin/bash", "-c", command).out().trim();
+                    assertThat(processOne, startsWith("/usr/bin/tini"));
                 }
             }
         }
