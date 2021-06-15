@@ -25,6 +25,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 @ExtendWith(VertxExtension.class)
 public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> {
     protected static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerCrdOperatorIT.class);
@@ -57,6 +58,7 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
+                    .withWhitelist("*")
                     .withNewConsumer()
                         .withBootstrapServers("localhost:9092")
                         .withGroupId("my-group")
