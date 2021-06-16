@@ -80,10 +80,13 @@ public class SetupClusterOperator {
             LOGGER.info("Going to install ClusterOperator via OLM");
             // cluster-wide olm co-operator
             if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
-                cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
-                createClusterRoleBindings();
-                olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
-                olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+                if (!Environment.isNamespaceRbacScope()) {
+                    cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+                    createClusterRoleBindings();
+                    olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
+                    olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+                }
             // single-namespace olm co-operator
             } else {
                 cluster.setNamespace(namespaceInstallTo);
@@ -108,7 +111,14 @@ public class SetupClusterOperator {
             }
             // cluster-wide installation
             if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
-                createClusterRoleBindings();
+                if (Environment.isNamespaceRbacScope()) {
+                    // we override namespaceToWatch to where cluster operator is installed because RBAC is
+                    // enabled and we have use only single namespace
+                    namespaceToWatch = namespaceInstallTo;
+                } else {
+                    // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+                    createClusterRoleBindings();
+                }
             }
             // 060-Deployment
             ResourceManager.setCoDeploymentName(clusterOperatorName);

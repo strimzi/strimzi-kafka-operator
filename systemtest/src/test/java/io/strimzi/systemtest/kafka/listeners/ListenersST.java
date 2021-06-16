@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -116,7 +117,7 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainAnonymous(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String clientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
@@ -156,7 +157,7 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsAuthenticated(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaUser = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -225,7 +226,7 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesPlainScramSha(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaUsername = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -301,7 +302,7 @@ public class ListenersST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendMessagesTlsScramSha(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaUsername = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -360,7 +361,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePort(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final Map<String, String> label = Collections.singletonMap("my-label", "value");
@@ -438,7 +439,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testOverrideNodePortConfiguration(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -501,7 +502,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -544,7 +545,7 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancer(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -586,7 +587,7 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerTls(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -638,7 +639,7 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     void testCustomSoloCertificatesForNodePort(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());

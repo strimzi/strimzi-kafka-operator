@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -84,7 +85,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testRecoveryDuringZookeeperRollingUpdate(ExtensionContext extensionContext) throws Exception {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -169,7 +170,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testRecoveryDuringKafkaRollingUpdate(ExtensionContext extensionContext) throws Exception {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -258,7 +259,7 @@ class RollingUpdateST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(SCALABILITY)
     void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -381,7 +382,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
     void testZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -493,7 +494,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testBrokerConfigurationChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
@@ -513,7 +514,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testManualKafkaConfigMapChangeDontTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
@@ -534,7 +535,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testExternalLoggingChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
@@ -602,7 +603,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testClusterOperatorFinishAllRollingUpdates(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());

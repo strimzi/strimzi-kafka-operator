@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -63,7 +64,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCapacityFile(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -97,7 +98,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDeployAndUnDeployCruiseControl(ExtensionContext extensionContext) throws IOException {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -142,7 +143,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -179,7 +180,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationReflection(ExtensionContext extensionContext) throws IOException {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -233,7 +234,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationFileIsCreated(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -247,7 +248,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationPerformanceOptions(ExtensionContext extensionContext) throws IOException {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());

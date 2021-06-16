@@ -15,6 +15,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
@@ -64,7 +65,7 @@ public class ReconciliationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
@@ -131,7 +132,7 @@ public class ReconciliationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testPauseReconciliationInKafkaRebalanceAndTopic(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 

@@ -534,11 +534,13 @@ public abstract class AbstractST implements TestSeparator {
 
             // if 'parallel namespace test' we are gonna delete namespace
             if (StUtils.isParallelNamespaceTest(extensionContext)) {
+                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+                if (!Environment.isNamespaceRbacScope()) {
+                    final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
-                final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-
-                LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
-                cluster.deleteNamespace(extensionContext, namespaceToDelete);
+                    LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
+                    cluster.deleteNamespace(extensionContext, namespaceToDelete);
+                }
             }
         }
     }
@@ -581,14 +583,17 @@ public abstract class AbstractST implements TestSeparator {
 
             // if 'parallel namespace test' we are gonna create
             if (StUtils.isParallelNamespaceTest(extensionContext)) {
-                final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
+                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+                if (!Environment.isNamespaceRbacScope()) {
+                    final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
 
-                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
-                // create namespace by
-                LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testName);
+                    extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
+                    // create namespace by
+                    LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testName);
 
-                cluster.createNamespace(extensionContext, namespaceTestCase);
-                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
+                    cluster.createNamespace(extensionContext, namespaceTestCase);
+                    NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
+                }
             }
         }
     }

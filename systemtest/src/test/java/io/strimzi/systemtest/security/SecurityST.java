@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -117,7 +118,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCertificates(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Running testCertificates {}", clusterName);
@@ -223,7 +224,7 @@ class SecurityST extends AbstractST {
             boolean zkShouldRoll,
             boolean kafkaShouldRoll,
             boolean eoShouldRoll) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
         createKafkaCluster(extensionContext);
 
@@ -399,7 +400,7 @@ class SecurityST extends AbstractST {
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         List<String> secrets = null;
@@ -589,7 +590,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAutoRenewCaCertsTriggerByExpiredCertificate(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -642,7 +643,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceWindow(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -719,7 +720,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRegeneratedAfterInternalCAisDeleted(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -788,7 +789,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     void testTlsHostnameVerificationWithKafkaConnect(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
@@ -837,7 +838,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     void testTlsHostnameVerificationWithMirrorMaker(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String sourceKafkaCluster = clusterName + "-source";
         final String targetKafkaCluster = clusterName + "-target";
@@ -906,7 +907,7 @@ class SecurityST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaUserWrite = "kafka-user-write";
@@ -1006,7 +1007,7 @@ class SecurityST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclWithSuperUser(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -1109,7 +1110,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testCaRenewalBreakInMiddle(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -1232,7 +1233,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaAndKafkaConnectTlsVersion(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final Map<String, Object> configWithNewestVersionOfTls = new HashMap<>();
@@ -1309,7 +1310,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaAndKafkaConnectCipherSuites(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final Map<String, Object> configWithCipherSuitesSha384 = new HashMap<>();
@@ -1377,7 +1378,7 @@ class SecurityST extends AbstractST {
     void testOwnerReferenceOfCASecrets(ExtensionContext extensionContext) {
         /* Different name for Kafka cluster to make the test quicker -> KafkaRoller is waiting for pods of "my-cluster" to become ready
          for 5 minutes -> this will prevent the waiting. */
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String secondClusterName = "my-second-cluster-" + clusterName;
 
@@ -1449,7 +1450,7 @@ class SecurityST extends AbstractST {
     }
 
     void checkClusterCACertRenew(ExtensionContext extensionContext, boolean customCA) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         if (customCA) {
@@ -1560,7 +1561,7 @@ class SecurityST extends AbstractST {
     }
 
     void checkClientsCACertRenew(ExtensionContext extensionContext, boolean customCA) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         if (customCA) {
@@ -1644,7 +1645,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCustomClusterCAClientsCA(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = Environment.isNamespaceRbacScope() ? NAMESPACE : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
