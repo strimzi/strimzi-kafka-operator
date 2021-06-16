@@ -103,6 +103,13 @@ spec:
                     description: Configure whether access token should be treated
                       as JWT. This should be set to `false` if the authorization server
                       returns opaque tokens. Defaults to `true`.
+                  audience:
+                    type: string
+                    description: OAuth audience to use when authenticating against
+                      the authorization server. Some authorization servers require
+                      the audience to be explicitly set. The possible values depend
+                      on how the authorization server is configured. By default, `audience`
+                      is not specified when performing the token endpoint request.
                   certificateAndKey:
                     type: object
                     properties:

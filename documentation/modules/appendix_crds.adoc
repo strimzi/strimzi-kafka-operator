@@ -187,7 +187,11 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |boolean
 |checkIssuer                        1.2+<.<a|Enable or disable issuer checking. By default issuer is checked using the value configured by `validIssuerUri`. Default value is `true`.
 |boolean
+|clientAudience                     1.2+<.<a|The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
+|string
 |clientId                           1.2+<.<a|OAuth Client ID which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+|string
+|clientScope                        1.2+<.<a|The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.
 |string
 |clientSecret                       1.2+<.<a|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
@@ -195,7 +199,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |disableTlsHostnameVerification     1.2+<.<a|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|enableECDSA                        1.2+<.<a|Enable or disable ECDSA support by installing BouncyCastle crypto provider. Default value is `false`.
+|enableECDSA                        1.2+<.<a|*The `enableECDSA` property has been deprecated.* Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
 |boolean
 |enableOauthBearer                  1.2+<.<a|Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
 |boolean
@@ -1751,6 +1755,8 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
 |accessTokenIsJwt                1.2+<.<a|Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
 |boolean
+|audience                        1.2+<.<a|OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request.
+|string
 |clientId                        1.2+<.<a|OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
 |string
 |clientSecret                    1.2+<.<a|Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
