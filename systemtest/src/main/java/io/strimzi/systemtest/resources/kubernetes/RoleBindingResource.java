@@ -40,6 +40,13 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
         return resource != null;
     }
 
+    public static RoleBindingBuilder roleBinding(String namespace) {
+        return new RoleBindingBuilder()
+            .editFirstSubject()
+                .withNamespace(namespace)
+            .endSubject();
+    }
+
     public static RoleBinding roleBinding(ExtensionContext extensionContext, String yamlPath, String namespace, String clientNamespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
@@ -47,16 +54,17 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
             LOGGER.info("Replacing ClusterRole RoleRef for Role RoleRef");
             roleBinding.getRoleRef().setKind("Role");
         }
-        return roleBinding(
+
+        return createRoleBinding(
             new RoleBindingBuilder(roleBinding)
                 .editFirstSubject()
-                .withNamespace(namespace)
+                    .withNamespace(namespace)
                 .endSubject()
                 .build(),
             clientNamespace);
     }
 
-    private static RoleBinding roleBinding(RoleBinding roleBinding, String clientNamespace) {
+    public static RoleBinding createRoleBinding(RoleBinding roleBinding, String clientNamespace) {
         ResourceManager.kubeClient().namespace(clientNamespace).createOrReplaceRoleBinding(roleBinding);
         return roleBinding;
     }
