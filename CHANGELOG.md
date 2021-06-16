@@ -24,6 +24,7 @@
 * The field `whitelist` in the `KafkaMirrorMaker` resource is deprecated and will be removed in the future.
   It is replaced with a new field `include`.
 * `bind-utils` removed from containers to improve security posture.
+* The option `enableECDSA` of Kafka CR `authentication` of type `oauth` has been deprecated and is ignored. ECDSA token signature support is now always enabled without the need for Strimzi Cluster Operator installing the BouncyCastle JCE crypto provider. BouncyCastle library is no longer packaged with Strimzi Kafka images.
 
 ## 0.23.0
 

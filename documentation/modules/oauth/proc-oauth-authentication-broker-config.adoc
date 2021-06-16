@@ -68,7 +68,6 @@ The examples here show the configuration options as configured for external list
     jwksExpirySeconds: 360 <8>
     jwksRefreshSeconds: 300 <9>
     jwksMinRefreshPauseSeconds: 1 <10>
-    enableECDSA: "true" <11>
 ----
 <1> Listener type set to `oauth`.
 <2> URI of the token issuer used for authentication.
@@ -80,7 +79,6 @@ The examples here show the configuration options as configured for external list
 <8> The duration the JWKS certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
 <9> The period between refreshes of JWKS certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.
 <10> The minimum pause in seconds between consecutive attempts to refresh JWKS public keys. When an unknown signing key is encountered, the JWKS keys refresh is scheduled outside the regular periodic schedule with at least the specified pause since the last refresh attempt. The refreshing of keys follows the rule of exponential backoff, retrying on unsuccessful refreshes with ever increasing pause, until it reaches `jwksRefreshSeconds`. The default value is 1.
-<11> (Optional) If ECDSA is used for signing JWT tokens on authorization server, then this needs to be enabled. It installs additional crypto providers using BouncyCastle crypto library. Default is `false`.
 
 [[example-2]]
 .Example 2: Configuring token validation using an introspection endpoint
@@ -126,6 +124,8 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
     enablePlain: true <8>
     tokenEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/token__ <9>
     customClaimCheck: "@.custom == 'custom-value'" <10>
+    clientAudience: __AUDIENCE__ <11>
+    clientScope: __SCOPE__ <12>
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
 <2> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
@@ -137,6 +137,8 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
 <8> Set this to `true` to enable the PLAIN mechanism on the listener, which is supported by all clients on all platforms. The Kafka client has to enable the PLAIN mechanism and set the `username` and the `password`. This mechanism can be used to authenticate either by using the OAuth access token, or by using the OAuth client id and secret (client credentials). If the client sets `password` to start with the string `$accessToken:`, the password is interpreted as the access token on the server, and `username` as the account username, otherwise the user is interpreted as the client id, and password as the client secret. Default is `false`.
 <9> This has to be set to support the client credentials authentication when `enablePlain` is set to true, as described in previous point.
 <10> Additional custom rules can be imposed on the JWT access token during validation by setting this to a JsonPath filter query. If the access token does not contain the necessary data, it is rejected. When using the `introspectionEndpointUri`, the custom check is applied to the introspection endpoint response JSON.
+<11> (Optional) An `audience` parameter passed to the token endpoint. An _audience_ is used  when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over PLAIN client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
+<12> (Optional) A `scope` parameter passed to the token endpoint. A _scope_ is used when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over PLAIN client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 

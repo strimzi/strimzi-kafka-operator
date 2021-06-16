@@ -96,6 +96,7 @@ spec:
     checkAccessTokenType: false <2>
     accessTokenIsJwt: false <3>
     scope: any <4>
+    audience: kafka <5>
 ----
 <1> (Optional) Disable TLS hostname verification. Default is `false`.
 <2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
@@ -103,6 +104,9 @@ spec:
 <4> (Optional) The `scope` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the scope.
 In this case it is `any`.
+<5> (Optional) The `audience` for requesting the token from the token endpoint.
+An authorization server may require a client to specify the audience.
+In this case it is `kafka`.
 
 . Apply the changes to the deployment of your Kafka resource.
 +
