@@ -1882,6 +1882,10 @@ spec:
                           items:
                             type: object
                             properties:
+                              fileName:
+                                type: string
+                                description: Name under which the artifact will be
+                                  stored.
                               sha512sum:
                                 type: string
                                 description: SHA512 checksum of the artifact. Optional.
@@ -1894,6 +1898,7 @@ spec:
                                 - jar
                                 - tgz
                                 - zip
+                                - other
                                 description: Artifact type. Currently, the supported
                                   artifact types are `tgz`, `jar`, and `zip`.
                               url:
@@ -4159,6 +4164,10 @@ spec:
                           items:
                             type: object
                             properties:
+                              fileName:
+                                type: string
+                                description: Name under which the artifact will be
+                                  stored.
                               sha512sum:
                                 type: string
                                 description: SHA512 checksum of the artifact. Optional.
@@ -4171,6 +4180,7 @@ spec:
                                 - jar
                                 - tgz
                                 - zip
+                                - other
                                 description: Artifact type. Currently, the supported
                                   artifact types are `tgz`, `jar`, and `zip`.
                               url:
@@ -6436,6 +6446,10 @@ spec:
                           items:
                             type: object
                             properties:
+                              fileName:
+                                type: string
+                                description: Name under which the artifact will be
+                                  stored.
                               sha512sum:
                                 type: string
                                 description: SHA512 checksum of the artifact. Optional.
@@ -6448,6 +6462,7 @@ spec:
                                 - jar
                                 - tgz
                                 - zip
+                                - other
                                 description: Artifact type. Currently, the supported
                                   artifact types are `tgz`, `jar`, and `zip`.
                               url:

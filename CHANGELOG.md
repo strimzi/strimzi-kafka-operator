@@ -24,7 +24,11 @@
 * The field `whitelist` in the `KafkaMirrorMaker` resource is deprecated and will be removed in the future.
   It is replaced with a new field `include`.
 * `bind-utils` removed from containers to improve security posture.
-* The option `enableECDSA` of Kafka CR `authentication` of type `oauth` has been deprecated and is ignored. ECDSA token signature support is now always enabled without the need for Strimzi Cluster Operator installing the BouncyCastle JCE crypto provider. BouncyCastle library is no longer packaged with Strimzi Kafka images.
+* Kafka Connect Build now uses hashes to name downloaded artifact files. Previously, it was using the last segment of the download URL.
+  If your artifact requires a specific name, you can use the new `type: other` artifact and its `fileName` field.
+* The option `enableECDSA` of Kafka CR `authentication` of type `oauth` has been deprecated and is ignored. 
+  ECDSA token signature support is now always enabled without the need for Strimzi Cluster Operator installing the BouncyCastle JCE crypto provider. 
+  BouncyCastle library is no longer packaged with Strimzi Kafka images.
 
 ## 0.23.0
 
