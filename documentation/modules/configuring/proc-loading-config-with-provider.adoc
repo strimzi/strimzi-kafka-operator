@@ -12,7 +12,8 @@ Load data from Kubernetes Secrets or ConfigMaps.
 Suppose you have a Secret that's managed outside the Kafka namespace, or outside the Kafka cluster.
 The provider allows you to reference the values of the Secret in your configuration without extracting the files.
 You just need to tell the provider what Secret to use and provide access rights.
-The provider loads the data without needing to restart the Kafka component.
+The provider loads the data without needing to restart the Kafka component, even when using a new Secret or ConfigMap.
+This capability avoids disruption when sharing a Kafka Connect instance with multiple connectors.
 
 The provider operates independently of Strimzi.
 You can use it to load configuration data for all Kafka components, including producers and consumers.
@@ -20,8 +21,13 @@ Use it, for example, to provide the credentials for Kafka Connect connector conf
 
 In this procedure, an external ConfigMap provides configuration properties for a connector.
 
-NOTE: As an alternative to using the Kubernetes Configuration Provider, you can mount ConfigMaps or Secrets into a Kafka Connect pod as environment variables or volumes.
-You do this by adding configuration using the  xref:type-ExternalConfiguration-reference[`externalConfiguration` property] in `KafkaConnect.spec`.
+NOTE: Kubernetes Configuration Provider can't use mounted files.
+For example, it can't load values that need the location of a truststore or keystore.
+Instead, you can mount ConfigMaps or Secrets into a Kafka Connect pod as environment variables or volumes.
+You add configuration using the xref:type-ExternalConfiguration-reference[`externalConfiguration` property] in `KafkaConnect.spec`.
+You don't need to set up access rights with this approach.
+However, Kafka Connect will need a restart when using a new Secret or ConfigMap for a connector.
+This will cause disruption to all the Kafka Connect instance's connectors.
 
 .Prerequisites
 
