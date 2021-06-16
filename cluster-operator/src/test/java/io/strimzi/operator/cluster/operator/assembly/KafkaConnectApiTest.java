@@ -48,6 +48,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -287,6 +288,7 @@ public class KafkaConnectApiTest {
     public void testChangeParentLoggerLevel(VertxTestContext context) {
         String desiredLogging = "log4j.rootLogger=TRACE, CONSOLE\n" +
                 "log4j.logger.io.org=WARN\n" +
+                "log4j.logger.org.com=WARN\n" +
                 "log4j.logger.io.org.com=FATAL";
 
         desiredLogging = Util.expandVars(desiredLogging);
@@ -310,6 +312,19 @@ public class KafkaConnectApiTest {
 
         // root logger level did not change. The parent logger level did
         assertTrue(client.parentLogLevelChanged(fetched, ops, Map.entry("io.org.com", "WARN")));
+
+        fetched = new HashMap();
+        fetched.put("root", singletonMap("level", "TRACE"));
+        fetched.put("io.org", singletonMap("level", "WARN"));
+        fetched.put("io.org.com", singletonMap("level", "FATAL"));
+
+        // nothing changed
+        assertFalse(client.parentLogLevelChanged(fetched, ops, Map.entry("io.org.com", "FATAL")));
+
+        // unknown (new) logger added
+        assertFalse(client.parentLogLevelChanged(fetched, ops, Map.entry("org.com", "WARN")));
+        assertTrue(client.parentLogLevelChanged(fetched, ops, Map.entry("org.com", "DEBUG")));
+
         context.completeNow();
     }
 }
