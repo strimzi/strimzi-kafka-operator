@@ -32,6 +32,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     private String clientId;
     private String scope;
+    private String audience;
     private String tokenEndpointUri;
     private GenericSecretSource clientSecret;
     private GenericSecretSource accessToken;
@@ -67,6 +68,17 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    @Description("OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. "
+            + "The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public String getAudience() {
+        return audience;
+    }
+
+    public void setAudience(String audience) {
+        this.audience = audience;
     }
 
     @Description("Authorization server token endpoint URI.")

@@ -14,6 +14,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceItem;
@@ -290,13 +291,13 @@ public class TracingST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("10")
+                        .withSize("10")
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("10")
+                        .withSize("10")
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endZookeeper()
@@ -382,13 +383,13 @@ public class TracingST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("10")
+                        .withSize("10")
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("10")
+                        .withSize("10")
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endZookeeper()
@@ -780,8 +781,8 @@ public class TracingST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-            .withNewApiVersion("networking.k8s.io/v1")
-            .withNewKind(Constants.NETWORK_POLICY)
+            .withApiVersion("networking.k8s.io/v1")
+            .withKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
                 .withNamespace(NAMESPACE)
@@ -841,7 +842,11 @@ public class TracingST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws IOException {
-        installClusterOperator(extensionContext, NAMESPACE);
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(extensionContext)
+            .withNamespace(NAMESPACE)
+            .createInstallation()
+            .runInstallation();
         // deployment of the jaeger
         deployJaegerOperator(extensionContext);
 
@@ -849,13 +854,13 @@ public class TracingST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("10")
+                        .withSize("10")
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("10")
+                        .withSize("10")
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endZookeeper()

@@ -24,6 +24,9 @@ annotations: {}
 labels: {}
 nodeSelector: {}
 
+podSecurityContext: {}
+securityContext: {}
+
 # Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
 # repository name with your registry URL.
 # Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
@@ -86,7 +89,7 @@ kafkaBridge:
     registry: quay.io
     repository: strimzi
     name: kafka-bridge
-    tag: 0.19.0
+    tag: 0.20.0
 kafkaExporter:
   image:
     registry: quay.io
@@ -144,3 +147,5 @@ imageRepositoryOverride: ""
 # Override the docker image tag used by all Strimzi images
 imageTagOverride: ""
 createGlobalResources: true
+# Override the exclude pattern for exclude some labels
+labelsExclusionPattern: ""

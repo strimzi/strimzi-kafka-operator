@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -86,13 +87,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("100")
+                        .withSize("100")
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("100")
+                        .withSize("100")
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
@@ -149,13 +150,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("100")
+                        .withSize("100")
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("100")
+                        .withSize("100")
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
@@ -208,22 +209,23 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, String topicName, int messageCount) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        // Setup Test environment with Kafka and store some messages
-        prepareEnvForOperator(extensionContext, NAMESPACE);
-        applyBindings(extensionContext, NAMESPACE);
-        // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(extensionContext)
+            .withNamespace(NAMESPACE)
+            .createInstallation()
+            .runInstallation();
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("100")
+                        .withSize("100")
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
-                        .withNewSize("100")
+                        .withSize("100")
                         .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
@@ -265,10 +267,17 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     private void recreateClusterOperator(ExtensionContext extensionContext) {
         // Recreate CO
-        applyClusterOperatorInstallFiles(NAMESPACE);
-        applyBindings(extensionContext, NAMESPACE);
+
+        install.applyClusterOperatorInstallFiles(NAMESPACE);
+        SetupClusterOperator.applyBindings(extensionContext, NAMESPACE);
         // 060-Deployment
-        resourceManager.createResource(extensionContext, BundleResource.clusterOperator(NAMESPACE).build());
+        resourceManager.createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespace(NAMESPACE)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
     }
 
     private void deleteAndRecreateNamespace() {
@@ -282,7 +291,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     @BeforeAll
     void createStorageClass() {
-        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).withName(storageClassName).delete();
+        kubeClient().getClient().storage().storageClasses().withName(storageClassName).delete();
         StorageClass storageClass = new StorageClassBuilder()
             .withNewMetadata()
                 .withName(storageClassName)
@@ -291,12 +300,12 @@ class NamespaceDeletionRecoveryST extends AbstractST {
             .withReclaimPolicy("Retain")
             .build();
 
-        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).createOrReplace(storageClass);
+        kubeClient().getClient().storage().storageClasses().createOrReplace(storageClass);
     }
 
     @AfterAll
     void teardown() {
-        kubeClient().getClient().storage().storageClasses().inNamespace(NAMESPACE).withName(storageClassName).delete();
+        kubeClient().getClient().storage().storageClasses().withName(storageClassName).delete();
 
         kubeClient().getClient().persistentVolumes().list().getItems().stream()
             .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka") || pv.getSpec().getClaimRef().getName().contains("zookeeper"))

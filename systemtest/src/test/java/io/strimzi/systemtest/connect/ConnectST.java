@@ -34,6 +34,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
@@ -880,7 +881,7 @@ class ConnectST extends AbstractST {
                 .withNewTls()
                     .withTrustedCertificates(new CertSecretSourceBuilder()
                         .withCertificate("ca.crt")
-                        .withNewSecretName(KafkaResources.clusterCaCertificateSecretName(clusterName))
+                        .withSecretName(KafkaResources.clusterCaCertificateSecretName(clusterName))
                         .build())
                 .endTls()
                 .withNewKafkaClientAuthenticationTls()
@@ -956,7 +957,7 @@ class ConnectST extends AbstractST {
                     .withNewTls()
                         .withTrustedCertificates(new CertSecretSourceBuilder()
                                 .withCertificate("ca.crt")
-                                .withNewSecretName(KafkaResources.clusterCaCertificateSecretName(clusterName))
+                                .withSecretName(KafkaResources.clusterCaCertificateSecretName(clusterName))
                                 .build())
                     .endTls()
                 .endSpec()
@@ -1346,6 +1347,12 @@ class ConnectST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        installClusterWideClusterOperator(extensionContext, NAMESPACE, Constants.CO_OPERATION_TIMEOUT_SHORT, Constants.RECONCILIATION_INTERVAL);
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(extensionContext)
+            .withNamespace(NAMESPACE)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
+            .createInstallation()
+            .runInstallation();
     }
 }

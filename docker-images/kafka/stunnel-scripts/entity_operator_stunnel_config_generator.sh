@@ -5,7 +5,10 @@ set -e
 EO_CERTS_KEYS=/etc/tls-sidecar/eo-certs
 # Combine all the certs in the cluster CA into one file
 CA_CERTS=/tmp/cluster-ca.crt
-cat /etc/tls-sidecar/cluster-ca-certs/*.crt > "$CA_CERTS"
+for cert in /etc/tls-sidecar/cluster-ca-certs/*.crt; do
+  sed -z '$ s/\n$//' "$cert" >> "$CA_CERTS"
+  echo "" >> "$CA_CERTS"
+done
 
 echo "pid = /tmp/stunnel.pid"
 echo "foreground = yes"

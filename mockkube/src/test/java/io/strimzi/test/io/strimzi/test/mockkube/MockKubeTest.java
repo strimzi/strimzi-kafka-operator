@@ -153,7 +153,7 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         RT resource = (RT) w.lastEvent().resource;
         resource.getMetadata().setResourceVersion(null);
         resource.getMetadata().setGeneration(null);
-        assertThat(pod, is(resource));
+        assertThat(resource, is(pod));
         assertThat(mixedOp.apply(client).delete(pod), is(false));
 
         // TODO createOrReplace(), createOrReplaceWithName()
@@ -187,6 +187,8 @@ public class MockKubeTest<RT extends HasMetadata, LT extends KubernetesResource 
         RT item = items.get(0);
         item.getMetadata().setResourceVersion(null);
         item.getMetadata().setGeneration(null);
+
+
         assertThat(item, is(pod));
 
         // List with namespace

@@ -5,11 +5,13 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
@@ -53,12 +55,14 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
-    private boolean enableECDSA = false;
+    private boolean enableECDSA = true;
     private Integer maxSecondsWithoutReauthentication;
     private boolean enablePlain = false;
     private String tokenEndpointUri;
     private boolean enableOauthBearer = true;
     private String customClaimCheck;
+    private String clientScope = null;
+    private String clientAudience = null;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -130,6 +134,26 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setCustomClaimCheck(String customClaimCheck) {
         this.customClaimCheck = customClaimCheck;
+    }
+
+    @Description("The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getClientScope() {
+        return clientScope;
+    }
+
+    public void setClientScope(String scope) {
+        this.clientScope = scope;
+    }
+
+    @Description("The audience to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getClientAudience() {
+        return clientAudience;
+    }
+
+    public void setClientAudience(String audience) {
+        this.clientAudience = audience;
     }
 
     @Description("URI of the JWKS certificate endpoint, which can be used for local JWT validation.")
@@ -278,8 +302,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.disableTlsHostnameVerification = disableTlsHostnameVerification;
     }
 
+    @DeprecatedProperty
+    @PresentInVersions("v1alpha1-v1beta2")
+    @Deprecated
     @Description("Enable or disable ECDSA support by installing BouncyCastle crypto provider. " +
-            "Default value is `false`.")
+            "ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isEnableECDSA() {
         return enableECDSA;

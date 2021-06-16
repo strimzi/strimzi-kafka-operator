@@ -17,7 +17,7 @@ It creates a new Kafka Connect image from this directory, which can then be used
 When started using the enhanced image, Kafka Connect loads any third-party plug-ins from the `/tmp/kafka-plugins/s2i` directory.
 
 IMPORTANT: With the introduction of `build` configuration to the `KafkaConnect` resource, Strimzi can now automatically build a container image with the connector plugins you require for your data connections.
-As a result, support for Kafka Connect with Source-to-Image (S2I) is deprecated. To prepare for this change, you can link:{BookURLUsing}#proc-migrating-kafka-connect-s2i-{context}[migrate Kafka Connect S2I instances to Kafka Connect instances].
+As a result, support for Kafka Connect with Source-to-Image (S2I) is deprecated and will be removed after Strimzi {ProductVersion}. To prepare for this change, you can link:{BookURLUsing}#proc-migrating-kafka-connect-s2i-{context}[migrate Kafka Connect S2I instances to Kafka Connect instances].
 
 .Procedure
 

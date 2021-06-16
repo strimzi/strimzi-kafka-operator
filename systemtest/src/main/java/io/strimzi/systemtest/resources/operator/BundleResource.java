@@ -27,6 +27,13 @@ public class BundleResource implements ResourceType<Deployment> {
 
     public static final String PATH_TO_CO_CONFIG = TestUtils.USER_PATH + "/../packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml";
 
+    private String name;
+    private String namespaceInstallTo;
+    private String namespaceToWatch;
+    private long operationTimeout;
+    private long reconciliationInterval;
+    private List<EnvVar> extraEnvVars;
+
     @Override
     public String getKind() {
         return Constants.DEPLOYMENT;
@@ -55,40 +62,92 @@ public class BundleResource implements ResourceType<Deployment> {
             && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
 
-    public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespace, operationTimeout, Constants.RECONCILIATION_INTERVAL);
+    // this is for resourceTypes inside ResourceManager
+    public BundleResource() {}
+
+    private BundleResource(BundleResourceBuilder builder) {
+        this.name = builder.name;
+        this.namespaceInstallTo = builder.namespaceInstallTo;
+        this.namespaceToWatch = builder.namespaceToWatch;
+        this.operationTimeout = builder.operationTimeout;
+        this.reconciliationInterval = builder.reconciliationInterval;
+        this.extraEnvVars = builder.extraEnvVars;
+
+        // assign defaults is something is not specified
+        if (this.name == null || this.name.isEmpty()) this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
+        if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
+        if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
+        if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
     }
 
-    public static DeploymentBuilder clusterOperator(String namespace, String namespaceEnv, long operationTimeout, long reconciliationInterval) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, operationTimeout, reconciliationInterval);
+    public static class BundleResourceBuilder {
+
+        private String name;
+        private String namespaceInstallTo;
+        private String namespaceToWatch;
+        private long operationTimeout;
+        private long reconciliationInterval;
+        private List<EnvVar> extraEnvVars;
+
+        public BundleResourceBuilder withName(String name) {
+            this.name = name;
+            return self();
+        }
+
+        public BundleResourceBuilder withNamespace(String namespaceInstallTo) {
+            this.namespaceInstallTo = namespaceInstallTo;
+            return self();
+        }
+        public BundleResourceBuilder withWatchingNamespaces(String namespaceToWatch) {
+            this.namespaceToWatch = namespaceToWatch;
+            return self();
+        }
+        public BundleResourceBuilder withOperationTimeout(long operationTimeout) {
+            this.operationTimeout = operationTimeout;
+            return self();
+        }
+        public BundleResourceBuilder withReconciliationInterval(long reconciliationInterval) {
+            this.reconciliationInterval = reconciliationInterval;
+            return self();
+        }
+
+        public BundleResourceBuilder withExtraEnvVars(List<EnvVar> extraEnvVars) {
+            this.extraEnvVars = extraEnvVars;
+            return self();
+        }
+
+        public BundleResourceBuilder defaultConfigurationWithNamespace(String namespaceName) {
+            this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
+            this.namespaceInstallTo = namespaceName;
+            this.namespaceToWatch = this.namespaceInstallTo;
+            this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
+            this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
+            return self();
+        }
+
+        protected BundleResourceBuilder self() {
+            return this;
+        }
+
+        public BundleResource buildBundleInstance() {
+            return new BundleResource(this);
+        }
     }
 
-    public static DeploymentBuilder clusterOperator(String namespace, String namespaceEnv, long reconciliationInterval) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, Constants.CO_OPERATION_TIMEOUT_DEFAULT, reconciliationInterval);
+    protected BundleResourceBuilder newBuilder() {
+        return new BundleResourceBuilder();
+    };
+
+    protected BundleResourceBuilder toBuilder() {
+        return newBuilder()
+            .withName(name)
+            .withNamespace(namespaceInstallTo)
+            .withWatchingNamespaces(namespaceToWatch)
+            .withOperationTimeout(operationTimeout)
+            .withReconciliationInterval(reconciliationInterval);
     }
 
-    public static DeploymentBuilder clusterOperator(String namespace, String namespaceEnv) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespaceEnv, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    public static DeploymentBuilder clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespace, operationTimeout, reconciliationInterval);
-    }
-
-    public static DeploymentBuilder clusterOperator(String name, String namespace, String namespaceEnv, long operationTimeout, long reconciliationInterval) {
-        return defaultClusterOperator(name, namespace, namespaceEnv, operationTimeout, reconciliationInterval);
-    }
-
-    public static DeploymentBuilder clusterOperator(String namespace) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    public static DeploymentBuilder defaultClusterOperator(String namespace) {
-        return defaultClusterOperator(Constants.STRIMZI_DEPLOYMENT_NAME, namespace, namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    private static DeploymentBuilder defaultClusterOperator(String name, String namespace, String namespaceEnv, long operationTimeout, long reconciliationInterval) {
-
+    public DeploymentBuilder buildBundleDeployment() {
         Deployment clusterOperator = DeploymentResource.getDeploymentFromYaml(PATH_TO_CO_CONFIG);
 
         // Get env from config file
@@ -100,7 +159,7 @@ public class BundleResource implements ResourceType<Deployment> {
         for (EnvVar envVar : envVars) {
             switch (envVar.getName()) {
                 case "STRIMZI_NAMESPACE":
-                    envVar.setValue(namespaceEnv);
+                    envVar.setValue(namespaceToWatch);
                     envVar.setValueFrom(null);
                     break;
                 case "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS":
@@ -109,6 +168,8 @@ public class BundleResource implements ResourceType<Deployment> {
                 case "STRIMZI_OPERATION_TIMEOUT_MS":
                     envVar.setValue(Long.toString(operationTimeout));
                     break;
+                case "STRIMZI_FEATURE_GATES":
+                    envVar.setValue(Environment.STRIMZI_FEATURE_GATES);
                 default:
                     if (envVar.getName().contains("KAFKA_BRIDGE_IMAGE")) {
                         envVar.setValue(Environment.useLatestReleasedBridge() ? envVar.getValue() : Environment.BRIDGE_IMAGE);
@@ -123,13 +184,22 @@ public class BundleResource implements ResourceType<Deployment> {
         envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.COMPONENTS_IMAGE_PULL_POLICY, null));
         envVars.add(new EnvVar("STRIMZI_LOG_LEVEL", Environment.STRIMZI_LOG_LEVEL, null));
         envVars.add(new EnvVar("STRIMZI_RBAC_SCOPE", Environment.STRIMZI_RBAC_SCOPE, null));
+
+        if (extraEnvVars != null) {
+            envVars.forEach(envVar -> extraEnvVars.stream()
+                    .filter(aVar -> envVar.getName().equals(aVar.getName()))
+                    .findFirst()
+                    .ifPresent(xVar -> envVar.setValue(xVar.getValue()))
+            );
+        }
+
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
             .editMetadata()
                 .withName(name)
-                .withNamespace(namespace)
+                .withNamespace(namespaceInstallTo)
                 .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.BundleClusterOperator.name())
             .endMetadata()
             .editSpec()

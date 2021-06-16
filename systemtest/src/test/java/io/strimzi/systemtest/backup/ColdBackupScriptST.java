@@ -12,6 +12,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 import java.util.Map;
 
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import org.apache.logging.log4j.LogManager;
@@ -43,7 +44,13 @@ public class ColdBackupScriptST extends AbstractST {
         String backupFilePath = USER_PATH + "/target/" + clusterName + ".zip";
 
         // deploy a test cluster
-        installClusterOperator(context, NAMESPACE);
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(context)
+            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
+            .withNamespace(NAMESPACE)
+            .createInstallation()
+            .runInstallation();
+
         resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1).build());
         String clientsPodName = deployAndGetInternalClientsPodName(context);
         InternalKafkaClient clients = buildInternalClients(context, clientsPodName, groupName, firstBatchSize);
@@ -69,7 +76,12 @@ public class ColdBackupScriptST extends AbstractST {
         // recreate the namespace and deploy the operator
         ResourceManager.kubeClient().deleteNamespace(NAMESPACE);
         NamespaceUtils.waitForNamespaceDeletion(NAMESPACE);
-        installClusterOperator(context, NAMESPACE);
+
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(context)
+            .withNamespace(NAMESPACE)
+            .createInstallation()
+            .runInstallation();
 
         // run restore procedure and wait for provisioning
         LOGGER.info("Running restore procedure for {}/{}", NAMESPACE, clusterName);

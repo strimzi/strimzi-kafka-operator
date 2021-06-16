@@ -111,6 +111,14 @@ spec:
                         description: Configure whether access token should be treated
                           as JWT. This should be set to `false` if the authorization
                           server returns opaque tokens. Defaults to `true`.
+                      audience:
+                        type: string
+                        description: OAuth audience to use when authenticating against
+                          the authorization server. Some authorization servers require
+                          the audience to be explicitly set. The possible values depend
+                          on how the authorization server is configured. By default,
+                          `audience` is not specified when performing the token endpoint
+                          request.
                       certificateAndKey:
                         type: object
                         properties:
@@ -305,6 +313,14 @@ spec:
                         description: Configure whether access token should be treated
                           as JWT. This should be set to `false` if the authorization
                           server returns opaque tokens. Defaults to `true`.
+                      audience:
+                        type: string
+                        description: OAuth audience to use when authenticating against
+                          the authorization server. Some authorization servers require
+                          the audience to be explicitly set. The possible values depend
+                          on how the authorization server is configured. By default,
+                          `audience` is not specified when performing the token endpoint
+                          request.
                       certificateAndKey:
                         type: object
                         properties:
@@ -824,6 +840,24 @@ spec:
                                                       type: string
                                             matchLabels:
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                            matchLabels:
+                                              type: object
                                         namespaces:
                                           type: array
                                           items:
@@ -838,6 +872,24 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                        matchLabels:
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -890,6 +942,24 @@ spec:
                                                       type: string
                                             matchLabels:
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                            matchLabels:
+                                              type: object
                                         namespaces:
                                           type: array
                                           items:
@@ -904,6 +974,24 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                        matchLabels:
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -1306,6 +1394,14 @@ spec:
                         description: Configure whether access token should be treated
                           as JWT. This should be set to `false` if the authorization
                           server returns opaque tokens. Defaults to `true`.
+                      audience:
+                        type: string
+                        description: OAuth audience to use when authenticating against
+                          the authorization server. Some authorization servers require
+                          the audience to be explicitly set. The possible values depend
+                          on how the authorization server is configured. By default,
+                          `audience` is not specified when performing the token endpoint
+                          request.
                       certificateAndKey:
                         type: object
                         properties:
@@ -1500,6 +1596,14 @@ spec:
                         description: Configure whether access token should be treated
                           as JWT. This should be set to `false` if the authorization
                           server returns opaque tokens. Defaults to `true`.
+                      audience:
+                        type: string
+                        description: OAuth audience to use when authenticating against
+                          the authorization server. Some authorization servers require
+                          the audience to be explicitly set. The possible values depend
+                          on how the authorization server is configured. By default,
+                          `audience` is not specified when performing the token endpoint
+                          request.
                       certificateAndKey:
                         type: object
                         properties:
@@ -1787,6 +1891,24 @@ spec:
                                               type: string
                                     matchLabels:
                                       type: object
+                                namespaceSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
                                 namespaces:
                                   type: array
                                   items:
@@ -1801,6 +1923,24 @@ spec:
                           type: object
                           properties:
                             labelSelector:
+                              type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                matchLabels:
+                                  type: object
+                            namespaceSelector:
                               type: object
                               properties:
                                 matchExpressions:
@@ -1853,6 +1993,24 @@ spec:
                                               type: string
                                     matchLabels:
                                       type: object
+                                namespaceSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
                                 namespaces:
                                   type: array
                                   items:
@@ -1867,6 +2025,24 @@ spec:
                           type: object
                           properties:
                             labelSelector:
+                              type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                matchLabels:
+                                  type: object
+                            namespaceSelector:
                               type: object
                               properties:
                                 matchExpressions:
@@ -2252,6 +2428,24 @@ spec:
                                                       type: string
                                             matchLabels:
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                            matchLabels:
+                                              type: object
                                         namespaces:
                                           type: array
                                           items:
@@ -2266,6 +2460,24 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                        matchLabels:
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -2318,6 +2530,24 @@ spec:
                                                       type: string
                                             matchLabels:
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                            matchLabels:
+                                              type: object
                                         namespaces:
                                           type: array
                                           items:
@@ -2332,6 +2562,24 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                        matchLabels:
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -2734,6 +2982,14 @@ spec:
                         description: Configure whether access token should be treated
                           as JWT. This should be set to `false` if the authorization
                           server returns opaque tokens. Defaults to `true`.
+                      audience:
+                        type: string
+                        description: OAuth audience to use when authenticating against
+                          the authorization server. Some authorization servers require
+                          the audience to be explicitly set. The possible values depend
+                          on how the authorization server is configured. By default,
+                          `audience` is not specified when performing the token endpoint
+                          request.
                       certificateAndKey:
                         type: object
                         properties:
@@ -2928,6 +3184,14 @@ spec:
                         description: Configure whether access token should be treated
                           as JWT. This should be set to `false` if the authorization
                           server returns opaque tokens. Defaults to `true`.
+                      audience:
+                        type: string
+                        description: OAuth audience to use when authenticating against
+                          the authorization server. Some authorization servers require
+                          the audience to be explicitly set. The possible values depend
+                          on how the authorization server is configured. By default,
+                          `audience` is not specified when performing the token endpoint
+                          request.
                       certificateAndKey:
                         type: object
                         properties:
@@ -3215,6 +3479,24 @@ spec:
                                               type: string
                                     matchLabels:
                                       type: object
+                                namespaceSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
                                 namespaces:
                                   type: array
                                   items:
@@ -3229,6 +3511,24 @@ spec:
                           type: object
                           properties:
                             labelSelector:
+                              type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                matchLabels:
+                                  type: object
+                            namespaceSelector:
                               type: object
                               properties:
                                 matchExpressions:
@@ -3281,6 +3581,24 @@ spec:
                                               type: string
                                     matchLabels:
                                       type: object
+                                namespaceSelector:
+                                  type: object
+                                  properties:
+                                    matchExpressions:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            type: string
+                                          operator:
+                                            type: string
+                                          values:
+                                            type: array
+                                            items:
+                                              type: string
+                                    matchLabels:
+                                      type: object
                                 namespaces:
                                   type: array
                                   items:
@@ -3295,6 +3613,24 @@ spec:
                           type: object
                           properties:
                             labelSelector:
+                              type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                matchLabels:
+                                  type: object
+                            namespaceSelector:
                               type: object
                               properties:
                                 matchExpressions:
@@ -3680,6 +4016,24 @@ spec:
                                                       type: string
                                             matchLabels:
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                            matchLabels:
+                                              type: object
                                         namespaces:
                                           type: array
                                           items:
@@ -3694,6 +4048,24 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                        matchLabels:
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -3746,6 +4118,24 @@ spec:
                                                       type: string
                                             matchLabels:
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                            matchLabels:
+                                              type: object
                                         namespaces:
                                           type: array
                                           items:
@@ -3760,6 +4150,24 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                        matchLabels:
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:

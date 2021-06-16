@@ -10,12 +10,15 @@
 * Add Kafka Quotas plugin with produce, consume, and storage quotas
 * Support pausing reconciliation of KafkaTopic CR with annotation `strimzi.io/pause-reconciliation`
 * Update cruise control to 2.5.55
+* Update to Strimzi Kafka Bridge to 0.20.0
 * Support for broker load information added to the rebalance optimization proposal. Information on the load difference, before and after a rebalance is stored in a ConfigMap
 * Add support for selectively changing the verbosity of logging for individual CRs, using markers.
 * Added support for `controller_mutation_rate' quota. Creation/Deletion of topics and creation of partitions can be configured through this.
 
 ### Changes, deprecations and removals
 
+* The deprecated `KafkaConnectS2I` custom resource will be removed after the 0.24.0 release. 
+  Please use the [migration guide](https://strimzi.io/docs/operators/latest/full/using.html#proc-migrating-kafka-connect-s2i-str) to migrate your `KafkaConnectS2I` deployments to [`KafkaConnect` Build](https://strimzi.io/docs/operators/latest/full/deploying.html#creating-new-image-using-kafka-connect-build-str) instead.
 * The fields `topicsBlacklistPattern` and `groupsBlacklistPattern` in the `KafkaMirrorMaker2` resource are deprecated and will be removed in the future.
   They are replaced by new fields `topicsExcludePattern` and `groupsExcludePattern`.
 * The field `whitelist` in the `KafkaMirrorMaker` resource is deprecated and will be removed in the future.
@@ -23,6 +26,9 @@
 * `bind-utils` removed from containers to improve security posture.
 * Kafka Connect Build now uses hashes to name downloaded artifact files. Previously, it was using the last segment of the download URL.
   If your artifact requires a specific name, you can use the new `type: other` artifact and its `fileName` field.
+* The option `enableECDSA` of Kafka CR `authentication` of type `oauth` has been deprecated and is ignored. 
+  ECDSA token signature support is now always enabled without the need for Strimzi Cluster Operator installing the BouncyCastle JCE crypto provider. 
+  BouncyCastle library is no longer packaged with Strimzi Kafka images.
 
 ## 0.23.0
 

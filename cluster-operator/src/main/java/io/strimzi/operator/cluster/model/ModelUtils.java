@@ -464,8 +464,8 @@ public class ModelUtils {
     public static AffinityBuilder populateAffinityBuilderWithRackLabelSelector(AffinityBuilder builder, Affinity userAffinity, String topologyKey) {
         // We need to add node affinity to make sure the pods are scheduled only on nodes with the rack label
         NodeSelectorRequirement selector = new NodeSelectorRequirementBuilder()
-                .withNewOperator("Exists")
-                .withNewKey(topologyKey)
+                .withOperator("Exists")
+                .withKey(topologyKey)
                 .build();
 
         if (userAffinity != null

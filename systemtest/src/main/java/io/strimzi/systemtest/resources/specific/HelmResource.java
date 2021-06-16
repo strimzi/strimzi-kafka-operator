@@ -38,6 +38,13 @@ public class HelmResource implements SpecificResourceType {
     public static final String LIMITS_MEMORY = "512Mi";
     public static final String LIMITS_CPU = "1000m";
 
+    private String namespaceToWatch;
+
+    public HelmResource() { }
+    public HelmResource(String namespaceToWatch) {
+        this.namespaceToWatch = namespaceToWatch;
+    }
+
     public void create(ExtensionContext extensionContext) {
         this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
     }
@@ -115,8 +122,13 @@ public class HelmResource implements SpecificResourceType {
                 entry("resources.limits.cpu", LIMITS_CPU),
                 entry("logLevelOverride", Environment.STRIMZI_LOG_LEVEL),
                 entry("fullReconciliationIntervalMs", Long.toString(reconciliationInterval)),
-                entry("operationTimeoutMs", Long.toString(operationTimeout)))
+                entry("operationTimeoutMs", Long.toString(operationTimeout)),
+                entry("featureGates", Environment.STRIMZI_FEATURE_GATES))
                 .collect(TestUtils.entriesToMap()));
+
+        if (this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+            values.put("watchAnyNamespace", "true");
+        }
 
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = KubeClusterResource.getInstance().setNamespace("kube-system");
@@ -135,5 +147,9 @@ public class HelmResource implements SpecificResourceType {
         ResourceManager.helmClient().delete(HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
         cmdKubeClient().delete(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
+    }
+
+    public String getNamespaceEnv() {
+        return this.namespaceToWatch;
     }
 }

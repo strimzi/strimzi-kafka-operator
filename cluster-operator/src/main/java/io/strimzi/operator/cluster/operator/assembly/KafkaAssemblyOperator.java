@@ -1793,7 +1793,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 String bootstrapAddress = getInternalServiceHostname(ListenersUtils.backwardsCompatibleBootstrapServiceName(name, listener), useServiceDnsDomain);
 
                 ListenerStatus ls = new ListenerStatusBuilder()
-                        .withNewType(listener.getName())
+                        .withType(listener.getName())
                         .withAddresses(new ListenerAddressBuilder()
                                 .withHost(bootstrapAddress)
                                 .withPort(listener.getPort())
@@ -1853,7 +1853,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withNewType(listener.getName())
+                                    .withType(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(listener.getPort())
@@ -2065,7 +2065,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
 
                                 ListenerStatus ls = new ListenerStatusBuilder()
-                                        .withNewType(listener.getName())
+                                        .withType(listener.getName())
                                         .withAddresses(new ArrayList<>(statusAddresses))
                                         .build();
                                 addListenerStatus(ls);
@@ -2104,7 +2104,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withNewType(listener.getName())
+                                    .withType(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())
@@ -2189,7 +2189,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withNewType(listener.getName())
+                                    .withType(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())
@@ -2267,7 +2267,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withNewType(listener.getName())
+                                    .withType(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())
@@ -3346,10 +3346,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return stsGeneration == podGeneration;
         }
 
-        private final Future<ReconciliationState> getCruiseControlDescription() {
+        /*test*/ final Future<ReconciliationState> getCruiseControlDescription() {
             CruiseControl cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions);
+
             if (cruiseControl != null) {
-                Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(),
+                return Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(),
                         cruiseControl.getLogging(), cruiseControl.getMetricsConfigInCm())
                         .compose(metricsAndLogging -> {
                             ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLogging);
@@ -3358,12 +3359,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             this.cruiseControl = cruiseControl;
-
                             this.ccDeployment = cruiseControl.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
+
                             return Future.succeededFuture(this);
                         });
+            } else {
+                return withVoid(Future.succeededFuture());
             }
-            return withVoid(Future.succeededFuture());
         }
 
         Future<ReconciliationState> cruiseControlServiceAccount() {

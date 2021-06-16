@@ -28,8 +28,8 @@ public class NetworkPolicyTemplates {
 
     public static NetworkPolicyBuilder networkPolicyBuilder(String namespace, String name, LabelSelector labelSelector) {
         return new NetworkPolicyBuilder()
-            .withNewApiVersion("networking.k8s.io/v1")
-                .withNewKind(Constants.NETWORK_POLICY)
+            .withApiVersion("networking.k8s.io/v1")
+                .withKind(Constants.NETWORK_POLICY)
                     .withNewMetadata()
                         .withName(name + "-allow")
                         .withNamespace(namespace)
@@ -46,8 +46,8 @@ public class NetworkPolicyTemplates {
 
     public static NetworkPolicy applyDefaultNetworkPolicy(ExtensionContext extensionContext, String namespace, DefaultNetworkPolicy policy) {
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-            .withNewApiVersion("networking.k8s.io/v1")
-            .withNewKind(Constants.NETWORK_POLICY)
+            .withApiVersion("networking.k8s.io/v1")
+            .withKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("global-network-policy")
                 .withNamespace(namespace)
