@@ -149,7 +149,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Tags metricTags;
 
         if (config.getCustomResourceSelector() != null) {
-            metricTags = Tags.of(Tag.of("kind", KafkaConnector.RESOURCE_KIND), Tag.of("selector", config.getCustomResourceSelector().toSelectorString()));
+            metricTags = Tags.of(Tag.of("kind", KafkaConnector.RESOURCE_KIND), Tag.of("selector", ""));
         } else {
             metricTags = Tags.of(Tag.of("kind", KafkaConnector.RESOURCE_KIND));
         }
