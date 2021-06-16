@@ -7,7 +7,7 @@
 
 = Example metrics files
 
-You can find example Grafana dashboards and other metrics configuration files in the `examples/metrics` directory.
+You can find example Grafana dashboards and other metrics configuration files in the link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics[examples/metrics] directory.
 
 .Example metrics files provided with Strimzi
 [source]
