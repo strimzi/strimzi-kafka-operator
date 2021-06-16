@@ -43,7 +43,7 @@ spec:
 
 If you deployed Cruise Control with your Kafka cluster with the metrics enabled, you can enable Grafana to present the metrics data it exposes.
 
-A Cruise Control dashboard is provided in the `examples/metrics` directory as a JSON file:
+A Cruise Control dashboard is provided in the link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics[examples/metrics] directory as a JSON file:
 
 * `strimzi-cruise-control.json`
 
