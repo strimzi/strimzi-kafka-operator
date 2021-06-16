@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -121,7 +122,9 @@ public class OperatorMetricsTest {
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, Labels.fromMap(emptyMap())) {
+        Labels nsLabel= Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue"));
+
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, nsLabel) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
@@ -142,6 +145,8 @@ public class OperatorMetricsTest {
                 return new Status() { };
             }
         };
+
+        assertThat(operator.getMatchLables(), is(nsLabel.toMap()));
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
@@ -246,6 +251,8 @@ public class OperatorMetricsTest {
                 return new Status() { };
             }
         };
+
+//        assertThat(operator.getMatchLables().get("nsLabelKey").toString(), is("nsLabelValue"));
 
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
