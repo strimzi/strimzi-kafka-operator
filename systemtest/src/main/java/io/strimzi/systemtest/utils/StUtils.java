@@ -373,4 +373,14 @@ public class StUtils {
                 .toLowerCase(Locale.ENGLISH)
                 .contains(PARALLEL_NAMESPACE)).count() == 1;
     }
+
+    /**
+     * Retrieve namespace based on the cluster configuration
+     * @param singleNamespace suite namespace
+     * @param extensionContext test context for get the parallel namespace
+     * @return single or parallel namespace based on cluster configuration
+     */
+    public static String getNamespaceBasedOnRbac(String singleNamespace, ExtensionContext extensionContext) {
+        return Environment.isNamespaceRbacScope() ? singleNamespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+    }
 }
