@@ -6,7 +6,9 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.Build;
+import io.strimzi.api.kafka.model.connect.build.DownloadableArtifact;
 import io.strimzi.api.kafka.model.connect.build.JarArtifact;
+import io.strimzi.api.kafka.model.connect.build.OtherArtifact;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
@@ -134,6 +136,8 @@ public class KafkaConnectDockerfile {
                 addTgzArtifact(writer, connectorPath, (TgzArtifact) art);
             } else if (art instanceof ZipArtifact) {
                 addZipArtifact(writer, connectorPath, (ZipArtifact) art);
+            } else if (art instanceof OtherArtifact) {
+                addOtherArtifact(writer, connectorPath, (OtherArtifact) art);
             } else {
                 throw new RuntimeException("Unexpected artifact type " + art.getType());
             }
@@ -148,18 +152,49 @@ public class KafkaConnectDockerfile {
      * @param jar               The JAR-type artifact
      */
     private void addJarArtifact(PrintWriter writer, String connectorPath, JarArtifact jar) {
-        String artifactDir = connectorPath + "/" + Util.sha1Prefix(jar.getUrl());
-        String artifactPath = artifactDir + "/" + jar.getUrl().substring(jar.getUrl().lastIndexOf("/") + 1);
+        String artifactHash = Util.sha1Prefix(jar.getUrl());
+        String artifactDir = connectorPath + "/" + artifactHash;
+        String artifactPath = artifactDir + "/" + artifactHash + ".jar";
         String downloadCmd =  "curl -L --output " + artifactPath + " " + jar.getUrl();
 
+        addUnmodifiedArtifact(writer, jar, artifactDir, downloadCmd, artifactPath);
+    }
+
+    /**
+     * Add command sequence for downloading files and checking their checksums.
+     *
+     * @param writer            Writer for printing the Docker commands
+     * @param connectorPath     Path where the connector to which this artifact belongs should be downloaded
+     * @param other             The Other-type artifact
+     */
+    private void addOtherArtifact(PrintWriter writer, String connectorPath, OtherArtifact other) {
+        String artifactHash = Util.sha1Prefix(other.getUrl());
+        String artifactDir = connectorPath + "/" + artifactHash;
+        String fileName = other.getFileName() != null ? other.getFileName() : artifactHash;
+        String artifactPath = artifactDir + "/" + fileName;
+        String downloadCmd =  "curl -L --output " + artifactPath + " " + other.getUrl();
+
+        addUnmodifiedArtifact(writer, other, artifactDir, downloadCmd, artifactPath);
+    }
+
+    /**
+     * Adds download command for artifacts which are just downloaded without any unpacking or other processing.
+     *
+     * @param writer            Writer for printing the Docker commands
+     * @param art               Artifact which should be downloaded
+     * @param artifactDir       Directory into which the artifact should be downloaded
+     * @param downloadCmd       Command for downloading the artifact
+     * @param artifactPath      Full path of the artifact
+     */
+    private void addUnmodifiedArtifact(PrintWriter writer, DownloadableArtifact art, String artifactDir, String downloadCmd, String artifactPath)    {
         writer.println("RUN mkdir -p " + artifactDir + " \\");
 
-        if (jar.getSha512sum() == null || jar.getSha512sum().isEmpty()) {
+        if (art.getSha512sum() == null || art.getSha512sum().isEmpty()) {
             // No checksum => we just download the file
             writer.println("      && " + downloadCmd);
         } else {
             // Checksum exists => we need to check it
-            String checksum = jar.getSha512sum() + " " + artifactPath;
+            String checksum = art.getSha512sum() + " " + artifactPath;
 
             writer.println("      && " + downloadCmd + " \\");
             writer.println("      && echo \"" + checksum + "\" > " + artifactPath + ".sha512 \\");
@@ -178,8 +213,9 @@ public class KafkaConnectDockerfile {
      * @param tgz               The TGZ-type artifact
      */
     private void addTgzArtifact(PrintWriter writer, String connectorPath, TgzArtifact tgz) {
-        String artifactDir = connectorPath + "/" + Util.sha1Prefix(tgz.getUrl());
-        String archivePath = connectorPath + "/" + tgz.getUrl().substring(tgz.getUrl().lastIndexOf("/") + 1);
+        String artifactHash = Util.sha1Prefix(tgz.getUrl());
+        String artifactDir = connectorPath + "/" + artifactHash;
+        String archivePath = connectorPath + "/" + artifactHash + ".tgz";
 
         String downloadCmd =  "curl -L --output " + archivePath + " " + tgz.getUrl();
         String unpackCmd =  "tar xvfz " + archivePath + " -C " + artifactDir;
@@ -215,8 +251,9 @@ public class KafkaConnectDockerfile {
      * @param zip               The ZIP-type artifact
      */
     private void addZipArtifact(PrintWriter writer, String connectorPath, ZipArtifact zip) {
-        String artifactDir = connectorPath + "/" + Util.sha1Prefix(zip.getUrl());
-        String archivePath = connectorPath + "/" + zip.getUrl().substring(zip.getUrl().lastIndexOf("/") + 1);
+        String artifactHash = Util.sha1Prefix(zip.getUrl());
+        String artifactDir = connectorPath + "/" + artifactHash;
+        String archivePath = connectorPath + "/" + artifactHash + ".zip";
 
         String downloadCmd =  "curl -L --output " + archivePath + " " + zip.getUrl();
         String unpackCmd =  "unzip " + archivePath + " -d " + artifactDir;
