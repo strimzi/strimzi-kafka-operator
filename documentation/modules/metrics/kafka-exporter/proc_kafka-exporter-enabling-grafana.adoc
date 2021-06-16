@@ -7,7 +7,7 @@
 = Enabling the Kafka Exporter Grafana dashboard
 
 Strimzi provides xref:ref-metrics-config-files-{context}[example dashboard configuration files for Grafana].
-The Kafka Exporter dashboard is provided in the `examples/metrics` directory as a JSON file:
+The Kafka Exporter dashboard is provided in the link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics[examples/metrics] directory as a JSON file:
 
 * `strimzi-kafka-exporter.json`
 
