@@ -233,6 +233,7 @@ You can use comma-separated lists.
 <43> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
 <44> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
 <45> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
+You can also use the _Kubernetes Configuration Provider_ to xref:proc-loading-config-with-provider-str[load configuration values from external sources].
 
 . Create or update the resource:
 +

@@ -1852,9 +1852,9 @@ include::../api/io.strimzi.api.kafka.model.connect.ExternalConfiguration.adoc[le
 [options="header"]
 |====
 |Property        |Description
-|env      1.2+<.<a|Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as environment variables.
+|env      1.2+<.<a|Allows data to pass from a Secret or ConfigMap to the Kafka Connect pods as environment variables.
 |xref:type-ExternalConfigurationEnv-{context}[`ExternalConfigurationEnv`] array
-|volumes  1.2+<.<a|Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.
+|volumes  1.2+<.<a|Allows data to pass from a Secret or ConfigMap to the Kafka Connect pods as volumes.
 |xref:type-ExternalConfigurationVolumeSource-{context}[`ExternalConfigurationVolumeSource`] array
 |====
 
