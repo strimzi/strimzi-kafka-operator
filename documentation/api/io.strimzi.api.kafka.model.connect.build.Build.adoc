@@ -112,17 +112,17 @@ spec:
 ----
 <1> (Required) List of connector plugins and their artifacts.
 
-Strimzi supports two types of artifacts:
+Strimzi supports the following types of artifacts:
 * JAR files, which are downloaded and used directly
 * TGZ archives, which are downloaded and unpacked
+* Other artifacts, which are downloaded and used directly
 
 IMPORTANT: Strimzi does not perform any security scanning of the downloaded artifacts.
 For security reasons, you should first verify the artifacts manually, and configure the checksum verification to make sure the same artifact is used in the automated build and in the Kafka Connect deployment.
 
 .Using JAR artifacts
 
-JAR artifacts represent a resource which is downloaded and added to a container image.
-JAR artifacts are mainly used for downloading JAR files, but they can also used to download other file types.
+JAR artifacts represent a JAR file that is downloaded and added to a container image.
 To use a JAR artifacts, set the `type` property to `jar`, and specify the download location using the `url` property.
 
 Additionally, you can specify a SHA-512 checksum of the artifact.
@@ -187,3 +187,38 @@ spec:
 <1> (Required) Type of artifact.
 <2> (Required) URL from which the archive is downloaded.
 <3> (Optional) SHA-512 checksum to verify the artifact.
+
+.Using `other` artifacts
+
+`other` artifacts represent any kind of file that is downloaded and added to a container image.
+If you want to use a specific name for the artifact in the resulting container image, use the `fileName` field.
+If a file name is not specified, the file is named based on the URL hash.
+
+Additionally, you can specify a SHA-512 checksum of the artifact.
+If specified, Strimzi will verify the checksum of the artifact while building the new container image.
+
+[source,yaml,subs=attributes+,options="nowrap"]
+.Example `other` artifact
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  #...
+  build:
+    output:
+      #...
+    plugins:
+      - name: my-plugin
+        artifacts:
+          - type: other  <1>
+            url: https://my-domain.tld/my-other-file.ext  <2>
+            sha512sum: 589...ab4  <3>
+            fileName: name-the-file.ext  <4>
+  #...
+----
+<1> (Required) Type of artifact.
+<2> (Required) URL from which the artifact is downloaded.
+<3> (Optional) SHA-512 checksum to verify the artifact.
+<4> (Optional) The name under which the file is stored in the resulting container image.

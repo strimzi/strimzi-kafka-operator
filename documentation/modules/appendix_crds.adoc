@@ -1995,7 +1995,7 @@ Used in: xref:type-Build-{context}[`Build`]
 |name       1.2+<.<a|The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
 |string
 |artifacts  1.2+<.<a|List of artifacts which belong to this connector plugin. Required.
-|xref:type-JarArtifact-{context}[`JarArtifact`], xref:type-TgzArtifact-{context}[`TgzArtifact`], xref:type-ZipArtifact-{context}[`ZipArtifact`] array
+|xref:type-JarArtifact-{context}[`JarArtifact`], xref:type-TgzArtifact-{context}[`TgzArtifact`], xref:type-ZipArtifact-{context}[`ZipArtifact`], xref:type-OtherArtifact-{context}[`OtherArtifact`] array
 |====
 
 [id='type-JarArtifact-{context}']
@@ -2046,6 +2046,25 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
 |string
 |type       1.2+<.<a|Must be `zip`.
+|string
+|====
+
+[id='type-OtherArtifact-{context}']
+### `OtherArtifact` schema reference
+
+Used in: xref:type-Plugin-{context}[`Plugin`]
+
+
+[options="header"]
+|====
+|Property          |Description
+|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+|string
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+|string
+|fileName   1.2+<.<a|Name under which the artifact will be stored.
+|string
+|type       1.2+<.<a|Must be `other`.
 |string
 |====
 
