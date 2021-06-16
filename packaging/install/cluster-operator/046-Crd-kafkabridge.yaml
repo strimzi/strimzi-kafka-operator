@@ -263,6 +263,15 @@ spec:
                     - allowedMethods
                     description: CORS configuration for the HTTP Bridge.
                 description: The HTTP related configuration.
+              adminClient:
+                type: object
+                properties:
+                  config:
+                    x-kubernetes-preserve-unknown-fields: true
+                    type: object
+                    description: The Kafka AdminClient configuration used for AdminClient
+                      instances created by the bridge.
+                description: Kafka AdminClient related configuration.
               consumer:
                 type: object
                 properties:
