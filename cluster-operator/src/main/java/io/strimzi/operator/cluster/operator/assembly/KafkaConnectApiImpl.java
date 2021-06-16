@@ -33,7 +33,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -472,7 +474,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 }
             } else if (entry.getKey().startsWith("log4j.logger.")) {
                 Map<String, String> fetchedLogger = fetchedLoggers.get(entry.getKey().substring("log4j.logger.".length()));
-                if (fetchedLogger == null || fetchedLogger.get("level") == null || !entry.getValue().equals(fetchedLogger.get("level"))) {
+                if (fetchedLogger == null || fetchedLogger.get("level") == null || parentLogLevelChanged(fetchedLoggers, ops, entry)) {
                     updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), Util.expandVar(entry.getValue(), ops.asMap()));
                 }
             }
@@ -484,6 +486,27 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             result = result.compose(previous -> updateConnectorLogger(reconciliation, host, port, logger.getKey(), getLoggerLevelFromAppenderCouple(logger.getValue())));
         }
         return result;
+    }
+
+    /*
+        We do use an optimization of not sending all the logger level each reconciliation. We can send only those which changed.
+        However we need to resend all lower hierarchy level logger levels.
+        So if root level changed in desired configuration, all other levels need to be reset as well.
+        If logger io.org changed, all loggers prefixed by io.org need to be reset.
+    */
+    protected boolean parentLogLevelChanged(Map<String, Map<String, String>> fetchedLoggers, OrderedProperties ops, Map.Entry<String, String> tested) {
+        if (!fetchedLoggers.get("root").get("level").equals(getLoggerLevelFromAppenderCouple(ops.asMap().get("log4j.rootLogger")))) {
+            return true;
+        }
+
+        AtomicBoolean result = new AtomicBoolean(false);
+        List<Map.Entry<String, String>> parents = ops.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith("log4j.logger." + tested.getKey())).collect(Collectors.toList());
+        parents.stream().forEach(entry -> {
+            if (!entry.getValue().equals(tested.getValue())) {
+                result.set(true);
+            }
+        });
+        return result.get();
     }
 
     /**

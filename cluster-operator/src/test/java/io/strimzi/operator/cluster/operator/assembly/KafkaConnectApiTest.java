@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -37,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -47,6 +49,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
@@ -278,5 +281,35 @@ public class KafkaConnectApiTest {
                             assertThat(map.get("unknown"), is(nullValue()));
                             async.flag();
                         }))));
+    }
+
+    @IsolatedTest
+    public void testChangeParentLoggerLevel(VertxTestContext context) {
+        String desiredLogging = "log4j.rootLogger=TRACE, CONSOLE\n" +
+                "log4j.logger.io.org=WARN\n" +
+                "log4j.logger.io.org.com=FATAL";
+
+        desiredLogging = Util.expandVars(desiredLogging);
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(desiredLogging);
+
+        KafkaConnectApiImpl client = new KafkaConnectApiImpl(vertx);
+
+        Map<String, Map<String, String>> fetched = new HashMap();
+        fetched.put("root", singletonMap("level", "INFO"));
+        fetched.put("io.org", singletonMap("level", "WARN"));
+        fetched.put("io.org.com", singletonMap("level", "FATAL"));
+
+        // root logger level changed
+        assertTrue(client.parentLogLevelChanged(fetched, ops, Map.entry("io.org.com", "WARN")));
+
+        fetched = new HashMap();
+        fetched.put("root", singletonMap("level", "TRACE"));
+        fetched.put("io.org", singletonMap("level", "ERROR"));
+        fetched.put("io.org.com", singletonMap("level", "FATAL"));
+
+        // root logger level did not change. The parent logger level did
+        assertTrue(client.parentLogLevelChanged(fetched, ops, Map.entry("io.org.com", "WARN")));
+        context.completeNow();
     }
 }
