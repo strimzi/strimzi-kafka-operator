@@ -182,6 +182,10 @@ public class Subject {
         return san;
     }
 
+    public boolean hasSubjectAltNames() {
+        return !dnsNames().isEmpty() || !ipAddresses().isEmpty();
+    }
+
     /**
      * @return The DN in the format understood by {@code openssl}.
      */

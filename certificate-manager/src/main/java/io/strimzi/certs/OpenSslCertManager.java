@@ -119,7 +119,7 @@ public class OpenSslCertManager implements CertManager {
                 out.append("basicConstraints = critical,CA:true,pathlen:0\n");
             }
             if (sbj != null) {
-                if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+                if (sbj.hasSubjectAltNames()) {
                     out.append("subjectAltName = @alt_names\n" +
                             "\n" +
                             "[alt_names]\n");
@@ -231,7 +231,7 @@ public class OpenSslCertManager implements CertManager {
         if (pathLength < 0) {
             throw new IllegalArgumentException("pathLength cannot be negative: " + pathLength);
         }
-        if (subject.subjectAltNames() != null && !subject.subjectAltNames().isEmpty()) {
+        if (subject.hasSubjectAltNames()) {
             throw new IllegalArgumentException("CA certificates should not have Subject Alternative Names");
         }
 
@@ -403,14 +403,12 @@ public class OpenSslCertManager implements CertManager {
                     .opt("-batch")
                     .optArg("-out", csrFile)
                     .optArg("-key", keyFile);
-            if (subject != null) {
-                if (subject.subjectAltNames() != null && subject.subjectAltNames().size() > 0) {
-                    sna = buildConfigFile(subject, true);
-                    args.optArg("-config", sna, true).optArg("-extensions", "v3_req");
-                }
-                args.optArg("-subj", subject);
-            }
 
+            if (subject.hasSubjectAltNames()) {
+                sna = buildConfigFile(subject, true);
+                args.optArg("-config", sna, true).optArg("-extensions", "v3_req");
+            }
+            args.optArg("-subj", subject);
             args.exec();
             delete(sna);
 
@@ -444,18 +442,13 @@ public class OpenSslCertManager implements CertManager {
 
         Path sna = null;
         try {
-            if (subject != null) {
-
-                if (subject.subjectAltNames() != null && subject.subjectAltNames().size() > 0) {
-
-                    // subject alt names need to be in an openssl configuration file
-                    sna = buildConfigFile(subject, false);
-                    cmd.optArg("-config", sna, true).optArg("-extensions", "v3_req");
-                }
-
-                cmd.optArg("-subj", subject);
+            if (subject.hasSubjectAltNames()) {
+                // subject alt names need to be in an openssl configuration file
+                sna = buildConfigFile(subject, false);
+                cmd.optArg("-config", sna, true).optArg("-extensions", "v3_req");
             }
 
+            cmd.optArg("-subj", subject);
             cmd.exec();
         } finally {
             delete(sna);
@@ -499,7 +492,7 @@ public class OpenSslCertManager implements CertManager {
                     .optArg("-enddate", notAfter)
                     .optArg("-config", defaultConfig, true);
 
-            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+            if (sbj.hasSubjectAltNames()) {
                 cmd.optArg("-extensions", "v3_req");
                 // subject alt names need to be in an openssl configuration file
                 sna = buildConfigFile(sbj, false);
