@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "consumer",
+        "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
         "producer", "resources", "jvmOptions", "logging",
         "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode
@@ -43,6 +43,7 @@ public class KafkaBridgeSpec extends Spec {
     private KafkaClientAuthentication authentication;
     private KafkaBridgeConsumerSpec consumer;
     private KafkaBridgeProducerSpec producer;
+    private KafkaBridgeAdminClientSpec adminClient;
     private ResourceRequirements resources;
     private JvmOptions jvmOptions;
     private Logging logging;
@@ -133,6 +134,16 @@ public class KafkaBridgeSpec extends Spec {
 
     public void setBootstrapServers(String bootstrapServers) {
         this.bootstrapServers = bootstrapServers;
+    }
+
+    @Description("Kafka AdminClient related configuration.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public KafkaBridgeAdminClientSpec getAdminClient() {
+        return adminClient;
+    }
+
+    public void setAdminClient(KafkaBridgeAdminClientSpec adminClient) {
+        this.adminClient = adminClient;
     }
 
     @Description("Kafka producer related configuration")
