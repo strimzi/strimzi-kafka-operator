@@ -29,31 +29,19 @@ import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static io.fabric8.kubernetes.client.Watcher.Action.ADDED;
-import static io.fabric8.kubernetes.client.Watcher.Action.DELETED;
-import static io.fabric8.kubernetes.client.Watcher.Action.MODIFIED;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
-import static java.util.Collections.singletonMap;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static io.fabric8.kubernetes.client.Watcher.Action.*;
+import static java.util.Collections.*;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -70,9 +58,8 @@ public class TopicOperatorTest {
     private MockTopicStore mockTopicStore = new MockTopicStore();
     private MockK8s mockK8s = new MockK8s();
     private TopicOperator topicOperator;
-    private Config config;
     private MetricsProvider metrics;
-    private ObjectMeta metadata = new ObjectMeta();
+    private final AtomicReference<ObjectMeta> metadata = new AtomicReference<>(new ObjectMeta());
 
     private static final Map<String, String> MANDATORY_CONFIG = new HashMap<>();
 
@@ -95,10 +82,8 @@ public class TopicOperatorTest {
     }
 
     @AfterAll
-    public static void after() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        vertx.close(done -> latch.countDown());
-        latch.await(30, TimeUnit.SECONDS);
+    public static void after() throws InterruptedException, ExecutionException {
+        vertx.close().toCompletionStage().toCompletableFuture().get();
     }
 
     @BeforeEach
@@ -106,14 +91,14 @@ public class TopicOperatorTest {
         mockKafka = new MockKafka();
         mockTopicStore = new MockTopicStore();
         mockK8s = new MockK8s();
-        config = new Config(new HashMap<>(MANDATORY_CONFIG));
+        Config config = new Config(new HashMap<>(MANDATORY_CONFIG));
         metrics = createCleanMetricsProvider();
         topicOperator = new TopicOperator(vertx, mockKafka, mockK8s, mockTopicStore, labels, "default-namespace", config, metrics);
-        metadata.setName(topicName.toString());
+        metadata.get().setName(topicName.toString());
         Map<String, String> lbls = new HashMap<>();
         lbls.put("app", "strimzi");
-        metadata.setLabels(lbls);
-        metadata.setAnnotations(new HashMap<>());
+        metadata.get().setLabels(lbls);
+        metadata.get().setAnnotations(new HashMap<>());
     }
 
     @AfterEach
@@ -141,12 +126,11 @@ public class TopicOperatorTest {
     public void testOnKafkaTopicAdded_ignorable(VertxTestContext context) {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder().withMetadata(new ObjectMetaBuilder().withName("non-topic").build()).build();
 
-        Checkpoint async = context.checkpoint();
         K8sTopicWatcher w = new K8sTopicWatcher(topicOperator, Future.succeededFuture(), () -> { });
         w.eventReceived(ADDED, kafkaTopic);
         mockKafka.assertEmpty(context);
         mockTopicStore.assertEmpty(context);
-        async.flag();
+        context.completeNow();
     }
 
     /** Test what happens when a non-topic KafkaTopic gets created in kubernetes */
@@ -163,7 +147,6 @@ public class TopicOperatorTest {
         String errorMessage = "KafkaTopic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null";
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
-        Checkpoint async = context.checkpoint();
         topicOperator.onResourceEvent(logContext, kafkaTopic, ADDED).onComplete(ar -> {
             assertFailed(context, ar);
             context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidTopicException.class)));
@@ -188,7 +171,7 @@ public class TopicOperatorTest {
                         .tag("reason", errorMessage)
                         .gauge().value(), is(0.0));
             });
-            async.flag();
+            context.completeNow();
 
         });
     }
@@ -196,14 +179,16 @@ public class TopicOperatorTest {
     /**
      * Trigger {@link TopicOperator#onResourceEvent(LogContext, KafkaTopic, io.fabric8.kubernetes.client.Watcher.Action)}
      * and have the Kafka and TopicStore respond with the given exceptions.
+     * @return future of resource completion.
      */
-    private TopicOperator resourceAdded(VertxTestContext context, CountDownLatch latch, Exception createException, Exception storeException) throws InterruptedException {
-        mockKafka.setCreateTopicResponse(topicName.toString(), createException);
+    private Future<Void> resourceAdded(VertxTestContext context, Exception storeException) {
+        mockKafka.setCreateTopicResponse(topicName.toString(), null);
         mockKafka.setTopicExistsResult(t -> Future.succeededFuture(false));
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
+        System.out.println(metadata);
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(metadata)
+                .withMetadata(metadata.get())
                 .withNewSpec()
                     .withReplicas(2)
                     .withPartitions(10)
@@ -213,29 +198,19 @@ public class TopicOperatorTest {
             topicName -> Future.succeededFuture(),
             topicName -> Future.succeededFuture(Utils.getTopicMetadata(TopicSerialization.fromTopicResource(kafkaTopic))));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
-        Checkpoint async = context.checkpoint();
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
 
-        topicOperator.onResourceEvent(logContext, kafkaTopic, ADDED).onComplete(ar -> {
-            if (createException != null
-                    || storeException != null) {
+        return topicOperator.onResourceEvent(logContext, kafkaTopic, ADDED).onComplete(ar -> {
+            if (storeException != null) {
                 assertFailed(context, ar);
                 Class<? extends Exception> expectedExceptionType;
-                if (createException != null) {
-                    expectedExceptionType = createException.getClass();
-                } else {
-                    expectedExceptionType = storeException.getClass();
-                }
+                expectedExceptionType = Objects.requireNonNullElse(null, storeException).getClass();
                 if (!expectedExceptionType.equals(ar.cause().getClass())) {
                     ar.cause().printStackTrace();
                 }
                 context.verify(() -> assertThat(ar.cause().getMessage(),  ar.cause().getClass().getName(), is(expectedExceptionType.getName())));
                 TopicName topicName = TopicSerialization.fromTopicResource(kafkaTopic).getTopicName();
-                if (createException != null) {
-                    mockKafka.assertNotExists(context, topicName);
-                } else {
-                    mockKafka.assertExists(context, topicName);
-                }
+                mockKafka.assertExists(context, topicName);
                 mockTopicStore.assertNotExists(context, topicName);
                 //TODO mockK8s.assertContainsEvent(context, e -> "Error".equals(e.getKind()));
             } else {
@@ -245,16 +220,8 @@ public class TopicOperatorTest {
                 mockTopicStore.assertContains(context, expectedTopic);
                 mockK8s.assertNoEvents(context);
             }
-            if (latch != null) {
-                latch.countDown();
-            }
-            async.flag();
         });
-        if (!context.awaitCompletion(60, TimeUnit.SECONDS)) {
-            context.failNow(new Throwable("Test timeout"));
-        }
 
-        return topicOperator;
     }
 
     /**
@@ -263,8 +230,8 @@ public class TopicOperatorTest {
      * 3. operator successfully creates in topic store
      */
     @Test
-    public void testOnKafkaTopicAdded(VertxTestContext context) throws InterruptedException {
-        resourceAdded(context, null, null, null);
+    public void testOnKafkaTopicAdded(VertxTestContext context) {
+        resourceAdded(context, null).onSuccess(x -> context.completeNow());
     }
 
     /**
@@ -272,12 +239,14 @@ public class TopicOperatorTest {
      * 2. error when creating topic in kafka
      */
     @Test
-    public void testOnKafkaTopicAdded_TopicExistsException(VertxTestContext context) throws InterruptedException {
+    public void testOnKafkaTopicAdded_TopicExistsException(VertxTestContext context) {
         Exception createException = new TopicExistsException("");
-        resourceAdded(context, null, createException, null);
-        // TODO check a k8s event got created
-        // TODO what happens when we subsequently reconcile?
-        assertNotReadyStatus(context, createException);
+        resourceAdded(context, createException).onComplete(x -> {
+            // TODO check a k8s event got created
+            // TODO what happens when we subsequently reconcile?
+            assertNotReadyStatus(context, createException);
+        })
+        .onComplete(x -> context.completeNow());
     }
 
     void assertNotReadyStatus(VertxTestContext context, Exception createException) {
@@ -296,10 +265,11 @@ public class TopicOperatorTest {
      * 2. error when creating topic in kafka
      */
     @Test
-    public void testOnKafkaTopicAdded_ClusterAuthorizationException(VertxTestContext context) throws InterruptedException {
+    public void testOnKafkaTopicAdded_ClusterAuthorizationException(VertxTestContext context) {
         Exception createException = new ClusterAuthorizationException("Test exception");
-        TopicOperator op = resourceAdded(context, null, createException, null);
-        assertNotReadyStatus(context, createException);
+        resourceAdded(context, createException)
+                    .onComplete(x -> assertNotReadyStatus(context, createException))
+                    .onComplete(x -> context.completeNow());
         // TODO check a k8s event got created
         // TODO what happens when we subsequently reconcile?
     }
@@ -310,14 +280,12 @@ public class TopicOperatorTest {
      * 3. error when creating in topic store
      */
     @Test
-    public void testOnKafkaTopicAdded_EntityExistsException(VertxTestContext context) throws InterruptedException {
+    public void testOnKafkaTopicAdded_EntityExistsException(VertxTestContext context) {
         TopicStore.EntityExistsException storeException = new TopicStore.EntityExistsException();
-        resourceAdded(context,
-                        null,
-                null,
-                storeException);
-        // TODO what happens when we subsequently reconcile?
-        assertNotReadyStatus(context, storeException);
+        resourceAdded(context, storeException)
+                // TODO what happens when we subsequently reconcile?
+                .onComplete(x -> assertNotReadyStatus(context, storeException))
+                .onComplete(x -> context.completeNow());
     }
 
     // TODO ^^ but a disconnected/loss of session error
@@ -338,7 +306,6 @@ public class TopicOperatorTest {
         mockKafka.setTopicMetadataResponse(topicName, topicMetadata, null);
         mockK8s.setCreateResponse(resourceName, null);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        Checkpoint async = context.checkpoint();
         topicOperator.onTopicCreated(logContext, topicName).onComplete(ar -> {
             assertSucceeded(context, ar);
             mockK8s.assertExists(context, resourceName);
@@ -353,7 +320,7 @@ public class TopicOperatorTest {
                         .tag("resource-namespace", "default-namespace")
                         .gauge().value(), is(1.0));
             });
-            async.flag();
+            context.completeNow();
         });
     }
 
@@ -394,7 +361,6 @@ public class TopicOperatorTest {
         });
         mockK8s.setCreateResponse(resourceName, null);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        Checkpoint async = context.checkpoint();
         topicOperator.onTopicCreated(logContext, topicName).onComplete(ar -> {
             assertSucceeded(context, ar);
             context.verify(() -> assertThat(counter.get(), is(4)));
@@ -416,7 +382,7 @@ public class TopicOperatorTest {
                         .tag("resource-namespace", "default-namespace")
                         .gauge().value(), is(1.0));
             });
-            async.flag();
+            context.completeNow();
         });
     }
 
@@ -442,7 +408,6 @@ public class TopicOperatorTest {
         mockKafka.setTopicExistsResult(t -> Future.succeededFuture(true));
         mockKafka.setTopicMetadataResponse(topicName, null, null);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        Checkpoint async = context.checkpoint();
         topicOperator.onTopicCreated(logContext, topicName).onComplete(ar -> {
             assertFailed(context, ar);
             context.verify(() -> assertThat(ar.cause().getClass().getName(), is(MaxAttemptsExceededException.class.getName())));
@@ -458,7 +423,7 @@ public class TopicOperatorTest {
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
             });
-            async.flag();
+            context.completeNow();
         });
     }
 
@@ -471,7 +436,6 @@ public class TopicOperatorTest {
     public void testOnTopicChanged(VertxTestContext context) {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
         Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "baz")).build();
-        Topic privateTopic = kubeTopic;
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
@@ -480,26 +444,25 @@ public class TopicOperatorTest {
         //mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
-                .create(privateTopic);
+                .create(kubeTopic);
         mockTopicStore.setUpdateTopicResponse(topicName, null);
 
         mockK8s.setCreateResponse(resourceName, null)
                 .createResource(resource);
         mockK8s.setModifyResponse(resourceName, null);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        Checkpoint async = context.checkpoint(3);
         topicOperator.onTopicConfigChanged(logContext, topicName).onComplete(ar -> {
             assertSucceeded(context, ar);
             context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("baz")));
             mockTopicStore.read(topicName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
                 context.verify(() -> assertThat(ar2.result().getConfig().get("cleanup.policy"), is("baz")));
-                async.flag();
+                context.completeNow();
             });
             mockK8s.getFromName(resourceName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"), is("baz")));
-                async.flag();
+                context.completeNow();
             });
 
             context.verify(() -> {
@@ -518,7 +481,7 @@ public class TopicOperatorTest {
                         .tag("resource-namespace", "default-namespace")
                         .gauge().value(), is(1.0));
             });
-            async.flag();
+            context.completeNow();
         });
     }
 
@@ -529,11 +492,9 @@ public class TopicOperatorTest {
      * Test reconciliation when a resource has been created while the operator wasn't running
      */
     @Test
-    public void testReconcile_withResource_noKafka_noPrivate(VertxTestContext context) throws InterruptedException {
+    public void testReconcile_withResource_noKafka_noPrivate(VertxTestContext context) {
 
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
-        Topic kafkaTopic = null;
-        Topic privateTopic = null;
 
         Checkpoint async0 = context.checkpoint();
         mockKafka.setCreateTopicResponse(topicName.toString(), null);
@@ -547,9 +508,7 @@ public class TopicOperatorTest {
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, topicResource);
         mockK8s.createResource(topicResource).onComplete(ar -> async0.flag());
 
-        CountDownLatch latch = new CountDownLatch(1);
-        Checkpoint async = context.checkpoint(1);
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, null, null).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertExists(context, kubeTopic.getTopicName());
@@ -557,12 +516,9 @@ public class TopicOperatorTest {
             mockTopicStore.read(topicName).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
-                async.flag();
-                latch.countDown();
+                context.completeNow();
             });
         });
-        latch.await(30, TimeUnit.SECONDS);
-        context.completeNow();
     }
 
     /**
@@ -573,8 +529,6 @@ public class TopicOperatorTest {
     public void testReconcile_withResource_noKafka_withPrivate(VertxTestContext context) {
 
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
-        Topic kafkaTopic = null;
-        Topic privateTopic = kubeTopic;
 
         Checkpoint async0 = context.checkpoint(2);
         KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
@@ -583,12 +537,10 @@ public class TopicOperatorTest {
                 .createResource(topicResource).onComplete(ar -> async0.flag());
         mockK8s.setDeleteResponse(resourceName, null);
         mockTopicStore.setCreateTopicResponse(topicName, null)
-                .create(privateTopic).onComplete(ar -> async0.flag());
+                .create(kubeTopic).onComplete(ar -> async0.flag());
         mockTopicStore.setDeleteTopicResponse(topicName, null);
 
-        Checkpoint async = context.checkpoint();
-
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, null, kubeTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertNotExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
@@ -602,21 +554,19 @@ public class TopicOperatorTest {
      * Test reconciliation when a topic has been created while the operator wasn't running
      */
     @Test
-    public void testReconcile_noResource_withKafka_noPrivate(VertxTestContext context) throws InterruptedException {
+    public void testReconcile_noResource_withKafka_noPrivate(VertxTestContext context) {
 
-        Topic kubeTopic = null;
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic privateTopic = null;
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
 
-        CountDownLatch async0 = new CountDownLatch(1);
         mockTopicStore.setCreateTopicResponse(topicName, null);
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
-        async0.await();
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
+
+
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        CountDownLatch async = new CountDownLatch(2);
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, null, kafkaTopic, null).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -625,18 +575,12 @@ public class TopicOperatorTest {
             mockTopicStore.read(topicName).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(readResult.result(), is(kafkaTopic)));
-                async.countDown();
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(kafkaTopic)));
-                async.countDown();
             });
-            try {
-                async.await(60, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+
             context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic)));
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
@@ -648,8 +592,8 @@ public class TopicOperatorTest {
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                context.completeNow();
             });
-            context.completeNow();
         });
     }
 
@@ -668,9 +612,7 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_noResource_withKafka_withPrivate(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = null;
         Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
-        Topic privateTopic = kafkaTopic;
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
@@ -680,14 +622,13 @@ public class TopicOperatorTest {
         mockTopicStore.setDeleteTopicResponse(topicName, null);
         async0.await();
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        Checkpoint async = context.checkpoint();
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, null, kafkaTopic, kafkaTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertNotExists(context, topicName);
             mockK8s.assertNotExists(context, topicName.asKubeName());
             mockKafka.assertNotExists(context, topicName);
             mockK8s.assertNoEvents(context);
-            async.flag();
+            context.completeNow();
         });
     }
 
@@ -697,13 +638,11 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_matching(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic kafkaTopic = kubeTopic;
-        Topic privateTopic = null;
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kubeTopic).onComplete(ar -> async0.countDown());
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
         KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
@@ -711,8 +650,7 @@ public class TopicOperatorTest {
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
 
-        Checkpoint async = context.checkpoint();
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kubeTopic, null).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -721,9 +659,9 @@ public class TopicOperatorTest {
             mockTopicStore.read(topicName).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
-                async.flag();
+                context.completeNow();
             });
-            context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic)));
+            context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kubeTopic)));
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
@@ -752,9 +690,8 @@ public class TopicOperatorTest {
     public void testReconcile_withResource_withKafka_noPrivate_overriddenName(VertxTestContext context) throws InterruptedException {
         TopicName topicName = new TopicName("__consumer_offsets");
         ResourceName kubeName = new ResourceName("consumer-offsets");
-        Topic kubeTopic = new Topic.Builder(topicName, kubeName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic privateTopic = null;
+        Topic kubeTopic = new Topic.Builder(topicName, kubeName, 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName_ -> Future.succeededFuture());
@@ -766,8 +703,7 @@ public class TopicOperatorTest {
         mockTopicStore.setCreateTopicResponse(topicName, null);
         async0.await();
 
-        Checkpoint async = context.checkpoint();
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, null).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, kubeName);
@@ -777,7 +713,7 @@ public class TopicOperatorTest {
             mockTopicStore.read(topicName).onComplete(readResult -> {
                 context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
                 context.verify(() -> assertThat(readResult.result().getResourceName(), is(kubeName)));
-                async.flag();
+                context.completeNow();
             });
             context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic)));
             context.verify(() -> {
@@ -799,27 +735,23 @@ public class TopicOperatorTest {
      * the topics are irreconcilably different: Kafka wins
      */
     @Test
-    public void testReconcile_withResource_withKafka_noPrivate_configsReconcilable(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true"), metadata).build();
-        Topic privateTopic = null;
-        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar"), metadata).build();
+    public void testReconcile_withResource_withKafka_noPrivate_configsReconcilable(VertxTestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true"), metadata.get()).build();
+        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar"), metadata.get()).build();
 
-        CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
-        mockK8s.createResource(topic).onComplete(ar -> async0.countDown());
+        mockK8s.createResource(topic);
         mockK8s.setModifyResponse(topicName.asKubeName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
-        async0.await();
 
-        CountDownLatch async = new CountDownLatch(2);
-        topicOperator.reconcile(reconciliation(logContext), logContext, topic, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, topic, kubeTopic, kafkaTopic, null).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockTopicStore.assertExists(context, topicName);
             mockK8s.assertExists(context, topicName.asKubeName());
@@ -827,18 +759,12 @@ public class TopicOperatorTest {
             mockTopicStore.read(topicName).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(readResult.result(), is(mergedTopic)));
-                async.countDown();
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(mergedTopic)));
-                async.countDown();
             });
-            try {
-                async.await(60, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+
             context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(mergedTopic)));
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
@@ -849,8 +775,9 @@ public class TopicOperatorTest {
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                context.completeNow();
             });
-            context.completeNow();
+
         });
     }
 
@@ -859,25 +786,21 @@ public class TopicOperatorTest {
      * the topics are irreconcilably different: Kafka wins
      */
     @Test
-    public void testReconcile_withResource_withKafka_noPrivate_irreconcilable(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short) 2, map("cleanup.policy", "baz"), metadata).build();
-        Topic privateTopic = null;
+    public void testReconcile_withResource_withKafka_noPrivate_irreconcilable(VertxTestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short) 2, map("cleanup.policy", "baz"), metadata.get()).build();
 
-        CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
 
         KafkaTopic topic = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
-        mockK8s.createResource(topic).onComplete(ar -> async0.countDown());
+        mockK8s.createResource(topic);
         mockK8s.setModifyResponse(topicName.asKubeName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
-        async0.await();
 
-        CountDownLatch async = new CountDownLatch(2);
-        topicOperator.reconcile(reconciliation(logContext), logContext, topic, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
+        topicOperator.reconcile(reconciliation(logContext), logContext, topic, kubeTopic, kafkaTopic, null).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockK8s.assertContainsEvent(context, e ->
                     e.getMessage().contains("KafkaTopic is incompatible with the topic metadata. " +
@@ -888,20 +811,17 @@ public class TopicOperatorTest {
             mockTopicStore.read(topicName).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(readResult.result(), is(kafkaTopic)));
-                async.countDown();
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(kafkaTopic)));
-                async.countDown();
             });
-            try {
-                async.await(60, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic)));
-            context.completeNow();
+
+            context.verify(() -> {
+                assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic));
+                context.completeNow();
+            });
+
         });
     }
 
@@ -910,48 +830,39 @@ public class TopicOperatorTest {
      * a 3 way merge is needed.
      */
     @Test
-    public void testReconcile_withResource_withKafka_withPrivate_3WayMerge(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "baz"), metadata).build();
-        Topic privateTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), metadata).build();
-        Topic resultTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+    public void testReconcile_withResource_withKafka_withPrivate_3WayMerge(VertxTestContext context) {
+        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "baz"), metadata.get()).build();
+        Topic privateTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), metadata.get()).build();
+        Topic resultTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
 
-        CountDownLatch async0 = new CountDownLatch(3);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
-        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic).onComplete(ar -> async0.countDown());
+        mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
-        mockK8s.createResource(resource).onComplete(ar -> async0.countDown());
+        mockK8s.createResource(resource);
         mockK8s.setModifyResponse(topicName.asKubeName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
-        mockTopicStore.create(privateTopic).onComplete(ar -> async0.countDown());
-        async0.await();
+        mockTopicStore.create(privateTopic);
 
-        CountDownLatch async = new CountDownLatch(3);
         topicOperator.reconcile(reconciliation(logContext), logContext, resource, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockK8s.assertNoEvents(context);
             mockTopicStore.read(topicName).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(readResult.result(), is(resultTopic)));
-                async.countDown();
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(resultTopic)));
-                async.countDown();
             });
-            context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(resultTopic)));
-            async.countDown();
-            try {
-                async.await(60, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            context.completeNow();
+            context.verify(() -> {
+                assertThat(mockKafka.getTopicState(topicName), is(resultTopic));
+                context.completeNow();
+            });
         });
     }
 
@@ -964,28 +875,25 @@ public class TopicOperatorTest {
     // + non-matching predicate
     // + error cases
 
-    private void resourceRemoved(VertxTestContext context, CountDownLatch latch, Exception deleteTopicException, Exception storeException) {
+    private Future<Void> resourceRemoved(VertxTestContext context, Exception deleteTopicException, Exception storeException) {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
-        Topic kafkaTopic = kubeTopic;
-        Topic privateTopic = kubeTopic;
 
         mockKafka.setCreateTopicResponse(topicName.toString(), null)
-                .createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
+                .createTopic(Reconciliation.DUMMY_RECONCILIATION, kubeTopic);
         mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kubeTopic), null);
         mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
-                .create(privateTopic);
+                .create(kubeTopic);
         mockTopicStore.setDeleteTopicResponse(topicName, storeException);
 
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.DELETED, resource);
 
-        Checkpoint async = context.checkpoint();
-        topicOperator.onResourceEvent(logContext, resource, DELETED).onComplete(ar -> {
+        return topicOperator.onResourceEvent(logContext, resource, DELETED).onComplete(ar -> {
             if (deleteTopicException != null || storeException != null) {
 
-                if (deleteTopicException != null && deleteTopicException instanceof TopicDeletionDisabledException) {
+                if (deleteTopicException instanceof TopicDeletionDisabledException) {
                     // For the specific topic deletion disabled exception the exception will be caught and the resource
                     // event will be processed successfully
                     assertSucceeded(context, ar);
@@ -996,26 +904,22 @@ public class TopicOperatorTest {
 
                 if (deleteTopicException != null) {
                     // If there was a broker deletion exception the broker topic should still exist
-                    mockKafka.assertExists(context, kafkaTopic.getTopicName());
+                    mockKafka.assertExists(context, kubeTopic.getTopicName());
                 } else {
-                    mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
+                    mockKafka.assertNotExists(context, kubeTopic.getTopicName());
                 }
 
-                if (deleteTopicException != null && deleteTopicException instanceof TopicDeletionDisabledException) {
+                if (deleteTopicException instanceof TopicDeletionDisabledException) {
                     //If there was a topic deletion disabled exception then the Store topic would still be deleted.
-                    mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
+                    mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
                 } else {
-                    mockTopicStore.assertExists(context, kafkaTopic.getTopicName());
+                    mockTopicStore.assertExists(context, kubeTopic.getTopicName());
                 }
 
             } else {
                 assertSucceeded(context, ar);
-                mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
-                mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
-            }
-            async.flag();
-            if (latch != null) {
-                latch.countDown();
+                mockKafka.assertNotExists(context, kubeTopic.getTopicName());
+                mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
             }
         });
     }
@@ -1024,7 +928,6 @@ public class TopicOperatorTest {
     public void testOnKafkaTopicChanged(VertxTestContext context) {
         Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), null).build();
         Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), null).build();
-        Topic privateTopic = kafkaTopic;
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
 
@@ -1034,13 +937,11 @@ public class TopicOperatorTest {
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
-                .create(privateTopic);
+                .create(kafkaTopic);
         mockTopicStore.setUpdateTopicResponse(topicName, null);
 
         mockK8s.setCreateResponse(resourceName, null);
-        mockK8s.createResource(resource).onComplete(ar -> {
-            assertSucceeded(context, ar);
-        });
+        mockK8s.createResource(resource).onComplete(ar -> assertSucceeded(context, ar));
         mockK8s.setModifyResponse(resourceName, null);
 
         CountDownLatch async = new CountDownLatch(3);
@@ -1067,76 +968,59 @@ public class TopicOperatorTest {
                         .tag("name", topicName.toString())
                         .tag("resource-namespace", "default-namespace")
                         .gauge().value(), is(1.0));
+                context.completeNow();
             });
 
-            async.countDown();
-            try {
-                async.await(60, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            context.completeNow();
+
         });
     }
 
     @Test
     public void testOnKafkaTopicRemoved(VertxTestContext context) {
-        Exception deleteTopicException = null;
-        Exception storeException = null;
-        resourceRemoved(context, null, deleteTopicException, storeException);
+        Future<Void> removalFuture = resourceRemoved(context, null, null);
+        removalFuture.onSuccess(x -> context.completeNow());
+        removalFuture.onFailure(context::failNow);
     }
 
     @Test
     public void testOnKafkaTopicRemoved_UnknownTopicOrPartitionException(VertxTestContext context) {
         Exception deleteTopicException = new UnknownTopicOrPartitionException();
-        Exception storeException = null;
-        resourceRemoved(context, null, deleteTopicException, storeException);
+        resourceRemoved(context, deleteTopicException, null).onComplete(x -> context.completeNow());
     }
 
     @Test
     public void testOnKafkaTopicRemoved_NoSuchEntityExistsException(VertxTestContext context) {
-        Exception deleteTopicException = null;
         Exception storeException = new TopicStore.NoSuchEntityExistsException();
-        resourceRemoved(context, null, deleteTopicException, storeException);
+        resourceRemoved(context, null, storeException).onComplete(x -> context.completeNow());
     }
 
     @Test
     public void testOnKafkaTopicRemoved_TopicDeletionDisabledException(VertxTestContext context) {
         // Deals with the situation where the delete.topic.enable=false config is set in the broker
         Exception deleteTopicException = new TopicDeletionDisabledException("Topic deletion disable");
-        Exception storeException = null;
-        resourceRemoved(context, null, deleteTopicException, storeException);
+        resourceRemoved(context, deleteTopicException, null).onComplete(x -> context.completeNow());
     }
+
 
     private void topicDeleted(VertxTestContext context, Exception storeException, Exception k8sException) {
-        topicDeleted(context, storeException, k8sException, false);
-    }
-
-    private void topicDeleted(VertxTestContext context, Exception storeException, Exception k8sException, boolean topicExists) {
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).withMapName(resourceName).build();
-        Topic kafkaTopic = kubeTopic;
-        Topic privateTopic = kubeTopic;
 
         mockK8s.setCreateResponse(resourceName, null)
                 .createResource(TopicSerialization.toTopicResource(kubeTopic, labels));
         mockK8s.setDeleteResponse(resourceName, k8sException);
 
         mockTopicStore.setCreateTopicResponse(topicName, null)
-                .create(privateTopic);
+                .create(kubeTopic);
         mockTopicStore.setDeleteTopicResponse(topicName, storeException);
 
-        mockKafka.setTopicExistsResult(t -> Future.succeededFuture(topicExists));
+        mockKafka.setTopicExistsResult(t -> Future.succeededFuture(false));
 
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        Checkpoint async = context.checkpoint();
         topicOperator.onTopicDeleted(logContext, topicName).onComplete(ar -> {
             if (k8sException != null
-                    || storeException != null
-                    || topicExists) {
+                    || storeException != null) {
                 assertFailed(context, ar);
-                if (topicExists) {
-                    mockK8s.assertExists(context, resourceName);
-                } else if (k8sException == null) {
+                 if (k8sException == null) {
                     mockK8s.assertNotExists(context, resourceName);
                 } else {
                     mockK8s.assertExists(context, resourceName);
@@ -1147,36 +1031,30 @@ public class TopicOperatorTest {
                 mockK8s.assertNotExists(context, resourceName);
                 mockTopicStore.assertNotExists(context, topicName);
             }
-            async.flag();
+            context.completeNow();
         });
     }
 
     @Test
     public void testOnTopicDeleted(VertxTestContext context) {
-        Exception storeException = null;
-        Exception k8sException = null;
-        topicDeleted(context, storeException, k8sException);
+        topicDeleted(context, null, null);
     }
 
     @Test
     public void testOnTopicDeletedSpurious(VertxTestContext context) {
-        Exception storeException = null;
-        Exception k8sException = null;
-        topicDeleted(context, storeException, k8sException, false);
+        topicDeleted(context, null, null);
     }
 
     @Test
     public void testOnTopicDeleted_NoSuchEntityExistsException(VertxTestContext context) {
-        Exception k8sException = null;
         Exception storeException = new TopicStore.NoSuchEntityExistsException();
-        topicDeleted(context, storeException, k8sException);
+        topicDeleted(context, storeException, null);
     }
 
     @Test
     public void testOnTopicDeleted_KubernetesClientException(VertxTestContext context) {
         Exception k8sException = new KubernetesClientException("Test exception");
-        Exception storeException = null;
-        topicDeleted(context, storeException, k8sException);
+        topicDeleted(context, null, k8sException);
     }
 
     @Test
@@ -1235,51 +1113,66 @@ public class TopicOperatorTest {
     }
 
     @Test
-    public void testReconcileMetrics(VertxTestContext context) throws InterruptedException {
+    public void testReconcileMetrics(VertxTestContext context) {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
-        resourceAdded(context, null, null, null);
-        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
+        resourceAdded(context, null)
+                .compose(x -> topicOperator.reconcileAllTopics("periodic"))
+                .onComplete(context.succeeding(e -> context.verify(() -> {
+                        System.out.println("Here");
+                        MeterRegistry registry = metrics.meterRegistry();
 
-        Checkpoint async = context.checkpoint();
-        reconcileFuture.onComplete(context.succeeding(e -> context.verify(() -> {
-            MeterRegistry registry = metrics.meterRegistry();
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                                .tag("kind", "KafkaTopic")
+                                .tag("name", topicName.toString())
+                                .tag("resource-namespace", "default-namespace")
+                                .gauge().value(), is(1.0));
 
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                    .tag("kind", "KafkaTopic")
-                    .tag("name", topicName.toString())
-                    .tag("resource-namespace", "default-namespace")
-                    .gauge().value(), is(1.0));
-
-            async.flag();
-        })));
+                        context.completeNow();
+                    })));
     }
 
     @Test
-    public void testReconcileMetricsWithPausedTopic(VertxTestContext context) throws InterruptedException {
+    public void testReconcileMetricsWithPausedTopic(VertxTestContext context) {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
-        metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "false");
-        resourceAdded(context, null, null, null);
-        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
+        metadata.get().getAnnotations().put("strimzi.io/pause-reconciliation", "false");
 
-        // workaround for the vertx junit5 integration
-        CountDownLatch latch = new CountDownLatch(2);
-        CountDownLatch splitLatch = new CountDownLatch(1);
+        resourceAdded(context, null)
+                .compose(x ->  topicOperator.reconcileAllTopics("periodic"))
+                .onComplete(context.succeeding(e -> context.verify(() -> {
+                        MeterRegistry registry = metrics.meterRegistry();
 
-        reconcileFuture.onComplete(context.succeeding(e -> context.verify(() -> {
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                                .tag("kind", "KafkaTopic")
+                                .tag("name", topicName.toString())
+                                .tag("resource-namespace", "default-namespace")
+                                .gauge().value(), is(1.0));
+        })))
+        .onSuccess(x -> metadata.get().getAnnotations().put("strimzi.io/pause-reconciliation", "true"))
+        .compose(x  -> resourceAdded(context, null))
+        .onComplete(x -> topicOperator.reconcileAllTopics("periodic2"))
+        .onComplete(context.succeeding(f -> context.verify(() -> {
             MeterRegistry registry = metrics.meterRegistry();
 
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(2.0));
+            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(1.0));
             assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
             assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
@@ -1291,62 +1184,28 @@ public class TopicOperatorTest {
                     .tag("name", topicName.toString())
                     .tag("resource-namespace", "default-namespace")
                     .gauge().value(), is(1.0));
+        })))
+        .onSuccess(x -> context.completeNow());
 
-            latch.countDown();
-            splitLatch.countDown();
-        })));
-
-        splitLatch.await(10_000, TimeUnit.MILLISECONDS);
-        metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "true");
-
-        resourceAdded(context, null, null, null);
-        topicOperator.reconcileAllTopics("periodic").onComplete(context.succeeding(f -> context.verify(() -> {
-            MeterRegistry registry = metrics.meterRegistry();
-
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(2.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(1.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(2.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(2L));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                    .tag("kind", "KafkaTopic")
-                    .tag("name", topicName.toString())
-                    .tag("resource-namespace", "default-namespace")
-                    .gauge().value(), is(1.0));
-
-            latch.countDown();
-        })));
-
-        assertThat(latch.await(10_000, TimeUnit.MILLISECONDS), is(true));
-        context.completeNow();
     }
 
     @Test
-    public void testReconcileMetricsDeletedTopic(VertxTestContext context) throws InterruptedException {
+    public void testReconcileMetricsDeletedTopic(VertxTestContext context) {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
-        Future<?> reconcileFuture = topicOperator.reconcileAllTopics("periodic");
-        CountDownLatch addLatch = new CountDownLatch(1);
-        resourceAdded(context, addLatch, null, null);
-        addLatch.await(30, TimeUnit.SECONDS);
-        CountDownLatch deleteLatch = new CountDownLatch(1);
-        resourceRemoved(context, deleteLatch,  null, null);
-        deleteLatch.await(30, TimeUnit.SECONDS);
+        topicOperator.reconcileAllTopics("periodic")
+                .onSuccess(x -> resourceAdded(context, null))
+                .onSuccess(x -> resourceRemoved(context, null, null))
+                .onComplete(context.succeeding(e -> {
+                    MeterRegistry registry = metrics.meterRegistry();
 
-        Checkpoint async = context.checkpoint();
-        reconcileFuture.onComplete(context.succeeding(e -> {
-            MeterRegistry registry = metrics.meterRegistry();
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
-            assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
-            async.flag();
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
+                    context.completeNow();
         }));
     }
 
@@ -1359,9 +1218,7 @@ public class TopicOperatorTest {
         MetricsProvider metrics = new MicrometerMetricsProvider();
         MeterRegistry registry = metrics.meterRegistry();
 
-        registry.forEachMeter(meter -> {
-            registry.remove(meter);
-        });
+        registry.forEachMeter(registry::remove);
 
         return metrics;
     }
