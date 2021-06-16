@@ -10,13 +10,11 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -29,14 +27,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.matches;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @ExtendWith(VertxExtension.class)
@@ -81,7 +73,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
      * Configure the given {@code mockClient} to return the given {@code op}
      * that's appropriate for the kind of resource being tests.
      */
-    protected abstract void mocker(C mockClient, MixedOperation op);
+    protected abstract void mocker(C mockClient, MixedOperation<T, L, R> op);
 
     /** Create the subclass of ResourceOperation to be tested */
     protected abstract AbstractNonNamespacedResourceOperator<C, T, L, R> createResourceOperations(
@@ -97,12 +89,9 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
-        EditReplacePatchDeletable mockR = mock(resourceType());
-        HasMetadata hasMetadata = mock(HasMetadata.class);
         when(mockResource.get()).thenReturn(resource);
-
-        when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockR);
-        when(mockR.patch(any())).thenReturn(hasMetadata);
+        when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockResource);
+        when(mockResource.patch(any(HasMetadata.class))).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -118,7 +107,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource())
                 .onComplete(context.succeeding(ar -> {
                     verify(mockResource).get();
-                    verify(mockR).patch((T) any());
+                    verify(mockResource).patch(any(HasMetadata.class));
                     verify(mockResource, never()).create(any());
                     verify(mockResource, never()).create();
                     verify(mockResource, never()).createOrReplace(any());
