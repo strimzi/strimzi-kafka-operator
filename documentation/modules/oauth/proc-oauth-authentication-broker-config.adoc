@@ -124,8 +124,8 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
     enablePlain: true <8>
     tokenEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/token__ <9>
     customClaimCheck: "@.custom == 'custom-value'" <10>
-    clientAudience: __audience__ <11>
-    clientScope: __scope__ <12>
+    clientAudience: __AUDIENCE__ <11>
+    clientScope: __SCOPE__ <12>
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
 <2> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
