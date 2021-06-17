@@ -122,7 +122,7 @@ public class OperatorMetricsTest {
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
-        Labels nsLabel= Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue"));
+        Labels nsLabel = Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue"));
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, nsLabel) {
             @Override
