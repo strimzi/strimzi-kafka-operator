@@ -1753,8 +1753,8 @@ spec:
                       required:
                       - name
                       - valueFrom
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as environment variables.
+                    description: Makes data from a Secret or ConfigMap available in
+                      the Kafka Connect pods as environment variables.
                   volumes:
                     type: array
                     items:
@@ -1810,8 +1810,8 @@ spec:
                             Secret or ConfigMap has to be specified.
                       required:
                       - name
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as volumes.
+                    description: Makes data from a Secret or ConfigMap available in
+                      the Kafka Connect pods as volumes.
                 description: Pass data from Secrets or ConfigMaps to the Kafka Connect
                   pods and use them to configure connectors.
               build:
@@ -4035,8 +4035,8 @@ spec:
                       required:
                       - name
                       - valueFrom
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as environment variables.
+                    description: Makes data from a Secret or ConfigMap available in
+                      the Kafka Connect pods as environment variables.
                   volumes:
                     type: array
                     items:
@@ -4092,8 +4092,8 @@ spec:
                             Secret or ConfigMap has to be specified.
                       required:
                       - name
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as volumes.
+                    description: Makes data from a Secret or ConfigMap available in
+                      the Kafka Connect pods as volumes.
                 description: Pass data from Secrets or ConfigMaps to the Kafka Connect
                   pods and use them to configure connectors.
               build:
@@ -6317,8 +6317,8 @@ spec:
                       required:
                       - name
                       - valueFrom
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as environment variables.
+                    description: Makes data from a Secret or ConfigMap available in
+                      the Kafka Connect pods as environment variables.
                   volumes:
                     type: array
                     items:
@@ -6374,8 +6374,8 @@ spec:
                             Secret or ConfigMap has to be specified.
                       required:
                       - name
-                    description: Allows to pass data from Secret or ConfigMap to the
-                      Kafka Connect pods as volumes.
+                    description: Makes data from a Secret or ConfigMap available in
+                      the Kafka Connect pods as volumes.
                 description: Pass data from Secrets or ConfigMaps to the Kafka Connect
                   pods and use them to configure connectors.
               build:
