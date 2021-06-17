@@ -12,7 +12,6 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
@@ -36,11 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -48,9 +43,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -102,6 +95,7 @@ public class SimpleAclOperatorTest {
         context.completeNow();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testReconcileInternalCreateAddsAclsToAuthorizer(VertxTestContext context) {
         Admin mockAdminClient = mock(AdminClient.class);
@@ -130,7 +124,6 @@ public class SimpleAclOperatorTest {
             mockCreateAcls(mockAdminClient, aclBindingsCaptor);
         });
 
-        Checkpoint async = context.checkpoint();
         aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
                 .onComplete(context.succeeding(rr -> context.verify(() -> {
                     Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
@@ -142,10 +135,11 @@ public class SimpleAclOperatorTest {
                     assertThat(capturedResourcePatterns, hasSize(2));
                     assertThat(capturedResourcePatterns, hasItems(resource1, resource2));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testReconcileInternalUpdateCreatesNewAclsAndDeletesOldAcls(VertxTestContext context) {
         Admin mockAdminClient = mock(AdminClient.class);
@@ -169,8 +163,7 @@ public class SimpleAclOperatorTest {
             mockDeleteAcls(mockAdminClient, Collections.singleton(readAclBinding), aclBindingFiltersCaptor);
         });
 
-        Checkpoint async = context.checkpoint();
-        aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet(asList(rule1)))
+        aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet<>(Collections.singletonList(rule1)))
                 .onComplete(context.succeeding(rr -> context.verify(() -> {
 
                     // Create Write rule for resource 2
@@ -192,10 +185,11 @@ public class SimpleAclOperatorTest {
                     assertThat(capturedResourcePatternFilters, hasSize(1));
                     assertThat(capturedResourcePatternFilters, hasItem(resource1.toFilter()));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testReconcileInternalDelete(VertxTestContext context) {
         Admin mockAdminClient = mock(AdminClient.class);
@@ -212,7 +206,6 @@ public class SimpleAclOperatorTest {
             mockDeleteAcls(mockAdminClient, Collections.singleton(readAclBinding), aclBindingFiltersCaptor);
         });
 
-        Checkpoint async = context.checkpoint();
         aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", null)
                 .onComplete(context.succeeding(rr -> context.verify(() -> {
 
@@ -225,10 +218,11 @@ public class SimpleAclOperatorTest {
                     assertThat(capturedResourcePatternFilters, hasSize(1));
                     assertThat(capturedResourcePatternFilters, hasItem(resource.toFilter()));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
+    @SuppressWarnings("unchecked")
     private void mockDescribeAcls(Admin mockAdminClient, AclBindingFilter aclBindingFilter, Collection<AclBinding> aclBindings)
             throws InterruptedException, ExecutionException {
         DescribeAclsResult result = mock(DescribeAclsResult.class);
@@ -238,6 +232,7 @@ public class SimpleAclOperatorTest {
         when(mockAdminClient.describeAcls(aclBindingFilter != null ? aclBindingFilter : any())).thenReturn(result);
     }
 
+    @SuppressWarnings("unchecked")
     private void mockCreateAcls(Admin mockAdminClient, ArgumentCaptor<Collection<AclBinding>> aclBindingsCaptor)
             throws InterruptedException, ExecutionException {
         CreateAclsResult result = mock(CreateAclsResult.class);
@@ -247,6 +242,7 @@ public class SimpleAclOperatorTest {
         when(mockAdminClient.createAcls(aclBindingsCaptor.capture())).thenReturn(result);
     }
 
+    @SuppressWarnings("unchecked")
     private void mockDeleteAcls(Admin mockAdminClient, Collection<AclBinding> aclBindings, ArgumentCaptor<Collection<AclBindingFilter>> aclBindingFiltersCaptor)
             throws InterruptedException, ExecutionException {
         DeleteAclsResult result = mock(DeleteAclsResult.class);

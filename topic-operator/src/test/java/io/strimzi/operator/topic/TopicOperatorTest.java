@@ -20,7 +20,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
@@ -32,19 +31,13 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.fabric8.kubernetes.client.Watcher.Action.ADDED;
-import static io.fabric8.kubernetes.client.Watcher.Action.DELETED;
-import static io.fabric8.kubernetes.client.Watcher.Action.MODIFIED;
+import static io.fabric8.kubernetes.client.Watcher.Action.*;
 import static java.util.Collections.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -501,7 +494,7 @@ public class TopicOperatorTest {
 
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
 
-        Checkpoint async0 = context.checkpoint();
+
         mockKafka.setCreateTopicResponse(topicName.toString(), null);
         //mockKafka.setTopicMetadataResponse(topicName, null, null);
         mockKafka.setTopicMetadataResponse(
@@ -511,19 +504,19 @@ public class TopicOperatorTest {
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
         KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, topicResource);
-        mockK8s.createResource(topicResource).onComplete(ar -> async0.flag());
-
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, null, null).onComplete(reconcileResult -> {
-            assertSucceeded(context, reconcileResult);
-            mockKafka.assertExists(context, kubeTopic.getTopicName());
-            mockTopicStore.assertExists(context, kubeTopic.getTopicName());
-            mockK8s.assertNoEvents(context);
-            mockTopicStore.read(topicName).onComplete(readResult -> {
-                assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
-                context.completeNow();
-            });
-        });
+        mockK8s.createResource(topicResource).onComplete(x ->
+                topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, null, null)
+                        .onComplete(reconcileResult -> {
+                                        assertSucceeded(context, reconcileResult);
+                                        mockKafka.assertExists(context, kubeTopic.getTopicName());
+                                        mockTopicStore.assertExists(context, kubeTopic.getTopicName());
+                                        mockK8s.assertNoEvents(context);
+                                        mockTopicStore.read(topicName).onComplete(readResult -> {
+                                            assertSucceeded(context, readResult);
+                                            context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
+                                            context.completeNow();
+                                        });
+        }));
     }
 
     /**
@@ -534,24 +527,24 @@ public class TopicOperatorTest {
     public void testReconcile_withResource_noKafka_withPrivate(VertxTestContext context) {
 
         Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
-
-        Checkpoint async0 = context.checkpoint(2);
         KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.DELETED, topicResource);
-        mockK8s.setCreateResponse(resourceName, null)
-                .createResource(topicResource).onComplete(ar -> async0.flag());
-        mockK8s.setDeleteResponse(resourceName, null);
-        mockTopicStore.setCreateTopicResponse(topicName, null)
-                .create(kubeTopic).onComplete(ar -> async0.flag());
-        mockTopicStore.setDeleteTopicResponse(topicName, null);
 
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, null, kubeTopic).onComplete(reconcileResult -> {
-            assertSucceeded(context, reconcileResult);
-            mockKafka.assertNotExists(context, kubeTopic.getTopicName());
-            mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
-            mockK8s.assertNotExists(context, kubeTopic.getResourceName());
-            mockK8s.assertNoEvents(context);
-            context.completeNow();
+        mockK8s.setDeleteResponse(resourceName, null)
+               .setCreateResponse(resourceName, null)
+               .createResource(topicResource)
+               .compose(x ->
+                       mockTopicStore.setDeleteTopicResponse(topicName, null)
+                                     .setCreateTopicResponse(topicName, null)
+                                     .create(kubeTopic))
+              .compose(y -> topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, null, kubeTopic))
+              .onComplete(reconcileResult -> {
+                    assertSucceeded(context, reconcileResult);
+                    mockKafka.assertNotExists(context, kubeTopic.getTopicName());
+                    mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
+                    mockK8s.assertNotExists(context, kubeTopic.getResourceName());
+                    mockK8s.assertNoEvents(context);
+                    context.completeNow();
         });
     }
 
