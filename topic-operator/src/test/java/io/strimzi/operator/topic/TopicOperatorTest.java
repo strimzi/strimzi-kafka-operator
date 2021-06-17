@@ -32,14 +32,19 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static io.fabric8.kubernetes.client.Watcher.Action.*;
+import static io.fabric8.kubernetes.client.Watcher.Action.ADDED;
+import static io.fabric8.kubernetes.client.Watcher.Action.DELETED;
+import static io.fabric8.kubernetes.client.Watcher.Action.MODIFIED;
 import static java.util.Collections.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,7 +64,7 @@ public class TopicOperatorTest {
     private MockK8s mockK8s = new MockK8s();
     private TopicOperator topicOperator;
     private MetricsProvider metrics;
-    private final AtomicReference<ObjectMeta> metadata = new AtomicReference<>(new ObjectMeta());
+    private final ObjectMeta metadata = new ObjectMeta();
 
     private static final Map<String, String> MANDATORY_CONFIG = new HashMap<>();
 
@@ -94,11 +99,11 @@ public class TopicOperatorTest {
         Config config = new Config(new HashMap<>(MANDATORY_CONFIG));
         metrics = createCleanMetricsProvider();
         topicOperator = new TopicOperator(vertx, mockKafka, mockK8s, mockTopicStore, labels, "default-namespace", config, metrics);
-        metadata.get().setName(topicName.toString());
+        metadata.setName(topicName.toString());
         Map<String, String> lbls = new HashMap<>();
         lbls.put("app", "strimzi");
-        metadata.get().setLabels(lbls);
-        metadata.get().setAnnotations(new HashMap<>());
+        metadata.setLabels(lbls);
+        metadata.setAnnotations(new HashMap<>());
     }
 
     @AfterEach
@@ -188,7 +193,7 @@ public class TopicOperatorTest {
 
         System.out.println(metadata);
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(metadata.get())
+                .withMetadata(metadata)
                 .withNewSpec()
                     .withReplicas(2)
                     .withPartitions(10)
@@ -556,7 +561,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcile_noResource_withKafka_noPrivate(VertxTestContext context) {
 
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
 
         mockTopicStore.setCreateTopicResponse(topicName, null);
         mockK8s.setCreateResponse(topicName.asKubeName(), null);
@@ -638,7 +643,7 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_matching(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
@@ -690,8 +695,8 @@ public class TopicOperatorTest {
     public void testReconcile_withResource_withKafka_noPrivate_overriddenName(VertxTestContext context) throws InterruptedException {
         TopicName topicName = new TopicName("__consumer_offsets");
         ResourceName kubeName = new ResourceName("consumer-offsets");
-        Topic kubeTopic = new Topic.Builder(topicName, kubeName, 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
+        Topic kubeTopic = new Topic.Builder(topicName, kubeName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
 
         CountDownLatch async0 = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName_ -> Future.succeededFuture());
@@ -736,9 +741,9 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_configsReconcilable(VertxTestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true"), metadata.get()).build();
-        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar"), metadata.get()).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true"), metadata).build();
+        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar"), metadata).build();
 
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
@@ -787,8 +792,8 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_irreconcilable(VertxTestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short) 2, map("cleanup.policy", "baz"), metadata.get()).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short) 2, map("cleanup.policy", "baz"), metadata).build();
 
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
@@ -831,10 +836,10 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_withPrivate_3WayMerge(VertxTestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "baz"), metadata.get()).build();
-        Topic privateTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), metadata.get()).build();
-        Topic resultTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "bar"), metadata.get()).build();
+        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "baz"), metadata).build();
+        Topic privateTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), metadata).build();
+        Topic resultTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "bar"), metadata).build();
 
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
         mockKafka.createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
@@ -1144,7 +1149,7 @@ public class TopicOperatorTest {
     public void testReconcileMetricsWithPausedTopic(VertxTestContext context) {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
-        metadata.get().getAnnotations().put("strimzi.io/pause-reconciliation", "false");
+        metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "false");
 
         resourceAdded(context, null)
                 .compose(x ->  topicOperator.reconcileAllTopics("periodic"))
@@ -1165,7 +1170,7 @@ public class TopicOperatorTest {
                                 .tag("resource-namespace", "default-namespace")
                                 .gauge().value(), is(1.0));
         })))
-        .onSuccess(x -> metadata.get().getAnnotations().put("strimzi.io/pause-reconciliation", "true"))
+        .onSuccess(x -> metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "true"))
         .compose(x  -> resourceAdded(context, null))
         .onComplete(x -> topicOperator.reconcileAllTopics("periodic2"))
         .onComplete(context.succeeding(f -> context.verify(() -> {

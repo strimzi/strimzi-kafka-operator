@@ -61,6 +61,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -123,9 +124,9 @@ public class KafkaStatusTest {
                 .withNewStatus()
                     .withObservedGeneration(1L)
                     .withConditions(new ConditionBuilder()
-                            .withNewLastTransitionTime(StatusUtils.iso8601(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
-                            .withNewType("NotReady")
-                            .withNewStatus("True")
+                            .withLastTransitionTime(StatusUtils.iso8601(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
+                            .withType("NotReady")
+                            .withStatus("True")
                             .build())
                 .endStatus()
                 .build();
@@ -229,14 +230,14 @@ public class KafkaStatusTest {
                         .withType("Ready")
                     .endCondition()
                     .withListeners(new ListenerStatusBuilder()
-                            .withNewType("plain")
+                            .withType("plain")
                             .withAddresses(new ListenerAddressBuilder()
                                     .withHost("my-service.my-namespace.svc")
                                     .withPort(9092)
                                     .build())
                             .build(),
                             new ListenerStatusBuilder()
-                                    .withNewType("external")
+                                    .withType("external")
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost("my-route-address.domain.tld")
                                             .withPort(443)
@@ -336,14 +337,14 @@ public class KafkaStatusTest {
                         .withType("Ready")
                     .endCondition()
                     .withListeners(new ListenerStatusBuilder()
-                                    .withNewType("plain")
+                                    .withType("plain")
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost("my-service.my-namespace.svc")
                                             .withPort(9092)
                                             .build())
                                     .build(),
                             new ListenerStatusBuilder()
-                                    .withNewType("external")
+                                    .withType("external")
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost("my-route-address.domain.tld")
                                             .withPort(443)
@@ -488,28 +489,28 @@ public class KafkaStatusTest {
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 0)
+                    .withName(clusterName + "-kafka-" + 0)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.1")
+                    .withHostIP("10.0.0.1")
                 .endStatus()
                 .build();
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 1)
+                    .withName(clusterName + "-kafka-" + 1)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.25")
+                    .withHostIP("10.0.0.25")
                 .endStatus()
                 .build();
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 2)
+                    .withName(clusterName + "-kafka-" + 2)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.13")
+                    .withHostIP("10.0.0.13")
                 .endStatus()
                 .build();
 
@@ -542,10 +543,10 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().size(), is(1));
             assertThat(status.getListeners().get(0).getType(), is("external"));
 
-            List<ListenerAddress> addresses = status.getListeners().get(0).getAddresses();
+            Set<ListenerAddress> addresses = Set.copyOf(status.getListeners().get(0).getAddresses());
             assertThat(addresses.size(), is(3));
 
-            List<ListenerAddress> expected = List.of(new ListenerAddressBuilder().withHost("50.35.18.119").withPort(31234).build(),
+            Set<ListenerAddress> expected = Set.of(new ListenerAddressBuilder().withHost("50.35.18.119").withPort(31234).build(),
                                                      new ListenerAddressBuilder().withHost("55.36.78.115").withPort(31234).build(),
                                                      new ListenerAddressBuilder().withHost("5.124.16.8").withPort(31234).build());
 
@@ -607,28 +608,28 @@ public class KafkaStatusTest {
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 0)
+                    .withName(clusterName + "-kafka-" + 0)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.1")
+                    .withHostIP("10.0.0.1")
                 .endStatus()
                 .build();
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 1)
+                    .withName(clusterName + "-kafka-" + 1)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.25")
+                    .withHostIP("10.0.0.25")
                 .endStatus()
                 .build();
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 2)
+                    .withName(clusterName + "-kafka-" + 2)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.13")
+                    .withHostIP("10.0.0.13")
                 .endStatus()
                 .build();
 
@@ -661,10 +662,10 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().size(), is(1));
             assertThat(status.getListeners().get(0).getType(), is("external"));
 
-            List<ListenerAddress> addresses = status.getListeners().get(0).getAddresses();
+            Set<ListenerAddress> addresses = Set.copyOf(status.getListeners().get(0).getAddresses());
             assertThat(addresses.size(), is(3));
 
-            List<ListenerAddress> expected = List.of(new ListenerAddressBuilder().withHost("my-address-0").withPort(31234).build(),
+            Set<ListenerAddress> expected = Set.of(new ListenerAddressBuilder().withHost("my-address-0").withPort(31234).build(),
                                                      new ListenerAddressBuilder().withHost("my-address-1").withPort(31234).build(),
                                                      new ListenerAddressBuilder().withHost("5.124.16.8").withPort(31234).build()
             );
@@ -717,28 +718,28 @@ public class KafkaStatusTest {
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 0)
+                    .withName(clusterName + "-kafka-" + 0)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.1")
+                    .withHostIP("10.0.0.1")
                 .endStatus()
                 .build();
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 1)
+                    .withName(clusterName + "-kafka-" + 1)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.25")
+                    .withHostIP("10.0.0.25")
                 .endStatus()
                 .build();
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 2)
+                    .withName(clusterName + "-kafka-" + 2)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.13")
+                    .withHostIP("10.0.0.13")
                 .endStatus()
                 .build();
 
@@ -824,28 +825,28 @@ public class KafkaStatusTest {
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 0)
+                    .withName(clusterName + "-kafka-" + 0)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.1")
+                    .withHostIP("10.0.0.1")
                 .endStatus()
                 .build();
 
         Pod pod1 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 1)
+                    .withName(clusterName + "-kafka-" + 1)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.1")
+                    .withHostIP("10.0.0.1")
                 .endStatus()
                 .build();
 
         Pod pod2 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 2)
+                    .withName(clusterName + "-kafka-" + 2)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.1")
+                    .withHostIP("10.0.0.1")
                 .endStatus()
                 .build();
 
@@ -930,10 +931,10 @@ public class KafkaStatusTest {
         // Mock Pods Operator
         Pod pod0 = new PodBuilder()
                 .withNewMetadata()
-                    .withNewName(clusterName + "-kafka-" + 0)
+                    .withName(clusterName + "-kafka-" + 0)
                 .endMetadata()
                 .withNewStatus()
-                    .withNewHostIP("10.0.0.5")
+                    .withHostIP("10.0.0.5")
                 .endStatus()
                 .build();
 
@@ -1145,7 +1146,7 @@ public class KafkaStatusTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             ListenerStatus ls = new ListenerStatusBuilder()
-                    .withNewType("plain")
+                    .withType("plain")
                     .withAddresses(new ListenerAddressBuilder()
                             .withHost("my-service.my-namespace.svc")
                             .withPort(9092)
@@ -1153,7 +1154,7 @@ public class KafkaStatusTest {
                     .build();
 
             ListenerStatus ls2 = new ListenerStatusBuilder()
-                    .withNewType("external")
+                    .withType("external")
                     .withAddresses(new ListenerAddressBuilder()
                             .withHost("my-route-address.domain.tld")
                             .withPort(443)
@@ -1182,7 +1183,7 @@ public class KafkaStatusTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             ListenerStatus ls = new ListenerStatusBuilder()
-                    .withNewType("plain")
+                    .withType("plain")
                     .withAddresses(new ListenerAddressBuilder()
                             .withHost("my-service.my-namespace.svc")
                             .withPort(9092)

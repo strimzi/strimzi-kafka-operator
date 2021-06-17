@@ -358,13 +358,10 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
-
         op.new ReconciliationState(reconciliation, kafka).getCruiseControlDescription()
                 .onComplete(context.failing(c -> context.verify(() -> {
                     assertThat(c.getMessage(), is("Failed ConfigMap getAsync call"));
-
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 

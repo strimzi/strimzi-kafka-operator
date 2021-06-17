@@ -785,7 +785,7 @@ public class KafkaAssemblyOperatorMockTest {
                 updatedKafka);
 
         initialReconcile(context)
-            .onComplete(context.succeeding(v -> initialState.getKafkaClusterDescription()))
+            .compose(v -> initialState.getKafkaClusterDescription())
             .compose(v -> initialState.prepareVersionChange())
             .compose(v -> initialState.getZookeeperDescription())
             .compose(KafkaAssemblyOperator.ReconciliationState::zkVersionChange)
