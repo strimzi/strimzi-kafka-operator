@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface CertManager {
@@ -33,6 +34,14 @@ public interface CertManager {
      * @throws IOException If an input or output file could not be read/written.
      */
     void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException;
+
+    void generateRootCaCert(Subject subject, File subjectKeyFile, File subjectCertFile,
+                            ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException;
+
+    void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
+                                    Subject subject,
+                                    File subjectKeyFile, File subjectCertFile,
+                                    ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException;
 
     /**
      * Add the provided certificate to the truststore which is created if it doesn't exist

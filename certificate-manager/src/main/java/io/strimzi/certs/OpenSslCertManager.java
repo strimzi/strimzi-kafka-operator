@@ -145,14 +145,6 @@ public class OpenSslCertManager implements CertManager {
         generateRootCaCert(sbj, keyFile, certFile, notBefore, notAfter, 0);
     }
 
-    public void generateIntermediateCert(File keyFile, File certFile, Subject sbj, File subjectKeyFile, File subjectCertFile, int pathLen, int days) throws IOException {
-        Instant now = clock.instant();
-        ZonedDateTime notBefore = now.atZone(UTC);
-        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(UTC);
-        generateIntermediateCaCert(keyFile, certFile, sbj, subjectKeyFile,
-                subjectCertFile, notBefore, notAfter, pathLen);
-    }
-
     /**
      * Generate a root (i.e. self-signed) CA certificate, using either a new CA key or reusing an existing subject key.
      *
@@ -168,6 +160,7 @@ public class OpenSslCertManager implements CertManager {
      *                   only be used to issue end entity certificates, or &gt;0 when issuing intermediate CA certificates.
      * @throws IOException IO problems
      */
+    @Override
     public void generateRootCaCert(Subject subject, File subjectKeyFile, File subjectCertFile,
                                    ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
         generateCaCert(null, null, subject, subjectKeyFile, subjectCertFile, notBefore, notAfter, pathLength);
@@ -190,6 +183,7 @@ public class OpenSslCertManager implements CertManager {
      *                   only be used to issue end entity certificates, or &gt;0 when issuing intermediate CA certificates.
      * @throws IOException IO problems
      */
+    @Override
     public void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
                                            Subject subject,
                                            File subjectKeyFile, File subjectCertFile,
@@ -384,49 +378,10 @@ public class OpenSslCertManager implements CertManager {
 
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject subject, int days) throws IOException {
-        // Preconditions
-        Objects.requireNonNull(keyFile);
-        Objects.requireNonNull(certFile);
-        Objects.requireNonNull(subject);
-        if (days <= 0) {
-            throw new IllegalArgumentException("Invalid validityDays " + days);
-        }
-
-        // See https://serverfault.com/a/501513
-        Path sna = null;
-        Path csrFile = null;
-        try {
-            csrFile = Files.createTempFile(null, null);
-
-            OpensslArgs args = new OpensslArgs("openssl", "req")
-                    .opt("-new")
-                    .opt("-batch")
-                    .optArg("-out", csrFile)
-                    .optArg("-key", keyFile);
-
-            if (subject.hasSubjectAltNames()) {
-                sna = buildConfigFile(subject, true);
-                args.optArg("-config", sna, true).optArg("-extensions", "v3_req");
-            }
-            args.optArg("-subj", subject);
-            args.exec();
-            delete(sna);
-
-            // subject alt names need to be in an openssl configuration file
-            sna = buildConfigFile(subject, true);
-            new OpensslArgs("openssl", "x509")
-                    .opt("-req")
-                    .optArg("-days", String.valueOf(days))
-                    .optArg("-in", csrFile)
-                    .optArg("-signkey", keyFile)
-                    .optArg("-out", certFile)
-                    .optArg("-extfile", sna, true)
-                    .optArg("-extensions", "v3_req")
-                    .exec();
-        } finally {
-            delete(sna);
-            delete(csrFile);
-        }
+        Instant now = clock.instant();
+        ZonedDateTime notBefore = now.atZone(UTC);
+        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(UTC);
+        generateCaCert(null, null, subject, keyFile, certFile, notBefore, notAfter, 0);
     }
 
     @Override
