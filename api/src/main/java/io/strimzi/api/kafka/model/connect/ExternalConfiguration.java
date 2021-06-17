@@ -37,7 +37,7 @@ public class ExternalConfiguration implements Serializable, UnknownPropertyPrese
     private List<ExternalConfigurationVolumeSource> volumes;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as environment variables.")
+    @Description("Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public List<ExternalConfigurationEnv> getEnv() {
         return env;
@@ -47,7 +47,7 @@ public class ExternalConfiguration implements Serializable, UnknownPropertyPrese
         this.env = env;
     }
 
-    @Description("Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.")
+    @Description("Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public List<ExternalConfigurationVolumeSource> getVolumes() {
         return volumes;
