@@ -5,6 +5,17 @@
 
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Supplier;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
@@ -23,19 +34,6 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -419,7 +417,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<Map<String, Map<String, String>>> listConnectLoggers(Reconciliation reconciliation, String host, int port) {
+    public Future<Map<String, String>> listConnectLoggers(Reconciliation reconciliation, String host, int port) {
         String path = "/admin/loggers/";
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
                 httpClient.request(HttpMethod.GET, port, host, path, request -> {
@@ -432,7 +430,17 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                     response.result().bodyHandler(buffer -> {
                                         try {
                                             Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
-                                            result.complete(fetchedLoggers);
+                                            Map<String, String> loggerMap = new HashMap<>(fetchedLoggers.size());
+                                            for (var e : fetchedLoggers.entrySet()) {
+                                                String level = e.getValue().get("level");
+                                                if (level != null && e.getValue().size() == 1) {
+                                                    loggerMap.put(e.getKey(), level);
+                                                } else {
+                                                    result.tryFail("Inner map has unexpected keys " + e.getValue().keySet());
+                                                    break;
+                                                }
+                                            }
+                                            result.tryComplete(loggerMap);
                                         } catch (IOException e) {
                                             LOGGER.warnCr(reconciliation, "Failed to get list of connector loggers", e);
                                             result.fail(new ConnectRestException(response.result(), "Failed to get connector loggers", e));
@@ -451,62 +459,44 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                 }));
     }
 
-    private Future<Void> updateLoggers(Reconciliation reconciliation, String host, int port, String desiredLogging, Map<String, Map<String, String>> fetchedLoggers, OrderedProperties defaultLogging) {
-        desiredLogging = Util.expandVars(desiredLogging);
-        Map<String, String> updateLoggers = new LinkedHashMap<>();
-        defaultLogging.asMap().entrySet().forEach(entry -> {
-            // set all logger levels to default
-            if (entry.getKey().equals("log4j.rootLogger")) {
-                updateLoggers.put("root", Util.expandVar(entry.getValue(), defaultLogging.asMap()));
-            } else if (entry.getKey().startsWith("log4j.logger.")) {
-                updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), Util.expandVar(entry.getValue(), defaultLogging.asMap()));
-            }
-        });
+    private Future<Boolean> updateLoggers(Reconciliation reconciliation, String host, int port,
+                                       String desiredLogging,
+                                       Map<String, String> fetchedLoggers,
+                                       OrderedProperties defaultLogging) {
 
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(desiredLogging);
-        ops.asMap().entrySet().forEach(entry -> {
-            // set desired loggers to desired levels
-            if (entry.getKey().equals("log4j.rootLogger")) {
-                if (fetchedLoggers.get("root") == null || fetchedLoggers.get("root").get("level") == null ||
-                        !entry.getValue().equals(fetchedLoggers.get("root").get("level"))) {
-                    updateLoggers.put("root", Util.expandVar(entry.getValue(), ops.asMap()));
-                }
-            } else if (entry.getKey().startsWith("log4j.logger.")) {
-                Map<String, String> fetchedLogger = fetchedLoggers.get(entry.getKey().substring("log4j.logger.".length()));
-                if (fetchedLogger == null || fetchedLogger.get("level") == null || parentLogLevelChanged(fetchedLoggers, ops, entry)) {
-                    updateLoggers.put(entry.getKey().substring("log4j.logger.".length()), Util.expandVar(entry.getValue(), ops.asMap()));
-                }
+        Map<String, String> updateLoggers = new TreeMap<>((k1, k2) -> {
+            if ("root".equals(k1)) {
+                // we need root logger always to be the first logger to be set via REST API
+                return "root".equals(k2) ? 0 : -1;
+            } else if ("root".equals(k2)) {
+                return 1;
             }
+            return k1.compareTo(k2);
         });
+        updateLoggers.putAll(fetchedLoggers);
+        addToLoggers(defaultLogging.asMap(), updateLoggers);
+        addToLoggers(new OrderedProperties().addStringPairs(Util.expandVars(desiredLogging)).asMap(), updateLoggers);
 
-        LinkedHashMap<String, String> updateSortedLoggers = sortLoggers(updateLoggers);
-        Future<Void> result = Future.succeededFuture();
-        for (Map.Entry<String, String> logger : updateSortedLoggers.entrySet()) {
-            result = result.compose(previous -> updateConnectorLogger(reconciliation, host, port, logger.getKey(), getLoggerLevelFromAppenderCouple(logger.getValue())));
+        if (updateLoggers.equals(fetchedLoggers)) {
+            return Future.succeededFuture(false);
+        } else {
+            Future<Void> result = Future.succeededFuture();
+            for (Map.Entry<String, String> logger : updateLoggers.entrySet()) {
+                result = result.compose(previous -> updateConnectorLogger(reconciliation, host, port,
+                        logger.getKey(), logger.getValue()));
+            }
+            return result.map(true);
         }
-        return result;
     }
 
-    /*
-        We do use an optimization of not sending all the logger level each reconciliation. We can send only those which changed.
-        However we need to resend all lower hierarchy level logger levels.
-        So if root level changed in desired configuration, all other levels need to be reset as well.
-        If logger io.org changed, all loggers prefixed by io.org need to be reset.
-    */
-    protected boolean parentLogLevelChanged(Map<String, Map<String, String>> fetchedLoggers, OrderedProperties ops, Map.Entry<String, String> tested) {
-        if (!fetchedLoggers.get("root").get("level").equals(getLoggerLevelFromAppenderCouple(ops.asMap().get("log4j.rootLogger")))) {
-            return true;
-        }
-
-        AtomicBoolean result = new AtomicBoolean(false);
-        List<Map.Entry<String, String>> parents = ops.asMap().entrySet().stream().filter(entry -> entry.getKey().startsWith("log4j.logger." + tested.getKey())).collect(Collectors.toList());
-        parents.stream().forEach(entry -> {
-            if (!entry.getValue().equals(tested.getValue())) {
-                result.set(true);
+    private void addToLoggers(Map<String, String> entries, Map<String, String> updateLoggers) {
+        for (Map.Entry<String, String> e : entries.entrySet()) { // set desired loggers to desired levels
+            if (e.getKey().equals("log4j.rootLogger")) {
+                updateLoggers.put("root", getLoggerLevelFromAppenderCouple(Util.expandVar(e.getValue(), entries)));
+            } else if (e.getKey().startsWith("log4j.logger.")) {
+                updateLoggers.put(e.getKey().substring("log4j.logger.".length()), getLoggerLevelFromAppenderCouple(Util.expandVar(e.getValue(), entries)));
             }
-        });
-        return result.get();
+        }
     }
 
     /**
@@ -524,38 +514,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<Void> updateConnectLoggers(Reconciliation reconciliation, String host, int port, String desiredLogging, OrderedProperties defaultLogging) {
+    public Future<Boolean> updateConnectLoggers(Reconciliation reconciliation, String host, int port, String desiredLogging, OrderedProperties defaultLogging) {
         return listConnectLoggers(reconciliation, host, port)
                 .compose(fetchedLoggers -> updateLoggers(reconciliation, host, port, desiredLogging, fetchedLoggers, defaultLogging));
-    }
-
-    /**
-     * To apply loggers correctly, we need to sort them. The sorting is performed on base of logger generality.
-     * Logger "abc.company" is more general than "abc.company.name"
-     * @param loggers map of loggers to be sorted
-     * @return map of sorted loggers
-     */
-    private LinkedHashMap<String, String> sortLoggers(Map<String, String> loggers) {
-        Comparator<Map.Entry<String, String>> loggerComparator = (e1, e2) -> {
-            String k1 = e1.getKey();
-            String k2 = e2.getKey();
-            if (k1.equals("root")) {
-                // we need root logger always to be the first logger to be set via REST API
-                return Integer.MIN_VALUE;
-            }
-            if (k2.equals("root")) {
-                return Integer.MAX_VALUE;
-            }
-            return k1.compareTo(k2);
-        };
-        List<Map.Entry<String, String>> listOfEntries = new ArrayList<>(loggers.entrySet());
-        listOfEntries.sort(loggerComparator);
-
-        LinkedHashMap<String, String> sortedLoggers = new LinkedHashMap<>(listOfEntries.size());
-        for (Map.Entry<String, String> entry : listOfEntries) {
-            sortedLoggers.put(entry.getKey(), entry.getValue());
-        }
-        return sortedLoggers;
     }
 
     @Override

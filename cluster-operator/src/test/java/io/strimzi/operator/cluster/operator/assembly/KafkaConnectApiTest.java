@@ -4,10 +4,17 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -28,17 +35,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -47,10 +45,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
@@ -262,7 +258,10 @@ public class KafkaConnectApiTest {
                 "log4j.logger.org.apache.zookeeper=WARN\n" +
                 "log4j.logger.org.I0Itec.zkclient=INFO\n" +
                 "log4j.logger.org.reflections.Reflection=INFO\n" +
-                "log4j.logger.org.reflections=FATAL";
+                "log4j.logger.org.reflections=FATAL\n" +
+                "log4j.logger.foo=WARN\n" +
+                "log4j.logger.foo.bar=TRACE\n" +
+                "log4j.logger.foo.bar.quux=DEBUG";
 
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
         Checkpoint async = context.checkpoint();
@@ -271,60 +270,24 @@ public class KafkaConnectApiTest {
         ops.addStringPairs(desired);
 
         client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", PORT, desired, ops)
-                .onComplete(context.succeeding())
+                .onComplete(context.succeeding(wasChanged -> context.verify(() -> assertEquals(true, wasChanged))))
                 .compose(a -> client.listConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", PORT)
                         .onComplete(context.succeeding(map -> context.verify(() -> {
-                            assertThat(map.get("org.apache.zookeeper").get("level"), is("WARN"));
-                            assertThat(map.get("org.I0Itec.zkclient").get("level"), is("INFO"));
-                            assertThat(map.get("org.reflections").get("level"), is("FATAL"));
-                            assertThat(map.get("org.reflections.Reflection").get("level"), is("INFO"));
-                            assertThat(map.get("root").get("level"), is("TRACE"));
-                            assertThat(map.get("unknown"), is(nullValue()));
+                            assertThat(map.get("root"), is("TRACE"));
+                            assertThat(map.get("org.apache.zookeeper"), is("WARN"));
+                            assertThat(map.get("org.I0Itec.zkclient"), is("INFO"));
+                            assertThat(map.get("org.reflections"), is("FATAL"));
+                            assertThat(map.get("org.reflections.Reflection"), is("INFO"));
+                            assertThat(map.get("org.reflections.Reflection"), is("INFO"));
+                            assertThat(map.get("foo"), is("WARN"));
+                            assertThat(map.get("foo.bar"), is("TRACE"));
+                            assertThat(map.get("foo.bar.quux"), is("DEBUG"));
+
+                        }))))
+                .compose(a -> client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", PORT, desired, ops)
+                        .onComplete(context.succeeding(wasChanged -> context.verify(() -> {
+                            assertEquals(false, wasChanged);
                             async.flag();
                         }))));
-    }
-
-    @IsolatedTest
-    public void testChangeParentLoggerLevel(VertxTestContext context) {
-        String desiredLogging = "log4j.rootLogger=TRACE, CONSOLE\n" +
-                "log4j.logger.io.org=WARN\n" +
-                "log4j.logger.org.com=WARN\n" +
-                "log4j.logger.io.org.com=FATAL";
-
-        desiredLogging = Util.expandVars(desiredLogging);
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(desiredLogging);
-
-        KafkaConnectApiImpl client = new KafkaConnectApiImpl(vertx);
-
-        Map<String, Map<String, String>> fetched = new HashMap();
-        fetched.put("root", singletonMap("level", "INFO"));
-        fetched.put("io.org", singletonMap("level", "WARN"));
-        fetched.put("io.org.com", singletonMap("level", "FATAL"));
-
-        // root logger level changed
-        assertTrue(client.parentLogLevelChanged(fetched, ops, Map.entry("io.org.com", "WARN")));
-
-        fetched = new HashMap();
-        fetched.put("root", singletonMap("level", "TRACE"));
-        fetched.put("io.org", singletonMap("level", "ERROR"));
-        fetched.put("io.org.com", singletonMap("level", "FATAL"));
-
-        // root logger level did not change. The parent logger level did
-        assertTrue(client.parentLogLevelChanged(fetched, ops, Map.entry("io.org.com", "WARN")));
-
-        fetched = new HashMap();
-        fetched.put("root", singletonMap("level", "TRACE"));
-        fetched.put("io.org", singletonMap("level", "WARN"));
-        fetched.put("io.org.com", singletonMap("level", "FATAL"));
-
-        // nothing changed
-        assertFalse(client.parentLogLevelChanged(fetched, ops, Map.entry("io.org.com", "FATAL")));
-
-        // unknown (new) logger added
-        assertFalse(client.parentLogLevelChanged(fetched, ops, Map.entry("org.com", "WARN")));
-        assertTrue(client.parentLogLevelChanged(fetched, ops, Map.entry("org.com", "DEBUG")));
-
-        context.completeNow();
     }
 }
