@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.List;
 
@@ -203,6 +204,16 @@ public class MockCertManager implements CertManager {
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
         generateSelfSignedCert(keyFile, certFile, sbj, days);
+    }
+
+    @Override
+    public void generateRootCaCert(Subject subject, File subjectKeyFile, File subjectCertFile, ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+        generateSelfSignedCert(subjectKeyFile, subjectCertFile, subject, 1);
+    }
+
+    @Override
+    public void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile, Subject subject, File subjectKeyFile, File subjectCertFile, ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+        throw new RuntimeException("Not implemented");
     }
 
     @Override
