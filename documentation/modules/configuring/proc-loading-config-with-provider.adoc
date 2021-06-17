@@ -1,0 +1,158 @@
+// Module included in the following assemblies:
+//
+// assembly-config-kafka-connect.adoc
+
+[id='proc-loading-config-with-provider-{context}']
+= Loading configuration values from external sources
+
+[role="_abstract"]
+Use the _Kubernetes Configuration Provider_ plugin to load configuration data from external sources.
+Load data from Kubernetes Secrets or ConfigMaps.
+
+Suppose you have a Secret that's managed outside the Kafka namespace, or outside the Kafka cluster.
+The provider allows you to reference the values of the Secret in your configuration without extracting the files.
+You just need to tell the provider what Secret to use and provide access rights.
+The provider loads the data without needing to restart the Kafka component, even when using a new Secret or ConfigMap.
+This capability avoids disruption when a Kafka Connect instance hosts multiple connectors.
+
+The provider operates independently of Strimzi.
+You can use it to load configuration data for all Kafka components, including producers and consumers.
+Use it, for example, to provide the credentials for Kafka Connect connector configuration.
+
+In this procedure, an external ConfigMap provides configuration properties for a connector.
+
+NOTE: Kubernetes Configuration Provider can't use mounted files.
+For example, it can't load values that need the location of a truststore or keystore.
+Instead, you can mount ConfigMaps or Secrets into a Kafka Connect pod as environment variables or volumes.
+You add configuration using the xref:type-ExternalConfiguration-reference[`externalConfiguration` property] in `KafkaConnect.spec`.
+You don't need to set up access rights with this approach.
+However, Kafka Connect will need a restart when using a new Secret or ConfigMap for a connector.
+This will cause disruption to all the Kafka Connect instance's connectors.
+
+.Prerequisites
+
+* A Kubernetes cluster is available.
+* A Kafka cluster is running.
+* The Cluster Operator is running.
+
+.Procedure
+
+. Create a ConfigMap or Secret that contains the configuration properties.
++
+In this example, a ConfigMap named `my-connector-configuration` contains connector properties:
++
+.Example ConfigMap with connector properties
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-connector-configuration
+data:
+  option1: value1
+  option2: value2
+----
+
+. Specify the Kubernetes Configuration Provider in the Kafka Connect configuration.
++
+The specification shown here can support loading values from Secrets and ConfigMaps.
++
+.Example external volumes set to values from a ConfigMap
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: my-connect
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  # ...
+  config:
+    # ...
+    config.providers: secrets,configmaps <1>
+    config.providers.secrets.class: io.strimzi.kafka.KubernetesSecretConfigProvider <2>
+    config.providers.configmaps.class: io.strimzi.kafka.KubernetesConfigMapConfigProvider <3>
+  # ...
+----
+<1> The alias for the configuration provider is used to define other configuration parameters.
+The provider parameters use the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
+<2> `KubernetesSecretConfigProvider` provides values from Secrets.
+<3> `KubernetesConfigMapConfigProvider` provides values from ConfigMaps.
+
+. Create or update the resource to enable the provider.
++
+[source,shell,subs=+quotes]
+kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
+
+. Create a role that permits access to the values in the external ConfigMap.
++
+.Example role to access values from a ConfigMap
+[source,yaml,subs="attributes+"]
+----
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: connector-configuration-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["my-connector-configuration"]
+  verbs: ["get"]
+# ...
+----
++
+The rule gives the role permission to access the `my-connector-configuration` ConfigMap.
+
+. Create a role binding to permit access to the namespace that contains the ConfigMap.
++
+.Example role binding to access the namespace that contains the ConfigMap
+[source,yaml,subs="attributes+"]
+----
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: connector-configuration-role-binding
+subjects:
+- kind: ServiceAccount
+  name: my-connect-connect
+  namespace: my-project
+roleRef:
+  kind: Role
+  name: connector-configuration-role
+  apiGroup: rbac.authorization.k8s.io
+# ...
+----
++
+The role binding gives the role permission to access the `my-project` namespace.
++
+The service account must be the same one used by the Kafka Connect deployment.
+The service account name format is __CLUSTER_NAME__-connect, where __CLUSTER_NAME__ is the name of the `KafkaConnect` custom resource.
+
+. Reference the ConfigMap in the connector configuration.
++
+.Example connector configuration referencing the ConfigMap
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: my-connector
+  labels:
+    strimzi.io/cluster: my-connect
+spec:
+  # ...
+  config:
+    option: ${configmaps:my-project/my-connector-configuration:option1}
+    # ...
+# ...
+----
++
+Placeholders for the property values in the ConfigMap are referenced in the connector configuration.
+The placeholder structure is `configmaps:__PATH-AND-FILE-NAME__:__PROPERTY__`.
+`KubernetesConfigMapConfigProvider` reads and extracts the _option1_ property value from the external ConfigMap.
+
+
+[role="_additional-resources"]
+.Additional resources
+* xref:type-ExternalConfiguration-reference[External configuration for Kafka Connect connectors]
