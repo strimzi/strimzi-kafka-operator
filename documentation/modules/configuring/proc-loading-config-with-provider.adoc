@@ -13,7 +13,7 @@ Suppose you have a Secret that's managed outside the Kafka namespace, or outside
 The provider allows you to reference the values of the Secret in your configuration without extracting the files.
 You just need to tell the provider what Secret to use and provide access rights.
 The provider loads the data without needing to restart the Kafka component, even when using a new Secret or ConfigMap.
-This capability avoids disruption when sharing a Kafka Connect instance with multiple connectors.
+This capability avoids disruption when a Kafka Connect instance hosts multiple connectors.
 
 The provider operates independently of Strimzi.
 You can use it to load configuration data for all Kafka components, including producers and consumers.
