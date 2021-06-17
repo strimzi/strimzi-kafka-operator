@@ -146,9 +146,9 @@ public interface KafkaConnectApi {
      * @param desiredLogging Desired logging.
      * @param defaultLogging Default logging.
      * @return A Future which completes with the result of the request. If the request was successful,
-     * this returns the list of connector loggers.
+     * this returns whether any loggers were actually changed.
      */
-    Future<Void> updateConnectLoggers(Reconciliation reconciliation, String host, int port, String desiredLogging, OrderedProperties defaultLogging);
+    Future<Boolean> updateConnectLoggers(Reconciliation reconciliation, String host, int port, String desiredLogging, OrderedProperties defaultLogging);
 
     /**
      * Make a {@code GET} request to {@code /admin/loggers}.
@@ -158,7 +158,7 @@ public interface KafkaConnectApi {
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connect loggers.
      */
-    Future<Map<String, Map<String, String>>> listConnectLoggers(Reconciliation reconciliation, String host, int port);
+    Future<Map<String, String>> listConnectLoggers(Reconciliation reconciliation, String host, int port);
 
     /**
      * Make a {@code POST} request to {@code /connectors/${connectorName}/restart}.
