@@ -12,11 +12,8 @@ import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -32,21 +29,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class K8sImplTest {
 
-    private static Vertx vertx;
-
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
-
+    @SuppressWarnings("unchecked")
     @Test
-    public void testList(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
+    public void testList(Vertx vertx, VertxTestContext context) {
 
         List<KafkaTopic> mockKafkaTopicsList = Collections.singletonList(new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder()
@@ -70,7 +55,7 @@ public class K8sImplTest {
 
         k8s.listResources().onComplete(context.succeeding(kafkaTopics -> context.verify(() -> {
             assertThat(kafkaTopics, is(mockKafkaTopicsList));
-            async.flag();
+            context.completeNow();
         })));
     }
 }

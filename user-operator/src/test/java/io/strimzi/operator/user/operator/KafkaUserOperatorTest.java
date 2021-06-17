@@ -22,7 +22,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
@@ -54,6 +53,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 @ExtendWith(VertxExtension.class)
 public class KafkaUserOperatorTest {
     protected static Vertx vertx;
@@ -103,7 +103,6 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -146,7 +145,7 @@ public class KafkaUserOperatorTest {
 
                 assertThat(capturedAcls.get(1), is(nullValue()));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -184,7 +183,6 @@ public class KafkaUserOperatorTest {
 
         when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -221,7 +219,7 @@ public class KafkaUserOperatorTest {
                 assertThat(aclRules, is(ResourceUtils.createExpectedSimpleAclRules(user)));
                 assertThat(capturedAcls.get(1), is(nullValue()));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -259,7 +257,6 @@ public class KafkaUserOperatorTest {
 
         when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<String> capturedNames = secretNameCaptor.getAllValues();
@@ -288,7 +285,7 @@ public class KafkaUserOperatorTest {
                 assertThat(capturedAcls.get(0), is(nullValue()));
                 assertThat(capturedAcls.get(1), is(nullValue()));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -329,7 +326,6 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -353,7 +349,7 @@ public class KafkaUserOperatorTest {
                 assertThat(new String(Base64.getDecoder().decode(captured.getData().get("user.crt"))), is("crt file"));
                 assertThat(new String(Base64.getDecoder().decode(captured.getData().get("user.key"))), is("key file"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -378,7 +374,6 @@ public class KafkaUserOperatorTest {
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, Labels.EMPTY, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
 
-        Checkpoint async = context.checkpoint();
         op.delete(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -395,7 +390,7 @@ public class KafkaUserOperatorTest {
                 assertThat(capturedAclNames.get(0), is(KafkaUserModel.getTlsUserName(ResourceUtils.NAME)));
                 assertThat(capturedAclNames.get(1), is(KafkaUserModel.getScramUserName(ResourceUtils.NAME)));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -433,7 +428,6 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
         when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -479,7 +473,7 @@ public class KafkaUserOperatorTest {
                 assertThat(aclRules, is(ResourceUtils.createExpectedSimpleAclRules(user)));
                 assertThat(capturedAcls.get(1), is(nullValue()));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -517,7 +511,6 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
         when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -562,7 +555,7 @@ public class KafkaUserOperatorTest {
                 assertThat(aclRules, is(ResourceUtils.createExpectedSimpleAclRules(user)));
                 assertThat(capturedAcls.get(1), is(nullValue()));
 
-                async.flag();
+                context.completeNow();
             })));
 
     }
@@ -596,7 +589,6 @@ public class KafkaUserOperatorTest {
 
         when(quotasOps.reconcile(any(), anyString(), eq(null))).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -613,12 +605,12 @@ public class KafkaUserOperatorTest {
                 assertThat(capturedAclNames.get(0), is(KafkaUserModel.getTlsUserName(ResourceUtils.NAME)));
                 assertThat(capturedAclNames.get(1), is(KafkaUserModel.getScramUserName(ResourceUtils.NAME)));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
     @Test
-    public void testReconcileAll(VertxTestContext context) throws InterruptedException {
+    public void testReconcileAll(VertxTestContext context) {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
@@ -642,7 +634,7 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.listAsync(eq(ResourceUtils.NAMESPACE), eq(Optional.of(new LabelSelector(null, Labels.fromMap(ResourceUtils.LABELS).toMap()))))).thenReturn(
                 Future.succeededFuture(Arrays.asList(newTlsUser, newScramShaUser, existingTlsUser, existingScramShaUser)));
         when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.fromMap(ResourceUtils.LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
-        when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user")));
+        when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<>(Arrays.asList("existing-tls-user", "second-deleted-user")));
         when(scramOps.list()).thenReturn(asList("existing-tls-user", "deleted-scram-sha-user"));
 
         when(mockCrdOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(newTlsUser);
@@ -657,8 +649,6 @@ public class KafkaUserOperatorTest {
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
         Set<String> deleted = new CopyOnWriteArraySet<>();
-
-        Checkpoint async = context.checkpoint();
 
         Promise reconcileAllCompleted = Promise.promise();
 
@@ -688,7 +678,7 @@ public class KafkaUserOperatorTest {
             assertThat(createdOrUpdated, is(new HashSet(asList("new-tls-user", "existing-tls-user",
                     "new-scram-sha-user", "existing-scram-sha-user"))));
             assertThat(deleted, is(new HashSet(asList("second-deleted-user", "deleted-scram-sha-user"))));
-            async.flag();
+            context.completeNow();
         }));
     }
 
@@ -723,7 +713,6 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
         when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -768,7 +757,7 @@ public class KafkaUserOperatorTest {
                 assertThat(aclRules, is(ResourceUtils.createExpectedSimpleAclRules(user)));
                 assertThat(capturedAcls.get(0), is(nullValue()));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -807,7 +796,6 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
         when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -851,7 +839,7 @@ public class KafkaUserOperatorTest {
                 assertThat(aclRules, is(ResourceUtils.createExpectedSimpleAclRules(user)));
                 assertThat(capturedAcls.get(0), is(nullValue()));
 
-                async.flag();
+                context.completeNow();
             })));
 
     }
@@ -887,7 +875,6 @@ public class KafkaUserOperatorTest {
 
         when(quotasOps.reconcile(any(), anyString(), eq(null))).thenReturn(Future.succeededFuture());
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
@@ -907,7 +894,7 @@ public class KafkaUserOperatorTest {
                 assertThat(scramUserCaptor.getAllValues(), is(singletonList(ResourceUtils.NAME)));
                 assertThat(scramPasswordCaptor.getAllValues(), is(singletonList(null)));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -939,7 +926,6 @@ public class KafkaUserOperatorTest {
                 Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.failing(e -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
@@ -947,7 +933,7 @@ public class KafkaUserOperatorTest {
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getMessage(), is(failureMsg));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("NotReady"));
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -978,14 +964,13 @@ public class KafkaUserOperatorTest {
                 Labels.fromMap(ResourceUtils.LABELS),
                 mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME, ResourceUtils.NAMESPACE, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 List<KafkaUser> capturedStatuses = userCaptor.getAllValues();
                 assertThat(capturedStatuses.get(0).getStatus().getUsername(), is("CN=user"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getStatus(), is("True"));
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
-                async.flag();
+                context.completeNow();
             })));
     }
 }

@@ -70,6 +70,8 @@ public class ZkImplTest {
 
     @Test
     public void testWatchThenUnwatchChildren(VertxTestContext context) {
+
+        //Left these checkpoints intact because they seem to be relevant to use both.
         Checkpoint deletionOccurred = context.checkpoint();
         Checkpoint createOccurred = context.checkpoint();
 

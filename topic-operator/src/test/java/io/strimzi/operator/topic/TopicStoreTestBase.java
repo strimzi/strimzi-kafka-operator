@@ -31,8 +31,6 @@ public abstract class TopicStoreTestBase {
     public void testCrud(VertxTestContext context) {
         Assumptions.assumeTrue(canRunTest());
 
-        Checkpoint async = context.checkpoint();
-
         String topicName = "my_topic_" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
         Topic topic = new Topic.Builder(topicName, 2,
                 (short) 3, Collections.singletonMap("foo", "bar")).build();
@@ -94,7 +92,7 @@ public abstract class TopicStoreTestBase {
             .compose(v -> store.delete(updatedTopic.getTopicName()))
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TopicStore.NoSuchEntityExistsException.class));
-                async.flag();
+                context.completeNow();
             })));
     }
 
