@@ -32,6 +32,9 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.image.imagePullSecrets }}
       {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext: {{ toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: strimzi-tmp
           emptyDir:
@@ -107,6 +110,10 @@ spec:
               value: {{ .Values.kubernetesServiceDnsDomain | quote }}{{ end }}
             - name: STRIMZI_FEATURE_GATES
               value: {{ .Values.featureGates | quote }}
+            {{- if .Values.labelsExclusionPattern }}
+            - name: STRIMZI_LABELS_EXCLUSION_PATTERN
+              value: {{ .Values.labelsExclusionPattern | quote }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthy
@@ -119,6 +126,9 @@ spec:
               port: http
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          {{- with .Values.securityContext }}
+          securityContext: {{ toYaml .| nindent 12 }}
+          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       {{- with .Values.nodeSelector }}

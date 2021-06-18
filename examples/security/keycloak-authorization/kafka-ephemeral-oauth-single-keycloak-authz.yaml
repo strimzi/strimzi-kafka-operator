@@ -1,0 +1,53 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    version: 2.8.0
+    replicas: 1
+    listeners:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: oauth
+          validIssuerUri: https://${SSO_HOST}/auth/realms/kafka-authz
+          jwksEndpointUri: https://${SSO_HOST}/auth/realms/kafka-authz/protocol/openid-connect/certs
+          userNameClaim: preferred_username
+          maxSecondsWithoutReauthentication: 3600
+          tlsTrustedCertificates:
+            - secretName: oauth-server-cert
+              certificate: sso.crt
+    authorization:
+      type: keycloak
+      clientId: kafka
+      tokenEndpointUri: https://${SSO_HOST}/auth/realms/kafka-authz/protocol/openid-connect/token
+      tlsTrustedCertificates:
+        - secretName: oauth-server-cert
+          certificate: sso.crt
+      delegateToKafkaAcls: true
+      superUsers:
+        - User:service-account-kafka
+    logging:
+      type: inline
+      loggers:
+        log4j.logger.io.strimzi: "TRACE"
+        log4j.logger.kafka: "DEBUG"
+        log4j.logger.org.apache.kafka: "DEBUG"
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      log.message.format.version: "2.8"
+      inter.broker.protocol.version: "2.8"
+    storage:
+      type: ephemeral
+  zookeeper:
+    replicas: 3
+    storage:
+      type: ephemeral
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}

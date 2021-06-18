@@ -9,7 +9,7 @@ image:
   registry: quay.io
   repository: strimzi
   name: operator
-  tag: 0.23.0
+  tag: 0.24.0-rc1
 logVolume: co-config-volume
 logConfigMap: strimzi-cluster-operator
 logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
@@ -24,6 +24,9 @@ annotations: {}
 labels: {}
 nodeSelector: {}
 
+podSecurityContext: {}
+securityContext: {}
+
 # Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
 # repository name with your registry URL.
 # Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
@@ -32,97 +35,97 @@ zookeeper:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 kafka:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 kafkaConnect:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 kafkaConnects2i:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 topicOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: 0.23.0
+    tag: 0.24.0-rc1
 userOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: 0.23.0
+    tag: 0.24.0-rc1
 kafkaInit:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: 0.23.0
+    tag: 0.24.0-rc1
 tlsSidecarEntityOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 kafkaMirrorMaker:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 kafkaBridge:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka-bridge
-    tag: 0.19.0
+    tag: 0.20.1
 kafkaExporter:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 jmxTrans:
   image:
     registry: quay.io
     repository: strimzi
     name: jmxtrans
-    tag: 0.23.0
+    tag: 0.24.0-rc1
 kafkaMirrorMaker2:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 cruiseControl:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 tlsSidecarCruiseControl:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.23.0
+    tagPrefix: 0.24.0-rc1
 kanikoExecutor:
   image:
     registry: quay.io
     repository: strimzi
     name: kaniko-executor
-    tag: 0.23.0
+    tag: 0.24.0-rc1
 resources:
   limits:
     memory: 384Mi
@@ -144,3 +147,5 @@ imageRepositoryOverride: ""
 # Override the docker image tag used by all Strimzi images
 imageTagOverride: ""
 createGlobalResources: true
+# Override the exclude pattern for exclude some labels
+labelsExclusionPattern: ""

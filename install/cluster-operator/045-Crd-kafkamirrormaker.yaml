@@ -111,6 +111,14 @@ spec:
                         description: Configure whether access token should be treated
                           as JWT. This should be set to `false` if the authorization
                           server returns opaque tokens. Defaults to `true`.
+                      audience:
+                        type: string
+                        description: OAuth audience to use when authenticating against
+                          the authorization server. Some authorization servers require
+                          the audience to be explicitly set. The possible values depend
+                          on how the authorization server is configured. By default,
+                          `audience` is not specified when performing the token endpoint
+                          request.
                       certificateAndKey:
                         type: object
                         properties:
@@ -306,6 +314,14 @@ spec:
                         description: Configure whether access token should be treated
                           as JWT. This should be set to `false` if the authorization
                           server returns opaque tokens. Defaults to `true`.
+                      audience:
+                        type: string
+                        description: OAuth audience to use when authenticating against
+                          the authorization server. Some authorization servers require
+                          the audience to be explicitly set. The possible values depend
+                          on how the authorization server is configured. By default,
+                          `audience` is not specified when performing the token endpoint
+                          request.
                       certificateAndKey:
                         type: object
                         properties:
@@ -479,10 +495,18 @@ spec:
                 type: string
                 description: List of topics which are included for mirroring. This
                   option allows any regular expression using Java-style regular expressions.
-                  Mirroring two topics named A and B is achieved by using the whitelist
+                  Mirroring two topics named A and B is achieved by using the expression
                   `'A\|B'`. Or, as a special case, you can mirror all topics using
-                  the whitelist '*'. You can also specify multiple regular expressions
-                  separated by commas.
+                  the regular expression '*'. You can also specify multiple regular
+                  expressions separated by commas.
+              include:
+                type: string
+                description: List of topics which are included for mirroring. This
+                  option allows any regular expression using Java-style regular expressions.
+                  Mirroring two topics named A and B is achieved by using the expression
+                  `'A\|B'`. Or, as a special case, you can mirror all topics using
+                  the regular expression '*'. You can also specify multiple regular
+                  expressions separated by commas.
               jvmOptions:
                 type: object
                 properties:
@@ -827,6 +851,25 @@ spec:
                                             matchLabels:
                                               x-kubernetes-preserve-unknown-fields: true
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                            matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
+                                              type: object
                                         namespaces:
                                           type: array
                                           items:
@@ -841,6 +884,25 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                        matchLabels:
+                                          x-kubernetes-preserve-unknown-fields: true
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -895,6 +957,25 @@ spec:
                                             matchLabels:
                                               x-kubernetes-preserve-unknown-fields: true
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                            matchLabels:
+                                              x-kubernetes-preserve-unknown-fields: true
+                                              type: object
                                         namespaces:
                                           type: array
                                           items:
@@ -909,6 +990,25 @@ spec:
                                   type: object
                                   properties:
                                     labelSelector:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                        matchLabels:
+                                          x-kubernetes-preserve-unknown-fields: true
+                                          type: object
+                                    namespaceSelector:
                                       type: object
                                       properties:
                                         matchExpressions:
@@ -1009,6 +1109,35 @@ spec:
                               type: string
                         description: The pod's topology spread constraints.
                     description: Template for Kafka MirrorMaker `Pods`.
+                  podDisruptionBudget:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                          annotations:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                        description: Metadata to apply to the `PodDistruptionBugetTemplate`
+                          resource.
+                      maxUnavailable:
+                        type: integer
+                        minimum: 0
+                        description: Maximum number of unavailable pods to allow automatic
+                          Pod eviction. A Pod eviction is allowed when the `maxUnavailable`
+                          number of pods or fewer are unavailable after the eviction.
+                          Setting this value to 0 prevents all voluntary evictions,
+                          so the pods must be evicted manually. Defaults to 1.
+                    description: Template for Kafka MirrorMaker `PodDisruptionBudget`.
                   mirrorMakerContainer:
                     type: object
                     properties:
@@ -1082,7 +1211,7 @@ spec:
                                 type: string
                         description: Security context for the container.
                     description: Template for Kafka MirrorMaker container.
-                  podDisruptionBudget:
+                  serviceAccount:
                     type: object
                     properties:
                       metadata:
@@ -1100,17 +1229,8 @@ spec:
                             description: Annotations added to the resource template.
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
-                        description: Metadata to apply to the `PodDistruptionBugetTemplate`
-                          resource.
-                      maxUnavailable:
-                        type: integer
-                        minimum: 0
-                        description: Maximum number of unavailable pods to allow automatic
-                          Pod eviction. A Pod eviction is allowed when the `maxUnavailable`
-                          number of pods or fewer are unavailable after the eviction.
-                          Setting this value to 0 prevents all voluntary evictions,
-                          so the pods must be evicted manually. Defaults to 1.
-                    description: Template for Kafka MirrorMaker `PodDisruptionBudget`.
+                        description: Metadata applied to the resource.
+                    description: Template for the Kafka MirrorMaker service account.
                 description: Template to specify how Kafka MirrorMaker resources,
                   `Deployments` and `Pods`, are generated.
               livenessProbe:
@@ -1175,11 +1295,19 @@ spec:
                     description: The timeout for each attempted health check. Default
                       to 5 seconds. Minimum value is 1.
                 description: Pod readiness checking.
+            oneOf:
+            - properties:
+                whitelist: {}
+              required:
+              - whitelist
+            - properties:
+                include: {}
+              required:
+              - include
             required:
             - replicas
             - consumer
             - producer
-            - whitelist
             description: The specification of Kafka MirrorMaker.
           status:
             type: object
