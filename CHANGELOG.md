@@ -14,6 +14,7 @@
 * Support for broker load information added to the rebalance optimization proposal. Information on the load difference, before and after a rebalance is stored in a ConfigMap
 * Add support for selectively changing the verbosity of logging for individual CRs, using markers.
 * Added support for `controller_mutation_rate' quota. Creation/Deletion of topics and creation of partitions can be configured through this.
+* Use newer version of Kafka Exporter with different bugfixes 
 
 ### Changes, deprecations and removals
 
