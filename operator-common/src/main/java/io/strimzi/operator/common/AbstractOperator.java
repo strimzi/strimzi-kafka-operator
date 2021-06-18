@@ -102,13 +102,9 @@ public abstract class AbstractOperator<
         this.metrics = metrics;
 
         // Setup metrics
-        Tags metricTags;
+        String selectorValue = selectorLabels != null ? selectorLabels.toSelectorString() : "";
+        Tags metricTags = Tags.of(Tag.of("kind", kind()), Tag.of("selector", selectorValue));
 
-        if (selectorLabels != null) {
-            metricTags = Tags.of(Tag.of("kind", kind()), Tag.of("selector", selectorLabels.toSelectorString()));
-        } else {
-            metricTags = Tags.of(Tag.of("kind", kind()), Tag.of("selector", ""));
-        }
         periodicReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations.periodical",
                 "Number of periodical reconciliations done by the operator",
                 metricTags);
