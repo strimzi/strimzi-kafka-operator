@@ -89,7 +89,7 @@ kafkaBridge:
     registry: quay.io
     repository: strimzi
     name: kafka-bridge
-    tag: 0.20.0
+    tag: 0.20.1
 kafkaExporter:
   image:
     registry: quay.io
