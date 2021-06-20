@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.25.0
+
+### Changes, deprecations and removals
+
 ## 0.24.0
 
 * Add support for [Kubernetes Configuration Provider for Apache Kafka](https://github.com/strimzi/kafka-kubernetes-config-provider)
