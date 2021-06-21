@@ -123,12 +123,9 @@ public class HelmResource implements SpecificResourceType {
                 entry("logLevelOverride", Environment.STRIMZI_LOG_LEVEL),
                 entry("fullReconciliationIntervalMs", Long.toString(reconciliationInterval)),
                 entry("operationTimeoutMs", Long.toString(operationTimeout)),
-                entry("featureGates", Environment.STRIMZI_FEATURE_GATES))
+                entry("featureGates", Environment.STRIMZI_FEATURE_GATES),
+                entry("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) ? "true" : "false"))
                 .collect(TestUtils.entriesToMap()));
-
-        if (this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
-            values.put("watchAnyNamespace", "true");
-        }
 
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = KubeClusterResource.getInstance().setNamespace("kube-system");
