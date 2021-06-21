@@ -211,7 +211,9 @@ public class KubeClusterResource {
     public void deleteNamespace(ExtensionContext extensionContext, String namespaceName) {
         kubeClient().deleteNamespace(namespaceName);
         cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
-        if (extensionContext != null) deleteNamespaceFromSet(extensionContext, testNamespace);
+        if (extensionContext != null) {
+            deleteNamespaceFromSet(extensionContext, testNamespace);
+        }
     }
 
     /**

@@ -545,8 +545,8 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
-            teardownEnvForOperator();
             ResourceManager.getInstance().deleteResources(extensionContext);
+            teardownEnvForOperator();
         }
     }
 
