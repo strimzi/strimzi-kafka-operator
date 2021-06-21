@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -54,7 +53,7 @@ public class MainIT {
 
     @Test
     public void testCreateClusterRolesCreatesClusterRoles(VertxTestContext context) {
-        assertDoesNotThrow(() -> KubeCluster.bootstrap());
+        assertDoesNotThrow(KubeCluster::bootstrap);
         Map<String, String> envVars = new HashMap<>(6);
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
@@ -67,14 +66,13 @@ public class MainIT {
 
         ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
-        Checkpoint a = context.checkpoint();
         Main.maybeCreateClusterRoles(vertx, config, client)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue()));
                 assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue()));
                 assertThat(cro.get("strimzi-kafka-broker"), is(notNullValue()));
                 assertThat(cro.get("strimzi-entity-operator"), is(notNullValue()));
-                a.flag();
+                context.completeNow();
             })));
     }
 }

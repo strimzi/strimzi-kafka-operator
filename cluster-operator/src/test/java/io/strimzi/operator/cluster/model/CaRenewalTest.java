@@ -31,7 +31,7 @@ public class CaRenewalTest {
     @ParallelTest
     public void renewalOfStatefulSetCertificatesWithNullSecret() throws IOException {
         Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
-            private AtomicInteger invocationCount = new AtomicInteger(0);
+            private final AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
             public boolean certRenewed() {
@@ -45,7 +45,7 @@ public class CaRenewalTest {
 
             @Override
             protected CertAndKey generateSignedCert(Subject subject,
-                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
+                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) {
                 int index = invocationCount.getAndIncrement();
 
                 return new CertAndKey(
@@ -61,13 +61,12 @@ public class CaRenewalTest {
         int replicas = 3;
         Function<Integer, Subject> subjectFn = i -> new Subject();
         Function<Integer, String> podNameFn = i -> "pod" + i;
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION, replicas,
                 subjectFn,
                 null,
                 podNameFn,
-                isMaintenanceTimeWindowsSatisfied);
+                true);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
@@ -88,7 +87,7 @@ public class CaRenewalTest {
     @ParallelTest
     public void renewalOfStatefulSetCertificatesWithCaRenewal() throws IOException {
         Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
-            private AtomicInteger invocationCount = new AtomicInteger(0);
+            private final AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
             public boolean certRenewed() {
@@ -102,7 +101,7 @@ public class CaRenewalTest {
 
             @Override
             protected CertAndKey generateSignedCert(Subject subject,
-                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
+                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) {
                 int index = invocationCount.getAndIncrement();
 
                 return new CertAndKey(
@@ -117,7 +116,7 @@ public class CaRenewalTest {
 
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                    .withNewName("test-secret")
+                    .withName("test-secret")
                 .endMetadata()
                 .addToData("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -136,14 +135,13 @@ public class CaRenewalTest {
         int replicas = 3;
         Function<Integer, Subject> subjectFn = i -> new Subject();
         Function<Integer, String> podNameFn = i -> "pod" + i;
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
                 replicas,
                 subjectFn,
                 initialSecret,
                 podNameFn,
-                isMaintenanceTimeWindowsSatisfied);
+                true);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
@@ -164,7 +162,7 @@ public class CaRenewalTest {
     @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalInWindow() throws IOException {
         Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
-            private AtomicInteger invocationCount = new AtomicInteger(0);
+            private final AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
             public boolean certRenewed() {
@@ -188,7 +186,7 @@ public class CaRenewalTest {
 
             @Override
             protected CertAndKey generateSignedCert(Subject subject,
-                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
+                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) {
                 int index = invocationCount.getAndIncrement();
 
                 return new CertAndKey(
@@ -203,7 +201,7 @@ public class CaRenewalTest {
 
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withNewName("test-secret")
+                .withName("test-secret")
                 .endMetadata()
                 .addToData("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -222,14 +220,13 @@ public class CaRenewalTest {
         int replicas = 3;
         Function<Integer, Subject> subjectFn = i -> new Subject();
         Function<Integer, String> podNameFn = i -> "pod" + i;
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
-                replicas,
-                subjectFn,
-                initialSecret,
-                podNameFn,
-                isMaintenanceTimeWindowsSatisfied);
+                                                    replicas,
+                                                    subjectFn,
+                                                    initialSecret,
+                                                    podNameFn,
+                                                    true);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));
@@ -250,7 +247,7 @@ public class CaRenewalTest {
     @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalOutsideWindow() throws IOException {
         Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
-            private AtomicInteger invocationCount = new AtomicInteger(0);
+            private final AtomicInteger invocationCount = new AtomicInteger(0);
 
             @Override
             public boolean certRenewed() {
@@ -274,7 +271,7 @@ public class CaRenewalTest {
 
             @Override
             protected CertAndKey generateSignedCert(Subject subject,
-                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
+                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) {
                 int index = invocationCount.getAndIncrement();
 
                 return new CertAndKey(
@@ -289,7 +286,7 @@ public class CaRenewalTest {
 
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withNewName("test-secret")
+                .withName("test-secret")
                 .endMetadata()
                 .addToData("pod0.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("pod0.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -308,14 +305,13 @@ public class CaRenewalTest {
         int replicas = 3;
         Function<Integer, Subject> subjectFn = i -> new Subject();
         Function<Integer, String> podNameFn = i -> "pod" + i;
-        boolean isMaintenanceTimeWindowsSatisfied = false;
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
                 replicas,
                 subjectFn,
                 initialSecret,
                 podNameFn,
-                isMaintenanceTimeWindowsSatisfied);
+                false);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("old-cert"));
         assertThat(new String(newCerts.get("pod0").key()), is("old-key"));

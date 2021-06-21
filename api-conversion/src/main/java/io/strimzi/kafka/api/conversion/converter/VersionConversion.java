@@ -4,13 +4,13 @@
  */
 package io.strimzi.kafka.api.conversion.converter;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.strimzi.api.annotations.ApiVersion;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public class VersionConversion<T extends HasMetadata> extends ListConversion<T, Conversion<T>> {
 

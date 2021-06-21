@@ -4,9 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import java.util.Map;
-import java.util.Optional;
-
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -29,6 +26,9 @@ import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
+
+import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;

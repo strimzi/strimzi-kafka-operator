@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList<T>, R extends Resource<T>> extends AbstractResourceOperatorTest<C, T, L, R> {
 
@@ -50,13 +50,12 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         mocker(mockClient, mockCms);
 
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
-        Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, atLeastOnce()).get();
                 verify(mockResource, never()).isReady();
-                async.flag();
+                context.completeNow();
             })));
 
     }
@@ -80,12 +79,11 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, never()).isReady();
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -132,11 +130,10 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 5_000)
             .onComplete(context.succeeding(v -> {
                 verify(mockResource, times(unreadyCount + 1)).isReady();
-                async.flag();
+                context.completeNow();
             }));
     }
 
@@ -159,13 +156,12 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 verify(mockResource, atLeastOnce()).get();
                 verify(mockResource, atLeastOnce()).isReady();
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -190,11 +186,10 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
 
         AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
-                async.flag();
+                context.completeNow();
             })));
     }
 }

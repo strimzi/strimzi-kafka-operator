@@ -10,7 +10,6 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.zookeeper.KeeperException;
@@ -18,14 +17,11 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
-import org.apache.zookeeper.client.ZKClientConfig;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -180,20 +176,14 @@ public class ZookeeperScalerTest {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.NOT_CONNECTED);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
-            @Override
-            public ZooKeeperAdmin createZookeeperAdmin(String connectString, int sessionTimeout, Watcher watcher, ZKClientConfig conf) throws IOException {
-                return mockZooAdmin;
-            }
-        };
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, conf) -> mockZooAdmin;
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getMessage(), is("Failed to connect to Zookeeper zookeeper:2181. Connection was not ready in 1000 ms."));
             verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
+            context.completeNow();
         })));
     }
 
@@ -206,21 +196,17 @@ public class ZookeeperScalerTest {
         when(mockZooAdmin.getConfig(false, null)).thenReturn(config.getBytes(StandardCharsets.US_ASCII));
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
-            @Override
-            public ZooKeeperAdmin createZookeeperAdmin(String connectString, int sessionTimeout, Watcher watcher, ZKClientConfig conf) throws IOException {
-                watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
-                return mockZooAdmin;
-            }
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, conf) -> {
+            watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
+            return mockZooAdmin;
         };
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
             verify(mockZooAdmin, never()).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
             verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
+            context.completeNow();
         })));
     }
 
@@ -238,21 +224,17 @@ public class ZookeeperScalerTest {
         when(mockZooAdmin.reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull())).thenReturn(updated.getBytes(StandardCharsets.US_ASCII));
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
-            @Override
-            public ZooKeeperAdmin createZookeeperAdmin(String connectString, int sessionTimeout, Watcher watcher, ZKClientConfig conf) throws IOException {
-                watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
-                return mockZooAdmin;
-            }
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, conf) -> {
+            watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
+            return mockZooAdmin;
         };
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
             verify(mockZooAdmin, times(1)).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
             verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
+            context.completeNow();
         })));
     }
 
@@ -267,21 +249,17 @@ public class ZookeeperScalerTest {
         when(mockZooAdmin.reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull())).thenThrow(new KeeperException.NewConfigNoQuorum());
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
-            @Override
-            public ZooKeeperAdmin createZookeeperAdmin(String connectString, int sessionTimeout, Watcher watcher, ZKClientConfig conf) throws IOException {
-                watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
-                return mockZooAdmin;
-            }
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, conf) -> {
+            watcher.process(new WatchedEvent(null, Watcher.Event.KeeperState.SyncConnected, null));
+            return mockZooAdmin;
         };
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getCause(), instanceOf(KeeperException.class));
             verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
+            context.completeNow();
         })));
     }
 
@@ -289,10 +267,9 @@ public class ZookeeperScalerTest {
     public void testConnectionToNonExistingHost(VertxTestContext context)  {
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyCaSecret, dummyCoSecret, 2_000);
 
-        Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getMessage(), is("Failed to connect to Zookeeper i-do-not-exist.com:2181. Connection was not ready in 2000 ms."));
-            check.flag();
+            context.completeNow();
         })));
     }
 
@@ -303,20 +280,14 @@ public class ZookeeperScalerTest {
         when(mockZooAdmin.getConfig(false, null)).thenThrow(KeeperException.ConnectionLossException.class);
         when(mockZooAdmin.close(1_000)).thenThrow(InterruptedException.class);
 
-        ZooKeeperAdminProvider zooKeeperAdminProvider = new ZooKeeperAdminProvider() {
-            @Override
-            public ZooKeeperAdmin createZookeeperAdmin(String connectString, int sessionTimeout, Watcher watcher, ZKClientConfig conf) throws IOException {
-                return mockZooAdmin;
-            }
-        };
+        ZooKeeperAdminProvider zooKeeperAdminProvider = (connectString, sessionTimeout, watcher, conf) -> mockZooAdmin;
 
         ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getMessage(), is("Failed to get current Zookeeper server configuration"));
             verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
+            context.completeNow();
         })));
     }
 

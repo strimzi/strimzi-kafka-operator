@@ -32,7 +32,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -216,7 +215,6 @@ public class PartialRollingUpdateTest {
         startKube();
 
         LOGGER.info("Recovery reconciliation");
-        Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 4; i++) {
@@ -225,7 +223,7 @@ public class PartialRollingUpdateTest {
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected generation " + generation, generation, is("3")));
             }
-            async.flag();
+            context.completeNow();
         });
     }
 
@@ -240,7 +238,6 @@ public class PartialRollingUpdateTest {
         startKube();
 
         LOGGER.info("Recovery reconciliation");
-        Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
@@ -250,7 +247,7 @@ public class PartialRollingUpdateTest {
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected generation " + generation, generation, is("3")));
             }
-            async.flag();
+            context.completeNow();
         });
     }
 
@@ -270,7 +267,6 @@ public class PartialRollingUpdateTest {
         startKube();
 
         LOGGER.info("Recovery reconciliation");
-        Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
@@ -286,7 +282,7 @@ public class PartialRollingUpdateTest {
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected cert generation " + certGeneration, certGeneration, is("3")));
             }
-            async.flag();
+            context.completeNow();
         });
     }
 
@@ -303,7 +299,6 @@ public class PartialRollingUpdateTest {
         startKube();
 
         LOGGER.info("Recovery reconciliation");
-        Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
@@ -313,7 +308,7 @@ public class PartialRollingUpdateTest {
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected cert generation " + certGeneration, certGeneration, is("3")));
             }
-            async.flag();
+            context.completeNow();
         });
     }
 

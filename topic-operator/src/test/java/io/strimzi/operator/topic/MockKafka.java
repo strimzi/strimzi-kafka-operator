@@ -60,7 +60,8 @@ public class MockKafka implements Kafka {
         return this;
     }
 
-    public MockKafka setTopicMetadataResponses(Function<TopicName, Future<TopicMetadata>>... topicMetadataRespose) {
+    @SafeVarargs
+    public final MockKafka setTopicMetadataResponses(Function<TopicName, Future<TopicMetadata>>... topicMetadataRespose) {
         this.topicMetadataRespose = asList(topicMetadataRespose);
         this.topicMetadataResposeCall = 0;
         return this;
@@ -231,10 +232,20 @@ public class MockKafka implements Kafka {
     }
 
     public void assertContains(VertxTestContext context, Topic topic) {
+        System.out.println(topic.getTopicName());
+        System.out.println(topic);
+        System.out.println(topics.get(topic.getTopicName()));
         context.verify(() -> {
             TopicName topicName = topic.getTopicName();
             assertThat("The topic " + topicName + " does not exist", topics, hasKey(topicName));
-            assertThat("The topic " + topicName + " has an unexpected state", topics.get(topicName), is(topic));
+
+            // I expect the Kube state and the stored state to be different, because the topic operator
+            // will skip reconciling any topic marked for pausing, so the state will still contain the topic with
+            // pause-reconcilation either false, or not set
+            String pauseAnnotation = topic.getMetadata().getAnnotations().get("strimzi.io/pause-reconciliation");
+            if (!"true".equals(pauseAnnotation)) {
+                assertThat("The topic " + topicName + " has an unexpected state",  topics.get(topicName), is(topic));
+            }
         });
     }
 

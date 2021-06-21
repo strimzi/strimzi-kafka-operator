@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.AclRuleGroupResource;
 import io.strimzi.api.kafka.model.AclRuleResource;
 import io.strimzi.api.kafka.model.AclRuleTopicResource;
 import io.strimzi.api.kafka.model.AclRuleTransactionalIdResource;
-
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
 

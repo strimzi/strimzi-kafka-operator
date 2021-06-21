@@ -4,11 +4,11 @@
  */
 package io.strimzi.systemtest.specific;
 
-import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;

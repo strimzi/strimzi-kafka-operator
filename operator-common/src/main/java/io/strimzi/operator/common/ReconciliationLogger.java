@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common;
 
-import java.io.Serializable;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,6 +14,8 @@ import org.apache.logging.log4j.spi.AbstractLogger;
 import org.apache.logging.log4j.spi.ExtendedLoggerWrapper;
 import org.apache.logging.log4j.util.MessageSupplier;
 import org.apache.logging.log4j.util.Supplier;
+
+import java.io.Serializable;
 
 /**
  * Custom Logger interface with convenience methods for

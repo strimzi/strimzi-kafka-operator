@@ -21,13 +21,13 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
-import io.strimzi.operator.common.PasswordGenerator;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;

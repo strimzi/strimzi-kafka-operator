@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.vertx.core.Promise;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Assumptions;
@@ -30,8 +29,6 @@ public abstract class TopicStoreTestBase {
     @Test
     public void testCrud(VertxTestContext context) {
         Assumptions.assumeTrue(canRunTest());
-
-        Checkpoint async = context.checkpoint();
 
         String topicName = "my_topic_" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
         Topic topic = new Topic.Builder(topicName, 2,
@@ -94,7 +91,7 @@ public abstract class TopicStoreTestBase {
             .compose(v -> store.delete(updatedTopic.getTopicName()))
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TopicStore.NoSuchEntityExistsException.class));
-                async.flag();
+                context.completeNow();
             })));
     }
 

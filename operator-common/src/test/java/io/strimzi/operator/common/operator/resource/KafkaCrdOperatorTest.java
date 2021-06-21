@@ -11,16 +11,15 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.matches;
@@ -35,6 +34,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     protected Class<Resource> resourceType() {
         return Resource.class;
     }
@@ -50,10 +50,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
-                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
-                                .withNewPlain()
-                                .endPlain()
-                                .build()))
+                        .withListeners(new ArrayOrObjectKafkaListeners(List.of(new GenericKafkaListenerBuilder().build())))
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()
@@ -83,18 +80,21 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
                 .build();
     }
 
+
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         when(mockClient.customResources(any(), any())).thenReturn(op);
     }
 
     @Override
-    protected CrdOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new CrdOperator(vertx, mockClient, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, Kafka, KafkaList> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+        return new CrdOperator<>(vertx, mockClient, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
     }
 
     @Test
-    public void testUpdateStatusAsync(VertxTestContext context) throws IOException {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void testUpdateStatusAsync(VertxTestContext context) {
         Kafka resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.updateStatus(any())).thenReturn(resource);
@@ -108,10 +108,8 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        Checkpoint async = context.checkpoint();
-
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, resource())
-            .onComplete(context.succeeding(kafka -> async.flag()));
+            .onComplete(context.succeeding(k -> context.completeNow()));
     }
 }

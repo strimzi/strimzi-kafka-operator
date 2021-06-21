@@ -8,7 +8,6 @@ import io.apicurio.registry.utils.ConcurrentUtil;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.I0Itec.zkclient.ZkClient;
@@ -80,8 +79,7 @@ public class TopicStoreUpgradeTest {
         try {
             doTestUpgrade(zk);
         } finally {
-            Checkpoint async = context.checkpoint();
-            zk.disconnect(ar -> async.flag());
+            zk.disconnect(ar -> context.completeNow());
         }
     }
 
@@ -121,7 +119,7 @@ public class TopicStoreUpgradeTest {
     public static void before() throws Exception {
         vertx = Vertx.vertx();
 
-        cluster = new EmbeddedKafkaCluster(1);
+        EmbeddedKafkaCluster cluster = new EmbeddedKafkaCluster(1);
         cluster.start();
 
         MANDATORY_CONFIG.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.bootstrapServers());

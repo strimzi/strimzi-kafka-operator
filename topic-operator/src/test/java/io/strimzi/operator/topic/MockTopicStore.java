@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.vertx.core.Future;
 import io.vertx.junit5.VertxTestContext;
 
@@ -76,7 +77,17 @@ public class MockTopicStore implements TopicStore {
     }
 
     public void assertContains(VertxTestContext context, Topic topic) {
-        context.verify(() -> assertThat(topics.get(topic.getTopicName()), is(topic)));
+        context.verify(() -> {
+            // I expect the Kube state and the stored state to be different, because the topic operator
+            // will skip reconciling any topic marked for pausing, so the state will still contain the topic with
+            // pause-reconcilation either false, or not set
+            ObjectMeta metadata = topic.getMetadata();
+            Map<String, String> annotations = metadata != null ? metadata.getAnnotations() : null;
+            String pauseAnnotation = annotations != null ? annotations.get("strimzi.io/pause-reconciliation") : null;
+            if (!"true".equals(pauseAnnotation)) {
+                assertThat(topics.get(topic.getTopicName()), is(topic));
+            }
+        });
     }
 
     public MockTopicStore setCreateTopicResponse(TopicName createTopic, Exception exception) {

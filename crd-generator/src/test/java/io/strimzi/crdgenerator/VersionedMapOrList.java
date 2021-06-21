@@ -4,10 +4,6 @@
  */
 package io.strimzi.crdgenerator;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -21,6 +17,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.strimzi.crdgenerator.annotations.Alternation;
 import io.strimzi.crdgenerator.annotations.Alternative;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @JsonDeserialize(using = VersionedMapOrList.Deserializer.class)
 @JsonSerialize(using = VersionedMapOrList.Serializer.class)

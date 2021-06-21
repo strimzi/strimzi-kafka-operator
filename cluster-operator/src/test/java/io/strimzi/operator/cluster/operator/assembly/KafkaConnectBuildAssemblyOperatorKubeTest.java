@@ -13,10 +13,14 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
@@ -40,12 +44,11 @@ import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -55,6 +58,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
@@ -73,6 +77,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"deprecation", "unchecked"})
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectBuildAssemblyOperatorKubeTest {
     private static final String NAMESPACE = "my-ns";
@@ -122,8 +127,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -208,7 +213,6 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -237,7 +241,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(2));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -246,7 +250,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -275,12 +279,10 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
-
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -358,15 +360,14 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.failing(v -> context.verify(() -> {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(1));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -416,8 +417,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -502,7 +503,6 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -523,7 +523,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(2));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -532,7 +532,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -582,8 +582,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -679,7 +679,6 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -697,7 +696,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(1));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(0));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(0));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -706,7 +705,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -756,8 +755,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -854,7 +853,6 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -875,7 +873,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(3));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -884,7 +882,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -934,8 +932,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1034,7 +1032,6 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -1055,7 +1052,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(3));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -1064,7 +1061,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -1098,8 +1095,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1168,7 +1165,6 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -1194,7 +1190,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -1228,8 +1224,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1313,7 +1309,6 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -1334,7 +1329,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(3));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -1343,7 +1338,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 }

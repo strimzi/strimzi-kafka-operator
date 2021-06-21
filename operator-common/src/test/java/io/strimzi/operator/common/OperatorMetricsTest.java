@@ -4,10 +4,13 @@
  */
 package io.strimzi.operator.common;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ListMeta;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -15,13 +18,13 @@ import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
@@ -32,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -66,16 +70,17 @@ public class OperatorMetricsTest {
     public void testSuccessfulReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        FooWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        FooOperator operator = new FooOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Foo.MockStatus> createOrUpdate(Reconciliation reconciliation, Foo resource) {
                 return Future.succeededFuture();
             }
 
             @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, Foo resource) {
                 return emptySet();
             }
 
@@ -85,12 +90,11 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
-                return new Status() { };
+            protected Foo.MockStatus createStatus() {
+                return new Foo.MockStatus();
             }
         };
 
-        Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
@@ -109,7 +113,7 @@ public class OperatorMetricsTest {
                             .tag("resource-namespace", "my-namespace")
                             .gauge().value(), is(1.0));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -117,16 +121,16 @@ public class OperatorMetricsTest {
     public void testFailingReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        FooWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        FooOperator operator = new FooOperator(vertx, "TestResource", resourceOperator, metrics, null) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Foo.MockStatus> createOrUpdate(Reconciliation reconciliation, Foo resource) {
                 return Future.failedFuture(new RuntimeException("Test error"));
             }
 
             @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, Foo resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -137,12 +141,11 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
-                return new Status() { };
+            protected Foo.MockStatus createStatus() {
+                return new Foo.MockStatus();
             }
         };
 
-        Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
@@ -162,7 +165,7 @@ public class OperatorMetricsTest {
                             .tag("reason", "Test error")
                             .gauge().value(), is(0.0));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -170,16 +173,16 @@ public class OperatorMetricsTest {
     public void testPauseReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
+        FooWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        FooOperator operator = new FooOperator(vertx, "TestResource", resourceOperator, metrics, null) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Foo.MockStatus> createOrUpdate(Reconciliation reconciliation, Foo resource) {
                 return Future.succeededFuture();
             }
 
             @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, Foo resource) {
                 return new HashSet<>();
             }
 
@@ -189,12 +192,11 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
-                return new Status() { };
+            protected Foo.MockStatus createStatus() {
+                return new Foo.MockStatus();
             }
         };
 
-        Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
@@ -214,7 +216,7 @@ public class OperatorMetricsTest {
                             .tag("resource-namespace", "my-namespace")
                             .gauge().value(), is(1.0));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -222,16 +224,16 @@ public class OperatorMetricsTest {
     public void testFailingWithLockReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        FooWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        FooOperator operator = new FooOperator(vertx, "TestResource", resourceOperator, metrics, null) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Foo.MockStatus> createOrUpdate(Reconciliation reconciliation, Foo resource) {
                 return Future.failedFuture(new UnableToAcquireLockException());
             }
 
             @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, Foo resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -242,12 +244,11 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
-                return new Status() { };
+            protected Foo.MockStatus createStatus() {
+                return new Foo.MockStatus();
             }
         };
 
-        Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
@@ -260,7 +261,7 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(0L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -268,31 +269,31 @@ public class OperatorMetricsTest {
     public void testDeleteCountsReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+        FooWatchableStatusedResourceOperator resourceOperator = new FooWatchableStatusedResourceOperator(vertx, null, "TestResource") {
             @Override
-            protected MixedOperation operation() {
+            protected MixedOperation<Foo, Foo.FooList, Resource<Foo>> operation() {
                 return null;
             }
 
             @Override
-            public HasMetadata get(String namespace, String name) {
+            public Foo get(String namespace, String name) {
                 return null;
             }
 
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+            public Future<Foo> updateStatusAsync(Reconciliation reconciliation, Foo resource) {
                 return null;
             }
         };
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        FooOperator operator = new FooOperator(vertx, "TestResource", resourceOperator, metrics, null) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Foo.MockStatus> createOrUpdate(Reconciliation reconciliation, Foo resource) {
                 return null;
             }
 
             @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, Foo resource) {
                 // Do nothing
                 return emptySet();
             }
@@ -303,12 +304,11 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
-                return new Status() { };
+            protected Foo.MockStatus createStatus() {
+                return new Foo.MockStatus();
             }
         };
 
-        Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
@@ -321,15 +321,13 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThrows(MeterNotFoundException.class, () -> {
-                        registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
-                                .tag("kind", "TestResource")
-                                .tag("name", "my-resource")
-                                .tag("resource-namespace", "my-namespace")
-                                .gauge();
-                    });
+                    assertThrows(MeterNotFoundException.class, () -> registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                                                                             .tag("kind", "TestResource")
+                                                                             .tag("name", "my-resource")
+                                                                             .tag("resource-namespace", "my-namespace")
+                                                                             .gauge());
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -342,11 +340,11 @@ public class OperatorMetricsTest {
         resources.add(new NamespaceAndName("my-namespace", "vtid"));
         resources.add(new NamespaceAndName("my-namespace", "utv"));
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        FooWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        FooOperator operator = new FooOperator(vertx, "TestResource", resourceOperator, metrics, null) {
             @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            protected Future<Foo.MockStatus> createOrUpdate(Reconciliation reconciliation, Foo resource) {
                 return Future.succeededFuture();
             }
 
@@ -355,13 +353,13 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
+            public Set<Condition> validate(Reconciliation reconciliation, Foo resource) {
                 // Do nothing
                 return emptySet();
             }
 
             @Override
-            Future<Void> updateStatus(Reconciliation reconciliation, Status desiredStatus) {
+            Future<Void> updateStatus(Reconciliation reconciliation, Foo.MockStatus desiredStatus) {
                 return Future.succeededFuture();
             }
 
@@ -371,15 +369,14 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
-                return new Status() { };
+            protected  Foo.MockStatus createStatus() {
+                return new Foo.MockStatus();
             }
         };
 
         Promise<Void> reconcileAllPromise = Promise.promise();
         operator.reconcileAll("test", "my-namespace", reconcileAllPromise);
 
-        Checkpoint async = context.checkpoint();
         reconcileAllPromise.future().onComplete(context.succeeding(v -> context.verify(() -> {
             MeterRegistry registry = metrics.meterRegistry();
 
@@ -400,7 +397,7 @@ public class OperatorMetricsTest {
                         .gauge().value(), is(1.0));
             }
 
-            async.flag();
+            context.completeNow();
         })));
     }
 
@@ -413,201 +410,127 @@ public class OperatorMetricsTest {
         MetricsProvider metrics = new MicrometerMetricsProvider();
         MeterRegistry registry = metrics.meterRegistry();
 
-        registry.forEachMeter(meter -> {
-            registry.remove(meter);
-        });
+        registry.forEachMeter(registry::remove);
 
         return metrics;
     }
 
-    protected abstract static class MyResource extends CustomResource {
+    protected abstract static class MyResource<S, T> extends CustomResource<S, T> {
     }
 
-    protected AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
-        return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+    protected FooWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
+        return new FooWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+            public Future<Foo> updateStatusAsync(Reconciliation reconciliation, Foo resource) {
                 return null;
             }
 
             @Override
-            protected MixedOperation operation() {
+            protected MixedOperation<Foo, Foo.FooList, Resource<Foo>> operation() {
                 return null;
             }
 
             @Override
-            public CustomResource get(String namespace, String name) {
-                @Group("strimzi")
-                @Version("v1")
-                class Foo extends MyResource {
-                    @Override
-                    public ObjectMeta getMetadata() {
-                        return new ObjectMeta();
-                    }
-
-                    @Override
-                    public void setMetadata(ObjectMeta objectMeta) {
-
-                    }
-
-                    @Override
-                    public String getKind() {
-                        return "TestResource";
-                    }
-
-                    @Override
-                    public String getApiVersion() {
-                        return "v1";
-                    }
-
-                    @Override
-                    public void setApiVersion(String s) {
-
-                    }
-
-                    @Override
-                    public Spec getSpec() {
-                        return new Spec() { };
-                    }
-
-                    @Override
-                    public void setSpec(Object spec) {
-                    }
-
-                    @Override
-                    public Status getStatus() {
-                        return null;
-                    }
-
-                    @Override
-                    public void setStatus(Object status) {
-
-                    }
-                }
+            public Foo get(String namespace, String name) {
                 return new Foo();
             }
         };
     }
 
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource()    {
-        return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+    private FooWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource()    {
+        return new FooWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+            public Future<Foo> updateStatusAsync(Reconciliation reconciliation, Foo resource) {
                 return Future.succeededFuture();
             }
 
             @Override
-            protected MixedOperation operation() {
+            protected MixedOperation<Foo, Foo.FooList, Resource<Foo>> operation() {
                 return null;
             }
 
             @Override
-            public CustomResource get(String namespace, String name) {
-                @Group("strimzi")
-                @Version("v1")
-                class Foo extends MyResource {
-                    @Override
-                    public ObjectMeta getMetadata() {
-                        ObjectMeta md = new ObjectMeta();
-                        md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
-                        return md;
-                    }
+            public Foo get(String namespace, String name) {
+                ObjectMeta md = new ObjectMeta();
+                md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
 
-                    @Override
-                    public void setMetadata(ObjectMeta objectMeta) {
-
-                    }
-
-                    @Override
-                    public String getKind() {
-                        return "TestResource";
-                    }
-
-                    @Override
-                    public String getApiVersion() {
-                        return "v1";
-                    }
-
-                    @Override
-                    public void setApiVersion(String s) {
-
-                    }
-
-                    @Override
-                    public Spec getSpec() {
-                        return new Spec() { };
-                    }
-
-                    @Override
-                    public void setSpec(Object spec) {
-                    }
-
-                    @Override
-                    public Status getStatus() {
-                        return null;
-                    }
-
-                    @Override
-                    public void setStatus(Object status) {
-
-                    }
-                }
-                return new Foo();
+                return new Foo().withMeta(md);
             }
 
             @Override
-            public Future getAsync(String namespace, String name) {
-                @Group("strimzi")
-                @Version("v1")
-                class Foo extends MyResource {
-                    @Override
-                    public ObjectMeta getMetadata() {
-                        ObjectMeta md = new ObjectMeta();
-                        md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
-                        return md;
-                    }
-
-                    @Override
-                    public void setMetadata(ObjectMeta objectMeta) {
-
-                    }
-
-                    @Override
-                    public String getKind() {
-                        return "TestResource";
-                    }
-
-                    @Override
-                    public String getApiVersion() {
-                        return "v1";
-                    }
-
-                    @Override
-                    public void setApiVersion(String s) {
-
-                    }
-
-                    @Override
-                    public Spec getSpec() {
-                        return new Spec() { };
-                    }
-
-                    @Override
-                    public void setSpec(Object spec) {
-                    }
-
-                    @Override
-                    public Status getStatus() {
-                        return null;
-                    }
-
-                    @Override
-                    public void setStatus(Object status) {
-
-                    }
-                }
-                return Future.succeededFuture(new Foo());
+            public Future<Foo> getAsync(String namespace, String name) {
+                return Future.succeededFuture(get(namespace, name));
             }
         };
+    }
+
+    @Group("strimzi")
+    @Version("v1")
+    static class Foo extends MyResource<Foo.MockSpec, Foo.MockStatus> {
+
+        ObjectMeta meta = new ObjectMeta();
+
+        static class MockSpec extends Spec {
+        }
+
+        static class MockStatus extends Status {
+        }
+
+        static class FooList implements KubernetesResourceList<Foo> {
+
+            @Override
+            public ListMeta getMetadata() {
+                return null;
+            }
+
+            @Override
+            public List<Foo> getItems() {
+                return null;
+            }
+        }
+
+        @Override
+        public ObjectMeta getMetadata() {
+            return this.meta;
+        }
+
+        @Override
+        public String getKind() {
+            return "TestResource";
+        }
+
+        @Override
+        public String getApiVersion() {
+            return "v1";
+        }
+
+        @Override
+        public MockSpec getSpec() {
+            return new MockSpec();
+        }
+
+        @Override
+        public MockStatus getStatus() {
+            return new MockStatus();
+        }
+
+        public Foo withMeta(ObjectMeta meta) {
+            this.meta = meta;
+            return this;
+        }
+    }
+
+    abstract static class FooWatchableStatusedResourceOperator extends AbstractWatchableStatusedResourceOperator<KubernetesClient, Foo, Foo.FooList, Resource<Foo>> {
+        public FooWatchableStatusedResourceOperator(Vertx vertx, KubernetesClient client, String resourceKind) {
+            super(vertx, client, resourceKind);
+        }
+    }
+
+    abstract static class FooOperator extends AbstractOperator<Foo, Foo.MockSpec, Foo.MockStatus, FooWatchableStatusedResourceOperator> {
+        public FooOperator(Vertx vertx, String kind, FooWatchableStatusedResourceOperator resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
+            super(vertx, kind, resourceOperator, metrics, selectorLabels);
+        }
     }
 }

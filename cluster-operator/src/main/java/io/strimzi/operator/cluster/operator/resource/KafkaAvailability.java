@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import org.apache.kafka.clients.admin.Admin;

@@ -21,8 +21,8 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
         ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> {
 
     @Override
-    protected void mocker(KubernetesClient mockClient, MixedOperation op) {
-        RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class);
+    protected void mocker(KubernetesClient mockClient, MixedOperation<ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> op) {
+        RbacAPIGroupDSL mockRbac = mock(RbacAPIGroupDSL.class, "rbac");
         when(mockClient.rbac()).thenReturn(mockRbac);
         when(mockRbac.clusterRoleBindings()).thenReturn(op);
     }
@@ -44,6 +44,7 @@ public class ClusterRoleBindingOperatorTest extends AbstractNonNamespacedResourc
         return KubernetesClient.class;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     protected Class<? extends Resource> resourceType() {
         return Resource.class;

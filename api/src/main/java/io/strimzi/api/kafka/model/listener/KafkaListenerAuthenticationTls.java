@@ -4,10 +4,9 @@
  */
 package io.strimzi.api.kafka.model.listener;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 

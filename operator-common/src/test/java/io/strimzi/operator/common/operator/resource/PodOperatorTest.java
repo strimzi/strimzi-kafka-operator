@@ -15,7 +15,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
@@ -38,26 +37,26 @@ public class PodOperatorTest extends
         pr.list(NAMESPACE, Labels.EMPTY);
         context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY), is(emptyList())));
 
-        Checkpoint async = context.checkpoint(1);
         pr.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource()).onComplete(createResult -> {
             context.verify(() -> assertThat(createResult.succeeded(), is(true)));
             context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY).stream()
                         .map(p -> p.getMetadata().getName())
                         .collect(Collectors.toList()), is(singletonList(RESOURCE_NAME))));
 
-            pr.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, null).onComplete(deleteResult -> {
-                context.verify(() -> assertThat(deleteResult.succeeded(), is(true)));
-                async.flag();
-            });
+            pr.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, null)
+                    .onComplete(deleteResult -> context.verify(() -> assertThat(deleteResult.succeeded(), is(true))));
 
+            context.completeNow();
         });
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     protected Class clientType() {
         return KubernetesClient.class;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     protected Class<? extends Resource> resourceType() {
         return Resource.class;
@@ -85,6 +84,7 @@ public class PodOperatorTest extends
                 .build();
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     protected void mocker(KubernetesClient client, MixedOperation op) {
         when(client.pods()).thenReturn(op);

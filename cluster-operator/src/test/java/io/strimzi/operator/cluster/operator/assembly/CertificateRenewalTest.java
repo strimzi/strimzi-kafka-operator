@@ -31,11 +31,9 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
-
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -64,6 +62,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -93,20 +92,19 @@ public class CertificateRenewalTest {
 
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
-    private String clusterCaStorePassword = "123456";
     private static Vertx vertx;
-    private OpenSslCertManager certManager = new OpenSslCertManager();
-    private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+    private final OpenSslCertManager certManager = new OpenSslCertManager();
+    private final PasswordGenerator passwordGenerator = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                     "0123456789");
-    private List<Secret> secrets = new ArrayList();
+    private List<Secret> secrets = new ArrayList<>();
 
     @BeforeEach
     public void clearSecrets() {
-        secrets = new ArrayList();
+        secrets = new ArrayList<>();
     }
 
     @BeforeAll
@@ -131,7 +129,7 @@ public class CertificateRenewalTest {
                 .endSpec()
                 .build();
 
-        return reconcileCa(context, kafka, () -> new Date());
+        return reconcileCa(context, kafka, Date::new);
     }
 
     private Future<ArgumentCaptor<Secret>> reconcileCa(VertxTestContext context, Kafka kafka, Supplier<Date> dateSupplier) {
@@ -141,7 +139,7 @@ public class CertificateRenewalTest {
         when(secretOps.list(eq(NAMESPACE), any())).thenAnswer(invocation -> {
             Map<String, String> requiredLabels = ((Labels) invocation.getArgument(1)).toMap();
             return secrets.stream().filter(s -> {
-                Map<String, String> labels = new HashMap(s.getMetadata().getLabels());
+                Map<String, String> labels = new HashMap<>(s.getMetadata().getLabels());
                 labels.keySet().retainAll(requiredLabels.keySet());
                 return labels.equals(requiredLabels);
             }).collect(Collectors.toList());
@@ -156,9 +154,7 @@ public class CertificateRenewalTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
-
-        Promise reconcileCasComplete = Promise.promise();
+        Promise<ArgumentCaptor<Secret>> reconcileCasComplete = Promise.promise();
         op.new ReconciliationState(reconciliation, kafka).reconcileCas(dateSupplier)
             .onComplete(ar -> {
                 // If succeeded return the argument captor object instead of the Reconciliation state
@@ -169,11 +165,12 @@ public class CertificateRenewalTest {
                 } else {
                     reconcileCasComplete.fail(ar.cause());
                 }
-                async.flag();
+                context.completeNow();
             });
         return reconcileCasComplete.future();
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private CertAndKey generateCa(OpenSslCertManager certManager, CertificateAuthority certificateAuthority, String commonName)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         File clusterCaKeyFile = File.createTempFile("tls", "cluster-ca-key");
@@ -185,6 +182,7 @@ public class CertificateRenewalTest {
             sbj.setCommonName(commonName);
 
             certManager.generateSelfSignedCert(clusterCaKeyFile, clusterCaCertFile, sbj, ModelUtils.getCertificateValidity(certificateAuthority));
+            String clusterCaStorePassword = "123456";
             certManager.addCertToTrustStore(clusterCaCertFile, CA_CRT, clusterCaStoreFile, clusterCaStorePassword);
             return new CertAndKey(
                     Files.readAllBytes(clusterCaKeyFile.toPath()),
@@ -261,7 +259,6 @@ public class CertificateRenewalTest {
         // Delete secrets to emulate secrets not pre-existing
         secrets.clear();
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
@@ -276,7 +273,7 @@ public class CertificateRenewalTest {
 
                 assertThat(c.getAllValues().get(3).getData().keySet(), is(singleton(CA_KEY)));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -288,27 +285,26 @@ public class CertificateRenewalTest {
                 .withGenerateCertificateAuthority(false)
                 .build();
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(InvalidConfigurationException.class));
                 assertThat(e.getMessage(), is("Cluster CA should not be generated, but the secrets were not found."));
-                async.flag();
+                context.completeNow();
             })));
     }
 
     @Test
     public void testReconcileCasNoCertsGetGeneratedOutsideRenewalPeriod(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
-        assertNoCertsGetGeneratedOutsideRenewalPeriod(context, true);
+        assertNoCertsGetGeneratedOutsideRenewalPeriod(context);
     }
 
-    private void assertNoCertsGetGeneratedOutsideRenewalPeriod(VertxTestContext context, boolean generateCertificateAuthority)
+    private void assertNoCertsGetGeneratedOutsideRenewalPeriod(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
-                .withGenerateCertificateAuthority(generateCertificateAuthority)
+                .withGenerateCertificateAuthority(true)
                 .build();
 
         List<Secret> clusterCaSecrets = initialClusterCaSecrets(certificateAuthority);
@@ -346,29 +342,25 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
-
         reconcileCa(context, certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues().get(0).getData().keySet(), is(set(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
                 assertThat(c.getAllValues().get(0).getData().get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertDoesNotThrow(() -> {
-                    assertThat(x509Certificate(initialClusterCaCertSecret.getData().get(CA_CRT)),
-                            is(getCertificateFromTrustStore(CA_CRT, c.getAllValues().get(0).getData())));
-                });
+                assertDoesNotThrow(() ->
+                        assertThat(x509Certificate(initialClusterCaCertSecret.getData().get(CA_CRT)),
+                        is(getCertificateFromTrustStore(CA_CRT, c.getAllValues().get(0).getData()))));
                 assertThat(c.getAllValues().get(1).getData().keySet(), is(set(CA_KEY)));
                 assertThat(c.getAllValues().get(1).getData().get(CA_KEY), is(initialClusterCaKeySecret.getData().get(CA_KEY)));
 
                 assertThat(c.getAllValues().get(2).getData().keySet(), is(set(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
                 assertThat(c.getAllValues().get(2).getData().get(CA_CRT), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
-                assertDoesNotThrow(() -> {
-                    assertThat(x509Certificate(initialClientsCaCertSecret.getData().get(CA_CRT)),
-                            is(getCertificateFromTrustStore(CA_CRT, c.getAllValues().get(2).getData())));
-                });
+                assertDoesNotThrow(() ->
+                        assertThat(x509Certificate(initialClientsCaCertSecret.getData().get(CA_CRT)),
+                        is(getCertificateFromTrustStore(CA_CRT, c.getAllValues().get(2).getData()))));
 
                 assertThat(c.getAllValues().get(3).getData().keySet(), is(set(CA_KEY)));
                 assertThat(c.getAllValues().get(3).getData().get(CA_KEY), is(initialClientsCaKeySecret.getData().get(CA_KEY)));
-                async.flag();
+                context.completeNow();
             })));
 
     }
@@ -401,7 +393,6 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
@@ -445,7 +436,7 @@ public class CertificateRenewalTest {
                 String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
                 assertThat(newClientsCaKey, is(notNullValue()));
                 assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -484,7 +475,6 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
@@ -530,7 +520,7 @@ public class CertificateRenewalTest {
                 assertThat(newClientsCaKey, is(notNullValue()));
                 assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -582,8 +572,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
-        reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 00, 0).atZone(ZoneId.of("GMT")).toInstant()))
+        reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 0, 0).atZone(ZoneId.of("GMT")).toInstant()))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
@@ -631,7 +620,7 @@ public class CertificateRenewalTest {
                 assertThat(newClientsCaKey, is(notNullValue()));
                 assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -683,7 +672,6 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 12, 0).atZone(ZoneId.of("GMT")).toInstant()))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues().size(), is(4));
@@ -731,7 +719,7 @@ public class CertificateRenewalTest {
                 String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
                 assertThat(newClientsCaKey, is(notNullValue()));
                 assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -772,7 +760,6 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
@@ -780,6 +767,7 @@ public class CertificateRenewalTest {
                 Map<String, String> clusterCaCertData = c.getAllValues().get(0).getData();
                 assertThat(clusterCaCertData, aMapWithSize(4));
                 X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
+                //noinspection OptionalGetWithoutIsPresent
                 String oldClusterCaCertKey = clusterCaCertData.keySet()
                         .stream()
                         .filter(alias -> alias.startsWith("ca-"))
@@ -793,7 +781,7 @@ public class CertificateRenewalTest {
                 assertThat(newClusterCaCertStore, is(not(initialClusterCaCertSecret.getData().get(CA_STORE))));
                 assertThat(newClusterCaCertStorePassword, is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
-                Map.Entry oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
+                Map.Entry<String, String> oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
                 assertThat(oldClusterCaCert.getValue(), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
                 assertThat(oldX509ClusterCaCertStore, is(x509Certificate(String.valueOf(oldClusterCaCert.getValue()))));
                 assertThat(x509Certificate(newClusterCaCert).getSubjectDN().getName(), is("CN=cluster-ca v1, O=io.strimzi"));
@@ -809,6 +797,7 @@ public class CertificateRenewalTest {
                 Map<String, String> clientsCaCertData = c.getAllValues().get(2).getData();
                 assertThat(clientsCaCertData, aMapWithSize(4));
                 X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
+                @SuppressWarnings("OptionalGetWithoutIsPresent")
                 String oldClientsCaCertKey = clientsCaCertData.keySet()
                         .stream()
                         .filter(alias -> alias.startsWith("ca-"))
@@ -822,7 +811,7 @@ public class CertificateRenewalTest {
                 assertThat(newClientsCaCertStore, is(not(initialClientsCaCertSecret.getData().get(CA_STORE))));
                 assertThat(newClientsCaCertStorePassword, is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
-                Map.Entry oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
+                Map.Entry<String, String> oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
                 assertThat(oldClientsCaCert.getValue(), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
                 assertThat(oldX509ClientsCaCertStore, is(x509Certificate(String.valueOf(oldClientsCaCert.getValue()))));
                 assertThat(x509Certificate(newClientsCaCert).getSubjectDN().getName(), is("CN=clients-ca v1, O=io.strimzi"));
@@ -834,7 +823,7 @@ public class CertificateRenewalTest {
                 String newClientsCaKey = clientsCaKeyData.remove(CA_KEY);
                 assertThat(newClientsCaKey, is(notNullValue()));
                 assertThat(newClientsCaKey, is(not(initialClientsCaKeySecret.getData().get(CA_KEY))));
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -887,7 +876,6 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 0, 0).atZone(ZoneId.of("GMT")).toInstant()))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
@@ -934,7 +922,7 @@ public class CertificateRenewalTest {
                 assertThat(newClientsCaKey, is(notNullValue()));
                 assertThat(newClientsCaKey, is(initialClientsCaKeySecret.getData().get(CA_KEY)));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -987,7 +975,6 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 12, 0).atZone(ZoneId.of("GMT")).toInstant()))
             .onComplete(context.succeeding(c -> context.verify(() -> {
 
@@ -997,7 +984,7 @@ public class CertificateRenewalTest {
                 assertThat(c.getAllValues().get(0).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
                 assertThat(clusterCaCertData, aMapWithSize(4));
                 X509Certificate newX509ClusterCaCertStore = getCertificateFromTrustStore(CA_CRT, clusterCaCertData);
-                String oldClusterCaCertKey = clusterCaCertData.keySet()
+                @SuppressWarnings("OptionalGetWithoutIsPresent") String oldClusterCaCertKey = clusterCaCertData.keySet()
                         .stream()
                         .filter(alias -> alias.startsWith("ca-"))
                         .findAny()
@@ -1010,7 +997,7 @@ public class CertificateRenewalTest {
                 assertThat(newClusterCaCertStore, is(not(initialClusterCaCertSecret.getData().get(CA_STORE))));
                 assertThat(newClusterCaCertStorePassword, is(initialClusterCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(newX509ClusterCaCertStore, is(x509Certificate(newClusterCaCert)));
-                Map.Entry oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
+                Map.Entry<String, String> oldClusterCaCert = clusterCaCertData.entrySet().iterator().next();
                 assertThat(oldClusterCaCert.getValue(), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
                 assertThat(oldX509ClusterCaCertStore, is(x509Certificate(String.valueOf(oldClusterCaCert.getValue()))));
                 assertThat(x509Certificate(newClusterCaCert).getSubjectDN().getName(), is("CN=cluster-ca v1, O=io.strimzi"));
@@ -1027,7 +1014,7 @@ public class CertificateRenewalTest {
                 assertThat(c.getAllValues().get(2).getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1"));
                 assertThat(clientsCaCertData, aMapWithSize(4));
                 X509Certificate newX509ClientsCaCertStore = getCertificateFromTrustStore(CA_CRT, clientsCaCertData);
-                String oldClientsCaCertKey = clientsCaCertData.keySet()
+                @SuppressWarnings("OptionalGetWithoutIsPresent") String oldClientsCaCertKey = clientsCaCertData.keySet()
                         .stream()
                         .filter(alias -> alias.startsWith("ca-"))
                         .findAny()
@@ -1040,7 +1027,7 @@ public class CertificateRenewalTest {
                 assertThat(newClientsCaCertStore, is(not(initialClientsCaCertSecret.getData().get(CA_STORE))));
                 assertThat(newClientsCaCertStorePassword, is(initialClientsCaCertSecret.getData().get(CA_STORE_PASSWORD)));
                 assertThat(newX509ClientsCaCertStore, is(x509Certificate(newClientsCaCert)));
-                Map.Entry oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
+                Map.Entry<String, String> oldClientsCaCert = clientsCaCertData.entrySet().iterator().next();
                 assertThat(oldClientsCaCert.getValue(), is(initialClientsCaCertSecret.getData().get(CA_CRT)));
                 assertThat(oldX509ClientsCaCertStore, is(x509Certificate(String.valueOf(oldClientsCaCert.getValue()))));
                 assertThat(x509Certificate(newClientsCaCert).getSubjectDN().getName(), is("CN=clients-ca v1, O=io.strimzi"));
@@ -1053,7 +1040,7 @@ public class CertificateRenewalTest {
                 assertThat(newClientsCaKey, is(notNullValue()));
                 assertThat(newClientsCaKey, is(not(initialClientsCaKeySecret.getData().get(CA_KEY))));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -1062,6 +1049,7 @@ public class CertificateRenewalTest {
                 .generateCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(newClusterCaCert)));
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void testExpiredCertsGetRemovedAuto(VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
@@ -1083,7 +1071,7 @@ public class CertificateRenewalTest {
         // add an expired certificate to the secret ...
         initialClusterCaCertSecret.getData().put("ca-2018-07-01T09-00-00.crt",
                 Base64.getEncoder().encodeToString(
-                        TestUtils.readResource(getClass(), "cluster-ca.crt").getBytes(StandardCharsets.UTF_8)));
+                        Objects.requireNonNull(TestUtils.readResource(getClass(), "cluster-ca.crt")).getBytes(StandardCharsets.UTF_8)));
         assertThat(initialClusterCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
         assertThat(initialClusterCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
         // ... and to the related truststore
@@ -1110,7 +1098,7 @@ public class CertificateRenewalTest {
         // add an expired certificate to the secret ...
         initialClientsCaCertSecret.getData().put("ca-2018-07-01T09-00-00.crt",
                 Base64.getEncoder().encodeToString(
-                TestUtils.readResource(getClass(), "clients-ca.crt").getBytes(StandardCharsets.UTF_8)));
+                Objects.requireNonNull(TestUtils.readResource(getClass(), "clients-ca.crt")).getBytes(StandardCharsets.UTF_8)));
         assertThat(initialClientsCaKeySecret.getData().keySet(), is(singleton(CA_KEY)));
         assertThat(initialClientsCaKeySecret.getData().get(CA_KEY), is(notNullValue()));
         // ... and to the related truststore
@@ -1130,7 +1118,6 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
@@ -1154,7 +1141,7 @@ public class CertificateRenewalTest {
                 Map<String, String> clientsCaKeyData = c.getAllValues().get(3).getData();
                 assertThat(clientsCaKeyData.get(CA_KEY), is(initialClientsCaKeySecret.getData().get(CA_KEY)));
                 assertThat(isCertInTrustStore("ca-2018-07-01T09-00-00.crt", clientsCaCertData), is(false));
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -1194,11 +1181,10 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaCertSecret);
         secrets.add(initialClientsCaKeySecret);
 
-        Checkpoint async = context.checkpoint();
         reconcileCa(context, certificateAuthority, certificateAuthority)
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(0));
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -1213,10 +1199,18 @@ public class CertificateRenewalTest {
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, null, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+        Secret newSecret;
+        newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION,
+                clusterCaMock,
+                null,
+                namespace,
+                secretName,
+                commonName,
+                keyCertName,
+                labels,
+                ownerReference,
+                true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -1228,7 +1222,7 @@ public class CertificateRenewalTest {
     public void testRenewalOfDeploymentCertificatesWithRenewingCa() throws IOException {
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                    .withNewName("test-secret")
+                    .withName("test-secret")
                 .endMetadata()
                 .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -1247,10 +1241,9 @@ public class CertificateRenewalTest {
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
         Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+                keyCertName, labels, ownerReference, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -1262,7 +1255,7 @@ public class CertificateRenewalTest {
     public void testRenewalOfDeploymentCertificatesDelayedRenewal() throws IOException {
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withNewName("test-secret")
+                    .withName("test-secret")
                 .endMetadata()
                 .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -1281,10 +1274,9 @@ public class CertificateRenewalTest {
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
         Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+                keyCertName, labels, ownerReference, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -1296,7 +1288,7 @@ public class CertificateRenewalTest {
     public void testRenewalOfDeploymentCertificatesDelayedRenewalOutsideOfMaintenanceWindow() throws IOException {
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withNewName("test-secret")
+                    .withName("test-secret")
                 .endMetadata()
                 .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -1315,10 +1307,17 @@ public class CertificateRenewalTest {
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = false;
 
-        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION,
+                clusterCaMock,
+                initialSecret,
+                namespace,
+                secretName,
+                commonName,
+                keyCertName,
+                labels,
+                ownerReference,
+                false);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes())));
         assertThat(newSecret.getData(), hasEntry("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes())));

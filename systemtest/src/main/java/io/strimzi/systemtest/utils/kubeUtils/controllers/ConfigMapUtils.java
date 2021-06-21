@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;

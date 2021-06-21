@@ -4,9 +4,13 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
-import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
-import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
-import static org.hamcrest.MatcherAssert.assertThat;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
+import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
+import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -15,14 +19,9 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
-import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
+import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
+import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The InternalKafkaClient for sending and receiving messages using basic properties.

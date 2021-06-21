@@ -4,9 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import java.io.IOException;
-import java.io.StringWriter;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionBuilder;
@@ -14,6 +11,9 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
+import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.annotations.KubeVersion;
+import io.strimzi.api.annotations.VersionRange;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.listener.KafkaListeners;
@@ -22,10 +22,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListe
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.crdgenerator.CrdGenerator;
-import io.strimzi.api.annotations.KubeVersion;
-import io.strimzi.api.annotations.VersionRange;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +30,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
 
 import static io.strimzi.api.annotations.ApiVersion.V1;
 import static io.strimzi.api.annotations.ApiVersion.V1ALPHA1;
