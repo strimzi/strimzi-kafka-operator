@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 

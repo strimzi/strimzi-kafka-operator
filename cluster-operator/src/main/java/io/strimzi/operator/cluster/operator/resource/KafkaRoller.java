@@ -16,7 +16,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;

@@ -31,8 +31,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * DynamicConfigurationSharedST is responsible for verify that if we change dynamic Kafka configuration it will not

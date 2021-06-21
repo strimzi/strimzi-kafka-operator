@@ -4,8 +4,9 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import io.strimzi.test.executor.Exec;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,10 +17,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import io.strimzi.test.executor.Exec;
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 /**
  * Class represent verifiable kafka client which keeps common features of kafka clients

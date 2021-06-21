@@ -79,8 +79,6 @@ public class KafkaBridgeAssemblyOperatorTest {
 
     protected static Vertx vertx;
     private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
-    private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties(Reconciliation.DUMMY_RECONCILIATION, "kafkaBridgeDefaultLoggingProperties")
-            .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
     private static final String BOOTSTRAP_SERVERS = "foo-kafka:9092";
     private static final KafkaBridgeConsumerSpec KAFKA_BRIDGE_CONSUMER_SPEC = new KafkaBridgeConsumerSpec();

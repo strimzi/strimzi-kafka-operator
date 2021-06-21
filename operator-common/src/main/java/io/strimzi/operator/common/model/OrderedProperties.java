@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.model;
 
 import io.strimzi.operator.common.InvalidConfigParameterException;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;

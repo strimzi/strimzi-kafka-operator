@@ -4,12 +4,12 @@
  */
 package io.strimzi.kafka.api.conversion.converter;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 
 /**
  * A conversion from one version of an object to another.

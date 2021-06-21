@@ -7,14 +7,14 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.vertx.core.Vertx;
-
-import java.util.HashMap;
-import java.util.Map;
 import io.vertx.core.VertxOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The entry-point to the topic operator.

@@ -4,30 +4,29 @@
  */
 package io.strimzi.systemtest.backup;
 
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.TestUtils.USER_PATH;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
-
-import java.util.Map;
-
+import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
+import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
-import io.strimzi.test.executor.Exec;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import java.util.Map;
+
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.TestUtils.USER_PATH;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)

@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Base64;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;

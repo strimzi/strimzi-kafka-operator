@@ -4,14 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
@@ -33,6 +25,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -250,8 +250,7 @@ public class KafkaConnectApiTest {
 
         KafkaConnectApi client = new KafkaConnectApiImpl(vertx);
 
-        OrderedProperties ops = new OrderedProperties();
-        ops.addStringPairs(desired);
+        OrderedProperties ops = new OrderedProperties().addStringPairs(desired);
 
         client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", PORT, desired, ops)
                 .onComplete(context.succeeding(wasChanged -> context.verify(() -> assertEquals(true, wasChanged))))
@@ -271,7 +270,7 @@ public class KafkaConnectApiTest {
                 .compose(a -> client.updateConnectLoggers(Reconciliation.DUMMY_RECONCILIATION, "localhost", PORT, desired, ops)
                         .onComplete(context.succeeding(wasChanged -> context.verify(() -> {
                             assertEquals(false, wasChanged);
-                            context.completeNow();;
+                            context.completeNow();
                         }))));
     }
 }

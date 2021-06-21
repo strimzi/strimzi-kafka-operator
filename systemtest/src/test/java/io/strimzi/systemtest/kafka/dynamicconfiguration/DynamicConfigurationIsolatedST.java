@@ -45,8 +45,8 @@ import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**

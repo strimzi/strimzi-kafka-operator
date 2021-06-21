@@ -85,7 +85,6 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.InvalidConfigurationException;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;

@@ -11,8 +11,8 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceType;
 
 import java.util.function.Consumer;
 
