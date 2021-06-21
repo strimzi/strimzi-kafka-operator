@@ -21,9 +21,9 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class StrimziKafkaContainerTest {
+public class StrimziKafkaContainerIT {
 
-    private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaContainerTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaContainerIT.class);
 
     private StrimziKafkaContainer systemUnderTest;
 
