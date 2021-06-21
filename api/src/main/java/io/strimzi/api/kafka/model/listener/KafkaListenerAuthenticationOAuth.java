@@ -55,7 +55,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private boolean accessTokenIsJwt = true;
     private List<CertSecretSource> tlsTrustedCertificates;
     private boolean disableTlsHostnameVerification = false;
-    private boolean enableECDSA = true;
+    private Boolean enableECDSA;
     private Integer maxSecondsWithoutReauthentication;
     private boolean enablePlain = false;
     private String tokenEndpointUri;
@@ -308,11 +308,11 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     @Description("Enable or disable ECDSA support by installing BouncyCastle crypto provider. " +
             "ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    public boolean isEnableECDSA() {
+    public Boolean getEnableECDSA() {
         return enableECDSA;
     }
 
-    public void setEnableECDSA(boolean enableECDSA) {
+    public void setEnableECDSA(Boolean enableECDSA) {
         this.enableECDSA = enableECDSA;
     }
 
