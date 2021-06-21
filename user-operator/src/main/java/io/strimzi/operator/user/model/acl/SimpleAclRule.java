@@ -7,7 +7,6 @@ package io.strimzi.operator.user.model.acl;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.AclRuleType;
-
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclPermissionType;

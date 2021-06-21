@@ -92,17 +92,16 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
             .onComplete(context.succeeding(rrDelete -> context.verify(() -> {
                 // it seems the resource is cached for some time so we need wait for it to be null
                 context.verify(() -> Util.waitFor(Reconciliation.DUMMY_RECONCILIATION,
-                                                  vertx,
-                                        "resource deletion " + resourceName,
-                                          "deleted",
-                                      1000,
-                                        30_000,
-                                                 () -> op.get(resourceName) == null
-                        ).onComplete(del -> {
-                            assertThat(op.get(resourceName), is(nullValue()));
-                            context.completeNow();
-                        })
-                );
+                    vertx,
+                    "resource deletion " + resourceName,
+                    "deleted",
+                    1000,
+                    30_000,
+                    () -> op.get(resourceName) == null
+                ).onComplete(del -> {
+                    assertThat(op.get(resourceName), is(nullValue()));
+                    context.completeNow();
+                }));
             })));
     }
 

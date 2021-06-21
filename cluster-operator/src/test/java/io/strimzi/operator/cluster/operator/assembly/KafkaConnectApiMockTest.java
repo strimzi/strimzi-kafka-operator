@@ -42,7 +42,7 @@ public class KafkaConnectApiMockTest {
 
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
         api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-           .onComplete(context.succeeding(res -> context.completeNow()));
+            .onComplete(context.succeeding(res -> context.completeNow()));
     }
 
     @Test
@@ -55,7 +55,7 @@ public class KafkaConnectApiMockTest {
         KafkaConnectApi api = new MockKafkaConnectApi(vertx, statusResults);
 
         api.statusWithBackOff(Reconciliation.DUMMY_RECONCILIATION, backOff, "some-host", 8083, "some-connector")
-           .onComplete(context.succeeding(res -> context.completeNow()));
+            .onComplete(context.succeeding(res -> context.completeNow()));
     }
 
     @Test

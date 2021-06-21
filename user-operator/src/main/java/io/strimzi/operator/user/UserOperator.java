@@ -6,17 +6,17 @@ package io.strimzi.operator.user;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
-
-import java.util.concurrent.TimeUnit;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.

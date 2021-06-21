@@ -35,7 +35,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -212,11 +216,11 @@ public class TopicOperatorMockTest {
         reconcile().onComplete(x -> getFromKafka(kafkaName)
                                        // Check things still the same
                                        .onSuccess(topic -> context.verify(() -> {
-                                            Topic expected = new Topic.Builder(fromKafka.result())
+                                           Topic expected = new Topic.Builder(fromKafka.result())
                                                     .withConfigEntry("retention.bytes", Integer.toString(retention + 1))
                                                     .build();
-                                            assertThat(topic, is(expected));
-                    })))
+                                           assertThat(topic, is(expected));
+                                       })))
                     .onSuccess(x -> context.completeNow());
 
         // Reconcile after change #partitions change

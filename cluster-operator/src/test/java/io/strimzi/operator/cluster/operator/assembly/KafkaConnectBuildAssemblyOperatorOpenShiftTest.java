@@ -9,12 +9,20 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.openshift.api.model.*;
+import io.fabric8.openshift.api.model.Build;
+import io.fabric8.openshift.api.model.BuildBuilder;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigBuilder;
+import io.fabric8.openshift.api.model.BuildRequest;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.*;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
@@ -29,7 +37,17 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.*;
+import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
+import io.strimzi.operator.common.operator.resource.BuildOperator;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -44,11 +62,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 
-import static java.util.Collections.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -217,7 +241,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-               context.completeNow();
+                context.completeNow();
             })));
     }
 
@@ -502,7 +526,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-               context.completeNow();
+                context.completeNow();
             })));
     }
 
@@ -626,7 +650,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-               context.completeNow();
+                context.completeNow();
             })));
     }
 
@@ -778,7 +802,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-               context.completeNow();
+                context.completeNow();
             })));
     }
 
@@ -969,7 +993,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-               context.completeNow();
+                context.completeNow();
             })));
     }
 
@@ -1162,7 +1186,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-               context.completeNow();
+                context.completeNow();
             })));
     }
 
@@ -1355,7 +1379,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-               context.completeNow();
+                context.completeNow();
             })));
     }
 }

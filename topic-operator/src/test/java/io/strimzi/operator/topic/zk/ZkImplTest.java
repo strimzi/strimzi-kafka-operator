@@ -59,7 +59,7 @@ public class ZkImplTest {
         fooCreated.future().compose(v -> {
             try {
                 zkServer.restart();
-                zkImpl.create("/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, x-> {});
+                zkImpl.create("/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, x -> { });
             } catch (Exception e) {
                 context.failNow(e);
             }

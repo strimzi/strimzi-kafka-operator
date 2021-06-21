@@ -70,7 +70,7 @@ public class OperatorMetricsTest {
     public void testSuccessfulReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-       FooWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        FooWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
 
         FooOperator operator = new FooOperator(vertx, "TestResource", resourceOperator, metrics, null) {
 

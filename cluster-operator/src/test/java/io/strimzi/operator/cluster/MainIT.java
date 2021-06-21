@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;

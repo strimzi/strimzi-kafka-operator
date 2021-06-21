@@ -55,8 +55,8 @@ public class KafkaUpgradeDowngradeMockTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static final PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
-    private static final Kafka basicKafka = new KafkaBuilder()
+    private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
+    private static final Kafka BASIC_KAFKA = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
@@ -118,11 +118,11 @@ public class KafkaUpgradeDowngradeMockTest {
                 .build();
 
         ResourceOperatorSupplier supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, FeatureGates.NONE, 2_000);
+                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), PFA, FeatureGates.NONE, 2_000);
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
-        operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
+        operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
 
         LOGGER.info("Reconciling initially -> create");
@@ -131,7 +131,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     private Kafka kafkaWithVersions(String kafkaVersion, String messageFormatVersion, String protocolVersion)   {
-        return new KafkaBuilder(basicKafka)
+        return new KafkaBuilder(BASIC_KAFKA)
                 .editSpec()
                     .editKafka()
                         .withVersion(kafkaVersion)
@@ -144,7 +144,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     private Kafka kafkaWithVersions(String kafkaVersion)   {
-        return new KafkaBuilder(basicKafka)
+        return new KafkaBuilder(BASIC_KAFKA)
                 .editSpec()
                     .editKafka()
                         .withVersion(kafkaVersion)
@@ -396,7 +396,7 @@ public class KafkaUpgradeDowngradeMockTest {
     public void testUpgradeWithoutAnyVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
 
-        Kafka updatedKafka = new KafkaBuilder(basicKafka).build();
+        Kafka updatedKafka = new KafkaBuilder(BASIC_KAFKA).build();
 
         initialize(initialKafka)
                 .onComplete(context.succeeding(v -> context.verify(() ->

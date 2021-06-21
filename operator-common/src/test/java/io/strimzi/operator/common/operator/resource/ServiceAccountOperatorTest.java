@@ -171,7 +171,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
                     assertThat(saCaptor.getValue().getMetadata().getLabels().get("lKey"), is("lValue"));
                     assertThat(saCaptor.getValue().getMetadata().getAnnotations().get("aKey"), is("aValue"));
 
-                   context.completeNow();
+                    context.completeNow();
                 }));
     }
 }

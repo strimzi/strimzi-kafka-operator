@@ -23,15 +23,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class ZookeeperScalerTest {
@@ -172,7 +183,7 @@ public class ZookeeperScalerTest {
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getMessage(), is("Failed to connect to Zookeeper zookeeper:2181. Connection was not ready in 1000 ms."));
             verify(mockZooAdmin, times(1)).close(anyInt());
-           context.completeNow();
+            context.completeNow();
         })));
     }
 
@@ -195,7 +206,7 @@ public class ZookeeperScalerTest {
         scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
             verify(mockZooAdmin, never()).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
             verify(mockZooAdmin, times(1)).close(anyInt());
-           context.completeNow();
+            context.completeNow();
         })));
     }
 
@@ -223,7 +234,7 @@ public class ZookeeperScalerTest {
         scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
             verify(mockZooAdmin, times(1)).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
             verify(mockZooAdmin, times(1)).close(anyInt());
-           context.completeNow();
+            context.completeNow();
         })));
     }
 
@@ -248,7 +259,7 @@ public class ZookeeperScalerTest {
         scaler.scale(1).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getCause(), instanceOf(KeeperException.class));
             verify(mockZooAdmin, times(1)).close(anyInt());
-           context.completeNow();
+            context.completeNow();
         })));
     }
 
@@ -258,7 +269,7 @@ public class ZookeeperScalerTest {
 
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getMessage(), is("Failed to connect to Zookeeper i-do-not-exist.com:2181. Connection was not ready in 2000 ms."));
-           context.completeNow();
+            context.completeNow();
         })));
     }
 
@@ -276,7 +287,7 @@ public class ZookeeperScalerTest {
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
             assertThat(cause.getMessage(), is("Failed to get current Zookeeper server configuration"));
             verify(mockZooAdmin, times(1)).close(anyInt());
-           context.completeNow();
+            context.completeNow();
         })));
     }
 

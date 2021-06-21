@@ -28,18 +28,32 @@ import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.fabric8.kubernetes.client.Watcher.Action.*;
-import static java.util.Collections.*;
-import static org.hamcrest.CoreMatchers.*;
+import static io.fabric8.kubernetes.client.Watcher.Action.ADDED;
+import static io.fabric8.kubernetes.client.Watcher.Action.DELETED;
+import static io.fabric8.kubernetes.client.Watcher.Action.MODIFIED;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
@@ -507,16 +521,16 @@ public class TopicOperatorTest {
         mockK8s.createResource(topicResource).onComplete(x ->
                 topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, null, null)
                         .onComplete(reconcileResult -> {
-                                        assertSucceeded(context, reconcileResult);
-                                        mockKafka.assertExists(context, kubeTopic.getTopicName());
-                                        mockTopicStore.assertExists(context, kubeTopic.getTopicName());
-                                        mockK8s.assertNoEvents(context);
-                                        mockTopicStore.read(topicName).onComplete(readResult -> {
-                                            assertSucceeded(context, readResult);
-                                            context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
-                                            context.completeNow();
-                                        });
-        }));
+                            assertSucceeded(context, reconcileResult);
+                            mockKafka.assertExists(context, kubeTopic.getTopicName());
+                            mockTopicStore.assertExists(context, kubeTopic.getTopicName());
+                            mockK8s.assertNoEvents(context);
+                            mockTopicStore.read(topicName).onComplete(readResult -> {
+                                assertSucceeded(context, readResult);
+                                context.verify(() -> assertThat(readResult.result(), is(kubeTopic)));
+                                context.completeNow();
+                            });
+                        }));
     }
 
     /**
@@ -539,13 +553,13 @@ public class TopicOperatorTest {
                                      .create(kubeTopic))
               .compose(y -> topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, null, kubeTopic))
               .onComplete(reconcileResult -> {
-                    assertSucceeded(context, reconcileResult);
-                    mockKafka.assertNotExists(context, kubeTopic.getTopicName());
-                    mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
-                    mockK8s.assertNotExists(context, kubeTopic.getResourceName());
-                    mockK8s.assertNoEvents(context);
-                    context.completeNow();
-        });
+                  assertSucceeded(context, reconcileResult);
+                  mockKafka.assertNotExists(context, kubeTopic.getTopicName());
+                  mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
+                  mockK8s.assertNotExists(context, kubeTopic.getResourceName());
+                  mockK8s.assertNoEvents(context);
+                  context.completeNow();
+              });
     }
 
     /**
@@ -1018,7 +1032,7 @@ public class TopicOperatorTest {
             if (k8sException != null
                     || storeException != null) {
                 assertFailed(context, ar);
-                 if (k8sException == null) {
+                if (k8sException == null) {
                     mockK8s.assertNotExists(context, resourceName);
                 } else {
                     mockK8s.assertExists(context, resourceName);
@@ -1117,25 +1131,25 @@ public class TopicOperatorTest {
         resourceAdded(context, null)
                 .compose(x -> topicOperator.reconcileAllTopics("periodic"))
                 .onComplete(context.succeeding(e -> context.verify(() -> {
-                        System.out.println("Here");
-                        MeterRegistry registry = metrics.meterRegistry();
+                    System.out.println("Here");
+                    MeterRegistry registry = metrics.meterRegistry();
 
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                                .tag("kind", "KafkaTopic")
-                                .tag("name", topicName.toString())
-                                .tag("resource-namespace", "default-namespace")
-                                .gauge().value(), is(1.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                            .tag("kind", "KafkaTopic")
+                            .tag("name", topicName.toString())
+                            .tag("resource-namespace", "default-namespace")
+                            .gauge().value(), is(1.0));
 
-                        context.completeNow();
-                    })));
+                    context.completeNow();
+                })));
     }
 
     @Test
@@ -1147,22 +1161,22 @@ public class TopicOperatorTest {
         resourceAdded(context, null)
                 .compose(x ->  topicOperator.reconcileAllTopics("periodic"))
                 .onComplete(context.succeeding(e -> context.verify(() -> {
-                        MeterRegistry registry = metrics.meterRegistry();
+                    MeterRegistry registry = metrics.meterRegistry();
 
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
 
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                        assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                                .tag("kind", "KafkaTopic")
-                                .tag("name", topicName.toString())
-                                .tag("resource-namespace", "default-namespace")
-                                .gauge().value(), is(1.0));
-        })))
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                            .tag("kind", "KafkaTopic")
+                            .tag("name", topicName.toString())
+                            .tag("resource-namespace", "default-namespace")
+                            .gauge().value(), is(1.0));
+                })))
         .onSuccess(x -> metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "true"))
         .compose(x  -> resourceAdded(context, null))
         .onComplete(x -> topicOperator.reconcileAllTopics("periodic2"))
@@ -1183,7 +1197,7 @@ public class TopicOperatorTest {
                     .tag("resource-namespace", "default-namespace")
                     .gauge().value(), is(1.0));
         })))
-        .onSuccess(x -> context.completeNow());
+            .onSuccess(x -> context.completeNow());
 
     }
 
@@ -1204,7 +1218,7 @@ public class TopicOperatorTest {
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
                     context.completeNow();
-        }));
+                }));
     }
 
     /**

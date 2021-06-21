@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.vertx.core.Promise;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Assumptions;

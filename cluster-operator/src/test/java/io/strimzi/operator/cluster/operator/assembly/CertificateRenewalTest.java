@@ -7,14 +7,22 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.*;
+import io.strimzi.api.kafka.model.CertificateAuthority;
+import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
+import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.*;
+import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -48,11 +56,20 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.Ca.*;
+import static io.strimzi.operator.cluster.model.Ca.CA_CRT;
+import static io.strimzi.operator.cluster.model.Ca.CA_KEY;
+import static io.strimzi.operator.cluster.model.Ca.CA_STORE;
+import static io.strimzi.operator.cluster.model.Ca.CA_STORE_PASSWORD;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -60,10 +77,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -1179,10 +1199,18 @@ public class CertificateRenewalTest {
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
-        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, null, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+        Secret newSecret;
+        newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION,
+                clusterCaMock,
+                null,
+                namespace,
+                secretName,
+                commonName,
+                keyCertName,
+                labels,
+                ownerReference,
+                true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -1194,7 +1222,7 @@ public class CertificateRenewalTest {
     public void testRenewalOfDeploymentCertificatesWithRenewingCa() throws IOException {
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                    .withNewName("test-secret")
+                    .withName("test-secret")
                 .endMetadata()
                 .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -1213,10 +1241,9 @@ public class CertificateRenewalTest {
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
         Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+                keyCertName, labels, ownerReference, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -1228,7 +1255,7 @@ public class CertificateRenewalTest {
     public void testRenewalOfDeploymentCertificatesDelayedRenewal() throws IOException {
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withNewName("test-secret")
+                    .withName("test-secret")
                 .endMetadata()
                 .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -1247,10 +1274,9 @@ public class CertificateRenewalTest {
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = true;
 
         Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+                keyCertName, labels, ownerReference, true);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", newCertAndKey.certAsBase64String()));
         assertThat(newSecret.getData(), hasEntry("deployment.key", newCertAndKey.keyAsBase64String()));
@@ -1262,7 +1288,7 @@ public class CertificateRenewalTest {
     public void testRenewalOfDeploymentCertificatesDelayedRenewalOutsideOfMaintenanceWindow() throws IOException {
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withNewName("test-secret")
+                    .withName("test-secret")
                 .endMetadata()
                 .addToData("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes()))
                 .addToData("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes()))
@@ -1281,10 +1307,17 @@ public class CertificateRenewalTest {
         String keyCertName = "deployment";
         Labels labels = Labels.forStrimziCluster("my-cluster");
         OwnerReference ownerReference = new OwnerReference();
-        boolean isMaintenanceTimeWindowsSatisfied = false;
 
-        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION, clusterCaMock, initialSecret, namespace, secretName, commonName,
-                keyCertName, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+        Secret newSecret = ModelUtils.buildSecret(Reconciliation.DUMMY_RECONCILIATION,
+                clusterCaMock,
+                initialSecret,
+                namespace,
+                secretName,
+                commonName,
+                keyCertName,
+                labels,
+                ownerReference,
+                false);
 
         assertThat(newSecret.getData(), hasEntry("deployment.crt", Base64.getEncoder().encodeToString("old-cert".getBytes())));
         assertThat(newSecret.getData(), hasEntry("deployment.key", Base64.getEncoder().encodeToString("old-key".getBytes())));
