@@ -163,7 +163,9 @@ public class KubeClusterResource {
             deploymentNamespaces.add(namespace);
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
-            if (extensionContext != null) addNamespaceToSet(extensionContext, namespace);
+            if (extensionContext != null) {
+                addNamespaceToSet(extensionContext, namespace);
+            }
         }
         testNamespace = useNamespace;
         LOGGER.info("Using Namespace {}", useNamespace);
