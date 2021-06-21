@@ -1,0 +1,167 @@
+// Module included in the following assemblies:
+//
+// assembly-logging-configuration.adoc
+
+[id='creating-logging-filters_{context}']
+= Adding logging filters to Operators
+
+[role="_abstract"]
+If you are using a ConfigMap to configure the (log4j2) logging levels for Strimzi Operators,
+you can also define logging filters to limit what's returned in the log.
+
+Filters use _markers_ to specify what to include in the log.
+You specify a kind, namespace and name for the marker.
+For example, if a Kafka cluster is failing, you can isolate the logs by specifying the kind as `Kafka`, and use the namespace and name of the failing cluster.
+
+This example shows a marker filter for a Kafka cluster named `my-kafka-cluster`.
+
+.Basic logging filter configuration
+[source,yaml,subs="+attributes"]
+----
+appender.console.filter.filter1.type=MarkerFilter <1>
+appender.console.filter.filter1.onMatch=ACCEPT <2>
+appender.console.filter.filter1.onMismatch=DENY <3>
+appender.console.filter.filter1.marker=Kafka(my-namespace/my-kafka-cluster) <4>
+----
+<1> The `MarkerFilter` type compares a specified marker for filtering.
+<2> The `onMatch` property accepts the log if the marker matches.
+<3> The `onMismatch` property rejects the log if the marker does not match.
+<4> The marker used for filtering is in the format __KIND(NAMESPACE/NAME-OF-RESOURCE)__.
+
+You can create one or more filters.
+Here, the log is filtered for two Kafka clusters.
+
+.Multiple logging filter configuration
+[source,yaml,subs="+attributes"]
+----
+appender.console.filter.filter1.type=MarkerFilter
+appender.console.filter.filter1.onMatch=ACCEPT
+appender.console.filter.filter1.onMismatch=DENY
+appender.console.filter.filter1.marker=Kafka(my-namespace/my-kafka-cluster-1)
+appender.console.filter.filter2.type=MarkerFilter
+appender.console.filter.filter2.onMatch=ACCEPT
+appender.console.filter.filter2.onMismatch=DENY
+appender.console.filter.filter2.marker=Kafka(my-namespace/my-kafka-cluster-2)
+----
+
+.Adding filters to the Cluster Operator
+
+To add filters to the Cluster Operator, update its logging ConfigMap YAML file (`install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`).
+
+.Procedure
+
+. Update the `050-ConfigMap-strimzi-cluster-operator.yaml` file to add the filter properties to the ConfigMap.
++
+In this example, the filter properties return logs only for the `my-kafka-cluster` Kafka cluster:
++
+[source,yaml,subs="+attributes"]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: strimzi-cluster-operator
+data:
+  log4j2.properties:
+    #...
+    appender.console.filter.filter1.type=MarkerFilter
+    appender.console.filter.filter1.onMatch=ACCEPT
+    appender.console.filter.filter1.onMismatch=DENY
+    appender.console.filter.filter1.marker=Kafka(my-namespace/my-kafka-cluster)
+----
++
+Alternatively, edit the `ConfigMap` directly:
++
+[source,shell,subs=+quotes]
+----
+kubectl edit cm strimzi-cluster-operator
+----
+
+. If you updated the YAML file instead of editing the `ConfigMap` directly, apply the changes by deploying the ConfigMap:
++
+[source,shell,subs=+quotes]
+----
+kubectl create -f install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml
+----
+
+.Adding filters to the Topic Operator or User Operator
+
+To add filters to the Topic Operator or User Operator, create or edit a logging ConfigMap.
+
+In this procedure a logging ConfigMap is created with filters for the Topic Operator.
+The same approach is used for the User Operator.
+
+.Procedure
+
+. Create the ConfigMap.
++
+You can create the ConfigMap as a YAML file or from a properties file.
++
+In this example, the filter properties return logs only for the `my-topic` topic:
++
+[source,yaml,subs="+attributes"]
+----
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: logging-configmap
+data:
+  log4j2.properties:
+    rootLogger.level="INFO"
+    appender.console.filter.filter1.type=MarkerFilter
+    appender.console.filter.filter1.onMatch=ACCEPT
+    appender.console.filter.filter1.onMismatch=DENY
+    appender.console.filter.filter1.marker=KafkaTopic(my-namespace/my-topic)
+----
++
+If you are using a properties file, specify the file at the command line:
++
+[source,shell]
+----
+kubectl create configmap logging-configmap --from-file=log4j2.properties
+----
++
+The properties file defines the logging configuration:
++
+[source,text]
+----
+# Define the logger
+rootLogger.level="INFO"
+# Set the filters
+appender.console.filter.filter1.type=MarkerFilter
+appender.console.filter.filter1.onMatch=ACCEPT
+appender.console.filter.filter1.onMismatch=DENY
+appender.console.filter.filter1.marker=KafkaTopic(my-namespace/my-topic)
+# ...
+----
+
+. Define _external_ logging in the `spec` of the resource, setting the `logging.valueFrom.configMapKeyRef.name` to the name of the ConfigMap and `logging.valueFrom.configMapKeyRef.key` to the key in this ConfigMap.
++
+For the Topic Operator, logging is specified in the `topicOperator` configuration of the `Kafka` resource.
++
+[source,shell,subs="+quotes,attributes"]
+----
+spec:
+  # ...
+  entityOperator:
+    topicOperator:
+      logging:
+        type: external
+        valueFrom:
+          configMapKeyRef:
+            name: logging-configmap
+            key: log4j2.properties
+----
+
+. Apply the changes by deploying the Cluster Operator:
+
+[source,shell,subs=+quotes]
+----
+create -f install/cluster-operator -n my-cluster-operator-namespace
+----
+
+[role="_additional-resources"]
+.Additional resources
+* xref:proc-config-kafka-str[Configuring Kafka]
+* xref:logging_configuration_by_configmap[Cluster Operator logging]
+* xref:property-topic-operator-logging-reference[Topic Operator logging]
+* xref:property-user-operator-logging-reference[User Operator logging]

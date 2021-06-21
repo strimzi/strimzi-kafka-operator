@@ -1,0 +1,68 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deployment-configuration.adoc
+
+[id='external-logging_{context}']
+= Logging configuration
+
+[role="_abstract"]
+Configure logging levels in the custom resources of Kafka components and Strimzi Operators.
+You can specify the logging levels directly in the `spec.logging` property of the resource YAML.
+Or you can define the logging properties in a ConfigMap that's referenced in the YAML using the `configMapKeyRef` property.
+
+The advantages of using a ConfigMap are that the logging properties are maintained in one place and are accessible to more than one resource.
+If you are using a ConfigMap to specify loggers for Strimzi Operators, you can also append the logging specification to add filters.
+
+You specify a `type` in your logging specification:
+
+* `inline` when specifying logging levels directly
+* `external` when referencing a ConfigMap
+
+.Example `inline` logging configuration
+[source,shell,subs="+quotes,attributes"]
+----
+spec:
+  # ...
+  logging:
+    type: inline
+    loggers:
+      kafka.root.logger.level: "INFO"
+----
+
+
+.Example `external` logging configuration
+[source,shell,subs="+quotes,attributes"]
+----
+spec:
+  # ...
+  logging:
+    type: external
+    valueFrom:
+      configMapKeyRef:
+        name: my-config-map
+        key: my-config-map-key
+----
+
+Values for the `name` and `key` of the ConfigMap are mandatory.
+Default logging is used if the `name` or `key` is not set.
+
+[role="_additional-resources"]
+.Additional resources
+
+*Kafka component logging*
+
+* xref:property-kafka-logging-reference[Kafka logging]
+* xref:property-zookeeper-logging-reference[Zookeeper logging]
+* xref:property-kafka-connect-logging-reference[Kafka Connect and Mirror Maker 2.0 logging]
+* xref:property-mm-loggers-reference[MirrorMaker logging]
+* xref:property-kafka-bridge-logging-reference[Kafka Bridge logging]
+* xref:ref-cruise-control-configuration-str[Cruise Control logging]
+
+*Operator logging*
+
+* xref:logging_configuration_by_configmap[Cluster Operatror logging]
+* xref:property-topic-operator-logging-reference[Topic Operator logging]
+* xref:property-user-operator-logging-reference[User Operator logging]
+
+include::../../modules/configuring/proc-creating-configmap.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-creating-logging-filters.adoc[leveloffset=+1]
