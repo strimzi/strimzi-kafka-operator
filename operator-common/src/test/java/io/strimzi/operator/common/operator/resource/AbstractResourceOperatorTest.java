@@ -93,9 +93,12 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
+        EditReplacePatchDeletable mockR = mock(resourceType());
+        HasMetadata hasMetadata = mock(HasMetadata.class);
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
-        when(mockResource.patch(any())).thenReturn(resource);
+
+        when(mockResource.withPropagationPolicy(cascade ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockR);
+        when(mockR.patch((T) any())).thenReturn(hasMetadata);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
@@ -110,7 +113,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
-            verify(mockResource).patch(any());
+            verify(mockR).patch((T) any());
             verify(mockResource, never()).create(any());
             verify(mockResource, never()).create();
             verify(mockResource, never()).createOrReplace(any());

@@ -1085,7 +1085,7 @@ public class KafkaStatusTest {
                 .editOrNewSpec()
                     .editOrNewKafka()
                         .withNewPersistentClaimStorage()
-                            .withNewSize("100Gi")
+                            .withSize("100Gi")
                         .endPersistentClaimStorage()
                     .endKafka()
                 .endSpec()

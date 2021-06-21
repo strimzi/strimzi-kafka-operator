@@ -163,7 +163,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)
                 .onComplete(context.succeeding(rr -> {
-                    verify(mockResource, times(1)).patch(any());
+                    verify(mockResource, times(1)).patch(any(ServiceAccount.class));
 
                     assertThat(saCaptor.getValue(), is(notNullValue()));
                     assertThat(saCaptor.getValue().getSecrets().size(), is(2));

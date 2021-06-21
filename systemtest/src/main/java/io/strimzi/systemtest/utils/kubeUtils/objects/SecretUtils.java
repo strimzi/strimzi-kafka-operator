@@ -66,13 +66,13 @@ public class SecretUtils {
     public static void createSecret(String namespaceName, String secretName, String dataKey, String dataValue) {
         LOGGER.info("Creating secret {}", secretName);
         kubeClient(namespaceName).createSecret(new SecretBuilder()
-            .withNewApiVersion("v1")
-            .withNewKind("Secret")
+            .withApiVersion("v1")
+            .withKind("Secret")
             .withNewMetadata()
                 .withName(secretName)
                 .withNamespace(namespaceName)
             .endMetadata()
-            .withNewType("Opaque")
+            .withType("Opaque")
                 .withData(Collections.singletonMap(dataKey, dataValue))
             .build());
     }

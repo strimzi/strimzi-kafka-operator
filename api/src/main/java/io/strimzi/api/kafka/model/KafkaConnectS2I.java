@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -87,6 +88,7 @@ import static java.util.Collections.unmodifiableList;
 @Group(Constants.STRIMZI_GROUP)
 @Deprecated
 @DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.connect.build.Build.class)
+@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
 public class KafkaConnectS2I extends CustomResource<KafkaConnectS2ISpec, KafkaConnectS2IStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
@@ -109,6 +111,7 @@ public class KafkaConnectS2I extends CustomResource<KafkaConnectS2ISpec, KafkaCo
     public static final String LABEL_SELECTOR_PATH = ".status.labelSelector";
 
     private String apiVersion;
+    private String kind = RESOURCE_KIND;
     private ObjectMeta metadata;
     private KafkaConnectS2ISpec spec;
     private KafkaConnectS2IStatus status;

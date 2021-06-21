@@ -896,7 +896,7 @@ public class ConnectorMockTest {
         Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(connect);
         waitForConnectReady(connectName);
 
-        // triggered atleast once (Connect creation)
+        // triggered at least once (Connect creation)
         verify(api, atLeastOnce()).list(
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT));
         verify(api, never()).createOrUpdatePutRequest(any(),

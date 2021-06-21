@@ -30,7 +30,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.policy.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
@@ -968,7 +968,7 @@ public class ZookeeperClusterTest {
         Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configurationJson, zooConfigurationJson))
                 .editSpec()
                     .editZookeeper()
-                        .withNewEphemeralStorage().withNewSizeLimit(sizeLimit).endEphemeralStorage()
+                        .withNewEphemeralStorage().withSizeLimit(sizeLimit).endEphemeralStorage()
                     .endZookeeper()
                 .endSpec()
                 .build();
@@ -1124,7 +1124,7 @@ public class ZookeeperClusterTest {
 
         SecurityContext securityContext = new SecurityContextBuilder()
                 .withPrivileged(false)
-                .withNewReadOnlyRootFilesystem(false)
+                .withReadOnlyRootFilesystem(false)
                 .withAllowPrivilegeEscalation(false)
                 .withRunAsNonRoot(true)
                 .withNewCapabilities()

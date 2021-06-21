@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
-import io.fabric8.kubernetes.api.model.batch.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
