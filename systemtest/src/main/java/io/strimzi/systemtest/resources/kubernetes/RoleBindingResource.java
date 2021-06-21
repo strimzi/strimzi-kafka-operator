@@ -40,13 +40,6 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
         return resource != null;
     }
 
-    public static RoleBindingBuilder roleBinding(String namespace) {
-        return new RoleBindingBuilder()
-            .editFirstSubject()
-                .withNamespace(namespace)
-            .endSubject();
-    }
-
     public static RoleBinding roleBinding(ExtensionContext extensionContext, String yamlPath, String namespace, String clientNamespace) {
         LOGGER.info("Creating RoleBinding from {} in namespace {}", yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
