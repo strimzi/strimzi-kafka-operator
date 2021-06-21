@@ -146,7 +146,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.port = port;
 
         // Setup metrics for connectors
-
         Tags metricTags = Tags.of(Tag.of("kind", KafkaConnector.RESOURCE_KIND), Tag.of("selector", ""));
 
         connectorsReconciliationsCounter = metrics.counter(METRICS_PREFIX + "reconciliations",

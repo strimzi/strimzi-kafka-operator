@@ -462,11 +462,6 @@ public abstract class AbstractOperator<
     public Optional<LabelSelector> selector() {
         return selector;
     }
-
-    public Map<String, String> getMatchLables() {
-        return selector.get().getMatchLabels();
-    }
-
     /**
      * Create Kubernetes watch.
      *

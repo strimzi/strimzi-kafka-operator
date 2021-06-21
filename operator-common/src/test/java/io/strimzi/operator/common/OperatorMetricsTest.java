@@ -193,7 +193,7 @@ public class OperatorMetricsTest {
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, Labels.fromMap(emptyMap())) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
