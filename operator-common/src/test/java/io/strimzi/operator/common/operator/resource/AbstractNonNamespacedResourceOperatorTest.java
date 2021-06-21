@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -95,6 +96,8 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
+        EditReplacePatchDeletable mockR = mock(resourceType());
+        HasMetadata hasMetadata = mock(HasMetadata.class);
         when(mockResource.get()).thenReturn(resource);
         when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockResource);
         when(mockResource.patch(any(HasMetadata.class))).thenReturn(resource);
@@ -141,7 +144,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource())
                 .onComplete(context.succeeding(ar -> {
                     verify(mockResource).get();
@@ -173,7 +175,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             context.completeNow();
@@ -198,7 +199,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(
                 vertx, mockClient);
-
 
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.succeeding(rr -> {
             verify(mockResource).get();
@@ -227,7 +227,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
             context.completeNow();
@@ -249,7 +248,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         mocker(mockClient, mockCms);
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
-
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).get();
@@ -283,7 +281,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         mocker(mockClient, mockCms);
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
-
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).delete();
@@ -347,7 +344,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
@@ -382,7 +378,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, is(ex));
             assertThat("Watch was not closed", watchWasClosed.get(), is(true));
@@ -410,7 +405,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         mocker(mockClient, mockCms);
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
-
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
@@ -444,7 +438,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         mocker(mockClient, mockCms);
 
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
-
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
             verify(mockResource).delete();

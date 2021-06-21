@@ -221,13 +221,12 @@ public class CaRenewalTest {
         Function<Integer, Subject> subjectFn = i -> new Subject();
         Function<Integer, String> podNameFn = i -> "pod" + i;
 
-        Map<String, CertAndKey> newCerts;
-        newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
-                replicas,
-                subjectFn,
-                initialSecret,
-                podNameFn,
-                true);
+        Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(Reconciliation.DUMMY_RECONCILIATION,
+                                                    replicas,
+                                                    subjectFn,
+                                                    initialSecret,
+                                                    podNameFn,
+                                                    true);
 
         assertThat(new String(newCerts.get("pod0").cert()), is("new-cert0"));
         assertThat(new String(newCerts.get("pod0").key()), is("new-key0"));

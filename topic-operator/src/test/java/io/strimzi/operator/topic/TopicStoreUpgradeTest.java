@@ -30,6 +30,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @ExtendWith(VertxExtension.class)
 public class TopicStoreUpgradeTest {
     private static final Map<String, String> MANDATORY_CONFIG;
+    private static EmbeddedKafkaCluster cluster;
 
     static {
         MANDATORY_CONFIG = new HashMap<>();

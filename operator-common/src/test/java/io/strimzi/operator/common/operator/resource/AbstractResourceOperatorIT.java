@@ -117,8 +117,6 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
             .onComplete(context.succeeding(rrDeleted -> {
                 // it seems the resource is cached for some time so we need wait for it to be null
                 context.verify(() -> {
-
-                        //TODO this sus looking code
                         Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
                                 30_000, () -> op.get(namespace, resourceName) == null)
                                 .onComplete(del -> {
