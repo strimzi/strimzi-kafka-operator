@@ -63,7 +63,7 @@ public class UserOperator extends AbstractVerticle {
 
                 LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
-                    LOGGER.info("Triggering periodic reconciliation for namespace {}...", namespace);
+                    LOGGER.info("Triggering periodic reconciliation for namespace {}", namespace);
                     reconcileAll("timer");
                 });
 
