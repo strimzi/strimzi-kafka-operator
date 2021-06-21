@@ -49,7 +49,6 @@ spec:
 [source,shell,subs="+quotes,attributes+"]
 kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount _my-cluster-operator-namespace_:strimzi-cluster-operator
 kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount _my-cluster-operator-namespace_:strimzi-cluster-operator
-kubectl create clusterrolebinding strimzi-cluster-operator-topic-operator-delegation --clusterrole=strimzi-topic-operator --serviceaccount _my-cluster-operator-namespace_:strimzi-cluster-operator
 +
 Replace `_my-cluster-operator-namespace_` with the namespace you want to install the Cluster Operator into.
 
