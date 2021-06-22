@@ -153,7 +153,11 @@ public class Main {
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {
-                        LOGGER.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
+                        if (config.getCustomResourceSelector() != null) {
+                            LOGGER.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
+                        } else {
+                            LOGGER.info("Cluster Operator verticle started in namespace {} without label selector", namespace);
+                        }
                     } else {
                         LOGGER.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
                         System.exit(1);

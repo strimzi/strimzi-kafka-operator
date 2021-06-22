@@ -122,7 +122,7 @@ public class ClusterOperator extends AbstractVerticle {
                 .compose(f -> {
                     LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
                     this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), res2 -> {
-                        LOGGER.info("Triggering periodic reconciliation for namespace {}...", namespace);
+                        LOGGER.info("Triggering periodic reconciliation for namespace {}", namespace);
                         reconcileAll("timer");
                     });
                     return startHealthServer().map((Void) null);
